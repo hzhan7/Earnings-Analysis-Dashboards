@@ -72,6 +72,7 @@ class TsmDashboardTest(unittest.TestCase):
         exhibits = [exhibit for section in self.payload["sections"] for exhibit in section["exhibits"]]
         self.assertEqual([exhibit["n"] for exhibit in exhibits], list(range(2, 10)))
         self.assertEqual(len({exhibit["n"] for exhibit in exhibits}), 8)
+        self.assertTrue(all(not exhibit.get("full", False) for exhibit in exhibits))
         bridge = next(exhibit for exhibit in exhibits if exhibit["n"] == 6)
         self.assertEqual(bridge["values"], [28.83, 32.63, 63.2])
         self.assertIn("出售及盯市", bridge["src_extra"])

@@ -26,6 +26,7 @@ class GooglePrototypeTest(unittest.TestCase):
     def test_expected_exhibit_order(self) -> None:
         exhibits = [ex for section in self.payload["sections"] for ex in section["exhibits"]]
         self.assertEqual([ex["n"] for ex in exhibits], [2, 3, 4, 5, 6, 7, 8, 9])
+        self.assertTrue(all(not ex.get("full", False) for ex in exhibits))
         fcf = next(ex for ex in exhibits if ex["n"] == 7)
         self.assertEqual(fcf["values"][-1], -5855)
 

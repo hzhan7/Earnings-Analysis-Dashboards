@@ -163,7 +163,6 @@ def build_payload(staging: dict) -> dict:
             "ylab": "同比增速",
             "note": "Search Q2 同比 +16.8%，较 Q1 的 19.1% 放缓；YouTube ads 回升至 +12.9%。",
             "src_extra": source_note("分项收入与同比来自公司季度 release"),
-            "full": True,
         },
         {
             "n": 5,
@@ -198,7 +197,6 @@ def build_payload(staging: dict) -> dict:
             "zero_line": True,
             "note": "Q2 经营现金流同比增加 $11.3B，但 CapEx 同比增加 $22.5B，现金增量被资本开支完全吞没。",
             "src_extra": source_note("FCF = 经营现金流 − 购买物业及设备"),
-            "full": True,
         },
         {
             "n": 6,
@@ -233,7 +231,6 @@ def build_payload(staging: dict) -> dict:
                 "backlog 来自公司季度电话会，非利润表项目；Q1 2026 纳入 TPU hardware "
                 "agreements，跨季可比性有限。净增为自算，可由表格视图复核。"
             ),
-            "full": True,
         },
         {
             "n": 9,
@@ -254,7 +251,6 @@ def build_payload(staging: dict) -> dict:
                 "正负柱不应被相加为期末现金变动。"
             ),
             "src_extra": source_note("普通股、优先股、债务及主要用途来自 Q2 cash-flow / equity disclosures"),
-            "full": True,
         },
     ]
 

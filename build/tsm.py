@@ -116,7 +116,6 @@ def build_payload(staging: dict) -> dict:
             },
             "note": "Q2 收入 US$40.20B，环比 +12.0%、同比 +33.7%；八季累计增幅为 71.1%（D）。",
             "src_extra": "美元收入与同比来自各季 TSMC earnings release；八季累计增幅为自算。",
-            "full": True,
         },
         {
             "n": 3,
@@ -134,7 +133,6 @@ def build_payload(staging: dict) -> dict:
             "ylab": "利润率",
             "note": "毛利率超原指引上限 0.2pp，营业利润率超 1.8pp；Q3 两项指引中值分别降至 66% 与 57%。",
             "src_extra": "利润率与指引来自 TSMC earnings release；相对指引上限的差额为自算。",
-            "full": True,
         },
         {
             "n": 4,
@@ -155,7 +153,6 @@ def build_payload(staging: dict) -> dict:
             "ylab": "晶圆收入占比",
             "note": "2nm 首次单列为 3%，3nm 升至 30%；此前的 0 表示未单列或整数百分比舍入为零，不代表绝对没有收入。",
             "src_extra": "制程组合分母为 total wafer revenue，来自 TSMC 各季 management report。",
-            "full": True,
         },
         {
             "n": 5,
@@ -174,7 +171,6 @@ def build_payload(staging: dict) -> dict:
             "ylab": "净收入占比",
             "note": "Q2 HPC 环比增长 20%，Smartphone 环比下降 4%；收入结构继续向高性能计算集中。",
             "src_extra": "平台组合分母为 net revenue；占比与环比变化来自 2Q26 management report。",
-            "full": True,
         },
         {
             "n": 6,
@@ -193,7 +189,6 @@ def build_payload(staging: dict) -> dict:
             "ylab": "NT$B",
             "note": "Q2 后两柱合计 NT$95.83B；其他/残余 NT$32.63B = 95.83 − 63.20（D），不是公司定义的调整后利润。",
             "src_extra": "非营业项目总额与 VIS 股份出售及盯市收益来自 2Q26 management report。",
-            "full": True,
         },
         {
             "n": 7,
@@ -212,7 +207,6 @@ def build_payload(staging: dict) -> dict:
             "bar_labels": False,
             "note": "Q2 经营现金流 NT$783.36B、现金支付 CapEx NT$496.00B；FCF = OCF − cash CapEx = NT$287.36B（D）。",
             "src_extra": "均为季度 NT$B 现金流口径，不与全年美元 CapEx 预算混用；FCF 按 TSMC 定义复算。",
-            "full": True,
         },
         {
             "n": 8,
@@ -230,7 +224,6 @@ def build_payload(staging: dict) -> dict:
             "ylab": "天",
             "note": "公司将库存天数上升主要归因于 N2 爬坡；应收天数环比增加 3 天。",
             "src_extra": "应收与库存天数来自各季 TSMC management report。",
-            "full": True,
         },
         {
             "n": 9,
@@ -248,7 +241,6 @@ def build_payload(staging: dict) -> dict:
             "bar_labels": False,
             "note": "八季实际收入全部不低于指引中点；其中六季达到或超过区间上端（D）。",
             "src_extra": "区间为各季度开始时公司给出的美元收入指引，实际值来自随后发布的 earnings release。",
-            "full": True,
         },
     ]
 
