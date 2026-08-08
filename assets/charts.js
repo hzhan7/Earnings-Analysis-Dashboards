@@ -727,6 +727,16 @@
     /* x 标签带：90° 时带高 = 标签**文字长度**，45° 是它的斜边投影，0° 只是一个行高 ——
        三种都正比于字号，所以整条按 FS 缩放。 */
     var XB = fscale(rot === 90 ? 48 : (rot === 0 ? 22 : 36));
+    /* 但 48/36/22 是照「Jul-24」这种 3~4 个拉丁字符的月份标签定的常数。x 轴是**长短语**
+       时（「新台币汇率 vs 假设（升值为逆风）」20+ em）标签远比这个带高，多出来的部分
+       会伸出卡片、盖在下面的 Note / Source 正文上 —— 这不是重叠，是跑到别人的地盘上。
+       所以按最长标签反算一次需要的带高，**只增不减**：月份标签的图算出来比常数小，
+       走 max 之后一个像素都不变；只有长标签的图会把带子撑开到真正够用。 */
+    var xstep = ex.xstep || 1, xlEm = 1;
+    for (i = 0; i < n; i += xstep)
+      if (labels[i] != null) xlEm = Math.max(xlEm, emWidth(labels[i]));
+    if (rot !== 0)
+      XB = Math.max(XB, xlEm * fscale(8.2) * (rot === 90 ? 1 : 0.707) + fscale(10));
     /* 新图型里 qtr_bar / grouped_bars 的右轴（y/y、误差）是可选的：payload 没给 ex.line
        就退化成单轴柱图，不画空的右刻度。gs_bar 的 ex.yoy 同理（默认不给 = 维持现状）。 */
     var dual = kind === 'bar_line_dual' || kind === 'stacked_dual' ||
@@ -946,7 +956,7 @@
     if (y0 < -1e-9 && y1 > 1e-9)
       el('line', { x1: M.l, x2: M.l + pw, y1: Y(0), y2: Y(0), stroke: C.AXIS, 'stroke-width': 0.9 }, svg);
 
-    var step = ex.xstep || 1;
+    var step = xstep;
     /* x 标签的字号上界：多数图的 x 是月份（3~6 字，怎么放都够），但有的图 x 是**名字**
        （exchanges12 的「Deutsche Börse」「CME Group」14 个字）。45° 斜排时每个标签沿
        轴向铺开约 len×cos45°，相邻两个的外接框按构造就会压上 —— 基线字号下差之毫厘
@@ -955,9 +965,8 @@
          rot=45  斜排：轴向占用是斜边投影        → band×1.414 / (len×0.55)
          rot=90  竖排：轴向只占一个行高，与长度无关 → band / 1.15
        与格宽同理，这是硬约束，不随 FS 长。 */
-    var xlEm = 1;
-    for (i = 0; i < n; i += step) if (labels[i] != null) xlEm = Math.max(xlEm, emWidth(labels[i]));
-    /* 两条约束取严的那条：
+    /* xlEm（最长标签的 em 宽度）在上面算 XB 时已经求过，不重复扫一遍。
+       两条约束取严的那条：
          轴向（相邻两个标签不许互压）—— 竖排只占一个行高，横排/斜排占文字长度的投影；
          纵深（标签不许伸出标签带 XB，伸出去就压到卡片底下的 Note 正文上）。
        纵深这一条在月份标签上从不触发（「Jul-24」才 3.3 em），但 x 是长中文短语时
