@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# The first public release contains only the reviewed GOOGL sample.
+series/*.json
+!series/googl.json
+config/
+build/all.py
+build/ingest_local.py
+assets/hub.js
