@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import datetime as dt
 import json
 import math
 import re
@@ -39,14 +38,24 @@ def check(payload: dict) -> None:
         raise PayloadGuardError("Invalid payload values:\n" + "\n".join(errors[:20]))
 
 
-def write_dash(path: str, payload: dict, generator: str) -> Path:
+def write_js(path: str | Path, var_name: str, payload: dict, generator: str) -> Path:
+    """Write a guarded browser payload as `window.<var_name> = …`.
+
+    The banner carries no build date on purpose: every generated file must be a
+    pure function of the reviewed series, so that `build/all.py && git status`
+    is itself the drift check. `git log -1 -- <path>` records when it was built.
+    """
     check(payload)
     body = json.dumps(payload, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(
-        f"// 由 build/{generator}.py 生成于 {dt.date.today().isoformat()}，请勿手改\n"
-        f"window.DASH = {body};\n",
+        f"// 由 build/{generator}.py 生成，请勿手改\n"
+        f"window.{var_name} = {body};\n",
         encoding="utf-8",
     )
     return target
+
+
+def write_dash(path: str, payload: dict, generator: str) -> Path:
+    return write_js(path, "DASH", payload, generator)

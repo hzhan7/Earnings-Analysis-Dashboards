@@ -11,6 +11,8 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from build.all import roster_payload  # noqa: E402
+from build.googl import build_payload as build_googl_payload  # noqa: E402
 from build.tsm import build_payload  # noqa: E402
 
 
@@ -93,18 +95,26 @@ class TsmDashboardTest(unittest.TestCase):
 
     def test_published_payload_roster_and_shell(self) -> None:
         self.assertEqual(js_payload(ROOT / "data" / "tsm.js", "window.DASH"), self.payload)
+        # roster.js is loaded by every company page, so a stale one -- the exact
+        # result of rebuilding one company instead of running build/all.py --
+        # corrupts the cross-company nav on all of them. Assert equality, not
+        # just the slug set.
+        googl_source = json.loads((ROOT / "series" / "googl.json").read_text(encoding="utf-8"))
         roster = js_payload(ROOT / "data" / "roster.js", "window.ROSTER")
-        self.assertEqual({item["slug"] for item in roster["items"]}, {"googl", "tsm"})
-        self.assertEqual(
-            {group["key"] for group in roster["groups"]},
-            {"internet", "semiconductor_ai"},
-        )
+        self.assertEqual(roster, roster_payload(build_googl_payload(googl_source), self.payload))
         shell = (ROOT / "tsm" / "index.html").read_text(encoding="utf-8")
         self.assertIn('../data/tsm.js', shell)
         self.assertNotIn('../data/googl.js', shell)
+
+    def test_home_page_matches_roster(self) -> None:
+        """index.html is hand-written and reads no payload, so it can silently
+        keep advertising last quarter while the company pages move on."""
         home = (ROOT / "index.html").read_text(encoding="utf-8")
-        self.assertIn('href="googl/"', home)
-        self.assertIn('href="tsm/"', home)
+        roster = js_payload(ROOT / "data" / "roster.js", "window.ROSTER")
+        for item in roster["items"]:
+            self.assertIn(f'href="{item["slug"]}/"', home)
+            self.assertIn(item["latest_label"], home)
+            self.assertIn(item["release_date"], home)
 
     def test_public_files_exclude_private_and_broker_material(self) -> None:
         text = "\n".join(

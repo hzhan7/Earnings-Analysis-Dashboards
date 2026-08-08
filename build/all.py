@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import datetime as dt
 import json
 import sys
 from pathlib import Path
@@ -12,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import googl, tsm  # noqa: E402
-from build.payload_guard import check  # noqa: E402
+from build.payload_guard import write_js  # noqa: E402
 
 
 DATA_DIR = ROOT / "data"
@@ -61,14 +60,7 @@ def roster_payload(googl_payload: dict, tsm_payload: dict) -> dict:
 
 
 def write_roster(payload: dict) -> None:
-    check(payload)
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    body = json.dumps(payload, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
-    (DATA_DIR / "roster.js").write_text(
-        f"// 由 build/all.py 生成于 {dt.date.today().isoformat()}，请勿手改\n"
-        f"window.ROSTER = {body};\n",
-        encoding="utf-8",
-    )
+    write_js(DATA_DIR / "roster.js", "ROSTER", payload, "all")
 
 
 def main() -> int:

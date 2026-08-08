@@ -3,10 +3,23 @@ __pycache__/
 .DS_Store
 tmp/
 
+# Source material is never published, whatever directory it lands in.
+# README and index.html both promise this; these lines are what enforce it.
+*.pdf
+*.ppt
+*.pptx
+*.doc
+*.docx
+*.csv
+*.xlsx
+.env
+.env.*
+
 # Only reviewed company series are published.
+# Adding a company? Add `!series/<slug>.json` below, or `git add -A` will skip
+# the new series file silently (rc=0, absent from `git diff --cached`).
 series/*.json
 !series/googl.json
 !series/tsm.json
 config/
 build/ingest_local.py
-assets/hub.js

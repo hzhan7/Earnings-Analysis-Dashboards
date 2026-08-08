@@ -1,0 +1,24 @@
+#!/bin/sh
+# Last gate before private research material becomes a public, permanent URL.
+#
+# Deliberately runs ONLY the content-boundary scan, not the full suite: the
+# per-company tests pin the current quarter's numbers, so a normal quarter roll
+# turns them red. A hook that blocks legitimate publishing gets bypassed with
+# --no-verify within one quarter and protects nothing after that. The full suite
+# belongs in CI, where a red run costs an email instead of a workaround.
+#
+# Enable once per clone:  git config core.hooksPath hooks
+# Bypass deliberately:    git push --no-verify
+
+set -e
+
+root=$(git rev-parse --show-toplevel)
+cd "$root"
+
+if ! python3 -m unittest discover -s tests -p 'test_content_boundary.py' -q; then
+	echo ''
+	echo 'pre-push blocked: a published file breaches the content boundary.'
+	echo 'Fix the file, or edit FORBIDDEN in tests/test_content_boundary.py if'
+	echo 'the term is genuinely publishable.'
+	exit 1
+fi
