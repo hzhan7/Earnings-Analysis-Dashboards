@@ -10,7 +10,6 @@ reported or a transparent arithmetic derivation from reported figures.
 
 from __future__ import annotations
 
-import datetime as dt
 import json
 import re
 import sys
@@ -19,6 +18,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from build.page_shell import render_shell  # noqa: E402
 from build.payload_guard import write_dash  # noqa: E402
 
 
@@ -409,76 +409,13 @@ def build_payload(staging: dict) -> dict:
     }
 
 
-SHELL = """<!doctype html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GOOGL Quarterly Results Prototype</title>
-<link rel="stylesheet" href="../assets/style.css">
-</head>
-<body>
-<div class="wrap"><div class="inner">
-<div id="head-slot"></div>
-<div class="masthead"><span class="tracker" id="tracker">—</span><span class="meta" id="meta">—</span></div>
-<h1 id="h1">—</h1>
-<p class="subtitle" id="sub">—</p>
-<p class="headline" id="headline">—</p>
-<div class="brief" id="brief" hidden></div>
-<div id="lead"></div>
-<div id="guidance"></div>
-<div id="sections"></div>
-<details class="appendix-drawer">
-  <summary>数据核对表与历史原值</summary>
-  <div id="tables"></div>
-</details>
-<div class="source-drawer" id="sources"></div>
-<div class="prose"><h2>口径与方法说明</h2><ol id="notes"></ol></div>
-<footer id="foot"></footer>
-</div></div>
-<script src="../data/roster.js"></script>
-<script src="../data/googl.js"></script>
-<script src="../assets/charts.js"></script>
-<script src="../assets/page.js"></script>
-</body>
-</html>
-"""
-
-
-def write_roster(payload: dict) -> None:
-    roster = {
-        "schema_version": "quarterly-roster/prototype-v1",
-        "groups": [{"key": "internet", "label": "互联网平台", "order": 1}],
-        "items": [{
-            "slug": "googl",
-            "ticker": "GOOGL",
-            "name": "Alphabet",
-            "aliases": ["Google", "谷歌"],
-            "group": "internet",
-            "latest_label": payload["latest"]["disclosed_period_label"],
-            "latest_full_label": payload["latest"]["full_financial_period_label"],
-            "release_date": payload["latest"]["release_date"],
-            "status": "history_ready",
-            "cadence_label": "自然年季度；完整披露",
-            "headline_metrics": ["Revenue $119.8B", "Cloud +81.8%", "FCF -$5.9B"],
-            "search_text": "googl google alphabet 谷歌 互联网 cloud search youtube",
-        }],
-        "footer": "GOOGL 样板 · 其余 watchlist 公司待样板确认后接入",
-    }
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    body = json.dumps(roster, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
-    (DATA_DIR / "roster.js").write_text(
-        f"// 由 build/googl.py 生成于 {dt.date.today().isoformat()}，请勿手改\n"
-        f"window.ROSTER = {body};\n",
-        encoding="utf-8",
-    )
+SHELL = render_shell("GOOGL", "googl")
 
 
 def main() -> int:
     staging = json.loads(STAGING_PATH.read_text(encoding="utf-8"))
     payload = build_payload(staging)
     write_dash(str(DATA_DIR / "googl.js"), payload, "googl")
-    write_roster(payload)
     shell_dir = ROOT / "googl"
     shell_dir.mkdir(exist_ok=True)
     (shell_dir / "index.html").write_text(SHELL, encoding="utf-8")

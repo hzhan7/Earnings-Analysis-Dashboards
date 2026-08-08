@@ -21,12 +21,12 @@
 
   function navigation() {
     var R = window.ROSTER;
-    if (!R) return '<nav class="nav"><a class="home" href="../">总览</a></nav>';
+    if (!R) return '<nav class="nav" aria-label="公司导航"><a class="home" href="../">总览</a></nav>';
     var byGroup = {};
     R.items.forEach(function (item) {
       (byGroup[item.group] || (byGroup[item.group] = [])).push(item);
     });
-    var html = '<nav class="quarter-nav"><a class="back" href="../">← 全部公司</a>' +
+    var html = '<nav class="quarter-nav" aria-label="公司导航"><a class="back" href="../">← 全部公司</a>' +
       '<label>切换公司 <select id="ticker-select" aria-label="切换公司">';
     R.groups.forEach(function (group) {
       html += '<optgroup label="' + esc(group.label) + '">';
@@ -78,7 +78,7 @@
   function tableHTML(title, headers, rows, extraClass) {
     var html = '<section class="card table-card ' + (extraClass || '') + '"><header><h3>' +
       esc(title) + '</h3></header><div class="tblwrap"><table><thead><tr>';
-    headers.forEach(function (header) { html += '<th>' + esc(header) + '</th>'; });
+    headers.forEach(function (header) { html += '<th scope="col">' + esc(header) + '</th>'; });
     html += '</tr></thead><tbody>';
     rows.forEach(function (row) {
       html += '<tr>';
@@ -95,9 +95,9 @@
     var html = '<section class="card summary-card"><header><h3>Exhibit ' + (index + 1) + ': ' +
       esc(block.title) + '</h3><span class="frequency-chip">' +
       (block.frequency === 'semiannual' ? '半年频' : '季度') + '</span></header>' +
-      '<div class="tblwrap"><table class="sum"><thead><tr><th>指标</th>';
+      '<div class="tblwrap"><table class="sum"><thead><tr><th scope="col">指标</th>';
     block.heads.forEach(function (header, headIndex) {
-      html += '<th' + (headIndex === block.sep ? ' class="sep"' : '') + '>' + esc(header) + '</th>';
+      html += '<th scope="col"' + (headIndex === block.sep ? ' class="sep"' : '') + '>' + esc(header) + '</th>';
     });
     html += '</tr></thead><tbody>';
     block.rows.forEach(function (row) {

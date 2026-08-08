@@ -1,0 +1,157 @@
+{
+  "schema_version": "quarterly-dashboard-source/tsm-v1",
+  "company": {
+    "ticker": "TSM",
+    "name": "TSMC",
+    "legal_name": "Taiwan Semiconductor Manufacturing Company Limited",
+    "accounting_standard": "TIFRS"
+  },
+  "latest": {
+    "period": "Q2 2026",
+    "previous_period": "Q1 2026",
+    "prior_year_period": "Q2 2025",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-16",
+    "audit_status": "unaudited"
+  },
+  "periods": [
+    "Q3 2024",
+    "Q4 2024",
+    "Q1 2025",
+    "Q2 2025",
+    "Q3 2025",
+    "Q4 2025",
+    "Q1 2026",
+    "Q2 2026"
+  ],
+  "financials": {
+    "revenue_usd_bn": [23.50, 26.88, 25.53, 30.07, 33.10, 33.73, 35.90, 40.20],
+    "revenue_yoy_pct": [36.0, 37.0, 35.3, 44.4, 40.8, 25.5, 40.6, 33.7],
+    "gross_margin_pct": [57.8, 59.0, 58.8, 58.6, 59.5, 62.3, 66.2, 67.7],
+    "operating_margin_pct": [47.5, 49.0, 48.5, 49.6, 50.6, 54.0, 58.1, 60.3],
+    "eps_ntd": [12.54, 14.45, 13.94, 15.36, 17.44, 19.50, 22.08, 27.25],
+    "wafer_shipments_kpcs_12in_equiv": [3338, 3418, 3259, 3718, 4085, 3961, 4174, 4336]
+  },
+  "technology_mix_pct": {
+    "2nm": [0, 0, 0, 0, 0, 0, 0, 3],
+    "3nm": [20, 26, 22, 24, 23, 28, 25, 30],
+    "5nm": [32, 34, 36, 36, 37, 35, 36, 33],
+    "7nm": [17, 14, 15, 14, 14, 14, 13, 11],
+    "advanced_7nm_and_below": [69, 74, 73, 74, 74, 77, 74, 77]
+  },
+  "mix_notes": {
+    "technology_denominator": "percentage of total wafer revenue",
+    "platform_denominator": "percentage of net revenue",
+    "two_nm_zero_interpretation": "Q3 2024 through Q1 2026 were not separately disclosed or rounded to zero at integer-percent precision; zero does not mean no revenue"
+  },
+  "platform_mix_pct": {
+    "hpc": [51, 53, 59, 60, 57, 55, 61, 66],
+    "smartphone": [34, 35, 28, 27, 30, 32, 26, 22]
+  },
+  "cash_flow_ntd_bn": {
+    "operating_cash_flow": [391.99, 620.21, 625.57, 497.07, 426.83, 725.51, 698.97, 783.36],
+    "capital_expenditures": [207.08, 361.95, 330.83, 297.22, 287.45, 356.91, 350.76, 496.00],
+    "free_cash_flow": [184.91, 258.26, 294.74, 199.85, 139.38, 368.60, 348.21, 287.36]
+  },
+  "working_capital_days": {
+    "receivable_days": [28, 27, 28, 23, 25, 26, 26, 29],
+    "inventory_days": [87, 80, 83, 76, 74, 74, 80, 87]
+  },
+  "revenue_guidance_history_usd_bn": {
+    "low": [22.4, 26.1, 25.0, 28.4, 31.8, 32.2, 34.6, 39.0],
+    "high": [23.2, 26.9, 25.8, 29.2, 33.0, 33.4, 35.8, 40.2],
+    "actual": [23.50, 26.88, 25.53, 30.07, 33.10, 33.73, 35.90, 40.20]
+  },
+  "current_snapshot": {
+    "revenue_usd_bn": [40.20, 35.90, 30.07],
+    "revenue_ntd_bn": [1270.38, 1134.10, 933.79],
+    "wafer_shipments_kpcs_12in_equiv": [4336, 4174, 3718],
+    "advanced_mix_pct": [77, 74, 74],
+    "hpc_mix_pct": [66, 61, 60],
+    "gross_margin_pct": [67.7, 66.2, 58.6],
+    "operating_margin_pct": [60.3, 58.1, 49.6],
+    "net_income_ntd_bn": [706.56, 572.48, 398.27],
+    "eps_ntd": [27.25, 22.08, 15.36],
+    "non_operating_items_ntd_bn": [95.83, 28.83, 29.61],
+    "operating_cash_flow_ntd_bn": [783.36, 698.97, 497.07],
+    "capital_expenditures_ntd_bn": [496.00, 350.76, 297.22],
+    "free_cash_flow_ntd_bn": [287.36, 348.21, 199.85],
+    "receivable_days": [29, 26, 23],
+    "inventory_days": [87, 80, 76],
+    "vis_disposal_and_mark_to_market_gain_pretax_ntd_bn": 63.20
+  },
+  "guidance": {
+    "q2_actual": {
+      "revenue_usd_bn": 40.20,
+      "gross_margin_pct": 67.7,
+      "operating_margin_pct": 60.3,
+      "usd_ntd": 31.60
+    },
+    "q2_prior": {
+      "revenue_usd_bn": [39.0, 40.2],
+      "gross_margin_pct": [65.5, 67.5],
+      "operating_margin_pct": [56.5, 58.5],
+      "usd_ntd": 31.7
+    },
+    "q3_new": {
+      "revenue_usd_bn": [44.6, 45.8],
+      "gross_margin_pct": [65.0, 67.0],
+      "operating_margin_pct": [56.0, 58.0],
+      "usd_ntd": 32.0
+    },
+    "fy2026_revenue_growth": "slightly above 40% in US dollar terms",
+    "fy2026_revenue_growth_prior": "above 30% in US dollar terms",
+    "fy2026_capex_usd_bn": [60, 64],
+    "fy2026_capex_prior_usd_bn": [52, 56],
+    "fy2026_capex_prior_positioning": "towards the high end",
+    "n2_h2_gross_margin_dilution_pp": [3, 4],
+    "overseas_fab_gross_margin_dilution_early_pp": [2, 3],
+    "overseas_fab_gross_margin_dilution_latter_pp": [3, 4]
+  },
+  "sources": [
+    {
+      "label": "TSMC Q2 2026 quarterly-results hub",
+      "url": "https://investor.tsmc.com/english/quarterly-results/2026/q2"
+    },
+    {
+      "label": "Q2 2026 Management Report",
+      "url": "https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2026-07/6f49632674bd2d0fd48cb65aaf89ec6ab510b559/2Q26%20ManagementReport.pdf"
+    },
+    {
+      "label": "Q2 2026 earnings release (SEC Exhibit 99.1)",
+      "url": "https://www.sec.gov/Archives/edgar/data/1046179/000104617926000451/a2q26e_withguidancexfinal.htm"
+    },
+    {
+      "label": "Q2 2026 earnings conference transcript (TSMC IR hosted)",
+      "url": "https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2026-07/547d1696765e05ce3adb81c108ce1c8c1682b80c/TSMC%202Q26%20Transcript.pdf"
+    },
+    {
+      "label": "TSMC Q1 2026 quarterly results",
+      "url": "https://investor.tsmc.com/english/quarterly-results/2026/q1"
+    },
+    {
+      "label": "TSMC Q4 2025 quarterly results",
+      "url": "https://investor.tsmc.com/english/quarterly-results/2025/q4"
+    },
+    {
+      "label": "TSMC Q3 2025 quarterly results",
+      "url": "https://investor.tsmc.com/english/quarterly-results/2025/q3"
+    },
+    {
+      "label": "TSMC Q2 2025 quarterly results",
+      "url": "https://investor.tsmc.com/english/quarterly-results/2025/q2"
+    },
+    {
+      "label": "TSMC Q1 2025 quarterly results",
+      "url": "https://investor.tsmc.com/english/quarterly-results/2025/q1"
+    },
+    {
+      "label": "TSMC Q4 2024 quarterly results",
+      "url": "https://investor.tsmc.com/english/quarterly-results/2024/q4"
+    },
+    {
+      "label": "TSMC Q3 2024 quarterly results",
+      "url": "https://investor.tsmc.com/english/quarterly-results/2024/q3"
+    }
+  ]
+}

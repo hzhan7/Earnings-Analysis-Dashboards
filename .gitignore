@@ -1,11 +1,12 @@
 __pycache__/
 *.py[cod]
 .DS_Store
+tmp/
 
-# The first public release contains only the reviewed GOOGL sample.
+# Only reviewed company series are published.
 series/*.json
 !series/googl.json
+!series/tsm.json
 config/
-build/all.py
 build/ingest_local.py
 assets/hub.js

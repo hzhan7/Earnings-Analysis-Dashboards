@@ -1,9 +1,16 @@
-<!doctype html>
+"""Shared HTML shell for quarterly-results company pages."""
+
+from __future__ import annotations
+
+
+def render_shell(ticker: str, slug: str) -> str:
+    """Return the static shell used by the common browser renderer."""
+    return f"""<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GOOGL Quarterly Results</title>
+<title>{ticker} Quarterly Results</title>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
@@ -28,8 +35,9 @@
 <footer id="foot"></footer>
 </div></div>
 <script src="../data/roster.js"></script>
-<script src="../data/googl.js"></script>
+<script src="../data/{slug}.js"></script>
 <script src="../assets/charts.js"></script>
 <script src="../assets/page.js"></script>
 </body>
 </html>
+"""
