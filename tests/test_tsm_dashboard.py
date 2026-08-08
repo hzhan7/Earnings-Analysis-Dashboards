@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build.all import roster_payload  # noqa: E402
+from build.board import STATUS_LABELS  # noqa: E402
 from build.googl import build_payload as build_googl_payload  # noqa: E402
 from build.tsm import build_payload  # noqa: E402
 
@@ -72,19 +73,64 @@ class TsmDashboardTest(unittest.TestCase):
 
     def test_expected_exhibit_order_and_quality_bridge(self) -> None:
         exhibits = [exhibit for section in self.payload["sections"] for exhibit in section["exhibits"]]
-        self.assertEqual([exhibit["n"] for exhibit in exhibits], list(range(2, 10)))
-        self.assertEqual(len({exhibit["n"] for exhibit in exhibits}), 8)
+        self.assertEqual([exhibit["n"] for exhibit in exhibits], list(range(2, 11)))
         self.assertTrue(all(not exhibit.get("full", False) for exhibit in exhibits))
-        bridge = next(exhibit for exhibit in exhibits if exhibit["n"] == 6)
+        bridge = next(exhibit for exhibit in exhibits if exhibit["n"] == 7)
         self.assertEqual(bridge["values"], [28.83, 32.63, 63.2])
         self.assertIn("出售及盯市", bridge["src_extra"])
 
-    def test_derived_summary_cells_are_marked(self) -> None:
-        rows = self.payload["summary"]["blocks"][0]["rows"]
-        for row in rows:
-            self.assertTrue(all(cell["status"] == "derived" for cell in row["cells"][3:]))
-        free_cash = next(row for row in rows if row["label"] == "自由现金流")
-        self.assertTrue(all(cell["status"] == "derived" for cell in free_cash["cells"]))
+    def test_implied_asp_reproduces_reported_revenue(self) -> None:
+        """Implied ASP is the only number on the page that is not a reported
+        level, so it has to invert back to the reported revenue exactly."""
+        scale = next(
+            group for group in self.payload["panel"]["groups"] if group["id"] == "trend_scale"
+        )
+        asp_row = next(row for row in scale["rows"] if row["label"] == "隐含 ASP")
+        self.assertTrue(all(cell["status"] == "derived" for cell in asp_row["cells"]))
+        for index, cell in enumerate(asp_row["cells"]):
+            asp = float(cell["v"].lstrip("$").replace(",", ""))
+            shipments = self.source["financials"]["wafer_shipments_kpcs_12in_equiv"][index]
+            revenue = self.source["financials"]["revenue_usd_bn"][index]
+            self.assertAlmostEqual(asp * shipments / 1_000_000, revenue, places=1)
+
+    def test_tracking_board_rows_carry_threshold_and_action(self) -> None:
+        blocks = self.payload["summary"]["blocks"]
+        self.assertEqual([block["id"] for block in blocks], ["tracking"])
+        board = blocks[0]
+        self.assertEqual(len(board["rows"]), 8)
+        known = {f"st st-{key}" for key in STATUS_LABELS}
+        for row in board["rows"]:
+            self.assertEqual(len(row["cells"]), len(board["heads"]))
+            self.assertTrue(row["cells"][1]["v"].strip())
+            self.assertTrue(row["cells"][2]["v"].strip())
+            self.assertIn(row["cells"][3]["cls"], known)
+        capex_row = next(row for row in board["rows"] if row["label"] == "收入增速 vs CapEx 增速")
+        self.assertEqual(capex_row["cells"][3]["cls"], "st st-hit")
+
+    def test_panel_groups_are_rectangular(self) -> None:
+        panel = self.payload["panel"]
+        self.assertEqual(
+            [group["id"] for group in panel["groups"]],
+            [
+                "trend_scale",
+                "trend_margin",
+                "trend_mix",
+                "trend_cash",
+                "trend_guidance",
+                "quarter_detail",
+            ],
+        )
+        for group in panel["groups"]:
+            for row in group["rows"]:
+                self.assertEqual(len(row["cells"]), len(group["heads"]), f"{group['id']}/{row['label']}")
+        for group in panel["groups"][:5]:
+            self.assertEqual(len(group["heads"]), 8)
+
+    def test_cross_page_table_is_identical_on_both_pages(self) -> None:
+        googl_source = json.loads((ROOT / "series" / "googl.json").read_text(encoding="utf-8"))
+        googl = build_googl_payload(googl_source)
+        self.assertEqual(self.payload["tables"][0]["rows"], googl["tables"][0]["rows"])
+        self.assertEqual(self.payload["tables"][0]["headers"], googl["tables"][0]["headers"])
 
     def test_sources_are_official_http_links(self) -> None:
         allowed_hosts = {"investor.tsmc.com", "www.sec.gov"}
@@ -105,6 +151,7 @@ class TsmDashboardTest(unittest.TestCase):
         shell = (ROOT / "tsm" / "index.html").read_text(encoding="utf-8")
         self.assertIn('../data/tsm.js', shell)
         self.assertNotIn('../data/googl.js', shell)
+        self.assertIn('id="panel"', shell)
 
     def test_home_page_matches_roster(self) -> None:
         """index.html is hand-written and reads no payload, so it can silently

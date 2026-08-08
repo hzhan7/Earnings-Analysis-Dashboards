@@ -104,6 +104,7 @@
     "fy2026_capex_usd_bn": [60, 64],
     "fy2026_capex_prior_usd_bn": [52, 56],
     "fy2026_capex_prior_positioning": "towards the high end",
+    "long_term_gross_margin_floor_pct": 56,
     "n2_h2_gross_margin_dilution_pp": [3, 4],
     "overseas_fab_gross_margin_dilution_early_pp": [2, 3],
     "overseas_fab_gross_margin_dilution_latter_pp": [3, 4]

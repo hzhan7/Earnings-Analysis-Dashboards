@@ -25,6 +25,7 @@ def render_shell(ticker: str, slug: str) -> str:
 <div id="lead"></div>
 <div id="guidance"></div>
 <div id="sections"></div>
+<div id="panel"></div>
 <details class="appendix-drawer">
   <summary>数据核对表与历史原值</summary>
   <div id="tables"></div>

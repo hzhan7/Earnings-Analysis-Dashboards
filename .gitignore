@@ -23,3 +23,8 @@ series/*.json
 !series/tsm.json
 config/
 build/ingest_local.py
+
+# Local research notes about the private workflow. This repo is public and
+# GitHub Pages serves every tracked file, so design notes that describe the
+# local Earnings Analysis vault stay out of the tree.
+docs/
