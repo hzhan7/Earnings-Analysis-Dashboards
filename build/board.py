@@ -10,6 +10,9 @@ reader sees which lines are breached without parsing units.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 
 def headroom(direction: str, threshold: float, actual: float) -> float:
     """Return distance from a threshold in percent, signed so positive is safe.
@@ -34,6 +37,7 @@ UNIT_FORMATS = {
     "usd_bn": lambda value: f"US${value:.1f}B",
     "days": lambda value: f"{value:.0f}天",
     "fx": lambda value: f"{value:.2f}",
+    "million": lambda value: f"{value:.0f}M",
 }
 
 
@@ -146,34 +150,64 @@ def threshold_table(n: int, title: str, entries: list[dict], value_key: str,
     }
 
 
-def ai_capex_cycle_table(n: int, googl_capex: dict, tsm_series: dict) -> dict:
-    """Return the shared upstream-capex / downstream-shipment cross reference.
+SERIES_DIR = Path(__file__).resolve().parents[1] / "series"
 
-    ``googl_capex`` maps a quarter label to ``(capex_usd_m, capex_intensity)``.
-    The two sides keep their own currencies and must not be added together.
+# One accessor per company: (series file, period list, cash-capex list).  Only
+# cash purchases of property and equipment are collected, because that is the
+# one capex definition all four filers report identically -- META's headline
+# number adds finance-lease principal and MSFT's adds finance-lease additions,
+# so the company-defined totals are not addable across pages.
+_CASH_CAPEX_SOURCES = [
+    ("googl", "GOOGL", lambda d: (d["quarterly"]["periods"], d["quarterly"]["capital_expenditures"])),
+    ("meta", "META", lambda d: (d["periods"], d["quarterly_usd_m"]["purchases_of_property_and_equipment"])),
+    ("msft", "MSFT", lambda d: (d["periods"], d["quarterly_usd_m"]["cash_paid_for_property_and_equipment"])),
+]
+
+
+def _load(slug: str) -> dict:
+    return json.loads((SERIES_DIR / f"{slug}.json").read_text(encoding="utf-8"))
+
+
+def ai_capex_cycle_table(n: int) -> dict:
+    """Return the upstream-capex / downstream-shipment cross reference.
+
+    Published byte-identically on every company page: three hyperscalers'
+    quarterly cash capex against the foundry quarter that has to build it.
+    Each page can answer "did my company spend more"; only this table answers
+    "did the spending turn into shipments".
     """
+    tsm = _load("tsm")
+    periods = tsm["periods"]
+    by_company = []
+    for slug, _label, accessor in _CASH_CAPEX_SOURCES:
+        company_periods, capex = accessor(_load(slug))
+        by_company.append(dict(zip(company_periods, capex)))
+
     rows = []
-    for index, period in enumerate(tsm_series["periods"]):
-        capex = googl_capex.get(period)
-        revenue = tsm_series["financials"]["revenue_usd_bn"][index]
-        rows.append([
-            period,
-            f"${capex[0]:,.0f}M" if capex else "—",
-            capex[1] if capex else "—",
-            f"US${revenue:.2f}B",
-            f"{tsm_series['financials']['revenue_yoy_pct'][index]:.1f}%",
-            f"NT${tsm_series['cash_flow_ntd_bn']['capital_expenditures'][index]:,.2f}B",
-        ])
+    for index, period in enumerate(periods):
+        values = [company.get(period) for company in by_company]
+        total = sum(value for value in values if value is not None)
+        revenue = tsm["financials"]["revenue_usd_bn"][index]
+        rows.append(
+            [period]
+            + [f"${value:,.0f}M" if value is not None else "—" for value in values]
+            + [
+                f"${total:,.0f}M D",
+                f"US${revenue:.2f}B",
+                f"{tsm['financials']['revenue_yoy_pct'][index]:.1f}%",
+            ]
+        )
     return {
         "n": n,
         "title": "AI capex 循环：上游投入承诺与下游出货（跨页对照）",
         "headers": [
             "期间",
-            "GOOGL CapEx",
-            "GOOGL CapEx/收入",
+            "GOOGL 现金 CapEx",
+            "META 现金 CapEx",
+            "MSFT 现金 CapEx",
+            "三家合计 D",
             "TSM 收入",
             "TSM 收入 YoY",
-            "TSM CapEx",
         ],
         "rows": rows,
     }

@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build.board import (  # noqa: E402
+    ai_capex_cycle_table,
     headroom,
     headroom_exhibit,
     number_exhibits,
@@ -27,7 +28,6 @@ from build.board import (  # noqa: E402
     threshold_table,
     unit_text,
 )
-from build.googl import cross_capex_table  # noqa: E402
 from build.page_shell import render_shell  # noqa: E402
 from build.payload_guard import write_dash  # noqa: E402
 
@@ -604,7 +604,7 @@ def build_payload(staging: dict) -> dict:
             "headers": ["期间", "公司指引", "中值", "实际", "较中值"],
             "rows": guidance_table,
         },
-        cross_capex_table(next_table_number + 6),
+        ai_capex_cycle_table(next_table_number + 6),
     ]
 
     return {

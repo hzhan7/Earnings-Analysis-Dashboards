@@ -1,7 +1,8 @@
 # Earnings Analysis Dashboards
 
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
-chart-led research pages. Reviewed pages currently cover Alphabet and TSMC.
+chart-led research pages. Reviewed pages currently cover Alphabet, Meta,
+Microsoft and TSMC.
 
 ## Build
 
@@ -13,6 +14,8 @@ python3 -m http.server 8765
 Open `http://127.0.0.1:8765/`, then choose:
 
 - `http://127.0.0.1:8765/googl/`
+- `http://127.0.0.1:8765/meta/`
+- `http://127.0.0.1:8765/msft/`
 - `http://127.0.0.1:8765/tsm/`
 
 Live site: https://hzhan7.github.io/Earnings-Analysis-Dashboards/
@@ -29,6 +32,11 @@ Live site: https://hzhan7.github.io/Earnings-Analysis-Dashboards/
   unverified customer-concentration estimates, local absolute paths, source
   PDFs, PPTs and transcripts.
 - `D` means Derived / 自算; it does not mean a company-defined non-GAAP metric.
+- Quarters are labelled by calendar quarter on every page. Microsoft's fiscal
+  year ends in June, so its `Q2 2026` is the quarter ended 2026-06-30, which the
+  company itself calls FY2026 Q4; the page says so in its subtitle and notes.
+  Without one convention the cross-company capex table would compare different
+  three-month periods and look fine doing it.
 
 ## Page modules
 
@@ -46,7 +54,25 @@ Charts are ordered the way the note is actually used:
 3. **下季跟踪** — the same thresholds pointed forward.
 4. **长期常规** — the routine multi-quarter series, chosen per company rather
    than from a template. Alphabet gets revenue/capital intensity/depreciation/
-   geography; TSMC gets node migration, platform mix and working capital.
+   geography; Meta gets the depreciation curve, trailing cash conversion and its
+   two non-advertising revenue lines; Microsoft gets capital intensity, margins,
+   the depreciation curve and the finance-lease channel that sits outside its
+   capex definition; TSMC gets node migration, platform mix and working capital.
+
+Two of the series exist only on this site, because the number that decides the
+quarter is not one any filing prints:
+
+- Meta's **year-over-year incremental operating margin** (ΔOI / ΔRevenue). A
+  margin falling from 41% to 31% and a company whose extra dollar of revenue
+  carries a negative extra dollar of profit look identical on a margin chart.
+- Microsoft's **free cash flow adjusted for unpaid capex**. Reported free cash
+  flow counts only capex that was paid; the 10-K discloses how much was still
+  sitting in accounts payable, so subtracting that year's increase turns a
+  −6.5% year into a −31.6% one using three disclosed numbers and no estimate.
+
+Where a threshold is settled on an adjusted basis but the history exists only on
+the reported one, the chart carries both lines rather than silently plotting one
+and captioning the other.
 
 Sections 1 and 3 are built the same way, twice over:
 
@@ -65,12 +91,18 @@ assigned in render order, so inserting a chart never leaves a caption pointing
 at the wrong exhibit.
 
 Around the charts: a headline stating the quarter's core tension, three short
-takeaways, a shared `AI capex 循环` cross-reference published identically on both
-pages, the official-source drawer, and a `口径与方法说明` block that lists what
-each page knowingly does not carry.
+takeaways, a shared `AI capex 循环` cross-reference published byte-identically on
+every page, the official-source drawer, and a `口径与方法说明` block that lists
+what each page knowingly does not carry.
+
+The cross-reference puts the three hyperscalers' quarterly **cash** capex against
+the foundry quarter that has to build it. Cash purchases of property and
+equipment is the one capex definition all four filers report the same way —
+Meta's headline number adds finance-lease principal and Microsoft's adds
+finance-lease additions, so the company-defined totals are not addable.
 
 Each company has a reviewed source series and a company-specific builder. The
-shared `build/all.py` entry point rebuilds both company payloads, their thin
+shared `build/all.py` entry point rebuilds every company payload, their thin
 HTML shells and the cross-company roster without exposing local source files.
 
 Thresholds on the page are local research settings, not company guidance and not

@@ -11,9 +11,8 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from build.all import roster_payload  # noqa: E402
+from build.all import build_all, roster_payload  # noqa: E402
 from build.board import headroom  # noqa: E402
-from build.googl import build_payload as build_googl_payload  # noqa: E402
 from build.tsm import build_payload  # noqa: E402
 
 
@@ -181,13 +180,22 @@ class TsmDashboardTest(unittest.TestCase):
         for row in financials["rows"]:  # implied ASP travels with the raw inputs
             self.assertTrue(row[-1].endswith("D"))
 
-    def test_cross_page_table_is_identical_on_both_pages(self) -> None:
-        googl_source = json.loads((ROOT / "series" / "googl.json").read_text(encoding="utf-8"))
-        googl = build_googl_payload(googl_source)
-        mine = next(table for table in self.payload["tables"] if "AI capex" in table["title"])
-        theirs = next(table for table in googl["tables"] if "AI capex" in table["title"])
-        self.assertEqual(mine["rows"], theirs["rows"])
-        self.assertEqual(mine["headers"], theirs["headers"])
+    def test_cross_page_table_is_identical_on_every_page(self) -> None:
+        """The AI-capex cross reference is the one object published byte-for-byte
+        on all four pages; if a builder starts assembling its own copy, the pages
+        quietly stop agreeing about the same quarters."""
+        payloads = build_all()
+        tables = [
+            next(table for table in payload["tables"] if "AI capex" in table["title"])
+            for payload in payloads.values()
+        ]
+        self.assertEqual(len(tables), 4)
+        for table in tables[1:]:
+            self.assertEqual(table["rows"], tables[0]["rows"])
+            self.assertEqual(table["headers"], tables[0]["headers"])
+        self.assertEqual(len(tables[0]["rows"]), len(self.source["periods"]))
+        for row in tables[0]["rows"]:
+            self.assertNotIn("—", row[1:4], "a hyperscaler capex column lost a quarter")
 
     def test_sources_are_official_http_links(self) -> None:
         allowed_hosts = {"investor.tsmc.com", "www.sec.gov"}
@@ -202,9 +210,11 @@ class TsmDashboardTest(unittest.TestCase):
         # result of rebuilding one company instead of running build/all.py --
         # corrupts the cross-company nav on all of them. Assert equality, not
         # just the slug set.
-        googl_source = json.loads((ROOT / "series" / "googl.json").read_text(encoding="utf-8"))
         roster = js_payload(ROOT / "data" / "roster.js", "window.ROSTER")
-        self.assertEqual(roster, roster_payload(build_googl_payload(googl_source), self.payload))
+        self.assertEqual(roster, roster_payload(build_all()))
+        self.assertEqual(
+            [item["slug"] for item in roster["items"]], ["googl", "meta", "msft", "tsm"]
+        )
         shell = (ROOT / "tsm" / "index.html").read_text(encoding="utf-8")
         self.assertIn('../data/tsm.js', shell)
         self.assertNotIn('../data/googl.js', shell)
