@@ -80,7 +80,7 @@ class ContentBoundaryTest(unittest.TestCase):
         names = {path.relative_to(ROOT).as_posix() for path in published_files()}
         self.assertIn("data/roster.js", names)
         self.assertIn("index.html", names)
-        for slug in ("googl", "tsm"):
+        for slug in ("googl", "meta", "msft", "tsm"):
             self.assertIn(f"series/{slug}.json", names)
             self.assertIn(f"data/{slug}.js", names)
             self.assertIn(f"{slug}/index.html", names)

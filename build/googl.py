@@ -97,12 +97,8 @@ def source_note(detail: str) -> str:
 
 
 def cross_capex_table(n: int) -> dict:
-    """Return the shared AI-capex cross reference used by both company pages."""
-    staging = json.loads(STAGING_PATH.read_text(encoding="utf-8"))
-    tsm_series = json.loads((ROOT / "series" / "tsm.json").read_text(encoding="utf-8"))
-    cash = trend(staging, "八季度趋势（现金与资本强度）")
-    capex_by_period = {row[0]: (number(row[2]), row[4]) for row in cash["rows"]}
-    return ai_capex_cycle_table(n, capex_by_period, tsm_series)
+    """Return the shared AI-capex cross reference used by every company page."""
+    return ai_capex_cycle_table(n)
 
 
 WINDOW = 8

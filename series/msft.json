@@ -1,0 +1,211 @@
+{
+  "schema_version": "quarterly-dashboard-source/msft-v1",
+  "company": {
+    "ticker": "MSFT",
+    "name": "Microsoft",
+    "legal_name": "Microsoft Corporation",
+    "accounting_standard": "US GAAP"
+  },
+  "latest": {
+    "period": "Q2 2026",
+    "fiscal_period": "FY2026 Q4",
+    "previous_period": "Q1 2026",
+    "prior_year_period": "Q2 2025",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-29",
+    "analysis_date": "2026-07-30",
+    "audit_status": "audited"
+  },
+  "period_labelling": {
+    "convention": "自然年季度",
+    "note": "本页统一用自然年季度标注。Q2 2026 = 微软 FY2026 Q4（期末 2026-06-30），Q3 2026 = FY2027 Q1，依此类推。"
+  },
+  "periods": [
+    "Q3 2023",
+    "Q4 2023",
+    "Q1 2024",
+    "Q2 2024",
+    "Q3 2024",
+    "Q4 2024",
+    "Q1 2025",
+    "Q2 2025",
+    "Q3 2025",
+    "Q4 2025",
+    "Q1 2026",
+    "Q2 2026"
+  ],
+  "quarterly_usd_m": {
+    "revenue_total": [56517, 62020, 61858, 64727, 65585, 69632, 70066, 76441, 77673, 81273, 82886, 90007],
+    "gross_profit": [40215, 42397, 43353, 45043, 45486, 47833, 48147, 52427, 53630, 55295, 56058, 60482],
+    "operating_income": [26895, 27032, 27581, 27925, 30552, 31653, 32000, 34323, 37961, 38275, 38398, 40603],
+    "operating_expenses": [13320, 15365, 15772, 17118, 14934, 16180, 16147, 18104, 15669, 17020, 17660, 19879],
+    "other_income_expense_net": [389, -506, -854, -675, -283, -2288, -623, -1707, -3660, 9971, 942, 3444],
+    "operating_cash_flow": [30583, 18853, 31917, 37195, 34180, 22291, 37044, 42647, 45057, 35758, 46679, 55441],
+    "cash_paid_for_property_and_equipment": [9917, 9735, 10952, 13873, 14923, 15804, 16745, 17079, 19394, 29876, 30876, 35802],
+    "finance_lease_additions": [1704, 1796, 3421, 4712, 4332, 6435, 3241, 6503, 9147, 6330, 4009, 5122],
+    "stock_repurchases": [4831, 4000, 4213, 4210, 4107, 4986, 4781, 4546, 5650, 7415, 4627, 4579],
+    "dividends_paid": [5051, 5574, 5572, 5574, 5574, 6170, 6169, 6169, 6169, 6762, 6756, 6758],
+    "depreciation": [null, null, null, null, 4700, 5200, 5800, 6300, 7100, 7900, 9000, 10300]
+  },
+  "segments_usd_m": {
+    "periods": [
+      "Q3 2024",
+      "Q4 2024",
+      "Q1 2025",
+      "Q2 2025",
+      "Q3 2025",
+      "Q4 2025",
+      "Q1 2026",
+      "Q2 2026"
+    ],
+    "productivity_revenue": [28317, 29437, 29944, 33112, 33020, 34116, 35013, 37847],
+    "intelligent_cloud_revenue": [24092, 25544, 26751, 29878, 30897, 32907, 34681, 39306],
+    "more_personal_computing_revenue": [13176, 14651, 13371, 13451, 13756, 14250, 13192, 12854],
+    "productivity_operating_income": [16516, 16885, 17379, 18993, 20407, 20599, 20973, 21900],
+    "intelligent_cloud_operating_income": [10503, 10851, 11095, 12140, 13391, 13873, 13753, 15955],
+    "more_personal_computing_operating_income": [3533, 3917, 3526, 3190, 4163, 3803, 3672, 2748],
+    "intelligent_cloud_cost_of_revenue": [8614, 9405, 10307, 11845, 12314, 13566, 15120, 16876],
+    "recast_note": "FY2025 起分部口径经过一次重述；本表八季全部取自 FY2026 各期 10-Q / 10-K 的重述后可比列"
+  },
+  "azure_growth_cc_pct": [34, 31, 35, 39, 39, 38, 39, 43],
+  "azure_growth_provenance": {
+    "basis": "各季 earnings release 与电话会披露的固定汇率同比；公司不在财务报表中单列 Azure 收入，因此只有增速可用",
+    "annual_crosscheck_pct": {"FY2025": 34, "FY2026": 41},
+    "note": "年度对照取自各年 10-K 的「Azure and other cloud services revenue grew …」原句（报告口径）；逐季序列按收入体量加权后与之一致"
+  },
+  "operating_kpi": {
+    "commercial_rpo": {
+      "periods": ["Q2 2025", "Q3 2025", "Q4 2025", "Q1 2026", "Q2 2026"],
+      "level_usd_bn": [368, 392, 625, 627, 678],
+      "twelve_month_share_pct": [40, 25, 25, 25, 30],
+      "share_note": "12 个月内可确认比例：Q3 2025–Q1 2026 为电话会给出的「约 25%」，Q2 2026 为公司披露的「约 30%」，Q2 2025 为按本季口径反推的约 40%"
+    },
+    "copilot_paid_seats_m": {
+      "periods": ["Q4 2025", "Q1 2026", "Q2 2026"],
+      "values": [15, 20, 30]
+    },
+    "microsoft_cloud": {
+      "periods": ["Q2 2025", "Q3 2025", "Q1 2026", "Q2 2026"],
+      "revenue_usd_bn": [46.7, 49.1, 54.5, 59.3],
+      "gross_margin_pct": [68, 68, 66, 65]
+    },
+    "bookings_ex_largest_customer_yoy_pct": {
+      "periods": ["Q1 2026", "Q2 2026"],
+      "values": [7, 18]
+    }
+  },
+  "fiscal_year_usd_m": {
+    "labels": ["FY2025", "FY2026"],
+    "period_end": ["2025-06-30", "2026-06-30"],
+    "revenue": [281724, 331839],
+    "operating_income": [128528, 155237],
+    "operating_cash_flow": [136162, 182935],
+    "cash_paid_for_property_and_equipment": [64551, 115948],
+    "finance_lease_additions": [20511, 24608],
+    "unpaid_capex_in_payables": [6900, 26700],
+    "unpaid_capex_in_payables_prior": 4300,
+    "stock_repurchases": [18420, 22271],
+    "dividends_paid": [24082, 26445],
+    "depreciation": [22000, 34300],
+    "depreciation_and_amortization_fy2026": 38534,
+    "contracted_not_yet_commenced_leases": [92700, 329100],
+    "cash_and_short_term_investments": [94565, 76843],
+    "finance_lease_liabilities_fy2026": 66594,
+    "debt_fy2026": 40294
+  },
+  "guidance": {
+    "next_quarter_label": "Q3 2026（FY2027 Q1）",
+    "revenue_usd_m": [89850, 90950],
+    "cost_of_revenue_usd_m": [29600, 29800],
+    "operating_expenses_usd_m": [16800, 16900],
+    "intelligent_cloud_usd_m": [40950, 41250],
+    "productivity_usd_m": [36700, 37000],
+    "more_personal_computing_usd_m": [12200, 12700],
+    "azure_cc_growth_pct": 45,
+    "capex_next_quarter": "高于 US$50B",
+    "fy2027_revenue": "双位数增长（定性）",
+    "fy2027_operating_margin": "同比下降不足 1 个百分点",
+    "fy2027_free_cash_flow": "保持为正",
+    "fy2027_tax_rate_pct": 20.0,
+    "cy2026_capex_usd_bn": 175,
+    "cy2026_capex_prior_usd_bn": 190,
+    "capex_restatement_reason": "数据中心与办公楼估计可使用年限由 15 年延长至 25 年后，部分融资租赁重分类为经营租赁；管理层明确「除该年限影响外，2026 自然年资本开支预期不变」",
+    "useful_life_years": [15, 25]
+  },
+  "market_expectation": {
+    "label": "市场预期（财报前一致预期，来源不具名）",
+    "as_of": "2026-07-29",
+    "revenue_usd_m_range": [87620, 89370],
+    "non_gaap_eps_usd": 4.33,
+    "post_earnings_price_change_pct": 9.0,
+    "source_conflict_note": "两个公开来源的收入预期相差 US$1.75B，本页只发布区间并据此降低 beat 幅度的可信度"
+  },
+  "followup_closure": {
+    "labels": ["已验证", "部分验证", "被证伪"],
+    "counts": [2, 2, 1],
+    "set_in": "Q1 2026"
+  },
+  "prior_kpi_settlement": {
+    "set_in": "Q1 2026",
+    "quantified": [
+      {"metric": "Azure 固定汇率增速", "direction": "up", "threshold": 40.0, "actual": 43.0, "unit": "pct"},
+      {"metric": "Microsoft Cloud 毛利率", "direction": "up", "threshold": 64.0, "actual": 65.0, "unit": "pct"},
+      {"metric": "12 个月内可确认 RPO 同比", "direction": "up", "threshold": 30.0, "actual": 37.0, "unit": "pct"},
+      {"metric": "商业签约额（剔除单一大客户）同比", "direction": "up", "threshold": 15.0, "actual": 18.0, "unit": "pct"},
+      {"metric": "M365 Copilot 付费席位", "direction": "up", "threshold": 25.0, "actual": 30.0, "unit": "million"},
+      {"metric": "经营费用同比", "direction": "down", "threshold": 10.0, "actual": 9.8, "unit": "pct"}
+    ],
+    "retired": [
+      "「商业 RPO 总额同比」已退役：总额被单一大客户合约主导，无法反映底层商业健康",
+      "「单季报告口径自由现金流」已退役：未捕捉计入应付账款的未付资本开支，改用调整后口径",
+      "「AI 年化收入」已退役：上季首披后本季停止披露，已不可观测"
+    ]
+  },
+  "next_kpi": {
+    "for_period": "Q3 2026",
+    "quantified": [
+      {"metric": "Azure 固定汇率增速", "direction": "up", "threshold": 42.0, "current": 43.0, "unit": "pct"},
+      {"metric": "Intelligent Cloud 分部毛利率", "direction": "up", "threshold": 56.0, "current": 57.07, "unit": "pct"},
+      {"metric": "单季回购金额", "direction": "up", "threshold": 3000.0, "current": 4579.0, "unit": "usd_m"},
+      {"metric": "单季自由现金流（报告口径）", "direction": "up", "threshold": 15000.0, "current": 19639.0, "unit": "usd_m"},
+      {"metric": "股东回报 / 调整后自由现金流", "direction": "down", "threshold": 100.0, "current": 103.2, "unit": "pct"},
+      {"metric": "已签约未起租租约 / 年收入", "direction": "down", "threshold": 100.0, "current": 99.2, "unit": "pct"}
+    ],
+    "disclosure_gated": [
+      "折旧年限 15→25 年在下季实际带来多少折旧节省：管理层只给了「对 FY2027 经营利润影响很小」的定性说法",
+      "计入应付账款的未付资本开支是回落还是继续攀升：决定 FY2026 的 US$19.8B 缺口是账期管理还是交付时点",
+      "M365 Copilot 的每席位收入或独立年化收入：连续多季未披露，30M 席位的收入含义因此不可建模",
+      "AI 年化收入是否恢复披露：上季首披后本季完全消失，且无人追问"
+    ]
+  },
+  "sources": [
+    {
+      "label": "Microsoft Investor Relations",
+      "url": "https://www.microsoft.com/en-us/investor"
+    },
+    {
+      "label": "FY2026 Form 10-K（期末 2026-06-30）",
+      "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/msft-20260630.htm"
+    },
+    {
+      "label": "FY2026 Q4 业绩发布 8-K",
+      "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323632/msft-20260729.htm"
+    },
+    {
+      "label": "FY2026 Q3 Form 10-Q（期末 2026-03-31）",
+      "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526191507/msft-20260331.htm"
+    },
+    {
+      "label": "FY2026 Q2 Form 10-Q（期末 2025-12-31）",
+      "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526027207/msft-20251231.htm"
+    },
+    {
+      "label": "FY2026 Q1 Form 10-Q（期末 2025-09-30）",
+      "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312525256321/msft-20250930.htm"
+    },
+    {
+      "label": "FY2025 Form 10-K（期末 2025-06-30）",
+      "url": "https://www.sec.gov/Archives/edgar/data/789019/000095017025100235/msft-20250630.htm"
+    }
+  ]
+}
