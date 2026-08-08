@@ -282,8 +282,9 @@ def build_payload(staging: dict) -> dict:
             "label_fmt": "usd0",
             "ylab": "US$B",
             "note": (
-                f"新台币口径下 CapEx 同比 {signed(capex_ntd_yoy)}，已经快于收入的 {signed(revenue_ntd_yoy)}——"
-                "与上季「收入增速快于 CapEx 增速」的说法相反，这是本季股价的直接压制项。"
+                f"新台币口径下本季 CapEx 同比 {signed(capex_ntd_yoy)}、收入同比 {signed(revenue_ntd_yoy)}——"
+                "与上季「收入增速快于 CapEx 增速」的说法相反；两条增速的八季对照本页尚无数据，"
+                "但现金流三柱图已能看出 CapEx 抬升快于经营现金流。"
             ),
             "src_extra": (
                 "三次口径依次为 1 月 US$52–56B、4 月 closer to US$56B、7 月 US$60–64B；"

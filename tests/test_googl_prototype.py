@@ -43,7 +43,7 @@ class GooglePageTest(unittest.TestCase):
     def test_section_order_matches_how_the_note_is_used(self) -> None:
         self.assertEqual(
             [(section["id"], len(section["exhibits"])) for section in self.payload["sections"]],
-            [("settled", 7), ("quarter_highlights", 6), ("next_quarter", 7), ("routine", 4)],
+            [("settled", 8), ("quarter_highlights", 6), ("next_quarter", 8), ("routine", 4)],
         )
 
     def test_headroom_bars_reproduce_the_thresholds(self) -> None:
@@ -74,9 +74,7 @@ class GooglePageTest(unittest.TestCase):
                 for exhibit in self.by_section[section_id][1:]
             }
             tracked = {entry["metric"] for entry in self.staging[block]["quantified"]}
-            missing = tracked - charted
-            # 折旧 YoY has a single reportable point, so it cannot carry a trend.
-            self.assertEqual(missing, {"折旧 YoY"}, section_id)
+            self.assertEqual(tracked - charted, set(), section_id)
 
     def test_threshold_lines_match_the_declared_thresholds(self) -> None:
         for section_id, block, value_key in [
@@ -114,15 +112,29 @@ class GooglePageTest(unittest.TestCase):
         self.assertEqual(eps_exhibit["values"][-1], expectation["operating_eps_mid"])
 
     def test_backlog_exhibit_keeps_the_net_add_collapse_visible(self) -> None:
+        """Backlog comes from the filings, not call colour, and the net-add line
+        has to be the first difference of the plotted levels."""
         backlog = next(ex for ex in self.exhibits if ex["kind"] == "bar_line")
-        self.assertEqual(backlog["bar"]["values"], [240, 462, 514])
-        self.assertEqual(backlog["line"]["values"], [None, 222, 52])
-        self.assertIn("TPU", backlog["note"])
+        levels = backlog["bar"]["values"]
+        self.assertEqual(len(levels), 8)
+        self.assertEqual(levels[-1], 514.0)
+        # The first shown net add legitimately reaches one quarter before the
+        # window, which is why the series carries nine points and shows eight.
+        full = self.staging["backlog"]["level_usd_bn"]
+        self.assertEqual(len(full), 9)
+        expected = [
+            round(current - previous, 6)
+            for previous, current in zip(full, full[1:])
+        ]
+        self.assertEqual(
+            [round(v, 6) for v in backlog["line"]["values"]], expected
+        )
+        self.assertIn("TPU", backlog["src_extra"])
 
     def test_audit_tables_back_every_derived_exhibit(self) -> None:
         tables = self.payload["tables"]
         first = len(self.exhibits) + 2
-        self.assertEqual([table["n"] for table in tables], list(range(first, first + 6)))
+        self.assertEqual([table["n"] for table in tables], list(range(first, first + len(tables))))
         cross = next(table for table in tables if "AI capex" in table["title"])
         self.assertEqual(len(cross["rows"]), 8)
         # Thresholds must also be readable in their original units.
@@ -147,14 +159,48 @@ class GooglePageTest(unittest.TestCase):
             self.assertNotIn(forbidden, text)
         self.assertNotIn("/users/", text)
         self.assertNotIn("/library/cloudstorage/", text)
-        self.assertNotIn("$73,552m", text)
         self.assertNotIn("经营口径 eps", text)
 
-    def test_ttm_free_cash_flow_discrepancy_stays_flagged(self) -> None:
-        """The source table's y/y for TTM FCF does not reconcile with its own
-        Q2 2025 column.  The page must keep saying so rather than quietly
-        publishing whichever number looks tidier."""
-        self.assertTrue(any("待回源核对" in note for note in self.payload["notes"]))
+    def test_every_plotted_curve_spans_the_full_window(self) -> None:
+        """The point of carrying four extra quarters is that no y/y line starts
+        halfway across the axis.  A short series means the backfill regressed."""
+        for exhibit in self.exhibits:
+            if exhibit["kind"] != "lines":
+                continue
+            if not exhibit["title"].endswith("%") and "YoY" not in exhibit["title"]:
+                continue
+            for series in exhibit["series"]:
+                if series["name"].endswith("阈值") or "阈值" in series["name"]:
+                    continue
+                self.assertTrue(
+                    all(value is not None for value in series["values"]),
+                    f"{exhibit['title']} / {series['name']}",
+                )
+
+    def test_twelve_quarter_base_backs_every_yoy(self) -> None:
+        q = self.staging["quarterly"]
+        self.assertEqual(len(q["periods"]), 12)
+        for key in ("revenue_total", "search_and_other", "youtube_ads", "cloud",
+                    "depreciation", "operating_cash_flow", "capital_expenditures"):
+            self.assertEqual(len(q[key]), 12, key)
+        for region, values in q["geography_usd_m"].items():
+            self.assertEqual(len(values), 12, region)
+        table = next(t for t in self.payload["tables"] if "十二季度" in t["title"])
+        self.assertEqual(len(table["rows"]), 12)
+
+    def test_trailing_free_cash_flow_reconciles_with_the_quarters(self) -> None:
+        """The local note recorded $73,552M as Q2 2025's trailing FCF; recomputing
+        from the quarterly cash flows puts that figure at Q3 2025 and Q2 2025 at
+        $66,728M. The page must publish the reconciled series."""
+        q = self.staging["quarterly"]
+        free_cash = [
+            operating - capex
+            for operating, capex in zip(q["operating_cash_flow"], q["capital_expenditures"])
+        ]
+        index = q["periods"].index("Q2 2025")
+        self.assertEqual(sum(free_cash[index - 3:index + 1]), 66728)
+        self.assertEqual(sum(free_cash[index - 2:index + 2]), 73552)
+        self.assertTrue(any("66,728" in note and "73,552" in note for note in self.payload["notes"]))
 
 
 if __name__ == "__main__":

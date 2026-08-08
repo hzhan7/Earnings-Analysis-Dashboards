@@ -105,27 +105,73 @@ def cross_capex_table(n: int) -> dict:
     return ai_capex_cycle_table(n, capex_by_period, tsm_series)
 
 
+WINDOW = 8
+
+
+def yoy(values: list[float]) -> list[float | None]:
+    """Year-over-year in percent, None until a year-ago quarter exists."""
+    return [None] * 4 + [
+        (values[index] / values[index - 4] - 1) * 100 for index in range(4, len(values))
+    ]
+
+
+def trailing(values: list[float]) -> list[float | None]:
+    """Rolling four-quarter sum, None until four quarters exist."""
+    return [None] * 3 + [sum(values[index - 3:index + 1]) for index in range(3, len(values))]
+
+
+def shown(values: list) -> list:
+    return values[-WINDOW:]
+
+
 def build_payload(staging: dict) -> dict:
     revenue = trend(staging, "八季度趋势（收入侧）")
     cash = trend(staging, "八季度趋势（现金与资本强度）")
 
-    revenue_labels = [row[0] for row in revenue["rows"]]
-    cash_labels = [row[0] for row in cash["rows"]]
+    # The series carries twelve quarters so that every displayed quarter has a
+    # year-ago base.  Charts show the last eight; the four extra only exist to
+    # make the y/y lines complete rather than starting halfway across the axis.
+    q = staging["quarterly"]
+    revenue_labels = shown(q["periods"])
+    cash_labels = revenue_labels
 
-    revenue_values = column(revenue, "总收入")
-    revenue_yoy = column(revenue, "YoY")
-    search_yoy = [number(row[4]) for row in revenue["rows"]]
-    youtube_yoy = [number(row[6]) for row in revenue["rows"]]
-    cloud_values = column(revenue, "Cloud")
-    cloud_yoy = [number(row[8]) for row in revenue["rows"]]
+    revenue_values = shown(q["revenue_total"])
+    revenue_yoy = shown(yoy(q["revenue_total"]))
+    search_values = shown(q["search_and_other"])
+    search_yoy = shown(yoy(q["search_and_other"]))
+    youtube_yoy = shown(yoy(q["youtube_ads"]))
+    cloud_values = shown(q["cloud"])
+    cloud_yoy = shown(yoy(q["cloud"]))
     cloud_opm = column(revenue, "Cloud OPM")
-    capex_values = column(cash, "CapEx")
-    fcf_values = column(cash, "自由现金流")
-    capex_intensity = column(cash, "CapEx/收入")
+    dep_values = shown(q["depreciation"])
+    dep_yoy = shown(yoy(q["depreciation"]))
+    ocf_values = shown(q["operating_cash_flow"])
+    capex_values = shown(q["capital_expenditures"])
+    fcf_all = [
+        operating - capex
+        for operating, capex in zip(q["operating_cash_flow"], q["capital_expenditures"])
+    ]
+    fcf_values = shown(fcf_all)
+    ttm_fcf_values = shown(trailing(fcf_all))
+    capex_intensity = [
+        capex / revenue_value * 100
+        for capex, revenue_value in zip(capex_values, revenue_values)
+    ]
+    accel_streak = 0
+    for index in range(len(revenue_yoy) - 1, 0, -1):
+        if revenue_yoy[index] is None or revenue_yoy[index - 1] is None:
+            break
+        if revenue_yoy[index] <= revenue_yoy[index - 1]:
+            break
+        accel_streak += 1
+    geography_yoy_series = {
+        region: shown(yoy(values)) for region, values in q["geography_usd_m"].items()
+    }
 
     dep_cur, dep_prev, dep_prior = snap(staging, "折旧")
     sbc_cur, sbc_prev, sbc_prior = snap(staging, "股权激励费用")
-    ttm_fcf_cur, ttm_fcf_prev, ttm_fcf_prior = snap(staging, "TTM 自由现金流")
+    ttm_fcf_cur, ttm_fcf_prev = ttm_fcf_values[-1], ttm_fcf_values[-2]
+    ttm_fcf_prior = ttm_fcf_values[-5]
 
     consensus = staging["market_expectation"]
     eps_bridge = staging["eps_bridge"]
@@ -140,12 +186,17 @@ def build_payload(staging: dict) -> dict:
         for low, high in zip(capex_guide["low_usd_bn"], capex_guide["high_usd_bn"])
     ]
     eps_gap = (eps_bridge["values"][2] / consensus["operating_eps_mid"] - 1) * 100
-    backlog_qoq = [None] + [
+    backlog_levels = backlog["level_usd_bn"]
+    backlog_labels = shown(backlog["periods"])
+    backlog_shown = shown(backlog_levels)
+    backlog_qoq = shown([None] + [
         (current / previous - 1) * 100
-        for previous, current in zip(backlog["level_usd_bn"], backlog["level_usd_bn"][1:])
-    ]
-    ttm_fcf_periods = ["Q2 2025", "Q1 2026", "Q2 2026"]
-    ttm_fcf_series = [ttm_fcf_prior, ttm_fcf_prev, ttm_fcf_cur]
+        for previous, current in zip(backlog_levels, backlog_levels[1:])
+    ])
+    backlog_net_add = shown([None] + [
+        current - previous
+        for previous, current in zip(backlog_levels, backlog_levels[1:])
+    ])
 
     # One entry per tracked metric, so §1 and §3 can each draw the metric's own
     # history under its own threshold instead of a single normalised bar.
@@ -153,11 +204,10 @@ def build_payload(staging: dict) -> dict:
         "Cloud 收入 YoY": (revenue_labels, cloud_yoy, "pct1", "同比增速", "Cloud 收入 YoY"),
         "Cloud 经营利润率": (revenue_labels, cloud_opm, "pct1", "利润率", "Cloud OPM"),
         "Search & other YoY": (revenue_labels, search_yoy, "pct1", "同比增速", "Search & other YoY"),
-        "Cloud backlog 环比": (backlog["periods"], backlog_qoq, "pct1", "环比", "backlog 环比"),
-        "Cloud backlog 单季净增": (
-            backlog["periods"], backlog["net_add_usd_bn"], "usd0", "$B", "单季净增",
-        ),
-        "TTM 自由现金流": (ttm_fcf_periods, ttm_fcf_series, "f0c", "$M", "TTM 自由现金流"),
+        "Cloud backlog 环比": (backlog_labels, backlog_qoq, "pct1", "环比", "backlog 环比"),
+        "Cloud backlog 单季净增": (backlog_labels, backlog_net_add, "usd0", "$B", "单季净增"),
+        "TTM 自由现金流": (revenue_labels, ttm_fcf_values, "f0c", "$M", "TTM 自由现金流"),
+        "折旧 YoY": (revenue_labels, dep_yoy, "pct1", "同比增速", "折旧 YoY"),
         "Q2 CapEx（不超上限）": (cash_labels, capex_values, "f0c", "$M", "单季 CapEx"),
         "Q3 CapEx（不低于此值否则全年指引下修）": (
             cash_labels, capex_values, "f0c", "$M", "单季 CapEx",
@@ -214,32 +264,36 @@ def build_payload(staging: dict) -> dict:
             "阈值为上季本地研究设定，不是公司指引；实际值来自 Q2 2026 release。"
             "另有 3 条定性阈值同时触发（AI Mode 变现披露、回购归零、Waymo 披露倒退），"
             "1 条因可被增发规避而退役（净现金），1 条（Network ads）因阈值接近零会使百分比失真而不入图。"
-            "下面逐条给出各指标自身走势与阈值线；折旧 YoY 只有本季一个可回源的同比点，无法成趋势图，"
-            "改见「长期常规跟踪」里的折旧金额三期图。"
+            "下面逐条给出各指标自身八季走势与阈值线。"
         ),
     )
 
     built = [
         settled,
         {
-            "kind": "gs_bar",
-            "title": "Cloud 收入 +81.8%，利润率连续八季上行至 35.59%",
+            # Growth and margin are the two curves that decide this segment; the
+            # revenue level is a scale fact and belongs in the note, not the axis.
+            "kind": "lines",
+            "title": (
+                f"Cloud 增速八季由 {cloud_yoy[0]:.1f}% 升到 {cloud_yoy[-1]:.1f}%，"
+                f"利润率同步升到 {cloud_opm[-1]:.2f}%"
+            ),
             "xlabels": revenue_labels,
-            "values": cloud_values,
-            "legend": "Cloud 收入",
-            "fmt": "f0c",
-            "yfmt": "f0c",
-            "label_fmt": "f0c",
-            "ylab": "$M",
-            "ylab2": "Cloud OPM",
-            "yoy": {
-                "name": "Cloud OPM (RHS)",
-                "values": cloud_opm,
-                "color": "GOLD",
-                "yfmt": "pct1",
-            },
-            "note": "增速连续五季加速（33.5% → 47.8% → 63.4% → 81.8%），利润率八季无一次回落，累计 +18.44pp。",
-            "src_extra": source_note("Cloud 收入与经营利润来自公司分部表；OPM 为自算"),
+            "series": [
+                {"name": "Cloud 收入 YoY", "values": cloud_yoy, "color": "NAVY"},
+                {"name": "Cloud 经营利润率", "values": cloud_opm, "color": "GOLD"},
+            ],
+            "fmt": "pct1",
+            "yfmt": "pct1",
+            "label_fmt": "pct1",
+            "zero_base": True,
+            "end_label": True,
+            "ylab": "同比增速 / 利润率",
+            "note": (
+                f"两条线八季同向上行，是最难被叙事伪造的组合；本季收入 "
+                f"${cloud_values[-1]:,.0f}M，利润率累计 +{cloud_opm[-1] - cloud_opm[0]:.2f}pp。"
+            ),
+            "src_extra": source_note("Cloud 收入与经营利润来自公司分部表；同比与 OPM 为自算"),
         },
         {
             "kind": "lines",
@@ -264,17 +318,17 @@ def build_payload(staging: dict) -> dict:
         {
             "kind": "bar_line",
             "title": "backlog 创 $514B 新高，但单季净增从 $222B 降到 $52B",
-            "xlabels": backlog["periods"],
+            "xlabels": backlog_labels,
             "bar": {
-                "name": "Cloud backlog 余额",
+                "name": "backlog 余额",
                 "color": "NAVY",
-                "values": backlog["level_usd_bn"],
+                "values": backlog_shown,
                 "yfmt": "usd0",
             },
             "line": {
                 "name": "单季净增 (RHS)",
                 "color": "RED",
-                "values": backlog["net_add_usd_bn"],
+                "values": backlog_net_add,
                 "yfmt": "usd0",
             },
             "fmt": "usd0",
@@ -287,8 +341,8 @@ def build_payload(staging: dict) -> dict:
                 "TPU 系统销售已计入 backlog，但公司拒绝给出占比。"
             ),
             "src_extra": (
-                "backlog 来自各季电话会口径，非利润表项目；公司未披露取消额、久期明细与客户集中度，"
-                "Q1 2026 纳入 TPU hardware agreements，跨季可比性有限。"
+                "backlog 为合同剩余履约义务，来自各期 10-Q / 10-K；Q2 2026 尚无 10-Q，采用当季电话会口径。"
+                "公司未披露取消额与客户集中度，Q1 2026 起纳入 TPU hardware agreements。口径细节见核对表。"
             ),
         },
         {
@@ -357,12 +411,12 @@ def build_payload(staging: dict) -> dict:
             src_extra=(
                 "阈值为本地研究设定，不是公司指引；当前值为 Q2 2026 实际。"
                 "另有 5 条需等披露才能判定（backlog 客户集中度、2027 CapEx 指引、ATM 发行额、"
-                "TPU 系统收入、AI Mode 变现指标）；折旧 YoY 同样只有单点，见长期常规一节。"
+                "TPU 系统收入、AI Mode 变现指标）。"
             ),
         ),
         {
             "kind": "gs_bar",
-            "title": "总收入同比连续五季加速至 24.2%",
+            "title": f"总收入同比连续 {accel_streak} 季加速至 {revenue_yoy[-1]:.1f}%",
             "xlabels": revenue_labels,
             "values": revenue_values,
             "legend": "总收入",
@@ -377,12 +431,17 @@ def build_payload(staging: dict) -> dict:
                 "color": "GREEN",
                 "yfmt": "pct1",
             },
-            "note": "在约 $4,000 亿的年收入体量上连续五季加速，本季收入较市场预期高约 2.4%。",
+            "note": (
+                f"在约 $4,000 亿的年收入体量上连续 {accel_streak} 季加速，"
+                f"本季收入较市场预期高 {change(revenue_values[-1], consensus['revenue_usd_m'])}。"
+            ),
             "src_extra": source_note("收入与同比来自公司季度 release"),
         },
         {
             "kind": "gs_line",
-            "title": "资本强度七季从 14.8% 升到 37.5%，且尚未见顶",
+            "title": (
+                f"资本强度八季从 {capex_intensity[0]:.1f}% 升到 {capex_intensity[-1]:.1f}%，且尚未见顶"
+            ),
             "xlabels": cash_labels,
             "values": capex_intensity,
             "legend": "CapEx / 收入",
@@ -394,59 +453,70 @@ def build_payload(staging: dict) -> dict:
             "src_extra": source_note("CapEx / 收入为自算"),
         },
         {
-            "kind": "grouped_bars",
-            "title": "折旧同比 +42.1%，快于收入的 +24.2%",
-            "xlabels": ["Q2 2025", "Q1 2026", "Q2 2026"],
-            "groups": [
-                {"name": "折旧", "values": [dep_prior, dep_prev, dep_cur], "color": "NAVY"},
-                {"name": "股权激励费用", "values": [sbc_prior, sbc_prev, sbc_cur], "color": "MBLUE"},
-            ],
+            "kind": "gs_bar",
+            "title": f"折旧同比 {dep_yoy[-1]:+.1f}%，快于收入的 {revenue_yoy[-1]:+.1f}%",
+            "xlabels": revenue_labels,
+            "values": dep_values,
+            "legend": "季度折旧",
             "fmt": "f0c",
             "yfmt": "f0c",
             "label_fmt": "f0c",
             "ylab": "$M",
-            "bar_labels": False,
+            "ylab2": "同比增速",
+            "yoy": {
+                "name": "折旧 YoY (RHS)",
+                "values": dep_yoy,
+                "color": "RED",
+                "yfmt": "pct1",
+            },
             "note": (
-                "当季 CapEx 是折旧的 6.3 倍，意味着折旧的上行才刚开始；"
-                "公司未按季给出八季折旧序列，本图只用可回源的三期。"
+                f"折旧同比已连续多季高于收入同比；当季 CapEx 是折旧的 "
+                f"{capex_values[-1] / dep_values[-1]:.1f} 倍，意味着这条线的上行才刚开始。"
             ),
-            "src_extra": source_note("折旧与股权激励费用来自季度现金流量表"),
+            "src_extra": source_note("季度折旧来自各期 10-Q / 10-K 现金流量表，第四季按全年减前三季倒推"),
         },
         {
-            "kind": "bars_labeled",
-            "title": "TTM 自由现金流从 $66.7B 降到 $53.3B",
-            "xlabels": ["Q2 2025", "Q1 2026", "Q2 2026"],
-            "values": [ttm_fcf_prior, ttm_fcf_prev, ttm_fcf_cur],
+            "kind": "gs_line",
+            "title": (
+                f"TTM 自由现金流见顶回落：${max(ttm_fcf_values):,.0f}M → ${ttm_fcf_cur:,.0f}M"
+            ),
+            "xlabels": revenue_labels,
+            "values": ttm_fcf_values,
             "legend": "TTM 自由现金流",
             "fmt": "f0c",
             "yfmt": "f0c",
             "label_fmt": "f0c",
             "ylab": "$M",
             "note": (
-                f"较上季 {change(ttm_fcf_cur, ttm_fcf_prev)}；只使用公司在各季 release 中"
-                "给出的 TTM 口径，不自行拼接未披露季度。"
+                f"同比 {change(ttm_fcf_cur, ttm_fcf_prior)}、较上季 {change(ttm_fcf_cur, ttm_fcf_prev)}；"
+                "滚动四季口径把单季的税款与季节性摊平，拐点出现在 Q1 2026。"
             ),
-            "src_extra": source_note("TTM 自由现金流为公司披露口径"),
+            "src_extra": source_note("按各季经营现金流减资本开支滚动四季求和（自算），逐季原值见核对表"),
         },
         {
-            "kind": "grouped_bars",
-            "title": "美国收入同比 +32%，是其余地区的两倍以上",
-            "xlabels": geography["labels"],
-            "groups": [
-                {"name": "Q2 2025", "values": geography["prior_year_usd_m"], "color": "BLUE"},
-                {"name": "Q2 2026", "values": geography["current_usd_m"], "color": "NAVY"},
-            ],
-            "fmt": "f0c",
-            "yfmt": "f0c",
-            "label_fmt": "f0c",
-            "ylab": "$M",
-            "bar_labels": False,
-            "note": (
-                f"四地区同比依次为 {geography_yoy[0]:.0f}% / {geography_yoy[1]:.0f}% / "
-                f"{geography_yoy[2]:.0f}% / {geography_yoy[3]:.0f}%；美国占比升至 50.8%，"
-                "与 AI 基础设施需求的地域集中一致。"
+            "kind": "lines",
+            "title": (
+                f"美国收入同比 {geography_yoy_series['美国'][-1]:+.0f}%，与其余地区的差距在拉大"
             ),
-            "src_extra": source_note("分地域收入来自 Q2 release；同比与占比为自算"),
+            "xlabels": revenue_labels,
+            "series": [
+                {"name": "美国", "values": geography_yoy_series["美国"], "color": "NAVY"},
+                {"name": "EMEA", "values": geography_yoy_series["EMEA"], "color": "MBLUE"},
+                {"name": "APAC", "values": geography_yoy_series["APAC"], "color": "GOLD"},
+                {"name": "其他美洲", "values": geography_yoy_series["其他美洲"], "color": "GRAY"},
+            ],
+            "fmt": "pct1",
+            "yfmt": "pct1",
+            "label_fmt": "pct1",
+            "zero_base": True,
+            "end_label": True,
+            "ylab": "同比增速",
+            "note": (
+                f"美国自 Q4 2025 起与其余三个地区分道扬镳，本季占总收入 "
+                f"{geography['current_usd_m'][0] / revenue_values[-1] * 100:.1f}%；"
+                "地域集中度与 AI 基础设施客户的集中度是同一件事的两个视角。"
+            ),
+            "src_extra": source_note("分地域收入来自各期 10-Q / 10-K，第四季按全年减前三季倒推；同比为自算"),
         },
     ]
     highlights = built[1:7]
@@ -491,25 +561,41 @@ def build_payload(staging: dict) -> dict:
             "当前值",
         ),
         {
-            "n": next_table_number + 2,
-            "title": revenue["title"],
-            "headers": revenue["headers"],
-            "rows": revenue["rows"],
+            "n": 0,
+            "title": "十二季度基础数据（前四季只用于计算同比）",
+            "headers": ["季度", "总收入", "Search & other", "YouTube ads", "Cloud",
+                        "折旧", "经营现金流", "CapEx", "自由现金流 D", "美国", "EMEA", "APAC", "其他美洲"],
+            "rows": [
+                [
+                    period,
+                    f"${q['revenue_total'][i]:,.0f}M",
+                    f"${q['search_and_other'][i]:,.0f}M",
+                    f"${q['youtube_ads'][i]:,.0f}M",
+                    f"${q['cloud'][i]:,.0f}M",
+                    f"${q['depreciation'][i]:,.0f}M",
+                    f"${q['operating_cash_flow'][i]:,.0f}M",
+                    f"${q['capital_expenditures'][i]:,.0f}M",
+                    (lambda v: f"-${abs(v):,.0f}M" if v < 0 else f"${v:,.0f}M")(
+                        q["operating_cash_flow"][i] - q["capital_expenditures"][i]
+                    ),
+                    f"${q['geography_usd_m']['美国'][i]:,.0f}M",
+                    f"${q['geography_usd_m']['EMEA'][i]:,.0f}M",
+                    f"${q['geography_usd_m']['APAC'][i]:,.0f}M",
+                    f"${q['geography_usd_m']['其他美洲'][i]:,.0f}M",
+                ]
+                for i, period in enumerate(q["periods"])
+            ],
         },
         {
-            "n": next_table_number + 3,
-            "title": cash["title"].replace("八季度", "七季度"),
-            "headers": cash["headers"],
-            "rows": cash["rows"],
-        },
-        {
-            "n": next_table_number + 4,
+            "n": 0,
             "title": staging["snapshot"]["title"],
             "headers": staging["snapshot"]["headers"],
             "rows": staging["snapshot"]["rows"],
         },
-        cross_capex_table(next_table_number + 5),
+        cross_capex_table(0),
     ]
+    for offset, table in enumerate(tables):
+        table["n"] = next_table_number + offset
 
     return {
         "schema_version": "quarterly-dashboard/googl-v3",
@@ -621,9 +707,12 @@ def build_payload(staging: dict) -> dict:
             "本页只发布公司披露值、可复算的简单派生值，以及明确标注的市场预期；D 标记代表 Derived / 自算。",
             "市场预期一律标注为「市场预期」并给出取数时点，不写卖方机构名，也不发布评级、目标价或估值。",
             "$2.85 仅做 $9.11 − $6.26 的算术拆分，不命名为经营 EPS，也不等同公司定义的 non-GAAP 指标。",
-            "TTM 自由现金流只使用公司在 release 中披露的 TTM 口径，不自行拼接未披露季度；源表 y/y 为 -27.6%，与本页 Q2 2025 列的简单比值不一致，待回源核对。",
+            "TTM 自由现金流按各季经营现金流减资本开支滚动四季自算。本地分析稿曾记 Q2 2025 的 TTM 为 $73,552M、"
+            "同比 -27.6%；按 10-Q 逐季倒推，$73,552M 实为 Q3 2025 的 TTM，Q2 2025 应为 $66,728M，同比 -20.2%。本页采用后者。",
             "Cloud backlog 来自季度电话会口径；公司未披露取消额、外汇调整或客户集中度。",
             "Q4 2025 总收入采用当季 earnings release 的 $113,828M；与最新 10-K 倒挤值存在 $1M 差异。",
+            "所有同比曲线用十二个季度的基础数据计算（展示最近八季，另四季只为让同比从第一格就有值），逐季原值见核对表。",
+            "季度值来自各期 10-Q 与 10-K；无 10-Q 的第四季度按「全年 − 前三季」倒推，Q2 2026 采用当季 earnings release。",
             "本页已知未接入：收入成本 / R&D / S&M / G&A 四条费用线、有效税率、稀释股数、paid clicks 与 CPC，以及电话会口径的 Gemini、订阅、Waymo 等运营 KPI。",
         ],
         "footer": (
