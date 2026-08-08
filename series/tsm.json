@@ -154,5 +154,56 @@
       "label": "TSMC Q3 2024 quarterly results",
       "url": "https://investor.tsmc.com/english/quarterly-results/2024/q3"
     }
-  ]
+  ],
+  "market_expectation": {
+    "label": "市场预期（财报前一致预期，来源不具名）",
+    "as_of": "2026-07-16",
+    "revenue_usd_bn": 39.94,
+    "gross_margin_pct": 67.1,
+    "net_income_ntd_bn": 632.64,
+    "eps_ntd": 24.29,
+    "q3_revenue_usd_bn": 43.1,
+    "fy_capex_usd_bn": 58.0,
+    "post_earnings_price_change_pct": -2.32
+  },
+  "net_income_bridge": {
+    "labels": ["报告净利", "其中：VIS 一次性（税前）", "核心净利 D", "市场预期"],
+    "values_ntd_bn": [706.56, 63.20, 643.36, 632.64]
+  },
+  "capex_guidance_history": {
+    "calls": ["1 月年度 call", "4 月 Q1 call", "7 月 Q2 call"],
+    "dates": ["2026-01-15", "2026-04-16", "2026-07-16"],
+    "low_usd_bn": [52, 56, 60],
+    "high_usd_bn": [56, 56, 64],
+    "positioning": ["初始区间", "指向上端 closer to $56B", "上调至 $60–64B"]
+  },
+  "q2_guidance_delivery": [
+    {"metric": "收入 vs 指引中值", "value": 1.52, "unit": "pct"},
+    {"metric": "毛利率 vs 指引中值", "value": 1.2, "unit": "pp"},
+    {"metric": "营业利润率 vs 指引中值", "value": 2.8, "unit": "pp"},
+    {"metric": "有效税率 vs 指引（低为优）", "value": 1.9, "unit": "pp"},
+    {"metric": "新台币汇率 vs 假设（升值为逆风）", "value": -0.3, "unit": "pct"}
+  ],
+  "followup_closure": {
+    "labels": ["已验证", "部分验证", "被证伪", "仍未披露"],
+    "counts": [3, 4, 1, 4],
+    "set_in": "Q1 2026"
+  },
+  "next_kpi": {
+    "for_period": "Q3 2026",
+    "quantified": [
+      {"metric": "毛利率", "direction": "up", "threshold": 65.5, "current": 67.7, "unit": "pct"},
+      {"metric": "库存天数", "direction": "down", "threshold": 90.0, "current": 87.0, "unit": "days"},
+      {"metric": "单季 CapEx", "direction": "down", "threshold": 19.0, "current": 15.70, "unit": "usd_bn"},
+      {"metric": "HPC 占比（集中度）", "direction": "down", "threshold": 68.0, "current": 66.0, "unit": "pct"},
+      {"metric": "2nm 占晶圆收入", "direction": "up", "threshold": 5.0, "current": 3.0, "unit": "pct"},
+      {"metric": "USD/TWD 即期（升值为逆风）", "direction": "up", "threshold": 31.0, "current": 31.60, "unit": "fx"}
+    ],
+    "disclosure_gated": [
+      "Q3 实际收入：低于指引下限 US$44.6B 即减仓评估",
+      "1 月年度 call 的 2027 CapEx 指引：≥ US$70B 且无对应收入指引即重新评估",
+      "1 月年度 call 是否正式上修长期毛利率目标至 58%+",
+      "Smartphone 连续三季负增长即警示终端弱于管理层口径"
+    ]
+  }
 }

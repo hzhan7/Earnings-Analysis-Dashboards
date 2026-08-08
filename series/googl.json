@@ -479,5 +479,214 @@
         ]
       ]
     }
-  ]
+  ],
+  "market_expectation": {
+    "label": "市场预期（财报前一致预期，来源不具名）",
+    "as_of": "2026-07-22",
+    "operating_eps_low": 2.87,
+    "operating_eps_high": 2.91,
+    "operating_eps_mid": 2.89,
+    "revenue_usd_m": 117000,
+    "post_earnings_price_change_pct": -4.9
+  },
+  "eps_bridge": {
+    "labels": [
+      "GAAP 摊薄 EPS",
+      "其中：权益证券收益",
+      "剔除后（简单自算）",
+      "市场预期"
+    ],
+    "values": [
+      9.11,
+      6.26,
+      2.85,
+      2.89
+    ]
+  },
+  "capex_guidance_history": {
+    "calls": [
+      "Q4 2025 电话会",
+      "Q1 2026 电话会",
+      "Q2 2026 电话会"
+    ],
+    "dates": [
+      "2026-02-04",
+      "2026-04-29",
+      "2026-07-22"
+    ],
+    "low_usd_bn": [
+      175,
+      180,
+      195
+    ],
+    "high_usd_bn": [
+      185,
+      190,
+      205
+    ]
+  },
+  "backlog": {
+    "periods": [
+      "Q4 2025",
+      "Q1 2026",
+      "Q2 2026"
+    ],
+    "level_usd_bn": [
+      240,
+      462,
+      514
+    ],
+    "net_add_usd_bn": [
+      null,
+      222,
+      52
+    ]
+  },
+  "geography": {
+    "labels": [
+      "美国",
+      "EMEA",
+      "APAC",
+      "其他美洲"
+    ],
+    "prior_year_usd_m": [
+      46063,
+      28262,
+      16480,
+      5735
+    ],
+    "current_usd_m": [
+      60846,
+      32501,
+      19317,
+      7026
+    ]
+  },
+  "prior_kpi_settlement": {
+    "set_in": "Q1 2026",
+    "settled_in": "Q2 2026",
+    "quantified": [
+      {
+        "metric": "Cloud 收入 YoY",
+        "direction": "up",
+        "threshold": 55.0,
+        "actual": 81.8,
+        "unit": "pct"
+      },
+      {
+        "metric": "Cloud 经营利润率",
+        "direction": "up",
+        "threshold": 30.0,
+        "actual": 35.59,
+        "unit": "pct"
+      },
+      {
+        "metric": "Search & other YoY",
+        "direction": "up",
+        "threshold": 14.0,
+        "actual": 16.8,
+        "unit": "pct"
+      },
+      {
+        "metric": "折旧 YoY",
+        "direction": "down",
+        "threshold": 55.0,
+        "actual": 42.1,
+        "unit": "pct"
+      },
+      {
+        "metric": "Q2 CapEx（不超上限）",
+        "direction": "down",
+        "threshold": 55000.0,
+        "actual": 44924.0,
+        "unit": "usd_m"
+      },
+      {
+        "metric": "Cloud backlog 环比",
+        "direction": "up",
+        "threshold": 10.0,
+        "actual": 11.3,
+        "unit": "pct"
+      },
+      {
+        "metric": "TTM 自由现金流",
+        "direction": "up",
+        "threshold": 55000.0,
+        "actual": 53273.0,
+        "unit": "usd_m"
+      }
+    ],
+    "qualitative_triggered": [
+      "AI Mode / AIO 变现指标连续三季未披露",
+      "回购连续两季 $0M 且债务续升",
+      "Waymo 量化披露倒退"
+    ],
+    "retired": [
+      "净现金 < $35,000M：可被增发直接规避，口径已失真，退役"
+    ],
+    "excluded_from_chart": [
+      "Network ads YoY：阈值 -5%、实际 -0.7%，未触发。阈值绝对值接近零会让「距阈值 %」失真，故不进图，只记录结果。"
+    ]
+  },
+  "next_kpi": {
+    "for_period": "Q3 2026",
+    "quantified": [
+      {
+        "metric": "Cloud backlog 单季净增",
+        "direction": "up",
+        "threshold": 25000.0,
+        "current": 52000.0,
+        "unit": "usd_m"
+      },
+      {
+        "metric": "TTM 自由现金流",
+        "direction": "up",
+        "threshold": 30000.0,
+        "current": 53273.0,
+        "unit": "usd_m"
+      },
+      {
+        "metric": "Cloud 收入 YoY",
+        "direction": "up",
+        "threshold": 60.0,
+        "current": 81.8,
+        "unit": "pct"
+      },
+      {
+        "metric": "Cloud 经营利润率",
+        "direction": "up",
+        "threshold": 30.0,
+        "current": 35.59,
+        "unit": "pct"
+      },
+      {
+        "metric": "Search & other YoY",
+        "direction": "up",
+        "threshold": 13.0,
+        "current": 16.8,
+        "unit": "pct"
+      },
+      {
+        "metric": "折旧 YoY",
+        "direction": "down",
+        "threshold": 50.0,
+        "current": 42.1,
+        "unit": "pct"
+      },
+      {
+        "metric": "Q3 CapEx（不低于此值否则全年指引下修）",
+        "direction": "up",
+        "threshold": 52000.0,
+        "current": 44924.0,
+        "unit": "usd_m"
+      }
+    ],
+    "disclosure_gated": [
+      "backlog 客户集中度：10-Q 确认单一客户 > 35% 即撤销多头",
+      "2027 CapEx 指引：> $280,000M 且 TTM FCF 为负即减仓",
+      "ATM 计划实际发行额：单季 > $10,000M 即警示",
+      "TPU 系统销售收入：首次量化即为双向重大催化",
+      "AI Mode / AIO 变现指标：仍不披露且 Search < +13% 即警示"
+    ]
+  }
 }

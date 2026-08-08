@@ -92,8 +92,7 @@
   }
 
   function summaryHTML(block, index) {
-    var html = '<section class="card summary-card' + (block.id ? ' block-' + esc(block.id) : '') +
-      '"><header><h3>Exhibit ' + (index + 1) + ': ' +
+    var html = '<section class="card summary-card"><header><h3>Exhibit ' + (index + 1) + ': ' +
       esc(block.title) + '</h3><span class="frequency-chip">' +
       (block.frequency === 'semiannual' ? '半年频' : '季度') + '</span></header>' +
       '<div class="tblwrap"><table class="sum"><thead><tr><th scope="col">指标</th>';
@@ -118,46 +117,6 @@
   Array.prototype.forEach.call(el('lead').querySelectorAll('.tblwrap'), function (wrap, index) {
     markScrollable(wrap, (blocks[index] ? blocks[index].heads.length + 1 : 0));
   });
-
-  /* Layer 1: the fixed operating panel.  Groups are collapsible because the
-     panel is deliberately exhaustive -- it answers "what did the last eight
-     quarters look like", which is a scan, not a read. */
-  function panelGroupHTML(group) {
-    var html = '<details class="card panel-group"' + (group.open ? ' open' : '') +
-      '><summary><h3>' + esc(group.title) + '</h3></summary>' +
-      '<div class="tblwrap"><table class="sum"><thead><tr><th scope="col">指标</th>';
-    group.heads.forEach(function (header, headIndex) {
-      html += '<th scope="col"' + (headIndex === group.sep ? ' class="sep"' : '') + '>' +
-        esc(header) + '</th>';
-    });
-    html += '</tr></thead><tbody>';
-    group.rows.forEach(function (row) {
-      html += '<tr><td>' + esc(row.label) + '</td>';
-      row.cells.forEach(function (cell, cellIndex) {
-        html += '<td class="' + esc((cell.cls || '') + (cellIndex === group.sep ? ' sep' : '')) + '">' +
-          esc(cell.v || '—') + (cell.status === 'derived' ? '<sup class="derived-mark">D</sup>' : '') + '</td>';
-      });
-      html += '</tr>';
-    });
-    return html + '</tbody></table></div>' +
-      (group.note ? '<p class="src"><b>Note:</b> ' + esc(group.note) + '</p>' : '') +
-      '</details>';
-  }
-
-  if (D.panel) {
-    el('panel').innerHTML = '<div class="section-head"><h2>' + esc(D.panel.title) + '</h2>' +
-      (D.panel.description ? '<p>' + esc(D.panel.description) + '</p>' : '') + '</div>' +
-      (D.panel.groups || []).map(panelGroupHTML).join('');
-    Array.prototype.forEach.call(el('panel').querySelectorAll('.panel-group'), function (node, index) {
-      var group = (D.panel.groups || [])[index] || {heads: []};
-      var wrap = node.querySelector('.tblwrap');
-      markScrollable(wrap, group.heads.length + 1);
-      // A collapsed <details> measures zero width, so re-check on first open.
-      node.addEventListener('toggle', function () {
-        if (node.open) markScrollable(wrap, group.heads.length + 1);
-      });
-    });
-  }
 
   if (D.guidance) {
     el('guidance').innerHTML = '<h2 class="section">Guidance / Outlook</h2>' +

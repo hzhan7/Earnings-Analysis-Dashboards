@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build.all import roster_payload  # noqa: E402
-from build.board import STATUS_LABELS  # noqa: E402
+from build.board import headroom  # noqa: E402
 from build.googl import build_payload as build_googl_payload  # noqa: E402
 from build.tsm import build_payload  # noqa: E402
 
@@ -28,6 +28,7 @@ class TsmDashboardTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.source = json.loads((ROOT / "series" / "tsm.json").read_text(encoding="utf-8"))
         cls.payload = build_payload(cls.source)
+        cls.exhibits = [ex for section in cls.payload["sections"] for ex in section["exhibits"]]
 
     def test_all_historical_series_have_eight_quarters(self) -> None:
         self.assertEqual(len(self.source["periods"]), 8)
@@ -58,8 +59,9 @@ class TsmDashboardTest(unittest.TestCase):
         ):
             self.assertAlmostEqual(round(operating - capex, 2), free_cash, places=2)
 
-        vis_gain = snapshot["vis_disposal_and_mark_to_market_gain_pretax_ntd_bn"]
-        self.assertEqual(round(snapshot["non_operating_items_ntd_bn"][0] - vis_gain, 2), 32.63)
+        bridge = self.source["net_income_bridge"]["values_ntd_bn"]
+        self.assertAlmostEqual(bridge[0] - bridge[1], bridge[2], places=2)
+        self.assertEqual(bridge[1], snapshot["vis_disposal_and_mark_to_market_gain_pretax_ntd_bn"])
 
     def test_guidance_history_is_not_overstated(self) -> None:
         history = self.source["revenue_guidance_history_usd_bn"]
@@ -71,66 +73,66 @@ class TsmDashboardTest(unittest.TestCase):
         self.assertEqual(at_or_above_high, 6)
         self.assertLess(history["actual"][1], history["high"][1])  # Q4'24 remained in range.
 
-    def test_expected_exhibit_order_and_quality_bridge(self) -> None:
-        exhibits = [exhibit for section in self.payload["sections"] for exhibit in section["exhibits"]]
-        self.assertEqual([exhibit["n"] for exhibit in exhibits], list(range(2, 11)))
-        self.assertTrue(all(not exhibit.get("full", False) for exhibit in exhibits))
-        bridge = next(exhibit for exhibit in exhibits if exhibit["n"] == 7)
-        self.assertEqual(bridge["values"], [28.83, 32.63, 63.2])
-        self.assertIn("出售及盯市", bridge["src_extra"])
+    def test_page_is_chart_led(self) -> None:
+        self.assertEqual(self.payload["summary"]["blocks"], [])
+        self.assertIsNone(self.payload["guidance"])
+        self.assertEqual([ex["n"] for ex in self.exhibits], list(range(2, 15)))
+        for exhibit in self.exhibits:
+            self.assertTrue(exhibit.get("kind"), exhibit["n"])
+            self.assertTrue(exhibit.get("note"), f"exhibit {exhibit['n']} has no explanation")
+
+    def test_section_order_matches_how_the_note_is_used(self) -> None:
+        self.assertEqual(
+            [(section["id"], len(section["exhibits"])) for section in self.payload["sections"]],
+            [("settled", 3), ("quarter_highlights", 6), ("next_quarter", 1), ("routine", 3)],
+        )
 
     def test_implied_asp_reproduces_reported_revenue(self) -> None:
-        """Implied ASP is the only number on the page that is not a reported
-        level, so it has to invert back to the reported revenue exactly."""
-        scale = next(
-            group for group in self.payload["panel"]["groups"] if group["id"] == "trend_scale"
-        )
-        asp_row = next(row for row in scale["rows"] if row["label"] == "隐含 ASP")
-        self.assertTrue(all(cell["status"] == "derived" for cell in asp_row["cells"]))
-        for index, cell in enumerate(asp_row["cells"]):
-            asp = float(cell["v"].lstrip("$").replace(",", ""))
+        """Implied ASP is the only plotted series that is not a reported level,
+        so it has to invert back to reported revenue exactly."""
+        exhibit = next(ex for ex in self.exhibits if ex["n"] == 6)
+        asp = exhibit["yoy"]["values"]
+        for index, value in enumerate(asp):
             shipments = self.source["financials"]["wafer_shipments_kpcs_12in_equiv"][index]
             revenue = self.source["financials"]["revenue_usd_bn"][index]
-            self.assertAlmostEqual(asp * shipments / 1_000_000, revenue, places=1)
+            self.assertAlmostEqual(value * shipments / 1_000_000, revenue, places=6)
+        self.assertEqual(exhibit["values"], self.source["financials"]["wafer_shipments_kpcs_12in_equiv"])
 
-    def test_tracking_board_rows_carry_threshold_and_action(self) -> None:
-        blocks = self.payload["summary"]["blocks"]
-        self.assertEqual([block["id"] for block in blocks], ["tracking"])
-        board = blocks[0]
-        self.assertEqual(len(board["rows"]), 8)
-        known = {f"st st-{key}" for key in STATUS_LABELS}
-        for row in board["rows"]:
-            self.assertEqual(len(row["cells"]), len(board["heads"]))
-            self.assertTrue(row["cells"][1]["v"].strip())
-            self.assertTrue(row["cells"][2]["v"].strip())
-            self.assertIn(row["cells"][3]["cls"], known)
-        capex_row = next(row for row in board["rows"] if row["label"] == "收入增速 vs CapEx 增速")
-        self.assertEqual(capex_row["cells"][3]["cls"], "st st-hit")
+    def test_headroom_bars_reproduce_the_thresholds(self) -> None:
+        entries = self.source["next_kpi"]["quantified"]
+        exhibit = next(ex for ex in self.exhibits if ex["n"] == 11)
+        self.assertEqual(exhibit["kind"], "diverging_bars")
+        self.assertEqual(exhibit["xlabels"], [entry["metric"] for entry in entries])
+        for entry, plotted in zip(entries, exhibit["values"]):
+            expected = headroom(entry["direction"], entry["threshold"], entry["current"])
+            self.assertAlmostEqual(plotted, round(expected, 1), places=6, msg=entry["metric"])
+        breached = [
+            label for label, value in zip(exhibit["xlabels"], exhibit["values"]) if value < 0
+        ]
+        self.assertEqual(breached, ["2nm 占晶圆收入"])
 
-    def test_panel_groups_are_rectangular(self) -> None:
-        panel = self.payload["panel"]
-        self.assertEqual(
-            [group["id"] for group in panel["groups"]],
-            [
-                "trend_scale",
-                "trend_margin",
-                "trend_mix",
-                "trend_cash",
-                "trend_guidance",
-                "quarter_detail",
-            ],
-        )
-        for group in panel["groups"]:
-            for row in group["rows"]:
-                self.assertEqual(len(row["cells"]), len(group["heads"]), f"{group['id']}/{row['label']}")
-        for group in panel["groups"][:5]:
-            self.assertEqual(len(group["heads"]), 8)
+    def test_market_expectation_is_labelled_and_unattributed(self) -> None:
+        text = json.dumps(self.payload, ensure_ascii=False)
+        self.assertIn("市场预期", text)
+        for broker in ["FactSet", "Bloomberg", "LSEG", "QUICK", "consensus"]:
+            self.assertNotIn(broker.lower(), text.lower())
+        self.assertEqual(self.source["market_expectation"]["as_of"], "2026-07-16")
+
+    def test_audit_tables_back_every_derived_exhibit(self) -> None:
+        tables = {table["n"]: table for table in self.payload["tables"]}
+        self.assertEqual(sorted(tables), [15, 16, 17, 18, 19, 20, 21])
+        self.assertIn("AI capex", tables[21]["title"])
+        self.assertEqual(len(tables[16]["rows"]), len(self.source["next_kpi"]["quantified"]))
+        for row in tables[17]["rows"]:  # implied ASP travels with the raw inputs
+            self.assertTrue(row[-1].endswith("D"))
 
     def test_cross_page_table_is_identical_on_both_pages(self) -> None:
         googl_source = json.loads((ROOT / "series" / "googl.json").read_text(encoding="utf-8"))
         googl = build_googl_payload(googl_source)
-        self.assertEqual(self.payload["tables"][0]["rows"], googl["tables"][0]["rows"])
-        self.assertEqual(self.payload["tables"][0]["headers"], googl["tables"][0]["headers"])
+        mine = next(table for table in self.payload["tables"] if "AI capex" in table["title"])
+        theirs = next(table for table in googl["tables"] if "AI capex" in table["title"])
+        self.assertEqual(mine["rows"], theirs["rows"])
+        self.assertEqual(mine["headers"], theirs["headers"])
 
     def test_sources_are_official_http_links(self) -> None:
         allowed_hosts = {"investor.tsmc.com", "www.sec.gov"}
@@ -151,7 +153,6 @@ class TsmDashboardTest(unittest.TestCase):
         shell = (ROOT / "tsm" / "index.html").read_text(encoding="utf-8")
         self.assertIn('../data/tsm.js', shell)
         self.assertNotIn('../data/googl.js', shell)
-        self.assertIn('id="panel"', shell)
 
     def test_home_page_matches_roster(self) -> None:
         """index.html is hand-written and reads no payload, so it can silently

@@ -23,46 +23,46 @@ Live site: https://hzhan7.github.io/Earnings-Analysis-Dashboards/
 - Published numbers: company-reported figures and transparent arithmetic
   derivations only. Short commentary is research interpretation, not company
   guidance or a rating.
-- Excluded: ratings, target prices, valuation, sell-side consensus, unverified
-  customer-concentration estimates, local absolute paths, source PDFs, PPTs and
-  transcripts.
+- Market expectations may be published as a labelled, dated comparison point
+  (`市场预期`), with no broker or vendor named.
+- Excluded: ratings, target prices, valuation, broker-attributed estimates,
+  unverified customer-concentration estimates, local absolute paths, source
+  PDFs, PPTs and transcripts.
 - `D` means Derived / 自算; it does not mean a company-defined non-GAAP metric.
 
 ## Page modules
 
-Every company page is built in two layers, because the page answers two
-different questions and they need different shapes.
+The page stands in for the slide deck that used to accompany the local earnings
+note, so it is meant to be **scanned, not read**: charts carry the argument and
+each one gets a sentence or two underneath. Prose tables are reference material
+and live in the collapsed audit drawer.
 
-**Layer 2 — tracking board (Exhibit 1).** The handful of metrics that carry an
-explicit threshold and a trigger action, plus a status chip. It answers "what
-changed in the things I actually track". Rows are expected to be re-cut as the
-thesis moves: a threshold that has been priced in, or has stopped
-discriminating, should be retired rather than rolled forward. Thresholds are
-local research settings, not company guidance and not a rating.
+Charts are ordered the way the note is actually used:
 
-**Layer 1 — quarterly operating panel (after the charts).** Fixed fields, same
-rows every quarter, grouped and collapsible: eight-quarter trends first, then
-the current quarter against the prior quarter and the year-ago quarter. It
-answers "what did the last few quarters look like". Panel fields deliberately do
-not follow the quarter's theme — a field that appears and disappears destroys
-its own history.
+1. **上季兑现** — settle the thresholds set last quarter before looking at any
+   new number. Without this the page only ever accumulates opinions.
+2. **本季重点** — what actually moved: the beats, the misses, the one thing
+   management would not disclose.
+3. **下季跟踪** — the same thresholds pointed forward.
+4. **长期常规** — the routine multi-quarter series, chosen per company rather
+   than from a template. Alphabet gets revenue/capital intensity/depreciation/
+   geography; TSMC gets node migration, platform mix and working capital.
 
-Around those two layers:
+Sections 1 and 3 share one visual: a diverging bar of **distance from the
+threshold**, signed so positive always means safe. It puts percent, US$M, days
+and FX rates on a single axis, which is the only way a mixed-unit KPI list stops
+being a table. `build/board.py` owns that normalisation and the audit table that
+restores the original units.
 
-- One conclusion-led headline stating the quarter's core tension, plus three
-  short takeaways.
-- Numbered exhibits with chart/table toggle, ordered growth → quality → capital
-  and cash → forward-looking.
-- A guidance / capital-cadence table where the company gives one.
-- A shared `AI capex 循环` cross-reference table published identically on both
-  pages, plus the official-source drawer.
-- Desktop and mobile layouts using the same static payload.
+Around the charts: a headline stating the quarter's core tension, three short
+takeaways, a shared `AI capex 循环` cross-reference published identically on both
+pages, the official-source drawer, and a `口径与方法说明` block that lists what
+each page knowingly does not carry.
 
-Each company has a reviewed source series and a company-specific builder;
-`build/board.py` holds the shared board and panel primitives. The shared
-`build/all.py` entry point rebuilds both company payloads, their thin HTML
-shells and the cross-company roster without exposing local source files.
+Each company has a reviewed source series and a company-specific builder. The
+shared `build/all.py` entry point rebuilds both company payloads, their thin
+HTML shells and the cross-company roster without exposing local source files.
 
-Fields a series is knowingly missing are listed in that page's own
-`口径与方法说明` block, so the gap is visible to a reader instead of only to the
-builder.
+Thresholds on the page are local research settings, not company guidance and not
+a rating. Market expectations may be published, but only unattributed and dated
+— never with a broker name attached.

@@ -9,7 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from build.board import STATUS_LABELS  # noqa: E402
+from build.board import headroom  # noqa: E402
 from build.googl import build_payload, parse_number  # noqa: E402
 
 
@@ -18,82 +18,78 @@ class GooglePageTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.staging = json.loads((ROOT / "series" / "googl.json").read_text(encoding="utf-8"))
         cls.payload = build_payload(cls.staging)
+        cls.exhibits = [ex for section in cls.payload["sections"] for ex in section["exhibits"]]
 
     def test_currency_sign_parsing(self) -> None:
         self.assertEqual(parse_number("-$5,855M"), -5855)
         self.assertEqual(parse_number("($5,855M)"), -5855)
         self.assertEqual(parse_number("$5,855M"), 5855)
 
-    def test_expected_exhibit_order(self) -> None:
-        exhibits = [ex for section in self.payload["sections"] for ex in section["exhibits"]]
-        self.assertEqual([ex["n"] for ex in exhibits], list(range(2, 12)))
-        self.assertTrue(all(not ex.get("full", False) for ex in exhibits))
-        fcf = next(ex for ex in exhibits if ex["n"] == 8)
-        self.assertEqual(fcf["values"][-1], -5855)
+    def test_page_is_chart_led(self) -> None:
+        """The page replaces a slide deck, so the lead modules are charts.  A
+        table creeping back above the charts is the regression to catch."""
+        self.assertEqual(self.payload["summary"]["blocks"], [])
+        self.assertIsNone(self.payload["guidance"])
+        self.assertEqual([ex["n"] for ex in self.exhibits], list(range(2, 15)))
+        for exhibit in self.exhibits:
+            self.assertTrue(exhibit.get("kind"), exhibit["n"])
+            self.assertTrue(exhibit.get("note"), f"exhibit {exhibit['n']} has no explanation")
 
-    def test_tracking_board_is_the_only_lead_block(self) -> None:
-        blocks = self.payload["summary"]["blocks"]
-        self.assertEqual([block["id"] for block in blocks], ["tracking"])
-        board = blocks[0]
-        self.assertEqual(len(board["rows"]), 8)
-        known = {f"st st-{key}" for key in STATUS_LABELS}
-        for row in board["rows"]:
-            self.assertEqual(len(row["cells"]), len(board["heads"]))
-            # Every row must carry a threshold and an action, or it is a metric
-            # tile pretending to be a tracker.
-            self.assertTrue(row["cells"][1]["v"].strip())
-            self.assertTrue(row["cells"][2]["v"].strip())
-            self.assertIn(row["cells"][3]["cls"], known)
-
-    def test_board_numbers_reconcile_with_the_series(self) -> None:
-        """The board may interpret, but it may not invent: each published value
-        has to fall out of the same snapshot the panel prints."""
-        rows = {row[0]: row for row in self.staging["snapshot"]["rows"]}
-        revenue = parse_number(rows["总收入"][3])
-        depreciation = parse_number(rows["折旧"][3])
-        equity_gain = parse_number(rows["— 权益证券收益"][3])
-        net_income = parse_number(rows["净利润（归属普通股）"][3])
-        board = {row["label"]: row["cells"][0]["v"] for row in self.payload["summary"]["blocks"][0]["rows"]}
-        self.assertIn(f"{depreciation / revenue * 100:.2f}%", board["折旧 / 收入"])
-        self.assertIn(
-            f"{equity_gain / net_income * 100:.1f}%",
-            board["GAAP 净利润中权益证券收益占比"],
-        )
-
-    def test_panel_groups_are_rectangular(self) -> None:
-        panel = self.payload["panel"]
-        ids = [group["id"] for group in panel["groups"]]
+    def test_section_order_matches_how_the_note_is_used(self) -> None:
         self.assertEqual(
-            ids,
-            [
-                "trend_revenue",
-                "trend_cash",
-                "quarter_segments",
-                "quarter_cost",
-                "quarter_quality",
-                "quarter_capital",
-            ],
+            [(section["id"], len(section["exhibits"])) for section in self.payload["sections"]],
+            [("settled", 1), ("quarter_highlights", 6), ("next_quarter", 1), ("routine", 5)],
         )
-        for group in panel["groups"]:
-            for row in group["rows"]:
-                self.assertEqual(len(row["cells"]), len(group["heads"]), f"{group['id']}/{row['label']}")
-        trend = next(group for group in panel["groups"] if group["id"] == "trend_revenue")
-        self.assertEqual(len(trend["heads"]), 8)
 
-    def test_ttm_free_cash_flow_discrepancy_stays_flagged(self) -> None:
-        """The source table's y/y for TTM FCF does not reconcile with its own
-        Q2 2025 column.  The page must keep saying so rather than quietly
-        publishing whichever number looks tidier."""
-        capital = next(
-            group for group in self.payload["panel"]["groups"] if group["id"] == "quarter_capital"
+    def test_headroom_bars_reproduce_the_thresholds(self) -> None:
+        """Exhibit 2 and 9 normalise mixed units into one axis, so the mapping
+        back to the source thresholds has to be exact."""
+        for exhibit_number, block, value_key in [
+            (2, "prior_kpi_settlement", "actual"),
+            (9, "next_kpi", "current"),
+        ]:
+            entries = self.staging[block]["quantified"]
+            exhibit = next(ex for ex in self.exhibits if ex["n"] == exhibit_number)
+            self.assertEqual(exhibit["kind"], "diverging_bars")
+            self.assertEqual(exhibit["xlabels"], [entry["metric"] for entry in entries])
+            for entry, plotted in zip(entries, exhibit["values"]):
+                expected = headroom(entry["direction"], entry["threshold"], entry[value_key])
+                self.assertAlmostEqual(plotted, round(expected, 1), places=6, msg=entry["metric"])
+
+    def test_only_the_cash_line_broke_last_quarter(self) -> None:
+        settled = next(ex for ex in self.exhibits if ex["n"] == 2)
+        breached = [
+            label for label, value in zip(settled["xlabels"], settled["values"]) if value < 0
+        ]
+        self.assertEqual(breached, ["TTM 自由现金流"])
+
+    def test_market_expectation_is_labelled_and_unattributed(self) -> None:
+        """Consensus is publishable here only as an unattributed, dated figure."""
+        text = json.dumps(self.payload, ensure_ascii=False)
+        self.assertIn("市场预期", text)
+        for broker in ["FactSet", "Bloomberg", "LSEG", "Visible Alpha", "consensus"]:
+            self.assertNotIn(broker.lower(), text.lower())
+        expectation = self.staging["market_expectation"]
+        self.assertEqual(expectation["as_of"], "2026-07-22")
+        eps_exhibit = next(ex for ex in self.exhibits if ex["n"] == 8)
+        self.assertEqual(eps_exhibit["values"][-1], expectation["operating_eps_mid"])
+
+    def test_backlog_exhibit_keeps_the_net_add_collapse_visible(self) -> None:
+        backlog = next(ex for ex in self.exhibits if ex["n"] == 5)
+        self.assertEqual(backlog["bar"]["values"], [240, 462, 514])
+        self.assertEqual(backlog["line"]["values"], [None, 222, 52])
+        self.assertIn("TPU", backlog["note"])
+
+    def test_audit_tables_back_every_derived_exhibit(self) -> None:
+        tables = {table["n"]: table for table in self.payload["tables"]}
+        self.assertEqual(sorted(tables), [15, 16, 17, 18, 19, 20])
+        self.assertIn("AI capex", tables[20]["title"])
+        self.assertEqual(len(tables[20]["rows"]), 8)
+        # Thresholds must also be readable in their original units.
+        self.assertEqual(
+            len(tables[15]["rows"]), len(self.staging["prior_kpi_settlement"]["quantified"])
         )
-        self.assertIn("待回源核对", capital["note"])
-
-    def test_cross_page_table_is_published(self) -> None:
-        tables = self.payload["tables"]
-        self.assertEqual(len(tables), 1)
-        self.assertIn("AI capex", tables[0]["title"])
-        self.assertEqual(len(tables[0]["rows"]), 8)
+        self.assertEqual(len(tables[16]["rows"]), len(self.staging["next_kpi"]["quantified"]))
 
     def test_published_payload_matches_builder(self) -> None:
         text = (ROOT / "data" / "googl.js").read_text(encoding="utf-8")
@@ -114,19 +110,11 @@ class GooglePageTest(unittest.TestCase):
         self.assertNotIn("$73,552m", text)
         self.assertNotIn("经营口径 eps", text)
 
-    def test_derived_panel_cells_are_marked(self) -> None:
-        segments = next(
-            group for group in self.payload["panel"]["groups"] if group["id"] == "quarter_segments"
-        )
-        derived = {row["label"] for row in segments["rows"] if row["cells"][0]["status"] == "derived"}
-        self.assertEqual(
-            derived,
-            {"广告收入合计", "Cloud OPM", "Services OPM", "经营利润率"},
-        )
-        for row in segments["rows"]:
-            for cell in row["cells"][3:]:
-                if cell["v"] != "—":
-                    self.assertEqual(cell["status"], "derived")
+    def test_ttm_free_cash_flow_discrepancy_stays_flagged(self) -> None:
+        """The source table's y/y for TTM FCF does not reconcile with its own
+        Q2 2025 column.  The page must keep saying so rather than quietly
+        publishing whichever number looks tidier."""
+        self.assertTrue(any("待回源核对" in note for note in self.payload["notes"]))
 
 
 if __name__ == "__main__":
