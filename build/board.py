@@ -42,7 +42,6 @@ def unit_text(unit: str, value: float) -> str:
 
 
 def headroom_exhibit(
-    n: int,
     title: str,
     entries: list[dict],
     value_key: str,
@@ -61,7 +60,6 @@ def headroom_exhibit(
         labels.append(entry["metric"])
         values.append(round(headroom(entry["direction"], entry["threshold"], actual), 1))
     return {
-        "n": n,
         "kind": "diverging_bars",
         "title": title,
         "xlabels": labels,
@@ -77,6 +75,55 @@ def headroom_exhibit(
         "note": note,
         "src_extra": src_extra,
     }
+
+
+def threshold_exhibit(
+    title: str,
+    xlabels: list[str],
+    values: list[float | None],
+    threshold: float,
+    *,
+    fmt: str,
+    ylab: str,
+    actual_name: str,
+    threshold_name: str,
+    note: str,
+    src_extra: str,
+) -> dict:
+    """Plot one tracked metric against its own threshold line.
+
+    The headroom bar answers "which lines broke"; this answers "how did it get
+    there", which is the part a single normalised bar throws away.  Drawing the
+    threshold as a flat series keeps the judgement on the chart instead of in
+    the caption.
+    """
+    return {
+        "kind": "lines",
+        "title": title,
+        "xlabels": xlabels,
+        "series": [
+            {"name": actual_name, "values": values, "color": "NAVY"},
+            {"name": threshold_name, "values": [threshold] * len(xlabels), "color": "RED"},
+        ],
+        "fmt": fmt,
+        "yfmt": fmt,
+        "label_fmt": fmt,
+        "end_label": True,
+        "ylab": ylab,
+        "note": note,
+        "src_extra": src_extra,
+    }
+
+
+def number_exhibits(exhibits: list[dict], start: int = 2) -> list[dict]:
+    """Assign exhibit numbers in render order.
+
+    Hand-numbering breaks the moment a chart is inserted, and a page whose
+    Exhibit 7 is captioned "see Exhibit 6" is worse than no caption.
+    """
+    for offset, exhibit in enumerate(exhibits):
+        exhibit["n"] = start + offset
+    return exhibits
 
 
 def threshold_table(n: int, title: str, entries: list[dict], value_key: str,

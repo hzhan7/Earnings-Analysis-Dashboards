@@ -29,8 +29,12 @@ sys.path.insert(0, str(ROOT))
 
 from build.board import (  # noqa: E402
     ai_capex_cycle_table,
+    headroom,
     headroom_exhibit,
+    number_exhibits,
+    threshold_exhibit,
     threshold_table,
+    unit_text,
 )
 from build.page_shell import render_shell  # noqa: E402
 from build.payload_guard import write_dash  # noqa: E402
@@ -113,7 +117,9 @@ def build_payload(staging: dict) -> dict:
     search_yoy = [number(row[4]) for row in revenue["rows"]]
     youtube_yoy = [number(row[6]) for row in revenue["rows"]]
     cloud_values = column(revenue, "Cloud")
+    cloud_yoy = [number(row[8]) for row in revenue["rows"]]
     cloud_opm = column(revenue, "Cloud OPM")
+    capex_values = column(cash, "CapEx")
     fcf_values = column(cash, "自由现金流")
     capex_intensity = column(cash, "CapEx/收入")
 
@@ -134,6 +140,58 @@ def build_payload(staging: dict) -> dict:
         for low, high in zip(capex_guide["low_usd_bn"], capex_guide["high_usd_bn"])
     ]
     eps_gap = (eps_bridge["values"][2] / consensus["operating_eps_mid"] - 1) * 100
+    backlog_qoq = [None] + [
+        (current / previous - 1) * 100
+        for previous, current in zip(backlog["level_usd_bn"], backlog["level_usd_bn"][1:])
+    ]
+    ttm_fcf_periods = ["Q2 2025", "Q1 2026", "Q2 2026"]
+    ttm_fcf_series = [ttm_fcf_prior, ttm_fcf_prev, ttm_fcf_cur]
+
+    # One entry per tracked metric, so §1 and §3 can each draw the metric's own
+    # history under its own threshold instead of a single normalised bar.
+    tracked = {
+        "Cloud 收入 YoY": (revenue_labels, cloud_yoy, "pct1", "同比增速", "Cloud 收入 YoY"),
+        "Cloud 经营利润率": (revenue_labels, cloud_opm, "pct1", "利润率", "Cloud OPM"),
+        "Search & other YoY": (revenue_labels, search_yoy, "pct1", "同比增速", "Search & other YoY"),
+        "Cloud backlog 环比": (backlog["periods"], backlog_qoq, "pct1", "环比", "backlog 环比"),
+        "Cloud backlog 单季净增": (
+            backlog["periods"], backlog["net_add_usd_bn"], "usd0", "$B", "单季净增",
+        ),
+        "TTM 自由现金流": (ttm_fcf_periods, ttm_fcf_series, "f0c", "$M", "TTM 自由现金流"),
+        "Q2 CapEx（不超上限）": (cash_labels, capex_values, "f0c", "$M", "单季 CapEx"),
+        "Q3 CapEx（不低于此值否则全年指引下修）": (
+            cash_labels, capex_values, "f0c", "$M", "单季 CapEx",
+        ),
+    }
+
+    def tracking_charts(entries, value_key, threshold_label, headline) -> list[dict]:
+        """Return one threshold chart per tracked metric that has a history."""
+        charts = []
+        for entry in entries:
+            metric = entry["metric"]
+            if metric not in tracked:
+                continue
+            xlabels, values, fmt, ylab, actual_name = tracked[metric]
+            side = "上方" if entry["direction"] == "up" else "下方"
+            charts.append(threshold_exhibit(
+                headline(entry),
+                xlabels,
+                values,
+                entry["threshold"],
+                fmt=fmt,
+                ylab=ylab,
+                actual_name=actual_name,
+                threshold_name=f"{threshold_label}（安全侧在{side}）",
+                note=(
+                    f"阈值 {unit_text(entry['unit'], entry['threshold'])}，"
+                    f"当前 {unit_text(entry['unit'], entry[value_key])}，"
+                    f"余量 {headroom(entry['direction'], entry['threshold'], entry[value_key]):+.1f}%。"
+                ),
+                src_extra=(
+                    "实际值来自公司季度 release / 电话会口径；阈值为本地研究设定，不是公司指引。"
+                ),
+            ))
+        return charts
     geography_yoy = [
         (current / prior - 1) * 100
         for current, prior in zip(geography["current_usd_m"], geography["prior_year_usd_m"])
@@ -145,7 +203,6 @@ def build_payload(staging: dict) -> dict:
     )
 
     settled = headroom_exhibit(
-        2,
         "上季 7 条量化阈值：经营类全部安全，被击穿的是现金类",
         prior_kpi["quantified"],
         "actual",
@@ -157,13 +214,14 @@ def build_payload(staging: dict) -> dict:
             "阈值为上季本地研究设定，不是公司指引；实际值来自 Q2 2026 release。"
             "另有 3 条定性阈值同时触发（AI Mode 变现披露、回购归零、Waymo 披露倒退），"
             "1 条因可被增发规避而退役（净现金），1 条（Network ads）因阈值接近零会使百分比失真而不入图。"
+            "下面逐条给出各指标自身走势与阈值线；折旧 YoY 只有本季一个可回源的同比点，无法成趋势图，"
+            "改见「长期常规跟踪」里的折旧金额三期图。"
         ),
     )
 
-    exhibits = [
+    built = [
         settled,
         {
-            "n": 3,
             "kind": "gs_bar",
             "title": "Cloud 收入 +81.8%，利润率连续八季上行至 35.59%",
             "xlabels": revenue_labels,
@@ -184,7 +242,6 @@ def build_payload(staging: dict) -> dict:
             "src_extra": source_note("Cloud 收入与经营利润来自公司分部表；OPM 为自算"),
         },
         {
-            "n": 4,
             "kind": "lines",
             "title": "Search 增速从 19.1% 回落到 16.8%，与市场预期基本一致",
             "xlabels": revenue_labels,
@@ -205,7 +262,6 @@ def build_payload(staging: dict) -> dict:
             "src_extra": source_note("分项收入与同比来自公司季度 release；市场预期为财报前一致预期，不具名"),
         },
         {
-            "n": 5,
             "kind": "bar_line",
             "title": "backlog 创 $514B 新高，但单季净增从 $222B 降到 $52B",
             "xlabels": backlog["periods"],
@@ -236,7 +292,6 @@ def build_payload(staging: dict) -> dict:
             ),
         },
         {
-            "n": 6,
             "kind": "bars_labeled",
             "title": "FY2026 CapEx 指引半年内三次上调，中点从 $180B 抬到 $200B",
             "xlabels": capex_guide["calls"],
@@ -253,7 +308,6 @@ def build_payload(staging: dict) -> dict:
             "src_extra": source_note("三次指引区间来自对应季度电话会；中点与 H2 隐含额为自算"),
         },
         {
-            "n": 7,
             "kind": "diverging_bars",
             "title": "单季自由现金流首次转负至 -$5.9B",
             "xlabels": cash_labels,
@@ -273,7 +327,6 @@ def build_payload(staging: dict) -> dict:
             "src_extra": source_note("FCF = 经营现金流 − 购买物业及设备"),
         },
         {
-            "n": 8,
             "kind": "bars_labeled",
             "title": "$9.11 的 GAAP EPS 里只有 $2.85 是经营的，且略低于市场预期",
             "xlabels": eps_bridge["labels"],
@@ -294,22 +347,20 @@ def build_payload(staging: dict) -> dict:
             ),
         },
         headroom_exhibit(
-            9,
             "下季 7 条量化阈值：当前值全部在安全侧，Q3 CapEx 是唯一需要往上走的一条",
             next_kpi["quantified"],
             "current",
             (
-                "口径同 Exhibit 2。Q3 CapEx 那条方向相反——低于 $52B 反而说明全年指引有下修风险，"
+                "口径与上一节的余量图相同。Q3 CapEx 那条方向相反——低于 $52B 反而说明全年指引有下修风险，"
                 "当前 Q2 实际值离该线还差 13.6%。"
             ),
             src_extra=(
                 "阈值为本地研究设定，不是公司指引；当前值为 Q2 2026 实际。"
                 "另有 5 条需等披露才能判定（backlog 客户集中度、2027 CapEx 指引、ATM 发行额、"
-                "TPU 系统收入、AI Mode 变现指标）。"
+                "TPU 系统收入、AI Mode 变现指标）；折旧 YoY 同样只有单点，见长期常规一节。"
             ),
         ),
         {
-            "n": 10,
             "kind": "gs_bar",
             "title": "总收入同比连续五季加速至 24.2%",
             "xlabels": revenue_labels,
@@ -330,7 +381,6 @@ def build_payload(staging: dict) -> dict:
             "src_extra": source_note("收入与同比来自公司季度 release"),
         },
         {
-            "n": 11,
             "kind": "gs_line",
             "title": "资本强度七季从 14.8% 升到 37.5%，且尚未见顶",
             "xlabels": cash_labels,
@@ -344,7 +394,6 @@ def build_payload(staging: dict) -> dict:
             "src_extra": source_note("CapEx / 收入为自算"),
         },
         {
-            "n": 12,
             "kind": "grouped_bars",
             "title": "折旧同比 +42.1%，快于收入的 +24.2%",
             "xlabels": ["Q2 2025", "Q1 2026", "Q2 2026"],
@@ -364,7 +413,6 @@ def build_payload(staging: dict) -> dict:
             "src_extra": source_note("折旧与股权激励费用来自季度现金流量表"),
         },
         {
-            "n": 13,
             "kind": "bars_labeled",
             "title": "TTM 自由现金流从 $66.7B 降到 $53.3B",
             "xlabels": ["Q2 2025", "Q1 2026", "Q2 2026"],
@@ -381,7 +429,6 @@ def build_payload(staging: dict) -> dict:
             "src_extra": source_note("TTM 自由现金流为公司披露口径"),
         },
         {
-            "n": 14,
             "kind": "grouped_bars",
             "title": "美国收入同比 +32%，是其余地区的两倍以上",
             "xlabels": geography["labels"],
@@ -402,41 +449,66 @@ def build_payload(staging: dict) -> dict:
             "src_extra": source_note("分地域收入来自 Q2 release；同比与占比为自算"),
         },
     ]
+    highlights = built[1:7]
+    next_headroom = built[7]
+    routine = [built[8], built[9], built[10], built[12]]
+
+    settled_charts = [built[0]] + tracking_charts(
+        prior_kpi["quantified"],
+        "actual",
+        "上季阈值",
+        lambda entry: (
+            f"{entry['metric']}：{'守住' if headroom(entry['direction'], entry['threshold'], entry['actual']) >= 0 else '已击穿'}"
+            f"上季阈值 {unit_text(entry['unit'], entry['threshold'])}"
+        ),
+    )
+    next_charts = [next_headroom] + tracking_charts(
+        next_kpi["quantified"],
+        "current",
+        "下季阈值",
+        lambda entry: (
+            f"{entry['metric']}：下季阈值 {unit_text(entry['unit'], entry['threshold'])}，"
+            f"当前 {unit_text(entry['unit'], entry['current'])}"
+        ),
+    )
+
+    exhibits = number_exhibits(settled_charts + highlights + next_charts + routine)
+    next_table_number = len(exhibits) + 2
 
     tables = [
         threshold_table(
-            15,
-            "Exhibit 2 明细：上季阈值与本季实际（原单位）",
+            next_table_number,
+            "上季阈值与本季实际（原单位）",
             prior_kpi["quantified"],
             "actual",
             "Q2 2026 实际",
         ),
         threshold_table(
-            16,
-            "Exhibit 9 明细：下季阈值与当前值（原单位）",
+            next_table_number + 1,
+            "下季阈值与当前值（原单位）",
             next_kpi["quantified"],
             "current",
             "当前值",
         ),
         {
-            "n": 17,
+            "n": next_table_number + 2,
             "title": revenue["title"],
             "headers": revenue["headers"],
             "rows": revenue["rows"],
         },
         {
-            "n": 18,
+            "n": next_table_number + 3,
             "title": cash["title"].replace("八季度", "七季度"),
             "headers": cash["headers"],
             "rows": cash["rows"],
         },
         {
-            "n": 19,
+            "n": next_table_number + 4,
             "title": staging["snapshot"]["title"],
             "headers": staging["snapshot"]["headers"],
             "rows": staging["snapshot"]["rows"],
         },
-        cross_capex_table(20),
+        cross_capex_table(next_table_number + 5),
     ]
 
     return {
@@ -518,25 +590,28 @@ def build_payload(staging: dict) -> dict:
                 "id": "settled",
                 "title": "一、上季跟踪指标兑现了吗",
                 "description": "先结算上季设下的阈值，再看本季数据——否则每季只会新增判断、从不闭环。",
-                "exhibits": exhibits[0:1],
+                "exhibits": exhibits[: len(settled_charts)],
             },
             {
                 "id": "quarter_highlights",
                 "title": "二、本季重点",
                 "description": "四个亮点与存疑项：Cloud、Search、backlog、资本开支与现金流，外加一张盈利质量拆解。",
-                "exhibits": exhibits[1:7],
+                "exhibits": exhibits[len(settled_charts): len(settled_charts) + len(highlights)],
             },
             {
                 "id": "next_quarter",
                 "title": "三、下季要跟踪什么",
                 "description": "同一套口径向前看：当前值离下季阈值还有多远。",
-                "exhibits": exhibits[7:8],
+                "exhibits": exhibits[
+                    len(settled_charts) + len(highlights):
+                    len(settled_charts) + len(highlights) + len(next_charts)
+                ],
             },
             {
                 "id": "routine",
                 "title": "四、长期常规跟踪",
                 "description": "GOOGL 专属的常规序列：总量增长、资本强度、折旧与现金转换、地域结构。",
-                "exhibits": exhibits[8:],
+                "exhibits": exhibits[-len(routine):],
             },
         ],
         "tables": tables,

@@ -634,9 +634,9 @@
       {
         "metric": "Cloud backlog 单季净增",
         "direction": "up",
-        "threshold": 25000.0,
-        "current": 52000.0,
-        "unit": "usd_m"
+        "threshold": 25.0,
+        "current": 52.0,
+        "unit": "usd_bn"
       },
       {
         "metric": "TTM 自由现金流",

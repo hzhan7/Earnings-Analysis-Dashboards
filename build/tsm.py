@@ -19,7 +19,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from build.board import headroom_exhibit, threshold_table  # noqa: E402
+from build.board import (  # noqa: E402
+    headroom,
+    headroom_exhibit,
+    number_exhibits,
+    threshold_exhibit,
+    threshold_table,
+    unit_text,
+)
 from build.googl import cross_capex_table  # noqa: E402
 from build.page_shell import render_shell  # noqa: E402
 from build.payload_guard import write_dash  # noqa: E402
@@ -93,9 +100,56 @@ def build_payload(staging: dict) -> dict:
     headline_beat = pct_change(net_income_bridge["values_ntd_bn"][0], consensus["net_income_ntd_bn"])
     gm_floor = guidance["long_term_gross_margin_floor_pct"]
 
-    exhibits = [
+    # CapEx is reported in NT$ but tracked against a US$ line, so the threshold
+    # is converted at the quarter's own realised rate and marked as derived.
+    capex_threshold_ntd = round(19.0 * guidance["q2_actual"]["usd_ntd"], 1)
+    tracked = {
+        "毛利率": (labels, financials["gross_margin_pct"], "pct1", "毛利率", "毛利率", None),
+        "库存天数": (labels, working["inventory_days"], "f0", "天", "库存天数", None),
+        "HPC 占比（集中度）": (labels, platform["hpc"], "pct0", "净收入占比", "HPC 占比", None),
+        "2nm 占晶圆收入": (labels, technology["2nm"], "pct0", "晶圆收入占比", "2nm 占比", None),
+        "单季 CapEx": (
+            labels, cash["capital_expenditures"], "f0c", "NT$B", "单季 CapEx", capex_threshold_ntd,
+        ),
+    }
+
+    def tracking_charts(entries, value_key, threshold_label, headline) -> list[dict]:
+        charts = []
+        for entry in entries:
+            metric = entry["metric"]
+            if metric not in tracked:
+                continue
+            xlabels, values, fmt, ylab, actual_name, override = tracked[metric]
+            side = "上方" if entry["direction"] == "up" else "下方"
+            threshold = entry["threshold"] if override is None else override
+            converted = (
+                ""
+                if override is None
+                else f"（US${entry['threshold']:.0f}B 按本季实际汇率 {guidance['q2_actual']['usd_ntd']} 折为 NT${override:,.1f}B D）"
+            )
+            charts.append(threshold_exhibit(
+                headline(entry),
+                xlabels,
+                values,
+                threshold,
+                fmt=fmt,
+                ylab=ylab,
+                actual_name=actual_name,
+                threshold_name=f"{threshold_label}（安全侧在{side}）",
+                note=(
+                    f"阈值 {unit_text(entry['unit'], entry['threshold'])}{converted}，"
+                    f"当前 {unit_text(entry['unit'], entry[value_key])}，"
+                    f"余量 {headroom(entry['direction'], entry['threshold'], entry[value_key]):+.1f}%。"
+                ),
+                src_extra=(
+                    "实际值来自各季 earnings release / management report；"
+                    "阈值为本地研究设定，不是公司指引。"
+                ),
+            ))
+        return charts
+
+    built = [
         {
-            "n": 2,
             "kind": "bars_labeled",
             "title": "上季 12 条待验证问题：3 条已验证、1 条被证伪、4 条仍未披露",
             "xlabels": closure["labels"],
@@ -112,7 +166,6 @@ def build_payload(staging: dict) -> dict:
             "src_extra": "问题清单来自上季本地分析稿的 follow-up；验证结果依据 2Q26 earnings conference 与 management report。",
         },
         {
-            "n": 3,
             "kind": "diverging_bars",
             "title": "Q2 全线优于自身指引中值，只有汇率是逆风",
             "xlabels": [item["metric"] for item in delivery],
@@ -134,7 +187,6 @@ def build_payload(staging: dict) -> dict:
             ),
         },
         {
-            "n": 4,
             "kind": "range_band",
             "title": "连续八季实际收入均达到或超过指引中点",
             "xlabels": labels,
@@ -151,7 +203,6 @@ def build_payload(staging: dict) -> dict:
             "src_extra": "区间为各季度开始时公司给出的美元收入指引，实际值来自随后发布的 earnings release。",
         },
         {
-            "n": 5,
             "kind": "gs_bar",
             "title": "收入 US$40.20B 落指引上端，全年增速指引从 30%+ 上调到略高于 40%",
             "xlabels": labels,
@@ -176,7 +227,6 @@ def build_payload(staging: dict) -> dict:
             "src_extra": "美元收入与同比来自各季 earnings release；市场预期为财报前一致预期，不具名。",
         },
         {
-            "n": 6,
             "kind": "gs_bar",
             "title": f"环比 +12.0% 里约三分之二来自价与结构：出货仅 {signed(shipment_qoq)}，隐含 ASP {signed(asp_qoq)}",
             "xlabels": labels,
@@ -203,7 +253,6 @@ def build_payload(staging: dict) -> dict:
             ),
         },
         {
-            "n": 7,
             "kind": "lines",
             "title": "毛利率 67.7% 超指引上限，但 Q3 指引中值已降到 66%",
             "xlabels": labels,
@@ -223,7 +272,6 @@ def build_payload(staging: dict) -> dict:
             "src_extra": "利润率与指引来自 TSMC earnings release；稀释幅度为管理层在电话会上的量化口径。",
         },
         {
-            "n": 8,
             "kind": "bars_labeled",
             "title": "FY2026 CapEx 预算半年内两次上调，中点从 US$54B 抬到 US$62B",
             "xlabels": capex_guide["calls"],
@@ -243,7 +291,6 @@ def build_payload(staging: dict) -> dict:
             ),
         },
         {
-            "n": 9,
             "kind": "bars_labeled",
             "title": f"净利大幅超预期，但剔除 VIS 一次性后核心 beat 只有 {core_beat:+.1f}%",
             "xlabels": net_income_bridge["labels"],
@@ -263,7 +310,6 @@ def build_payload(staging: dict) -> dict:
             ),
         },
         {
-            "n": 10,
             "kind": "grouped_bars",
             "title": "CapEx 环比 +41%，自由现金流反而下降 17.5%",
             "xlabels": labels,
@@ -284,7 +330,6 @@ def build_payload(staging: dict) -> dict:
             "src_extra": "季度新台币现金流口径；FCF = 经营现金流 − 现金支付资本开支，按 TSMC 定义复算。",
         },
         headroom_exhibit(
-            11,
             "下季 6 条量化阈值：2nm 占比是唯一需要大幅上行才能达标的一条",
             next_kpi["quantified"],
             "current",
@@ -298,7 +343,6 @@ def build_payload(staging: dict) -> dict:
             ),
         ),
         {
-            "n": 12,
             "kind": "lines",
             "title": "2nm 首次单列为 3%，7nm 及以下占比回到 77%",
             "xlabels": labels,
@@ -318,7 +362,6 @@ def build_payload(staging: dict) -> dict:
             "src_extra": "制程组合分母为 total wafer revenue，来自各季 management report。",
         },
         {
-            "n": 13,
             "kind": "lines",
             "title": "HPC 占比升至 66%，智能手机降至 22%",
             "xlabels": labels,
@@ -342,7 +385,6 @@ def build_payload(staging: dict) -> dict:
             ),
         },
         {
-            "n": 14,
             "kind": "lines",
             "title": "N2 爬坡把库存天数推回 87 天，应收天数升至 29 天",
             "xlabels": labels,
@@ -361,7 +403,6 @@ def build_payload(staging: dict) -> dict:
             "src_extra": "应收与库存天数来自各季 management report。",
         },
     ]
-
     financial_table = []
     mix_table = []
     cash_table = []
@@ -430,47 +471,79 @@ def build_payload(staging: dict) -> dict:
         ],
     ]
 
+    inventory_expectation = threshold_exhibit(
+        "上季判断库存回落到 75–78 天，实际升到 87 天（被证伪）",
+        labels,
+        working["inventory_days"],
+        78.0,
+        fmt="f0",
+        ylab="天",
+        actual_name="库存天数",
+        threshold_name="上季预期上沿 78 天",
+        note=(
+            "管理层归因于 N2 爬坡备货；这是上季 12 条判断里唯一被明确证伪的一条，"
+            "也是本页把 90 天设为下季警戒线的由来。"
+        ),
+        src_extra="库存天数来自各季 management report；75–78 天为上季本地分析稿的预期区间。",
+    )
+
+    settled_charts = built[0:3] + [inventory_expectation]
+    highlights = built[3:9]
+    next_charts = [built[9]] + tracking_charts(
+        next_kpi["quantified"],
+        "current",
+        "下季阈值",
+        lambda entry: (
+            f"{entry['metric']}：下季阈值 {unit_text(entry['unit'], entry['threshold'])}，"
+            f"当前 {unit_text(entry['unit'], entry['current'])}"
+        ),
+    )
+    routine = built[10:]
+
+    exhibits = number_exhibits(settled_charts + highlights + next_charts + routine)
+    next_table_number = len(exhibits) + 2
+
     tables = [
         {
             # Reference detail, not a lead module: the decision-relevant parts of
-            # guidance are already Exhibits 3, 4, 7 and 8.
-            "n": 15,
+            # guidance are already in the settled and highlight sections.
+            "n": next_table_number,
             "title": "Q2 兑现、Q3 指引与全年 outlook",
             "headers": ["指标", "Q2 原指引", "Q2 实际", "兑现", "Q3 / FY26 新口径", "变化 / 备注"],
             "rows": guide_rows,
         },
         threshold_table(
-            16,
-            "Exhibit 11 明细：下季阈值与当前值（原单位）",
+            next_table_number + 1,
+            "下季阈值与当前值（原单位）",
             next_kpi["quantified"],
             "current",
             "当前值",
         ),
         {
-            "n": 17,
+            "n": next_table_number + 2,
             "title": "八季度财务、出货与隐含 ASP",
             "headers": ["期间", "收入", "收入 YoY", "毛利率", "营业利润率", "稀释 EPS", "晶圆出货", "隐含 ASP"],
             "rows": financial_table,
         },
         {
-            "n": 18,
+            "n": next_table_number + 3,
             "title": "八季度制程与平台收入组合",
             "headers": ["期间", "2nm", "3nm", "5nm", "7nm", "≤7nm", "HPC", "Smartphone"],
             "rows": mix_table,
         },
         {
-            "n": 19,
+            "n": next_table_number + 4,
             "title": "八季度现金流与营运资金",
             "headers": ["期间", "经营现金流", "资本开支", "自由现金流", "应收天数", "库存天数"],
             "rows": cash_table,
         },
         {
-            "n": 20,
+            "n": next_table_number + 5,
             "title": "八季度美元收入指引兑现",
             "headers": ["期间", "公司指引", "中值", "实际", "较中值"],
             "rows": guidance_table,
         },
-        cross_capex_table(21),
+        cross_capex_table(next_table_number + 6),
     ]
 
     return {
@@ -519,25 +592,28 @@ def build_payload(staging: dict) -> dict:
                 "id": "settled",
                 "title": "一、上季跟踪指标兑现了吗",
                 "description": "先看上季留的问题闭环了几条、公司自己的指引兑现得怎么样，再谈本季。",
-                "exhibits": exhibits[0:3],
+                "exhibits": exhibits[: len(settled_charts)],
             },
             {
                 "id": "quarter_highlights",
                 "title": "二、本季重点",
                 "description": "收入与指引、量价拆分、毛利率拐点、资本开支上调，以及净利里的一次性成分。",
-                "exhibits": exhibits[3:9],
+                "exhibits": exhibits[len(settled_charts): len(settled_charts) + len(highlights)],
             },
             {
                 "id": "next_quarter",
                 "title": "三、下季要跟踪什么",
                 "description": "当前值离下季阈值还有多远，统一用「距阈值余量」口径。",
-                "exhibits": exhibits[9:10],
+                "exhibits": exhibits[
+                    len(settled_charts) + len(highlights):
+                    len(settled_charts) + len(highlights) + len(next_charts)
+                ],
             },
             {
                 "id": "routine",
                 "title": "四、长期常规跟踪",
                 "description": "TSM 专属的常规序列：制程世代迁移、平台结构与营运资金。",
-                "exhibits": exhibits[10:],
+                "exhibits": exhibits[-len(routine):],
             },
         ],
         "tables": tables,

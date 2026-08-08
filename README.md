@@ -48,11 +48,21 @@ Charts are ordered the way the note is actually used:
    than from a template. Alphabet gets revenue/capital intensity/depreciation/
    geography; TSMC gets node migration, platform mix and working capital.
 
-Sections 1 and 3 share one visual: a diverging bar of **distance from the
-threshold**, signed so positive always means safe. It puts percent, US$M, days
-and FX rates on a single axis, which is the only way a mixed-unit KPI list stops
-being a table. `build/board.py` owns that normalisation and the audit table that
-restores the original units.
+Sections 1 and 3 are built the same way, twice over:
+
+- One diverging bar of **distance from the threshold**, signed so positive
+  always means safe. It puts percent, US$M, days and FX rates on a single axis,
+  which is the only way a mixed-unit KPI list stops being a table.
+- Then **one chart per tracked metric**, showing that metric's own history under
+  a flat threshold line. The overview bar says which line broke; only the
+  per-metric chart says how it got there. A metric is left out only when it has
+  no series to plot (a single reportable point, or an unpublished spot rate),
+  and the overview names what was left out and why.
+
+`build/board.py` owns the normalisation, the threshold charts, exhibit numbering
+and the audit tables that restore the original units. Exhibit numbers are
+assigned in render order, so inserting a chart never leaves a caption pointing
+at the wrong exhibit.
 
 Around the charts: a headline stating the quarter's core tension, three short
 takeaways, a shared `AI capex 循环` cross-reference published identically on both

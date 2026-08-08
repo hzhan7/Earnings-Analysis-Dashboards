@@ -29,6 +29,9 @@ class TsmDashboardTest(unittest.TestCase):
         cls.source = json.loads((ROOT / "series" / "tsm.json").read_text(encoding="utf-8"))
         cls.payload = build_payload(cls.source)
         cls.exhibits = [ex for section in cls.payload["sections"] for ex in section["exhibits"]]
+        cls.by_section = {
+            section["id"]: section["exhibits"] for section in cls.payload["sections"]
+        }
 
     def test_all_historical_series_have_eight_quarters(self) -> None:
         self.assertEqual(len(self.source["periods"]), 8)
@@ -76,7 +79,9 @@ class TsmDashboardTest(unittest.TestCase):
     def test_page_is_chart_led(self) -> None:
         self.assertEqual(self.payload["summary"]["blocks"], [])
         self.assertIsNone(self.payload["guidance"])
-        self.assertEqual([ex["n"] for ex in self.exhibits], list(range(2, 15)))
+        self.assertEqual(
+            [ex["n"] for ex in self.exhibits], list(range(2, 2 + len(self.exhibits)))
+        )
         for exhibit in self.exhibits:
             self.assertTrue(exhibit.get("kind"), exhibit["n"])
             self.assertTrue(exhibit.get("note"), f"exhibit {exhibit['n']} has no explanation")
@@ -84,13 +89,13 @@ class TsmDashboardTest(unittest.TestCase):
     def test_section_order_matches_how_the_note_is_used(self) -> None:
         self.assertEqual(
             [(section["id"], len(section["exhibits"])) for section in self.payload["sections"]],
-            [("settled", 3), ("quarter_highlights", 6), ("next_quarter", 1), ("routine", 3)],
+            [("settled", 4), ("quarter_highlights", 6), ("next_quarter", 6), ("routine", 3)],
         )
 
     def test_implied_asp_reproduces_reported_revenue(self) -> None:
         """Implied ASP is the only plotted series that is not a reported level,
         so it has to invert back to reported revenue exactly."""
-        exhibit = next(ex for ex in self.exhibits if ex["n"] == 6)
+        exhibit = next(ex for ex in self.exhibits if "隐含 ASP" in ex["title"])
         asp = exhibit["yoy"]["values"]
         for index, value in enumerate(asp):
             shipments = self.source["financials"]["wafer_shipments_kpcs_12in_equiv"][index]
@@ -100,7 +105,7 @@ class TsmDashboardTest(unittest.TestCase):
 
     def test_headroom_bars_reproduce_the_thresholds(self) -> None:
         entries = self.source["next_kpi"]["quantified"]
-        exhibit = next(ex for ex in self.exhibits if ex["n"] == 11)
+        exhibit = self.by_section["next_quarter"][0]
         self.assertEqual(exhibit["kind"], "diverging_bars")
         self.assertEqual(exhibit["xlabels"], [entry["metric"] for entry in entries])
         for entry, plotted in zip(entries, exhibit["values"]):
@@ -111,6 +116,27 @@ class TsmDashboardTest(unittest.TestCase):
         ]
         self.assertEqual(breached, ["2nm 占晶圆收入"])
 
+    def test_every_tracked_metric_with_a_series_gets_its_own_chart(self) -> None:
+        charted = {
+            exhibit["title"].split("：")[0] for exhibit in self.by_section["next_quarter"][1:]
+        }
+        tracked = {entry["metric"] for entry in self.source["next_kpi"]["quantified"]}
+        # The spot FX rate has no published quarterly series to plot against.
+        self.assertEqual(tracked - charted, {"USD/TWD 即期（升值为逆风）"})
+        for exhibit in self.by_section["next_quarter"][1:]:
+            line = exhibit["series"][1]["values"]
+            self.assertEqual(len(set(line)), 1, exhibit["title"])
+            self.assertEqual(len(line), len(exhibit["series"][0]["values"]), exhibit["title"])
+
+    def test_capex_threshold_is_converted_and_marked(self) -> None:
+        """The CapEx line is tracked in US$ but reported in NT$, so the plotted
+        threshold must be the converted value and must say so."""
+        exhibit = next(ex for ex in self.by_section["next_quarter"][1:] if "CapEx" in ex["title"])
+        rate = self.source["guidance"]["q2_actual"]["usd_ntd"]
+        self.assertEqual(exhibit["series"][1]["values"][0], round(19.0 * rate, 1))
+        self.assertIn("按本季实际汇率", exhibit["note"])
+        self.assertIn("D", exhibit["note"])
+
     def test_market_expectation_is_labelled_and_unattributed(self) -> None:
         text = json.dumps(self.payload, ensure_ascii=False)
         self.assertIn("市场预期", text)
@@ -119,11 +145,13 @@ class TsmDashboardTest(unittest.TestCase):
         self.assertEqual(self.source["market_expectation"]["as_of"], "2026-07-16")
 
     def test_audit_tables_back_every_derived_exhibit(self) -> None:
-        tables = {table["n"]: table for table in self.payload["tables"]}
-        self.assertEqual(sorted(tables), [15, 16, 17, 18, 19, 20, 21])
-        self.assertIn("AI capex", tables[21]["title"])
-        self.assertEqual(len(tables[16]["rows"]), len(self.source["next_kpi"]["quantified"]))
-        for row in tables[17]["rows"]:  # implied ASP travels with the raw inputs
+        tables = self.payload["tables"]
+        first = len(self.exhibits) + 2
+        self.assertEqual([table["n"] for table in tables], list(range(first, first + 7)))
+        self.assertIn("AI capex", tables[-1]["title"])
+        self.assertEqual(len(tables[1]["rows"]), len(self.source["next_kpi"]["quantified"]))
+        financials = next(table for table in tables if "隐含 ASP" in table["title"])
+        for row in financials["rows"]:  # implied ASP travels with the raw inputs
             self.assertTrue(row[-1].endswith("D"))
 
     def test_cross_page_table_is_identical_on_both_pages(self) -> None:
