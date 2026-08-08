@@ -1865,8 +1865,13 @@
         items.push(['sq', col(ex.stacks[i].color), ex.stacks[i].name]);
       items.push(['line', col(ex.line.color), ex.line.name]);
     } else if (ex.kind === 'diverging_bars') {
-      items.push(['sq', C.NAVY, 'Reported > Core（油汇顺风）']);
-      items.push(['sq', C.RED, 'Reported < Core（油汇拖累）']);
+      /* 这两条曾经写死成「Reported > Core（油汇顺风）」——那是 Monthly-OP 里报告口径 vs
+         核心口径的图，正负两侧由油价与汇率解释。图型一被别的页面复用，图例就在说一件
+         图上根本没有的事：季报页的正负两侧是「仍在安全侧 / 已越过阈值」。payload 一直
+         在传 positive_label / negative_label，只是没人读。改成读 payload，缺省仍是原文案，
+         所以 Monthly-OP 那边不给标签的图一个字都不变。 */
+      items.push(['sq', C.NAVY, ex.positive_label || 'Reported > Core（油汇顺风）']);
+      items.push(['sq', C.RED, ex.negative_label || 'Reported < Core（油汇拖累）']);
 
     /* ── 新图型 ── */
     } else if (ex.kind === 'heat_matrix') {
