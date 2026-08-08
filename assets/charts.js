@@ -1780,7 +1780,10 @@
           values: ex.stacks[i].values, fmt: FMT.f0c });
       out.push({ name: ex.line.name, color: col(ex.line.color), values: ex.line.values, fmt: FMT.pct1 });
     } else if (ex.kind === 'diverging_bars') {
-      out.push({ name: 'Reported − Core', color: C.NAVY, values: ex.values, fmt: f });
+      /* 表格视图与 tooltip 共用这一行。上次只把图例改成读 payload，这里漏了，于是
+         「Reported − Core」继续出现在表头和悬浮提示里 —— 图例对了、点开表格还是别人的口径。
+         同样保留原文案作缺省，Monthly-OP 不给 legend 的图不受影响。 */
+      out.push({ name: ex.legend || 'Reported − Core', color: C.NAVY, values: ex.values, fmt: f });
 
     /* ── 新图型：表格视图与 tooltip 都吃这里的行，缺一个就是「切过去一片空白」 ── */
     } else if (ex.kind === 'year_lines') {

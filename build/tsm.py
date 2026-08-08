@@ -100,6 +100,19 @@ def build_payload(staging: dict) -> dict:
     headline_beat = pct_change(net_income_bridge["values_ntd_bn"][0], consensus["net_income_ntd_bn"])
     gm_floor = guidance["long_term_gross_margin_floor_pct"]
 
+    # US-dollar CapEx carries twelve quarters so its y/y is populated from the
+    # first column, and both sides of the intensity ratio stay in one currency.
+    capex_usd_all = staging["capital_expenditures_usd_bn"]["values"]
+    capex_usd = capex_usd_all[-len(periods):]
+    capex_usd_yoy = [
+        (capex_usd_all[index] / capex_usd_all[index - 4] - 1) * 100
+        for index in range(len(capex_usd_all) - len(periods), len(capex_usd_all))
+    ]
+    capex_intensity_usd = [
+        capex / revenue * 100
+        for capex, revenue in zip(capex_usd, financials["revenue_usd_bn"])
+    ]
+
     # CapEx is reported in NT$ but tracked against a US$ line, so the threshold
     # is converted at the quarter's own realised rate and marked as derived.
     capex_threshold_ntd = round(19.0 * guidance["q2_actual"]["usd_ntd"], 1)
@@ -282,9 +295,8 @@ def build_payload(staging: dict) -> dict:
             "label_fmt": "usd0",
             "ylab": "US$B",
             "note": (
-                f"新台币口径下本季 CapEx 同比 {signed(capex_ntd_yoy)}、收入同比 {signed(revenue_ntd_yoy)}——"
-                "与上季「收入增速快于 CapEx 增速」的说法相反；两条增速的八季对照本页尚无数据，"
-                "但现金流三柱图已能看出 CapEx 抬升快于经营现金流。"
+                f"新台币口径下本季 CapEx 同比 {signed(capex_ntd_yoy)}、收入同比 {signed(revenue_ntd_yoy)}；"
+                "两条增速的八季美元口径对照见下一节。"
             ),
             "src_extra": (
                 "三次口径依次为 1 月 US$52–56B、4 月 closer to US$56B、7 月 US$60–64B；"
@@ -488,8 +500,56 @@ def build_payload(staging: dict) -> dict:
         src_extra="库存天数来自各季 management report；75–78 天为上季本地分析稿的预期区间。",
     )
 
+    capex_intensity_chart = {
+        "kind": "gs_line",
+        "title": (
+            f"资本强度八季从 {capex_intensity_usd[0]:.1f}% 升到 {capex_intensity_usd[-1]:.1f}%"
+        ),
+        "xlabels": labels,
+        "values": capex_intensity_usd,
+        "legend": "CapEx / 收入（美元口径）",
+        "fmt": "pct1",
+        "yfmt": "pct1",
+        "label_fmt": "pct1",
+        "ylab": "占收入比",
+        "note": (
+            f"本季 {capex_intensity_usd[-1]:.1f}%，较上季 {capex_intensity_usd[-2]:.1f}% 跳升；"
+            "这条线与 GOOGL 页同口径，可直接对照上下游的资本强度。"
+        ),
+        "src_extra": (
+            "美元 CapEx 来自各季 earnings conference 原句，美元收入来自各季 earnings release；"
+            "比值为自算，两侧同币种，不与新台币现金流口径混用。"
+        ),
+    }
+
+    growth_crossover_chart = {
+        "kind": "lines",
+        "title": (
+            f"CapEx 增速 {capex_usd_yoy[-1]:+.0f}% 反超收入增速 "
+            f"{financials['revenue_yoy_pct'][-1]:+.0f}%"
+        ),
+        "xlabels": labels,
+        "series": [
+            {"name": "收入 YoY", "values": financials["revenue_yoy_pct"], "color": "NAVY"},
+            {"name": "CapEx YoY", "values": capex_usd_yoy, "color": "RED"},
+        ],
+        "fmt": "pct1",
+        "yfmt": "pct1",
+        "label_fmt": "pct1",
+        "end_label": True,
+        "ylab": "同比增速",
+        "note": (
+            "上季管理层称「收入增速快于 CapEx 增速」；本季两条线交叉，这是股价的直接压制项。"
+            "两条都是美元口径，不含汇率错配。"
+        ),
+        "src_extra": (
+            "收入同比为公司披露，CapEx 同比按各季 earnings conference 的美元 CapEx 自算；"
+            "同比需要上年同期，故序列多带四个季度，只展示最近八季。"
+        ),
+    }
+
     settled_charts = built[0:3] + [inventory_expectation]
-    highlights = built[3:9]
+    highlights = built[3:9] + [growth_crossover_chart]
     next_charts = [built[9]] + tracking_charts(
         next_kpi["quantified"],
         "current",
@@ -499,7 +559,7 @@ def build_payload(staging: dict) -> dict:
             f"当前 {unit_text(entry['unit'], entry['current'])}"
         ),
     )
-    routine = built[10:]
+    routine = built[10:] + [capex_intensity_chart]
 
     exhibits = number_exhibits(settled_charts + highlights + next_charts + routine)
     next_table_number = len(exhibits) + 2

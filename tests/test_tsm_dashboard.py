@@ -89,7 +89,7 @@ class TsmDashboardTest(unittest.TestCase):
     def test_section_order_matches_how_the_note_is_used(self) -> None:
         self.assertEqual(
             [(section["id"], len(section["exhibits"])) for section in self.payload["sections"]],
-            [("settled", 4), ("quarter_highlights", 6), ("next_quarter", 6), ("routine", 3)],
+            [("settled", 4), ("quarter_highlights", 7), ("next_quarter", 6), ("routine", 4)],
         )
 
     def test_implied_asp_reproduces_reported_revenue(self) -> None:
@@ -127,6 +127,33 @@ class TsmDashboardTest(unittest.TestCase):
             line = exhibit["series"][1]["values"]
             self.assertEqual(len(set(line)), 1, exhibit["title"])
             self.assertEqual(len(line), len(exhibit["series"][0]["values"]), exhibit["title"])
+
+    def test_dollar_capex_backs_the_intensity_and_growth_charts(self) -> None:
+        """CapEx is reported in NT$ but the intensity ratio and the growth
+        crossover both need US$ on each side, so the dollar series has to carry
+        four extra quarters and reconcile with the NT$ one."""
+        block = self.source["capital_expenditures_usd_bn"]
+        self.assertEqual(len(block["values"]), 12)
+        self.assertEqual(len(block["periods"]), 12)
+        self.assertEqual(block["periods"][-8:], self.source["periods"])
+        ntd = self.source["cash_flow_ntd_bn"]["capital_expenditures"]
+        for usd, nt in zip(block["values"][-8:], ntd):
+            self.assertTrue(28.0 < nt / usd < 34.0, f"implied FX {nt / usd:.1f}")
+        intensity = next(
+            ex for ex in self.exhibits if ex["title"].startswith("资本强度八季")
+        )
+        for index, value in enumerate(intensity["values"]):
+            expected = (
+                block["values"][-8:][index]
+                / self.source["financials"]["revenue_usd_bn"][index] * 100
+            )
+            self.assertAlmostEqual(value, expected, places=6)
+        crossover = next(ex for ex in self.exhibits if "反超收入增速" in ex["title"])
+        self.assertEqual(
+            crossover["series"][0]["values"], self.source["financials"]["revenue_yoy_pct"]
+        )
+        self.assertEqual(len(crossover["series"][1]["values"]), 8)
+        self.assertTrue(all(v is not None for v in crossover["series"][1]["values"]))
 
     def test_capex_threshold_is_converted_and_marked(self) -> None:
         """The CapEx line is tracked in US$ but reported in NT$, so the plotted
