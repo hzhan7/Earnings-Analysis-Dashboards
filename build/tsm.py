@@ -13,6 +13,7 @@ expectations, and arithmetic reproducible from the audit tables.
 from __future__ import annotations
 
 import json
+import statistics
 import sys
 from pathlib import Path
 
@@ -48,6 +49,258 @@ def pct_change(current: float, comparison: float) -> float:
 def compact_period(period: str) -> str:
     quarter, year = period.split()
     return f"{quarter}'{year[-2:]}"
+
+
+MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+              "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def month_label(month: str) -> str:
+    """``'2026-06'`` → ``'Jun-26'``."""
+    year, number = month.split("-")
+    return f"{MONTH_ABBR[int(number) - 1]}-{year[-2:]}"
+
+
+def quarter_end_month(quarter: str) -> str:
+    """``'2026Q2'`` → ``'2026-06'``."""
+    year, number = quarter.split("Q")
+    return f"{year}-{int(number) * 3:02d}"
+
+
+def rounded(values: list[float | None], digits: int = 6) -> list[float | None]:
+    """Round for the payload so a rebuild is idempotent, keeping ``None`` holes."""
+    return [None if value is None else round(value, digits) for value in values]
+
+
+def resolve_exhibit_refs(exhibits: list[dict]) -> list[dict]:
+    """Substitute ``{ref}`` placeholders with the numbers `number_exhibits` assigned.
+
+    Cross-references written as literal numbers break the moment a chart is
+    inserted, and the page already refuses to hand-number the exhibits
+    themselves; captions that point at them must follow the same rule.
+    """
+    numbers = {exhibit["ref"]: exhibit["n"] for exhibit in exhibits if exhibit.get("ref")}
+    for exhibit in exhibits:
+        exhibit.pop("ref", None)
+        for field in ("title", "note", "src_extra", "annot"):
+            text = exhibit.get(field)
+            if not isinstance(text, str):
+                continue
+            for key, number in numbers.items():
+                text = text.replace("{" + key + "}", str(number))
+            exhibit[field] = text
+    return exhibits
+
+
+def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
+    """The full guided-revenue record, and what the beats are actually made of.
+
+    The settled section already asks "did last quarter land in the range". This
+    asks the two questions eight quarters cannot answer: what the record looks
+    like once the window is pulled back to the first quarter TSMC guided in this
+    data set, and how much of each beat the company actually produced.
+
+    That second question has an exact answer here rather than an estimate.
+    Revenue is guided in US dollars at an FX assumption management states on the
+    call, and reported in US dollars at the rate the quarter realised, so:
+
+        (1 + dollar beat) = (1 + NT$ operating beat) x (assumption / realised)
+
+    Every term is a company-reported quarterly number, so the split needs no
+    monthly series and no market rate. Only the guidance table feeds this
+    section -- the page stays on one quarterly cadence.
+    """
+    guide = staging["quarterly_guidance_history"]
+    quarters = guide["quarters"]
+    low = guide["guide_low_usd_bn"]
+    high = guide["guide_high_usd_bn"]
+    midpoint = {
+        quarter: (lo + hi) / 2 for quarter, lo, hi in zip(quarters, low, high)
+    }
+    guide_fx = dict(zip(quarters, guide["guide_fx_ntd_per_usd"]))
+    actual_fx = dict(zip(quarters, guide["actual_fx_ntd_per_usd"]))
+    actual = dict(zip(quarters, guide["actual_revenue_usd_bn"]))
+
+    finished = [quarter for quarter in quarters if actual[quarter] is not None]
+    pending = [quarter for quarter in quarters if actual[quarter] is None]
+    beats = {quarter: (actual[quarter] / midpoint[quarter] - 1) * 100 for quarter in finished}
+
+    # ── The guided range against what was reported ────────────────────────────
+    below_midpoint = [quarter for quarter in finished if beats[quarter] < 0]
+    in_range = [
+        quarter
+        for quarter in finished
+        if low[quarters.index(quarter)] <= actual[quarter] <= high[quarters.index(quarter)]
+    ]
+    range_chart = {
+        "ref": "EX_RANGE",
+        "kind": "range_band",
+        "title": (
+            f"把指引兑现拉到 {len(quarters)} 个季度："
+            + (
+                f"{len(finished)} 个已完结季里只有 {'、'.join(below_midpoint)} 低于中值"
+                if len(below_midpoint) == 1
+                else f"{len(finished) - len(below_midpoint)}/{len(finished)} 个已完结季不低于中值"
+            )
+        ),
+        "xlabels": list(quarters),
+        "xrot": 90,
+        "lo": list(low),
+        "hi": list(high),
+        "actual": [actual[quarter] for quarter in quarters],
+        "actual_color": "NAVY",
+        "names": {
+            "range": "公司收入指引区间",
+            "actual": "实际收入",
+            "lo": "指引下限（US$B）",
+            "hi": "指引上限（US$B）",
+        },
+        "fmt": "usd1",
+        "label_fmt": "usd1",
+        "ylab": "US$B",
+        "note": (
+            f"上一图是同一口径的近八季版本；本图拉到指引表起点 {quarters[0]}，"
+            f"{len(finished)} 个已完结季里 {len(finished) - len(in_range)} 个直接从区间"
+            "<b>上端</b>穿出去，没有一个跌破下限。"
+            + (f"最后一格 {pending[-1]} 只有指引色块，实际值待披露。" if pending else "")
+            + "纵轴不自 0 起，但没有任何点被截掉。"
+        ),
+        "src_extra": (
+            "区间为各季度开始时公司给出的美元收入指引，实际值来自随后发布的 earnings release。"
+        ),
+    }
+    if pending:
+        range_chart["annot"] = f"{pending[-1]}：仅指引，实际值待披露"
+
+    # ── Distance from the guided midpoint ─────────────────────────────────────
+    window = finished[-14:]
+    deviation = [beats[quarter] for quarter in window]
+    above = sum(1 for value in deviation if value > 0)
+    mean_absolute = statistics.fmean(abs(value) for value in deviation)
+    midpoint_chart = {
+        "ref": "EX_MIDPOINT",
+        "kind": "grouped_bars",
+        "title": (
+            f"相对指引中值的偏离：{len(window)} 季里 {above} 季为正，"
+            f"平均绝对偏离 {mean_absolute:.1f}%"
+        ),
+        "xlabels": [month_label(quarter_end_month(quarter)) for quarter in window],
+        "xrot": 90,
+        "groups": [{
+            "name": "实际 vs 指引中值",
+            "color": "BLUE",
+            "values": rounded(deviation),
+        }],
+        "bar_labels": True,
+        "fmt": "pct1",
+        "label_fmt": "pct1",
+        "ylab": "% vs 指引中值",
+        "note": (
+            "正值 = 高于指引区间的中值；长期为正说明公司指引偏保守，不是一连串意外。"
+            "x 轴标的是该季最后一个月。<b>柱高不是纯经营偏离</b> —— 指引按业绩会写明的"
+            "<b>假设</b>汇率给出，实际收入按当季实际汇率折算，每根柱里都含一条汇率腿，"
+            "拆开见 Exhibit {EX_LEGS}。"
+        ),
+        "src_extra": (
+            "指引区间与实际收入来自各季 earnings conference 与 earnings release；"
+            "偏离为两者相除的自算值。"
+        ),
+    }
+
+    # ── What the beat is made of ──────────────────────────────────────────────
+    operating_leg = [
+        (actual[quarter] * actual_fx[quarter] / (midpoint[quarter] * guide_fx[quarter]) - 1) * 100
+        for quarter in window
+    ]
+    fx_leg = [(guide_fx[quarter] / actual_fx[quarter] - 1) * 100 for quarter in window]
+    opposed = [
+        quarter
+        for quarter, operating, currency in zip(window, operating_leg, fx_leg)
+        if operating * currency < 0
+    ]
+    flipped = [
+        quarter
+        for quarter, operating in zip(window, operating_leg)
+        if operating * beats[quarter] < 0
+    ]
+    fx_dominant = [
+        quarter
+        for quarter, operating, currency in zip(window, operating_leg, fx_leg)
+        if abs(currency) > abs(operating)
+    ]
+    headwind = sum(1 for value in fx_leg if value < 0)
+    tailwind = sum(1 for value in fx_leg if value > 0)
+    legs_chart = {
+        "ref": "EX_LEGS",
+        "kind": "grouped_bars",
+        "title": (
+            f"把收入超额拆成两条腿：{len(window)} 季里 {len(opposed)} 季方向相反，"
+            + (
+                f"{'、'.join(flipped)} 一季美元 beat 而新台币 miss"
+                if len(flipped) == 1
+                else f"{len(flipped)} 季两个口径给出相反结论"
+            )
+        ),
+        "xlabels": [month_label(quarter_end_month(quarter)) for quarter in window],
+        "xrot": 90,
+        "groups": [
+            {"name": "新台币经营超额", "color": "NAVY", "values": rounded(operating_leg)},
+            {"name": "汇率腿（假设 vs 实际）", "color": "GOLD", "values": rounded(fx_leg)},
+        ],
+        # 28 bars in one card cannot carry 28 labels without overlapping; the
+        # numbers live one click away in this card's own table view.
+        "bar_labels": False,
+        "fmt": "pp1",
+        "label_fmt": "pp1",
+        "ylab": "pp",
+        "note": (
+            "这是上一图那根柱的拆解，不是新数据：公司在业绩会上同时给出收入区间和"
+            "<b>假设汇率</b>，季报又按当季<b>实际汇率</b>折出美元收入，所以美元偏离恰好等于"
+            "两项<b>相乘</b>（不是相加）—— 深蓝是新台币经营超额，金色是假设汇率相对实际汇率的差。"
+            f"{len(window)} 季里 {len(opposed)} 季两条腿方向相反，但只有 {len(fx_dominant)} 季"
+            "汇率腿盖过经营腿"
+            + (
+                f"（{flipped[0]}：美元口径 {beats[flipped[0]]:+.1f}%、新台币经营 "
+                f"{operating_leg[window.index(flipped[0])]:+.2f}pp，整个超额来自假设 "
+                f"{guide_fx[flipped[0]]:.1f} 而实际 {actual_fx[flipped[0]]:.3f}）"
+                if flipped
+                else ""
+            )
+            + f"；其余 {headwind} 季汇率是<b>逆风</b>，美元口径反而低估了经营超额。"
+        ),
+        "src_extra": (
+            "假设汇率来自各季 earnings conference 的指引段，实际汇率来自随后一季的 "
+            "earnings release / management report；两条腿均为自算，原值见核对表。"
+        ),
+    }
+
+    charts = [range_chart, midpoint_chart, legs_chart]
+
+    table = {
+        "title": f"指引兑现全表（{len(quarters)} 季）：区间、汇率假设与超额分解",
+        "headers": ["期间", "公司收入指引", "中值", "实际收入", "较中值",
+                    "假设汇率", "实际汇率", "经营超额 D", "汇率腿 D"],
+        "rows": [],
+    }
+    for index, quarter in enumerate(quarters):
+        reported = actual[quarter]
+        realised = actual_fx[quarter]
+        derived = reported is not None and realised is not None
+        table["rows"].append([
+            quarter,
+            f"US${low[index]:.1f}–{high[index]:.1f}B",
+            f"US${midpoint[quarter]:.2f}B D",
+            f"US${reported:.2f}B" if reported is not None else "—",
+            f"{beats[quarter]:+.2f}% D" if reported is not None else "—",
+            f"{guide_fx[quarter]:.1f}",
+            f"{realised:.3f}" if realised is not None else "—",
+            f"{(reported * realised / (midpoint[quarter] * guide_fx[quarter]) - 1) * 100:+.2f}pp D"
+            if derived else "—",
+            f"{(guide_fx[quarter] / realised - 1) * 100:+.2f}pp D" if derived else "—",
+        ])
+
+    return charts, table
+
 
 
 def build_payload(staging: dict) -> dict:
@@ -200,6 +453,7 @@ def build_payload(staging: dict) -> dict:
             ),
         },
         {
+            "ref": "EX_SETTLED_RANGE",
             "kind": "range_band",
             "title": "连续八季实际收入均达到或超过指引中点",
             "xlabels": labels,
@@ -548,7 +802,12 @@ def build_payload(staging: dict) -> dict:
         ),
     }
 
-    settled_charts = built[0:3] + [inventory_expectation]
+    # The migrated guidance charts sit immediately after the eight-quarter
+    # range band they extend, not in a section of their own: they answer the
+    # same question over a longer window, and a reader comparing them should
+    # not have to scroll past four sections to do it.
+    delivery_charts, delivery_table = guidance_delivery_charts(staging)
+    settled_charts = built[0:3] + delivery_charts + [inventory_expectation]
     highlights = built[3:9] + [growth_crossover_chart]
     next_charts = [built[9]] + tracking_charts(
         next_kpi["quantified"],
@@ -561,7 +820,18 @@ def build_payload(staging: dict) -> dict:
     )
     routine = built[10:] + [capex_intensity_chart]
 
-    exhibits = number_exhibits(settled_charts + highlights + next_charts + routine)
+    exhibits = resolve_exhibit_refs(
+        number_exhibits(settled_charts + highlights + next_charts + routine)
+    )
+    # Slice by cumulative length rather than by hand-written indices: the
+    # sections are the same list, cut in order, so inserting a chart into one of
+    # them cannot silently move a chart into its neighbour.
+    grouped = []
+    cursor = 0
+    for group in (settled_charts, highlights, next_charts, routine):
+        grouped.append(exhibits[cursor:cursor + len(group)])
+        cursor += len(group)
+    settled_ex, highlight_ex, next_ex, routine_ex = grouped
     next_table_number = len(exhibits) + 2
 
     tables = [
@@ -604,7 +874,8 @@ def build_payload(staging: dict) -> dict:
             "headers": ["期间", "公司指引", "中值", "实际", "较中值"],
             "rows": guidance_table,
         },
-        ai_capex_cycle_table(next_table_number + 6),
+        {**delivery_table, "n": next_table_number + 6},
+        ai_capex_cycle_table(next_table_number + 7),
     ]
 
     return {
@@ -652,35 +923,36 @@ def build_payload(staging: dict) -> dict:
             {
                 "id": "settled",
                 "title": "一、上季跟踪指标兑现了吗",
-                "description": "先看上季留的问题闭环了几条、公司自己的指引兑现得怎么样，再谈本季。",
-                "exhibits": exhibits[: len(settled_charts)],
+                "description": (
+                    "先看上季留的问题闭环了几条、公司自己的指引兑现得怎么样，再谈本季。"
+                    "指引兑现给了三张：近八季、拉到指引表起点的全窗口，以及超额里经营与汇率各占多少。"
+                ),
+                "exhibits": settled_ex,
             },
             {
                 "id": "quarter_highlights",
                 "title": "二、本季重点",
                 "description": "收入与指引、量价拆分、毛利率拐点、资本开支上调，以及净利里的一次性成分。",
-                "exhibits": exhibits[len(settled_charts): len(settled_charts) + len(highlights)],
+                "exhibits": highlight_ex,
             },
             {
                 "id": "next_quarter",
                 "title": "三、下季要跟踪什么",
                 "description": "当前值离下季阈值还有多远，统一用「距阈值余量」口径。",
-                "exhibits": exhibits[
-                    len(settled_charts) + len(highlights):
-                    len(settled_charts) + len(highlights) + len(next_charts)
-                ],
+                "exhibits": next_ex,
             },
             {
                 "id": "routine",
                 "title": "四、长期常规跟踪",
                 "description": "TSM 专属的常规序列：制程世代迁移、平台结构与营运资金。",
-                "exhibits": exhibits[-len(routine):],
+                "exhibits": routine_ex,
             },
         ],
         "tables": tables,
         "notes": [
             "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
-            "Exhibit 11 的阈值是本地研究设定，不是公司指引，也不构成评级或投资建议；「距阈值余量」统一为正值代表安全侧。",
+            f"Exhibit {next_ex[0]['n']} 与其后各图的阈值是本地研究设定，不是公司指引，也不构成评级或投资建议；「距阈值余量」统一为正值代表安全侧。",
+            f"Exhibit {settled_ex[3]['n']}–{settled_ex[5]['n']} 全部只用季度数据：前两张是公司自己的美元口径，每个读数都含一条汇率腿；第三张按恒等式把它拆成新台币经营与汇率两项，两项相乘（不是相加）还原成美元偏离。本页不接入月度营收公告，全页维持季度更新节奏。",
             "本页只发布公司披露值、可复算的简单派生值，以及明确标注的市场预期；D 标记代表 Derived / 自算。",
             "市场预期一律标注为「市场预期」并给出取数时点，不写卖方机构名，也不发布评级、目标价或估值。",
             "隐含 ASP 为季度美元收入除以晶圆出货，仅用于量价拆分，不等同任何制程或封装的实际定价。",
@@ -688,7 +960,7 @@ def build_payload(staging: dict) -> dict:
             "自由现金流按 TSMC 口径，以经营现金流减季度现金支付资本开支复算；不是利润表 non-GAAP 指标。",
             "收入趋势采用美元口径，现金流采用新台币口径；季度现金支付 CapEx 不与全年美元 CapEx 预算相加。",
             "制程占比的分母为晶圆收入，平台占比的分母为净收入；两组 mix 不可直接相加。",
-            "本页已知未接入：月度营收、ROE、折旧、R&D / SG&A 费用线、IoT / 汽车 / DCE 平台占比、地区与客户类型组合。",
+            "本页已知未接入：ROE、折旧、R&D / SG&A 费用线、IoT / 汽车 / DCE 平台占比、地区与客户类型组合，以及收入以外的指引兑现历史（毛利率 / 营业利润率 / 税率的逐季指引区间尚未录入）。",
             "电话会文字稿仅链接 TSMC 官方 IR 托管版本，公开仓不复制原件或逐字内容。",
         ],
         "footer": "TSM quarterly results · 数据来自 TSMC 公开披露与透明自算 · 仅供研究，不构成投资建议",
@@ -702,7 +974,13 @@ def main() -> int:
     shell_dir = ROOT / "tsm"
     shell_dir.mkdir(exist_ok=True)
     (shell_dir / "index.html").write_text(SHELL, encoding="utf-8")
-    print("TSM page: 13 charts in 4 sections + 7 audit tables")
+    # Counted, not typed: this line claimed "13 charts in 4 sections" while the
+    # page had grown to 21.
+    charts = sum(len(section["exhibits"]) for section in payload["sections"])
+    print(
+        f"TSM page: {charts} charts in {len(payload['sections'])} sections "
+        f"+ {len(payload['tables'])} audit tables"
+    )
     return 0
 
 

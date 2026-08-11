@@ -23,6 +23,8 @@ Live site: https://hzhan7.github.io/Earnings-Analysis-Dashboards/
 ## Content boundary
 
 - Inputs: the local Earnings Analysis note plus company-reported quarterly data.
+  Every page updates on one cadence — quarterly — so nothing plotted here can
+  move between earnings dates.
 - Published numbers: company-reported figures and transparent arithmetic
   derivations only. Short commentary is research interpretation, not company
   guidance or a rating.
@@ -58,6 +60,16 @@ Charts are ordered the way the note is actually used:
    two non-advertising revenue lines; Microsoft gets capital intensity, margins,
    the depreciation curve and the finance-lease channel that sits outside its
    capex definition; TSMC gets node migration, platform mix and working capital.
+
+TSMC's first section carries three guidance charts rather than one, because the
+eight-quarter view cannot answer either question that matters about a company
+which has beaten its own midpoint almost every quarter. The second pulls the
+window back to the start of the guidance table; the third splits each beat into
+what the company produced and what the currency did. That split is an identity,
+not an estimate: revenue is guided in US dollars at an FX assumption stated on
+the call and reported at the rate the quarter realised, so the two legs
+compound exactly to the reported beat. It changes the reading — the dollar beat
+usually *understates* the operating beat, and in 2025Q2 it inverts it.
 
 Two of the series exist only on this site, because the number that decides the
 quarter is not one any filing prints:

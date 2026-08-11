@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -13,7 +14,7 @@ sys.path.insert(0, str(ROOT))
 
 from build.all import build_all, roster_payload  # noqa: E402
 from build.board import headroom  # noqa: E402
-from build.tsm import build_payload  # noqa: E402
+from build.tsm import build_payload, compact_period  # noqa: E402
 
 
 def js_payload(path: Path, assignment: str) -> dict:
@@ -88,8 +89,99 @@ class TsmDashboardTest(unittest.TestCase):
     def test_section_order_matches_how_the_note_is_used(self) -> None:
         self.assertEqual(
             [(section["id"], len(section["exhibits"])) for section in self.payload["sections"]],
-            [("settled", 4), ("quarter_highlights", 7), ("next_quarter", 6), ("routine", 4)],
+            [
+                ("settled", 7),
+                ("quarter_highlights", 7),
+                ("next_quarter", 6),
+                ("routine", 4),
+            ],
         )
+
+    def test_the_page_carries_no_monthly_series(self) -> None:
+        """The guidance charts were ported from a monthly-cadence dashboard.
+        Everything they plot has to come from quarterly disclosure, or this page
+        goes stale between earnings on a schedule its own subtitle denies."""
+        text = json.dumps(self.source, ensure_ascii=False)
+        for banned in ("monthly_revenue", "monthly_fx", "EXTAUS", "fred."):
+            self.assertNotIn(banned, text)
+        for exhibit in self.exhibits:
+            self.assertNotIn("qtd", exhibit, f"exhibit {exhibit['n']}")
+            self.assertNotEqual(exhibit["kind"], "year_lines", f"exhibit {exhibit['n']}")
+
+    def test_the_two_guidance_blocks_never_disagree(self) -> None:
+        """Both blocks are plotted in the settled section, side by side, over
+        different windows; overlapping cells must be the same cells."""
+        history = self.source["revenue_guidance_history_usd_bn"]
+        guide = self.source["quarterly_guidance_history"]
+        compact = [compact_period(period) for period in self.source["periods"]]
+        self.assertEqual(compact[-1], "Q2'26")
+        overlap = guide["quarters"].index("2024Q3")
+        window = slice(overlap, overlap + len(self.source["periods"]))
+        self.assertEqual(guide["guide_low_usd_bn"][window], history["low"])
+        self.assertEqual(guide["guide_high_usd_bn"][window], history["high"])
+        self.assertEqual(guide["actual_revenue_usd_bn"][window], history["actual"])
+        self.assertIsNone(guide["actual_revenue_usd_bn"][-1])
+        self.assertIsNone(guide["actual_fx_ntd_per_usd"][-1])
+        for name in ("guide_low_usd_bn", "guide_high_usd_bn", "guide_fx_ntd_per_usd",
+                     "actual_revenue_usd_bn", "actual_fx_ntd_per_usd"):
+            self.assertEqual(len(guide[name]), len(guide["quarters"]), name)
+
+    def test_beat_decomposition_multiplies_back_to_the_reported_beat(self) -> None:
+        """The two-leg chart claims the split is exact, not an approximation.
+        It is exact only because guidance is set at a stated assumption rate and
+        the result is reported at the realised one, so the two legs compound. If
+        that ever stops holding, the chart is silently pushing a residual into
+        one of the legs."""
+        settled = self.by_section["settled"]
+        legs = next(ex for ex in settled if "两条腿" in ex["title"])
+        midpoint_bars = next(
+            ex for ex in settled if ex["kind"] == "grouped_bars" and len(ex["groups"]) == 1
+        )
+        operating, currency = (group["values"] for group in legs["groups"])
+        dollar = midpoint_bars["groups"][0]["values"]
+        self.assertEqual(legs["xlabels"], midpoint_bars["xlabels"])
+        self.assertEqual(len(operating), len(dollar))
+        for label, one, two, total in zip(legs["xlabels"], operating, currency, dollar):
+            compounded = ((1 + one / 100) * (1 + two / 100) - 1) * 100
+            self.assertAlmostEqual(compounded, total, delta=0.01, msg=label)
+            # Adding the legs instead of compounding them is wrong, and on this
+            # data it is visibly wrong, so nobody can "simplify" it back.
+        worst = max(
+            abs(one + two - total) for one, two, total in zip(operating, currency, dollar)
+        )
+        self.assertGreater(worst, 0.1)
+        self.assertFalse(legs["bar_labels"])
+
+    def test_exhibit_cross_references_are_resolved_to_real_numbers(self) -> None:
+        """Captions point at other exhibits by number, and the numbers are
+        assigned at render time; an unresolved placeholder would ship as
+        literal '{EX_PACE}' text on the published page."""
+        text = json.dumps(self.payload, ensure_ascii=False)
+        self.assertNotIn("{EX_", text)
+        numbers = {ex["n"] for ex in self.exhibits}
+        settled = self.by_section["settled"]
+        legs = next(ex for ex in settled if "两条腿" in ex["title"])
+        midpoint_bars = next(
+            ex for ex in settled if ex["kind"] == "grouped_bars" and len(ex["groups"]) == 1
+        )
+        self.assertIn(f"Exhibit {legs['n']}", midpoint_bars["note"])
+        # The migrated charts sit directly after the eight-quarter range band
+        # they extend, and their captions say "上一图" -- which is only true if
+        # they stay adjacent and in this order.
+        order = [ex["n"] for ex in settled]
+        long_range = next(
+            ex for ex in settled if ex["kind"] == "range_band" and len(ex["xlabels"]) > 8
+        )
+        short_range = next(
+            ex for ex in settled if ex["kind"] == "range_band" and len(ex["xlabels"]) == 8
+        )
+        self.assertEqual(
+            [short_range["n"], long_range["n"], midpoint_bars["n"], legs["n"]],
+            order[2:6],
+        )
+        for note in self.payload["notes"]:
+            for token in re.findall(r"Exhibit (\d+)", note):
+                self.assertIn(int(token), numbers, note)
 
     def test_implied_asp_reproduces_reported_revenue(self) -> None:
         """Implied ASP is the only plotted series that is not a reported level,
@@ -173,7 +265,7 @@ class TsmDashboardTest(unittest.TestCase):
     def test_audit_tables_back_every_derived_exhibit(self) -> None:
         tables = self.payload["tables"]
         first = len(self.exhibits) + 2
-        self.assertEqual([table["n"] for table in tables], list(range(first, first + 7)))
+        self.assertEqual([table["n"] for table in tables], list(range(first, first + 8)))
         self.assertIn("AI capex", tables[-1]["title"])
         self.assertEqual(len(tables[1]["rows"]), len(self.source["next_kpi"]["quantified"]))
         financials = next(table for table in tables if "隐含 ASP" in table["title"])
