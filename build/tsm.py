@@ -148,6 +148,69 @@ def delivery_band(ref: str, metric: str, quarters: list[str], low: list[float],
     return band
 
 
+def midpoint_deviation(ref: str, metric: str, quarters: list[str], low: list[float],
+                       high: list[float], actual: list[float | None], *, mode: str,
+                       src_extra: str, extra_note: str = "", window: int = 14) -> dict:
+    """How far past the guided midpoint the quarter landed, for one guided metric.
+
+    The band charts answer "did it clear the range at all", which saturates:
+    operating margin has cleared the upper bound fifteen times running, so the
+    band says the same thing every quarter. This asks the question that still
+    has an answer -- by how much, and is that widening or narrowing.
+
+    Two modes because the units genuinely differ. Revenue is guided as a level,
+    so the honest distance is relative (%). Both margins are already ratios, so
+    theirs is the arithmetic gap (pp): dividing a percentage by a percentage
+    would print a number nobody quotes and that no company reports.
+    """
+    if mode not in ("pct", "pp"):
+        raise ValueError(f"unknown mode {mode!r}")
+    finished = [
+        index for index, value in enumerate(actual) if value is not None
+    ][-window:]
+    midpoints = [(low[index] + high[index]) / 2 for index in finished]
+    deviation = [
+        (actual[index] / mid - 1) * 100 if mode == "pct" else actual[index] - mid
+        for index, mid in zip(finished, midpoints)
+    ]
+    unit = "%" if mode == "pct" else "pp"
+    above = sum(1 for value in deviation if value > 0)
+    mean_absolute = statistics.fmean(abs(value) for value in deviation)
+    biggest = max(deviation, key=abs)
+    return {
+        "ref": ref,
+        "kind": "grouped_bars",
+        "title": (
+            f"{metric}相对指引中值的偏离：{len(deviation)} 季里 {above} 季为正，"
+            f"平均绝对偏离 {mean_absolute:.1f}{unit}"
+        ),
+        "xlabels": [month_label(quarter_end_month(quarters[index])) for index in finished],
+        "xrot": 90,
+        "groups": [{
+            "name": f"实际{metric} vs 指引中值",
+            "color": "BLUE",
+            "values": rounded(deviation),
+        }],
+        "bar_labels": True,
+        "fmt": "pct1" if mode == "pct" else "pp1",
+        "label_fmt": "pct1" if mode == "pct" else "pp1",
+        "ylab": f"{unit} vs 指引中值",
+        "note": (
+            f"正值 = 高于指引区间的中值；长期为正说明公司指引偏保守，不是一连串意外。"
+            f"x 轴标的是该季最后一个月。"
+            f"窗口内最大的一次是 {month_label(quarter_end_month(quarters[finished[deviation.index(biggest)]]))} "
+            f"的 {biggest:+.1f}{unit}。"
+            + (
+                "本图单位是<b>百分点</b>，与收入那张的<b>百分比</b>不可直接比大小 —— "
+                "率的偏离取算术差，除一次只会得到一个没人引用的数。"
+                if mode == "pp" else ""
+            )
+            + extra_note
+        ),
+        "src_extra": src_extra,
+    }
+
+
 def expectation_chart(staging: dict) -> dict:
     """Reported beat versus core beat, against the same market expectation.
 
@@ -281,37 +344,46 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         ),
     )
 
-    # ── Distance from the guided midpoint ─────────────────────────────────────
+    # ── Distance from the guided midpoint, one chart per guided metric ────────
     window = finished[-14:]
-    deviation = [beats[quarter] for quarter in window]
-    above = sum(1 for value in deviation if value > 0)
-    mean_absolute = statistics.fmean(abs(value) for value in deviation)
-    midpoint_chart = {
-        "ref": "EX_MIDPOINT",
-        "kind": "grouped_bars",
-        "title": (
-            f"收入相对指引中值的偏离：{len(window)} 季里 {above} 季为正，"
-            f"平均绝对偏离 {mean_absolute:.1f}%"
+    midpoint_chart = midpoint_deviation(
+        "EX_MIDPOINT", "收入", quarters, low, high, guide["actual_revenue_usd_bn"],
+        mode="pct", src_extra=SOURCE_6K + "偏离为实际收入除以指引中值的自算值。",
+        extra_note=(
+            "<b>柱高不是纯经营偏离</b> —— 指引按业绩会写明的<b>假设</b>汇率给出，"
+            "实际收入按当季实际汇率折算，每根柱里都含一条汇率腿，拆开见 Exhibit {EX_LEGS}。"
         ),
-        "xlabels": [month_label(quarter_end_month(quarter)) for quarter in window],
-        "xrot": 90,
-        "groups": [{
-            "name": "实际 vs 指引中值",
-            "color": "BLUE",
-            "values": rounded(deviation),
-        }],
-        "bar_labels": True,
-        "fmt": "pct1",
-        "label_fmt": "pct1",
-        "ylab": "% vs 指引中值",
-        "note": (
-            "正值 = 高于指引区间的中值；长期为正说明公司指引偏保守，不是一连串意外。"
-            "x 轴标的是该季最后一个月。<b>柱高不是纯经营偏离</b> —— 指引按业绩会写明的"
-            "<b>假设</b>汇率给出，实际收入按当季实际汇率折算，每根柱里都含一条汇率腿，"
-            "拆开见 Exhibit {EX_LEGS}。"
+    )
+    # The two margins share the revenue guidance's FX assumption -- it is one
+    # column in the same 6-K -- so their gaps carry an FX component too. The
+    # direction is stated, not the size: TSMC publishes no sensitivity in these
+    # filings and this page does not invent one.
+    FX_SHARED = (
+        "毛利率指引与收入指引写在同一份 6-K 里、共用同一个假设汇率，"
+        "所以这条偏离同样含汇率成分（新台币比假设弱时对利润率是顺风）；"
+        "哪几季顺风、哪几季逆风见 Exhibit {EX_LEGS} 的金色腿。"
+        "本页不给汇率对利润率的敏感度系数 —— 这批 6-K 没有披露，不自行编造。"
+    )
+    gm_midpoint_chart = midpoint_deviation(
+        "EX_GM_MIDPOINT", "毛利率", quarters,
+        guide["gross_margin_guide_low_pct"], guide["gross_margin_guide_high_pct"],
+        guide["gross_margin_actual_pct"], mode="pp",
+        src_extra=(SOURCE_6K + "实际毛利率 = 该季 6-K 合并损益表的毛利 ÷ 净销售额 D；"
+                   "偏离为实际值减指引中值的自算值。"),
+        extra_note=FX_SHARED,
+    )
+    om_midpoint_chart = midpoint_deviation(
+        "EX_OM_MIDPOINT", "营业利润率", quarters,
+        guide["operating_margin_guide_low_pct"], guide["operating_margin_guide_high_pct"],
+        guide["operating_margin_actual_pct"], mode="pp",
+        src_extra=(SOURCE_6K + "实际营业利润率 = 该季 6-K 合并损益表的营业利益 ÷ 净销售额 D；"
+                   "偏离为实际值减指引中值的自算值。"),
+        extra_note=(
+            "这一条的柱<b>全部为正</b>，与 Exhibit {EX_OM} 的「没有一季落回区间内」是同一件事的"
+            "两种说法 —— 区间图已经饱和（每季都超上限，看不出多少），要读幅度只能看这张。"
+            + FX_SHARED.replace("毛利率指引", "营业利润率指引")
         ),
-        "src_extra": SOURCE_6K + "偏离为实际收入除以指引中值的自算值。",
-    }
+    )
 
     # ── What the beat is made of ──────────────────────────────────────────────
     operating_leg = [
@@ -353,7 +425,7 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         "label_fmt": "pp1",
         "ylab": "pp",
         "note": (
-            "这是上一图那根柱的拆解，不是新数据：公司在业绩会上同时给出收入区间和"
+            "这是 Exhibit {EX_MIDPOINT} 那根柱的拆解，不是新数据：公司在业绩会上同时给出收入区间和"
             "<b>假设汇率</b>，季报又按当季<b>实际汇率</b>折出美元收入，所以美元偏离恰好等于"
             "两项<b>相乘</b>（不是相加）—— 深蓝是新台币经营超额，金色是假设汇率相对实际汇率的差。"
             f"{len(window)} 季里 {len(opposed)} 季两条腿方向相反，但只有 {len(fx_dominant)} 季"
@@ -370,7 +442,15 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         "src_extra": SOURCE_6K + "两条腿均为自算，原值见核对表。",
     }
 
-    charts = [revenue_band, margin_band, operating_band, midpoint_chart, legs_chart]
+    # 按「问题层」排，不按指标排：三张区间图彼此可比（同一个问题、三个指标，
+    # 营业利润率那张的图注正是拿另外两张作对照），三张偏离图同理；收入超额的
+    # 汇率拆解只服务收入那一条，放最后。指标内的两张图讲的是同一件事的粗读与细读，
+    # 挨在一起反而没有对照价值。
+    charts = [
+        revenue_band, margin_band, operating_band,
+        midpoint_chart, gm_midpoint_chart, om_midpoint_chart,
+        legs_chart,
+    ]
 
     table = {
         "title": f"指引兑现全表（{len(quarters)} 季）：三项指引区间、汇率假设与超额分解",

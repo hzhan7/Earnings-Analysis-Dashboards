@@ -90,7 +90,7 @@ class TsmDashboardTest(unittest.TestCase):
         self.assertEqual(
             [(section["id"], len(section["exhibits"])) for section in self.payload["sections"]],
             [
-                ("settled", 9),
+                ("settled", 11),
                 ("quarter_highlights", 7),
                 ("next_quarter", 6),
                 ("routine", 4),
@@ -247,25 +247,100 @@ class TsmDashboardTest(unittest.TestCase):
         numbers = {ex["n"] for ex in self.exhibits}
         settled = self.by_section["settled"]
         legs = next(ex for ex in settled if "两条腿" in ex["title"])
-        midpoint_bars = next(
-            ex for ex in settled if ex["kind"] == "grouped_bars" and len(ex["groups"]) == 1
-        )
-        self.assertIn(f"Exhibit {legs['n']}", midpoint_bars["note"])
-        # The migrated charts sit directly after the eight-quarter range band
-        # they extend, and their captions say "上一图" -- which is only true if
-        # they stay adjacent and in this order.
-        # The three guided metrics run together, then the deviation bars, then
-        # the decomposition -- captions say "上一图", which is only true in this
-        # order. And no eight-quarter revenue band survives beside the long one.
+        deviations = [
+            ex for ex in settled
+            if ex["kind"] == "grouped_bars" and len(ex["groups"]) == 1
+            and "相对指引中值的偏离" in ex["title"]
+        ]
+        revenue_deviation = next(ex for ex in deviations if ex["title"].startswith("收入"))
+        # The decomposition splits the REVENUE deviation bar specifically, and it
+        # no longer sits next to it, so the caption must name that exhibit by
+        # number rather than say "上一图".
+        self.assertIn(f"Exhibit {revenue_deviation['n']}", legs["note"])
+        self.assertIn(f"Exhibit {legs['n']}", revenue_deviation["note"])
+        self.assertNotIn("上一图", legs["note"])
+        # Grouped by question, not by metric: the three bands run together (they
+        # are only comparable side by side -- the operating-margin caption reads
+        # against the other two), then the three deviation charts, then the
+        # revenue-only decomposition. And no eight-quarter revenue band survives
+        # beside the long one.
         bands = [ex for ex in settled if ex["kind"] == "range_band"]
         self.assertEqual([len(ex["xlabels"]) for ex in bands], [15, 15, 15])
         self.assertEqual(
-            [ex["n"] for ex in bands] + [midpoint_bars["n"], legs["n"]],
-            [ex["n"] for ex in settled][3:8],
+            [ex["n"] for ex in bands] + [ex["n"] for ex in deviations] + [legs["n"]],
+            [ex["n"] for ex in settled][3:10],
+        )
+        self.assertEqual(
+            [ex["title"].split("：")[0] for ex in bands],
+            [ex["title"].split("相对")[0] for ex in deviations],
+            "band order and deviation order must present the metrics the same way",
         )
         for note in self.payload["notes"]:
             for token in re.findall(r"Exhibit (\d+)", note):
                 self.assertIn(int(token), numbers, note)
+
+    def test_midpoint_deviation_charts_reproduce_the_guided_midpoints(self) -> None:
+        """One chart per guided metric, each recomputable from the 6-K columns.
+
+        Revenue is guided as a level so its distance is relative (%); the two
+        margins are already ratios so theirs is the arithmetic gap (pp). Mixing
+        those two up is the mistake this test exists to catch -- it would print
+        a plausible-looking number that no filing contains.
+        """
+        guide = self.source["quarterly_guidance_history"]
+        settled = self.by_section["settled"]
+        cases = [
+            ("收入", "actual_revenue_usd_bn", "guide_low_usd_bn", "guide_high_usd_bn", "pct"),
+            ("毛利率", "gross_margin_actual_pct",
+             "gross_margin_guide_low_pct", "gross_margin_guide_high_pct", "pp"),
+            ("营业利润率", "operating_margin_actual_pct",
+             "operating_margin_guide_low_pct", "operating_margin_guide_high_pct", "pp"),
+        ]
+        for metric, actual_key, low_key, high_key, mode in cases:
+            with self.subTest(metric=metric):
+                exhibit = next(
+                    ex for ex in settled
+                    if ex["title"].startswith(f"{metric}相对指引中值的偏离")
+                )
+                self.assertEqual(exhibit["fmt"], "pct1" if mode == "pct" else "pp1")
+                self.assertEqual(exhibit["ylab"], ("%" if mode == "pct" else "pp") + " vs 指引中值")
+                finished = [
+                    index for index, value in enumerate(guide[actual_key]) if value is not None
+                ]
+                expected = []
+                for index in finished:
+                    mid = (guide[low_key][index] + guide[high_key][index]) / 2
+                    actual = guide[actual_key][index]
+                    expected.append(actual / mid * 100 - 100 if mode == "pct" else actual - mid)
+                plotted = exhibit["groups"][0]["values"]
+                self.assertEqual(len(plotted), len(expected))
+                for got, want in zip(plotted, expected):
+                    self.assertAlmostEqual(got, want, places=6)
+                # The headline count has to be the plotted data, not prose.
+                above = sum(1 for value in expected if value > 0)
+                self.assertIn(f"{len(expected)} 季里 {above} 季为正", exhibit["title"])
+
+    def test_latest_quarter_deviations_match_the_delivery_chart(self) -> None:
+        """The newest bar of each deviation chart is the same number the Q2
+        delivery chart already prints, so the two cannot drift apart."""
+        delivery = {
+            entry["metric"]: (entry["value"], entry["unit"])
+            for entry in self.source["q2_guidance_delivery"]
+        }
+        settled = self.by_section["settled"]
+        pairs = [
+            ("收入", "收入 vs 指引中值"),
+            ("毛利率", "毛利率 vs 指引中值"),
+            ("营业利润率", "营业利润率 vs 指引中值"),
+        ]
+        for metric, delivery_key in pairs:
+            with self.subTest(metric=metric):
+                exhibit = next(
+                    ex for ex in settled
+                    if ex["title"].startswith(f"{metric}相对指引中值的偏离")
+                )
+                value, _unit = delivery[delivery_key]
+                self.assertAlmostEqual(exhibit["groups"][0]["values"][-1], value, places=1)
 
     def test_implied_asp_reproduces_reported_revenue(self) -> None:
         """Implied ASP is the only plotted series that is not a reported level,
