@@ -517,14 +517,14 @@ class TsmDashboardTest(unittest.TestCase):
 
     def test_cross_page_table_is_identical_on_every_page(self) -> None:
         """The AI-capex cross reference is the one object published byte-for-byte
-        on all four pages; if a builder starts assembling its own copy, the pages
+        on every page; if a builder starts assembling its own copy, the pages
         quietly stop agreeing about the same quarters."""
         payloads = build_all()
         tables = [
             next(table for table in payload["tables"] if "AI capex" in table["title"])
             for payload in payloads.values()
         ]
-        self.assertEqual(len(tables), 4)
+        self.assertEqual(len(tables), len(payloads))
         for table in tables[1:]:
             self.assertEqual(table["rows"], tables[0]["rows"])
             self.assertEqual(table["headers"], tables[0]["headers"])
@@ -548,7 +548,8 @@ class TsmDashboardTest(unittest.TestCase):
         roster = js_payload(ROOT / "data" / "roster.js", "window.ROSTER")
         self.assertEqual(roster, roster_payload(build_all()))
         self.assertEqual(
-            [item["slug"] for item in roster["items"]], ["googl", "meta", "msft", "tsm"]
+            [item["slug"] for item in roster["items"]],
+            ["googl", "meta", "msft", "nvda", "tsm"],
         )
         shell = (ROOT / "tsm" / "index.html").read_text(encoding="utf-8")
         self.assertIn('../data/tsm.js', shell)

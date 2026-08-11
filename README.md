@@ -2,7 +2,7 @@
 
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Meta,
-Microsoft and TSMC.
+Microsoft, NVIDIA and TSMC.
 
 ## Build
 
@@ -16,6 +16,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/googl/`
 - `http://127.0.0.1:8765/meta/`
 - `http://127.0.0.1:8765/msft/`
+- `http://127.0.0.1:8765/nvda/`
 - `http://127.0.0.1:8765/tsm/`
 
 Live site: https://hzhan7.github.io/Earnings-Analysis-Dashboards/
@@ -36,9 +37,11 @@ Live site: https://hzhan7.github.io/Earnings-Analysis-Dashboards/
 - `D` means Derived / 自算; it does not mean a company-defined non-GAAP metric.
 - Quarters are labelled by calendar quarter on every page. Microsoft's fiscal
   year ends in June, so its `Q2 2026` is the quarter ended 2026-06-30, which the
-  company itself calls FY2026 Q4; the page says so in its subtitle and notes.
-  Without one convention the cross-company capex table would compare different
-  three-month periods and look fine doing it.
+  company itself calls FY2026 Q4; NVIDIA's ends in late January, so its
+  `Q1 2026` is the quarter ended 2026-04-26, which the company calls FY2027 Q1.
+  Both pages say so in their subtitle and notes. Without one convention the
+  cross-company capex table would compare different three-month periods and look
+  fine doing it.
 
 ## Page modules
 
@@ -59,14 +62,18 @@ Charts are ordered the way the note is actually used:
    geography; Meta gets the depreciation curve, trailing cash conversion and its
    two non-advertising revenue lines; Microsoft gets capital intensity, margins,
    the depreciation curve and the finance-lease channel that sits outside its
-   capex definition; TSMC gets node migration, platform mix and working capital.
+   capex definition; NVIDIA gets six years of margins and operating leverage
+   plus the inventory-and-supply-commitment block that carries its real capital
+   intensity; TSMC gets node migration, platform mix and working capital.
 
-TSMC's first section is built out further than the other three pages, because
+TSMC's and NVIDIA's first sections are built out further than the others,
+because both companies guide several numbers every quarter in the same sentence
+structure, and eight quarters cannot say whether clearing them is normal.
+
 TSMC guides three numbers every quarter — revenue, gross margin and operating
-margin — and eight quarters cannot say whether clearing them is normal for this
-company. Fifteen can, pulled from the fifteen earnings 6-Ks themselves, and the
-answer differs sharply by metric: revenue cleared the top of its range in 8 of
-14 quarters, gross margin in 9, and **operating margin in all 14 — not one
+margin — and fifteen quarters pulled from the fifteen earnings 6-Ks themselves
+answer it. The answer differs sharply by metric: revenue cleared the top of its
+range in 8 of 14 quarters, gross margin in 9, and **operating margin in all 14 — not one
 quarter landed back inside the range**. That last one reframes the guidance as
 a floor rather than a forecast, which is not visible from any single quarter.
 
@@ -79,6 +86,33 @@ to the reported beat. It changes the reading: the dollar beat usually
 the separate question of whether the quarter beat the *market* rather than the
 company, and shows why the answer depends on the profit line — a headline EPS
 beat of +12.2% is +2.2% once the quarter's one-off disposal gain comes out.
+
+NVIDIA guides revenue ±2%, both gross margins ±50bp and both operating expense
+lines, so its record runs 23 finished quarters back to 2020, read from the 24
+quarterly earnings 8-Ks. Its shape is the opposite of TSMC's, and the contrast
+is why the page is worth the build-out: **revenue cleared the top of its band in
+20 of 23 quarters, but gross margin sat inside its band in 15 of 23 and broke
+the bottom three times** — by 21.3pp, 8.9pp and 10.0pp. So the revenue guidance
+behaves like a floor and the margin guidance like a genuine forecast, and the
+page has to say both things at once rather than settling on one verdict.
+
+The decomposition chart is what makes that readable. Guiding revenue, margin and
+opex together implies an operating income NVIDIA never prints, and the distance
+from what it reported splits exactly three ways — revenue leg, margin leg, opex
+leg — with no estimate anywhere. All three quarters that fell short of that
+implied bar were the *margin* leg collapsing (gaming inventory write-downs in
+2022, the US$4.5B H20 charge in 2025); in the worst of them the revenue leg was
+still positive. The company's operating disappointments have come from cost and
+write-downs, never from demand.
+
+Two hazards had to be handled rather than smoothed over. NVIDIA's dollar band
+chart is drawn over eight quarters, not 23, because revenue grew from US$4.4B to
+US$91B and a ±2% band collapses to a few pixels at the left edge of a linear
+axis; the full record is carried by the scale-free deviation chart instead, and
+the page says so on the chart. And NVIDIA changed its non-GAAP definition in
+FY2027 Q1 to include stock-based compensation, restating history — so the long
+series run on GAAP, whose definition never moved, while every guidance/actual
+pair is compared within the single basis that applied at the time.
 
 Two of the series exist only on this site, because the number that decides the
 quarter is not one any filing prints:
@@ -121,6 +155,12 @@ the foundry quarter that has to build it. Cash purchases of property and
 equipment is the one capex definition all four filers report the same way —
 Meta's headline number adds finance-lease principal and Microsoft's adds
 finance-lease additions, so the company-defined totals are not addable.
+
+The NVDA page publishes that table byte-identically like every other page, but
+does **not** add itself as a column. It would be a reasonable fourth leg — the
+spending lands as NVIDIA revenue before it lands as TSMC wafers — but the table
+is one shared object rendered on all five pages, so changing its shape is a
+change to all five and belongs in its own pass, not in the one that adds a page.
 
 Each company has a reviewed source series and a company-specific builder. The
 shared `build/all.py` entry point rebuilds every company payload, their thin

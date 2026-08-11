@@ -11,7 +11,9 @@ reader sees which lines are breached without parsing units.
 from __future__ import annotations
 
 import json
+import statistics
 from pathlib import Path
+from typing import Callable
 
 
 def headroom(direction: str, threshold: float, actual: float) -> float:
@@ -115,6 +117,140 @@ def threshold_exhibit(
         "end_label": True,
         "ylab": ylab,
         "note": note,
+        "src_extra": src_extra,
+    }
+
+
+def _rounded(values: list[float | None], digits: int = 6) -> list[float | None]:
+    """Round for the payload so a rebuild is idempotent, keeping ``None`` holes."""
+    return [None if value is None else round(value, digits) for value in values]
+
+
+def delivery_band(ref: str, metric: str, xlabels: list[str], low: list[float],
+                  high: list[float], actual: list[float | None], *, fmt: str, ylab: str,
+                  unit: str, src_extra: str, extra_note: str = "",
+                  venue: str = "法说会", scope: str = "") -> dict:
+    """One guided metric's own range against what was reported, quarter by quarter.
+
+    Both companies that use this guide several numbers every quarter with the
+    same sentence structure, and the interesting part is that the hit rates
+    differ sharply *between* the metrics -- so it is one chart per metric, each
+    on its own axis, rather than one chart with everything normalised onto a
+    shared one. Percent and percentage points do not belong together.
+    """
+    finished = [index for index, value in enumerate(actual) if value is not None]
+    above = [index for index in finished if actual[index] > high[index]]
+    below = [index for index in finished if actual[index] < low[index]]
+    inside = len(finished) - len(above) - len(below)
+    pending = [xlabels[index] for index, value in enumerate(actual) if value is None]
+    if below and above:
+        verdict = (f"{len(finished)} 个已完结季里 {len(above)} 季超出上限、{inside} 季落在区间内、"
+                   f"{len(below)} 季跌破下限")
+    elif below:
+        verdict = (f"{len(finished)} 个已完结季里 {inside} 季落在区间内、"
+                   f"{len(below)} 季跌破下限，没有一季超出上限")
+    elif inside == 0:
+        verdict = f"{len(finished)} 个已完结季全部超出指引上限，一次例外都没有"
+    else:
+        verdict = (f"{len(finished)} 个已完结季里 {len(above)} 季超出上限、{inside} 季落在区间内，"
+                   "没有一季跌破下限")
+    band = {
+        "ref": ref,
+        "kind": "range_band",
+        # ``scope`` names the drawn window when it is deliberately shorter than
+        # the record the page holds, so a reader scanning titles cannot mistake
+        # "7 finished quarters" for the length of the history.
+        "title": f"{metric}{scope}：{verdict}",
+        "xlabels": list(xlabels),
+        "xrot": 90,
+        "lo": list(low),
+        "hi": list(high),
+        "actual": list(actual),
+        "actual_color": "NAVY",
+        "names": {
+            "range": f"公司{metric}指引区间",
+            "actual": f"实际{metric}",
+            "lo": f"指引下限（{unit}）",
+            "hi": f"指引上限（{unit}）",
+        },
+        "fmt": fmt,
+        "label_fmt": fmt,
+        "ylab": ylab,
+        "note": (
+            f"色块是该季<b>开始前</b>公司在上一场{venue}给出的{metric}区间，菱形是随后报出来的实际值。"
+            + extra_note
+            + (f"最后一格 {pending[-1]} 只有指引色块，实际值待披露。" if pending else "")
+            + "纵轴不自 0 起，但没有任何点被截掉。"
+        ),
+        "src_extra": src_extra,
+    }
+    if pending:
+        band["annot"] = f"{pending[-1]}：仅指引，实际值待披露"
+    return band
+
+
+def midpoint_deviation(ref: str, metric: str, xlabels: list[str], low: list[float],
+                       high: list[float], actual: list[float | None], *, mode: str,
+                       src_extra: str, extra_note: str = "", window: int = 14,
+                       label: Callable[[str], str] | None = None,
+                       bar_labels: bool = True, axis_note: str = "") -> dict:
+    """How far past the guided midpoint the quarter landed, for one guided metric.
+
+    The band charts answer "did it clear the range at all", which saturates once
+    a metric has cleared the same bound many times running: the band then says
+    the same thing every quarter. This asks the question that still has an
+    answer -- by how much, and is that widening or narrowing.
+
+    Two modes because the units genuinely differ. A level guided in dollars has
+    an honest relative distance (%). A ratio's distance is the arithmetic gap
+    (pp): dividing a percentage by a percentage would print a number nobody
+    quotes and that no company reports.
+    """
+    if mode not in ("pct", "pp"):
+        raise ValueError(f"unknown mode {mode!r}")
+    finished = [
+        index for index, value in enumerate(actual) if value is not None
+    ][-window:]
+    midpoints = [(low[index] + high[index]) / 2 for index in finished]
+    deviation = [
+        (actual[index] / mid - 1) * 100 if mode == "pct" else actual[index] - mid
+        for index, mid in zip(finished, midpoints)
+    ]
+    unit = "%" if mode == "pct" else "pp"
+    above = sum(1 for value in deviation if value > 0)
+    mean_absolute = statistics.fmean(abs(value) for value in deviation)
+    biggest = max(deviation, key=abs)
+    render = label or (lambda text: text)
+    return {
+        "ref": ref,
+        "kind": "grouped_bars",
+        "title": (
+            f"{metric}相对指引中值的偏离：{len(deviation)} 季里 {above} 季为正，"
+            f"平均绝对偏离 {mean_absolute:.1f}{unit}"
+        ),
+        "xlabels": [render(xlabels[index]) for index in finished],
+        "xrot": 90,
+        "groups": [{
+            "name": f"实际{metric} vs 指引中值",
+            "color": "BLUE",
+            "values": _rounded(deviation),
+        }],
+        "bar_labels": bar_labels,
+        "fmt": "pct1" if mode == "pct" else "pp1",
+        "label_fmt": "pct1" if mode == "pct" else "pp1",
+        "ylab": f"{unit} vs 指引中值",
+        "note": (
+            f"正值 = 高于指引区间的中值；长期为正说明公司指引偏保守，不是一连串意外。"
+            + axis_note
+            + f"窗口内最大的一次是 {render(xlabels[finished[deviation.index(biggest)]])} "
+            f"的 {biggest:+.1f}{unit}。"
+            + (
+                "本图单位是<b>百分点</b>，与收入那张的<b>百分比</b>不可直接比大小 —— "
+                "率的偏离取算术差，除一次只会得到一个没人引用的数。"
+                if mode == "pp" else ""
+            )
+            + extra_note
+        ),
         "src_extra": src_extra,
     }
 

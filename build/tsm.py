@@ -22,8 +22,10 @@ sys.path.insert(0, str(ROOT))
 
 from build.board import (  # noqa: E402
     ai_capex_cycle_table,
+    delivery_band,
     headroom,
     headroom_exhibit,
+    midpoint_deviation,
     number_exhibits,
     threshold_exhibit,
     threshold_table,
@@ -100,125 +102,6 @@ def resolve_exhibit_refs(exhibits: list[dict]) -> list[dict]:
                 text = text.replace("{" + key + "}", str(number))
             exhibit[field] = text
     return exhibits
-
-
-def delivery_band(ref: str, metric: str, quarters: list[str], low: list[float],
-                  high: list[float], actual: list[float | None], *, fmt: str, ylab: str,
-                  unit: str, src_extra: str, extra_note: str = "") -> dict:
-    """One guided metric's own range against what was reported, quarter by quarter.
-
-    The same object three times over, because the interesting part is the
-    comparison between them: TSMC guides revenue, gross margin and operating
-    margin every quarter with the same sentence structure, and the three have
-    very different hit rates. A chart per metric keeps each on its own axis --
-    percent and percentage points do not belong on one.
-    """
-    finished = [index for index, value in enumerate(actual) if value is not None]
-    above = [index for index in finished if actual[index] > high[index]]
-    below = [index for index in finished if actual[index] < low[index]]
-    inside = len(finished) - len(above) - len(below)
-    pending = [quarters[index] for index, value in enumerate(actual) if value is None]
-    if below:
-        verdict = (f"{len(finished)} 个已完结季里 {len(above)} 季超出上限、{inside} 季落在区间内、"
-                   f"{len(below)} 季跌破下限")
-    elif inside == 0:
-        verdict = f"{len(finished)} 个已完结季全部超出指引上限，一次例外都没有"
-    else:
-        verdict = (f"{len(finished)} 个已完结季里 {len(above)} 季超出上限、{inside} 季落在区间内，"
-                   "没有一季跌破下限")
-    band = {
-        "ref": ref,
-        "kind": "range_band",
-        "title": f"{metric}：{verdict}",
-        "xlabels": list(quarters),
-        "xrot": 90,
-        "lo": list(low),
-        "hi": list(high),
-        "actual": list(actual),
-        "actual_color": "NAVY",
-        "names": {
-            "range": f"公司{metric}指引区间",
-            "actual": f"实际{metric}",
-            "lo": f"指引下限（{unit}）",
-            "hi": f"指引上限（{unit}）",
-        },
-        "fmt": fmt,
-        "label_fmt": fmt,
-        "ylab": ylab,
-        "note": (
-            f"色块是该季<b>开始前</b>公司在上一场法说会给出的{metric}区间，菱形是随后报出来的实际值。"
-            + extra_note
-            + (f"最后一格 {pending[-1]} 只有指引色块，实际值待披露。" if pending else "")
-            + "纵轴不自 0 起，但没有任何点被截掉。"
-        ),
-        "src_extra": src_extra,
-    }
-    if pending:
-        band["annot"] = f"{pending[-1]}：仅指引，实际值待披露"
-    return band
-
-
-def midpoint_deviation(ref: str, metric: str, quarters: list[str], low: list[float],
-                       high: list[float], actual: list[float | None], *, mode: str,
-                       src_extra: str, extra_note: str = "", window: int = 14) -> dict:
-    """How far past the guided midpoint the quarter landed, for one guided metric.
-
-    The band charts answer "did it clear the range at all", which saturates:
-    operating margin has cleared the upper bound fifteen times running, so the
-    band says the same thing every quarter. This asks the question that still
-    has an answer -- by how much, and is that widening or narrowing.
-
-    Two modes because the units genuinely differ. Revenue is guided as a level,
-    so the honest distance is relative (%). Both margins are already ratios, so
-    theirs is the arithmetic gap (pp): dividing a percentage by a percentage
-    would print a number nobody quotes and that no company reports.
-    """
-    if mode not in ("pct", "pp"):
-        raise ValueError(f"unknown mode {mode!r}")
-    finished = [
-        index for index, value in enumerate(actual) if value is not None
-    ][-window:]
-    midpoints = [(low[index] + high[index]) / 2 for index in finished]
-    deviation = [
-        (actual[index] / mid - 1) * 100 if mode == "pct" else actual[index] - mid
-        for index, mid in zip(finished, midpoints)
-    ]
-    unit = "%" if mode == "pct" else "pp"
-    above = sum(1 for value in deviation if value > 0)
-    mean_absolute = statistics.fmean(abs(value) for value in deviation)
-    biggest = max(deviation, key=abs)
-    return {
-        "ref": ref,
-        "kind": "grouped_bars",
-        "title": (
-            f"{metric}相对指引中值的偏离：{len(deviation)} 季里 {above} 季为正，"
-            f"平均绝对偏离 {mean_absolute:.1f}{unit}"
-        ),
-        "xlabels": [month_label(quarter_end_month(quarters[index])) for index in finished],
-        "xrot": 90,
-        "groups": [{
-            "name": f"实际{metric} vs 指引中值",
-            "color": "BLUE",
-            "values": rounded(deviation),
-        }],
-        "bar_labels": True,
-        "fmt": "pct1" if mode == "pct" else "pp1",
-        "label_fmt": "pct1" if mode == "pct" else "pp1",
-        "ylab": f"{unit} vs 指引中值",
-        "note": (
-            f"正值 = 高于指引区间的中值；长期为正说明公司指引偏保守，不是一连串意外。"
-            f"x 轴标的是该季最后一个月。"
-            f"窗口内最大的一次是 {month_label(quarter_end_month(quarters[finished[deviation.index(biggest)]]))} "
-            f"的 {biggest:+.1f}{unit}。"
-            + (
-                "本图单位是<b>百分点</b>，与收入那张的<b>百分比</b>不可直接比大小 —— "
-                "率的偏离取算术差，除一次只会得到一个没人引用的数。"
-                if mode == "pp" else ""
-            )
-            + extra_note
-        ),
-        "src_extra": src_extra,
-    }
 
 
 def expectation_chart(staging: dict) -> dict:
@@ -358,7 +241,10 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
     window = finished[-14:]
     midpoint_chart = midpoint_deviation(
         "EX_MIDPOINT", "收入", quarters, low, high, guide["actual_revenue_usd_bn"],
-        mode="pct", src_extra=SOURCE_6K + "偏离为实际收入除以指引中值的自算值。",
+        mode="pct",
+        label=lambda quarter: month_label(quarter_end_month(quarter)),
+        axis_note="x 轴标的是该季最后一个月。",
+        src_extra=SOURCE_6K + "偏离为实际收入除以指引中值的自算值。",
         extra_note=(
             "<b>柱高不是纯经营偏离</b> —— 指引按业绩会写明的<b>假设</b>汇率给出，"
             "实际收入按当季实际汇率折算，每根柱里都含一条汇率腿，拆开见 Exhibit {EX_LEGS}。"
@@ -378,6 +264,9 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         "EX_GM_MIDPOINT", "毛利率", quarters,
         guide["gross_margin_guide_low_pct"], guide["gross_margin_guide_high_pct"],
         guide["gross_margin_actual_pct"], mode="pp",
+        label=lambda quarter: month_label(quarter_end_month(quarter)),
+        axis_note="x 轴标的是该季最后一个月。",
+        
         src_extra=(SOURCE_6K + "实际毛利率 = 该季 6-K 合并损益表的毛利 ÷ 净销售额 D；"
                    "偏离为实际值减指引中值的自算值。"),
         extra_note=FX_SHARED,
@@ -386,6 +275,9 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         "EX_OM_MIDPOINT", "营业利润率", quarters,
         guide["operating_margin_guide_low_pct"], guide["operating_margin_guide_high_pct"],
         guide["operating_margin_actual_pct"], mode="pp",
+        label=lambda quarter: month_label(quarter_end_month(quarter)),
+        axis_note="x 轴标的是该季最后一个月。",
+        
         src_extra=(SOURCE_6K + "实际营业利润率 = 该季 6-K 合并损益表的营业利益 ÷ 净销售额 D；"
                    "偏离为实际值减指引中值的自算值。"),
         extra_note=(

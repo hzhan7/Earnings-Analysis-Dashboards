@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from build import googl, meta, msft, tsm  # noqa: E402
+from build import googl, meta, msft, nvda, tsm  # noqa: E402
 from build.payload_guard import write_js  # noqa: E402
 
 
@@ -20,6 +20,7 @@ MODULES = {
     "googl": googl,
     "meta": meta,
     "msft": msft,
+    "nvda": nvda,
     "tsm": tsm,
 }
 
@@ -63,6 +64,16 @@ ENTRIES = [
         "cadence_label": "6 月制财年；本站按自然年季度标注",
         "headline_metrics": ["Revenue $90.0B", "Azure +43%", "FCF $19.6B"],
         "search_text": "msft microsoft 微软 azure copilot m365 云 软件",
+    },
+    {
+        "slug": "nvda",
+        "ticker": "NVDA",
+        "name": "NVIDIA",
+        "aliases": ["英伟达", "Nvidia"],
+        "group": "semiconductor_ai",
+        "cadence_label": "1 月制财年；本站按自然年季度标注",
+        "headline_metrics": ["Revenue $81.6B", "Data Center +92%", "GM 75.0%"],
+        "search_text": "nvda nvidia 英伟达 半导体 gpu ai 数据中心 hyperscale acie networking blackwell rubin",
     },
     {
         "slug": "tsm",
