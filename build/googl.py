@@ -718,7 +718,6 @@ def build_payload(staging: dict) -> dict:
     }
 
 
-SHELL = render_shell("GOOGL", "googl")
 
 
 def main() -> int:
@@ -727,7 +726,10 @@ def main() -> int:
     write_dash(str(DATA_DIR / "googl.js"), payload, "googl")
     shell_dir = ROOT / "googl"
     shell_dir.mkdir(exist_ok=True)
-    (shell_dir / "index.html").write_text(SHELL, encoding="utf-8")
+    # Rendered here, not at import: the shell stamps the payload's content
+    # hash into its <script src>, so it has to be built after write_dash.
+    (shell_dir / "index.html").write_text(
+        render_shell("GOOGL", "googl"), encoding="utf-8")
     print("GOOGL page: 13 charts in 4 sections + 6 audit tables")
     return 0
 

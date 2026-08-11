@@ -35,7 +35,6 @@ from build.payload_guard import write_dash  # noqa: E402
 
 STAGING_PATH = ROOT / "series" / "tsm.json"
 DATA_DIR = ROOT / "data"
-SHELL = render_shell("TSM", "tsm")
 
 
 def signed(value: float, digits: int = 1, suffix: str = "%") -> str:
@@ -1150,7 +1149,10 @@ def main() -> int:
     write_dash(str(DATA_DIR / "tsm.js"), payload, "tsm")
     shell_dir = ROOT / "tsm"
     shell_dir.mkdir(exist_ok=True)
-    (shell_dir / "index.html").write_text(SHELL, encoding="utf-8")
+    # Rendered here, not at import: the shell stamps the payload's content
+    # hash into its <script src>, so it has to be built after write_dash.
+    (shell_dir / "index.html").write_text(
+        render_shell("TSM", "tsm"), encoding="utf-8")
     # Counted, not typed: this line claimed "13 charts in 4 sections" while the
     # page had grown to 21.
     charts = sum(len(section["exhibits"]) for section in payload["sections"])

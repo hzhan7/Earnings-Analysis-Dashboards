@@ -2,9 +2,44 @@
 
 from __future__ import annotations
 
+import hashlib
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def fingerprint(relative: str) -> str:
+    """``?v=<8 hex of the file's sha256>``, or ``''`` when it is not built yet.
+
+    GitHub Pages serves everything with ``max-age=600`` and the shell used to
+    link its payload by a bare path, so for ten minutes after a publish a
+    returning reader kept the old ``data/<slug>.js`` and saw the previous
+    version of the page -- or, worse, a mix, because the HTML and the payload
+    expire independently. Keying the query on the content means a changed file
+    is a changed URL the browser has to fetch, while an unchanged file keeps its
+    URL and stays cached.
+
+    The digest is a pure function of the file, so ``build/all.py && git status``
+    stays the drift check. A build timestamp would have dirtied every page on
+    every build, which is exactly what `write_js` refuses to do for payloads.
+    """
+    target = ROOT / relative
+    if not target.exists():
+        return ""
+    return f"?v={hashlib.sha256(target.read_bytes()).hexdigest()[:8]}"
+
 
 def render_shell(ticker: str, slug: str) -> str:
-    """Return the static shell used by the common browser renderer."""
+    """Return the static shell used by the common browser renderer.
+
+    Call this **after** the page's payload has been written: the script tags
+    carry that file's content hash, so rendering the shell first would stamp the
+    previous build's digest and defeat the point.
+    """
+    roster_v = fingerprint("data/roster.js")
+    payload_v = fingerprint(f"data/{slug}.js")
+    charts_v = fingerprint("assets/charts.js")
+    page_v = fingerprint("assets/page.js")
     return f"""<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -34,10 +69,10 @@ def render_shell(ticker: str, slug: str) -> str:
 </main>
 <footer id="foot"></footer>
 </div></div>
-<script src="../data/roster.js"></script>
-<script src="../data/{slug}.js"></script>
-<script src="../assets/charts.js"></script>
-<script src="../assets/page.js"></script>
+<script src="../data/roster.js{roster_v}"></script>
+<script src="../data/{slug}.js{payload_v}"></script>
+<script src="../assets/charts.js{charts_v}"></script>
+<script src="../assets/page.js{page_v}"></script>
 </body>
 </html>
 """

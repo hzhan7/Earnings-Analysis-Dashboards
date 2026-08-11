@@ -41,7 +41,6 @@ from build.payload_guard import write_dash  # noqa: E402
 
 STAGING_PATH = ROOT / "series" / "meta.json"
 DATA_DIR = ROOT / "data"
-SHELL = render_shell("META", "meta")
 
 # The source carries twelve quarters so every displayed quarter has a year-ago
 # base; the page shows the last eight.
@@ -881,7 +880,10 @@ def main() -> int:
     write_dash(str(DATA_DIR / "meta.js"), payload, "meta")
     shell_dir = ROOT / "meta"
     shell_dir.mkdir(exist_ok=True)
-    (shell_dir / "index.html").write_text(SHELL, encoding="utf-8")
+    # Rendered here, not at import: the shell stamps the payload's content
+    # hash into its <script src>, so it has to be built after write_dash.
+    (shell_dir / "index.html").write_text(
+        render_shell("META", "meta"), encoding="utf-8")
     exhibits = sum(len(section["exhibits"]) for section in payload["sections"])
     print(f"META page: {exhibits} charts in 4 sections + {len(payload['tables'])} audit tables")
     return 0

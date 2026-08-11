@@ -471,6 +471,27 @@ class TsmDashboardTest(unittest.TestCase):
         self.assertIn('../data/tsm.js', shell)
         self.assertNotIn('../data/googl.js', shell)
 
+    def test_shell_versions_every_script_by_content(self) -> None:
+        """GitHub Pages caches everything for ten minutes and the HTML and the
+        payload expire independently, so a bare `src` let a returning reader see
+        the new page with the old data -- or a mix of both. Each script URL has
+        to carry its own file's digest, and it has to be the CURRENT digest: a
+        shell rendered before the payload was written would stamp the previous
+        build's hash and cache exactly the file it was meant to bust."""
+        import hashlib
+
+        shell = (ROOT / "tsm" / "index.html").read_text(encoding="utf-8")
+        sources = re.findall(r'<script src="\.\./([^"?]+)(\?v=([0-9a-f]+))?"', shell)
+        self.assertEqual(
+            [name for name, _, _ in sources],
+            ["data/roster.js", "data/tsm.js", "assets/charts.js", "assets/page.js"],
+        )
+        for name, query, digest in sources:
+            with self.subTest(script=name):
+                self.assertTrue(query, f"{name} is served without a cache-busting version")
+                expected = hashlib.sha256((ROOT / name).read_bytes()).hexdigest()[: len(digest)]
+                self.assertEqual(digest, expected, f"{name} carries a stale digest")
+
     def test_home_page_matches_roster(self) -> None:
         """index.html is hand-written and reads no payload, so it can silently
         keep advertising last quarter while the company pages move on."""

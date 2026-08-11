@@ -115,9 +115,12 @@ def build_all() -> dict:
 
 
 def main() -> int:
+    # Roster first: each page's shell stamps the content hash of every script it
+    # loads, roster.js included, so the roster has to be final before the shells
+    # are rendered or they would carry the previous build's digest for it.
+    write_roster(roster_payload(build_all()))
     for module in MODULES.values():
         module.main()
-    write_roster(roster_payload(build_all()))
     print(f"Quarterly Results: {len(MODULES)} reviewed companies + shared roster")
     return 0
 
