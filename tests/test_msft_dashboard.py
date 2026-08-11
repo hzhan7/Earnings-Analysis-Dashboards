@@ -214,16 +214,75 @@ class MsftDashboardTest(unittest.TestCase):
             self.assertEqual(len(set(threshold)), 1, exhibit["title"])
             self.assertEqual(len(threshold), WINDOW, exhibit["title"])
 
+    def test_long_history_agrees_with_the_reviewed_quarters(self) -> None:
+        """The ten-year series and the reviewed twelve must not disagree.
+
+        Microsoft's fiscal fourth quarter is never filed on its own -- it is the
+        year minus the nine-month year-to-date -- so this is also the check that
+        the subtraction still lands on the number a human already reviewed.
+        """
+        long = self.source["long_history"]
+        index = {quarter: i for i, quarter in enumerate(long["quarters"])}
+        pairs = [
+            ("revenue_usd_m", "revenue_total"),
+            ("gross_profit_usd_m", "gross_profit"),
+            ("operating_income_usd_m", "operating_income"),
+            ("capital_expenditures_usd_m", "cash_paid_for_property_and_equipment"),
+            ("operating_cash_flow_usd_m", "operating_cash_flow"),
+            ("depreciation_usd_m", "depreciation"),
+            ("finance_lease_additions_usd_m", "finance_lease_additions"),
+        ]
+        for long_key, reviewed_key in pairs:
+            for period, expected in zip(self.source["periods"], self.q[reviewed_key]):
+                quarter, year = period.split()
+                got = long[long_key][index[f"{year}Q{quarter[1]}"]]
+                self.assertEqual(got, expected, f"{long_key} {period}")
+
+    def test_quarterly_depreciation_is_not_invented_before_disclosure(self) -> None:
+        """Microsoft publishes depreciation annually far further back than it
+        publishes it quarterly.  Spreading a year over four quarters would draw a
+        curve the company never gave, so that chart keeps its short window and
+        the page says why rather than leaving the reader to notice."""
+        long = self.source["long_history"]
+        quarters = long["quarters"]
+        start = quarters.index(long["depreciation_first_reported"])
+        self.assertTrue(all(v is None for v in long["depreciation_usd_m"][:start]))
+        self.assertTrue(all(v is not None for v in long["depreciation_usd_m"][start:]))
+
+        depreciation_chart = next(ex for ex in self.exhibits if "季度折旧" in ex["title"])
+        self.assertEqual(len(depreciation_chart["xlabels"]), WINDOW)
+        self.assertIn("只有这张没有", depreciation_chart["note"])
+
+        # The other three routine charts did make it back to the start.
+        routine = self.by_section["routine"]
+        long_axes = [ex for ex in routine if len(ex["xlabels"]) > WINDOW]
+        self.assertEqual(len(long_axes), 3)
+
     def test_finance_leases_are_never_added_to_cash_capex(self) -> None:
         """The two spending channels take different routes through the cash flow
         statement, so the page charts them separately and says why."""
-        capex_chart = next(ex for ex in self.exhibits if "现金资本开支" in ex["title"])
+        long = self.source["long_history"]
+        capex_chart = next(ex for ex in self.exhibits if "资本强度" in ex["title"])
         lease_chart = next(ex for ex in self.exhibits if "融资租赁新增" in ex["title"])
+        intensity = [
+            round(spend / total * 100, 6)
+            for spend, total in zip(long["capital_expenditures_usd_m"], long["revenue_usd_m"])
+        ]
         self.assertEqual(
-            capex_chart["values"], self.q["cash_paid_for_property_and_equipment"][-WINDOW:]
+            [round(v, 6) for v in capex_chart["series"][0]["values"]], intensity
         )
-        self.assertEqual(lease_chart["values"], self.q["finance_lease_additions"][-WINDOW:])
+        leases = long["finance_lease_additions_usd_m"]
+        self.assertEqual(
+            lease_chart["series"][0]["values"], [v for v in leases if v is not None]
+        )
         self.assertIn("不把它与现金资本开支相加", lease_chart["src_extra"])
+        # The two channels stay on separate charts: neither series may be the
+        # sum of the two, which is the mistake the note exists to prevent.
+        combined = [
+            spend + (lease or 0)
+            for spend, lease in zip(long["capital_expenditures_usd_m"], leases)
+        ]
+        self.assertNotEqual(lease_chart["series"][0]["values"], combined)
 
     def test_audit_tables_back_every_derived_exhibit(self) -> None:
         tables = self.payload["tables"]

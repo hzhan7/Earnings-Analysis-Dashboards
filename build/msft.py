@@ -52,6 +52,22 @@ def compact_period(period: str) -> str:
     return f"{quarter}'{year[-2:]}"
 
 
+def quarter_label(quarter: str) -> str:
+    """``'2016Q1'`` → ``'Q1'16'``, matching `compact_period`'s output."""
+    year, number = quarter.split("Q")
+    return f"Q{number}'{year[-2:]}"
+
+
+def leading_gap(values: list[float | None]) -> int:
+    """Index of the first reported value; ``len(values)`` when there is none."""
+    return next((i for i, value in enumerate(values) if value is not None), len(values))
+
+
+# One x label per year: forty-two quarterly labels at 90 degrees turn the axis
+# into a hairbrush, and this axis is only ever navigated by year.
+LONG_STEP = 4
+
+
 def shown(values: list) -> list:
     return values[-WINDOW:]
 
@@ -109,6 +125,30 @@ def build_payload(staging: dict) -> dict:
     ]
     finance_leases = shown(q["finance_lease_additions"])
     other_income = shown(q["other_income_expense_net"])
+
+    # ── The routine charts run on the ten-year record, not the eight ─────────
+    # Eight quarters is barely one build cycle, which is the wrong window for
+    # every question this section asks.  Everything below is a filed number or
+    # the difference of two filed numbers; see long_history.provenance.
+    long = staging["long_history"]
+    long_labels = [quarter_label(quarter) for quarter in long["quarters"]]
+    long_revenue = long["revenue_usd_m"]
+    long_capex = long["capital_expenditures_usd_m"]
+    long_intensity = [
+        spend / total * 100 for spend, total in zip(long_capex, long_revenue)
+    ]
+    long_gross_margin = [
+        profit / total * 100
+        for profit, total in zip(long["gross_profit_usd_m"], long_revenue)
+    ]
+    long_operating_margin = [
+        income / total * 100
+        for income, total in zip(long["operating_income_usd_m"], long_revenue)
+    ]
+    # Finance leases start a couple of quarters into the window rather than at
+    # 2016Q1, so the chart carries its own shorter axis instead of two blanks.
+    long_leases = long["finance_lease_additions_usd_m"]
+    lease_from = leading_gap(long_leases)
 
     # Intelligent Cloud is the only segment that publishes its own cost of
     # revenue every quarter, which makes its gross margin the one AI-mix series
@@ -440,42 +480,46 @@ def build_payload(staging: dict) -> dict:
 
     routine = [
         {
-            "kind": "gs_bar",
+            "kind": "lines",
             "title": (
-                f"现金资本开支 ${capex[-1]:,.0f}M、占收入 {capex_intensity[-1]:.1f}%，"
-                f"八季从 {capex_intensity[0]:.1f}% 一路抬升"
+                f"资本强度十年从 {long_intensity[0]:.1f}% 升到 {long_intensity[-1]:.1f}%，"
+                f"本季现金资本开支 ${capex[-1]:,.0f}M"
             ),
-            "xlabels": labels,
-            "values": capex,
-            "legend": "现金支付的物业及设备",
-            "fmt": "f0c",
-            "yfmt": "f0c",
-            "label_fmt": "f0c",
-            "ylab": "$M",
-            "ylab2": "占收入比",
-            "yoy": {
-                "name": "现金 CapEx / 收入 (RHS) D",
-                "values": capex_intensity,
-                "color": "GOLD",
-                "yfmt": "pct1",
-            },
+            "xlabels": long_labels,
+            "xstep": LONG_STEP,
+            "series": [
+                {"name": "现金 CapEx / 收入 D", "values": long_intensity, "color": "NAVY"},
+            ],
+            "fmt": "pct1",
+            "yfmt": "pct1",
+            "label_fmt": "pct1",
+            "zero_base": True,
+            "end_label": True,
+            "ylab": "占收入比",
             "note": (
                 f"同比 {pct_change(capex[-1], capex[-5]):+.1f}%；下季指引仍在 "
-                f"{guidance['capex_next_quarter']}。这条线只含已付现的部分，"
-                "口径与本站其他公司页的现金资本开支一致，可直接横向比较。"
+                f"{guidance['capex_next_quarter']}。"
+                f"<b>拉长看才知道当前这一档没有先例</b>：2016–2019 年这条线长期在 "
+                f"{min(long_intensity[:16]):.0f}–{max(long_intensity[:16]):.0f}%，"
+                f"当前 {long_intensity[-1]:.1f}% 是十年区间的顶点。"
+                "这条线只含已付现的部分，口径与本站其他公司页的现金资本开支一致，可直接横向比较；"
+                "公司口径的资本开支还要加上下面那张融资租赁新增。"
             ),
-            "src_extra": source_note("现金资本开支来自各期现金流量表；占收入比为自算"),
+            "src_extra": source_note(
+                "现金资本开支逐季来自各期现金流量表（10-Q 只按年初至今披露，逐季由相邻两个"
+                "年初至今值相减，财政第四季为全年 − 前三季）；占收入比为自算"),
         },
         {
             "kind": "lines",
             "title": (
-                f"毛利率八季从 {gross_margin[0]:.1f}% 降到 {gross_margin[-1]:.1f}%，"
-                f"营业利润率 {operating_margin[-1]:.1f}%"
+                f"毛利率十年从 {long_gross_margin[0]:.1f}% 走到 {long_gross_margin[-1]:.1f}%，"
+                f"营业利润率 {long_operating_margin[-1]:.1f}%"
             ),
-            "xlabels": labels,
+            "xlabels": long_labels,
+            "xstep": LONG_STEP,
             "series": [
-                {"name": "毛利率", "values": gross_margin, "color": "NAVY"},
-                {"name": "营业利润率", "values": operating_margin, "color": "MBLUE"},
+                {"name": "毛利率", "values": long_gross_margin, "color": "NAVY"},
+                {"name": "营业利润率", "values": long_operating_margin, "color": "MBLUE"},
             ],
             "fmt": "pct1",
             "yfmt": "pct1",
@@ -486,6 +530,10 @@ def build_payload(staging: dict) -> dict:
                 f"下季指引隐含毛利率约 "
                 f"{(guidance_revenue_mid - sum(guidance['cost_of_revenue_usd_m']) / 2) / guidance_revenue_mid * 100:.1f}%，"
                 "较去年同期再降约 2pp；公司对 FY2027 的口径是「营业利润率同比下降不足 1 个百分点」。"
+                f"<b>八季的窗口会把这段读成单向下滑，十年的窗口说的是另一回事</b>："
+                f"毛利率 2016–2018 年在 {min(long_gross_margin[:12]):.0f}% 上下，"
+                f"到 {max(long_gross_margin):.0f}% 见顶后才回落到今天的 "
+                f"{long_gross_margin[-1]:.1f}%，当前值仍高于窗口起点。"
             ),
             "src_extra": source_note("毛利率与营业利润率按利润表口径自算，指引隐含值取区间中点"),
         },
@@ -514,29 +562,39 @@ def build_payload(staging: dict) -> dict:
                 f"{pct_change(fy['depreciation'][1], fy['depreciation'][0]):.0f}%。"
                 f"数据中心与办公楼的估计可使用年限自 FY2027 起由 {guidance['useful_life_years'][0]} 年延长到 "
                 f"{guidance['useful_life_years'][1]} 年，这条线的下一段斜率因此不再可比。"
+                f"<b>本节其余三张都拉到了 2016 年，只有这张没有</b>："
+                f"{long['depreciation_note']}"
             ),
             "src_extra": source_note("季度折旧来自各期现金流量表，按公司披露精度到 $100M；占收入比为自算"),
         },
         {
-            "kind": "gs_bar",
+            "kind": "lines",
             "title": (
-                f"融资租赁新增八季合计 ${sum(finance_leases):,.0f}M，是资本开支口径之外的第二条通道"
+                f"融资租赁新增十年累计 ${sum(v for v in long_leases if v is not None):,.0f}M，"
+                "是资本开支口径之外的第二条通道"
             ),
-            "xlabels": labels,
-            "values": finance_leases,
-            "legend": "融资租赁新增",
+            "xlabels": long_labels[lease_from:],
+            "xstep": LONG_STEP,
+            "series": [
+                {"name": "融资租赁新增", "values": long_leases[lease_from:], "color": "NAVY"},
+            ],
             "fmt": "f0c",
             "yfmt": "f0c",
             "label_fmt": "f0c",
+            "zero_base": True,
+            "end_label": True,
             "ylab": "$M",
             "note": (
                 f"FY2026 新增 ${fy['finance_lease_additions'][1]:,}M。年限延长后，一份 15 年期数据中心租约"
                 "占资产经济寿命的比例下降，会从融资租赁重分类为经营租赁——公司口径的自然年资本开支"
                 f"因此由约 US${guidance['cy2026_capex_prior_usd_bn']}B 调整为约 "
                 f"US${guidance['cy2026_capex_usd_bn']}B，而管理层同时说明支出预期本身没有变。"
+                "<b>十年窗口正是读这次重分类的前提</b>：这条通道在 2016–2019 年几乎是平的，"
+                "本轮建设周期才把它抬成与现金资本开支同一量级的第二条腿，"
+                "所以口径一动就能改写「公司资本开支」这个数。"
             ),
             "src_extra": (
-                "融资租赁新增为「以租赁负债交换的使用权资产」，来自各期现金流量表的补充披露；"
+                "融资租赁新增为「以租赁负债交换的使用权资产」，逐季来自各期现金流量表的补充披露；"
                 "本页不把它与现金资本开支相加，因为两者的现金路径不同。"
             ),
         },
