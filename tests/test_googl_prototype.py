@@ -23,6 +23,68 @@ class GooglePageTest(unittest.TestCase):
             section["id"]: section["exhibits"] for section in cls.payload["sections"]
         }
 
+    def test_long_history_agrees_with_the_reviewed_quarters(self) -> None:
+        """The ten-year series and the reviewed twelve must not disagree.
+
+        Alphabet files its cash-flow lines year-to-date only, so every quarter
+        but the first is one filed figure minus another; this is the check that
+        those subtractions still land on numbers a human already reviewed.
+        """
+        long = self.staging["long_history"]
+        quarterly = self.staging["quarterly"]
+        index = {quarter: i for i, quarter in enumerate(long["quarters"])}
+        pairs = [
+            ("revenue_usd_m", "revenue_total"),
+            ("capital_expenditures_usd_m", "capital_expenditures"),
+            ("operating_cash_flow_usd_m", "operating_cash_flow"),
+            ("depreciation_usd_m", "depreciation"),
+        ]
+        for long_key, reviewed_key in pairs:
+            for period, expected in zip(quarterly["periods"], quarterly[reviewed_key]):
+                quarter, year = period.split()
+                self.assertEqual(
+                    long[long_key][index[f"{year}Q{quarter[1]}"]], expected,
+                    f"{long_key} {period}",
+                )
+        for region, values in quarterly["geography_usd_m"].items():
+            for period, expected in zip(quarterly["periods"], values):
+                quarter, year = period.split()
+                self.assertEqual(
+                    long["geography_usd_m"][region][index[f"{year}Q{quarter[1]}"]], expected,
+                    f"geography {region} {period}",
+                )
+
+    def test_geography_still_sums_to_total_revenue(self) -> None:
+        """The four regions are the whole of revenue, in every quarter of the
+        long run.  If a region were dropped or double counted when the window
+        was pulled back, this is what catches it."""
+        long = self.staging["long_history"]
+        regions = list(long["geography_usd_m"].values())
+        for index, total in enumerate(long["revenue_usd_m"]):
+            parts = [region[index] for region in regions]
+            if any(part is None for part in parts):
+                continue
+            # Alphabet's regional split is exact, up to its own hedging line.
+            self.assertLess(
+                abs(sum(parts) - total) / total, 0.02,
+                f"{long['quarters'][index]}: regions {sum(parts)} vs total {total}",
+            )
+
+    def test_quarterly_depreciation_is_not_invented_before_disclosure(self) -> None:
+        """Alphabet did not tag a comparable quarterly depreciation line before
+        the quarter named in the source, so that chart keeps its short window
+        while the other three routine charts run the full ten years."""
+        long = self.staging["long_history"]
+        start = long["quarters"].index(long["depreciation_first_reported"])
+        self.assertTrue(all(v is None for v in long["depreciation_usd_m"][:start]))
+        self.assertTrue(all(v is not None for v in long["depreciation_usd_m"][start:]))
+
+        routine = self.by_section["routine"]
+        depreciation_chart = next(ex for ex in routine if "折旧同比" in ex["title"])
+        self.assertIn("只有这张没有", depreciation_chart["note"])
+        self.assertEqual(len(depreciation_chart["xlabels"]), 8)
+        self.assertEqual(len([ex for ex in routine if len(ex["xlabels"]) > 8]), 3)
+
     def test_currency_sign_parsing(self) -> None:
         self.assertEqual(parse_number("-$5,855M"), -5855)
         self.assertEqual(parse_number("($5,855M)"), -5855)

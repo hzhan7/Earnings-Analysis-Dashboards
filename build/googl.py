@@ -120,6 +120,22 @@ def shown(values: list) -> list:
     return values[-WINDOW:]
 
 
+def quarter_label(quarter: str) -> str:
+    """``'2016Q1'`` → ``'Q1'16'``, matching the eight-quarter labels."""
+    year, number = quarter.split("Q")
+    return f"Q{number}'{year[-2:]}"
+
+
+def leading_gap(values: list[float | None]) -> int:
+    """Index of the first reported value; ``len(values)`` when there is none."""
+    return next((i for i, value in enumerate(values) if value is not None), len(values))
+
+
+# One x label per year: forty-two quarterly labels at 90 degrees turn the axis
+# into a hairbrush, and this axis is only ever navigated by year.
+LONG_STEP = 4
+
+
 def build_payload(staging: dict) -> dict:
     revenue = trend(staging, "八季度趋势（收入侧）")
     cash = trend(staging, "八季度趋势（现金与资本强度）")
@@ -162,6 +178,29 @@ def build_payload(staging: dict) -> dict:
         accel_streak += 1
     geography_yoy_series = {
         region: shown(yoy(values)) for region, values in q["geography_usd_m"].items()
+    }
+
+    # ── The routine charts run on the ten-year record, not the eight ─────────
+    # Eight quarters cannot tell a trend from a wobble, and for capital
+    # intensity eight quarters is barely one build cycle.  Everything below is
+    # a filed number or the difference of two filed numbers; the quarterly
+    # cash-flow lines exist only year-to-date in a 10-Q, so every quarter after
+    # the first is one year-to-date figure minus the previous one.  See
+    # long_history.provenance.
+    long = staging["long_history"]
+    long_labels = [quarter_label(quarter) for quarter in long["quarters"]]
+    long_revenue = long["revenue_usd_m"]
+    long_capex = long["capital_expenditures_usd_m"]
+    long_revenue_yoy = yoy(long_revenue)
+    long_intensity = [
+        capex / total * 100 for capex, total in zip(long_capex, long_revenue)
+    ]
+    # y/y needs four quarters of run-up, so these two start a year in rather
+    # than drawing four empty slots on the left.
+    yoy_from = leading_gap(long_revenue_yoy)
+    long_geography_yoy = {
+        region: yoy(values)[yoy_from:]
+        for region, values in long["geography_usd_m"].items()
     }
 
     dep_cur, dep_prev, dep_prior = snap(staging, "折旧")
@@ -411,42 +450,58 @@ def build_payload(staging: dict) -> dict:
             ),
         ),
         {
-            "kind": "gs_bar",
-            "title": f"总收入同比连续 {accel_streak} 季加速至 {revenue_yoy[-1]:.1f}%",
-            "xlabels": revenue_labels,
-            "values": revenue_values,
-            "legend": "总收入",
-            "fmt": "f0c",
-            "yfmt": "f0c",
-            "label_fmt": "f0c",
-            "ylab": "$M",
-            "ylab2": "同比增速",
-            "yoy": {
-                "name": "同比增速 (RHS)",
-                "values": revenue_yoy,
-                "color": "GREEN",
-                "yfmt": "pct1",
-            },
-            "note": (
-                f"在约 $4,000 亿的年收入体量上连续 {accel_streak} 季加速，"
-                f"本季收入较市场预期高 {change(revenue_values[-1], consensus['revenue_usd_m'])}。"
-            ),
-            "src_extra": source_note("收入与同比来自公司季度 release"),
-        },
-        {
-            "kind": "gs_line",
+            "kind": "lines",
             "title": (
-                f"资本强度八季从 {capex_intensity[0]:.1f}% 升到 {capex_intensity[-1]:.1f}%，且尚未见顶"
+                f"总收入同比连续 {accel_streak} 季加速至 {revenue_yoy[-1]:.1f}%，"
+                f"十年区间 {min(v for v in long_revenue_yoy if v is not None):.0f}–"
+                f"{max(v for v in long_revenue_yoy if v is not None):.0f}%"
             ),
-            "xlabels": cash_labels,
-            "values": capex_intensity,
-            "legend": "CapEx / 收入",
+            "xlabels": long_labels[yoy_from:],
+            "xstep": LONG_STEP,
+            "series": [
+                {"name": "总收入同比", "values": long_revenue_yoy[yoy_from:], "color": "NAVY"},
+            ],
             "fmt": "pct1",
             "yfmt": "pct1",
             "label_fmt": "pct1",
+            "end_label": True,
+            "ylab": "同比增速",
+            "note": (
+                f"在约 $4,000 亿的年收入体量上连续 {accel_streak} 季加速，"
+                f"本季收入较市场预期高 {change(revenue_values[-1], consensus['revenue_usd_m'])}。"
+                "<b>八季的窗口里这只是一条上行线，十年的窗口里它是第三次加速</b> —— "
+                "2020 年疫情后的一次、2021 年的一次，都在两到三年内回落，"
+                "这一次与前两次的区别要靠资本强度那张图判断，不是靠这一张。"
+            ),
+            "src_extra": source_note(
+                "收入逐季来自各期 10-Q / 10-K（第四季为全年 − 前三季），同比为自算"),
+        },
+        {
+            "kind": "lines",
+            "title": (
+                f"资本强度十年从 {long_intensity[0]:.1f}% 升到 {long_intensity[-1]:.1f}%，且尚未见顶"
+            ),
+            "xlabels": long_labels,
+            "xstep": LONG_STEP,
+            "series": [
+                {"name": "CapEx / 收入 D", "values": long_intensity, "color": "NAVY"},
+            ],
+            "fmt": "pct1",
+            "yfmt": "pct1",
+            "label_fmt": "pct1",
+            "zero_base": True,
+            "end_label": True,
             "ylab": "占收入比",
-            "note": "按 FY2026 指引中点与全年收入估算，全年资本强度约 41%；这条线比利润表更早反映建设周期。",
-            "src_extra": source_note("CapEx / 收入为自算"),
+            "note": (
+                "按 FY2026 指引中点与全年收入估算，全年资本强度约 41%；这条线比利润表更早反映建设周期。"
+                f"<b>十年里这条线只有两个台阶</b>：2016–2022 年长期在 "
+                f"{min(long_intensity[:28]):.0f}–{max(long_intensity[:28]):.0f}% 之间来回，"
+                f"2023 年起单向上行到今天的 {long_intensity[-1]:.1f}%，"
+                "当前值是十年区间的顶点而非区间内的一次波动。"
+            ),
+            "src_extra": source_note(
+                "CapEx / 收入为自算；资本开支逐季来自各期现金流量表"
+                "（10-Q 只按年初至今披露，逐季由相邻两个年初至今值相减）"),
         },
         {
             "kind": "gs_bar",
@@ -468,6 +523,7 @@ def build_payload(staging: dict) -> dict:
             "note": (
                 f"折旧同比已连续多季高于收入同比；当季 CapEx 是折旧的 "
                 f"{capex_values[-1] / dep_values[-1]:.1f} 倍，意味着这条线的上行才刚开始。"
+                f"<b>本节其余三张都拉到了 2016 年，只有这张没有</b>：{long['depreciation_note']}"
             ),
             "src_extra": source_note("季度折旧来自各期 10-Q / 10-K 现金流量表，第四季按全年减前三季倒推"),
         },
@@ -494,12 +550,13 @@ def build_payload(staging: dict) -> dict:
             "title": (
                 f"美国收入同比 {geography_yoy_series['美国'][-1]:+.0f}%，与其余地区的差距在拉大"
             ),
-            "xlabels": revenue_labels,
+            "xlabels": long_labels[yoy_from:],
+            "xstep": LONG_STEP,
             "series": [
-                {"name": "美国", "values": geography_yoy_series["美国"], "color": "NAVY"},
-                {"name": "EMEA", "values": geography_yoy_series["EMEA"], "color": "MBLUE"},
-                {"name": "APAC", "values": geography_yoy_series["APAC"], "color": "GOLD"},
-                {"name": "其他美洲", "values": geography_yoy_series["其他美洲"], "color": "GRAY"},
+                {"name": "美国", "values": long_geography_yoy["美国"], "color": "NAVY"},
+                {"name": "EMEA", "values": long_geography_yoy["EMEA"], "color": "MBLUE"},
+                {"name": "APAC", "values": long_geography_yoy["APAC"], "color": "GOLD"},
+                {"name": "其他美洲", "values": long_geography_yoy["其他美洲"], "color": "GRAY"},
             ],
             "fmt": "pct1",
             "yfmt": "pct1",
@@ -511,8 +568,12 @@ def build_payload(staging: dict) -> dict:
                 f"美国自 Q4 2025 起与其余三个地区分道扬镳，本季占总收入 "
                 f"{geography['current_usd_m'][0] / revenue_values[-1] * 100:.1f}%；"
                 "地域集中度与 AI 基础设施客户的集中度是同一件事的两个视角。"
+                "<b>拉到十年才看得出这次分化没有先例</b>：2016 年以来这四条线基本同起同落，"
+                "只有 2020 年疫情那一次短暂错开过，且几个季度内就重新收拢。"
             ),
-            "src_extra": source_note("分地域收入来自各期 10-Q / 10-K，第四季按全年减前三季倒推；同比为自算"),
+            "src_extra": source_note(
+                "分地域收入逐季来自各期 10-Q / 10-K 的 srt:StatementGeographicalAxis 维度事实"
+                "（第四季按全年减前三季倒推）；同比为自算"),
         },
     ]
     highlights = built[1:7]
