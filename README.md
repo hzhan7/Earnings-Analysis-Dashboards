@@ -66,9 +66,37 @@ Charts are ordered the way the note is actually used:
    plus the inventory-and-supply-commitment block that carries its real capital
    intensity; TSMC gets node migration, platform mix and working capital.
 
-TSMC's and NVIDIA's first sections are built out further than the others,
-because both companies guide several numbers every quarter in the same sentence
-structure, and eight quarters cannot say whether clearing them is normal.
+On the Alphabet, Meta and Microsoft pages these run on the ten-year record
+rather than eight quarters, because eight quarters cannot tell a trend from a
+wobble and — for capital intensity — is barely one build cycle. It changes what
+several of them say: Microsoft's capital intensity sat in a narrow band from
+2016 to 2019 and is now at a ten-year high, and Alphabet's revenue
+reacceleration reads as a third episode rather than a first.
+
+The window is per chart, not per page, and it stops where the company's own
+disclosure stops rather than being padded:
+
+- All three file their cash-flow lines year-to-date only, so every quarter after
+  the first is one filed figure minus the previous one, and the fiscal fourth is
+  the year minus the nine months. Both legs are filed numbers. Where a printed
+  quarterly column also exists it wins, because each leg of a subtraction is
+  rounded to the million first: Alphabet's 2025Q4 revenue derives to 113,829 and
+  the company prints 113,828.
+- Three charts keep a short axis because the number does not exist further back,
+  and each says so on the chart. Microsoft discloses depreciation annually to
+  2009 but quarterly only recently; Alphabet tagged no comparable quarterly
+  depreciation line before 2023; Meta's two segment lines begin when segment
+  reporting began, and its finance-lease principal begins with ASC 842, which is
+  what its own free-cash-flow definition nets.
+- Meta's Family-of-Apps other revenue for 2024Q4 was 522 here and 519 in the
+  company's own release — 519 is also what the filed year minus the three
+  reported quarters gives, while 522 overshoots the year by 3. Corrected, with a
+  test pinning the reconciliation.
+
+TSMC's, NVIDIA's and Meta's first sections are built out further than the
+others, because those three companies put a quarterly guidance range in a filing
+and the other two do not. Eight quarters cannot say whether clearing a range is
+normal for a company; the full record can.
 
 TSMC guides three numbers every quarter — revenue, gross margin and operating
 margin — and fifteen quarters pulled from the fifteen earnings 6-Ks themselves
@@ -113,6 +141,25 @@ the page says so on the chart. And NVIDIA changed its non-GAAP definition in
 FY2027 Q1 to include stock-based compensation, restating history — so the long
 series run on GAAP, whose definition never moved, while every guidance/actual
 pair is compared within the single basis that applied at the time.
+
+Meta guides one number — next-quarter revenue, as a dollar range in the Outlook
+section of every quarterly 8-K EX-99.1 — so its page carries the same pair of
+charts: the range against the reported result, then the distance from the guided
+midpoint. Its answer is a third distinct shape. In 18 finished quarters Meta
+cleared the top of its range 8 times, landed inside it 10, and **never once
+missed the bottom**, so that lower bound has never been tested and reads as a
+floor the company is willing to publish rather than one end of a forecast. The
+midpoint chart adds what the band cannot show: the beat is narrowing.
+
+**Microsoft and Alphabet get no such record, and that is a sourcing limit rather
+than an editorial choice.** Microsoft's own 8-K says in as many words that
+guidance is given on the earnings call and webcast, so nothing in its filings
+can carry a range; the quarterly outlook block on its page comes from the call,
+one quarter at a time. Alphabet gives no quarterly numeric guidance at all — its
+capital-expenditure commitment for the year reaches a press release only when it
+changes, twice in forty-five releases. Neither page gets a fabricated record:
+transcribing fifteen quarters off webcast material that cannot be checked
+against a second source is the failure this repo is built to avoid.
 
 Two of the series exist only on this site, because the number that decides the
 quarter is not one any filing prints:

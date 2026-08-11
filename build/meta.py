@@ -56,6 +56,121 @@ def shown(values: list) -> list:
     return values[-WINDOW:]
 
 
+def quarter_label(quarter: str) -> str:
+    """``'2016Q1'`` → ``'Q1'16'``, matching the eight-quarter labels."""
+    year, number = quarter.split("Q")
+    return f"Q{number}'{year[-2:]}"
+
+
+def leading_gap(values: list[float | None]) -> int:
+    """Index of the first reported value; ``len(values)`` when there is none."""
+    return next((i for i, value in enumerate(values) if value is not None), len(values))
+
+
+# One x label per year: forty-two quarterly labels at 90 degrees turn the axis
+# into a hairbrush, and this axis is only ever navigated by year.
+LONG_STEP = 4
+
+
+def guidance_band(quarters: list[str], low: list[float], high: list[float],
+                  actual: list[float | None]) -> dict:
+    """Meta's own revenue range against what it then reported, quarter by quarter.
+
+    Deliberately local rather than shared with the TSMC page.  TSMC guides three
+    numbers and needs a generalised helper; META guides exactly one, and the
+    shared version is being rewritten in another session as this is written, so
+    depending on its signature would make this page break on someone else's
+    unrelated edit.
+    """
+    finished = [index for index, value in enumerate(actual) if value is not None]
+    above = [i for i in finished if actual[i] > high[i]]
+    below = [i for i in finished if actual[i] < low[i]]
+    inside = len(finished) - len(above) - len(below)
+    pending = [quarters[i] for i, value in enumerate(actual) if value is None]
+    return {
+        "ref": "meta_revenue_band",
+        "kind": "range_band",
+        "title": (
+            f"收入指引兑现：{len(finished)} 个已完结季里 {len(above)} 季超出上限、"
+            f"{inside} 季落在区间内，"
+            + ("没有一季跌破下限" if not below else f"{len(below)} 季跌破下限")
+        ),
+        "xlabels": [quarter_label(quarter) for quarter in quarters],
+        "xrot": 90,
+        "lo": list(low),
+        "hi": list(high),
+        "actual": list(actual),
+        "actual_color": "NAVY",
+        "names": {
+            "range": "公司收入指引区间",
+            "actual": "实际收入",
+            "lo": "指引下限（US$B）",
+            "hi": "指引上限（US$B）",
+        },
+        "fmt": "f1",
+        "label_fmt": "f1",
+        "ylab": "US$B",
+        "note": (
+            "色块是该季<b>开始前</b>公司在上一季财报里给出的收入区间，菱形是随后报出来的实际值。"
+            f"<b>下限从未被测试过</b>：{len(finished)} 季里一次都没有跌破，"
+            "所以这条区间的下沿不是预测的一端，是公司愿意公开承诺的地板。"
+            + (f"最后一格 {quarter_label(pending[-1])} 只有指引色块，实际值待披露。"
+               if pending else "")
+            + "纵轴不自 0 起，但没有任何点被截掉。"
+        ),
+        "src_extra": (
+            "指引区间逐季读自各季财报 8-K 的 EX-99.1 新闻稿「Outlook」段落；"
+            "实际收入取同批申报的 XBRL 收入事实。"
+        ),
+    }
+
+
+def guidance_deviation(quarters: list[str], low: list[float], high: list[float],
+                       actual: list[float | None]) -> dict:
+    """How far past the guided midpoint each quarter landed.
+
+    The band chart saturates once a metric has cleared the same bound many times
+    running -- it then says the same thing every quarter.  This asks the question
+    that still has an answer: by how much, and is that widening or narrowing.
+    """
+    finished = [index for index, value in enumerate(actual) if value is not None]
+    midpoints = [(low[i] + high[i]) / 2 for i in finished]
+    deviation = [
+        round((actual[i] / mid - 1) * 100, 6) for i, mid in zip(finished, midpoints)
+    ]
+    above = sum(1 for value in deviation if value > 0)
+    biggest = max(deviation, key=abs)
+    recent = deviation[-4:]
+    return {
+        "ref": "meta_revenue_midpoint",
+        "kind": "grouped_bars",
+        "title": (
+            f"收入相对指引中值的偏离：{len(deviation)} 季里 {above} 季为正，"
+            f"平均绝对偏离 {sum(abs(v) for v in deviation) / len(deviation):.1f}%"
+        ),
+        "xlabels": [quarter_label(quarters[i]) for i in finished],
+        "xrot": 90,
+        "groups": [{
+            "name": "实际收入 vs 指引中值",
+            "color": "BLUE",
+            "values": deviation,
+        }],
+        "bar_labels": True,
+        "fmt": "pct1",
+        "label_fmt": "pct1",
+        "ylab": "% vs 指引中值",
+        "note": (
+            "正值 = 高于指引区间的中值；长期为正说明公司指引偏保守，不是一连串意外。"
+            f"窗口内最大的一次是 {quarter_label(quarters[finished[deviation.index(biggest)]])} "
+            f"的 {biggest:+.1f}%。"
+            f"<b>这张图比上面那张多说的一句是「超额在收窄」</b>：最近四季平均 "
+            f"{sum(recent) / len(recent):+.1f}%，低于 2025 全年的水平 —— "
+            "区间照样年年清得掉，但清出来的余量不如从前厚。"
+        ),
+        "src_extra": "指引中值为区间上下限的算术平均（自算）；两条腿均为公司申报值。",
+    }
+
+
 def yoy(values: list[float]) -> list[float | None]:
     return [None] * 4 + [
         (values[index] / values[index - 4] - 1) * 100 for index in range(4, len(values))
@@ -133,6 +248,48 @@ def build_payload(staging: dict) -> dict:
             ads["ad_impressions_yoy_pct"], ads["price_per_ad_yoy_pct"]
         )
     ]
+
+    # ── The routine charts run on the ten-year record, not the eight ─────────
+    # Everything below is a filed number or the difference of two filed numbers.
+    # The cash-flow lines exist only year-to-date in a 10-Q, so each quarter
+    # after the first is one year-to-date figure minus the previous one; see
+    # long_history.provenance.
+    long = staging["long_history"]
+    long_labels = [quarter_label(quarter) for quarter in long["quarters"]]
+    long_revenue = long["revenue_usd_m"]
+    long_depreciation = long["depreciation_and_amortization_usd_m"]
+    long_revenue_yoy = yoy(long_revenue)
+    long_depreciation_yoy = yoy(long_depreciation)
+    yoy_from = leading_gap(long_revenue_yoy)
+
+    # META's own free-cash-flow definition nets finance-lease principal, which
+    # the company did not disclose before ASC 842 -- so this line starts where
+    # its own definition starts rather than being back-filled on a base the
+    # company never published.
+    long_lease = long["finance_lease_principal_usd_m"]
+    lease_from = leading_gap(long_lease)
+    long_fcf = [
+        None if lease is None else operating - purchases - lease
+        for operating, purchases, lease in zip(
+            long["operating_cash_flow_usd_m"],
+            long["capital_expenditures_usd_m"],
+            long_lease,
+        )
+    ]
+    long_ttm_fcf = [
+        None if any(value is None for value in long_fcf[index - 3:index + 1])
+        else sum(long_fcf[index - 3:index + 1])
+        for index in range(len(long_fcf))
+    ]
+    long_ttm_fcf[:3] = [None] * 3
+    ttm_from = leading_gap(long_ttm_fcf)
+
+    # The two segment lines only exist from the quarter META first reported
+    # segments; before that the categories did not exist, so the chart carries
+    # its own shorter axis rather than twenty blank quarters on the left.
+    long_reality = long["reality_labs_revenue_usd_m"]
+    long_foa_other = long["foa_other_revenue_usd_m"]
+    segment_from = leading_gap(long_reality)
 
     revenue_shown = shown(revenue)
     revenue_yoy = shown(yoy(revenue))
@@ -282,6 +439,26 @@ def build_payload(staging: dict) -> dict:
                 "经营利润率一条按剔除 $2,400M 法律计提与 $1,180M 遣散费后的 36.77% 结算，"
                 "GAAP 口径的 30.88% 击穿得更深。下面逐条给出可绘制指标自身的八季走势。"
             ),
+        ),
+    ]
+    # META is the only US filer on this site that puts its quarterly guidance in
+    # a filing, so it is the only one that can carry TSMC's guidance record.
+    # Microsoft's own release says guidance is given on the webcast instead, and
+    # Alphabet gives no quarterly number at all -- both are stated on their pages
+    # rather than silently left out.
+    guide_history = staging["quarterly_guidance_history"]
+    settled_charts += [
+        guidance_band(
+            guide_history["quarters"],
+            guide_history["guide_low_usd_bn"],
+            guide_history["guide_high_usd_bn"],
+            guide_history["actual_revenue_usd_bn"],
+        ),
+        guidance_deviation(
+            guide_history["quarters"],
+            guide_history["guide_low_usd_bn"],
+            guide_history["guide_high_usd_bn"],
+            guide_history["actual_revenue_usd_bn"],
         ),
     ]
     settled_charts += tracking_charts(
@@ -499,46 +676,55 @@ def build_payload(staging: dict) -> dict:
 
     routine = [
         {
-            "kind": "gs_bar",
+            "kind": "lines",
             "title": (
                 f"折旧摊销同比 {depreciation_yoy[-1]:+.1f}%，快于收入的 {revenue_yoy[-1]:+.1f}%"
             ),
-            "xlabels": labels,
-            "values": depreciation_shown,
-            "legend": "季度折旧摊销",
-            "fmt": "f0c",
-            "yfmt": "f0c",
-            "label_fmt": "f0c",
-            "ylab": "$M",
-            "ylab2": "同比增速",
-            "yoy": {
-                "name": "折旧摊销 YoY (RHS)",
-                "values": depreciation_yoy,
-                "color": "RED",
-                "yfmt": "pct1",
-            },
+            "xlabels": long_labels[yoy_from:],
+            "xstep": LONG_STEP,
+            "series": [
+                {"name": "折旧摊销同比", "values": long_depreciation_yoy[yoy_from:],
+                 "color": "RED"},
+                {"name": "收入同比", "values": long_revenue_yoy[yoy_from:], "color": "NAVY"},
+            ],
+            "fmt": "pct1",
+            "yfmt": "pct1",
+            "label_fmt": "pct1",
+            "end_label": True,
+            "ylab": "同比增速",
             "note": (
                 f"本季资本开支是折旧摊销的 {capex_shown[-1] / depreciation_shown[-1]:.1f} 倍，"
                 "意味着这条线的上行才刚开始；折旧曲线与收入曲线的交叉点，是这轮资本周期的定价问题。"
+                "<b>把两条同比放在一张图上，十年里只有两段折旧跑赢收入</b> —— "
+                "2019 年前后的一段，以及 2024 年至今的这一段；上一次的收敛用了大约两年，"
+                "而这一次资本开支与折旧的倍数还在扩大。"
             ),
-            "src_extra": source_note("折旧摊销来自各期现金流量表；同比为自算"),
+            "src_extra": source_note(
+                "折旧摊销逐季来自各期现金流量表（只按年初至今披露，逐季由相邻两个年初至今值"
+                "相减，第四季为全年 − 前三季）；同比为自算"),
         },
         {
-            "kind": "gs_line",
+            "kind": "lines",
             "title": (
-                f"TTM 自由现金流由 ${max(v for v in ttm_fcf if v is not None):,.0f}M 回落到 "
+                f"TTM 自由现金流由 ${max(v for v in long_ttm_fcf if v is not None):,.0f}M 回落到 "
                 f"${ttm_fcf[-1]:,.0f}M"
             ),
-            "xlabels": labels,
-            "values": ttm_fcf,
-            "legend": "TTM 自由现金流",
+            "xlabels": long_labels[ttm_from:],
+            "xstep": LONG_STEP,
+            "series": [
+                {"name": "TTM 自由现金流", "values": long_ttm_fcf[ttm_from:], "color": "NAVY"},
+            ],
             "fmt": "f0c",
             "yfmt": "f0c",
             "label_fmt": "f0c",
+            "end_label": True,
             "ylab": "$M",
             "note": (
                 f"滚动四季口径把单季税款与季节性摊平；同比 "
                 f"{pct_change(ttm_fcf[-1], ttm_fcf[-5]):+.1f}%，拐点出现在上一季。"
+                f"<b>这条线只能回到 {long_labels[ttm_from]}，不是 2016 年</b>："
+                f"{long['finance_lease_note']}"
+                "本页宁可让横轴短一截，也不拿公司没披露过的口径去补前面几年。"
             ),
             "src_extra": source_note("按各季经营现金流减资本开支（含融资租赁本金）滚动四季求和（自算）"),
         },
@@ -548,10 +734,12 @@ def build_payload(staging: dict) -> dict:
                 f"两条非广告收入线分道扬镳：FoA Other 首破 $10 亿，Reality Labs 仍在 "
                 f"${reality_labs_shown[-1]:,.0f}M"
             ),
-            "xlabels": labels,
+            "xlabels": long_labels[segment_from:],
+            "xstep": LONG_STEP,
             "series": [
-                {"name": "FoA Other", "values": foa_other_shown, "color": "NAVY"},
-                {"name": "Reality Labs", "values": reality_labs_shown, "color": "MBLUE"},
+                {"name": "FoA Other", "values": long_foa_other[segment_from:], "color": "NAVY"},
+                {"name": "Reality Labs", "values": long_reality[segment_from:],
+                 "color": "MBLUE"},
             ],
             "fmt": "f0c",
             "yfmt": "f0c",
@@ -564,10 +752,13 @@ def build_payload(staging: dict) -> dict:
                 f"${foa_other_shown[-1] * 4 / 1000:.1f}B，是唯一不依赖广告负载的增量引擎；"
                 f"Reality Labs 收入同比 {pct_change(reality_labs_shown[-1], reality_labs_shown[-5]):+.1f}% 首次转正，"
                 f"但本季经营亏损仍有 ${abs(snapshot['reality_labs_operating_loss_usd_m'][0]):,}M。"
+                f"<b>这张图只能回到 {long_labels[segment_from]}，不能到 2016</b>：{long['segment_note']}"
             ),
             "src_extra": (
-                "两条分项收入来自各期 10-Q / 10-K 的收入分解附注；Reality Labs 的 Q4 有硬件季节性，"
-                "不宜按环比读。"
+                "两条分项收入逐季来自各期 10-Q / 10-K 收入分解附注的分部维度事实；"
+                "第四季取公司 Q4 新闻稿印出来的三个月列，而不是「全年 − 前三季」的相减值 —— "
+                "相减的两条腿各自已四舍五入到百万，2024Q4 因此会算出 519 与 522 两个版本，"
+                "公司自己印的是 519。Reality Labs 的 Q4 有硬件季节性，不宜按环比读。"
             ),
         },
         {

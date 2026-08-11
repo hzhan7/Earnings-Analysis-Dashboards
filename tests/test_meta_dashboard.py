@@ -158,10 +158,110 @@ class MetaDashboardTest(unittest.TestCase):
             self.assertTrue(exhibit.get("note"), f"exhibit {exhibit['n']} has no explanation")
             self.assertTrue(exhibit.get("src_extra"), f"exhibit {exhibit['n']} has no source line")
 
+    def test_long_history_agrees_with_the_reviewed_quarters(self) -> None:
+        """The ten-year series and the reviewed twelve must not disagree.
+
+        Two windows over the same quarters is how a page ends up publishing two
+        different numbers for one fact.  Every overlapping quarter is compared
+        here, so a future edit to either block has to keep them equal.
+        """
+        long = self.source["long_history"]
+        index = {quarter: i for i, quarter in enumerate(long["quarters"])}
+        pairs = [
+            ("revenue_usd_m", "revenue_total"),
+            ("capital_expenditures_usd_m", "purchases_of_property_and_equipment"),
+            ("operating_cash_flow_usd_m", "operating_cash_flow"),
+            ("operating_income_usd_m", "operating_income"),
+            ("depreciation_and_amortization_usd_m", "depreciation_and_amortization"),
+            ("finance_lease_principal_usd_m", "finance_lease_principal"),
+            ("reality_labs_revenue_usd_m", "reality_labs_revenue"),
+            ("foa_other_revenue_usd_m", "foa_other_revenue"),
+        ]
+        for long_key, reviewed_key in pairs:
+            for period, expected in zip(self.source["periods"], self.q[reviewed_key]):
+                quarter, year = period.split()
+                got = long[long_key][index[f"{year}Q{quarter[1]}"]]
+                self.assertEqual(got, expected, f"{long_key} {period}")
+
+    def test_undisclosed_quarters_stay_empty(self) -> None:
+        """A series may not start before the company first published it.
+
+        META did not report segments until it reported them, and did not
+        disclose finance-lease principal before ASC 842.  Back-filling either
+        would invent a number the company never gave, so the holes are asserted
+        to be holes and the charts are asserted to carry the shorter axis.
+        """
+        long = self.source["long_history"]
+        quarters = long["quarters"]
+        for key, first_key in (
+            ("reality_labs_revenue_usd_m", "segment_first_reported"),
+            ("foa_other_revenue_usd_m", "segment_first_reported"),
+            ("finance_lease_principal_usd_m", "finance_lease_first_reported"),
+        ):
+            start = quarters.index(long[first_key])
+            self.assertTrue(all(value is None for value in long[key][:start]), key)
+            self.assertTrue(all(value is not None for value in long[key][start:]), key)
+
+        # The chart starts at the disclosure, not with blank slots on the left.
+        segment_chart = next(ex for ex in self.exhibits if "两条非广告收入线" in ex["title"])
+        for series in segment_chart["series"]:
+            self.assertNotIn(None, series["values"], segment_chart["title"])
+        self.assertEqual(
+            len(segment_chart["xlabels"]), len(quarters) - quarters.index(
+                long["segment_first_reported"])
+        )
+
+    def test_guidance_record_is_built_from_the_filed_ranges(self) -> None:
+        """Every guided quarter is the company's own range against its own actual.
+
+        META is the only US filer on this site that puts quarterly guidance in a
+        filing; the record is only worth publishing if each bar is traceable to
+        one, so both legs are checked against the source block.
+        """
+        history = self.source["quarterly_guidance_history"]
+        band = next(ex for ex in self.exhibits if ex.get("ref") == "meta_revenue_band")
+        self.assertEqual(band["lo"], history["guide_low_usd_bn"])
+        self.assertEqual(band["hi"], history["guide_high_usd_bn"])
+        self.assertEqual(band["actual"], history["actual_revenue_usd_bn"])
+        for low, high in zip(history["guide_low_usd_bn"], history["guide_high_usd_bn"]):
+            self.assertLess(low, high)
+
+        # The actual plotted against each guided quarter is the same revenue the
+        # rest of the page reports for it, in US$B.
+        long = self.source["long_history"]
+        index = {quarter: i for i, quarter in enumerate(long["quarters"])}
+        for quarter, actual in zip(history["quarters"], history["actual_revenue_usd_bn"]):
+            if actual is None:
+                continue
+            self.assertAlmostEqual(
+                actual, long["revenue_usd_m"][index[quarter]] / 1000.0, places=3, msg=quarter
+            )
+
+        # Only the quarter that has not been reported yet may be missing, and it
+        # has to be the last one.
+        missing = [i for i, value in enumerate(history["actual_revenue_usd_bn"]) if value is None]
+        self.assertIn(missing, ([], [len(history["quarters"]) - 1]))
+
+        deviation = next(
+            ex for ex in self.exhibits if ex.get("ref") == "meta_revenue_midpoint"
+        )
+        settled = [value for value in history["actual_revenue_usd_bn"] if value is not None]
+        self.assertEqual(len(deviation["groups"][0]["values"]), len(settled))
+        for quarter, low, high, actual, got in zip(
+            history["quarters"], history["guide_low_usd_bn"],
+            history["guide_high_usd_bn"], history["actual_revenue_usd_bn"],
+            deviation["groups"][0]["values"],
+        ):
+            if actual is None:
+                continue
+            self.assertAlmostEqual(
+                got, (actual / ((low + high) / 2) - 1) * 100, places=6, msg=quarter
+            )
+
     def test_section_order_matches_how_the_note_is_used(self) -> None:
         self.assertEqual(
             [(section["id"], len(section["exhibits"])) for section in self.payload["sections"]],
-            [("settled", 4), ("quarter_highlights", 6), ("next_quarter", 5), ("routine", 4)],
+            [("settled", 6), ("quarter_highlights", 6), ("next_quarter", 5), ("routine", 4)],
         )
 
     def test_headroom_bars_reproduce_the_thresholds(self) -> None:
