@@ -442,14 +442,13 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         "src_extra": SOURCE_6K + "两条腿均为自算，原值见核对表。",
     }
 
-    # 按「问题层」排，不按指标排：三张区间图彼此可比（同一个问题、三个指标，
-    # 营业利润率那张的图注正是拿另外两张作对照），三张偏离图同理；收入超额的
-    # 汇率拆解只服务收入那一条，放最后。指标内的两张图讲的是同一件事的粗读与细读，
-    # 挨在一起反而没有对照价值。
+    # 按指标分组（用户 2026-08 定）：一个指标的「区间 → 偏离」连着读完再换下一个，
+    # 收入那条后面直接跟它专属的汇率拆解。跨指标的对照靠图注点名，不靠版面相邻 ——
+    # 营业利润率那两张的图注各自写明了与另外两条指引的差别。
     charts = [
-        revenue_band, margin_band, operating_band,
-        midpoint_chart, gm_midpoint_chart, om_midpoint_chart,
-        legs_chart,
+        revenue_band, midpoint_chart, legs_chart,
+        margin_band, gm_midpoint_chart,
+        operating_band, om_midpoint_chart,
     ]
 
     table = {

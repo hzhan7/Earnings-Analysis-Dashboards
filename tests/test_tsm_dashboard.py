@@ -259,22 +259,23 @@ class TsmDashboardTest(unittest.TestCase):
         self.assertIn(f"Exhibit {revenue_deviation['n']}", legs["note"])
         self.assertIn(f"Exhibit {legs['n']}", revenue_deviation["note"])
         self.assertNotIn("上一图", legs["note"])
-        # Grouped by question, not by metric: the three bands run together (they
-        # are only comparable side by side -- the operating-margin caption reads
-        # against the other two), then the three deviation charts, then the
-        # revenue-only decomposition. And no eight-quarter revenue band survives
-        # beside the long one.
+        # Grouped by metric: each guided metric's band is followed immediately by
+        # its own deviation chart, and revenue's FX decomposition rides with
+        # revenue. Cross-metric comparison is carried by the captions, which name
+        # the other exhibits by number. And no eight-quarter revenue band
+        # survives beside the long one.
         bands = [ex for ex in settled if ex["kind"] == "range_band"]
         self.assertEqual([len(ex["xlabels"]) for ex in bands], [15, 15, 15])
-        self.assertEqual(
-            [ex["n"] for ex in bands] + [ex["n"] for ex in deviations] + [legs["n"]],
-            [ex["n"] for ex in settled][3:10],
-        )
-        self.assertEqual(
-            [ex["title"].split("：")[0] for ex in bands],
-            [ex["title"].split("相对")[0] for ex in deviations],
-            "band order and deviation order must present the metrics the same way",
-        )
+        metrics = ["收入", "毛利率", "营业利润率"]
+        self.assertEqual([ex["title"].split("：")[0] for ex in bands], metrics)
+        self.assertEqual([ex["title"].split("相对")[0] for ex in deviations], metrics)
+        expected = [
+            bands[0]["n"], deviations[0]["n"], legs["n"],
+            bands[1]["n"], deviations[1]["n"],
+            bands[2]["n"], deviations[2]["n"],
+        ]
+        self.assertEqual(expected, [ex["n"] for ex in settled][3:10])
+        self.assertEqual(expected, sorted(expected), "the block must stay in reading order")
         for note in self.payload["notes"]:
             for token in re.findall(r"Exhibit (\d+)", note):
                 self.assertIn(int(token), numbers, note)
