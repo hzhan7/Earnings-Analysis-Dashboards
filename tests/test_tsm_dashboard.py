@@ -45,7 +45,13 @@ class TsmDashboardTest(unittest.TestCase):
         ]:
             for name, values in self.source[section].items():
                 self.assertEqual(len(values), 8, f"{section}.{name}")
-                self.assertTrue(all(math.isfinite(value) for value in values), f"{section}.{name}")
+                # None is allowed and meaningful: a node with no row in the
+                # company's table is not the same fact as a reported 0%.
+                self.assertTrue(
+                    all(value is None or math.isfinite(value) for value in values),
+                    f"{section}.{name}",
+                )
+                self.assertIsNotNone(values[-1], f"{section}.{name} has no current value")
 
     def test_key_source_values_and_formulas(self) -> None:
         financials = self.source["financials"]
@@ -390,21 +396,98 @@ class TsmDashboardTest(unittest.TestCase):
         ntd = self.source["cash_flow_ntd_bn"]["capital_expenditures"]
         for usd, nt in zip(block["values"][-8:], ntd):
             self.assertTrue(28.0 < nt / usd < 34.0, f"implied FX {nt / usd:.1f}")
+        # The intensity chart now runs on the ten-year record, and the twelve
+        # quarters above are a slice of the SAME filings — so the overlap has to
+        # agree exactly. Two CapEx sources on one page is the defect this pins.
+        long = self.source["long_history"]
         intensity = next(
-            ex for ex in self.exhibits if ex["title"].startswith("资本强度八季")
+            ex for ex in self.exhibits if ex["title"].startswith("资本强度十年")
         )
+        self.assertEqual(len(intensity["values"]), len(long["quarters"]))
         for index, value in enumerate(intensity["values"]):
             expected = (
-                block["values"][-8:][index]
-                / self.source["financials"]["revenue_usd_bn"][index] * 100
+                long["capital_intensity"]["capex_usd_bn"][index]
+                / long["capital_intensity"]["revenue_usd_bn"][index] * 100
             )
             self.assertAlmostEqual(value, expected, places=6)
+        for period, value in zip(block["periods"], block["values"]):
+            quarter = "".join(reversed(period.split()))
+            self.assertEqual(
+                value,
+                long["capital_intensity"]["capex_usd_bn"][long["quarters"].index(quarter)],
+                f"{period}: the eight-quarter CapEx block disagrees with long_history",
+            )
+        for index, revenue in enumerate(self.source["financials"]["revenue_usd_bn"]):
+            self.assertEqual(revenue, long["capital_intensity"]["revenue_usd_bn"][-8:][index])
         crossover = next(ex for ex in self.exhibits if "反超收入增速" in ex["title"])
         self.assertEqual(
             crossover["series"][0]["values"], self.source["financials"]["revenue_yoy_pct"]
         )
         self.assertEqual(len(crossover["series"][1]["values"]), 8)
         self.assertTrue(all(v is not None for v in crossover["series"][1]["values"]))
+
+    def test_long_history_agrees_with_the_eight_reviewed_quarters(self) -> None:
+        """The routine charts run on 42 quarters read from the filings, while the
+        rest of the page runs on the 8 reviewed ones. Where they overlap they are
+        the same disclosure, so any disagreement means one of the two was mis-read
+        -- and the long series is the one nobody has eyeballed quarter by quarter."""
+        long = self.source["long_history"]
+        quarters = long["quarters"]
+        self.assertEqual(len(quarters), 42)
+        self.assertEqual((quarters[0], quarters[-1]), ("2016Q1", "2026Q2"))
+        self.assertEqual(sorted(set(quarters)), sorted(quarters), "duplicate quarter")
+        for block in ("technology_mix_pct", "platform_mix_pct", "working_capital_days",
+                      "capital_intensity"):
+            for name, values in long[block].items():
+                self.assertEqual(len(values), 42, f"{block}.{name}")
+
+        overlap = slice(-8, None)
+        for name in ("2nm", "3nm", "5nm", "7nm", "advanced_7nm_and_below"):
+            self.assertEqual(long["technology_mix_pct"][name][overlap],
+                             self.source["technology_mix_pct"][name], name)
+        for name in ("hpc", "smartphone"):
+            self.assertEqual(long["platform_mix_pct"][name][overlap],
+                             self.source["platform_mix_pct"][name], name)
+        for name in ("receivable_days", "inventory_days"):
+            self.assertEqual(long["working_capital_days"][name][overlap],
+                             self.source["working_capital_days"][name], name)
+
+    def test_long_history_respects_what_was_never_disclosed(self) -> None:
+        """Three disciplines, each protecting against a plausible-looking lie:
+        no HPC before TSMC reported a platform split, no node line before that
+        node had a row, and the 7nm-and-below aggregate summed here rather than
+        quoted from TSMC's own 'advanced technologies' headline, whose definition
+        moved twice without restatement."""
+        long = self.source["long_history"]
+        quarters = long["quarters"]
+        technology = long["technology_mix_pct"]
+
+        platform_start = quarters.index(long["platform_first_reported"])
+        self.assertEqual(long["platform_first_reported"], "2018Q1")
+        for name in ("hpc", "smartphone"):
+            values = long["platform_mix_pct"][name]
+            self.assertTrue(all(v is None for v in values[:platform_start]),
+                            f"{name} claims a value before TSMC reported platforms")
+            self.assertTrue(all(v is not None for v in values[platform_start:]), name)
+
+        for node, first in long["node_first_reported"].items():
+            values = technology[node]
+            start = quarters.index(first)
+            self.assertTrue(all(v is None for v in values[:start]),
+                            f"{node} has a value before its row existed")
+            self.assertTrue(all(v is not None for v in values[start:]),
+                            f"{node} has a hole after its row existed")
+            # The first non-zero must not precede the first reported quarter.
+            self.assertGreaterEqual(quarters.index(long["node_first_nonzero"][node]), start)
+
+        for index, quarter in enumerate(quarters):
+            summed = sum(technology[node][index] or 0 for node in ("2nm", "3nm", "5nm", "7nm"))
+            self.assertEqual(technology["advanced_7nm_and_below"][index], summed, quarter)
+        # It is a derivation, so it must be labelled as one on the chart.
+        chart = next(ex for ex in self.by_section["routine"] if "制程迁移" in ex["title"])
+        aggregate = next(s for s in chart["series"] if "7nm 及以下" in s["name"])
+        self.assertIn("D", aggregate["name"])
+        self.assertIn("advanced technologies", chart["note"])
 
     def test_capex_threshold_is_converted_and_marked(self) -> None:
         """The CapEx line is tracked in US$ but reported in NT$, so the plotted

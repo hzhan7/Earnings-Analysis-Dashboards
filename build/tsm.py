@@ -66,6 +66,17 @@ def quarter_end_month(quarter: str) -> str:
     return f"{year}-{int(number) * 3:02d}"
 
 
+def quarter_label(quarter: str) -> str:
+    """``'2016Q1'`` → ``'Q1'16'``, matching `compact_period`'s output."""
+    year, number = quarter.split("Q")
+    return f"Q{number}'{year[-2:]}"
+
+
+def leading_gap(values: list[float | None]) -> int:
+    """Index of the first reported value; ``len(values)`` when there is none."""
+    return next((i for i, value in enumerate(values) if value is not None), len(values))
+
+
 def rounded(values: list[float | None], digits: int = 6) -> list[float | None]:
     """Round for the payload so a rebuild is idempotent, keeping ``None`` holes."""
     return [None if value is None else round(value, digits) for value in values]
@@ -549,6 +560,32 @@ def build_payload(staging: dict) -> dict:
         for capex, revenue in zip(capex_usd, financials["revenue_usd_bn"])
     ]
 
+    # ── The four routine charts run on the ten-year record, not the eight ─────
+    # Eight quarters cannot show whether a mix shift is a trend or a wobble, and
+    # for capital intensity eight quarters is barely one build cycle. Everything
+    # below is company-reported per quarter; see long_history.provenance for the
+    # three disciplines that keep it honest (no platform back-cast before 2018,
+    # no derived days, no quoting of TSMC's own "advanced" aggregate).
+    long = staging["long_history"]
+    long_labels = [quarter_label(quarter) for quarter in long["quarters"]]
+    long_tech = long["technology_mix_pct"]
+    long_platform = long["platform_mix_pct"]
+    long_working = long["working_capital_days"]
+    long_capex = long["capital_intensity"]
+    # One x label per year: 42 quarterly labels at 90 degrees turn the axis into
+    # a hairbrush, and the reader only ever navigates this axis by year.
+    LONG_STEP = 4
+    long_intensity = [
+        capex / revenue * 100
+        for capex, revenue in zip(long_capex["capex_usd_bn"], long_capex["revenue_usd_bn"])
+    ]
+    # Platform gets its own shorter axis rather than eight blank quarters on the
+    # left: TSMC did not report HPC before 2019Q1 and only ever restated 2018.
+    platform_from = leading_gap(long_platform["hpc"])
+    platform_labels = long_labels[platform_from:]
+    node_birth = long["node_first_reported"]
+    node_first_real = long["node_first_nonzero"]
+
     # CapEx is reported in NT$ but tracked against a US$ line, so the threshold
     # is converted at the quarter's own realised rate and marked as derived.
     capex_threshold_ntd = round(19.0 * guidance["q2_actual"]["usd_ntd"], 1)
@@ -780,13 +817,20 @@ def build_payload(staging: dict) -> dict:
         ),
         {
             "kind": "lines",
-            "title": "2nm 首次单列为 3%，7nm 及以下占比回到 77%",
-            "xlabels": labels,
+            "title": (
+                f"十年制程迁移：7nm 及以下从 0% 升到 "
+                f"{long_tech['advanced_7nm_and_below'][-1]}%，2nm 本季首次单列为 "
+                f"{long_tech['2nm'][-1]}%"
+            ),
+            "xlabels": long_labels,
+            "xstep": LONG_STEP,
             "series": [
-                {"name": "2nm", "values": technology["2nm"], "color": "GOLD"},
-                {"name": "3nm", "values": technology["3nm"], "color": "NAVY"},
-                {"name": "5nm", "values": technology["5nm"], "color": "MBLUE"},
-                {"name": "7nm", "values": technology["7nm"], "color": "GRAY"},
+                {"name": "2nm", "values": long_tech["2nm"], "color": "GOLD"},
+                {"name": "3nm", "values": long_tech["3nm"], "color": "NAVY"},
+                {"name": "5nm", "values": long_tech["5nm"], "color": "MBLUE"},
+                {"name": "7nm", "values": long_tech["7nm"], "color": "GRAY"},
+                {"name": "7nm 及以下 D", "values": long_tech["advanced_7nm_and_below"],
+                 "color": "GREEN"},
             ],
             "fmt": "pct0",
             "yfmt": "pct0",
@@ -794,16 +838,42 @@ def build_payload(staging: dict) -> dict:
             "zero_base": True,
             "end_label": True,
             "ylab": "晶圆收入占比",
-            "note": "此前的 0 表示未单列或整数百分比舍入为零，不代表绝对没有收入；3nm 同期升至 30%。",
-            "src_extra": "制程组合分母为 total wafer revenue，来自各季 management report。",
+            "note": (
+                "<b>每条线从该节点第一次出现在公司表里的那一季起画，之前是空的 —— 那不是缺数据，"
+                "是当时表上根本没有这一行</b>（起始季 / 首次非零季）："
+                + "、".join(
+                    f"{node} {quarter_label(node_birth[node])} / "
+                    f"{quarter_label(node_first_real[node])}"
+                    for node in node_birth
+                )
+                + "。两个日期不同，是因为新节点常先以公司自己印的 0% 出现在后续报告的"
+                "比较列里，几个季度后才真正放量。之后某季若该行没印出来，表示舍入到 0.5% 以下，"
+                "按 0 计（依据是该季印出来的各行仍合计 100%）。"
+                "<b>绿线「7nm 及以下」是本页自己把印出来的 2/3/5/7nm 四行相加</b>，"
+                "不是公司披露的 advanced technologies 口径 —— 那个口径 2019Q1 从「28nm 及以下」"
+                "改成「16nm 及以下」、2021Q1 再改成「7nm 及以下」，且从未重述，直接连起来会在"
+                "这两处砸出纯定义性的假悬崖（2021Q1 报出来是 62%→49%，同口径其实是微升）。"
+                "自算值与公司口径在 2021Q1 起的 22 个季度逐季相等。"
+            ),
+            "src_extra": (
+                "制程组合分母为 total wafer revenue，口径十年未变；逐季读自各季 "
+                "quarterly management report 的 Wafer Revenue by Technology 表。"
+            ),
         },
         {
             "kind": "lines",
-            "title": "HPC 占比升至 66%，智能手机降至 22%",
-            "xlabels": labels,
+            "title": (
+                f"HPC 从 {long_platform['hpc'][platform_from]}% 升到 "
+                f"{long_platform['hpc'][-1]}%，智能手机从 "
+                f"{long_platform['smartphone'][platform_from]}% 降到 "
+                f"{long_platform['smartphone'][-1]}%"
+            ),
+            "xlabels": platform_labels,
+            "xstep": LONG_STEP,
             "series": [
-                {"name": "HPC", "values": platform["hpc"], "color": "NAVY"},
-                {"name": "Smartphone", "values": platform["smartphone"], "color": "MBLUE"},
+                {"name": "HPC", "values": long_platform["hpc"][platform_from:], "color": "NAVY"},
+                {"name": "Smartphone",
+                 "values": long_platform["smartphone"][platform_from:], "color": "MBLUE"},
             ],
             "fmt": "pct0",
             "yfmt": "pct0",
@@ -812,21 +882,34 @@ def build_payload(staging: dict) -> dict:
             "end_label": True,
             "ylab": "净收入占比",
             "note": (
-                "HPC 环比 +20%、手机环比 -4%；集中度是这条曲线的另一面，"
-                "HPC 站上 68% 即触发本页的集中度跟踪线。"
+                "<b>这条线只能回到 2018Q1，不能到 2016，原因是口径断层不是数据缺失</b>："
+                "台积电 2019Q1 才把收入拆分从「按应用」（Communication / Computer / Consumer / "
+                "Industrial-Standard）改成「按平台」，<b>在那之前根本没有 HPC 这个类别</b>。"
+                "2018 那四季用的是公司自己在 2019 各季报告的去年同期列里给出的重述值，属公司报告值；"
+                "2016–2017 公司只发过年度平台数、季度值从未发布。两套类别是交叉分类而非重切"
+                "（公司给的映射是「Computer >95% 归 HPC」「Communication 约 2/3 是 Smartphone」"
+                "这类 30–60% 的定性区间），拿它换算就是估算，本页不做。"
+                "集中度是这条曲线的另一面，HPC 站上 68% 即触发本页的集中度跟踪线。"
             ),
             "src_extra": (
-                "平台组合分母为 net revenue；本页仅接入 HPC 与 Smartphone 两类，"
+                "平台组合分母为 net revenue，逐季读自各季 quarterly management report 的 "
+                "Net Revenue by Platform 表；本页仅接入 HPC 与 Smartphone 两类，"
                 "IoT / 汽车 / DCE 尚未接入。"
             ),
         },
         {
             "kind": "lines",
-            "title": "N2 爬坡把库存天数推回 87 天，应收天数升至 29 天",
-            "xlabels": labels,
+            "title": (
+                f"库存天数十年区间 {min(long_working['inventory_days'])}–"
+                f"{max(long_working['inventory_days'])} 天，本季 "
+                f"{long_working['inventory_days'][-1]} 天；应收天数一路降到 "
+                f"{long_working['receivable_days'][-1]} 天"
+            ),
+            "xlabels": long_labels,
+            "xstep": LONG_STEP,
             "series": [
-                {"name": "库存天数", "values": working["inventory_days"], "color": "NAVY"},
-                {"name": "应收天数", "values": working["receivable_days"], "color": "MBLUE"},
+                {"name": "库存天数", "values": long_working["inventory_days"], "color": "NAVY"},
+                {"name": "应收天数", "values": long_working["receivable_days"], "color": "MBLUE"},
             ],
             "fmt": "f0",
             "yfmt": "f0",
@@ -834,9 +917,18 @@ def build_payload(staging: dict) -> dict:
             "end_label": True,
             "ylab": "天",
             "note": (
-                "公司归因于 N2 爬坡备货；若下季 2nm 占比已跳升而库存仍不回落，备货解释即失效。"
+                "本季公司归因于 N2 爬坡备货；若下季 2nm 占比已跳升而库存仍不回落，备货解释即失效。"
+                "拉长看，库存天数在 2016–2019 年长期在 40–70 天，2021 年后台阶式抬到 80–99 天，"
+                "当前 " + str(long_working["inventory_days"][-1]) + " 天仍在这个高台阶内而非异常值；"
+                "应收天数则是单向下行，从 2016 年的 40 天出头降到二十几天。"
+                "<b>两条都是公司印在报告里的原值，本页不自己推导</b> —— 实测任何"
+                "「余额 ÷ 日均」的公式都复现不出这 42 个季度（最好的一版只精确命中一成），"
+                "公司也未公开其天数惯例。"
             ),
-            "src_extra": "应收与库存天数来自各季 management report。",
+            "src_extra": (
+                "应收与库存天数逐季读自各季 quarterly management report 的 "
+                "「III - 2. Receivable/Inventory Days」表原值。"
+            ),
         },
     ]
     financial_table = []
@@ -854,15 +946,22 @@ def build_payload(staging: dict) -> dict:
             f"{shipments[index] / 1000:.3f}M",
             f"${asp[index]:,.0f} D",
         ])
+        # "—" is not a formatting nicety: a node with no row in the company's
+        # table is a different fact from a reported 0%, and printing "0%" for it
+        # is the thing the mix_notes used to have to apologise for.
+        def mix_cell(values: list[float | None]) -> str:
+            value = values[index]
+            return "—" if value is None else f"{value:.0f}%"
+
         mix_table.append([
             period,
-            f"{technology['2nm'][index]:.0f}%",
-            f"{technology['3nm'][index]:.0f}%",
-            f"{technology['5nm'][index]:.0f}%",
-            f"{technology['7nm'][index]:.0f}%",
-            f"{technology['advanced_7nm_and_below'][index]:.0f}%",
-            f"{platform['hpc'][index]:.0f}%",
-            f"{platform['smartphone'][index]:.0f}%",
+            mix_cell(technology["2nm"]),
+            mix_cell(technology["3nm"]),
+            mix_cell(technology["5nm"]),
+            mix_cell(technology["7nm"]),
+            mix_cell(technology["advanced_7nm_and_below"]),
+            mix_cell(platform["hpc"]),
+            mix_cell(platform["smartphone"]),
         ])
         cash_table.append([
             period,
@@ -923,25 +1022,36 @@ def build_payload(staging: dict) -> dict:
         src_extra="库存天数来自各季 management report；75–78 天为上季本地分析稿的预期区间。",
     )
 
+    intensity_low = min(long_intensity)
+    intensity_low_at = long_labels[long_intensity.index(intensity_low)]
+    intensity_high = max(long_intensity)
+    intensity_high_at = long_labels[long_intensity.index(intensity_high)]
     capex_intensity_chart = {
         "kind": "gs_line",
         "title": (
-            f"资本强度八季从 {capex_intensity_usd[0]:.1f}% 升到 {capex_intensity_usd[-1]:.1f}%"
+            f"资本强度十年从 {long_intensity[0]:.1f}% 升到 {long_intensity[-1]:.1f}%，"
+            f"期间峰值 {intensity_high:.1f}%（{intensity_high_at}）"
         ),
-        "xlabels": labels,
-        "values": capex_intensity_usd,
+        "xlabels": long_labels,
+        "xstep": LONG_STEP,
+        "values": [round(value, 6) for value in long_intensity],
         "legend": "CapEx / 收入（美元口径）",
         "fmt": "pct1",
         "yfmt": "pct1",
         "label_fmt": "pct1",
         "ylab": "占收入比",
         "note": (
-            f"本季 {capex_intensity_usd[-1]:.1f}%，较上季 {capex_intensity_usd[-2]:.1f}% 跳升；"
+            f"本季 {long_intensity[-1]:.1f}%，较上季 {long_intensity[-2]:.1f}% 跳升。"
+            f"十年区间 {intensity_low:.1f}%（{intensity_low_at}）到 "
+            f"{intensity_high:.1f}%（{intensity_high_at}）—— <b>本季并不是历史高位</b>，2021 年那轮扩产把单季资本支出打到收入的三分之二以上，八季的窗口看不到这件事。"
+            "单季比值天然比年度口径抖，因为 CapEx 按付款节奏落账、收入按季确认，"
+            "看趋势要顺着几个季度读，不要盯单点。"
             "这条线与 GOOGL 页同口径，可直接对照上下游的资本强度。"
         ),
         "src_extra": (
-            "美元 CapEx 来自各季 earnings conference 原句，美元收入来自各季 earnings release；"
-            "比值为自算，两侧同币种，不与新台币现金流口径混用。"
+            "美元 CapEx 逐季读自各季 quarterly management report 的「V. Capital Expenditures」"
+            "美元表（1Q16 的单位是 US$ millions，其余季为 billions），美元收入来自各季 "
+            "earnings release 原句；比值为自算，两侧同币种，不与新台币现金流口径混用。"
         ),
     }
 
