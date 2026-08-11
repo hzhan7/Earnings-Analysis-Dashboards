@@ -90,7 +90,7 @@ class TsmDashboardTest(unittest.TestCase):
         self.assertEqual(
             [(section["id"], len(section["exhibits"])) for section in self.payload["sections"]],
             [
-                ("settled", 7),
+                ("settled", 9),
                 ("quarter_highlights", 7),
                 ("next_quarter", 6),
                 ("routine", 4),
@@ -125,6 +125,92 @@ class TsmDashboardTest(unittest.TestCase):
         for name in ("guide_low_usd_bn", "guide_high_usd_bn", "guide_fx_ntd_per_usd",
                      "actual_revenue_usd_bn", "actual_fx_ntd_per_usd"):
             self.assertEqual(len(guide[name]), len(guide["quarters"]), name)
+
+    def test_margin_guidance_reconciles_with_the_reported_margins(self) -> None:
+        """Gross and operating margin are pulled from the same 6-K income
+        statements the rest of the page uses, so the overlapping eight quarters
+        must agree to the tenth of a point they are published at. A silent
+        mismatch here would mean the range bands are plotting a different
+        company than the margin trend chart in section two."""
+        guide = self.source["quarterly_guidance_history"]
+        overlap = guide["quarters"].index("2024Q3")
+        window = slice(overlap, overlap + len(self.source["periods"]))
+        for name, published in (
+            ("gross_margin_actual_pct", "gross_margin_pct"),
+            ("operating_margin_actual_pct", "operating_margin_pct"),
+        ):
+            for computed, reported in zip(guide[name][window], self.source["financials"][published]):
+                self.assertAlmostEqual(computed, reported, delta=0.05, msg=name)
+        # NT$ revenue from the same filings has to reproduce the snapshot too.
+        by_quarter = dict(zip(guide["quarters"], guide["reported_revenue_ntd_bn"]))
+        for quarter, snapshot in zip(
+            ("2026Q2", "2026Q1", "2025Q2"), self.source["current_snapshot"]["revenue_ntd_bn"]
+        ):
+            self.assertAlmostEqual(by_quarter[quarter], snapshot, places=1, msg=quarter)
+        for name in ("gross_margin_guide_low_pct", "gross_margin_guide_high_pct",
+                     "gross_margin_actual_pct", "operating_margin_guide_low_pct",
+                     "operating_margin_guide_high_pct", "operating_margin_actual_pct",
+                     "reported_revenue_ntd_bn"):
+            self.assertEqual(len(guide[name]), len(guide["quarters"]), name)
+            self.assertIsNone(guide[name][-1] if name.endswith(("actual_pct", "ntd_bn")) else None)
+
+    def test_every_guided_metric_gets_its_own_band(self) -> None:
+        """Three guided metrics, three bands, each on its own axis -- percent and
+        percentage points must never share one. And each band's plotted actual
+        has to be the source array, not a re-derivation."""
+        guide = self.source["quarterly_guidance_history"]
+        bands = {
+            ex["title"].split("：")[0]: ex
+            for ex in self.by_section["settled"] if ex["kind"] == "range_band"
+        }
+        self.assertEqual(set(bands), {"收入", "毛利率", "营业利润率"})
+        for metric, keys in (
+            ("收入", ("guide_low_usd_bn", "guide_high_usd_bn", "actual_revenue_usd_bn")),
+            ("毛利率", ("gross_margin_guide_low_pct", "gross_margin_guide_high_pct",
+                     "gross_margin_actual_pct")),
+            ("营业利润率", ("operating_margin_guide_low_pct", "operating_margin_guide_high_pct",
+                       "operating_margin_actual_pct")),
+        ):
+            band = bands[metric]
+            self.assertEqual(band["lo"], guide[keys[0]], metric)
+            self.assertEqual(band["hi"], guide[keys[1]], metric)
+            self.assertEqual(band["actual"], guide[keys[2]], metric)
+            self.assertEqual(band["xlabels"], guide["quarters"], metric)
+            for low, high in zip(band["lo"], band["hi"]):
+                self.assertLess(low, high, metric)
+        self.assertEqual(bands["收入"]["fmt"], "usd1")
+        self.assertEqual(bands["毛利率"]["fmt"], "pct1")
+        # Operating margin has never once landed back inside its range.
+        operating = guide["operating_margin_actual_pct"]
+        highs = guide["operating_margin_guide_high_pct"]
+        finished = [(a, h) for a, h in zip(operating, highs) if a is not None]
+        self.assertEqual(len(finished), 14)
+        self.assertTrue(all(a > h for a, h in finished))
+        self.assertIn("全部超出指引上限", bands["营业利润率"]["title"])
+
+    def test_expectation_chart_separates_headline_from_core(self) -> None:
+        """The chart's whole claim is that the answer to "did it beat" flips
+        depending on the profit line, so both must be plotted from the same
+        consensus figure and the core one must be the smaller."""
+        chart = next(
+            ex for ex in self.by_section["settled"] if "对市场预期" in ex["title"]
+        )
+        values = dict(zip(chart["xlabels"], chart["values"]))
+        self.assertEqual(chart["kind"], "diverging_bars")
+        self.assertGreater(values["报告 EPS"], values["核心 EPS D"])
+        self.assertGreater(values["报告净利"], values["核心净利 D"])
+        bridge = self.source["net_income_bridge"]["values_ntd_bn"]
+        consensus = self.source["market_expectation"]
+        self.assertAlmostEqual(
+            values["核心净利 D"], (bridge[2] / consensus["net_income_ntd_bn"] - 1) * 100, places=2
+        )
+        self.assertAlmostEqual(
+            values["营收（NT$）"],
+            (self.source["current_snapshot"]["revenue_ntd_bn"][0]
+             / consensus["revenue_ntd_bn"] - 1) * 100,
+            places=2,
+        )
+        self.assertTrue(all(value > 0 for value in chart["values"]))
 
     def test_beat_decomposition_multiplies_back_to_the_reported_beat(self) -> None:
         """The two-leg chart claims the split is exact, not an approximation.
@@ -168,16 +254,14 @@ class TsmDashboardTest(unittest.TestCase):
         # The migrated charts sit directly after the eight-quarter range band
         # they extend, and their captions say "上一图" -- which is only true if
         # they stay adjacent and in this order.
-        order = [ex["n"] for ex in settled]
-        long_range = next(
-            ex for ex in settled if ex["kind"] == "range_band" and len(ex["xlabels"]) > 8
-        )
-        short_range = next(
-            ex for ex in settled if ex["kind"] == "range_band" and len(ex["xlabels"]) == 8
-        )
+        # The three guided metrics run together, then the deviation bars, then
+        # the decomposition -- captions say "上一图", which is only true in this
+        # order. And no eight-quarter revenue band survives beside the long one.
+        bands = [ex for ex in settled if ex["kind"] == "range_band"]
+        self.assertEqual([len(ex["xlabels"]) for ex in bands], [15, 15, 15])
         self.assertEqual(
-            [short_range["n"], long_range["n"], midpoint_bars["n"], legs["n"]],
-            order[2:6],
+            [ex["n"] for ex in bands] + [midpoint_bars["n"], legs["n"]],
+            [ex["n"] for ex in settled][3:8],
         )
         for note in self.payload["notes"]:
             for token in re.findall(r"Exhibit (\d+)", note):

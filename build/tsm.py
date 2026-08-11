@@ -92,23 +92,143 @@ def resolve_exhibit_refs(exhibits: list[dict]) -> list[dict]:
     return exhibits
 
 
+def delivery_band(ref: str, metric: str, quarters: list[str], low: list[float],
+                  high: list[float], actual: list[float | None], *, fmt: str, ylab: str,
+                  unit: str, src_extra: str, extra_note: str = "") -> dict:
+    """One guided metric's own range against what was reported, quarter by quarter.
+
+    The same object three times over, because the interesting part is the
+    comparison between them: TSMC guides revenue, gross margin and operating
+    margin every quarter with the same sentence structure, and the three have
+    very different hit rates. A chart per metric keeps each on its own axis --
+    percent and percentage points do not belong on one.
+    """
+    finished = [index for index, value in enumerate(actual) if value is not None]
+    above = [index for index in finished if actual[index] > high[index]]
+    below = [index for index in finished if actual[index] < low[index]]
+    inside = len(finished) - len(above) - len(below)
+    pending = [quarters[index] for index, value in enumerate(actual) if value is None]
+    if below:
+        verdict = (f"{len(finished)} 个已完结季里 {len(above)} 季超出上限、{inside} 季落在区间内、"
+                   f"{len(below)} 季跌破下限")
+    elif inside == 0:
+        verdict = f"{len(finished)} 个已完结季全部超出指引上限，一次例外都没有"
+    else:
+        verdict = (f"{len(finished)} 个已完结季里 {len(above)} 季超出上限、{inside} 季落在区间内，"
+                   "没有一季跌破下限")
+    band = {
+        "ref": ref,
+        "kind": "range_band",
+        "title": f"{metric}：{verdict}",
+        "xlabels": list(quarters),
+        "xrot": 90,
+        "lo": list(low),
+        "hi": list(high),
+        "actual": list(actual),
+        "actual_color": "NAVY",
+        "names": {
+            "range": f"公司{metric}指引区间",
+            "actual": f"实际{metric}",
+            "lo": f"指引下限（{unit}）",
+            "hi": f"指引上限（{unit}）",
+        },
+        "fmt": fmt,
+        "label_fmt": fmt,
+        "ylab": ylab,
+        "note": (
+            f"色块是该季<b>开始前</b>公司在上一场法说会给出的{metric}区间，菱形是随后报出来的实际值。"
+            + extra_note
+            + (f"最后一格 {pending[-1]} 只有指引色块，实际值待披露。" if pending else "")
+            + "纵轴不自 0 起，但没有任何点被截掉。"
+        ),
+        "src_extra": src_extra,
+    }
+    if pending:
+        band["annot"] = f"{pending[-1]}：仅指引，实际值待披露"
+    return band
+
+
+def expectation_chart(staging: dict) -> dict:
+    """Reported beat versus core beat, against the same market expectation.
+
+    The page's other guidance charts ask whether the quarter cleared the
+    company's own bar. This asks whether it cleared the market's -- and it is
+    the one place where the answer changes depending on which profit line you
+    use. Both are plotted so the reader sees the gap rather than being told
+    about it.
+    """
+    consensus = staging["market_expectation"]
+    snapshot = staging["current_snapshot"]
+    bridge = staging["net_income_bridge"]["values_ntd_bn"]
+    financials = staging["financials"]
+
+    reported_net, core_net = bridge[0], bridge[2]
+    reported_eps = financials["eps_ntd"][-1]
+    # Core EPS is not disclosed: the one-off is a pre-tax non-operating gain, so
+    # scaling reported EPS by the core/reported profit ratio is the only
+    # arithmetic available and it is marked D like every other derived figure.
+    core_eps = reported_eps * core_net / reported_net
+
+    rows = [
+        ("营收（US$）", pct_change(financials["revenue_usd_bn"][-1], consensus["revenue_usd_bn"])),
+        ("营收（NT$）", pct_change(snapshot["revenue_ntd_bn"][0], consensus["revenue_ntd_bn"])),
+        ("毛利率（pp）", financials["gross_margin_pct"][-1] - consensus["gross_margin_pct"]),
+        ("报告净利", pct_change(reported_net, consensus["net_income_ntd_bn"])),
+        ("报告 EPS", pct_change(reported_eps, consensus["eps_ntd"])),
+        ("核心净利 D", pct_change(core_net, consensus["net_income_ntd_bn"])),
+        ("核心 EPS D", pct_change(core_eps, consensus["eps_ntd"])),
+    ]
+    headline = pct_change(reported_eps, consensus["eps_ntd"])
+    core = pct_change(core_eps, consensus["eps_ntd"])
+    one_off = bridge[1]
+    return {
+        "ref": "EX_EXPECTATION",
+        "kind": "diverging_bars",
+        "title": (
+            f"对市场预期：报告 EPS beat {headline:+.1f}%，剔除一次性后只有 {core:+.1f}%"
+        ),
+        "xlabels": [label for label, _ in rows],
+        "values": [round(value, 2) for _, value in rows],
+        "legend": "较市场预期",
+        "positive_label": "高于市场预期",
+        "negative_label": "低于市场预期",
+        "fmt": "pct1",
+        "yfmt": "pct1",
+        "label_fmt": "pct1",
+        "ylab": "% 或 pp",
+        "zero_line": True,
+        "note": (
+            f"处置世界先进股份与保留股份重估的税前一次性收益 NT${one_off:.2f}B 解释了净利超预期金额的"
+            f"绝大部分：剔除后核心净利较预期只有 {pct_change(core_net, consensus['net_income_ntd_bn']):+.1f}%。"
+            "<b>干净的超预期在营收与毛利率，不在利润</b>。"
+            "毛利率一项是百分点，其余是百分比，两类单位并列只用于比较方向与相对幅度。"
+        ),
+        "src_extra": (
+            f"实际值来自 {staging['latest']['period']} earnings release / management report；"
+            f"市场预期为财报前一致预期（{consensus['as_of']}），不具名。"
+            "核心净利 = 报告净利减一次性税前收益，未做税务调整；"
+            "核心 EPS 按核心 / 报告净利之比折算报告 EPS，均为自算，不是公司定义的调整后指标。"
+        ),
+    }
+
+
 def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
-    """The full guided-revenue record, and what the beats are actually made of.
+    """The full guided record for all three guided metrics, and what the beats are made of.
 
-    The settled section already asks "did last quarter land in the range". This
-    asks the two questions eight quarters cannot answer: what the record looks
-    like once the window is pulled back to the first quarter TSMC guided in this
-    data set, and how much of each beat the company actually produced.
+    TSMC guides three numbers every quarter -- revenue, gross margin, operating
+    margin -- plus the exchange rate it assumed when setting them. The eight
+    quarters the rest of the page carries cannot say whether beating the range
+    is normal for this company; fifteen can, and the answer differs sharply by
+    metric.
 
-    That second question has an exact answer here rather than an estimate.
-    Revenue is guided in US dollars at an FX assumption management states on the
-    call, and reported in US dollars at the rate the quarter realised, so:
+    The beat decomposition is an identity rather than an estimate. Revenue is
+    guided in US dollars at an FX assumption stated on the call and reported at
+    the rate the quarter realised, so:
 
         (1 + dollar beat) = (1 + NT$ operating beat) x (assumption / realised)
 
     Every term is a company-reported quarterly number, so the split needs no
-    monthly series and no market rate. Only the guidance table feeds this
-    section -- the page stays on one quarterly cadence.
+    monthly series and no market rate.
     """
     guide = staging["quarterly_guidance_history"]
     quarters = guide["quarters"]
@@ -122,55 +242,44 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
     actual = dict(zip(quarters, guide["actual_revenue_usd_bn"]))
 
     finished = [quarter for quarter in quarters if actual[quarter] is not None]
-    pending = [quarter for quarter in quarters if actual[quarter] is None]
     beats = {quarter: (actual[quarter] / midpoint[quarter] - 1) * 100 for quarter in finished}
 
-    # ── The guided range against what was reported ────────────────────────────
-    below_midpoint = [quarter for quarter in finished if beats[quarter] < 0]
-    in_range = [
-        quarter
-        for quarter in finished
-        if low[quarters.index(quarter)] <= actual[quarter] <= high[quarters.index(quarter)]
-    ]
-    range_chart = {
-        "ref": "EX_RANGE",
-        "kind": "range_band",
-        "title": (
-            f"把指引兑现拉到 {len(quarters)} 个季度："
-            + (
-                f"{len(finished)} 个已完结季里只有 {'、'.join(below_midpoint)} 低于中值"
-                if len(below_midpoint) == 1
-                else f"{len(finished) - len(below_midpoint)}/{len(finished)} 个已完结季不低于中值"
-            )
+    SOURCE_6K = (
+        "指引区间与假设汇率来自各季法说会当场发布的 6-K；"
+        "实际值来自随后一季 6-K 所载合并损益表。"
+    )
+    revenue_band = delivery_band(
+        "EX_RANGE", "收入", quarters, low, high, [actual[q] for q in quarters],
+        fmt="usd1", ylab="US$B", unit="US$B", src_extra=SOURCE_6K,
+        extra_note=(
+            "指引与实际都是公司自己给的美元数，而美元数是新台币结果除以当季实际汇率的产物，"
+            "所以每一格里都含一条汇率腿 —— 拆开见 Exhibit {EX_LEGS}。"
         ),
-        "xlabels": list(quarters),
-        "xrot": 90,
-        "lo": list(low),
-        "hi": list(high),
-        "actual": [actual[quarter] for quarter in quarters],
-        "actual_color": "NAVY",
-        "names": {
-            "range": "公司收入指引区间",
-            "actual": "实际收入",
-            "lo": "指引下限（US$B）",
-            "hi": "指引上限（US$B）",
-        },
-        "fmt": "usd1",
-        "label_fmt": "usd1",
-        "ylab": "US$B",
-        "note": (
-            f"上一图是同一口径的近八季版本；本图拉到指引表起点 {quarters[0]}，"
-            f"{len(finished)} 个已完结季里 {len(finished) - len(in_range)} 个直接从区间"
-            "<b>上端</b>穿出去，没有一个跌破下限。"
-            + (f"最后一格 {pending[-1]} 只有指引色块，实际值待披露。" if pending else "")
-            + "纵轴不自 0 起，但没有任何点被截掉。"
+    )
+    margin_band = delivery_band(
+        "EX_GM", "毛利率", quarters,
+        guide["gross_margin_guide_low_pct"], guide["gross_margin_guide_high_pct"],
+        guide["gross_margin_actual_pct"],
+        fmt="pct1", ylab="毛利率", unit="%",
+        src_extra=SOURCE_6K + "实际毛利率 = 该季 6-K 合并损益表的毛利 ÷ 净销售额 D。",
+        extra_note=(
+            "毛利率的兑现纪律比收入还稳：区间宽度一律 2pp，公司从不给单点。"
+            "本季 67.7% 超出上限 0.2pp，而下季指引中值已回到 66%，"
+            "管理层同时把 2H26 的 N2 稀释量化为 3–4pp —— 这条线的方向已经确定向下。"
         ),
-        "src_extra": (
-            "区间为各季度开始时公司给出的美元收入指引，实际值来自随后发布的 earnings release。"
+    )
+    operating_band = delivery_band(
+        "EX_OM", "营业利润率", quarters,
+        guide["operating_margin_guide_low_pct"], guide["operating_margin_guide_high_pct"],
+        guide["operating_margin_actual_pct"],
+        fmt="pct1", ylab="营业利润率", unit="%",
+        src_extra=SOURCE_6K + "实际营业利润率 = 该季 6-K 合并损益表的营业利益 ÷ 净销售额 D。",
+        extra_note=(
+            "<b>这是三条指引里最极端的一条</b>：窗口内没有任何一季落回区间之内，"
+            "全部从上限穿出去。它说明营业利润率的指引不是预测而是底线 —— "
+            "读这张图要问的不是「有没有超」，而是「超得比上季多还是少」。"
         ),
-    }
-    if pending:
-        range_chart["annot"] = f"{pending[-1]}：仅指引，实际值待披露"
+    )
 
     # ── Distance from the guided midpoint ─────────────────────────────────────
     window = finished[-14:]
@@ -181,7 +290,7 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         "ref": "EX_MIDPOINT",
         "kind": "grouped_bars",
         "title": (
-            f"相对指引中值的偏离：{len(window)} 季里 {above} 季为正，"
+            f"收入相对指引中值的偏离：{len(window)} 季里 {above} 季为正，"
             f"平均绝对偏离 {mean_absolute:.1f}%"
         ),
         "xlabels": [month_label(quarter_end_month(quarter)) for quarter in window],
@@ -201,10 +310,7 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
             "<b>假设</b>汇率给出，实际收入按当季实际汇率折算，每根柱里都含一条汇率腿，"
             "拆开见 Exhibit {EX_LEGS}。"
         ),
-        "src_extra": (
-            "指引区间与实际收入来自各季 earnings conference 与 earnings release；"
-            "偏离为两者相除的自算值。"
-        ),
+        "src_extra": SOURCE_6K + "偏离为实际收入除以指引中值的自算值。",
     }
 
     # ── What the beat is made of ──────────────────────────────────────────────
@@ -214,22 +320,15 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
     ]
     fx_leg = [(guide_fx[quarter] / actual_fx[quarter] - 1) * 100 for quarter in window]
     opposed = [
-        quarter
-        for quarter, operating, currency in zip(window, operating_leg, fx_leg)
-        if operating * currency < 0
+        quarter for quarter, one, two in zip(window, operating_leg, fx_leg) if one * two < 0
     ]
     flipped = [
-        quarter
-        for quarter, operating in zip(window, operating_leg)
-        if operating * beats[quarter] < 0
+        quarter for quarter, one in zip(window, operating_leg) if one * beats[quarter] < 0
     ]
     fx_dominant = [
-        quarter
-        for quarter, operating, currency in zip(window, operating_leg, fx_leg)
-        if abs(currency) > abs(operating)
+        quarter for quarter, one, two in zip(window, operating_leg, fx_leg) if abs(two) > abs(one)
     ]
     headwind = sum(1 for value in fx_leg if value < 0)
-    tailwind = sum(1 for value in fx_leg if value > 0)
     legs_chart = {
         "ref": "EX_LEGS",
         "kind": "grouped_bars",
@@ -268,30 +367,35 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
             )
             + f"；其余 {headwind} 季汇率是<b>逆风</b>，美元口径反而低估了经营超额。"
         ),
-        "src_extra": (
-            "假设汇率来自各季 earnings conference 的指引段，实际汇率来自随后一季的 "
-            "earnings release / management report；两条腿均为自算，原值见核对表。"
-        ),
+        "src_extra": SOURCE_6K + "两条腿均为自算，原值见核对表。",
     }
 
-    charts = [range_chart, midpoint_chart, legs_chart]
+    charts = [revenue_band, margin_band, operating_band, midpoint_chart, legs_chart]
 
     table = {
-        "title": f"指引兑现全表（{len(quarters)} 季）：区间、汇率假设与超额分解",
-        "headers": ["期间", "公司收入指引", "中值", "实际收入", "较中值",
+        "title": f"指引兑现全表（{len(quarters)} 季）：三项指引区间、汇率假设与超额分解",
+        "headers": ["期间", "收入指引", "实际收入", "较中值",
+                    "毛利率指引", "实际毛利率", "营业利润率指引", "实际营业利润率",
                     "假设汇率", "实际汇率", "经营超额 D", "汇率腿 D"],
         "rows": [],
     }
     for index, quarter in enumerate(quarters):
         reported = actual[quarter]
         realised = actual_fx[quarter]
+        gm = guide["gross_margin_actual_pct"][index]
+        om = guide["operating_margin_actual_pct"][index]
         derived = reported is not None and realised is not None
         table["rows"].append([
             quarter,
             f"US${low[index]:.1f}–{high[index]:.1f}B",
-            f"US${midpoint[quarter]:.2f}B D",
             f"US${reported:.2f}B" if reported is not None else "—",
             f"{beats[quarter]:+.2f}% D" if reported is not None else "—",
+            f"{guide['gross_margin_guide_low_pct'][index]:.1f}–"
+            f"{guide['gross_margin_guide_high_pct'][index]:.1f}%",
+            f"{gm:.2f}% D" if gm is not None else "—",
+            f"{guide['operating_margin_guide_low_pct'][index]:.1f}–"
+            f"{guide['operating_margin_guide_high_pct'][index]:.1f}%",
+            f"{om:.2f}% D" if om is not None else "—",
             f"{guide_fx[quarter]:.1f}",
             f"{realised:.3f}" if realised is not None else "—",
             f"{(reported * realised / (midpoint[quarter] * guide_fx[quarter]) - 1) * 100:+.2f}pp D"
@@ -300,6 +404,7 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         ])
 
     return charts, table
+
 
 
 
@@ -453,23 +558,6 @@ def build_payload(staging: dict) -> dict:
             ),
         },
         {
-            "ref": "EX_SETTLED_RANGE",
-            "kind": "range_band",
-            "title": "连续八季实际收入均达到或超过指引中点",
-            "xlabels": labels,
-            "lo": guide_history["low"],
-            "hi": guide_history["high"],
-            "actual": guide_history["actual"],
-            "names": {"range": "公司收入指引区间", "actual": "实际收入"},
-            "fmt": "usd1",
-            "yfmt": "usd1",
-            "label_fmt": "usd1",
-            "ylab": "US$B",
-            "bar_labels": False,
-            "note": "八季全部不低于中点，其中六季达到或超过区间上端；本季落在上端。",
-            "src_extra": "区间为各季度开始时公司给出的美元收入指引，实际值来自随后发布的 earnings release。",
-        },
-        {
             "kind": "gs_bar",
             "title": "收入 US$40.20B 落指引上端，全年增速指引从 30%+ 上调到略高于 40%",
             "xlabels": labels,
@@ -522,6 +610,7 @@ def build_payload(staging: dict) -> dict:
         {
             "kind": "lines",
             "title": "毛利率 67.7% 超指引上限，但 Q3 指引中值已降到 66%",
+            "ref": "EX_MARGIN_LEVEL",
             "xlabels": labels,
             "series": [
                 {"name": "毛利率", "values": financials["gross_margin_pct"], "color": "NAVY"},
@@ -535,6 +624,7 @@ def build_payload(staging: dict) -> dict:
             "note": (
                 f"管理层首次量化 2H26 的 N2 稀释 3–4pp，叠加海外厂后期 3–4pp；"
                 f"Q3 指引中值 {q3_gm_midpoint:.1f}%，较本季 -1.7pp。67.7% 大概率是本周期顶点。"
+                "本图画的是水平，逐季指引区间与兑现记录见 Exhibit {EX_GM}。"
             ),
             "src_extra": "利润率与指引来自 TSMC earnings release；稀释幅度为管理层在电话会上的量化口径。",
         },
@@ -570,6 +660,7 @@ def build_payload(staging: dict) -> dict:
             "note": (
                 f"报告净利较市场预期高 {headline_beat:+.1f}%，但处置世界先进股份与保留股份重估的"
                 f"税前一次性收益 NT$63.20B 解释了其中绝大部分；真正干净的超预期在收入与毛利率。"
+                "本图是净利的金额桥，各项相对市场预期的百分比见 Exhibit {EX_EXPECTATION}。"
             ),
             "src_extra": (
                 "报告净利与 VIS 相关收益来自 2Q26 management report；核心净利为两者相减的自算值（未做税务调整），"
@@ -802,14 +893,18 @@ def build_payload(staging: dict) -> dict:
         ),
     }
 
-    # The migrated guidance charts sit immediately after the eight-quarter
-    # range band they extend, not in a section of their own: they answer the
-    # same question over a longer window, and a reader comparing them should
-    # not have to scroll past four sections to do it.
+    # Section one now carries the whole "did the quarter clear the bar" story in
+    # one place: the company's own three guided metrics over the full guided
+    # record, then the market's bar, then the follow-up list it was supposed to
+    # settle. The eight-quarter revenue range band that used to sit here was
+    # removed -- the fifteen-quarter one below is the same chart over a longer
+    # window, and two of them side by side said nothing the longer one did not.
     delivery_charts, delivery_table = guidance_delivery_charts(staging)
-    settled_charts = built[0:3] + delivery_charts + [inventory_expectation]
-    highlights = built[3:9] + [growth_crossover_chart]
-    next_charts = [built[9]] + tracking_charts(
+    settled_charts = (
+        built[0:2] + [expectation_chart(staging)] + delivery_charts + [inventory_expectation]
+    )
+    highlights = built[2:8] + [growth_crossover_chart]
+    next_charts = [built[8]] + tracking_charts(
         next_kpi["quantified"],
         "current",
         "下季阈值",
@@ -818,7 +913,7 @@ def build_payload(staging: dict) -> dict:
             f"当前 {unit_text(entry['unit'], entry['current'])}"
         ),
     )
-    routine = built[10:] + [capex_intensity_chart]
+    routine = built[9:] + [capex_intensity_chart]
 
     exhibits = resolve_exhibit_refs(
         number_exhibits(settled_charts + highlights + next_charts + routine)
@@ -924,8 +1019,9 @@ def build_payload(staging: dict) -> dict:
                 "id": "settled",
                 "title": "一、上季跟踪指标兑现了吗",
                 "description": (
-                    "先看上季留的问题闭环了几条、公司自己的指引兑现得怎么样，再谈本季。"
-                    "指引兑现给了三张：近八季、拉到指引表起点的全窗口，以及超额里经营与汇率各占多少。"
+                    "先看上季留的问题闭环了几条、这一季对公司自己的指引和对市场预期各兑现到什么程度，"
+                    "再谈本季。公司每季指引三个数——收入、毛利率、营业利润率——三张图各给一条完整记录，"
+                    "最后拆开超额里经营与汇率各占多少。"
                 ),
                 "exhibits": settled_ex,
             },
@@ -952,7 +1048,9 @@ def build_payload(staging: dict) -> dict:
         "notes": [
             "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
             f"Exhibit {next_ex[0]['n']} 与其后各图的阈值是本地研究设定，不是公司指引，也不构成评级或投资建议；「距阈值余量」统一为正值代表安全侧。",
-            f"Exhibit {settled_ex[3]['n']}–{settled_ex[5]['n']} 全部只用季度数据：前两张是公司自己的美元口径，每个读数都含一条汇率腿；第三张按恒等式把它拆成新台币经营与汇率两项，两项相乘（不是相加）还原成美元偏离。本页不接入月度营收公告，全页维持季度更新节奏。",
+            f"第一节的指引兑现三张图（Exhibit {settled_ex[3]['n']}／{settled_ex[4]['n']}／{settled_ex[5]['n']}）用的是同一批 6-K：每份法说会 6-K 同时给出下一季的收入区间、毛利率区间、营业利润率区间与假设汇率，实际值取自随后一季 6-K 的合并损益表；毛利率与营业利润率由毛利、营业利益分别除以净销售额得出，与本页 financials 的八季逐季对到小数点后一位。",
+            f"Exhibit {settled_ex[2]['n']} 的「核心」口径是报告净利减 VIS 税前一次性收益的算术差，未做税务调整；核心 EPS 按核心 / 报告净利之比折算报告 EPS。两者都不是公司定义的调整后指标，只用于回答「这个季度是不是真的超预期」。",
+            "本页不接入月度营收公告，全页维持季度更新节奏。",
             "本页只发布公司披露值、可复算的简单派生值，以及明确标注的市场预期；D 标记代表 Derived / 自算。",
             "市场预期一律标注为「市场预期」并给出取数时点，不写卖方机构名，也不发布评级、目标价或估值。",
             "隐含 ASP 为季度美元收入除以晶圆出货，仅用于量价拆分，不等同任何制程或封装的实际定价。",

@@ -61,15 +61,24 @@ Charts are ordered the way the note is actually used:
    the depreciation curve and the finance-lease channel that sits outside its
    capex definition; TSMC gets node migration, platform mix and working capital.
 
-TSMC's first section carries three guidance charts rather than one, because the
-eight-quarter view cannot answer either question that matters about a company
-which has beaten its own midpoint almost every quarter. The second pulls the
-window back to the start of the guidance table; the third splits each beat into
-what the company produced and what the currency did. That split is an identity,
-not an estimate: revenue is guided in US dollars at an FX assumption stated on
-the call and reported at the rate the quarter realised, so the two legs
-compound exactly to the reported beat. It changes the reading — the dollar beat
-usually *understates* the operating beat, and in 2025Q2 it inverts it.
+TSMC's first section is built out further than the other three pages, because
+TSMC guides three numbers every quarter — revenue, gross margin and operating
+margin — and eight quarters cannot say whether clearing them is normal for this
+company. Fifteen can, pulled from the fifteen earnings 6-Ks themselves, and the
+answer differs sharply by metric: revenue cleared the top of its range in 8 of
+14 quarters, gross margin in 9, and **operating margin in all 14 — not one
+quarter landed back inside the range**. That last one reframes the guidance as
+a floor rather than a forecast, which is not visible from any single quarter.
+
+Two more charts sit with them. One splits each revenue beat into what the
+company produced and what the currency did — an identity, not an estimate,
+because revenue is guided in US dollars at an FX assumption stated on the call
+and reported at the rate the quarter realised, so the two legs compound exactly
+to the reported beat. It changes the reading: the dollar beat usually
+*understates* the operating beat, and in 2025Q2 it inverts it. The other asks
+the separate question of whether the quarter beat the *market* rather than the
+company, and shows why the answer depends on the profit line — a headline EPS
+beat of +12.2% is +2.2% once the quarter's one-off disposal gain comes out.
 
 Two of the series exist only on this site, because the number that decides the
 quarter is not one any filing prints:
