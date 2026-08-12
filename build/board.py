@@ -308,9 +308,17 @@ def ai_capex_cycle_table(n: int) -> dict:
     """Return the upstream-capex / downstream-shipment cross reference.
 
     Published byte-identically on every company page: three hyperscalers'
-    quarterly cash capex against the foundry quarter that has to build it.
-    Each page can answer "did my company spend more"; only this table answers
-    "did the spending turn into shipments".
+    quarterly cash capex, the accelerator revenue it lands in, and the foundry
+    quarter that has to build it. Each page can answer "did my company spend
+    more"; only this table answers "did the spending turn into shipments".
+
+    NVIDIA sits between the two ends rather than at one of them, so it gets the
+    Data Center line specifically -- Edge Computing is not what a hyperscaler's
+    capex buys. Its quarters end about four weeks after the calendar ones the
+    rest of the table uses (late April against 31 March), which the column
+    header states, because a reader comparing a row across cannot see it
+    otherwise. The offset is left in rather than interpolated away: shifting a
+    reported quarter onto someone else's calendar would invent a number.
     """
     tsm = _load("tsm")
     periods = tsm["periods"]
@@ -318,30 +326,35 @@ def ai_capex_cycle_table(n: int) -> dict:
     for slug, _label, accessor in _CASH_CAPEX_SOURCES:
         company_periods, capex = accessor(_load(slug))
         by_company.append(dict(zip(company_periods, capex)))
+    nvda = _load("nvda")
+    data_center = dict(zip(nvda["periods"], nvda["market_platform_usd_m"]["data_center"]))
 
     rows = []
     for index, period in enumerate(periods):
         values = [company.get(period) for company in by_company]
         total = sum(value for value in values if value is not None)
         revenue = tsm["financials"]["revenue_usd_bn"][index]
+        accelerator = data_center.get(period)
         rows.append(
             [period]
             + [f"${value:,.0f}M" if value is not None else "—" for value in values]
             + [
                 f"${total:,.0f}M D",
+                f"US${accelerator / 1000:.2f}B" if accelerator is not None else "—",
                 f"US${revenue:.2f}B",
                 f"{tsm['financials']['revenue_yoy_pct'][index]:.1f}%",
             ]
         )
     return {
         "n": n,
-        "title": "AI capex 循环：上游投入承诺与下游出货（跨页对照）",
+        "title": "AI capex 循环：三家云厂现金 CapEx → NVDA 数据中心 → TSM 晶圆（跨页对照）",
         "headers": [
             "期间",
             "GOOGL 现金 CapEx",
             "META 现金 CapEx",
             "MSFT 现金 CapEx",
             "三家合计 D",
+            "NVDA DC 收入（季末晚约 1 个月）",
             "TSM 收入",
             "TSM 收入 YoY",
         ],

@@ -203,11 +203,21 @@ equipment is the one capex definition all four filers report the same way —
 Meta's headline number adds finance-lease principal and Microsoft's adds
 finance-lease additions, so the company-defined totals are not addable.
 
-The NVDA page publishes that table byte-identically like every other page, but
-does **not** add itself as a column. It would be a reasonable fourth leg — the
-spending lands as NVIDIA revenue before it lands as TSMC wafers — but the table
-is one shared object rendered on all five pages, so changing its shape is a
-change to all five and belongs in its own pass, not in the one that adds a page.
+NVIDIA sits between the two ends rather than at one of them, so the table now
+carries its **Data Center** line as a middle column: hyperscaler cash capex →
+the accelerator revenue it lands in → the foundry quarter that has to build it.
+Data Center rather than total revenue, because a hyperscaler's capex does not
+buy game consoles. Over these eight quarters the three hyperscalers' capex grew
+3.1x, NVIDIA's Data Center 2.4x and TSMC's revenue 1.7x — the same wave,
+attenuating as it moves upstream.
+
+One caveat travels in the column header rather than being corrected away:
+NVIDIA's quarters end about four weeks after the calendar quarters the rest of
+the table uses (late April against 31 March), so a row compares periods that do
+not exactly coincide. Shifting a reported quarter onto another company's
+calendar would mean inventing a number, which is worse than an offset a reader
+can see. The most recent row is a dash because NVIDIA has not reported that
+quarter yet.
 
 Each company has a reviewed source series and a company-specific builder. The
 shared `build/all.py` entry point rebuilds every company payload, their thin

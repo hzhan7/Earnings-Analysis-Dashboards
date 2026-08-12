@@ -351,6 +351,39 @@ class NvdaDashboardTest(unittest.TestCase):
             self.assertTrue(all(row[index].endswith("D") for row in table["rows"]),
                             table_title)
 
+    def test_nvda_sits_between_the_two_ends_of_the_capex_table(self) -> None:
+        """The shared cross-reference carries Data Center, aligned by label only.
+
+        NVIDIA's quarters end about four weeks after the calendar quarters the
+        rest of the table uses, so a row compares periods that do not coincide.
+        That is disclosed in the column header rather than corrected, because
+        shifting a reported quarter onto another company's calendar would mean
+        inventing a number. The quarter NVIDIA has not reported yet must stay a
+        dash for the same reason.
+        """
+        table = next(item for item in self.payload["tables"] if "AI capex" in item["title"])
+        column = next(index for index, header in enumerate(table["headers"])
+                      if header.startswith("NVDA"))
+        self.assertIn("晚约 1 个月", table["headers"][column])
+
+        by_period = dict(zip(self.source["periods"],
+                             self.source["market_platform_usd_m"]["data_center"]))
+        seen = 0
+        for row in table["rows"]:
+            expected = by_period.get(row[0])
+            if expected is None:
+                self.assertEqual(row[column], "—", row[0])
+            else:
+                self.assertEqual(row[column], f"US${expected / 1000:.2f}B", row[0])
+                seen += 1
+        self.assertGreaterEqual(seen, 7, "the two windows stopped overlapping")
+        # Edge Computing is deliberately excluded: hyperscaler capex does not
+        # buy game consoles, so the whole-company line would overstate the link.
+        self.assertNotEqual(
+            table["rows"][0][column],
+            f"US${self.source['financials']['revenue_usd_m'][1] / 1000:.2f}B",
+        )
+
     def test_payload_matches_the_committed_build(self) -> None:
         published = js_payload(ROOT / "data" / "nvda.js", "window.DASH")
         self.assertEqual(published, self.payload)
