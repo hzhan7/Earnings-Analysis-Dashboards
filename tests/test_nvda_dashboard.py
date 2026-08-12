@@ -304,6 +304,48 @@ class NvdaDashboardTest(unittest.TestCase):
         self.assertIn("近 8 季", band["title"])
         self.assertIn("不是数据缺失", band["note"])
 
+    def test_every_guided_metric_gets_a_level_chart_and_a_deviation_chart(self) -> None:
+        """Three guided numbers, three pairs, grouped by metric."""
+        settled = self.by_section["settled"]
+        pairs = [("收入", "range_band"), ("收入", "grouped_bars"),
+                 ("non-GAAP 毛利率", "range_band"), ("non-GAAP 毛利率", "grouped_bars"),
+                 ("non-GAAP 营业费用", "range_band"), ("non-GAAP 营业费用", "grouped_bars")]
+        for metric, kind in pairs:
+            self.assertTrue(
+                any(chart["kind"] == kind and chart["title"].startswith(metric)
+                    for chart in settled),
+                f"no {kind} for {metric}",
+            )
+
+    def test_the_opex_chart_is_a_point_guidance_with_a_marked_break(self) -> None:
+        """Opex is guided as a single number, and its basis changed mid-record.
+
+        Two things have to be true at once and neither may be smoothed over: the
+        guidance has no width (so `lo == hi`, and the chart must not claim
+        anything cleared a bound), and the non-GAAP basis changed in Q1 2026, so
+        the *level* series is not comparable across that quarter.
+        """
+        chart = next(ex for ex in self.by_section["settled"]
+                     if ex["kind"] == "range_band" and ex["title"].startswith("non-GAAP 营业费用"))
+        self.assertEqual(chart["lo"], chart["hi"], "a point guidance must have no width")
+        for word in ("超出上限", "跌破下限", "区间内"):
+            self.assertNotIn(word, chart["title"], word)
+        self.assertIn("高于指引", chart["title"])
+
+        guide = self.source["quarterly_guidance_history"]
+        self.assertEqual(chart["break_at"], guide["quarters"].index("Q1 2026"))
+        self.assertIn("股权激励", chart["break_label"])
+        # The level jumps at the break because the definition did, and both legs
+        # jump together -- which is why the deviation chart carries no break.
+        step = guide["quarters"].index("Q1 2026")
+        before = guide["actual_non_gaap_opex_usd_m"][step - 1]
+        after = guide["actual_non_gaap_opex_usd_m"][step]
+        self.assertGreater(after / before, 1.3, "the restatement step vanished")
+        deviation = next(ex for ex in self.by_section["settled"]
+                         if ex["kind"] == "grouped_bars"
+                         and ex["title"].startswith("non-GAAP 营业费用"))
+        self.assertNotIn("break_at", deviation)
+
     def test_calendar_labelling_is_stated_because_the_fiscal_year_differs(self) -> None:
         self.assertIn("FY2027", self.payload["subtitle"])
         self.assertTrue(

@@ -123,6 +123,15 @@ is why the page is worth the build-out: **revenue cleared the top of its band in
 the bottom three times** — by 21.3pp, 8.9pp and 10.0pp. So the revenue guidance
 behaves like a floor and the margin guidance like a genuine forecast, and the
 page has to say both things at once rather than settling on one verdict.
+Operating expenses are the third answer again: guided as a single number with no
+range at all, and landing above it 12 times and below it 11 — as close to
+unbiased as this record gets.
+
+Each of the three gets the same pair, level chart then deviation chart, grouped
+so one metric is read through before the next begins. The opex level chart draws
+its guidance as a hairline rather than a band, because a point guidance has no
+width and pretending otherwise would invent one; its title says "above" and
+"below" instead of "cleared the upper bound", which would be a category error.
 
 The decomposition chart is what makes that readable. Guiding revenue, margin and
 opex together implies an operating income NVIDIA never prints, and the distance
@@ -140,7 +149,12 @@ axis; the full record is carried by the scale-free deviation chart instead, and
 the page says so on the chart. And NVIDIA changed its non-GAAP definition in
 FY2027 Q1 to include stock-based compensation, restating history — so the long
 series run on GAAP, whose definition never moved, while every guidance/actual
-pair is compared within the single basis that applied at the time.
+pair is compared within the single basis that applied at the time. That change
+is visible in exactly one place, the opex *level* chart, where it steps the line
+up by about US$1.9B; it carries a structural-break marker at that quarter rather
+than being drawn as one continuous series. Its deviation twin needs no marker,
+because dividing actual by guided cancels the change out — both legs moved
+together.
 
 Meta guides one number — next-quarter revenue, as a dollar range in the Outlook
 section of every quarterly 8-K EX-99.1 — so its page carries the same pair of

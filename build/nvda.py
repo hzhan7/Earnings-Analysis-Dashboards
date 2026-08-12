@@ -272,26 +272,49 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
     opex_actual = [
         None if value is None else value / 1000 for value in guide["actual_non_gaap_opex_usd_m"]
     ]
+    # The non-GAAP definition changed in Q1'26 to include stock-based
+    # compensation, so the *level* series has a real discontinuity even though
+    # each quarter's guidance and actual moved together. The break marker says
+    # "not comparable across here" rather than drawing one continuous line.
+    sbc_break = quarters.index("Q1 2026")
+    opex_band_chart = delivery_band(
+        "EX_OPEX_RANGE", "non-GAAP 营业费用", labels, opex_guide, opex_guide, opex_actual,
+        fmt="usd1", ylab="US$B", unit="US$B", venue="业绩发布", point=True,
+        break_at=sbc_break,
+        break_label="口径变更：non-GAAP 起含股权激励费用",
+        src_extra=SOURCE_8K + "费用指引为单点数，非区间。",
+        extra_note=(
+            "<b>和另外两条指引最大的不同是它没有宽度</b> —— 收入给 ±2%、毛利率给 ±50bp，"
+            "费用只给一个数，所以这条线上不存在「区间内」这回事，只有高于或低于。"
+            "菱形几乎粘在细线上，说明费用是这家公司最可预测的一条线；"
+            "本图看的是<b>水平与斜率</b>，具体差多少见 Exhibit {EX_OPEX_DEV}。"
+            "<b>红色竖线是口径断点</b>：自 Q1'26 起 non-GAAP 不再剔除股权激励费用，"
+            "费用水平一次性抬高（Q4'25 US$5.10B → Q1'26 US$7.45B），"
+            "断点左右的<b>绝对水平不可直接连着读</b>；"
+            "但该季的指引与实际同在新口径下给出与报出，所以指引与实际的<b>相对关系</b>不受影响。"
+        ),
+    )
     opex_dev_chart = midpoint_deviation(
         "EX_OPEX_DEV", "non-GAAP 营业费用", quarters, opex_guide, opex_guide, opex_actual,
         mode="pct", window=len(finished), label=compact_period, bar_labels=False,
         src_extra=SOURCE_8K + "费用指引是单点数，偏离为实际除以该点的自算值。",
         extra_note=(
-            "<b>费用指引没有区间</b>，公司给的是单点数，所以这里没有对应的区间图 —— "
-            "唯一能问的就是差多少。"
-            "读法与另外两张相反：<b>负值才是好消息</b>（实际花得比承诺少）。"
-            "柱子长期贴近零轴，说明费用是这家公司最可预测的一条线，"
-            "23 季的平均绝对偏离只有个位数百分比。"
-            "<b>口径提示：</b>自 Q1'26 起 non-GAAP 不再剔除股权激励费用，"
-            "费用的绝对水平因此一次性抬高（Q4'25 的 US$5.10B → Q1'26 的 US$7.45B）；"
-            "但每一季的指引与实际都在<b>同一口径</b>下给出与报出，所以这张偏离图不受影响。"
+            "承接 Exhibit {EX_OPEX_RANGE}：那张画水平，这张只画差额。"
+            "读法与另外两个指标相反：<b>负值才是好消息</b>（实际花得比承诺少）。"
+            "柱子长期贴近零轴，23 季的平均绝对偏离只有个位数百分比。"
+            "<b>这张图不受口径变更影响</b> —— 每一季的指引与实际都在同一口径下给出与报出，"
+            "相除之后股权激励费用在分子分母里同时出现，"
+            "所以这里没有 Exhibit {EX_OPEX_RANGE} 上那道断点。"
         ),
     )
 
+    # Grouped by metric: each guided number's level chart is followed straight
+    # away by its own deviation chart, so one metric is read through before the
+    # next starts. Revenue's FX-free beat decomposition sits with revenue.
     charts = [
         revenue_band_chart, revenue_dev_chart, legs_chart,
         margin_band_chart, margin_dev_chart,
-        opex_dev_chart,
+        opex_band_chart, opex_dev_chart,
     ]
 
     table = {

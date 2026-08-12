@@ -129,7 +129,8 @@ def _rounded(values: list[float | None], digits: int = 6) -> list[float | None]:
 def delivery_band(ref: str, metric: str, xlabels: list[str], low: list[float],
                   high: list[float], actual: list[float | None], *, fmt: str, ylab: str,
                   unit: str, src_extra: str, extra_note: str = "",
-                  venue: str = "法说会", scope: str = "") -> dict:
+                  venue: str = "法说会", scope: str = "", point: bool = False,
+                  break_at: int | None = None, break_label: str = "") -> dict:
     """One guided metric's own range against what was reported, quarter by quarter.
 
     Both companies that use this guide several numbers every quarter with the
@@ -143,7 +144,16 @@ def delivery_band(ref: str, metric: str, xlabels: list[str], low: list[float],
     below = [index for index in finished if actual[index] < low[index]]
     inside = len(finished) - len(above) - len(below)
     pending = [xlabels[index] for index, value in enumerate(actual) if value is None]
-    if below and above:
+    if point:
+        # A point guidance has no bound to clear, so "cleared the upper bound"
+        # would be a category error: `lo == hi` and every quarter is trivially
+        # outside. The band still draws -- the renderer floors its height at
+        # 0.9px -- which is the honest picture of a guidance with no width.
+        verdict = (f"{len(finished)} 个已完结季里 {len(above)} 季高于指引、"
+                   f"{len(below)} 季低于指引")
+        if inside:
+            verdict += f"、{inside} 季与指引完全相同"
+    elif below and above:
         verdict = (f"{len(finished)} 个已完结季里 {len(above)} 季超出上限、{inside} 季落在区间内、"
                    f"{len(below)} 季跌破下限")
     elif below:
@@ -168,24 +178,35 @@ def delivery_band(ref: str, metric: str, xlabels: list[str], low: list[float],
         "actual": list(actual),
         "actual_color": "NAVY",
         "names": {
-            "range": f"公司{metric}指引区间",
+            "range": f"公司{metric}指引" + ("（单点）" if point else "区间"),
             "actual": f"实际{metric}",
-            "lo": f"指引下限（{unit}）",
-            "hi": f"指引上限（{unit}）",
+            "lo": f"指引{'值' if point else '下限'}（{unit}）",
+            "hi": f"指引{'值' if point else '上限'}（{unit}）",
         },
         "fmt": fmt,
         "label_fmt": fmt,
         "ylab": ylab,
         "note": (
-            f"色块是该季<b>开始前</b>公司在上一场{venue}给出的{metric}区间，菱形是随后报出来的实际值。"
+            (f"细横线是该季<b>开始前</b>公司在上一场{venue}给出的{metric}指引，"
+             "公司给的是单点数而不是区间，所以它在图上没有宽度；"
+             "菱形是随后报出来的实际值。"
+             if point else
+             f"色块是该季<b>开始前</b>公司在上一场{venue}给出的{metric}区间，菱形是随后报出来的实际值。")
             + extra_note
-            + (f"最后一格 {pending[-1]} 只有指引色块，实际值待披露。" if pending else "")
+            + (f"最后一格 {pending[-1]} 只有指引{'' if point else '色块'}，实际值待披露。"
+               if pending else "")
             + "纵轴不自 0 起，但没有任何点被截掉。"
         ),
         "src_extra": src_extra,
     }
     if pending:
         band["annot"] = f"{pending[-1]}：仅指引，实际值待披露"
+    # Structural break (规矩 6): the series is not comparable across this index,
+    # so the chart says so rather than drawing one continuous line over a
+    # definition change.
+    if break_at is not None:
+        band["break_at"] = break_at
+        band["break_label"] = break_label
     return band
 
 
