@@ -3,7 +3,7 @@
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
 Broadcom, Cadence, Charles Schwab, Interactive Brokers, Mastercard, Meta,
-Microsoft, Moody's, NVIDIA, S&P Global, Synopsys, TSMC and Visa.
+Microsoft, Moody's, NVIDIA, S&P Global, Synopsys, TJX, TSMC and Visa.
 
 ## Build
 
@@ -24,8 +24,10 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/meta/`
 - `http://127.0.0.1:8765/msft/`
 - `http://127.0.0.1:8765/nvda/`
+- `http://127.0.0.1:8765/schw/`
 - `http://127.0.0.1:8765/snps/`
 - `http://127.0.0.1:8765/spgi/`
+- `http://127.0.0.1:8765/tjx/`
 - `http://127.0.0.1:8765/tsm/`
 - `http://127.0.0.1:8765/v/`
 
@@ -108,7 +110,11 @@ Charts are ordered the way the note is actually used:
    revenue and segment structure the IHS Markit merger rewrote, the six filed
    revenue types, the index assets its asset-linked fees are charged on, and
    the buyback that ran at 4.6x operating cash flow in the year the merger
-   closed.
+   closed; TJX gets ten years of pretax margin against capital
+   intensity, the store count and square footage that are its whole growth
+   engine, ten years of buybacks against the share count, and the three-bar
+   cash structure that shows what is left for shareholders after the stores
+   are built.
 
 On the Alphabet, Meta and Microsoft pages these run on the ten-year record
 rather than eight quarters, because eight quarters cannot tell a trend from a
@@ -175,12 +181,12 @@ disclosure stops rather than being padded:
   twice, in 2018 and 2019, ending at "net of proceeds from sales and
   incentives"; the series starts after the last move rather than splicing.
 
-Amazon's, Broadcom's, Cadence's, Synopsys', TSMC's, NVIDIA's and Meta's first
-sections are built out further than the others, because those seven companies
-put a quarterly number in a filing. Eight quarters cannot say whether clearing
-a range is normal for a company; the full record can. Broadcom is the one of
-the seven whose filed number is usually **not** a range, which turns out to be
-the point of its page rather than a caveat on it.
+Amazon's, Broadcom's, Cadence's, Synopsys', TJX's, TSMC's, NVIDIA's and Meta's
+first sections are built out further than the others, because those eight
+companies put a quarterly number in a filing. Eight quarters cannot say whether
+clearing a range is normal for a company; the full record can. Broadcom is the
+one of the eight whose filed number is usually **not** a range, which turns out
+to be the point of its page rather than a caveat on it.
 
 Moody's is a **third** case rather than a member of either group, and its page is
 built out for that reason. It files no quarterly range at all, but it does file a
@@ -545,6 +551,59 @@ kind of number.
 
 **Microsoft, Alphabet, Mastercard, Visa and Interactive Brokers get no such
 record, and that is a
+
+TJX files the longest record on this site and the most one-sided, and it is the
+first page here whose company sells nothing to a data centre. Every quarterly
+earnings 8-K EX-99.1 ends with an Outlook paragraph, and from Q1 FY2013 onward
+that paragraph guides next-quarter diluted EPS in the same sentence structure —
+**52 guided quarters, 49 of them finished**. Pretax profit margin joins the
+paragraph in 2022 and consolidated comparable sales in 2023, so the three
+records are 52, 17 and 15 quarters long and each chart is drawn over its own
+rather than over the shortest one they share.
+
+Unlike Synopsys, the three answers do not disagree. **Reported EPS cleared the
+top of its guided range 38 times in 49, landed inside it 8 times and broke the
+bottom 3 times; pretax margin cleared the top 15 times in 16; consolidated comp
+never once landed below its floor.** The three misses are not one phenomenon:
+Q1 2014 missed by half a cent after the split conversion, Q1 2020 was the
+quarter the stores shut, and Q1 2022 was the 2022 cost shock. The single margin
+miss is the most useful entry in the record, because the company names its own
+cause in the same release — "below the Company's plan due to an unplanned shrink
+charge", against guidance that had assumed shrink would be a 0.5-point
+*tailwind*.
+
+Two things stop that from being a tautology, and the page puts both on the
+charts rather than in a footnote. TJX publishes each quarter's outlook with the
+*previous* quarter's results, and it reports about three weeks after a quarter
+ends, so the Outlook paragraph lands **9 to 24 days into the quarter it guides**
+— a tenth to a quarter of the period already banked. And the company withdrew
+guidance outright for **seven consecutive quarters** in 2020–2021, writing "is
+not providing guidance at this time" in five straight releases; the axis jumps
+from Q1 2020 to Q1 2022 with a break marker, because a record that silently
+deletes the quarters a company refused to guide is measuring its own filter.
+
+Three basis hazards had to be handled rather than smoothed. TJX split two-for-one
+in November 2018, so every EPS figure stated before it is divided by two — an
+exact conversion, not an estimate — and exactly one pair straddles the split:
+Q3 2018, guided at US$1.18–1.20 before and reported at US$0.61 after, which
+converts to US$0.59–0.60 against US$0.61 and is a beat rather than the 49% miss
+the raw comparison shows. FY2018 and FY2024 were 53-week years with the extra
+week in the fiscal fourth, and that quarter's guidance was itself given on the
+14-week basis, so the page compares like with like and marks the week count.
+And two quarters carry an adjusting item that did not exist when the range was
+set — the FY2026 Q4 litigation settlement and the FY2027 Q2 tariff refunds — so
+those two are scored on the company's own adjusted figures, which is also the
+basis the company used to call them "well above the Company's plan".
+
+One number the page refuses to publish is the one the local note leans on
+hardest. The company's adjusted EPS of US$1.22 still contains a tariff cost
+tailwind — the CFO attributed the margin gain "mostly due to tariff
+favorability" — but "mostly" is the only quantification ever given. Turning it
+into a figure means choosing a ratio, which is an assumption rather than
+arithmetic, so the de-tariffed earnings go in the excluded list instead, exactly
+as Ansys' quarterly revenue does on the Synopsys page.
+
+**Microsoft, Alphabet, Mastercard and Visa get no such record, and that is a
 sourcing limit rather than an editorial choice.** Microsoft's own 8-K says in as
 many words that guidance is given on the earnings call and webcast, so nothing in
 its filings can carry a range; the quarterly outlook block on its page comes from
@@ -780,6 +839,18 @@ Meta's headline number adds finance-lease principal, Microsoft's adds
 finance-lease additions and Amazon's own free-cash-flow definition nets off
 proceeds from equipment sales and incentives, so the company-defined totals are
 not addable.
+
+**Carrying the table and being a column in it are separate things, and the
+design already separated them.** Cadence, Synopsys, TSMC and NVIDIA all publish
+the cross-reference without appearing in `_CASH_CAPEX_SOURCES`, and
+`test_cdns_is_not_in_the_cross_page_capex_table` pins exactly that. So the block
+is a standing site-wide reference — its title says `跨页对照` and it renders
+inside the collapsed audit drawer, not in the chart flow — rather than a claim
+that the page's company is in the AI supply chain. Visa, Mastercard and TJX
+carry it on the same terms. What TJX adds is a note saying so: the first pages
+outside the chain shipped the block with no explanation, and a reader who meets
+a foundry table in an off-price retailer's drawer deserves one sentence telling
+them it is a site-wide reference.
 
 Amazon joined this table when its page was built. It is the largest spender of
 the four in every quarter of the window, so leaving it out understated each row

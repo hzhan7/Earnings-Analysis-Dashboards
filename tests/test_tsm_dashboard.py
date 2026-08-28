@@ -557,7 +557,7 @@ class TsmDashboardTest(unittest.TestCase):
             [item["slug"] for item in roster["items"]],
             [
              "amzn", "avgo", "cdns", "googl", "ibkr", "ma", "mco", "meta",
-             "msci", "msft", "nvda", "schw", "snps", "spgi", "tsm", "v",
+             "msci", "msft", "nvda", "schw", "snps", "spgi", "tjx", "tsm", "v",
             ],
         )
         shell = (ROOT / "tsm" / "index.html").read_text(encoding="utf-8")

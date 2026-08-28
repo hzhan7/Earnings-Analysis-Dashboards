@@ -11,7 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amzn, avgo, cdns, googl, ibkr, ma, mco, meta, msci, msft, nvda, schw, snps, spgi, tsm, v,
+    amzn, avgo, cdns, googl, ibkr, ma, mco, meta, msci, msft, nvda, schw, snps, spgi,
+    tjx, tsm, v,
 )
 from build.payload_guard import write_js  # noqa: E402
 
@@ -33,6 +34,7 @@ MODULES = {
     "schw": schw,
     "snps": snps,
     "spgi": spgi,
+    "tjx": tjx,
     "tsm": tsm,
     "v": v,
 }
@@ -44,6 +46,7 @@ GROUPS = [
     {"key": "financial_data_indices", "label": "金融数据、评级与指数", "order": 4},
     {"key": "payment_networks", "label": "支付网络", "order": 5},
     {"key": "brokerage_wealth", "label": "券商与财富管理", "order": 6},
+    {"key": "consumer_retail", "label": "消费零售", "order": 7},
 ]
 
 # Everything here is navigation copy, not analysis: it is what a reader sees
@@ -194,6 +197,16 @@ ENTRIES = [
         "headline_metrics": ["Revenue $4.15B", "Ratings 交易性 +25%", "调整后 EPS $4.83"],
         "search_text": ("spgi s&p global 标普全球 标普 评级 信用评级 指数 ratings indices "
                         "market intelligence 大宗商品 能源 mobility 分拆 发行量 订阅"),
+    },
+    {
+        "slug": "tjx",
+        "ticker": "TJX",
+        "name": "The TJX Companies",
+        "aliases": ["TJ Maxx", "Marshalls", "HomeGoods", "TK Maxx", "折扣零售"],
+        "group": "consumer_retail",
+        "cadence_label": "1 月制财年；本站按自然年季度标注",
+        "headline_metrics": ["Revenue $15.18B", "Comp +4%", "Adj EPS $1.22"],
+        "search_text": "tjx tj maxx marshalls homegoods winners tk maxx sierra homesense 折扣零售 off-price 服装 家居 零售 关税 marmaxx",
     },
     {
         "slug": "tsm",

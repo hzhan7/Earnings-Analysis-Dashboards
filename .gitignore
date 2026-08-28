@@ -33,6 +33,7 @@ series/*.json
 !series/schw.json
 !series/snps.json
 !series/spgi.json
+!series/tjx.json
 !series/tsm.json
 !series/v.json
 config/
