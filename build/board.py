@@ -140,7 +140,8 @@ def delivery_band(ref: str, metric: str, xlabels: list[str], low: list[float],
                   high: list[float], actual: list[float | None], *, fmt: str, ylab: str,
                   unit: str, src_extra: str, extra_note: str = "",
                   venue: str = "法说会", scope: str = "", point: bool = False,
-                  break_at: int | None = None, break_label: str = "") -> dict:
+                  break_at: int | None = None, break_label: str = "",
+                  timing: str = "该季<b>开始前</b>") -> dict:
     """One guided metric's own range against what was reported, quarter by quarter.
 
     Both companies that use this guide several numbers every quarter with the
@@ -148,6 +149,14 @@ def delivery_band(ref: str, metric: str, xlabels: list[str], low: list[float],
     differ sharply *between* the metrics -- so it is one chart per metric, each
     on its own axis, rather than one chart with everything normalised onto a
     shared one. Percent and percentage points do not belong together.
+
+    ``timing`` says when the guidance was published relative to the quarter it
+    guides. The default reads "before the quarter began", which is how the first
+    pages here described it; Cadence overrides it, because its outlook goes out
+    with the *previous* quarter's results and so lands weeks into the quarter
+    being guided -- past the halfway mark for a first quarter. A record of never
+    missing means something weaker when part of the quarter is already banked,
+    so the chart has to say which one it is.
     """
     finished = [index for index, value in enumerate(actual) if value is not None]
     above = [index for index in finished if actual[index] > high[index]]
@@ -197,11 +206,11 @@ def delivery_band(ref: str, metric: str, xlabels: list[str], low: list[float],
         "label_fmt": fmt,
         "ylab": ylab,
         "note": (
-            (f"细横线是该季<b>开始前</b>公司在上一场{venue}给出的{metric}指引，"
+            (f"细横线是{timing}公司在上一场{venue}给出的{metric}指引，"
              "公司给的是单点数而不是区间，所以它在图上没有宽度；"
              "菱形是随后报出来的实际值。"
              if point else
-             f"色块是该季<b>开始前</b>公司在上一场{venue}给出的{metric}区间，菱形是随后报出来的实际值。")
+             f"色块是{timing}公司在上一场{venue}给出的{metric}区间，菱形是随后报出来的实际值。")
             + extra_note
             + (f"最后一格 {pending[-1]} 只有指引{'' if point else '色块'}，实际值待披露。"
                if pending else "")

@@ -2,7 +2,7 @@
 
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
-Meta, Microsoft, NVIDIA and TSMC.
+Cadence, Meta, Microsoft, NVIDIA and TSMC.
 
 ## Build
 
@@ -14,6 +14,7 @@ python3 -m http.server 8765
 Open `http://127.0.0.1:8765/`, then choose:
 
 - `http://127.0.0.1:8765/amzn/`
+- `http://127.0.0.1:8765/cdns/`
 - `http://127.0.0.1:8765/googl/`
 - `http://127.0.0.1:8765/meta/`
 - `http://127.0.0.1:8765/msft/`
@@ -65,7 +66,10 @@ Charts are ordered the way the note is actually used:
    revenue and three fifths of the operating profit; Meta gets the depreciation curve, trailing cash conversion and its
    two non-advertising revenue lines; Microsoft gets capital intensity, margins,
    the depreciation curve and the finance-lease channel that sits outside its
-   capex definition; NVIDIA gets six years of margins and operating leverage
+   capex definition; Cadence gets the ASC 606 revenue record, ten years of
+   margin, the same margin with stock compensation put back as a cost, the
+   operating leverage that produced it, and the coverage multiple behind its
+   record backlog; NVIDIA gets six years of margins and operating leverage
    plus the inventory-and-supply-commitment block that carries its real capital
    intensity; TSMC gets node migration, platform mix and working capital.
 
@@ -103,6 +107,27 @@ disclosure stops rather than being padded:
   company's own release — 519 is also what the filed year minus the three
   reported quarters gives, while 522 overshoots the year by 3. Corrected, with a
   test pinning the reconciliation.
+- Cadence's long series start at 2018Q1 rather than being padded backwards:
+  ASC 606 replaced ASC 605 for the quarter beginning 2018-01-01 and the earlier
+  years were never restated, so the two segments are not one line. Its
+  guidance/actual pairs are unaffected — each pair sits inside a single basis —
+  and only the level charts carry the break.
+- Cadence discloses product-category mix (`Core EDA` / `Semiconductor IP` /
+  `System Design and Analysis`) as **integer percentages of revenue and nothing
+  else**, so every dollar in that chart is a percentage times the reported
+  total. Dividing two of those integers compounds ±0.5pp into roughly ±10pp on a
+  growth rate, which is why the page reads its own "+43%" IP number as "just
+  over 40%" — the same thing the press release says. Geography is the exception
+  and the page uses it: China is a **filed dollar line** in the segment note, so
+  it is plotted from the filing rather than derived. The derivation the local
+  note used reads this quarter's China move as +107%; the filed dollars say
+  +95.7%.
+- One threshold set last quarter is reported as **unsettleable rather than
+  breached**. Book-to-bill's numerator is the difference of two backlog figures
+  the company rounds to US$0.1B, so a US$100M net add carries ±US$100M and the
+  ratio spans 1.00x–1.13x — straddling the 1.10x line it was meant to be judged
+  against. The backlog level and the coverage multiple survive the same rounding
+  and are kept.
 - Amazon's trailing free cash flow is a **disclosed** series — the company
   prints it in every release — and reading thirty quarters of it corrected the
   local note, which called this quarter's −$7.6B the first negative reading
@@ -113,10 +138,10 @@ disclosure stops rather than being padded:
   twice, in 2018 and 2019, ending at "net of proceeds from sales and
   incentives"; the series starts after the last move rather than splicing.
 
-Amazon's, TSMC's, NVIDIA's and Meta's first sections are built out further than
-the others, because those four companies put a quarterly guidance range in a
-filing and the other two do not. Eight quarters cannot say whether clearing a
-range is normal for a company; the full record can.
+Amazon's, Cadence's, TSMC's, NVIDIA's and Meta's first sections are built out
+further than the others, because those five companies put a quarterly guidance
+range in a filing and the other two do not. Eight quarters cannot say whether
+clearing a range is normal for a company; the full record can.
 
 TSMC guides three numbers every quarter — revenue, gross margin and operating
 margin — and fifteen quarters pulled from the fifteen earnings 6-Ks themselves
@@ -206,6 +231,32 @@ management's guided midpoint, all held. A framework anchored on the guidance of
 a company that has never missed the bottom of either range is anchored too low
 by construction.
 
+Cadence files the longest record of the five, and the most one-sided. Its
+quarterly outlook — revenue, GAAP and non-GAAP operating margin, GAAP and
+non-GAAP EPS — is stated in the CFO Commentary filed as EX-99.02 of every
+quarterly earnings 8-K, unbroken for 43 quarters back to Q1 2016. In the 42
+finished ones **reported revenue never landed below the guided floor, and never
+even below the guided midpoint — 42 times out of 42**. Non-GAAP EPS never broke
+the floor either. Only the operating margin ever came up short, twice, by 0.3pp
+and 0.1pp, and both times against a guidance that was a single number rather
+than a range, so there was no band to land in.
+
+That last distinction is the reason the parser had to be told about it. Cadence
+writes some ranges with the word "to" — `29% to 30%` — and reading those as a
+point overstated three 2018 beats by about a hundred basis points each. Twenty
+of the 43 margin guidances really are single points (`~30%`, `approximately
+30%`) and are drawn as hairlines; the other 23 are bands. A test now pins that
+the form flag and the two endpoints agree.
+
+**A perfect record means less here than it looks, and the page says so on every
+one of the six charts.** Cadence publishes each quarter's outlook alongside the
+*previous* quarter's results, and that release lands inside the quarter being
+guided: about four weeks in for Q2, Q3 and Q4, and past the halfway mark for Q1,
+whose guidance waits for the mid-February annual release — the Q1 2021 range was
+published on day 50 of a 91-day quarter. This is not an ex-ante forecast, and a
+page that let "never missed in 42 quarters" stand without that sentence would be
+publishing a tautology dressed as a finding.
+
 **Microsoft and Alphabet get no such record, and that is a sourcing limit rather
 than an editorial choice.** Microsoft's own 8-K says in as many words that
 guidance is given on the earnings call and webcast, so nothing in its filings
@@ -216,7 +267,7 @@ changes, twice in forty-five releases. Neither page gets a fabricated record:
 transcribing fifteen quarters off webcast material that cannot be checked
 against a second source is the failure this repo is built to avoid.
 
-Four of the series exist only on this site, because the number that decides the
+Five of the series exist only on this site, because the number that decides the
 quarter is not one any filing prints:
 
 - Amazon's **two-leg decomposition of the operating-income beat**, above, and
@@ -228,6 +279,14 @@ quarter is not one any filing prints:
 - Meta's **year-over-year incremental operating margin** (ΔOI / ΔRevenue). A
   margin falling from 41% to 31% and a company whose extra dollar of revenue
   carries a negative extra dollar of profit look identical on a margin chart.
+- Cadence's **implied fourth-quarter operating margin**. The company guides the
+  full year and the third quarter and never the fourth, but the fourth is what
+  the other two imply: the full-year non-GAAP operating income at the guidance
+  midpoint, less the first half as reported, less the third quarter's guided
+  midpoint, over the revenue the same subtraction leaves. It comes to 42.84%,
+  level with the quarter that carried a US$128.5M legal charge, in a year whose
+  revenue guidance was just raised — which is the tension the whole page is
+  about, and it is four filed numbers and no estimate.
 - Microsoft's **free cash flow adjusted for unpaid capex**. Reported free cash
   flow counts only capex that was paid; the 10-K discloses how much was still
   sitting in accounts payable, so subtracting that year's increase turns a

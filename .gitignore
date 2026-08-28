@@ -20,10 +20,12 @@ tmp/
 # the new series file silently (rc=0, absent from `git diff --cached`).
 series/*.json
 !series/amzn.json
+!series/cdns.json
 !series/googl.json
 !series/meta.json
 !series/msft.json
 !series/nvda.json
+!series/snps.json
 !series/tsm.json
 config/
 build/ingest_local.py

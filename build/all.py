@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from build import amzn, googl, meta, msft, nvda, tsm  # noqa: E402
+from build import amzn, cdns, googl, meta, msft, nvda, tsm  # noqa: E402
 from build.payload_guard import write_js  # noqa: E402
 
 
@@ -18,6 +18,7 @@ DATA_DIR = ROOT / "data"
 
 MODULES = {
     "amzn": amzn,
+    "cdns": cdns,
     "googl": googl,
     "meta": meta,
     "msft": msft,
@@ -45,6 +46,16 @@ ENTRIES = [
         "cadence_label": "自然年季度；完整披露",
         "headline_metrics": ["Revenue $200.6B", "AWS +37%", "TTM FCF -$7.6B"],
         "search_text": "amzn amazon 亚马逊 aws 云 电商 零售 广告 互联网 trainium prime",
+    },
+    {
+        "slug": "cdns",
+        "ticker": "CDNS",
+        "name": "Cadence Design Systems",
+        "aliases": ["Cadence", "楷登", "EDA"],
+        "group": "semiconductor_ai",
+        "cadence_label": "自然年季度；完整披露",
+        "headline_metrics": ["Revenue $1.58B", "Backlog $8.1B", "Non-GAAP OpM 45.5%"],
+        "search_text": "cdns cadence 楷登 eda 半导体 设计 ip palladium 硬件仿真 agentic 芯片设计",
     },
     {
         "slug": "googl",
