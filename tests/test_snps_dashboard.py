@@ -432,9 +432,35 @@ class SnpsDashboardTest(unittest.TestCase):
         self.assertEqual(entry["group"], "semiconductor_ai")
 
     def test_the_shell_links_the_payload_by_content_hash(self) -> None:
+        """Every `?v=` in the committed shell must be that file's CURRENT digest.
+
+        Checking only the shape of the query string is not enough, and this test
+        used to do exactly that. On 2026-08-29 a commit updated `data/snps.js`
+        but left `snps/index.html` out of its explicit path list, so the shell
+        went on stamping the previous payload's digest. Nothing caught it: the
+        renderer is correct (main() writes the payload before rendering the
+        shell), the working tree was consistent, and all 201 tests passed --
+        because they run after `build/all.py` has already regenerated the shell.
+        Only `git status` after a build showed it, and only if you looked.
+
+        The consequence is precisely what the fingerprint exists to prevent: the
+        payload bytes changed, its URL did not, so a reader who had already
+        loaded the old `data/snps.js?v=...` kept being served it from cache.
+        """
+        import hashlib
+
         shell = (ROOT / "snps" / "index.html").read_text(encoding="utf-8")
-        self.assertRegex(shell, r'src="\.\./data/snps\.js\?v=[0-9a-f]{8}"')
         self.assertIn("<title>SNPS Quarterly Results</title>", shell)
+        sources = re.findall(r'<script src="\.\./([^"?]+)(?:\?v=([0-9a-f]+))?"', shell)
+        self.assertEqual(
+            [name for name, _ in sources],
+            ["data/roster.js", "data/snps.js", "assets/charts.js", "assets/page.js"],
+        )
+        for name, digest in sources:
+            with self.subTest(script=name):
+                self.assertTrue(digest, f"{name} is served without a cache-busting version")
+                expected = hashlib.sha256((ROOT / name).read_bytes()).hexdigest()[: len(digest)]
+                self.assertEqual(digest, expected, f"{name} carries a stale digest")
 
     def test_compact_period_round_trips_the_labels_the_charts_use(self) -> None:
         self.assertEqual(compact_period("Q2 2026"), "Q2'26")
