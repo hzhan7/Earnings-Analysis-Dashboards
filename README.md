@@ -2,7 +2,7 @@
 
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
-Cadence, Meta, Microsoft, NVIDIA, Synopsys and TSMC.
+Cadence, Meta, Microsoft, NVIDIA, Synopsys, TSMC and Visa.
 
 ## Build
 
@@ -21,6 +21,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/nvda/`
 - `http://127.0.0.1:8765/snps/`
 - `http://127.0.0.1:8765/tsm/`
+- `http://127.0.0.1:8765/v/`
 
 Live site: https://hzhan7.github.io/Earnings-Analysis-Dashboards/
 
@@ -43,8 +44,9 @@ Live site: https://hzhan7.github.io/Earnings-Analysis-Dashboards/
   company itself calls FY2026 Q4; NVIDIA's ends in late January, so its
   `Q1 2026` is the quarter ended 2026-04-26, which the company calls FY2027 Q1;
   Synopsys' ends in October, so its `Q2 2026` is the quarter ended 2026-07-31,
-  which the company calls FY2026 Q3. Each page says so in its subtitle and
-  notes. Without one convention the
+  which the company calls FY2026 Q3; Visa's ends in September, so its `Q2 2026`
+  is the quarter ended 2026-06-30, which the company also calls FY2026 Q3. Each
+  page says so in its subtitle and notes. Without one convention the
   cross-company capex table would compare different three-month periods and look
   fine doing it.
 
@@ -74,7 +76,11 @@ Charts are ordered the way the note is actually used:
    operating leverage that produced it, and the coverage multiple behind its
    record backlog; NVIDIA gets six years of margins and operating leverage
    plus the inventory-and-supply-commitment block that carries its real capital
-   intensity; TSMC gets node migration, platform mix and working capital.
+   intensity; TSMC gets node migration, platform mix and working capital; Visa
+   gets thirteen years of its client-incentive rate, the two revenue growth
+   rates whose gap is that rate moving, the mix shift across its four gross
+   revenue lines, the non-US share of net revenue, and capital returned against
+   the cash flow that funds it.
 
 On the Alphabet, Meta and Microsoft pages these run on the ten-year record
 rather than eight quarters, because eight quarters cannot tell a trend from a
@@ -143,7 +149,7 @@ disclosure stops rather than being padded:
 
 Amazon's, Cadence's, Synopsys', TSMC's, NVIDIA's and Meta's first sections are
 built out further than the others, because those six companies put a quarterly
-guidance range in a filing and the other two do not. Eight quarters cannot say whether
+guidance range in a filing and the other three do not. Eight quarters cannot say whether
 clearing a range is normal for a company; the full record can.
 
 TSMC guides three numbers every quarter — revenue, gross margin and operating
@@ -260,7 +266,7 @@ published on day 50 of a 91-day quarter. This is not an ex-ante forecast, and a
 page that let "never missed in 42 quarters" stand without that sentence would be
 publishing a tautology dressed as a finding.
 
-Synopsys files the most *complete* guidance of the eight, and it produces the
+Synopsys files the most *complete* guidance of the nine, and it produces the
 only two-sided answer on this site. The "Financial Targets" table in every
 earnings 8-K EX-99.1 guides **every input of earnings per share** — revenue,
 GAAP and non-GAAP expenses, non-GAAP other income, the non-GAAP tax rate and the
@@ -311,8 +317,8 @@ the rest, which shows the US$105M of raises breaking down into US$80M of Ansys
 and US$25M of everything else — and names the quarterly split in the excluded
 list instead of deriving it.
 
-**Microsoft and Alphabet get no such record, and that is a sourcing limit rather
-than an editorial choice.** Microsoft's own 8-K says in as many words that
+**Microsoft, Alphabet and Visa get no such record, and that is a sourcing limit
+rather than an editorial choice.** Microsoft's own 8-K says in as many words that
 guidance is given on the earnings call and webcast, so nothing in its filings
 can carry a range; the quarterly outlook block on its page comes from the call,
 one quarter at a time. Alphabet gives no quarterly numeric guidance at all — its
@@ -320,6 +326,61 @@ capital-expenditure commitment for the year reaches a press release only when it
 changes, twice in forty-five releases. Neither page gets a fabricated record:
 transcribing fifteen quarters off webcast material that cannot be checked
 against a second source is the failure this repo is built to avoid.
+
+Visa is the sharpest version of the same limit, because the thing it withholds
+is not the number but the *unit*. It has never filed a numeric **quarterly**
+outlook at all: every Financial Outlook it ever published was fiscal-full-year,
+so the object the other five pages are built on — a next-quarter range and the
+quarter that settles it — does not exist anywhere in its filing history. Even
+the full-year outlook is leaving, in four visible steps: numeric on some metrics
+through fiscal 2020, present but explicitly withheld in fiscal 2020–2021, absent
+from most of 2022–2023, reduced in fiscal 2024 to a single sentence pointing at
+an earnings presentation that is **not archived on EDGAR**, and gone entirely
+from every release after 2025-01-30. The page prints that era map and
+deliberately prints no tally of how many releases carried a number: a count
+sampled from eighteen of a forty-plus release window does not generalise, and a
+precise-looking ratio would be the least defensible sentence on the page.
+
+What Visa did guide, repeatedly and numerically, turns out to be the one number
+its page is actually about. `Client incentives as a percent of gross revenues`
+appears as a range in the release that opens each fiscal year from 2017 to 2020.
+Both legs are filed — the range from the release, the delivered rate from that
+year's 10-K revenue note — and the record is one-sided in the *helpful*
+direction: three of the four years came in **below** the guided floor and none
+ever exceeded the ceiling, meaning Visa handed back less of its gross revenue
+than it had told the market it would. Then it stopped publishing the number, and
+in the six years since, the rate has gone from 23.4% to 28.7%.
+
+That rate is a filed figure every quarter back to 2012, because the four gross
+revenue lines and the client-incentive contra line are disclosed separately, so
+the ratio is division on disclosed numbers rather than an estimate — and the
+five reconcile to filed net revenue in all fifty-five quarters, fiscal fourths
+included. Over that window it climbs from 16.3% to 28.7%. Eight quarters cannot
+see it: across the last eight the line just oscillates between 27% and 29% and
+reads as noise. It is the clearest case on this site of a series whose meaning
+is entirely a function of its window.
+
+Two Visa hazards are handled rather than smoothed over, and both are places
+where the obvious arithmetic gives the wrong answer:
+
+- **Service revenue is recognised on the previous quarter's payments volume**,
+  which Visa states in every release, while that same release's headline
+  `Key Business Drivers` table prints the *current* quarter's volume. Lining the
+  two up is off by exactly one quarter, every quarter. Worse, Visa discloses
+  volume only as a year-over-year **percentage** and never as a quarterly dollar
+  amount, so a unit take-rate cannot be recomputed from the filings at all. The
+  page therefore publishes **no** revenue-versus-volume comparison and says why,
+  rather than reproducing a misaligned one.
+- **The litigation escrow is measured against the accrual it actually funds.**
+  The U.S. Retrospective Responsibility Plan escrow pays U.S. covered litigation
+  and nothing else; the balance sheet's `Accrued litigation` line is larger
+  because it also carries VE Territory and uncovered matters the escrow cannot
+  touch. Visa prints the split itself, in a table whose title says so. Against
+  the covered accrual the latest quarter is a US$66M **surplus** — US$888M
+  against US$822M. Against the total it looks like a US$386M shortfall, which is
+  what the local note read it as and what produced a forecast of an imminent
+  large top-up. Both lines are on the chart and the page names which pair
+  belongs together.
 
 Five of the series exist only on this site, because the number that decides the
 quarter is not one any filing prints:

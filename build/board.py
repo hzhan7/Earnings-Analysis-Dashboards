@@ -141,7 +141,7 @@ def delivery_band(ref: str, metric: str, xlabels: list[str], low: list[float],
                   unit: str, src_extra: str, extra_note: str = "",
                   venue: str = "法说会", scope: str = "", point: bool = False,
                   break_at: int | None = None, break_label: str = "",
-                  timing: str = "该季<b>开始前</b>") -> dict:
+                  timing: str = "该季<b>开始前</b>", period_word: str = "季") -> dict:
     """One guided metric's own range against what was reported, quarter by quarter.
 
     Both companies that use this guide several numbers every quarter with the
@@ -168,21 +168,21 @@ def delivery_band(ref: str, metric: str, xlabels: list[str], low: list[float],
         # would be a category error: `lo == hi` and every quarter is trivially
         # outside. The band still draws -- the renderer floors its height at
         # 0.9px -- which is the honest picture of a guidance with no width.
-        verdict = (f"{len(finished)} 个已完结季里 {len(above)} 季高于指引、"
-                   f"{len(below)} 季低于指引")
+        verdict = (f"{len(finished)} 个已完结{period_word}里 {len(above)} {period_word}高于指引、"
+                   f"{len(below)} {period_word}低于指引")
         if inside:
-            verdict += f"、{inside} 季与指引完全相同"
+            verdict += f"、{inside} {period_word}与指引完全相同"
     elif below and above:
-        verdict = (f"{len(finished)} 个已完结季里 {len(above)} 季超出上限、{inside} 季落在区间内、"
-                   f"{len(below)} 季跌破下限")
+        verdict = (f"{len(finished)} 个已完结{period_word}里 {len(above)} {period_word}超出上限、"
+                   f"{inside} {period_word}落在区间内、{len(below)} {period_word}跌破下限")
     elif below:
-        verdict = (f"{len(finished)} 个已完结季里 {inside} 季落在区间内、"
-                   f"{len(below)} 季跌破下限，没有一季超出上限")
+        verdict = (f"{len(finished)} 个已完结{period_word}里 {inside} {period_word}落在区间内、"
+                   f"{len(below)} {period_word}跌破下限，没有一{period_word}超出上限")
     elif inside == 0:
-        verdict = f"{len(finished)} 个已完结季全部超出指引上限，一次例外都没有"
+        verdict = f"{len(finished)} 个已完结{period_word}全部超出指引上限，一次例外都没有"
     else:
-        verdict = (f"{len(finished)} 个已完结季里 {len(above)} 季超出上限、{inside} 季落在区间内，"
-                   "没有一季跌破下限")
+        verdict = (f"{len(finished)} 个已完结{period_word}里 {len(above)} {period_word}超出上限、"
+                   f"{inside} {period_word}落在区间内，没有一{period_word}跌破下限")
     band = {
         "ref": ref,
         "kind": "range_band",

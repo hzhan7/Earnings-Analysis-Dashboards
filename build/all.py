@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from build import amzn, cdns, googl, meta, msft, nvda, snps, tsm  # noqa: E402
+from build import amzn, cdns, googl, meta, msft, nvda, snps, tsm, v  # noqa: E402
 from build.payload_guard import write_js  # noqa: E402
 
 
@@ -25,12 +25,14 @@ MODULES = {
     "nvda": nvda,
     "snps": snps,
     "tsm": tsm,
+    "v": v,
 }
 
 GROUPS = [
     {"key": "internet", "label": "互联网平台", "order": 1},
     {"key": "software_cloud", "label": "软件与云平台", "order": 2},
     {"key": "semiconductor_ai", "label": "半导体与 AI 基础设施", "order": 3},
+    {"key": "payment_networks", "label": "支付网络", "order": 5},
 ]
 
 # Everything here is navigation copy, not analysis: it is what a reader sees
@@ -117,6 +119,16 @@ ENTRIES = [
         "cadence_label": "自然年季度；完整披露",
         "headline_metrics": ["Revenue $40.2B", "HPC 66%", "GM 67.7%"],
         "search_text": "tsm tsmc taiwan semiconductor 台积电 半导体 foundry hpc ai 2nm",
+    },
+    {
+        "slug": "v",
+        "ticker": "V",
+        "name": "Visa",
+        "aliases": ["Visa", "维萨", "签证卡"],
+        "group": "payment_networks",
+        "cadence_label": "9 月制财年；本站按自然年季度标注",
+        "headline_metrics": ["Net revenue $11.6B", "激励率 28.7%", "GAAP OpM 59.1%"],
+        "search_text": "v visa 维萨 支付 卡组织 网络 跨境 client incentives 激励 借记卡 信用卡 发卡行 收单",
     },
 ]
 

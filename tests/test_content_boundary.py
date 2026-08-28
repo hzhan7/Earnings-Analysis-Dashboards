@@ -101,7 +101,7 @@ def published_files() -> list[Path]:
 # the point is to fail when discovery stops finding one, and a list derived from
 # discovery could never do that. The test below keeps it from drifting from the
 # roster it is supposed to mirror.
-COMPANY_SLUGS = ("amzn", "cdns", "googl", "meta", "msft", "nvda", "snps", "tsm")
+COMPANY_SLUGS = ("amzn", "cdns", "googl", "meta", "msft", "nvda", "snps", "tsm", "v")
 
 
 class ContentBoundaryTest(unittest.TestCase):

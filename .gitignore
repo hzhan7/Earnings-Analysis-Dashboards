@@ -27,6 +27,7 @@ series/*.json
 !series/nvda.json
 !series/snps.json
 !series/tsm.json
+!series/v.json
 config/
 build/ingest_local.py
 
