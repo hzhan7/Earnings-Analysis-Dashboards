@@ -150,6 +150,28 @@ class ContentBoundaryTest(unittest.TestCase):
         for entry in ENTRIES:
             self.assertIn(entry["group"], group_keys, entry["slug"])
 
+    def test_group_keys_are_unique(self) -> None:
+        """The test above cannot catch a duplicated key, by construction.
+
+        It builds its set of valid keys FROM GROUPS, so a key appearing twice is
+        still a member and every ENTRIES row referencing it still passes. The
+        order-uniqueness assertion below only catches the sub-case where the two
+        rows also share an `order`.
+
+        The consequence is visible to a reader rather than to the build.
+        `navigation()` walks GROUPS and looks up `byGroup[key]` per row, so a key
+        present twice renders two identical `<optgroup>`s and lists every company
+        in that group twice in the switcher -- with the suite green. Verified by
+        mutation: adding a second `payment_networks` row at a different `order`
+        left all other checks passing and put both payments companies in the
+        dropdown twice.
+
+        Two sessions adding the same group row concurrently is exactly how this
+        arrives, and it merges without a conflict.
+        """
+        keys = [group["key"] for group in GROUPS]
+        self.assertEqual(len(keys), len(set(keys)), keys)
+
     def test_groups_render_in_the_order_they_declare(self) -> None:
         """`order` is decorative -- position in the list is what renders.
 
