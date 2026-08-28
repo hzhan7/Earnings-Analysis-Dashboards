@@ -27,6 +27,7 @@ series/*.json
 !series/ma.json
 !series/mco.json
 !series/meta.json
+!series/msci.json
 !series/msft.json
 !series/nvda.json
 !series/schw.json

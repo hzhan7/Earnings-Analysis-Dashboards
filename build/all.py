@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amzn, avgo, cdns, googl, ibkr, ma, mco, meta, msft, nvda, schw, snps, spgi, tsm, v,
+    amzn, avgo, cdns, googl, ibkr, ma, mco, meta, msci, msft, nvda, schw, snps, spgi, tsm, v,
 )
 from build.payload_guard import write_js  # noqa: E402
 
@@ -27,6 +27,7 @@ MODULES = {
     "ma": ma,
     "mco": mco,
     "meta": meta,
+    "msci": msci,
     "msft": msft,
     "nvda": nvda,
     "schw": schw,
@@ -131,6 +132,17 @@ ENTRIES = [
         "cadence_label": "自然年季度；完整披露",
         "headline_metrics": ["Revenue $60.8B", "Ads +27.5%", "FCF $0.8B"],
         "search_text": "meta facebook instagram whatsapp 脸书 广告 reality labs 互联网",
+    },
+    {
+        "slug": "msci",
+        "ticker": "MSCI",
+        "name": "MSCI Inc.",
+        "aliases": ["MSCI", "明晟", "指数"],
+        "group": "financial_data_indices",
+        "cadence_label": "自然年季度；完整披露",
+        "headline_metrics": ["Revenue $867M", "ETF AUM $2,818B", "Adj EBITDA 62.1%"],
+        "search_text": ("msci 明晟 指数 index analytics 分析 可持续 sustainability climate "
+                        "私募资产 private assets etf aum 基点费率 run rate 留存率 订阅 资产型费用"),
     },
     {
         "slug": "msft",

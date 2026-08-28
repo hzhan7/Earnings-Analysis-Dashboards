@@ -978,7 +978,10 @@ def build_payload(staging: dict) -> dict:
             f"收入 US${revenue[-1]:,.0f}M、同比 {signed(yoy[-1])}，"
             f"Adjusted EBITDA 利润率 {ebitda_margin[-1]:.1f}%，"
             f"两条指引照例都过了——而这正是问题所在："
-            f"{finished_count} 个已完结季里实际收入<b>一次都没有低于</b>指引的点或中值，"
+            # `headline` is written with `node.textContent`, so a tag here reaches
+            # the reader as the literal characters `<b>`. Emphasis belongs in
+            # `brief` or an exhibit's `note`, which are raw innerHTML.
+            f"{finished_count} 个已完结季里实际收入一次都没有低于指引的点或中值，"
             f"偏离却始终挤在 +0.17% 到 +3.53% 这条窄带里，"
             f"且指引是在被指引季度已经过了中位 {median_days:.0f} 天时才发布的；"
             f"同一季，无条件采购承诺从 US${commitments['total'][-2]:,.0f}M 跳到 "
