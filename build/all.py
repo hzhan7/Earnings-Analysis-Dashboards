@@ -10,13 +10,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from build import googl, meta, msft, nvda, tsm  # noqa: E402
+from build import amzn, googl, meta, msft, nvda, tsm  # noqa: E402
 from build.payload_guard import write_js  # noqa: E402
 
 
 DATA_DIR = ROOT / "data"
 
 MODULES = {
+    "amzn": amzn,
     "googl": googl,
     "meta": meta,
     "msft": msft,
@@ -35,6 +36,16 @@ GROUPS = [
 # payload. The three fields that can go stale on their own -- period label,
 # release date, status -- are read from the payload instead of typed here.
 ENTRIES = [
+    {
+        "slug": "amzn",
+        "ticker": "AMZN",
+        "name": "Amazon.com",
+        "aliases": ["Amazon", "亚马逊", "AWS"],
+        "group": "internet",
+        "cadence_label": "自然年季度；完整披露",
+        "headline_metrics": ["Revenue $200.6B", "AWS +37%", "TTM FCF -$7.6B"],
+        "search_text": "amzn amazon 亚马逊 aws 云 电商 零售 广告 互联网 trainium prime",
+    },
     {
         "slug": "googl",
         "ticker": "GOOGL",

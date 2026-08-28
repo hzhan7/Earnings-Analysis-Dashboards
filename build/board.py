@@ -32,14 +32,24 @@ def headroom(direction: str, threshold: float, actual: float) -> float:
     return sign * (actual - threshold) / abs(threshold) * 100.0
 
 
+# Money keeps its sign outside the currency symbol: a threshold of minus ten
+# billion reads as "−US$10.0B", not "US$-10.0B". Amazon is the first company
+# here whose free-cash-flow threshold is negative, and the naive format put the
+# minus where a reader parses it as part of the unit.
 UNIT_FORMATS = {
     "pct": lambda value: f"{value:.1f}%",
     "pp": lambda value: f"{value:+.1f}pp",
-    "usd_m": lambda value: f"${value:,.0f}M",
-    "usd_bn": lambda value: f"US${value:.1f}B",
+    "usd_m": lambda value: f"{'−' if value < 0 else ''}${abs(value):,.0f}M",
+    "usd_bn": lambda value: f"{'−' if value < 0 else ''}US${abs(value):.1f}B",
     "days": lambda value: f"{value:.0f}天",
     "fx": lambda value: f"{value:.2f}",
     "million": lambda value: f"{value:.0f}M",
+    # Cadence settles two thresholds that are neither money nor a rate: a
+    # coverage ratio (backlog over trailing revenue) and a book-to-bill, both of
+    # which read as "times".  Per-share amounts get their own key so a US$8.10
+    # EPS threshold is not printed as though it were eight million dollars.
+    "times": lambda value: f"{value:.2f}x",
+    "usd_eps": lambda value: f"{'−' if value < 0 else ''}${abs(value):.2f}",
 }
 
 
@@ -311,10 +321,16 @@ SERIES_DIR = Path(__file__).resolve().parents[1] / "series"
 
 # One accessor per company: (series file, period list, cash-capex list).  Only
 # cash purchases of property and equipment are collected, because that is the
-# one capex definition all four filers report identically -- META's headline
-# number adds finance-lease principal and MSFT's adds finance-lease additions,
-# so the company-defined totals are not addable across pages.
+# one capex definition every filer here reports identically -- META's headline
+# number adds finance-lease principal, MSFT's adds finance-lease additions, and
+# AMZN's own free-cash-flow definition nets off proceeds from equipment sales
+# and incentives, so the company-defined totals are not addable across pages.
+#
+# AMZN joined this table when its page was built. Leaving the largest capex
+# spender of the four out of a table whose whole point is the size of the wave
+# would have understated every row by roughly a third.
 _CASH_CAPEX_SOURCES = [
+    ("amzn", "AMZN", lambda d: (d["periods"], d["quarterly_usd_m"]["purchases_of_property_and_equipment"])),
     ("googl", "GOOGL", lambda d: (d["quarterly"]["periods"], d["quarterly"]["capital_expenditures"])),
     ("meta", "META", lambda d: (d["periods"], d["quarterly_usd_m"]["purchases_of_property_and_equipment"])),
     ("msft", "MSFT", lambda d: (d["periods"], d["quarterly_usd_m"]["cash_paid_for_property_and_equipment"])),
@@ -328,7 +344,7 @@ def _load(slug: str) -> dict:
 def ai_capex_cycle_table(n: int) -> dict:
     """Return the upstream-capex / downstream-shipment cross reference.
 
-    Published byte-identically on every company page: three hyperscalers'
+    Published byte-identically on every company page: four hyperscalers'
     quarterly cash capex, the accelerator revenue it lands in, and the foundry
     quarter that has to build it. Each page can answer "did my company spend
     more"; only this table answers "did the spending turn into shipments".
@@ -368,13 +384,14 @@ def ai_capex_cycle_table(n: int) -> dict:
         )
     return {
         "n": n,
-        "title": "AI capex 循环：三家云厂现金 CapEx → NVDA 数据中心 → TSM 晶圆（跨页对照）",
+        "title": "AI capex 循环：四家云厂现金 CapEx → NVDA 数据中心 → TSM 晶圆（跨页对照）",
         "headers": [
             "期间",
+            "AMZN 现金 CapEx",
             "GOOGL 现金 CapEx",
             "META 现金 CapEx",
             "MSFT 现金 CapEx",
-            "三家合计 D",
+            "四家合计 D",
             "NVDA DC 收入（季末晚约 1 个月）",
             "TSM 收入",
             "TSM 收入 YoY",

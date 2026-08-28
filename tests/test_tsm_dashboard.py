@@ -529,8 +529,14 @@ class TsmDashboardTest(unittest.TestCase):
             self.assertEqual(table["rows"], tables[0]["rows"])
             self.assertEqual(table["headers"], tables[0]["headers"])
         self.assertEqual(len(tables[0]["rows"]), len(self.source["periods"]))
+        # One column per hyperscaler, so the slice has to widen with the table:
+        # pinning it at 1:4 would have kept passing while the newest column
+        # silently filled with dashes.
+        hyperscalers = sum(1 for header in tables[0]["headers"] if header.endswith("现金 CapEx"))
+        self.assertEqual(hyperscalers, 4)
         for row in tables[0]["rows"]:
-            self.assertNotIn("—", row[1:4], "a hyperscaler capex column lost a quarter")
+            self.assertNotIn("—", row[1:1 + hyperscalers],
+                             "a hyperscaler capex column lost a quarter")
 
     def test_sources_are_official_http_links(self) -> None:
         allowed_hosts = {"investor.tsmc.com", "www.sec.gov"}
@@ -549,7 +555,7 @@ class TsmDashboardTest(unittest.TestCase):
         self.assertEqual(roster, roster_payload(build_all()))
         self.assertEqual(
             [item["slug"] for item in roster["items"]],
-            ["googl", "meta", "msft", "nvda", "tsm"],
+            ["amzn", "googl", "meta", "msft", "nvda", "tsm"],
         )
         shell = (ROOT / "tsm" / "index.html").read_text(encoding="utf-8")
         self.assertIn('../data/tsm.js', shell)

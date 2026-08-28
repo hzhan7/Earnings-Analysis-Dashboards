@@ -1,8 +1,8 @@
 # Earnings Analysis Dashboards
 
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
-chart-led research pages. Reviewed pages currently cover Alphabet, Meta,
-Microsoft, NVIDIA and TSMC.
+chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
+Meta, Microsoft, NVIDIA and TSMC.
 
 ## Build
 
@@ -13,6 +13,7 @@ python3 -m http.server 8765
 
 Open `http://127.0.0.1:8765/`, then choose:
 
+- `http://127.0.0.1:8765/amzn/`
 - `http://127.0.0.1:8765/googl/`
 - `http://127.0.0.1:8765/meta/`
 - `http://127.0.0.1:8765/msft/`
@@ -59,7 +60,9 @@ Charts are ordered the way the note is actually used:
 3. **下季跟踪** — the same thresholds pointed forward.
 4. **长期常规** — the routine multi-quarter series, chosen per company rather
    than from a template. Alphabet gets revenue/capital intensity/depreciation/
-   geography; Meta gets the depreciation curve, trailing cash conversion and its
+   geography; Amazon gets revenue growth, capital intensity, how far the
+   depreciation wave still has to run, and AWS's two shares — a fifth of the
+   revenue and three fifths of the operating profit; Meta gets the depreciation curve, trailing cash conversion and its
    two non-advertising revenue lines; Microsoft gets capital intensity, margins,
    the depreciation curve and the finance-lease channel that sits outside its
    capex definition; NVIDIA gets six years of margins and operating leverage
@@ -76,12 +79,20 @@ reacceleration reads as a third episode rather than a first.
 The window is per chart, not per page, and it stops where the company's own
 disclosure stops rather than being padded:
 
-- All three file their cash-flow lines year-to-date only, so every quarter after
-  the first is one filed figure minus the previous one, and the fiscal fourth is
-  the year minus the nine months. Both legs are filed numbers. Where a printed
-  quarterly column also exists it wins, because each leg of a subtraction is
-  rounded to the million first: Alphabet's 2025Q4 revenue derives to 113,829 and
-  the company prints 113,828.
+- Alphabet, Meta and Microsoft file their cash-flow lines year-to-date only, so
+  every quarter after the first is one filed figure minus the previous one, and
+  the fiscal fourth is the year minus the nine months. Both legs are filed
+  numbers. Where a printed quarterly column also exists it wins, because each
+  leg of a subtraction is rounded to the million first: Alphabet's 2025Q4
+  revenue derives to 113,829 and the company prints 113,828.
+- Amazon is the exception and needs no differencing at all: its 10-Q cash-flow
+  statement prints three-month, year-to-date and trailing-twelve-month columns
+  side by side, so every quarter but the fiscal fourth is a filed figure. Even
+  the fourth is printed — in the Q4 press release — and where it is, it wins:
+  2020Q4 capex derives to 14,823 and the release prints 14,824. Amazon's
+  quarterly capex and depreciation stop at 2016Q2 rather than 2016Q1, because
+  the earlier quarter exists only year-to-date and that year's annual total is
+  not tagged either; the charts start where the number does.
 - Three charts keep a short axis because the number does not exist further back,
   and each says so on the chart. Microsoft discloses depreciation annually to
   2009 but quarterly only recently; Alphabet tagged no comparable quarterly
@@ -92,11 +103,20 @@ disclosure stops rather than being padded:
   company's own release — 519 is also what the filed year minus the three
   reported quarters gives, while 522 overshoots the year by 3. Corrected, with a
   test pinning the reconciliation.
+- Amazon's trailing free cash flow is a **disclosed** series — the company
+  prints it in every release — and reading thirty quarters of it corrected the
+  local note, which called this quarter's −$7.6B the first negative reading
+  since 2014. The company's own series was negative through 2021Q4–2023Q1 and
+  bottomed at −$23.5B in 2022Q2. The note was not careless: each release shows
+  only six quarters, so the previous trough is invisible unless you stack them.
+  The page plots all thirty and says so. Amazon also moved the *definition*
+  twice, in 2018 and 2019, ending at "net of proceeds from sales and
+  incentives"; the series starts after the last move rather than splicing.
 
-TSMC's, NVIDIA's and Meta's first sections are built out further than the
-others, because those three companies put a quarterly guidance range in a filing
-and the other two do not. Eight quarters cannot say whether clearing a range is
-normal for a company; the full record can.
+Amazon's, TSMC's, NVIDIA's and Meta's first sections are built out further than
+the others, because those four companies put a quarterly guidance range in a
+filing and the other two do not. Eight quarters cannot say whether clearing a
+range is normal for a company; the full record can.
 
 TSMC guides three numbers every quarter — revenue, gross margin and operating
 margin — and fifteen quarters pulled from the fifteen earnings 6-Ks themselves
@@ -165,6 +185,27 @@ missed the bottom**, so that lower bound has never been tested and reads as a
 floor the company is willing to publish rather than one end of a forecast. The
 midpoint chart adds what the band cannot show: the beat is narrowing.
 
+Amazon is the only company here that puts **two** ranges in every filing — net
+sales and operating income, in the `Financial Guidance` block of each quarterly
+8-K's EX-99.1, in the same sentence structure, unbroken for 37 guided quarters
+back to Q3 2017. It did not withdraw guidance in 2020 either; it widened the
+operating-income range to $(1.5)B–$1.5B and kept publishing. The record is a
+fourth distinct shape: in 36 finished quarters net sales cleared the top 21
+times and operating income 27 times, and **neither one ever landed below the
+bottom**.
+
+Having both is what makes the interesting chart possible. Guiding a level and a
+profit implies an operating margin Amazon never prints, and the distance from
+what it reported splits exactly two ways — a revenue leg and a margin leg, no
+estimate anywhere. The revenue leg never exceeds $0.60B in nine years; the
+margin leg carries the rest, $5.00B of the $5.46B beat in the latest quarter. So
+the demand forecast is close to honest and the *cost* forecast is the half held
+back, which is not how a "beats its own guidance" record usually reads — and it
+is the reason the page's own thresholds, set a quarter earlier against
+management's guided midpoint, all held. A framework anchored on the guidance of
+a company that has never missed the bottom of either range is anchored too low
+by construction.
+
 **Microsoft and Alphabet get no such record, and that is a sourcing limit rather
 than an editorial choice.** Microsoft's own 8-K says in as many words that
 guidance is given on the earnings call and webcast, so nothing in its filings
@@ -175,9 +216,15 @@ changes, twice in forty-five releases. Neither page gets a fabricated record:
 transcribing fifteen quarters off webcast material that cannot be checked
 against a second source is the failure this repo is built to avoid.
 
-Two of the series exist only on this site, because the number that decides the
+Four of the series exist only on this site, because the number that decides the
 quarter is not one any filing prints:
 
+- Amazon's **two-leg decomposition of the operating-income beat**, above, and
+  the **implied guided operating margin** it falls out of.
+- Amazon's **AWS sequential revenue increment** in dollars. Under a supply
+  constraint the year-over-year rate is set by how fast racks come up, not by
+  the base — reading the base is what produced a wrong call on the quarter, so
+  the page retires the growth-rate threshold and anchors on the increment.
 - Meta's **year-over-year incremental operating margin** (ΔOI / ΔRevenue). A
   margin falling from 41% to 31% and a company whose extra dollar of revenue
   carries a negative extra dollar of profit look identical on a margin chart.
@@ -211,18 +258,24 @@ takeaways, a shared `AI capex 循环` cross-reference published byte-identically
 every page, the official-source drawer, and a `口径与方法说明` block that lists
 what each page knowingly does not carry.
 
-The cross-reference puts the three hyperscalers' quarterly **cash** capex against
+The cross-reference puts the four hyperscalers' quarterly **cash** capex against
 the foundry quarter that has to build it. Cash purchases of property and
-equipment is the one capex definition all four filers report the same way —
-Meta's headline number adds finance-lease principal and Microsoft's adds
-finance-lease additions, so the company-defined totals are not addable.
+equipment is the one capex definition every filer here reports the same way —
+Meta's headline number adds finance-lease principal, Microsoft's adds
+finance-lease additions and Amazon's own free-cash-flow definition nets off
+proceeds from equipment sales and incentives, so the company-defined totals are
+not addable.
+
+Amazon joined this table when its page was built. It is the largest spender of
+the four in every quarter of the window, so leaving it out understated each row
+by roughly a third.
 
 NVIDIA sits between the two ends rather than at one of them, so the table now
 carries its **Data Center** line as a middle column: hyperscaler cash capex →
 the accelerator revenue it lands in → the foundry quarter that has to build it.
 Data Center rather than total revenue, because a hyperscaler's capex does not
-buy game consoles. Over these eight quarters the three hyperscalers' capex grew
-3.1x, NVIDIA's Data Center 2.4x and TSMC's revenue 1.7x — the same wave,
+buy game consoles. Over these eight quarters the four hyperscalers' capex grew
+2.8x, NVIDIA's Data Center 2.4x and TSMC's revenue 1.7x — the same wave,
 attenuating as it moves upstream.
 
 One caveat travels in the column header rather than being corrected away:

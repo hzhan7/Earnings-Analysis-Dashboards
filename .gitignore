@@ -19,6 +19,7 @@ tmp/
 # Adding a company? Add `!series/<slug>.json` below, or `git add -A` will skip
 # the new series file silently (rc=0, absent from `git diff --cached`).
 series/*.json
+!series/amzn.json
 !series/googl.json
 !series/meta.json
 !series/msft.json
