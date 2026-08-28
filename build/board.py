@@ -233,7 +233,8 @@ def midpoint_deviation(ref: str, metric: str, xlabels: list[str], low: list[floa
                        high: list[float], actual: list[float | None], *, mode: str,
                        src_extra: str, extra_note: str = "", window: int = 14,
                        label: Callable[[str], str] | None = None,
-                       bar_labels: bool = True, axis_note: str = "") -> dict:
+                       bar_labels: bool = True, axis_note: str = "",
+                       period_word: str = "季") -> dict:
     """How far past the guided midpoint the quarter landed, for one guided metric.
 
     The band charts answer "did it clear the range at all", which saturates once
@@ -245,6 +246,12 @@ def midpoint_deviation(ref: str, metric: str, xlabels: list[str], low: list[floa
     an honest relative distance (%). A ratio's distance is the arithmetic gap
     (pp): dividing a percentage by a percentage would print a number nobody
     quotes and that no company reports.
+
+    ``period_word`` names the unit each bar stands for, matching the parameter
+    of the same name on `delivery_band`. It is a quarter on every page whose
+    guidance is quarterly; S&P Global guides only the full year, so its bars are
+    fiscal years and a hardcoded 「季」 would have counted seven years as seven
+    quarters in the chart's own title.
     """
     if mode not in ("pct", "pp"):
         raise ValueError(f"unknown mode {mode!r}")
@@ -265,8 +272,8 @@ def midpoint_deviation(ref: str, metric: str, xlabels: list[str], low: list[floa
         "ref": ref,
         "kind": "grouped_bars",
         "title": (
-            f"{metric}相对指引中值的偏离：{len(deviation)} 季里 {above} 季为正，"
-            f"平均绝对偏离 {mean_absolute:.1f}{unit}"
+            f"{metric}相对指引中值的偏离：{len(deviation)} {period_word}里 {above} "
+            f"{period_word}为正，平均绝对偏离 {mean_absolute:.1f}{unit}"
         ),
         "xlabels": [render(xlabels[index]) for index in finished],
         "xrot": 90,

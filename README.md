@@ -2,8 +2,8 @@
 
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
-Cadence, Interactive Brokers, Mastercard, Meta, Microsoft, NVIDIA, Synopsys,
-TSMC and Visa.
+Cadence, Interactive Brokers, Mastercard, Meta, Microsoft, NVIDIA, S&P Global,
+Synopsys, TSMC and Visa.
 
 ## Build
 
@@ -23,6 +23,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/msft/`
 - `http://127.0.0.1:8765/nvda/`
 - `http://127.0.0.1:8765/snps/`
+- `http://127.0.0.1:8765/spgi/`
 - `http://127.0.0.1:8765/tsm/`
 - `http://127.0.0.1:8765/v/`
 
@@ -90,7 +91,12 @@ Charts are ordered the way the note is actually used:
    full rate cycle rewrote, net interest margin against the earning assets that
    quadrupled under it, accounts and the equity each one carries, the Up-C wedge,
    operating leverage, and the realised fee per order, which ends the record
-   below where it starts.
+   below where it starts; S&P Global gets the two legs of Ratings across a full
+   issuance cycle, its reported operating margin against the same margin with
+   disposition gains taken out, the revenue and segment structure the IHS Markit
+   merger rewrote, the six filed revenue types, the index assets its
+   asset-linked fees are charged on, and the buyback that ran at 4.6x operating
+   cash flow in the year the merger closed.
 
 On the Alphabet, Meta and Microsoft pages these run on the ten-year record
 rather than eight quarters, because eight quarters cannot tell a trend from a
@@ -326,6 +332,84 @@ does support — the four FY2026 revenue targets split into the acquired half an
 the rest, which shows the US$105M of raises breaking down into US$80M of Ansys
 and US$25M of everything else — and names the quarterly split in the excluded
 list instead of deriving it.
+
+S&P Global files the only **annual** guidance record on this site, and it
+produces the sharpest two-sided answer of any of them. It has never published a
+quarterly outlook at all; what it files, in the EX-99.1 of every quarterly
+earnings 8-K, is a full-year outlook that it then revises once a quarter. So the
+object the six pages above are built on does not exist here, and the honest
+isomorph is built instead: for each fiscal year the successive vintages (opening
+guidance, then the Q1, Q2 and Q3 revisions) are drawn as one continuous band, and
+the year's reported result lands on the **final** vintage, the cell that settles
+it. Thirty-one vintages across FY2019-FY2026 come out of the releases themselves.
+
+The finding is that the two earnings numbers on the same table behave like
+different objects. In seven finished years **adjusted diluted EPS never once
+landed below its final range** - five years above the top, two inside. **GAAP
+diluted EPS landed below in three of those same seven years.** Same release,
+same table, same twelve-month horizon; the gap between them is entirely the
+items the company itself excludes - deal amortization, disposition gains and
+losses, impairments. The number that never misses is the one the company
+defines. A third metric completes the picture rather than muddying it: adjusted
+free cash flow, guided only since FY2023, came in **below** its floor in two of
+three years. The earnings guidance behaves like a floor and the cash guidance
+like a forecast.
+
+Two things about that record needed handling rather than smoothing. The timing
+caveat is stronger here than on Cadence's page: the four vintages are published
+in February, April-May, July-August and October-November **of the year they
+guide**, so the last one goes out with about ten of twelve months already
+banked. "Never missed the final range" is close to a tautology, and the page
+says so on every band. What still carries information is the *opening* vintage,
+so the page adds a chart the band cannot draw - the deviation of each year's
+result from **every** one of its four vintages, which shows the funnel closing
+from 8.9% average absolute error to 1.6%. It also shows that the opening
+guidance was beaten in six of seven years, and that the single exception is
+FY2022 - the year S&P Global **withdrew** its guidance mid-year, on 2022-06-01,
+citing extraordinarily weak market conditions for its Ratings business. That is
+the same year the transaction leg of Ratings revenue hit the bottom of its
+cycle, which is the other thing this page is about.
+
+Because Ratings charges per rated issue, S&P Global's revenue contains a genuine
+cycle and an annuity side by side, and both are filed separately every quarter
+back to 2017Q4. Over 35 quarters the transaction leg ran US$624M to US$244M to
+US$746M - a 61% drawdown and a full recovery to a record - while the
+non-transaction leg (surveillance, annual fees, entity ratings) never fell
+through the same window. Eight quarters cannot see either half of that. The
+company's own billed-issuance KPI is deliberately *not* used to carry this
+argument: it entered SEC filings only in the 1Q2024 10-Q, so an honest series
+starts at 2023Q1, contains no down-cycle at all, and three of its fourteen
+quarters are residuals rather than printed figures. It is plotted, with that
+window stated on the chart.
+
+Two structural breaks are marked. The IHS Markit merger closed 2022-02-28, so
+FY2022 carries about ten months of the acquired business and FY2021 none:
+reported revenue rose 8,297 to 11,181 (+34.8%) while the 10-K's own pro-forma
+basis shows it *falling* 12,382 to 11,842 (-4.4%). Same year, opposite signs, so
+the line is not drawn through it. And S&P Global Mobility was spun off on
+**2026-07-01** - one day after the quarter this page reports. The Q2 2026
+release rebased the FY2026 outlook onto a basis excluding it, dropping adjusted
+EPS guidance from US$19.40-19.65 to US$17.50-17.75 while stating that the two
+are "not directly comparable"; against the restated FY2025 base the company
+published separately, the same revision is an **increase**, from +9.5% to +11.2%
+growth. Every filed statement still consolidates Mobility, and the page
+publishes them that way, because the recast has not reached a filing yet: 2025Q2
+revenue prints US$3,755M in both the 2025 and the 2026 10-Q, unchanged. The page
+carries no bridge across the rebase - the US$1.98 per-share add-back the company
+disclosed is for FY2025, not FY2026, and using it as a FY2026 bridge would be
+the publisher's invention rather than the company's disclosure.
+
+One derivation on that page exists because the obvious form has a hole in it.
+S&P Global's income statement reads `revenue - expenses + gain on dispositions +
+equity income = operating profit`, and the gain is large enough to matter:
+2022Q1's reported 79.2% operating margin contains US$1,344M of antitrust-driven
+divestiture proceeds and is 22.8% without them. But the filer never tags the
+gain for a fiscal fourth quarter, so "operating profit minus the gain" would
+break every Q4. The page plots revenue minus total expenses instead - two filed
+legs, no holes - and a test pins that the two forms agree wherever the gain is
+filed. The same discipline applies to the gain series itself, which is stored as
+null rather than zero where it is untagged: 2025Q4 carried roughly US$270M, and
+a zero there would have drawn it as clean operating profit.
 
 **Microsoft, Alphabet, Mastercard, Visa and Interactive Brokers get no such
 record, and that is a

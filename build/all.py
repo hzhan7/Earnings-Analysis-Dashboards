@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from build import amzn, cdns, googl, ibkr, ma, meta, msft, nvda, snps, tsm, v  # noqa: E402
+from build import amzn, cdns, googl, ibkr, ma, meta, msft, nvda, snps, spgi, tsm, v  # noqa: E402
 from build.payload_guard import write_js  # noqa: E402
 
 
@@ -26,6 +26,7 @@ MODULES = {
     "msft": msft,
     "nvda": nvda,
     "snps": snps,
+    "spgi": spgi,
     "tsm": tsm,
     "v": v,
 }
@@ -34,6 +35,7 @@ GROUPS = [
     {"key": "internet", "label": "互联网平台", "order": 1},
     {"key": "software_cloud", "label": "软件与云平台", "order": 2},
     {"key": "semiconductor_ai", "label": "半导体与 AI 基础设施", "order": 3},
+    {"key": "financial_data_indices", "label": "金融数据、评级与指数", "order": 4},
     {"key": "payment_networks", "label": "支付网络", "order": 5},
     {"key": "brokerage_wealth", "label": "券商与财富管理", "order": 6},
 ]
@@ -133,6 +135,17 @@ ENTRIES = [
         "cadence_label": "10 月制财年；本站按自然年季度标注",
         "headline_metrics": ["Revenue $2.48B", "Design IP +10.8%", "Non-GAAP OpM 41.6%"],
         "search_text": "snps synopsys 新思科技 eda 半导体 设计 ip ansys 仿真 芯片设计 backlog agentic",
+    },
+    {
+        "slug": "spgi",
+        "ticker": "SPGI",
+        "name": "S&P Global",
+        "aliases": ["标普全球", "S&P", "标普"],
+        "group": "financial_data_indices",
+        "cadence_label": "自然年季度；完整披露",
+        "headline_metrics": ["Revenue $4.15B", "Ratings 交易性 +25%", "调整后 EPS $4.83"],
+        "search_text": ("spgi s&p global 标普全球 标普 评级 信用评级 指数 ratings indices "
+                        "market intelligence 大宗商品 能源 mobility 分拆 发行量 订阅"),
     },
     {
         "slug": "tsm",
