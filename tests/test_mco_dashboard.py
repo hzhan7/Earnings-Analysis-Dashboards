@@ -237,12 +237,22 @@ class McoDashboardTest(unittest.TestCase):
     def test_audit_tables_carry_no_field_the_renderer_drops(self) -> None:
         """`tableHTML(title, headers, rows, cls)` is all the appendix drawer reads.
 
-        A `note` on a table dict is silently discarded -- it never reaches the
-        page, but it reads in the source like a published caveat, so the next
-        editor writes the qualification there and believes it shipped. This page
-        did exactly that on its first build: three tables carried notes no
-        reader could see, and the substance now lives in `notes`, which is
+        A `note` on a **`D.tables`** dict is silently discarded -- it never
+        reaches the page, but it reads in the source like a published caveat, so
+        the next editor writes the qualification there and believes it shipped.
+        This page did exactly that on its first build: three tables carried notes
+        no reader could see, and the substance now lives in `notes`, which is
         rendered. Every other page on the site carries zero.
+
+        **Scoped to `D.tables` deliberately, because `note` is not universally
+        dead on table-shaped dicts.** `D.guidance` is built by the same
+        `tableHTML` call, but `page.js` follows it with
+        `esc(D.guidance.note || '')`, so a guidance note *is* rendered -- AMZN
+        ships one 147 characters long. Widening this assertion to anything that
+        looks like a table would go red there, and the tempting way to green it
+        would delete a caption a reader can see. Two slots, one renderer call,
+        one reads the key and one drops it: the difference is a single line
+        after the call, not anything visible in the payload.
         """
         allowed = {"n", "title", "headers", "rows"}
         for table in self.payload["tables"]:
