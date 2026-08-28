@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from build import amzn, cdns, googl, ma, meta, msft, nvda, snps, tsm, v  # noqa: E402
+from build import amzn, cdns, googl, ibkr, ma, meta, msft, nvda, snps, tsm, v  # noqa: E402
 from build.payload_guard import write_js  # noqa: E402
 
 
@@ -20,6 +20,7 @@ MODULES = {
     "amzn": amzn,
     "cdns": cdns,
     "googl": googl,
+    "ibkr": ibkr,
     "ma": ma,
     "meta": meta,
     "msft": msft,
@@ -34,6 +35,7 @@ GROUPS = [
     {"key": "software_cloud", "label": "软件与云平台", "order": 2},
     {"key": "semiconductor_ai", "label": "半导体与 AI 基础设施", "order": 3},
     {"key": "payment_networks", "label": "支付网络", "order": 5},
+    {"key": "brokerage_wealth", "label": "券商与财富管理", "order": 6},
 ]
 
 # Everything here is navigation copy, not analysis: it is what a reader sees
@@ -70,6 +72,17 @@ ENTRIES = [
         "cadence_label": "自然年季度；完整披露",
         "headline_metrics": ["Revenue $119.8B", "Cloud +81.8%", "FCF -$5.9B"],
         "search_text": "googl google alphabet 谷歌 互联网 cloud search youtube",
+    },
+    {
+        "slug": "ibkr",
+        "ticker": "IBKR",
+        "name": "Interactive Brokers Group",
+        "aliases": ["Interactive Brokers", "盈透证券", "IB"],
+        "group": "brokerage_wealth",
+        "cadence_label": "自然年季度；完整披露",
+        "headline_metrics": ["Revenue $1.90B", "NIM 1.93%", "账户 5.19M"],
+        "search_text": ("ibkr interactive brokers 盈透证券 券商 经纪 交易 保证金 "
+                        "净息差 nim 客户权益 darts 期权 期货 清算 托管 up-c"),
     },
     {
         "slug": "ma",
