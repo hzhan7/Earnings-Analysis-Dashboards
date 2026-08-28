@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from build import amzn, cdns, googl, meta, msft, nvda, snps, tsm, v  # noqa: E402
+from build import amzn, cdns, googl, ma, meta, msft, nvda, snps, tsm, v  # noqa: E402
 from build.payload_guard import write_js  # noqa: E402
 
 
@@ -20,6 +20,7 @@ MODULES = {
     "amzn": amzn,
     "cdns": cdns,
     "googl": googl,
+    "ma": ma,
     "meta": meta,
     "msft": msft,
     "nvda": nvda,
@@ -69,6 +70,16 @@ ENTRIES = [
         "cadence_label": "自然年季度；完整披露",
         "headline_metrics": ["Revenue $119.8B", "Cloud +81.8%", "FCF -$5.9B"],
         "search_text": "googl google alphabet 谷歌 互联网 cloud search youtube",
+    },
+    {
+        "slug": "ma",
+        "ticker": "MA",
+        "name": "Mastercard",
+        "aliases": ["Mastercard", "万事达", "支付网络"],
+        "group": "payment_networks",
+        "cadence_label": "自然年季度；完整披露",
+        "headline_metrics": ["Revenue $9.28B", "Rebate ratio 52.4%", "VAS share 41.2%"],
+        "search_text": "ma mastercard 万事达 支付 网络 跨境 清算 返点 激励 增值服务 vas 发卡行 收单 稳定币",
     },
     {
         "slug": "meta",

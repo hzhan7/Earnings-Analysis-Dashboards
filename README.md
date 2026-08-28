@@ -2,7 +2,7 @@
 
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
-Cadence, Meta, Microsoft, NVIDIA, Synopsys, TSMC and Visa.
+Cadence, Mastercard, Meta, Microsoft, NVIDIA, Synopsys, TSMC and Visa.
 
 ## Build
 
@@ -16,6 +16,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/amzn/`
 - `http://127.0.0.1:8765/cdns/`
 - `http://127.0.0.1:8765/googl/`
+- `http://127.0.0.1:8765/ma/`
 - `http://127.0.0.1:8765/meta/`
 - `http://127.0.0.1:8765/msft/`
 - `http://127.0.0.1:8765/nvda/`
@@ -76,7 +77,10 @@ Charts are ordered the way the note is actually used:
    operating leverage that produced it, and the coverage multiple behind its
    record backlog; NVIDIA gets six years of margins and operating leverage
    plus the inventory-and-supply-commitment block that carries its real capital
-   intensity; TSMC gets node migration, platform mix and working capital; Visa
+   intensity; TSMC gets node migration, platform mix and working capital;
+   Mastercard gets its two revenue legs, the operating margin on the same basis
+   the company adjusts to, the leverage its buyback now runs on, and the price
+   it paid for its own stock quarter by quarter; Visa
    gets thirteen years of its client-incentive rate, the two revenue growth
    rates whose gap is that rate moving, the mix shift across its four gross
    revenue lines, the non-US share of net revenue, and capital returned against
@@ -317,15 +321,19 @@ the rest, which shows the US$105M of raises breaking down into US$80M of Ansys
 and US$25M of everything else — and names the quarterly split in the excluded
 list instead of deriving it.
 
-**Microsoft, Alphabet and Visa get no such record, and that is a sourcing limit
-rather than an editorial choice.** Microsoft's own 8-K says in as many words that
-guidance is given on the earnings call and webcast, so nothing in its filings
-can carry a range; the quarterly outlook block on its page comes from the call,
-one quarter at a time. Alphabet gives no quarterly numeric guidance at all — its
-capital-expenditure commitment for the year reaches a press release only when it
-changes, twice in forty-five releases. Neither page gets a fabricated record:
-transcribing fifteen quarters off webcast material that cannot be checked
-against a second source is the failure this repo is built to avoid.
+**Microsoft, Alphabet, Mastercard and Visa get no such record, and that is a
+sourcing limit rather than an editorial choice.** Microsoft's own 8-K says in as
+many words that guidance is given on the earnings call and webcast, so nothing in
+its filings can carry a range; the quarterly outlook block on its page comes from
+the call, one quarter at a time. Alphabet gives no quarterly numeric guidance at
+all — its capital-expenditure commitment for the year reaches a press release
+only when it changes, twice in forty-five releases. Mastercard's earnings 8-K
+contains no Outlook block at all: the words `outlook`, `guidance` and
+`we expect` do not appear in it, and what the call gives is "high end of low
+double-digit", which has no floor and no ceiling to clear. None of the four pages
+gets a fabricated record: transcribing fifteen quarters off webcast material that
+cannot be checked against a second source is the failure this repo is built to
+avoid.
 
 Visa is the sharpest version of the same limit, because the thing it withholds
 is not the number but the *unit*. It has never filed a numeric **quarterly**
@@ -382,7 +390,48 @@ where the obvious arithmetic gives the wrong answer:
   large top-up. Both lines are on the chart and the page names which pair
   belongs together.
 
-Five of the series exist only on this site, because the number that decides the
+**Mastercard's page answers the same question with a different quantity, and
+that is the reason it was worth building.** The interesting thing about a
+payment network is not whether it beats a range it never published; it is how
+much of what it bills it actually keeps. So the first two sections carry
+eighteen quarters of the rebate share of gross billings, and the answer has the
+same one-sided shape the guidance records have: **the ratio rose from 44.5% to
+52.4%, and in the fourteen comparable year-over-year readings it went up
+thirteen times — the single exception is 0.31pp.** A ratio that has essentially
+never come back is a structure, not a quarter.
+
+That number is not printed anywhere. Under the presentation Mastercard adopted
+in the first quarter of 2023, the four assessment lines are printed gross and
+the payment network is printed net, so the rebate is the difference of two filed
+figures. What licenses the series is that the company publishes the *growth
+rate* of the line it does not print: it says rebates rose 22% in the quarter and
+22% in the six months, and the subtraction gives 21.8% and 22.5%. A test pins
+both.
+
+Having the gross and the net side by side is what makes the page's own
+decomposition possible, and it is an identity rather than an estimate: net
+revenue = gross assessments − rebates + value-added services, so each quarter's
+year-over-year change splits exactly three ways. It reframes the quarter. The
+gross leg grew from US$944M to US$1,580M over fourteen quarters — and the part
+that reached net payment-network revenue has sat in a US$506–570M band for seven
+straight quarters. Everything extra the company billed was handed back. More
+than half of the net revenue increase now comes from the value-added services
+leg, which carries no rebate at all.
+
+The page also refuses one thing the local note leans on. The month-by-month
+cross-border split — travel against card-not-present — exists only in the
+quarterly earnings presentation and reaches no filing, so no history is built
+for it; the filings give total cross-border volume, gross dollar volume and
+switched transactions, and the page plots those three instead and says which
+question they cannot answer. One threshold from the previous quarter is reported
+as **unsettleable rather than passed or failed**: it was written as "a
+currency-neutral revenue growth of +11–12% triggers a downgrade", and Mastercard
+publishes currency-neutral growth only to the whole percentage point. The
+published figure was exactly +12%, sitting on the boundary, so the same number
+reads as both outcomes. The threshold had a finer resolution than the disclosure
+and has been retired.
+
+Seven of the series exist only on this site, because the number that decides the
 quarter is not one any filing prints:
 
 - Amazon's **two-leg decomposition of the operating-income beat**, above, and
@@ -406,6 +455,16 @@ quarter is not one any filing prints:
   flow counts only capex that was paid; the 10-K discloses how much was still
   sitting in accounts payable, so subtracting that year's increase turns a
   −6.5% year into a −31.6% one using three disclosed numbers and no estimate.
+- Mastercard's **payment network rebates and incentives**, above, and the
+  **share of gross billings** it represents. The company nets the line away
+  before printing anything, so the eighteen-quarter record is a subtraction the
+  company's own published growth rate has to agree with.
+- Mastercard's **implied repurchase price**, quarter by quarter: the cash it
+  spent divided by the shares it bought, both filed. It fell to US$500 in the
+  quarter it spent more than in any other quarter this page holds, and the
+  shares are disclosed to
+  0.1 million, so the chart carries the ±US$5 band the subtraction leaves rather
+  than a point estimate.
 
 Where a threshold is settled on an adjusted basis but the history exists only on
 the reported one, the chart carries both lines rather than silently plotting one
