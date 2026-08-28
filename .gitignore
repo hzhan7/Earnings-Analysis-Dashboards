@@ -24,6 +24,7 @@ series/*.json
 !series/googl.json
 !series/ibkr.json
 !series/ma.json
+!series/mco.json
 !series/meta.json
 !series/msft.json
 !series/nvda.json

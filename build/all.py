@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amzn, cdns, googl, ibkr, ma, meta, msft, nvda, schw, snps, spgi, tsm, v,
+    amzn, cdns, googl, ibkr, ma, mco, meta, msft, nvda, schw, snps, spgi, tsm, v,
 )
 from build.payload_guard import write_js  # noqa: E402
 
@@ -24,6 +24,7 @@ MODULES = {
     "googl": googl,
     "ibkr": ibkr,
     "ma": ma,
+    "mco": mco,
     "meta": meta,
     "msft": msft,
     "nvda": nvda,
@@ -98,6 +99,17 @@ ENTRIES = [
         "cadence_label": "自然年季度；完整披露",
         "headline_metrics": ["Revenue $9.28B", "Rebate ratio 52.4%", "VAS share 41.2%"],
         "search_text": "ma mastercard 万事达 支付 网络 跨境 清算 返点 激励 增值服务 vas 发卡行 收单 稳定币",
+    },
+    {
+        "slug": "mco",
+        "ticker": "MCO",
+        "name": "Moody's Corporation",
+        "aliases": ["Moody's", "穆迪", "评级"],
+        "group": "financial_data_indices",
+        "cadence_label": "自然年季度；全年指引逐季修订",
+        "headline_metrics": ["Revenue $2.19B", "MIS adj OpM 68.3%", "调整后 EPS $4.68"],
+        "search_text": ("mco moodys 穆迪 评级 信用评级 mis ma 债券 发行量 issuance "
+                        "arr 订阅 金融数据 指数 全年指引"),
     },
     {
         "slug": "meta",
