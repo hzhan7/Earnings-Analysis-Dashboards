@@ -234,6 +234,21 @@ class McoDashboardTest(unittest.TestCase):
             self.assertNotIn("<", self.payload[key], key)
         self.assertEqual(plain_text("a<b>c</b>d"), "acd")
 
+    def test_audit_tables_carry_no_field_the_renderer_drops(self) -> None:
+        """`tableHTML(title, headers, rows, cls)` is all the appendix drawer reads.
+
+        A `note` on a table dict is silently discarded -- it never reaches the
+        page, but it reads in the source like a published caveat, so the next
+        editor writes the qualification there and believes it shipped. This page
+        did exactly that on its first build: three tables carried notes no
+        reader could see, and the substance now lives in `notes`, which is
+        rendered. Every other page on the site carries zero.
+        """
+        allowed = {"n", "title", "headers", "rows"}
+        for table in self.payload["tables"]:
+            self.assertLessEqual(set(table) - allowed, set(),
+                                 f"table {table['n']} carries a field the renderer drops")
+
     def test_exhibit_notes_may_still_carry_markup(self) -> None:
         """The complement of the test above: this page does use bold in notes."""
         notes = [ex.get("note", "") for s in self.payload["sections"] for ex in s["exhibits"]]

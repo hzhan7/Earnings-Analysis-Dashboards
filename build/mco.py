@@ -530,7 +530,6 @@ def build_payload(staging: dict) -> dict:
             "title": "FY2019–FY2026 全年调整后摊薄 EPS 指引的四个版本与实际（US$/股）",
             "headers": ["财年", "2 月（定调）", "4 月", "7 月", "10 月（末次）", "全年实际"],
             "rows": rows_guidance,
-            "note": "每格是该期业绩 8-K EX-99.1 指引表里的当期值；实际值取次年 2 月那期的全年结果。",
         },
         {
             "n": first_table + 1,
@@ -545,7 +544,6 @@ def build_payload(staging: dict) -> dict:
                       f"{seg['mis_adj_operating_margin_pct'][i]:.1f}%",
                       f"{seg['ma_adj_operating_margin_pct'][i]:.1f}%"]
                      for i in range(len(seg["periods"]))],
-            "note": "外部收入口径（不含分部间收入）。分部列的先后顺序在 2023 年 4 月那期之后改过，本表按分部名取值而非按列位。",
         },
         {
             "n": first_table + 2,
@@ -559,7 +557,6 @@ def build_payload(staging: dict) -> dict:
                       f"{ann['operating_cash_flow_usd_m'][i]:,.0f}", f"{ann['capex_usd_m'][i]:,.0f}",
                       f"{ann['free_cash_flow_usd_m'][i]:,.0f}"]
                      for i, y in enumerate(ann["fiscal_years"])],
-            "note": "GAAP 各列取自 XBRL companyfacts；调整后 EPS 取自各年 2 月业绩新闻稿；自由现金流为自算。",
         },
         ai_capex_cycle_table(first_table + 3),
     ]
@@ -699,6 +696,9 @@ def build_payload(staging: dict) -> dict:
             "那 0.05pp 是公司把百分比四舍五入到一位小数留下的余数。",
             "MA 本季收入同比只有 +4%，口径上受两笔业务处置影响：Learning Solutions，"
             "以及本季完成的 MA Regulatory Solutions。公司在指引脚注里把处置收益单列为约 US$1.25/股 的负向加回项。",
+            "核对表的取数来源：全年指引四栏的每一格是该期业绩 8-K EX-99.1 指引表里的当期值，"
+            "全年实际取次年 2 月那期的全年结果；分部表为外部收入口径（不含分部间收入）；"
+            "年度表的 GAAP 各列取自 XBRL companyfacts，调整后 EPS 取自各年 2 月业绩新闻稿。",
             "自由现金流为经营现金流减申报资本开支的自算值，与公司自己的定义一致；标 D 的项均为此类透明自算。",
             "本页不发布评级、目标价、估值与任何券商共识，也不发布公司未在申报文件中给出的数字。",
         ]],
