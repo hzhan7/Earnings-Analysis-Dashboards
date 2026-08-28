@@ -2,7 +2,7 @@
 
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
-Cadence, Meta, Microsoft, NVIDIA and TSMC.
+Cadence, Meta, Microsoft, NVIDIA, Synopsys and TSMC.
 
 ## Build
 
@@ -19,6 +19,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/meta/`
 - `http://127.0.0.1:8765/msft/`
 - `http://127.0.0.1:8765/nvda/`
+- `http://127.0.0.1:8765/snps/`
 - `http://127.0.0.1:8765/tsm/`
 
 Live site: https://hzhan7.github.io/Earnings-Analysis-Dashboards/
@@ -40,8 +41,10 @@ Live site: https://hzhan7.github.io/Earnings-Analysis-Dashboards/
 - Quarters are labelled by calendar quarter on every page. Microsoft's fiscal
   year ends in June, so its `Q2 2026` is the quarter ended 2026-06-30, which the
   company itself calls FY2026 Q4; NVIDIA's ends in late January, so its
-  `Q1 2026` is the quarter ended 2026-04-26, which the company calls FY2027 Q1.
-  Both pages say so in their subtitle and notes. Without one convention the
+  `Q1 2026` is the quarter ended 2026-04-26, which the company calls FY2027 Q1;
+  Synopsys' ends in October, so its `Q2 2026` is the quarter ended 2026-07-31,
+  which the company calls FY2026 Q3. Each page says so in its subtitle and
+  notes. Without one convention the
   cross-company capex table would compare different three-month periods and look
   fine doing it.
 
@@ -138,9 +141,9 @@ disclosure stops rather than being padded:
   twice, in 2018 and 2019, ending at "net of proceeds from sales and
   incentives"; the series starts after the last move rather than splicing.
 
-Amazon's, Cadence's, TSMC's, NVIDIA's and Meta's first sections are built out
-further than the others, because those five companies put a quarterly guidance
-range in a filing and the other two do not. Eight quarters cannot say whether
+Amazon's, Cadence's, Synopsys', TSMC's, NVIDIA's and Meta's first sections are
+built out further than the others, because those six companies put a quarterly
+guidance range in a filing and the other two do not. Eight quarters cannot say whether
 clearing a range is normal for a company; the full record can.
 
 TSMC guides three numbers every quarter — revenue, gross margin and operating
@@ -256,6 +259,57 @@ whose guidance waits for the mid-February annual release — the Q1 2021 range w
 published on day 50 of a 91-day quarter. This is not an ex-ante forecast, and a
 page that let "never missed in 42 quarters" stand without that sentence would be
 publishing a tautology dressed as a finding.
+
+Synopsys files the most *complete* guidance of the eight, and it produces the
+only two-sided answer on this site. The "Financial Targets" table in every
+earnings 8-K EX-99.1 guides **every input of earnings per share** — revenue,
+GAAP and non-GAAP expenses, non-GAAP other income, the non-GAAP tax rate and the
+fully diluted share count — and then guides GAAP and non-GAAP EPS themselves.
+Twenty-four quarters of it run back to Q4 2020.
+
+Because the sixth number is implied by the other five, the table can be checked
+against itself: running the five midpoints through
+`(revenue − expenses + other) × (1 − tax) ÷ shares` reproduces the company's own
+printed EPS midpoint to within US$0.02 in 15 of the 24 quarters and within
+US$0.06 in all of them, the residual being the rounding of the published
+endpoints. That is what licenses the page to treat "guided revenue minus guided
+expenses" as an operating income Synopsys stands behind but never prints, and to
+split each beat into a revenue leg and an expense leg with no estimate anywhere.
+The legs say the beats are a demand story, not a cost story: the revenue leg
+dominates almost every quarter.
+
+The two-sided part is the finding. In 23 finished quarters **revenue landed
+*inside* the guided range 13 times** — Synopsys forecasts its own top line about
+as well as a backlog-driven model should let it — while **non-GAAP EPS landed
+*above* the top of its range 20 times**. Same press release, same quarter, same
+twelve-week horizon: the revenue number behaves like a forecast and the earnings
+number like a floor. No other page here has one company saying both things at
+once, and it is only visible because the two records sit side by side.
+
+It also guides its own share count, which nothing else here does, and that line
+is where the acquisition shows up: flat at 156 million for years, then a step to
+187 million when Ansys closed in July 2025. The one quarter that broke *above*
+the guided share range is the closing quarter itself.
+
+Both revenue misses in the record are marked rather than smoothed. One is not a
+miss at all: Synopsys moved Software Integrity to discontinued operations in the
+quarter ended 2024-04-30, so that quarter was guided on a basis that included the
+business and reported on one that did not. The 10-Q's discontinued-operations
+note puts those three months at US$126.4M, and adding it back to the reported
+US$1,454.7M gives US$1,581.1M — inside the US$1,560–1,590M that had been guided,
+and near the top, which is exactly what the company called it in its own release.
+The chart keeps the breaching bar and carries a structural-break marker at that
+quarter. The other miss is real: Q2 2025, which the CEO's own release attributes
+to Design IP underperforming — the line that has just turned back up.
+
+One number the page refuses to publish is the one the local note leans on hardest.
+"EDA excluding Ansys" cannot be recomputed from any filing: Synopsys has never
+disclosed Ansys' actual quarterly revenue, only an *expected* figure in the
+footnote to its full-year revenue target. So the page plots what that footnote
+does support — the four FY2026 revenue targets split into the acquired half and
+the rest, which shows the US$105M of raises breaking down into US$80M of Ansys
+and US$25M of everything else — and names the quarterly split in the excluded
+list instead of deriving it.
 
 **Microsoft and Alphabet get no such record, and that is a sourcing limit rather
 than an editorial choice.** Microsoft's own 8-K says in as many words that

@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from build import amzn, cdns, googl, meta, msft, nvda, tsm  # noqa: E402
+from build import amzn, cdns, googl, meta, msft, nvda, snps, tsm  # noqa: E402
 from build.payload_guard import write_js  # noqa: E402
 
 
@@ -23,6 +23,7 @@ MODULES = {
     "meta": meta,
     "msft": msft,
     "nvda": nvda,
+    "snps": snps,
     "tsm": tsm,
 }
 
@@ -96,6 +97,16 @@ ENTRIES = [
         "cadence_label": "1 月制财年；本站按自然年季度标注",
         "headline_metrics": ["Revenue $81.6B", "Data Center +92%", "GM 75.0%"],
         "search_text": "nvda nvidia 英伟达 半导体 gpu ai 数据中心 hyperscale acie networking blackwell rubin",
+    },
+    {
+        "slug": "snps",
+        "ticker": "SNPS",
+        "name": "Synopsys",
+        "aliases": ["新思科技", "Ansys"],
+        "group": "semiconductor_ai",
+        "cadence_label": "10 月制财年；本站按自然年季度标注",
+        "headline_metrics": ["Revenue $2.48B", "Design IP +10.8%", "Non-GAAP OpM 41.6%"],
+        "search_text": "snps synopsys 新思科技 eda 半导体 设计 ip ansys 仿真 芯片设计 backlog agentic",
     },
     {
         "slug": "tsm",
