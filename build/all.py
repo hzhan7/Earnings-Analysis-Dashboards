@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amzn, cdns, googl, ibkr, ma, meta, msft, nvda, schw, snps, spgi, tsm, v,
+    amzn, avgo, cdns, googl, ibkr, ma, meta, msft, nvda, schw, snps, spgi, tsm, v,
 )
 from build.payload_guard import write_js  # noqa: E402
 
@@ -20,6 +20,7 @@ DATA_DIR = ROOT / "data"
 
 MODULES = {
     "amzn": amzn,
+    "avgo": avgo,
     "cdns": cdns,
     "googl": googl,
     "ibkr": ibkr,
@@ -57,6 +58,16 @@ ENTRIES = [
         "cadence_label": "自然年季度；完整披露",
         "headline_metrics": ["Revenue $200.6B", "AWS +37%", "TTM FCF -$7.6B"],
         "search_text": "amzn amazon 亚马逊 aws 云 电商 零售 广告 互联网 trainium prime",
+    },
+    {
+        "slug": "avgo",
+        "ticker": "AVGO",
+        "name": "Broadcom",
+        "aliases": ["Broadcom", "博通", "VMware"],
+        "group": "semiconductor_ai",
+        "cadence_label": "11 月制财年；本站按自然年季度标注",
+        "headline_metrics": ["Revenue $22.19B", "AI 半导体 $10.8B", "EBITDA 利润率 68.7%"],
+        "search_text": "avgo broadcom 博通 半导体 ai xpu 定制加速器 asic networking 以太网 tomahawk jericho vmware 基础设施软件 vcf",
     },
     {
         "slug": "cdns",

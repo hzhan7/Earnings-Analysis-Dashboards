@@ -2,8 +2,8 @@
 
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
-Cadence, Interactive Brokers, Mastercard, Meta, Microsoft, NVIDIA, S&P Global,
-Synopsys, TSMC and Visa.
+Broadcom, Cadence, Charles Schwab, Interactive Brokers, Mastercard,
+Meta, Microsoft, NVIDIA, S&P Global, Synopsys, TSMC and Visa.
 
 ## Build
 
@@ -15,6 +15,7 @@ python3 -m http.server 8765
 Open `http://127.0.0.1:8765/`, then choose:
 
 - `http://127.0.0.1:8765/amzn/`
+- `http://127.0.0.1:8765/avgo/`
 - `http://127.0.0.1:8765/cdns/`
 - `http://127.0.0.1:8765/googl/`
 - `http://127.0.0.1:8765/ibkr/`
@@ -48,7 +49,9 @@ Live site: https://hzhan7.github.io/Earnings-Analysis-Dashboards/
   company itself calls FY2026 Q4; NVIDIA's ends in late January, so its
   `Q1 2026` is the quarter ended 2026-04-26, which the company calls FY2027 Q1;
   Synopsys' ends in October, so its `Q2 2026` is the quarter ended 2026-07-31,
-  which the company calls FY2026 Q3; Visa's ends in September, so its `Q2 2026`
+  which the company calls FY2026 Q3; Broadcom's ends in early November, so its
+  `Q1 2026` is the quarter ended 2026-05-03, which the company calls FY2026 Q2;
+  Visa's ends in September, so its `Q2 2026`
   is the quarter ended 2026-06-30, which the company also calls FY2026 Q3. Each
   page says so in its subtitle and notes. Without one convention the
   cross-company capex table would compare different three-month periods and look
@@ -80,7 +83,10 @@ Charts are ordered the way the note is actually used:
    operating leverage that produced it, and the coverage multiple behind its
    record backlog; NVIDIA gets six years of margins and operating leverage
    plus the inventory-and-supply-commitment block that carries its real capital
-   intensity; TSMC gets node migration, platform mix and working capital;
+   intensity; Broadcom gets its two engines' segment operating margins, the
+   capital intensity a fab-lite designer actually runs on, cash conversion, and
+   the post-VMware deleveraging path; TSMC gets node migration, platform mix and
+   working capital;
    Mastercard gets its two revenue legs, the operating margin on the same basis
    the company adjusts to, the leverage its buyback now runs on, and the price
    it paid for its own stock quarter by quarter; Visa
@@ -163,10 +169,12 @@ disclosure stops rather than being padded:
   twice, in 2018 and 2019, ending at "net of proceeds from sales and
   incentives"; the series starts after the last move rather than splicing.
 
-Amazon's, Cadence's, Synopsys', TSMC's, NVIDIA's and Meta's first sections are
-built out further than the others, because those six companies put a quarterly
-guidance range in a filing and the other three do not. Eight quarters cannot say whether
-clearing a range is normal for a company; the full record can.
+Amazon's, Broadcom's, Cadence's, Synopsys', TSMC's, NVIDIA's and Meta's first
+sections are built out further than the others, because those seven companies
+put a quarterly number in a filing and the other four do not. Eight quarters
+cannot say whether clearing a range is normal for a company; the full record
+can. Broadcom is the one of the seven whose filed number is usually **not** a
+range, which turns out to be the point of its page rather than a caveat on it.
 
 TSMC guides three numbers every quarter — revenue, gross margin and operating
 margin — and fifteen quarters pulled from the fifteen earnings 6-Ks themselves
@@ -410,6 +418,64 @@ legs, no holes - and a test pins that the two forms agree wherever the gain is
 filed. The same discipline applies to the gain series itself, which is stored as
 null rather than zero where it is untagged: 2025Q4 carried roughly US$270M, and
 a zero there would have drawn it as clean operating profit.
+
+Broadcom files a quarterly outlook too, and its record answers a question none
+of the others do: **what happens to a delivery record when the company changes
+the shape of the promise.** Across 33 earnings 8-Ks the `Business Outlook` block
+takes four forms. It opens as a GAAP/non-GAAP table with a revenue range
+(`$5,047M +/- $75M`); becomes a fiscal-year number for the whole of FY2019;
+returns as a quarterly range through the first COVID year; and from the FY2021
+Q1 outlook onward is a bare point — `approximately $6.6 billion` — with Adjusted
+EBITDA quoted as a percentage of projected revenue rather than a dollar amount.
+It reverts to fiscal-year guidance for three releases across the VMware year,
+then returns to quarterly points. Eight reported quarters inside the window were
+therefore never guided as quarters at all; the page draws those as gaps and
+lists the annual guidance that replaced them.
+
+The two halves say opposite-looking things. In the **five** quarters Broadcom
+published a revenue *range*, the reported number landed **inside it every
+time** — never above, never below. In the **nineteen** finished quarters it
+published a *point*, the number came in **above every time**. Read uniformly
+against the guided point or midpoint, all **24** finished quarters are positive,
+and Adjusted EBITDA margin has cleared its guided percentage in all **18**.
+
+A record with no misses would normally be the finding. Here it is the setup for
+a better one, and two facts do the work. First, the beats are tiny and
+astonishingly regular: revenue deviation spans +0.17% to +3.53% with a median of
++0.80%, across eight years that contain a COVID quarter, a US$69B acquisition
+and a four-fold increase in revenue. Second — the Cadence caveat again, and
+sharper — the outlook goes out with the *previous* quarter's results, a median
+of 31 days into the 91-day quarter it guides. A third of the quarter is already
+banked when the number is published. So the page says on every guidance chart
+that this is much less a forecast than a disclosure of something already largely
+known, and it declines to read "never missed" as forecasting skill.
+
+Its own series is the decomposition. Guiding a revenue level and an Adjusted
+EBITDA *margin* implies an EBITDA dollar amount Broadcom never prints, and the
+distance from what it reported splits exactly two ways with no estimate. The
+answer is a third distinct shape: Amazon's beats sit almost entirely in the
+margin leg and Synopsys' almost entirely in the revenue leg, while **Broadcom's
+split roughly evenly** — the margin leg is the larger half in 12 of 18 quarters.
+
+A second identity carries the segment view. The two reportable segments' filed
+operating incomes sum to the company's non-GAAP operating income **exactly, in
+all 30 quarters the segment note covers** (with the retired IP-licensing segment
+included for FY2019 and earlier), so the margin the company guides can be
+attributed to the semiconductor engine and the software engine without an
+estimate. It is worth attributing: infrastructure software is 32% of revenue and
+38% of segment operating profit.
+
+Two things its page refuses. **Segment gross margin** is not plotted: Broadcom
+first disclosed segment cost of revenue under ASU 2023-07 in the FY2025 10-K, so
+the quarterly series is two points long — and a threshold the local note set on
+it ("semiconductor segment GM below 68%") is therefore reported as
+**unsettleable rather than passed or failed**. And **AI semiconductor revenue**,
+the number the whole equity story runs on, is not a reportable segment: it
+appears only in the CEO's quote in the earnings release, rounded to US$0.1B, in
+one quarter as an inequality (`over $4.4 billion`) and in another not as a level
+at all. The page plots the six readings it has, in a chart kept deliberately
+apart from the formal record, and says on the chart why they are not the same
+kind of number.
 
 **Microsoft, Alphabet, Mastercard, Visa and Interactive Brokers get no such
 record, and that is a
