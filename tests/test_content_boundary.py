@@ -28,7 +28,7 @@ sys.path.insert(0, str(ROOT))
 # so `hooks/pre-push` keeps its budget. What it buys is the test below: with no
 # ENTRIES to compare against, the slug list is only ever checked by hand, which
 # is how NVDA stayed off it while three other companies were added to it.
-from build.all import ENTRIES  # noqa: E402
+from build.all import ENTRIES, GROUPS  # noqa: E402
 
 # Lower-cased substrings that must never reach a published file.
 #
@@ -128,6 +128,40 @@ class ContentBoundaryTest(unittest.TestCase):
         this list, and the next run is red instead of one company quieter.
         """
         self.assertEqual({entry["slug"] for entry in ENTRIES}, set(COMPANY_SLUGS))
+
+    def test_every_entry_group_exists_in_groups(self) -> None:
+        """A company whose group key is missing disappears from every page's nav.
+
+        `page.js:navigation()` builds the switcher as
+        `R.groups.forEach(g => byGroup[g.key])`, so it can only render companies
+        whose group key appears in GROUPS. Name a key in ENTRIES that GROUPS does
+        not carry and nothing complains anywhere: the build succeeds, the payload
+        and the shell are written, the page answers on its own URL, the roster
+        lists the company -- and it is silently absent from the company dropdown
+        on all nine pages, with no way to reach it except by typing the path.
+
+        This is a live hazard rather than a hypothetical: several company pages
+        are being added in parallel, each needing a group that does not exist
+        yet, and adding a dict to a list merges cleanly with every other session
+        doing the same. Reusing a neighbour's newly-arrived group row instead of
+        writing your own looks identical in a diff and fails exactly this way.
+        """
+        group_keys = {group["key"] for group in GROUPS}
+        for entry in ENTRIES:
+            self.assertIn(entry["group"], group_keys, entry["slug"])
+
+    def test_groups_render_in_the_order_they_declare(self) -> None:
+        """`order` is decorative -- position in the list is what renders.
+
+        Neither `roster_payload` nor `page.js` sorts by `order`; the nav and the
+        home page both walk the array. So a row appended at the end with a lower
+        `order` than the row before it renders out of sequence while looking
+        correct in the source. Pinning position against `order` keeps the field
+        honest instead of letting it drift into a comment.
+        """
+        orders = [group["order"] for group in GROUPS]
+        self.assertEqual(orders, sorted(orders), [g["key"] for g in GROUPS])
+        self.assertEqual(len(orders), len(set(orders)), "duplicate order values")
 
     def test_no_published_file_contains_forbidden_text(self) -> None:
         for path in published_files():
