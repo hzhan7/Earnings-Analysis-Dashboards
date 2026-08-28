@@ -422,11 +422,19 @@ def build_payload(staging: dict) -> dict:
     # anyway, because a one-off divestiture gain sits inside it. It is stated in
     # the note instead of drawn.
     gaap_eps_beat = pct_change(financials["gaap_eps_usd"][-1], guided_gaap_eps)
+    # The GAAP expense line is the one guided number that did not beat its
+    # midpoint. It is not on the bar -- it measures the same thing as the
+    # non-GAAP expense line on a different basis -- so the note has to say it.
+    next_quarter_gaap_lo = record["guide_gaap_expenses_lo_usd_m"][current]
+    next_quarter_gaap_hi = record["guide_gaap_expenses_hi_usd_m"][current]
+    gaap_expense = revenue[-1] - financials["gaap_operating_income_usd_m"][-1]
+    gaap_expense_gap = pct_change(gaap_expense,
+                                  (next_quarter_gaap_lo + next_quarter_gaap_hi) / 2)
     delivery_chart = {
         "ref": "EX_DELIVERY",
         "kind": "diverging_bars",
         "title": (
-            f"本季每一条指引都优于中值：收入 {signed(delivery[0][1])}，"
+            f"本季这五项全部优于指引中值：收入 {signed(delivery[0][1])}，"
             f"non-GAAP EPS {signed(delivery[3][1])}"
         ),
         "xlabels": [metric for metric, _ in delivery],
@@ -448,6 +456,11 @@ def build_payload(staging: dict) -> dict:
             "本季 GAAP 利润里含一笔 Processor IP Solutions 出售的税前收益，"
             "它不进 non-GAAP，却全额进 GAAP，见 Exhibit {EX_WEDGE}。"
             "费用与股数两项已按「比承诺少为正」翻过符号，与其余各项方向统一。"
+            f"<b>并非每一条指引都优于中值</b>：公司同时指引的 GAAP 费用报出 "
+            f"US${gaap_expense:,.0f}M，落在 US${next_quarter_gaap_lo:,.0f}–"
+            f"{next_quarter_gaap_hi:,.0f}M 的区间内，但比中值高 {gaap_expense_gap:.1f}%，"
+            "是本季唯一一条没做到中值的。它没有画在这根轴上，因为它与 non-GAAP 费用"
+            "衡量的是同一件事的两种口径，并列会重复计数。"
             "这几项的长窗口记录见 Exhibit {EX_REV_RANGE} 起的指引兑现组图。"
         ),
         "src_extra": (
@@ -1260,7 +1273,8 @@ def build_payload(staging: dict) -> dict:
         ),
         "headline": (
             f"收入 US${revenue[-1]:,.0f}M、同比 {signed(financials['revenue_yoy_pct'][-1])}，"
-            f"六条指引全部优于中值，公司同时上调 FY2026 的收入、利润率、EPS 与现金流；"
+            f"收入、non-GAAP 费用、non-GAAP EPS 与摊薄股数四条指引全部优于中值，"
+            f"公司同时上调 FY2026 的收入、利润率、EPS 与现金流；"
             f"但同一季里，收购摊销吃掉收入的 {amortization_share[-1]:.1f}%、"
             f"股数同比多出 {pct_change(financials['diluted_shares_m'][-1], financials['diluted_shares_m'][-5]):.1f}%，"
             f"于是 non-GAAP 净利同比 "
