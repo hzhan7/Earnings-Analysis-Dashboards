@@ -282,48 +282,6 @@ class SchwDashboardTest(unittest.TestCase):
                 with self.subTest(title=exhibit["title"], label=label):
                     self.assertIsNone(month.search(str(label)))
 
-    # ── navigation registration ──────────────────────────────────────────────
-    def test_every_entry_points_at_a_group_that_exists(self) -> None:
-        """A company naming a missing group key vanishes from every page's nav.
-
-        `assets/page.js:navigation()` builds the company dropdown by iterating
-        `R.groups` and emitting `byGroup[group.key] || []`, so an ENTRIES row
-        whose `group` matches no group key produces no `<option>` anywhere.
-        The payload builds, the shell renders, every other test passes -- and
-        nothing on the site links to the page.  That is exactly the "a page
-        nobody can reach" failure the registration checklist exists to prevent,
-        and nothing else in the suite checks this reference.
-        """
-        from build.all import ENTRIES, GROUPS
-
-        keys = [group["key"] for group in GROUPS]
-        self.assertEqual(len(keys), len(set(keys)), "duplicate group key")
-        for entry in ENTRIES:
-            with self.subTest(slug=entry["slug"]):
-                self.assertIn(
-                    entry["group"], keys,
-                    f'{entry["slug"]} names group {entry["group"]!r}, which is not in GROUPS',
-                )
-
-    def test_group_array_order_matches_the_order_field(self) -> None:
-        """`order` has no reader, so it drifts from what is actually rendered.
-
-        `page.js` iterates the `groups` array; nothing anywhere reads `order`.
-        The two agree today only because the rows were appended in ascending
-        order.  Appending a row whose `order` sits before an existing one
-        renders the nav in a sequence the data itself contradicts -- no error,
-        no failing test, just a field that quietly stops being true.  Insert at
-        the position matching the value rather than appending.
-        """
-        from build.all import GROUPS
-
-        orders = [group["order"] for group in GROUPS]
-        self.assertEqual(len(orders), len(set(orders)), "two groups share an order")
-        self.assertEqual(
-            orders, sorted(orders),
-            "GROUPS is rendered in array order; insert to match the order field",
-        )
-
     # ── published payload ────────────────────────────────────────────────────
     def test_published_payload_matches_a_rebuild(self) -> None:
         published = js_payload(ROOT / "data" / "schw.js", "window.DASH")

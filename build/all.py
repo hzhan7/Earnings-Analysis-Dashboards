@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from build import amzn, cdns, googl, meta, msft, nvda, schw, snps, tsm  # noqa: E402
+from build import amzn, cdns, googl, ibkr, ma, meta, msft, nvda, schw, snps, tsm, v  # noqa: E402
 from build.payload_guard import write_js  # noqa: E402
 
 
@@ -20,18 +20,22 @@ MODULES = {
     "amzn": amzn,
     "cdns": cdns,
     "googl": googl,
+    "ibkr": ibkr,
+    "ma": ma,
     "meta": meta,
     "msft": msft,
     "nvda": nvda,
     "schw": schw,
     "snps": snps,
     "tsm": tsm,
+    "v": v,
 }
 
 GROUPS = [
     {"key": "internet", "label": "互联网平台", "order": 1},
     {"key": "software_cloud", "label": "软件与云平台", "order": 2},
     {"key": "semiconductor_ai", "label": "半导体与 AI 基础设施", "order": 3},
+    {"key": "payment_networks", "label": "支付网络", "order": 5},
     {"key": "brokerage_wealth", "label": "券商与财富管理", "order": 6},
 ]
 
@@ -69,6 +73,27 @@ ENTRIES = [
         "cadence_label": "自然年季度；完整披露",
         "headline_metrics": ["Revenue $119.8B", "Cloud +81.8%", "FCF -$5.9B"],
         "search_text": "googl google alphabet 谷歌 互联网 cloud search youtube",
+    },
+    {
+        "slug": "ibkr",
+        "ticker": "IBKR",
+        "name": "Interactive Brokers Group",
+        "aliases": ["Interactive Brokers", "盈透证券", "IB"],
+        "group": "brokerage_wealth",
+        "cadence_label": "自然年季度；完整披露",
+        "headline_metrics": ["Revenue $1.90B", "NIM 1.93%", "账户 5.19M"],
+        "search_text": ("ibkr interactive brokers 盈透证券 券商 经纪 交易 保证金 "
+                        "净息差 nim 客户权益 darts 期权 期货 清算 托管 up-c"),
+    },
+    {
+        "slug": "ma",
+        "ticker": "MA",
+        "name": "Mastercard",
+        "aliases": ["Mastercard", "万事达", "支付网络"],
+        "group": "payment_networks",
+        "cadence_label": "自然年季度；完整披露",
+        "headline_metrics": ["Revenue $9.28B", "Rebate ratio 52.4%", "VAS share 41.2%"],
+        "search_text": "ma mastercard 万事达 支付 网络 跨境 清算 返点 激励 增值服务 vas 发卡行 收单 稳定币",
     },
     {
         "slug": "meta",
@@ -129,6 +154,16 @@ ENTRIES = [
         "cadence_label": "自然年季度；完整披露",
         "headline_metrics": ["Revenue $40.2B", "HPC 66%", "GM 67.7%"],
         "search_text": "tsm tsmc taiwan semiconductor 台积电 半导体 foundry hpc ai 2nm",
+    },
+    {
+        "slug": "v",
+        "ticker": "V",
+        "name": "Visa",
+        "aliases": ["Visa", "维萨", "签证卡"],
+        "group": "payment_networks",
+        "cadence_label": "9 月制财年；本站按自然年季度标注",
+        "headline_metrics": ["Net revenue $11.6B", "激励率 28.7%", "GAAP OpM 59.1%"],
+        "search_text": "v visa 维萨 支付 卡组织 网络 跨境 client incentives 激励 借记卡 信用卡 发卡行 收单",
     },
 ]
 

@@ -2,7 +2,8 @@
 
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
-Cadence, Meta, Microsoft, NVIDIA, Synopsys and TSMC.
+Cadence, Interactive Brokers, Mastercard, Meta, Microsoft, NVIDIA, Synopsys,
+TSMC and Visa.
 
 ## Build
 
@@ -16,11 +17,14 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/amzn/`
 - `http://127.0.0.1:8765/cdns/`
 - `http://127.0.0.1:8765/googl/`
+- `http://127.0.0.1:8765/ibkr/`
+- `http://127.0.0.1:8765/ma/`
 - `http://127.0.0.1:8765/meta/`
 - `http://127.0.0.1:8765/msft/`
 - `http://127.0.0.1:8765/nvda/`
 - `http://127.0.0.1:8765/snps/`
 - `http://127.0.0.1:8765/tsm/`
+- `http://127.0.0.1:8765/v/`
 
 Live site: https://hzhan7.github.io/Earnings-Analysis-Dashboards/
 
@@ -43,8 +47,9 @@ Live site: https://hzhan7.github.io/Earnings-Analysis-Dashboards/
   company itself calls FY2026 Q4; NVIDIA's ends in late January, so its
   `Q1 2026` is the quarter ended 2026-04-26, which the company calls FY2027 Q1;
   Synopsys' ends in October, so its `Q2 2026` is the quarter ended 2026-07-31,
-  which the company calls FY2026 Q3. Each page says so in its subtitle and
-  notes. Without one convention the
+  which the company calls FY2026 Q3; Visa's ends in September, so its `Q2 2026`
+  is the quarter ended 2026-06-30, which the company also calls FY2026 Q3. Each
+  page says so in its subtitle and notes. Without one convention the
   cross-company capex table would compare different three-month periods and look
   fine doing it.
 
@@ -74,7 +79,18 @@ Charts are ordered the way the note is actually used:
    operating leverage that produced it, and the coverage multiple behind its
    record backlog; NVIDIA gets six years of margins and operating leverage
    plus the inventory-and-supply-commitment block that carries its real capital
-   intensity; TSMC gets node migration, platform mix and working capital.
+   intensity; TSMC gets node migration, platform mix and working capital;
+   Mastercard gets its two revenue legs, the operating margin on the same basis
+   the company adjusts to, the leverage its buyback now runs on, and the price
+   it paid for its own stock quarter by quarter; Visa
+   gets thirteen years of its client-incentive rate, the two revenue growth
+   rates whose gap is that rate moving, the mix shift across its four gross
+   revenue lines, the non-US share of net revenue, and capital returned against
+   the cash flow that funds it; Interactive Brokers gets the revenue mix that a
+   full rate cycle rewrote, net interest margin against the earning assets that
+   quadrupled under it, accounts and the equity each one carries, the Up-C wedge,
+   operating leverage, and the realised fee per order, which ends the record
+   below where it starts.
 
 On the Alphabet, Meta and Microsoft pages these run on the ten-year record
 rather than eight quarters, because eight quarters cannot tell a trend from a
@@ -143,7 +159,7 @@ disclosure stops rather than being padded:
 
 Amazon's, Cadence's, Synopsys', TSMC's, NVIDIA's and Meta's first sections are
 built out further than the others, because those six companies put a quarterly
-guidance range in a filing and the other two do not. Eight quarters cannot say whether
+guidance range in a filing and the other three do not. Eight quarters cannot say whether
 clearing a range is normal for a company; the full record can.
 
 TSMC guides three numbers every quarter — revenue, gross margin and operating
@@ -260,7 +276,7 @@ published on day 50 of a 91-day quarter. This is not an ex-ante forecast, and a
 page that let "never missed in 42 quarters" stand without that sentence would be
 publishing a tautology dressed as a finding.
 
-Synopsys files the most *complete* guidance of the eight, and it produces the
+Synopsys files the most *complete* guidance of the nine, and it produces the
 only two-sided answer on this site. The "Financial Targets" table in every
 earnings 8-K EX-99.1 guides **every input of earnings per share** — revenue,
 GAAP and non-GAAP expenses, non-GAAP other income, the non-GAAP tax rate and the
@@ -311,17 +327,169 @@ the rest, which shows the US$105M of raises breaking down into US$80M of Ansys
 and US$25M of everything else — and names the quarterly split in the excluded
 list instead of deriving it.
 
-**Microsoft and Alphabet get no such record, and that is a sourcing limit rather
-than an editorial choice.** Microsoft's own 8-K says in as many words that
-guidance is given on the earnings call and webcast, so nothing in its filings
-can carry a range; the quarterly outlook block on its page comes from the call,
-one quarter at a time. Alphabet gives no quarterly numeric guidance at all — its
-capital-expenditure commitment for the year reaches a press release only when it
-changes, twice in forty-five releases. Neither page gets a fabricated record:
-transcribing fifteen quarters off webcast material that cannot be checked
-against a second source is the failure this repo is built to avoid.
+**Microsoft, Alphabet, Mastercard, Visa and Interactive Brokers get no such
+record, and that is a
+sourcing limit rather than an editorial choice.** Microsoft's own 8-K says in as
+many words that guidance is given on the earnings call and webcast, so nothing in
+its filings can carry a range; the quarterly outlook block on its page comes from
+the call, one quarter at a time. Alphabet gives no quarterly numeric guidance at
+all — its capital-expenditure commitment for the year reaches a press release
+only when it changes, twice in forty-five releases. Mastercard's earnings 8-K
+contains no Outlook block at all: the words `outlook`, `guidance` and
+`we expect` do not appear in it, and what the call gives is "high end of low
+double-digit", which has no floor and no ceiling to clear. Interactive Brokers is
+the plainest case of all: there is no outlook block, no range and no forward
+number of any kind in any of its earnings 8-Ks, so the record is not thin — it is
+absent. None of the five pages
+gets a fabricated record: transcribing fifteen quarters off webcast material that
+cannot be checked against a second source is the failure this repo is built to
+avoid.
 
-Five of the series exist only on this site, because the number that decides the
+Visa is the sharpest version of the same limit, because the thing it withholds
+is not the number but the *unit*. It has never filed a numeric **quarterly**
+outlook at all: every Financial Outlook it ever published was fiscal-full-year,
+so the object the other five pages are built on — a next-quarter range and the
+quarter that settles it — does not exist anywhere in its filing history. Even
+the full-year outlook is leaving, in four visible steps: numeric on some metrics
+through fiscal 2020, present but explicitly withheld in fiscal 2020–2021, absent
+from most of 2022–2023, reduced in fiscal 2024 to a single sentence pointing at
+an earnings presentation that is **not archived on EDGAR**, and gone entirely
+from every release after 2025-01-30. The page prints that era map and
+deliberately prints no tally of how many releases carried a number: a count
+sampled from eighteen of a forty-plus release window does not generalise, and a
+precise-looking ratio would be the least defensible sentence on the page.
+
+What Visa did guide, repeatedly and numerically, turns out to be the one number
+its page is actually about. `Client incentives as a percent of gross revenues`
+appears as a range in the release that opens each fiscal year from 2017 to 2020.
+Both legs are filed — the range from the release, the delivered rate from that
+year's 10-K revenue note — and the record is one-sided in the *helpful*
+direction: three of the four years came in **below** the guided floor and none
+ever exceeded the ceiling, meaning Visa handed back less of its gross revenue
+than it had told the market it would. Then it stopped publishing the number, and
+in the six years since, the rate has gone from 23.4% to 28.7%.
+
+That rate is a filed figure every quarter back to 2012, because the four gross
+revenue lines and the client-incentive contra line are disclosed separately, so
+the ratio is division on disclosed numbers rather than an estimate — and the
+five reconcile to filed net revenue in all fifty-five quarters, fiscal fourths
+included. Over that window it climbs from 16.3% to 28.7%. Eight quarters cannot
+see it: across the last eight the line just oscillates between 27% and 29% and
+reads as noise. It is the clearest case on this site of a series whose meaning
+is entirely a function of its window.
+
+Two Visa hazards are handled rather than smoothed over, and both are places
+where the obvious arithmetic gives the wrong answer:
+
+- **Service revenue is recognised on the previous quarter's payments volume**,
+  which Visa states in every release, while that same release's headline
+  `Key Business Drivers` table prints the *current* quarter's volume. Lining the
+  two up is off by exactly one quarter, every quarter. Worse, Visa discloses
+  volume only as a year-over-year **percentage** and never as a quarterly dollar
+  amount, so a unit take-rate cannot be recomputed from the filings at all. The
+  page therefore publishes **no** revenue-versus-volume comparison and says why,
+  rather than reproducing a misaligned one.
+- **The litigation escrow is measured against the accrual it actually funds.**
+  The U.S. Retrospective Responsibility Plan escrow pays U.S. covered litigation
+  and nothing else; the balance sheet's `Accrued litigation` line is larger
+  because it also carries VE Territory and uncovered matters the escrow cannot
+  touch. Visa prints the split itself, in a table whose title says so. Against
+  the covered accrual the latest quarter is a US$66M **surplus** — US$888M
+  against US$822M. Against the total it looks like a US$386M shortfall, which is
+  what the local note read it as and what produced a forecast of an imminent
+  large top-up. Both lines are on the chart and the page names which pair
+  belongs together.
+
+**Mastercard's page answers the same question with a different quantity, and
+that is the reason it was worth building.** The interesting thing about a
+payment network is not whether it beats a range it never published; it is how
+much of what it bills it actually keeps. So the first two sections carry
+eighteen quarters of the rebate share of gross billings, and the answer has the
+same one-sided shape the guidance records have: **the ratio rose from 44.5% to
+52.4%, and in the fourteen comparable year-over-year readings it went up
+thirteen times — the single exception is 0.31pp.** A ratio that has essentially
+never come back is a structure, not a quarter.
+
+That number is not printed anywhere. Under the presentation Mastercard adopted
+in the first quarter of 2023, the four assessment lines are printed gross and
+the payment network is printed net, so the rebate is the difference of two filed
+figures. What licenses the series is that the company publishes the *growth
+rate* of the line it does not print: it says rebates rose 22% in the quarter and
+22% in the six months, and the subtraction gives 21.8% and 22.5%. A test pins
+both.
+
+Having the gross and the net side by side is what makes the page's own
+decomposition possible, and it is an identity rather than an estimate: net
+revenue = gross assessments − rebates + value-added services, so each quarter's
+year-over-year change splits exactly three ways. It reframes the quarter. The
+gross leg grew from US$944M to US$1,580M over fourteen quarters — and the part
+that reached net payment-network revenue has sat in a US$506–570M band for seven
+straight quarters. Everything extra the company billed was handed back. More
+than half of the net revenue increase now comes from the value-added services
+leg, which carries no rebate at all.
+
+The page also refuses one thing the local note leans on. The month-by-month
+cross-border split — travel against card-not-present — exists only in the
+quarterly earnings presentation and reaches no filing, so no history is built
+for it; the filings give total cross-border volume, gross dollar volume and
+switched transactions, and the page plots those three instead and says which
+question they cannot answer. One threshold from the previous quarter is reported
+as **unsettleable rather than passed or failed**: it was written as "a
+currency-neutral revenue growth of +11–12% triggers a downgrade", and Mastercard
+publishes currency-neutral growth only to the whole percentage point. The
+published figure was exactly +12%, sitting on the boundary, so the same number
+reads as both outcomes. The threshold had a finer resolution than the disclosure
+and has been retired.
+
+**Interactive Brokers is the first page here whose subject is a price the
+company does not set.** Its quarter reads as an unambiguous record — accounts up
+34% to 5.19 million, customer equity up 40% to US$930.3B, DARTs up 36% — and the
+page's headline is that none of that is the reason revenue hit a record. Over
+the same year the net interest margin fell from 2.07% to 1.93% and all three
+annualised yields the company publishes fell with it: margin loans 4.67% → 4.10%,
+segregated cash 3.86% → 3.32%, the rate paid on customer credits 2.64% → 2.23%.
+More than half of total net revenues is net interest rather than commissions, so
+the volume story and the price story pull in opposite directions and only one of
+them is management's to control.
+
+Thirty quarters are what make that legible, and the window was chosen to cover
+one full rate cycle rather than to look long. Inside it the two revenue lines
+cross **twice**: zero rates pushed net interest below commissions in Q1 2020 and
+kept it there for nine quarters, and the hiking cycle pushed it back on top in
+Q2 2022. The net interest margin bottomed at 0.94% in Q3 2020 and peaked at 2.46%
+in Q3 2023, and for three quarters of 2021 the yield on segregated customer cash
+was **negative** — the company was paying to hold it. Average interest-earning
+assets grew 3.7x across the same window, dipping in only two quarters of the
+thirty. Eight quarters of
+any of this would show a trend that is really a position in a cycle.
+
+Two things on that page are structural rather than analytical, and both are
+marked rather than smoothed. The company **renamed its per-order commission
+metric** at Q1 2020, from "Commission per DART" to "Commission per Cleared
+Commissionable Order"; the two never appear in the same release, so there is no
+overlap quarter to splice on and the series starts there instead of being
+carried back. And the **4-for-1 split** declared 2025-04-15 restated only those
+quarters that later served as a comparative, so the per-share figures on the
+public interface are two bases spliced together — which is why this page
+publishes net income available for common stockholders in dollars and **no
+multi-quarter EPS line at all**. A test asserts that no exhibit anywhere plots a
+per-share series, because the failure mode is someone adding one later and it
+drawing a step that reads as a business event.
+
+One correction the data forced during the build is worth recording, because the
+plausible version was wrong in both directions. Per-account equity looks like a
+dilution story — accounts grew 8.3x while the average account shrank 24% — and
+the first draft of that chart said the dilution had not yet begun. It had: the
+average fell from US$268,966 in Q4 2020 to US$142,694 in Q3 2022. But it has
+since recovered 25.7% while accounts more than doubled again, so the honest
+reading is that the dilution happened, ended three years ago, and has not
+resumed. The same pass caught a caption calling the per-order commission "stable"
+when it has run from US$3.30 to US$2.31 to US$3.19 and back to US$2.64 — a
+US$0.55 slide from its Q4 2023 high across ten quarters, and no net rise over the
+twenty-six the series holds. The commission line grows on order count while the
+realised fee per order falls, not with it.
+
+Eight of the series exist only on this site, because the number that decides the
 quarter is not one any filing prints:
 
 - Amazon's **two-leg decomposition of the operating-income beat**, above, and
@@ -345,6 +513,24 @@ quarter is not one any filing prints:
   flow counts only capex that was paid; the 10-K discloses how much was still
   sitting in accounts payable, so subtracting that year's increase turns a
   −6.5% year into a −31.6% one using three disclosed numbers and no estimate.
+- Mastercard's **payment network rebates and incentives**, above, and the
+  **share of gross billings** it represents. The company nets the line away
+  before printing anything, so the eighteen-quarter record is a subtraction the
+  company's own published growth rate has to agree with.
+- Mastercard's **implied repurchase price**, quarter by quarter: the cash it
+  spent divided by the shares it bought, both filed. It fell to US$500 in the
+  quarter it spent more than in any other quarter this page holds, and the
+  shares are disclosed to
+  0.1 million, so the chart carries the ±US$5 band the subtraction leaves rather
+  than a point estimate.
+- Interactive Brokers' **share of consolidated net income that never reaches its
+  listed shareholders**. Under the Up-C structure the public company holds only a
+  minority of the operating LLC, so most of the reported profit is booked to the
+  noncontrolling holder: US$1,026M of this quarter's US$1,338M, leaving US$312M.
+  The company prints both figures but never the ratio, and the ratio is the whole
+  point — it has fallen from 84.9% to 76.7% across thirty quarters as the listed
+  entity buys units back, which is 8.2pp in seven and a half years. On that
+  gradient the wedge is not a rounding item that will close; it is the structure.
 
 Where a threshold is settled on an adjusted basis but the history exists only on
 the reported one, the chart carries both lines rather than silently plotting one

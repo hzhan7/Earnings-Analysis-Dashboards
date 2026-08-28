@@ -22,12 +22,15 @@ series/*.json
 !series/amzn.json
 !series/cdns.json
 !series/googl.json
+!series/ibkr.json
+!series/ma.json
 !series/meta.json
 !series/msft.json
 !series/nvda.json
 !series/schw.json
 !series/snps.json
 !series/tsm.json
+!series/v.json
 config/
 build/ingest_local.py
 
