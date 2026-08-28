@@ -25,6 +25,7 @@ series/*.json
 !series/meta.json
 !series/msft.json
 !series/nvda.json
+!series/schw.json
 !series/snps.json
 !series/tsm.json
 config/

@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from build import amzn, cdns, googl, meta, msft, nvda, snps, tsm  # noqa: E402
+from build import amzn, cdns, googl, meta, msft, nvda, schw, snps, tsm  # noqa: E402
 from build.payload_guard import write_js  # noqa: E402
 
 
@@ -23,6 +23,7 @@ MODULES = {
     "meta": meta,
     "msft": msft,
     "nvda": nvda,
+    "schw": schw,
     "snps": snps,
     "tsm": tsm,
 }
@@ -31,6 +32,7 @@ GROUPS = [
     {"key": "internet", "label": "互联网平台", "order": 1},
     {"key": "software_cloud", "label": "软件与云平台", "order": 2},
     {"key": "semiconductor_ai", "label": "半导体与 AI 基础设施", "order": 3},
+    {"key": "brokerage_wealth", "label": "券商与财富管理", "order": 6},
 ]
 
 # Everything here is navigation copy, not analysis: it is what a reader sees
@@ -97,6 +99,16 @@ ENTRIES = [
         "cadence_label": "1 月制财年；本站按自然年季度标注",
         "headline_metrics": ["Revenue $81.6B", "Data Center +92%", "GM 75.0%"],
         "search_text": "nvda nvidia 英伟达 半导体 gpu ai 数据中心 hyperscale acie networking blackwell rubin",
+    },
+    {
+        "slug": "schw",
+        "ticker": "SCHW",
+        "name": "Charles Schwab",
+        "aliases": ["嘉信理财", "Schwab"],
+        "group": "brokerage_wealth",
+        "cadence_label": "自然年季度；完整披露",
+        "headline_metrics": ["Revenue $7.07B", "NIM 3.00%", "DATs 11.9M"],
+        "search_text": "schw schwab 嘉信 嘉信理财 券商 经纪 财富管理 银行 净利息收入 nim sweep 现金 交易 nna 客户资产",
     },
     {
         "slug": "snps",
