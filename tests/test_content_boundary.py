@@ -14,10 +14,21 @@ on every push. A hook that fails on a normal quarter roll gets bypassed with
 from __future__ import annotations
 
 import subprocess
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+# The one import this file allows itself, weighed against the cheapness the
+# docstring promises. It pulls in the eight company builders plus board/
+# page_shell/payload_guard -- standard library throughout, no third-party
+# dependency, ~10ms on a standalone run of this file that took 70ms without it,
+# so `hooks/pre-push` keeps its budget. What it buys is the test below: with no
+# ENTRIES to compare against, the slug list is only ever checked by hand, which
+# is how NVDA stayed off it while three other companies were added to it.
+from build.all import ENTRIES  # noqa: E402
 
 # Lower-cased substrings that must never reach a published file.
 #
@@ -86,16 +97,36 @@ def published_files() -> list[Path]:
     ]
 
 
+# The companies the scan is expected to reach. Written out by hand on purpose:
+# the point is to fail when discovery stops finding one, and a list derived from
+# discovery could never do that. The test below keeps it from drifting from the
+# roster it is supposed to mirror.
+COMPANY_SLUGS = ("amzn", "cdns", "googl", "meta", "msft", "nvda", "snps", "tsm")
+
+
 class ContentBoundaryTest(unittest.TestCase):
     def test_scan_covers_every_company(self) -> None:
         """A company whose files stopped being discovered would pass vacuously."""
         names = {path.relative_to(ROOT).as_posix() for path in published_files()}
         self.assertIn("data/roster.js", names)
         self.assertIn("index.html", names)
-        for slug in ("amzn", "cdns", "googl", "meta", "msft", "nvda", "snps", "tsm"):
+        for slug in COMPANY_SLUGS:
             self.assertIn(f"series/{slug}.json", names)
             self.assertIn(f"data/{slug}.js", names)
             self.assertIn(f"{slug}/index.html", names)
+
+    def test_slug_list_matches_the_build_roster(self) -> None:
+        """The guard above only guards the companies it happens to list.
+
+        NVDA shipped a page, a series and a payload at 6aa7b15 and was still
+        missing from that list eight commits later, while AMZN, CDNS and SNPS
+        were each added to it in turn. For that whole stretch NVDA's three files
+        could have dropped out of discovery and the scan would have passed
+        vacuously. Nothing caught it because a hand-maintained list has nothing
+        checking it. This is that check: register a company in ENTRIES, forget
+        this list, and the next run is red instead of one company quieter.
+        """
+        self.assertEqual({entry["slug"] for entry in ENTRIES}, set(COMPANY_SLUGS))
 
     def test_no_published_file_contains_forbidden_text(self) -> None:
         for path in published_files():
