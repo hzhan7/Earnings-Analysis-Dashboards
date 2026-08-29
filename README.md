@@ -2,7 +2,7 @@
 
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
-American Express, Broadcom, Cadence, Charles Schwab, Ferrari,
+American Express, Broadcom, Cadence, Charles Schwab, Costco, Ferrari,
 Interactive Brokers, Mastercard, Meta, Microsoft, Moody's, MSCI, Nasdaq,
 NIKE, NVIDIA, Philip Morris International, S&P Global, Synopsys, TJX, TSMC
 and Visa.
@@ -20,6 +20,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/avgo/`
 - `http://127.0.0.1:8765/axp/`
 - `http://127.0.0.1:8765/cdns/`
+- `http://127.0.0.1:8765/cost/`
 - `http://127.0.0.1:8765/googl/`
 - `http://127.0.0.1:8765/ibkr/`
 - `http://127.0.0.1:8765/ma/`
@@ -145,7 +146,11 @@ Charts are ordered the way the note is actually used:
    thirty-eight quarters of the two prices it charges — the annual fee per
    card against the merchant discount rate — the four revenue legs those two
    prices land in, and the wedge between net income and earnings per share
-   that its buyback opens.
+   that its buyback opens; Costco gets the two legs its operating margin
+   splits into across thirteen years, the gross margin against the SG&A rate
+   that is the one of the two that actually moved, how long a single
+   membership-fee increase takes to finish arriving, and what a retailer
+   running at 2% capital intensity does with the cash it keeps.
 
 On the Alphabet, Meta and Microsoft pages these run on the ten-year record
 rather than eight quarters, because eight quarters cannot tell a trend from a
@@ -1191,7 +1196,97 @@ US$0.55 slide from its Q4 2023 high across ten quarters, and no net rise over th
 twenty-six the series holds. The commission line grows on order count while the
 realised fee per order falls, not with it.
 
-Ten of the series exist only on this site, because the number that decides the
+Costco is the only company here whose filed guidance is about **capital rather
+than profit**, and that gives its record a shape none of the others have. Its
+earnings 8-K carries no outlook block at all — across twelve consecutive
+releases the words `outlook`, `guidance` and `we expect` appear only inside the
+forward-looking-statements legend. What it does file, in the `Capital
+Expenditure Plans` paragraph of every 10-K and again in every 10-Q, is next
+year's capital expenditure as a dollar range, plus a warehouse-opening plan and
+— since 2024-05-30, in the EX-99.2 supplemental deck — a fiscal-year-end
+warehouse count revised every quarter.
+
+Against the plan as first published, twelve settled years land **five above the
+range, two inside it and five below** — the only balanced record on this site.
+Every other guidance record here behaves like a floor: Cadence's revenue never
+missed in 42 quarters, Meta's never in 18, S&P Global's adjusted earnings per
+share never in seven years. Costco's misses run both ways in equal numbers, and
+the reason is structural rather than admirable: a capital plan is not a promise
+to anyone. Underspending it is not a failure and overspending it is not a beat,
+so nothing pushes it toward a number that will be cleared.
+
+Balanced is not the same as uninformative, and two other things the record says
+are sharper than the tally. The plan is **restated in every 10-Q**, three times a
+year, and the revision narrows the mean absolute error only from 9.1% to 5.5%;
+Moody's and S&P Global, guiding a year the same way, close their funnels to
+about a fifth or a seventh. A company that rewrites its number four times a year
+and still lands 5% from the last version is revising the number rather than the
+uncertainty. And the sign flips partway through: four of the five under-spends
+fall in fiscal 2014–2017, while every settled year from fiscal 2021 onward came
+in at or above the plan. The same paragraph, in the same section of the same
+document, went from a ceiling the company could not reach to a floor it could
+not hold.
+
+The three records also disagree with each other in a way that is the page's
+point rather than a loose end. The *store count* Costco estimates every quarter
+in its supplemental deck has landed **exactly** on the final estimate in both
+settled fiscal years; the *dollars* those stores cost miss by 5% to 15% every
+year. It can tell you how many warehouses it will have and not what they will
+cost.
+
+Two things there are marked rather than smoothed. The 10-K is filed in early
+October and the fiscal year begins in early September, so the plan goes out 37
+to 53 days into the year it guides — the caveat Cadence and Broadcom carry, on
+an annual horizon. And the fiscal 2024 10-K guides fiscal 2025 as "a similar
+amount", with no number; that year is drawn with no band rather than an invented
+one, and it is the year capital expenditure rose 16.7%.
+
+The opening plan is the one record on this site that gets a chart and **no hit
+rate**, because the sentence is not one object. Its qualifier moves four times
+across the window — a range, then "up to", then "approximately", then
+"approximately up to", then "up to" again — and the relocation clause flips
+between naming relocations as part of the plan and as an addition to it. The
+page plots the quantity (planned openings against actual openings, with the plan
+restated as N + M in the years relocations are additional) and says in as many
+words that a point estimate not reached and a ceiling not touched are not the
+same event. The two earliest guided years are dropped outright: their plan is a
+range rather than a number and their opening count is stated once as net-new and
+once as gross-new.
+
+Costco's quarters also do not line up with the calendar and cannot be made to.
+Its fiscal year ends on the Sunday nearest 31 August, its first three quarters
+are twelve weeks and its fourth is sixteen (seventeen in a 53-week year), so the
+site's usual rule — label a fiscal quarter by the calendar quarter it mostly
+covers — is **not one-to-one here**: fiscal 2026 Q2 and fiscal 2026 Q3 both have
+more days in calendar Q1 2026. The page labels by the calendar quarter each
+period *ends* in, which is monotone, and says so. Two consequences travel with
+every chart: on an eight-quarter axis two bars cover a third more trading than
+the other six, and one of them, Q3 2024, compares sixteen weeks against the
+seventeen of the 53-week fiscal 2023 — its year-over-year figures are short by
+roughly a week and are marked where they appear.
+
+And Costco publishes its comparable sales **twice, at two precisions**: to one
+decimal in the earnings release, rounded to whole percentages in the 10-Q. The
+local note's central claim — that the ex-gasoline, ex-currency comp is a flat
+line at about 6.5% — exists only at the finer one. In the filings the same three
+quarters read 6%, 7%, 7%, which looks like acceleration. The page plots the
+release series, carries the 10-Q series in the audit drawer, and says which is
+which. Its adjusted comparable-sales record starts at fiscal 2020 Q1 for a
+different reason: for the four quarters of fiscal 2019 the column labelled
+"Adjusted" also strips an ASC 606 accounting change, so it is a second
+definition wearing the first one's label.
+
+One more thing the page refuses. Costco is the only company here that publishes
+a sales figure **between** earnings dates — a comparable-sales reading for every
+four- or five-week retail month. Only some of those reach EDGAR: about forty
+8-Ks carry a retail month, overwhelmingly February, bundled into the
+second-quarter earnings release. That is a sparse annual point rather than a
+monthly series, and the site's cadence is quarterly either way, so none of it is
+carried. The same bundling is a parser trap the build had to handle: every
+second-quarter release prints *two* comparable-sales tables with identical row
+labels, one for the twelve-week quarter and one for the February retail month.
+
+Thirteen of the series exist only on this site, because the number that decides the
 quarter is not one any filing prints:
 
 - NIKE's **direct-to-consumer share of NIKE Brand revenue**, plotted against the
@@ -1246,6 +1341,32 @@ quarter is not one any filing prints:
   entity buys units back, which is 8.2pp in seven and a half years. On that
   gradient the wedge is not a rounding item that will close; it is the structure.
 
+- Costco's **two legs of the operating margin**. Operating income over net sales
+  splits exactly into a merchandising leg (gross margin less SG&A less
+  preopening) and a membership leg (fees over net sales), and the identity
+  closes in all thirteen years. In fiscal 2013 the two were 0.75pp and 2.22pp —
+  the company that "makes its money on membership fees" made three quarters of
+  its operating profit that way. In fiscal 2025 they are 1.87pp and 1.97pp,
+  0.10pp apart, and membership's share of operating income has fallen from 74.9%
+  to 51.3%. Neither leg is a figure any filing prints, and the fee was raised
+  twice inside the window.
+- Costco's **four-leg decomposition of earnings-per-share growth**. Earnings per
+  share is (operating income + other income) × (1 − tax rate) ÷ diluted shares,
+  so the year-over-year ratio factors exactly into an operating leg, a
+  below-the-line leg, a tax leg and a share-count leg with no estimate anywhere.
+  The latest quarter's +15.3% is +11.3% operating and the rest interest income
+  on an US$19.0B cash balance plus a lower tax rate. The record starts where the
+  noncontrolling-interest line goes to nil, because before that a fifth leg
+  would be needed and the two halves would not be one basis.
+- Costco's **gasoline-and-currency gap in comparable sales** — reported comp
+  minus the company's own ex-gasoline, ex-currency comp. Both legs are filed to
+  one decimal; the difference is not, and the company never splits the two
+  causes apart. Over 27 quarters the gap has been *negative* in 15, so gasoline
+  and currency have suppressed the headline more often than flattered it, and it
+  swung from −0.7pp to +3.2pp in four quarters. The local note read this
+  quarter's tailwind as a risk still to come; the record says the tailwind is
+  the unusual state.
+
 Where a threshold is settled on an adjusted basis but the history exists only on
 the reported one, the chart carries both lines rather than silently plotting one
 and captioning the other.
@@ -1285,8 +1406,8 @@ the cross-reference without appearing in `_CASH_CAPEX_SOURCES`, and
 `test_cdns_is_not_in_the_cross_page_capex_table` pins exactly that. So the block
 is a standing site-wide reference — its title says `跨页对照` and it renders
 inside the collapsed audit drawer, not in the chart flow — rather than a claim
-that the page's company is in the AI supply chain. Visa, Mastercard, TJX and
-NIKE carry it on the same terms. What TJX adds is a note saying so: the first pages
+that the page's company is in the AI supply chain. Visa, Mastercard, TJX, NIKE
+and Costco carry it on the same terms. What TJX adds is a note saying so: the first pages
 outside the chain shipped the block with no explanation, and a reader who meets
 a foundry table in an off-price retailer's drawer deserves one sentence telling
 them it is a site-wide reference.

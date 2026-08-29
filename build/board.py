@@ -56,6 +56,11 @@ UNIT_FORMATS = {
     "eur_m": lambda value: f"{'−' if value < 0 else ''}€{abs(value):,.0f}M",
     "eur_bn": lambda value: f"{'−' if value < 0 else ''}€{abs(value):.2f}B",
     "eur_eps": lambda value: f"{'−' if value < 0 else ''}€{abs(value):.2f}",
+    # Costco is the first page whose threshold sits on a *change* the company
+    # states in basis points rather than on a level. Storing it in percentage
+    # points would print both the threshold (−0.10pp) and the current value
+    # (−0.09pp) as "-0.1pp", so the audit table could not tell them apart.
+    "bps": lambda value: f"{value:+.0f}bp",
 }
 
 

@@ -23,6 +23,7 @@ series/*.json
 !series/avgo.json
 !series/axp.json
 !series/cdns.json
+!series/cost.json
 !series/googl.json
 !series/ibkr.json
 !series/ma.json

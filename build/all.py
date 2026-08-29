@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amzn, avgo, axp, cdns, googl, ibkr, ma, mco, meta, msci, msft, ndaq, nke,
+    amzn, avgo, axp, cdns, cost, googl, ibkr, ma, mco, meta, msci, msft, ndaq, nke,
     nvda, pm, race, schw, snps,
     spgi, tjx, tsm, v,
 )
@@ -25,6 +25,7 @@ MODULES = {
     "avgo": avgo,
     "axp": axp,
     "cdns": cdns,
+    "cost": cost,
     "googl": googl,
     "ibkr": ibkr,
     "ma": ma,
@@ -102,6 +103,17 @@ ENTRIES = [
         "cadence_label": "自然年季度；完整披露",
         "headline_metrics": ["Revenue $1.58B", "Backlog $8.1B", "Non-GAAP OpM 45.5%"],
         "search_text": "cdns cadence 楷登 eda 半导体 设计 ip palladium 硬件仿真 agentic 芯片设计",
+    },
+    {
+        "slug": "cost",
+        "ticker": "COST",
+        "name": "Costco Wholesale",
+        "aliases": ["Costco", "好市多", "开市客", "仓储会员店"],
+        "group": "consumer_retail",
+        "cadence_label": "8 月底制财年；本站按自然年季度标注",
+        "headline_metrics": ["Revenue $70.5B", "调整后 comp +6.6%", "会员费/营业利润 51%"],
+        "search_text": ("cost costco 好市多 开市客 仓储会员店 零售 会员费 续费率 executive "
+                        "同店销售 comp 汽油 加油站 自有品牌 kirkland 药房 电商 仓库 山姆"),
     },
     {
         "slug": "googl",
