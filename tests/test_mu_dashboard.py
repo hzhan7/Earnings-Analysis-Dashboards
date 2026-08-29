@@ -335,14 +335,27 @@ class MuGuidanceRecordTest(unittest.TestCase):
         scope_re = re.compile(r"(\d+)\s*(?:个已完结)?季(?:里|有)")
         mark_re = re.compile(r"(\d+)\s*季\s*(" + "|".join(markers) + ")")
 
+        # The `brief` prints the same tallies in its own words. It was hand-typed
+        # prose beside computed charts until this test reached it, which is the
+        # same shape as the note the gate had not been reading -- one layer up.
+        blocks = [(name, [exhibit["title"], exhibit.get("note", "")])
+                  for exhibit in self.exhibits
+                  for name in metrics if exhibit["title"].startswith(name)]
+        brief = self.payload["brief"]
+        # The brief states two tallies in two sentences, so it is split and each
+        # sentence attributed by the metric it names -- scanning the whole block
+        # against one metric would compare the revenue counts to the margin ones
+        # and fail for a reason that has nothing to do with either.
+        for sentence in re.split(r"[。]", re.sub(r"<[^>]+>", " ", brief)):
+            for name in metrics:
+                if name in sentence or (name == "收入" and "收入指引" in sentence):
+                    blocks.append((name, [sentence]))
+                    break
+
         seen = 0
-        for exhibit in self.exhibits:
-            metric = next((name for name in metrics
-                           if exhibit["title"].startswith(name)), None)
-            if metric is None:
-                continue
+        for metric, texts in blocks:
             keys = metrics[metric]
-            for text in (exhibit["title"], exhibit.get("note", "")):
+            for text in texts:
                 # Split into sentences that each declare their own scope.
                 bounds = [match for match in scope_re.finditer(text)]
                 for position, match in enumerate(bounds):
@@ -361,7 +374,11 @@ class MuGuidanceRecordTest(unittest.TestCase):
                                 f"{metric} over {scope} quarters: chart says "
                                 f"{number} 季{marker}, the series says "
                                 f"{counts[markers[marker]]}")
-        self.assertGreaterEqual(seen, 9, "the tally phrases stopped being found")
+        self.assertGreaterEqual(seen, 12, "the tally phrases stopped being found")
+        self.assertGreaterEqual(
+            sum(1 for _, texts in blocks if texts and texts[0] in
+                re.sub(r"<[^>]+>", " ", brief)), 2,
+            "the brief no longer states the tallies this test can check")
         self.assertGreater(self.tally(*metrics["non-GAAP 毛利率"])[2], 0,
                            "this page exists because the record is two-sided")
 

@@ -389,7 +389,16 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
              if eps_lo[index] is not None else "—"),
             f"US${eps_actual[index]:.2f}" if done and eps_actual[index] is not None else "—",
         ])
-    return charts, table
+    # Returned so the page's `brief` can print the same tallies instead of
+    # retyping them. Hand-typed prose beside a computed chart is the shape the
+    # tally gate was written for, and the brief was the one place it was still
+    # happening.
+    tallies = {
+        "revenue": (rev_n, rev_above, rev_inside, rev_below),
+        "gross_margin": (gm_n, gm_above, gm_inside, gm_below),
+        "worst_gap": worst_gap,
+    }
+    return charts, table, tallies
 
 
 # ── section two: what the quarter is made of ────────────────────────────────
@@ -965,7 +974,10 @@ def build_payload(staging: dict) -> dict:
     outlook = staging["next_quarter_guidance"]
     annual = staging["annual_cycle"]
 
-    settled_ex, delivery_table = guidance_delivery_charts(staging)
+    settled_ex, delivery_table, tallies = guidance_delivery_charts(staging)
+    rev_n, rev_above, rev_inside, rev_below = tallies["revenue"]
+    gm_n, gm_above, gm_inside, gm_below = tallies["gross_margin"]
+    worst_gap = tallies["worst_gap"]
     highlight_ex = quarter_charts(staging)
     next_ex = next_quarter_charts(staging)
     routine_ex = routine_charts(staging)
@@ -1203,9 +1215,12 @@ def build_payload(staging: dict) -> dict:
             '两条都是同一张损益表上的申报值，'
             '公司对售价与出货位元只给文字口径，本页不把文字折成数字。</p></article>'
             '<article><span>记录</span><b>它的指引两个方向都破过</b>'
-            '<p>二十七个已完结季里，non-GAAP 毛利率指引 16 季穿出上限、8 季落在区间内、'
-            '3 季跌破 —— 最差的一次差四十个百分点。'
-            '收入指引更接近一半一半，不是底线。</p></article>'
+            f'<p>{gm_n} 个已完结季里，non-GAAP 毛利率指引 {gm_above} 季穿出上限、'
+            f'{gm_inside} 季落在区间内、{gm_below} 季跌破下限，'
+            f'最差的一次差 {abs(worst_gap):.0f} 个百分点。'
+            f'同样 {rev_n} 季，收入指引 {rev_above} 季穿出上限、'
+            f'{rev_inside} 季落在区间内、{rev_below} 季跌破下限 —— '
+            '接近一半一半，不是底线。</p></article>'
             '<article><span>口径</span><b>协议：申报 US$5.0B，口头 US$100B</b>'
             '<p>10-Q 里的剩余履约义务是 50 亿美元、客户存款 4.22 亿美元；'
             '管理层同日在电话会上说的是 1,000 亿与 220 亿。'
