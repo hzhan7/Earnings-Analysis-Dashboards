@@ -262,15 +262,17 @@ class ContentBoundaryTest(unittest.TestCase):
         page address written inline in the prose -- `## Verification` invites
         exactly that -- is not counted as a twenty-fourth entry.
 
-        The opening paragraph naming the companies is pinned separately, and
-        *by name* after all: matching each entry's `name` and `aliases` against
-        the parsed names by case-insensitive containment **in both directions**
-        resolves every short form here with no suffix-stripping heuristic
-        (`Meta` inside `Meta Platforms`, and `Costco Wholesale` inside a prose
-        `Costco Wholesale Corporation`). Counting that paragraph's names was
-        rejected rather than deferred: two registered names already contain a
-        comma (`NIKE, Inc.`, `Nasdaq, Inc.`), so a writer copying a registered
-        name into the prose would false-fail a count -- and a push gate that
+        The opening paragraph that names the companies is a separate problem
+        and is **not** pinned here. Pinning it *by name* does work, and needs no
+        suffix-stripping heuristic, but only in one direction: its short forms
+        are contained *by* the registered names rather than equal to them, so
+        `prose inside registered` is what carries them -- drop that direction
+        and `meta` (`Meta` vs `Meta Platforms`) and `tjx` (`TJX` vs `The TJX
+        Companies`) stop resolving, while dropping the opposite direction
+        currently costs nothing. Counting the names instead was rejected rather
+        than deferred: two registered names already contain a comma
+        (`NIKE, Inc.`, `Nasdaq, Inc.`), so a writer copying a registered name
+        into the prose would false-fail a count -- and a push gate that
         false-fails gets bypassed with `--no-verify` and then protects nothing.
 
         Order is asserted against `sorted()` rather than against `ENTRIES`' own
