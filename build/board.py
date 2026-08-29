@@ -61,6 +61,15 @@ UNIT_FORMATS = {
     # points would print both the threshold (−0.10pp) and the current value
     # (−0.09pp) as "-0.1pp", so the audit table could not tell them apart.
     "bps": lambda value: f"{value:+.0f}bp",
+    # CME is the first page whose thresholds are a contract volume and a
+    # per-contract rate. Average daily volume is quoted in thousands of
+    # contracts and the interesting moves are a few hundred wide, so `million`
+    # rounds 29,843 and 28,000 to the same "30M"; the rate carries three
+    # decimals, and `usd_eps` prints $0.678 and $0.670 as $0.68 and $0.67 --
+    # in both cases the audit table would show a threshold and a current value
+    # that look identical while the headroom bar beside it shows a gap.
+    "contracts_k": lambda value: f"{value:,.0f} 千手",
+    "usd_rpc": lambda value: f"${value:.3f}",
 }
 
 

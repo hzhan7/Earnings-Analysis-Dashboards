@@ -123,6 +123,41 @@ function render(slug) {
     }
   }
 
+  /* A finite coordinate can still be off the canvas, and that is invisible to
+   * every check above: the element carries no NaN, the payload is finite, the
+   * card is not empty, and the browser simply clips whatever falls outside the
+   * viewBox without a word. `stacked_dual` reaches this the moment its
+   * right-hand series passes 60: `charts.js` scales that axis to
+   * `ticks(0, rc.ymax || 60, 6)` rather than to the data, so a share line at
+   * 80% is drawn at a negative y and disappears, while the legend goes on
+   * advertising it -- the same ending as AVGO Exhibit 16, one arithmetic step
+   * further along. Found on CME Exhibit 4 while that page was being built, and
+   * on IBKR Exhibit 8, which had been shipping that way.
+   *
+   * Only stroked paths and polylines are checked, and only against the
+   * vertical extent: bar labels and end labels are deliberately allowed to sit
+   * in the margin, and the horizontal axis is padded by the renderer. */
+  for (const svg of doc.querySelectorAll(".grid svg")) {
+    const box = (svg.getAttribute("viewBox") || "").split(/\s+/).map(Number);
+    const height = box.length === 4 ? box[3] : null;
+    if (!height || !isFinite(height)) continue;
+    for (const node of svg.querySelectorAll("path, polyline")) {
+      if (node.getAttribute("fill") !== "none") continue;
+      const geometry = node.getAttribute("d") || node.getAttribute("points") || "";
+      const ys = [...geometry.matchAll(/(-?[\d.]+)[ ,](-?[\d.]+)/g)].map((m) => Number(m[2]));
+      const finite = ys.filter((y) => isFinite(y));
+      if (!finite.length) continue;
+      const low = Math.min(...finite);
+      const high = Math.max(...finite);
+      if (low < -1 || high > height + 1) {
+        errors.push(
+          `<${node.tagName}> is drawn at y ${low.toFixed(0)}..${high.toFixed(0)} ` +
+            `outside a canvas ${height.toFixed(0)} tall in ${locate(node)}`
+        );
+      }
+    }
+  }
+
   const nodata = [...doc.querySelectorAll("p.note")].filter((n) =>
     /无数据/.test(n.textContent)
   ).length;

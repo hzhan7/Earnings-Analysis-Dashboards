@@ -426,8 +426,13 @@ def upc_wedge(staging: dict) -> dict:
             {"name": "归属普通股东", "color": "NAVY",
              "values": rounded(common[-RECENT:])},
         ],
+        # `stacked_dual` scales its right axis to `ticks(0, ymax || 60, 6)` and
+        # not to the data, so this share -- which has run above 77% -- was being
+        # drawn above the top of the canvas and dropped by the browser without
+        # a word, while the legend still named it. Caught by the off-canvas
+        # check added to `tests/render_check.js`.
         "line": {"name": "少数股东占比 (RHS)", "color": "RED",
-                 "values": rounded(share[-RECENT:]), "yfmt": "pct1"},
+                 "values": rounded(share[-RECENT:]), "yfmt": "pct1", "ymax": 100},
         "fmt": "f0c",
         "yfmt": "f0c",
         "label_fmt": "f0c",

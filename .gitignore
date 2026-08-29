@@ -24,6 +24,7 @@ series/*.json
 !series/axp.json
 !series/cboe.json
 !series/cdns.json
+!series/cme.json
 !series/cost.json
 !series/googl.json
 !series/ibkr.json

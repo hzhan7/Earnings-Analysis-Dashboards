@@ -11,8 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amzn, avgo, axp, cboe, cdns, cost, googl, ibkr, ma, mco, meta, msci, msft,
-    ndaq, nke, nvda, pm, race, schw, snps,
+    amzn, avgo, axp, cboe, cdns, cme, cost, googl, ibkr, ma, mco, meta, msci,
+    msft, ndaq, nke, nvda, pm, race, schw, snps,
     spgi, tjx, tsm, v,
 )
 from build.payload_guard import write_js  # noqa: E402
@@ -26,6 +26,7 @@ MODULES = {
     "axp": axp,
     "cboe": cboe,
     "cdns": cdns,
+    "cme": cme,
     "cost": cost,
     "googl": googl,
     "ibkr": ibkr,
@@ -117,6 +118,18 @@ ENTRIES = [
         "cadence_label": "自然年季度；完整披露",
         "headline_metrics": ["Revenue $1.58B", "Backlog $8.1B", "Non-GAAP OpM 45.5%"],
         "search_text": "cdns cadence 楷登 eda 半导体 设计 ip palladium 硬件仿真 agentic 芯片设计",
+    },
+    {
+        "slug": "cme",
+        "ticker": "CME",
+        "name": "CME Group Inc.",
+        "aliases": ["CME Group", "芝商所", "芝加哥商品交易所"],
+        "group": "exchanges",
+        "cadence_label": "自然年季度；申报文件只指引资本开支",
+        "headline_metrics": ["Revenue $1.71B", "清算费同比 −2.6%", "调整后 OpM 69.5%"],
+        "search_text": ("cme cme group 芝商所 芝加哥商品交易所 交易所 衍生品 期货 期权 清算 "
+                        "adv 成交量 rpc 每手费率 分级费率 利率期货 股指期货 国债 "
+                        "brokertec ebs 抵押品 保证金 行情数据 未平仓合约"),
     },
     {
         "slug": "cost",
