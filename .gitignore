@@ -33,6 +33,7 @@ series/*.json
 !series/meta.json
 !series/msci.json
 !series/msft.json
+!series/mu.json
 !series/ndaq.json
 !series/nke.json
 !series/nvda.json

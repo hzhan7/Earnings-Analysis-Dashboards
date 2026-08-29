@@ -12,7 +12,7 @@ sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
     amzn, avgo, axp, cboe, cdns, cme, cost, googl, ibkr, ma, mco, meta, msci,
-    msft, ndaq, nke, nvda, pm, race, schw, skhynix, snps,
+    msft, mu, ndaq, nke, nvda, pm, race, schw, skhynix, snps,
     spgi, tjx, tsm, v,
 )
 from build.payload_guard import write_js  # noqa: E402
@@ -35,6 +35,7 @@ MODULES = {
     "meta": meta,
     "msci": msci,
     "msft": msft,
+    "mu": mu,
     "ndaq": ndaq,
     "nke": nke,
     "nvda": nvda,
@@ -215,6 +216,18 @@ ENTRIES = [
         "cadence_label": "6 月制财年；本站按自然年季度标注",
         "headline_metrics": ["Revenue $90.0B", "Azure +43%", "FCF $19.6B"],
         "search_text": "msft microsoft 微软 azure copilot m365 云 软件",
+    },
+    {
+        "slug": "mu",
+        "ticker": "MU",
+        "name": "Micron Technology, Inc.",
+        "aliases": ["Micron", "美光", "内存", "存储器"],
+        "group": "semiconductor_ai",
+        "cadence_label": "8 月底制财年；本站按自然年季度标注",
+        "headline_metrics": ["Revenue $41.46B", "non-GAAP GM 84.9%", "\u9500\u8d27\u6210\u672c\u73af\u6bd4 +4.8%"],
+        "search_text": ("mu micron 美光 内存 存储器 半导体 dram nand hbm 闪存 "
+                        "颗粒 位元 售价 asp 周期 涨价 数据中心 服务器 ssd "
+                        "供货协议 sca take-or-pay 资本开支 晶圆厂"),
     },
     {
         "slug": "ndaq",

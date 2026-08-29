@@ -3,9 +3,9 @@
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
 American Express, Broadcom, Cadence, Cboe Global Markets, Charles Schwab,
-CME Group, Costco, Ferrari, Interactive Brokers, Mastercard, Meta, Microsoft,
-Moody's, MSCI, Nasdaq, NIKE, NVIDIA, Philip Morris International, S&P Global,
-SK hynix, Synopsys, TJX, TSMC and Visa.
+CME Group, Costco, Ferrari, Interactive Brokers, Mastercard, Meta, Micron,
+Microsoft, Moody's, MSCI, Nasdaq, NIKE, NVIDIA, Philip Morris International,
+S&P Global, SK hynix, Synopsys, TJX, TSMC and Visa.
 
 ## Build
 
@@ -30,6 +30,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/meta/`
 - `http://127.0.0.1:8765/msci/`
 - `http://127.0.0.1:8765/msft/`
+- `http://127.0.0.1:8765/mu/`
 - `http://127.0.0.1:8765/ndaq/`
 - `http://127.0.0.1:8765/nke/`
 - `http://127.0.0.1:8765/nvda/`
@@ -198,12 +199,18 @@ Charts are ordered the way the note is actually used:
    the fourteen-year adjusted operating margin, the fifty-nine quarters of
    index-option volume against a per-contract price that never had to be
    discounted, the second revenue split the company publishes alongside its
-   segments, and the buyback against the price it actually paid; and CME Group
+   segments, and the buyback against the price it actually paid; CME Group
    gets fifty-four quarters of contract volume against the per-contract rate
    that moves against it, the slope that turns a 1% move in contracts into a
    0.66% move in revenue, the slice of the clearing fee its published volumes
    do not cover, and the basis points it keeps out of the interest earned on
-   client collateral.
+   client collateral; and Micron gets the fifteen fiscal years its record
+   quarter has to be read against — an annual gross margin running from −9.1%
+   to 58.9% across them, against 84.6% in the quarter this page reports — the
+   capital intensity whose peaks land on the revenue troughs rather than on
+   its peaks, the three cash-flow lines whose capital-expenditure leg has not yet
+   turned, and nineteen quarters of inventory measured against cost of goods
+   sold rather than against a selling price that has multiplied.
 
 On the Alphabet, Meta and Microsoft pages these run on the ten-year record
 rather than eight quarters, because eight quarters cannot tell a trend from a

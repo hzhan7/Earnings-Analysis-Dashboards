@@ -106,8 +106,8 @@ def published_files() -> list[Path]:
 COMPANY_SLUGS = (
     "amzn", "avgo", "axp", "cboe", "cdns", "cme", "cost", "googl", "ibkr",
     "ma", "mco",
-    "meta", "msci", "msft", "ndaq", "nke", "nvda", "pm", "race", "schw",
-    "skhynix", "snps", "spgi", "tjx", "tsm", "v",
+    "meta", "msci", "msft", "mu", "ndaq", "nke", "nvda", "pm", "race",
+    "schw", "skhynix", "snps", "spgi", "tjx", "tsm", "v",
 )
 
 
