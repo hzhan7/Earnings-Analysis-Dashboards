@@ -39,6 +39,7 @@ series/*.json
 !series/pm.json
 !series/race.json
 !series/schw.json
+!series/skhynix.json
 !series/snps.json
 !series/spgi.json
 !series/tjx.json

@@ -56,6 +56,13 @@ UNIT_FORMATS = {
     "eur_m": lambda value: f"{'−' if value < 0 else ''}€{abs(value):,.0f}M",
     "eur_bn": lambda value: f"{'−' if value < 0 else ''}€{abs(value):.2f}B",
     "eur_eps": lambda value: f"{'−' if value < 0 else ''}€{abs(value):.2f}",
+    # SK hynix reports in won, where the interesting quantities are trillions:
+    # a quarter's revenue is ₩79.3T and its net cash ₩69.4T. Borrowing `usd_m`
+    # would misprint a won figure with a dollar sign, and storing trillions in a
+    # millions formatter would print 79,318,746 for a number nobody quotes that
+    # way. The `T` suffix is one the payload guard knows, so a non-finite value
+    # formatted through here is still rejected rather than painted on a chart.
+    "krw_tn": lambda value: f"{'−' if value < 0 else ''}₩{abs(value):.1f}T",
     # Costco is the first page whose threshold sits on a *change* the company
     # states in basis points rather than on a level. Storing it in percentage
     # points would print both the threshold (−0.10pp) and the current value

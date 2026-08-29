@@ -1,0 +1,1022 @@
+{
+ "_provenance": "Every figure here is printed in a document SK hynix filed or published. Two SEC-hosted filings carry the parts no press release contains: the Form 424B4 prospectus of 2026-07-10 (audited K-IFRS statements for FY2023-FY2025 and Q1, the product-revenue note, the customer-concentration note, capital expenditures, and the thirteen-quarter table of bit-shipment and ASP phrases) and the Form 6-K of 2026-07-29 (the Q2 2026 preliminary results table, which is the only place the quarter's pre-tax profit appears). The 22-quarter revenue / operating profit / net income series comes from each quarter's own newsroom results release. SK hynix is an SEC registrant: CIK 2120882, file number 001-43391, Nasdaq SKHY, annual report on Form 20-F.",
+ "schema_version": "quarterly-staging/skhynix-v1",
+ "company": {
+  "ticker": "SKHY",
+  "name": "SK hynix",
+  "legal_name": "SK hynix Inc.",
+  "krx_code": "000660",
+  "cik": "0002120882",
+  "accounting_standard": "K-IFRS",
+  "currency": "KRW"
+ },
+ "latest": {
+  "period": "2026Q2",
+  "previous_period": "2026Q1",
+  "prior_year_period": "2025Q2",
+  "period_end": "2026-06-30",
+  "release_date": "2026-07-29",
+  "audit_status": "provisional"
+ },
+ "periods": [
+  "2021Q1",
+  "2021Q2",
+  "2021Q3",
+  "2021Q4",
+  "2022Q1",
+  "2022Q2",
+  "2022Q3",
+  "2022Q4",
+  "2023Q1",
+  "2023Q2",
+  "2023Q3",
+  "2023Q4",
+  "2024Q1",
+  "2024Q2",
+  "2024Q3",
+  "2024Q4",
+  "2025Q1",
+  "2025Q2",
+  "2025Q3",
+  "2025Q4",
+  "2026Q1",
+  "2026Q2"
+ ],
+ "period_ends": [
+  "2021-03-31",
+  "2021-06-30",
+  "2021-09-30",
+  "2021-12-31",
+  "2022-03-31",
+  "2022-06-30",
+  "2022-09-30",
+  "2022-12-31",
+  "2023-03-31",
+  "2023-06-30",
+  "2023-09-30",
+  "2023-12-31",
+  "2024-03-31",
+  "2024-06-30",
+  "2024-09-30",
+  "2024-12-31",
+  "2025-03-31",
+  "2025-06-30",
+  "2025-09-30",
+  "2025-12-31",
+  "2026-03-31",
+  "2026-06-30"
+ ],
+ "release_dates": [
+  "2021-04-28",
+  "2021-07-27",
+  "2021-10-26",
+  "2022-01-28",
+  "2022-04-27",
+  "2022-07-27",
+  "2022-10-26",
+  "2023-02-01",
+  "2023-04-26",
+  "2023-07-26",
+  "2023-10-26",
+  "2024-01-25",
+  "2024-04-25",
+  "2024-07-25",
+  "2024-10-24",
+  "2025-01-23",
+  "2025-04-24",
+  "2025-07-24",
+  "2025-10-29",
+  "2026-01-28",
+  "2026-04-23",
+  "2026-07-29"
+ ],
+ "financials_krw_bn": {
+  "revenue": [
+   8494.0,
+   10322.0,
+   11805.0,
+   12377.0,
+   12160.0,
+   13810.0,
+   10982.9,
+   7699.0,
+   5088.1,
+   7305.9,
+   9066.2,
+   11305.5,
+   12429.6,
+   16423.3,
+   17573.1,
+   19767.0,
+   17639.1,
+   22232.0,
+   24448.9,
+   32826.7,
+   52576.3,
+   79318.7
+  ],
+  "operating_profit": [
+   1324.0,
+   2695.0,
+   4172.0,
+   4220.0,
+   2860.0,
+   4190.0,
+   1660.5,
+   -1701.0,
+   -3402.3,
+   -2882.1,
+   -1792.0,
+   346.0,
+   2886.0,
+   5468.5,
+   7030.0,
+   8082.8,
+   7440.5,
+   9212.9,
+   11383.4,
+   19169.6,
+   37610.3,
+   60542.6
+  ],
+  "net_income": [
+   993.0,
+   1988.0,
+   3315.0,
+   null,
+   1980.0,
+   2880.0,
+   1107.6,
+   -3524.0,
+   -2585.5,
+   -2987.9,
+   -2184.7,
+   -1379.5,
+   1917.0,
+   4120.0,
+   5753.4,
+   8006.5,
+   8108.2,
+   6996.2,
+   12597.5,
+   15246.0,
+   40345.9,
+   93922.6
+  ],
+  "operating_margin_pct_disclosed": [
+   16,
+   26,
+   35,
+   null,
+   24,
+   30,
+   15,
+   -22,
+   -67,
+   -39,
+   -20,
+   3,
+   23,
+   33,
+   40,
+   41,
+   42,
+   41,
+   47,
+   58,
+   72,
+   76
+  ],
+  "_disclosed_margin_note": "The company prints an INTEGER operating margin. It is kept here exactly as printed and is never recomputed. Charts use the ratio computed from the two won amounts, because an integer loses up to 0.5pp and a quarter-on-quarter step built from integers can be a full point wrong.",
+  "_2021Q4_hole": "The FY2021 release prints fourth-quarter revenue and operating profit but no fourth-quarter net income and no fourth-quarter margin; the 29% and the 9,616 in that release are full-year figures. The hole is left as null rather than plugged with the full year minus three quarters."
+ },
+ "restatement_2022q4": {
+  "_status": "declared break, drawn on the page",
+  "as_first_reported": {
+   "revenue": 7699.0,
+   "operating_profit": -1701.0,
+   "net_income": -3524.0,
+   "operating_margin_pct": -22
+  },
+  "as_restated": {
+   "revenue": 7672.0,
+   "operating_profit": -1912.0,
+   "net_income": -3735.0,
+   "operating_margin_pct": -25
+  },
+  "delta": {
+   "revenue": -27.0,
+   "operating_profit": -211.0,
+   "net_income": -211.0
+  },
+  "fy2022_as_first_reported": {
+   "revenue": 44648.0,
+   "operating_profit": 7007.0,
+   "net_income": 2439.0
+  },
+  "fy2022_as_restated": {
+   "revenue": 44621.6,
+   "operating_profit": 6809.0,
+   "net_income": 2242.0
+  },
+  "basis_used_in_series": "as_first_reported",
+  "why": "The series carries each quarter as the company first reported it, which is the only basis on which the four quarters of 2022 reconcile to the full year the company printed at the time. The restated fourth quarter is published beside it rather than swapped in: mixing the restated quarter into a series of first-reported quarters leaves an unresolvable residual in the first three, because SK hynix never republished those three."
+ },
+ "annual_audited_krw_bn": {
+  "_source": "Form 424B4, audited K-IFRS consolidated statements",
+  "years": [
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ],
+  "revenue": [
+   32766,
+   66193,
+   97147
+  ],
+  "cost_of_sales": [
+   33299,
+   34365,
+   38456
+  ],
+  "gross_profit": [
+   -533,
+   31828,
+   58691
+  ],
+  "sga": [
+   3446,
+   3924,
+   5019
+  ],
+  "rnd": [
+   3751,
+   4436,
+   6466
+  ],
+  "operating_profit": [
+   -7730,
+   23468,
+   47206
+  ],
+  "profit_before_tax": [
+   -11658,
+   23885,
+   50466
+  ],
+  "income_tax": [
+   -2520,
+   4088,
+   7518
+  ],
+  "net_income": [
+   -9138,
+   19797,
+   42948
+  ],
+  "capital_expenditures": [
+   8325,
+   15946,
+   27519
+  ],
+  "operating_cash_flow": [
+   4278,
+   29796,
+   53373
+  ],
+  "depreciation_and_amortization": [
+   13619,
+   12545,
+   13890
+  ],
+  "adjusted_ebitda": [
+   5889,
+   36012,
+   61096
+  ],
+  "_capex_definition": "As printed in the filing: cash outflows for acquisition of property, plant and equipment, included in net cash used in investing activities. It excludes intangibles, and it is the same definition the cross-page capex table uses for the four cloud vendors.",
+  "_operating_profit_identity": "Operating profit is not a line in this K-IFRS presentation. It is gross profit less selling and administrative expenses less research and development. That identity reproduces the operating profit the company reports in its own releases exactly, for all three years and for Q1 2026."
+ },
+ "quarterly_audited_krw_bn": {
+  "_source": "Form 424B4 interim statements",
+  "periods": [
+   "2025Q1",
+   "2026Q1"
+  ],
+  "revenue": [
+   17639,
+   52576
+  ],
+  "gross_profit": [
+   10102,
+   41679
+  ],
+  "sga": [
+   1190,
+   1618
+  ],
+  "rnd": [
+   1472,
+   2451
+  ],
+  "operating_profit": [
+   7440,
+   37610
+  ],
+  "profit_before_tax": [
+   9299,
+   51617
+  ],
+  "income_tax": [
+   1191,
+   11271
+  ],
+  "net_income": [
+   8108,
+   40346
+  ],
+  "capital_expenditures": [
+   6284,
+   7657
+  ],
+  "operating_cash_flow": [
+   9024,
+   26330
+  ],
+  "depreciation_and_amortization": [
+   3334,
+   3726
+  ],
+  "adjusted_ebitda": [
+   10774,
+   41336
+  ]
+ },
+ "revenue_by_product_krw_bn": {
+  "_source": "Form 424B4 note 24(2) for the years, interim note for the quarters. AUDITED.",
+  "labels": [
+   "FY2023",
+   "FY2024",
+   "FY2025",
+   "2025Q1",
+   "2026Q1"
+  ],
+  "dram": [
+   20769,
+   44732,
+   74904,
+   14037,
+   40659
+  ],
+  "nand": [
+   9653,
+   19274,
+   20690,
+   3229,
+   11574
+  ],
+  "other": [
+   2344,
+   2187,
+   1552,
+   373,
+   343
+  ],
+  "total": [
+   32766,
+   66193,
+   97147,
+   17639,
+   52576
+  ],
+  "dram_pct": [
+   63.4,
+   67.6,
+   77.1,
+   79.6,
+   77.3
+  ],
+  "nand_pct": [
+   29.5,
+   29.1,
+   21.3,
+   18.3,
+   22.0
+  ],
+  "other_pct": [
+   7.2,
+   3.3,
+   1.6,
+   2.1,
+   0.7
+  ],
+  "_note": "This is the only product split SK hynix discloses, and it is annual plus the first quarter. There is no quarterly product split for any other quarter, so a quarterly DRAM or flash revenue series does not exist and is not built here."
+ },
+ "customer_concentration": {
+  "_source": "Form 424B4 note 4(2). AUDITED.",
+  "years": [
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ],
+  "largest_customer_krw_bn": [
+   null,
+   10903,
+   23260
+  ],
+  "largest_customer_pct": [
+   null,
+   16.5,
+   23.9
+  ],
+  "fy2023_text": "For the year ended December 31, 2023, no revenue derived from a single customer reached over 10% of the Group's revenue."
+ },
+ "revenue_by_selling_entity_krw_bn": {
+  "_source": "Form 424B4 note 24(3).",
+  "_caveat": "Based on the location of the SELLING ENTITY, not the customer. It says where SK hynix books the sale, not where the demand is.",
+  "years": [
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ],
+  "korea": [
+   2034,
+   1904,
+   1932
+  ],
+  "usa": [
+   15390,
+   41961,
+   66885
+  ],
+  "china": [
+   10110,
+   15534,
+   19136
+  ],
+  "asia_ex_china": [
+   4297,
+   5381,
+   7216
+  ],
+  "europe": [
+   935,
+   1413,
+   1977
+  ]
+ },
+ "q2_2026_below_operating_profit_krw_bn": {
+  "_source": "Form 6-K filed 2026-07-29. The quarter's newsroom release stops at net income.",
+  "periods": [
+   "2026Q1",
+   "2026Q2"
+  ],
+  "operating_profit": [
+   37610.3,
+   60542.6
+  ],
+  "profit_before_tax": [
+   51616.9,
+   122708.4
+  ],
+  "net_income": [
+   40345.9,
+   93922.6
+  ],
+  "_derived_note": "Income tax and the non-operating total are differences between two printed lines: tax is pre-tax profit less profit for the period, and the non-operating total is pre-tax profit less operating profit. Nothing below operating profit is broken out into components by SK hynix in any document read for this page, so no component is published here."
+ },
+ "balance_sheet_krw_bn": {
+  "_source": "quarterly newsroom releases; only the quarters that print it",
+  "periods": [
+   "2024Q4",
+   "2025Q1",
+   "2025Q2",
+   "2025Q3",
+   "2026Q1",
+   "2026Q2"
+  ],
+  "cash_and_equivalents": [
+   14200,
+   14300,
+   17000,
+   27900,
+   54300,
+   88000
+  ],
+  "interest_bearing_debt": [
+   22700,
+   null,
+   null,
+   24100,
+   19300,
+   18600
+  ],
+  "net_cash": [
+   -8500,
+   null,
+   null,
+   3800,
+   35000,
+   69400
+  ],
+  "_gap": "The FY2025 annual release prints no balance-sheet figure at all, though the three quarters before it did. There is therefore no year-end 2025 cash or debt figure in any company release, and none is invented here."
+ },
+ "kpi_phrases": {
+  "_source": "Form 424B4. Thirteen quarters, 1Q 2023 to 1Q 2026.",
+  "_asp_currency": "USD",
+  "_the_finding": "These are the two quantities whose product is revenue, and SK hynix publishes both of them as English adjectives. It did so in its registration statement, in the same document that reports revenue to the million won.",
+  "quarters": [
+   "1Q 2023",
+   "2Q 2023",
+   "3Q 2023",
+   "4Q 2023",
+   "1Q 2024",
+   "2Q 2024",
+   "3Q 2024",
+   "4Q 2024",
+   "1Q 2025",
+   "2Q 2025",
+   "3Q 2025",
+   "4Q 2025",
+   "1Q 2026"
+  ],
+  "dram_bit_shipment": {
+   "phrases": [
+    "Around 20% Decrease",
+    "Mid-30% Increase",
+    "Around 20% Increase",
+    "Low-single% Increase",
+    "Mid-teen% Decrease",
+    "Low-20% Increase",
+    "Slight Decrease",
+    "Mid-single% Increase",
+    "High-single% Decrease",
+    "Mid-20% Increase",
+    "High-single% Increase",
+    "Low-single% Increase",
+    "Flat"
+   ],
+   "low_pct": [
+    -22.0,
+    33.0,
+    18.0,
+    1.0,
+    -16.0,
+    20.0,
+    -3.0,
+    4.0,
+    -9.0,
+    23.0,
+    7.0,
+    1.0,
+    -1.0
+   ],
+   "high_pct": [
+    -18.0,
+    37.0,
+    22.0,
+    3.0,
+    -14.0,
+    23.0,
+    -1.0,
+    6.0,
+    -7.0,
+    27.0,
+    9.0,
+    3.0,
+    1.0
+   ],
+   "midpoint_pct": [
+    -20.0,
+    35.0,
+    20.0,
+    2.0,
+    -15.0,
+    21.5,
+    -2.0,
+    5.0,
+    -8.0,
+    25.0,
+    8.0,
+    2.0,
+    0.0
+   ],
+   "one_sided": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ]
+  },
+  "dram_asp": {
+   "phrases": [
+    "High-teen% Decrease",
+    "High-single% Increase",
+    "Around 10% Increase",
+    "High-teen% Increase",
+    "Over 20% Increase",
+    "Mid-teen% Increase",
+    "Mid-teen% Increase",
+    "Around 10% Increase",
+    "Flat",
+    "Low-single% Increase",
+    "Mid-single% Increase",
+    "Mid-20% Increase",
+    "Mid-60% Increase"
+   ],
+   "low_pct": [
+    -19.0,
+    7.0,
+    9.0,
+    17.0,
+    20.0,
+    14.0,
+    14.0,
+    9.0,
+    -1.0,
+    1.0,
+    4.0,
+    23.0,
+    63.0
+   ],
+   "high_pct": [
+    -17.0,
+    9.0,
+    11.0,
+    19.0,
+    30.0,
+    16.0,
+    16.0,
+    11.0,
+    1.0,
+    3.0,
+    6.0,
+    27.0,
+    67.0
+   ],
+   "midpoint_pct": [
+    -18.0,
+    8.0,
+    10.0,
+    18.0,
+    25.0,
+    15.0,
+    15.0,
+    10.0,
+    0.0,
+    2.0,
+    5.0,
+    25.0,
+    65.0
+   ],
+   "one_sided": [
+    false,
+    false,
+    false,
+    false,
+    true,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ]
+  },
+  "nand_bit_shipment": {
+   "phrases": [
+    "Mid-teen% Decrease",
+    "Around 50% Increase",
+    "Mid-single% Increase",
+    "Low-single% Decrease",
+    "Flat",
+    "Low-single% Decrease",
+    "Mid-teen% Decrease",
+    "Mid-single% Decrease",
+    "High-teen% Decrease",
+    "Over 70% Increase",
+    "Mid-single% Decrease",
+    "Around 10% Increase",
+    "Around 10% Decrease"
+   ],
+   "low_pct": [
+    -16.0,
+    45.0,
+    4.0,
+    -3.0,
+    -1.0,
+    -3.0,
+    -16.0,
+    -6.0,
+    -19.0,
+    70.0,
+    -6.0,
+    9.0,
+    -11.0
+   ],
+   "high_pct": [
+    -14.0,
+    55.0,
+    6.0,
+    -1.0,
+    1.0,
+    -1.0,
+    -14.0,
+    -4.0,
+    -17.0,
+    80.0,
+    -4.0,
+    11.0,
+    -9.0
+   ],
+   "midpoint_pct": [
+    -15.0,
+    50.0,
+    5.0,
+    -2.0,
+    0.0,
+    -2.0,
+    -15.0,
+    -5.0,
+    -18.0,
+    75.0,
+    -5.0,
+    10.0,
+    -10.0
+   ],
+   "one_sided": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    true,
+    false,
+    false,
+    false
+   ]
+  },
+  "nand_asp": {
+   "phrases": [
+    "Around 10% Decrease",
+    "Around 10% Decrease",
+    "Slight Decrease",
+    "Over 40% Increase",
+    "Over 30% Increase",
+    "Mid-high-teen% Increase",
+    "Mid-teen% Increase",
+    "Mid-single% Decrease",
+    "Around 20% Decrease",
+    "High-single% Decrease",
+    "Low-teen% Increase",
+    "Low 30% Increase",
+    "Mid 70% Increase"
+   ],
+   "low_pct": [
+    -11.0,
+    -11.0,
+    -3.0,
+    40.0,
+    30.0,
+    15.0,
+    14.0,
+    -6.0,
+    -22.0,
+    -9.0,
+    11.0,
+    30.0,
+    73.0
+   ],
+   "high_pct": [
+    -9.0,
+    -9.0,
+    -1.0,
+    50.0,
+    40.0,
+    19.0,
+    16.0,
+    -4.0,
+    -18.0,
+    -7.0,
+    13.0,
+    33.0,
+    77.0
+   ],
+   "midpoint_pct": [
+    -10.0,
+    -10.0,
+    -2.0,
+    45.0,
+    35.0,
+    17.0,
+    15.0,
+    -5.0,
+    -20.0,
+    -8.0,
+    12.0,
+    31.5,
+    75.0
+   ],
+   "one_sided": [
+    false,
+    false,
+    false,
+    true,
+    true,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ]
+  },
+  "phrase_vocabulary": {
+   "Flat": {
+    "low": -1.0,
+    "high": 1.0,
+    "one_sided": false
+   },
+   "Slight Decrease": {
+    "low": -3.0,
+    "high": -1.0,
+    "one_sided": false
+   },
+   "Low-single% Increase": {
+    "low": 1.0,
+    "high": 3.0,
+    "one_sided": false
+   },
+   "Low-single% Decrease": {
+    "low": -3.0,
+    "high": -1.0,
+    "one_sided": false
+   },
+   "Mid-single% Increase": {
+    "low": 4.0,
+    "high": 6.0,
+    "one_sided": false
+   },
+   "Mid-single% Decrease": {
+    "low": -6.0,
+    "high": -4.0,
+    "one_sided": false
+   },
+   "High-single% Increase": {
+    "low": 7.0,
+    "high": 9.0,
+    "one_sided": false
+   },
+   "High-single% Decrease": {
+    "low": -9.0,
+    "high": -7.0,
+    "one_sided": false
+   },
+   "Low-teen% Increase": {
+    "low": 11.0,
+    "high": 13.0,
+    "one_sided": false
+   },
+   "Mid-teen% Increase": {
+    "low": 14.0,
+    "high": 16.0,
+    "one_sided": false
+   },
+   "Mid-teen% Decrease": {
+    "low": -16.0,
+    "high": -14.0,
+    "one_sided": false
+   },
+   "High-teen% Increase": {
+    "low": 17.0,
+    "high": 19.0,
+    "one_sided": false
+   },
+   "High-teen% Decrease": {
+    "low": -19.0,
+    "high": -17.0,
+    "one_sided": false
+   },
+   "Mid-high-teen% Increase": {
+    "low": 15.0,
+    "high": 19.0,
+    "one_sided": false
+   },
+   "Around 10% Increase": {
+    "low": 9.0,
+    "high": 11.0,
+    "one_sided": false
+   },
+   "Around 10% Decrease": {
+    "low": -11.0,
+    "high": -9.0,
+    "one_sided": false
+   },
+   "Around 20% Increase": {
+    "low": 18.0,
+    "high": 22.0,
+    "one_sided": false
+   },
+   "Around 20% Decrease": {
+    "low": -22.0,
+    "high": -18.0,
+    "one_sided": false
+   },
+   "Around 50% Increase": {
+    "low": 45.0,
+    "high": 55.0,
+    "one_sided": false
+   },
+   "Low-20% Increase": {
+    "low": 20.0,
+    "high": 23.0,
+    "one_sided": false
+   },
+   "Mid-20% Increase": {
+    "low": 23.0,
+    "high": 27.0,
+    "one_sided": false
+   },
+   "Mid-30% Increase": {
+    "low": 33.0,
+    "high": 37.0,
+    "one_sided": false
+   },
+   "Low 30% Increase": {
+    "low": 30.0,
+    "high": 33.0,
+    "one_sided": false
+   },
+   "Mid 70% Increase": {
+    "low": 73.0,
+    "high": 77.0,
+    "one_sided": false
+   },
+   "Mid-60% Increase": {
+    "low": 63.0,
+    "high": 67.0,
+    "one_sided": false
+   },
+   "Over 20% Increase": {
+    "low": 20.0,
+    "high": 30.0,
+    "one_sided": true
+   },
+   "Over 30% Increase": {
+    "low": 30.0,
+    "high": 40.0,
+    "one_sided": true
+   },
+   "Over 40% Increase": {
+    "low": 40.0,
+    "high": 50.0,
+    "one_sided": true
+   },
+   "Over 70% Increase": {
+    "low": 70.0,
+    "high": 80.0,
+    "one_sided": true
+   }
+  },
+  "_mapping_status": "The interval assigned to each phrase is this page's reading, not a company number. Four phrases are one-sided in the filing -- Over 20%, Over 30%, Over 40% and Over 70% -- and have no upper bound at all; each is capped ten points above its floor here so that it can be drawn, and the cap is a drawing convention, not a disclosure."
+ },
+ "sources": [
+  {
+   "label": "SK hynix 2026 年第二季度业绩 6-K（2026-07-29，含税前利润行）",
+   "url": "https://www.sec.gov/Archives/edgar/data/2120882/000119312526321989/d115239d6k.htm"
+  },
+  {
+   "label": "SK hynix Form 424B4 招股说明书（2026-07-10，含审计财务报表、分产品收入、客户集中度与十三季量价用词表）",
+   "url": "https://www.sec.gov/Archives/edgar/data/2120882/000119312526299963/d32785d424b4.htm"
+  },
+  {
+   "label": "SK hynix 在 SEC EDGAR 的全部申报（CIK 2120882）",
+   "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0002120882&type=&dateb=&owner=include&count=40"
+  },
+  {
+   "label": "SK hynix Newsroom 季度业绩发布（22 季营收、营业利润与净利润的来源）",
+   "url": "https://news.skhynix.com/category/press/quarterly-earnings/"
+  },
+  {
+   "label": "SK hynix 投资者关系",
+   "url": "https://www.skhynix.com/ir"
+  }
+ ]
+}

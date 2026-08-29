@@ -5,7 +5,7 @@ chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
 American Express, Broadcom, Cadence, Cboe Global Markets, Charles Schwab,
 CME Group, Costco, Ferrari, Interactive Brokers, Mastercard, Meta, Microsoft,
 Moody's, MSCI, Nasdaq, NIKE, NVIDIA, Philip Morris International, S&P Global,
-Synopsys, TJX, TSMC and Visa.
+SK hynix, Synopsys, TJX, TSMC and Visa.
 
 ## Build
 
@@ -36,6 +36,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/pm/`
 - `http://127.0.0.1:8765/race/`
 - `http://127.0.0.1:8765/schw/`
+- `http://127.0.0.1:8765/skhynix/`
 - `http://127.0.0.1:8765/snps/`
 - `http://127.0.0.1:8765/spgi/`
 - `http://127.0.0.1:8765/tjx/`
@@ -98,7 +99,10 @@ no dependency at all, and is what actually runs on a fresh clone.
 - `D` means Derived / 自算; it does not mean a company-defined non-GAAP metric.
 - Amounts are in the currency the filer reports in. Ferrari reports under IFRS
   in euro, so its page is denominated in EUR and its figures are not addable to
-  the US-dollar pages.
+  the US-dollar pages; SK hynix reports under K-IFRS in won and is denominated
+  in KRW, quoted in trillions the way the company quotes itself, so it is not
+  addable to either. The cross-page capex table stays in US dollars on every
+  page, because it compares four filers that all report in that currency.
 - Quarters are labelled by calendar quarter on every page. Microsoft's fiscal
   year ends in June, so its `Q2 2026` is the quarter ended 2026-06-30, which the
   company itself calls FY2026 Q4; NVIDIA's ends in late January, so its

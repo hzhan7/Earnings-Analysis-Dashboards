@@ -107,7 +107,7 @@ COMPANY_SLUGS = (
     "amzn", "avgo", "axp", "cboe", "cdns", "cme", "cost", "googl", "ibkr",
     "ma", "mco",
     "meta", "msci", "msft", "ndaq", "nke", "nvda", "pm", "race", "schw",
-    "snps", "spgi", "tjx", "tsm", "v",
+    "skhynix", "snps", "spgi", "tjx", "tsm", "v",
 )
 
 

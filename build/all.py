@@ -12,7 +12,7 @@ sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
     amzn, avgo, axp, cboe, cdns, cme, cost, googl, ibkr, ma, mco, meta, msci,
-    msft, ndaq, nke, nvda, pm, race, schw, snps,
+    msft, ndaq, nke, nvda, pm, race, schw, skhynix, snps,
     spgi, tjx, tsm, v,
 )
 from build.payload_guard import write_js  # noqa: E402
@@ -41,6 +41,7 @@ MODULES = {
     "pm": pm,
     "race": race,
     "schw": schw,
+    "skhynix": skhynix,
     "snps": snps,
     "spgi": spgi,
     "tjx": tjx,
@@ -279,6 +280,18 @@ ENTRIES = [
         "cadence_label": "自然年季度；完整披露",
         "headline_metrics": ["Revenue $7.07B", "NIM 3.00%", "DATs 11.9M"],
         "search_text": "schw schwab 嘉信 嘉信理财 券商 经纪 财富管理 银行 净利息收入 nim sweep 现金 交易 nna 客户资产",
+    },
+    {
+        "slug": "skhynix",
+        "ticker": "SKHY",
+        "name": "SK hynix Inc.",
+        "aliases": ["SK hynix", "SK 海力士", "海力士", "000660", "HBM"],
+        "group": "semiconductor_ai",
+        "cadence_label": "自然年季度；不发布任何财务指引",
+        "headline_metrics": ["Revenue \u20a979.3T", "\u8425\u4e1a\u5229\u6da6\u7387 76.3%", "\u91cf\u4ef7\u53ea\u7ed9\u7528\u8bcd"],
+        "search_text": ("skhynix sk hynix sk\u6d77\u529b\u58eb \u6d77\u529b\u58eb 000660 skhy \u5b58\u50a8 \u5185\u5b58 \u534a\u5bfc\u4f53 "
+                        "dram nand \u95ea\u5b58 hbm hbm3e hbm4 \u97e9\u56fd k-ifrs \u97e9\u5143 \u51fa\u8d27\u91cf \u5e73\u5747\u552e\u4ef7 asp "
+                        "\u5468\u671f \u8d44\u672c\u5f00\u652f \u5ba2\u6237\u96c6\u4e2d\u5ea6 solidigm kioxia adr 20-f 6-k"),
     },
     {
         "slug": "snps",
