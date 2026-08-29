@@ -240,6 +240,56 @@ class ContentBoundaryTest(unittest.TestCase):
         self.assertEqual(home.count('class="hcard"'), len(ENTRIES))
         self.assertIn("8 季趋势", home)
 
+    def test_the_readme_lists_every_company_page(self) -> None:
+        """`README.md`'s preview-URL list is hand-written and nothing read it.
+
+        Registering a company touches the builder, `MODULES`, `ENTRIES` and the
+        roster -- each of which either raises or is asserted by the tests above
+        -- and then a Markdown list that no test and no build step ever opens.
+        So the README is the one place a company can be missed while every gate
+        stays green -- and it is the normal outcome, not an accident anyone can
+        be told to stop having. Of the 30 commits that touched both this list
+        and `build/all.py`, **9 shipped a list shorter than the roster**:
+        `a8525ed` 8/9, `2268de7` 11/12, `14f2512` 12/13, `c7f846e` 13/14,
+        `a2b7dbe` 14/15, `52d48ff` 14/16, `b379a9e` 16/17, `ad86a37` 17/18,
+        `6aba75a` 17/18. The gap is not brief either: `schw` landed in `a8525ed`
+        and was absent here for sixteen commits until `b379a9e`; `msci` landed
+        in `52d48ff` and was absent for seven until `be9cdbd` backfilled it
+        while adding NKE. At `52d48ff` the list was two companies behind at
+        once, which is why this asserts a set difference and not a length.
+
+        Parsed from the anchored bullet form rather than from the bare URL, so a
+        page address written inline in the prose -- `## Verification` invites
+        exactly that -- is not counted as a twenty-fourth entry.
+
+        The opening paragraph naming the companies is pinned separately, and
+        *by name* after all: matching each entry's `name` and `aliases` against
+        the parsed names by case-insensitive containment **in both directions**
+        resolves every short form here with no suffix-stripping heuristic
+        (`Meta` inside `Meta Platforms`, and `Costco Wholesale` inside a prose
+        `Costco Wholesale Corporation`). Counting that paragraph's names was
+        rejected rather than deferred: two registered names already contain a
+        comma (`NIKE, Inc.`, `Nasdaq, Inc.`), so a writer copying a registered
+        name into the prose would false-fail a count -- and a push gate that
+        false-fails gets bypassed with `--no-verify` and then protects nothing.
+
+        Order is asserted against `sorted()` rather than against `ENTRIES`' own
+        order: the README presents an alphabetical-by-slug list, and that is the
+        order a reader scans, so it holds even if `ENTRIES` is ever reordered.
+        """
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        listed = re.findall(
+            r"^- `http://127\.0\.0\.1:8765/([a-z0-9]+)/`$", readme, re.M)
+        slugs = [entry["slug"] for entry in ENTRIES]
+
+        self.assertEqual(
+            sorted(set(slugs) - set(listed)), [], "registered but absent from README"
+        )
+        self.assertEqual(
+            sorted(set(listed) - set(slugs)), [], "listed in README but not registered"
+        )
+        self.assertEqual(listed, sorted(slugs))
+
     def test_literal_text_fields_carry_no_markup(self) -> None:
         """Some payload fields are escaped or textContent'd; a tag prints raw.
 
