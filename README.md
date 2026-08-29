@@ -3,7 +3,8 @@
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
 Broadcom, Cadence, Charles Schwab, Interactive Brokers, Mastercard, Meta,
-Microsoft, Moody's, NVIDIA, S&P Global, Synopsys, TJX, TSMC and Visa.
+Microsoft, Moody's, NVIDIA, Philip Morris International, S&P Global, Synopsys,
+TJX, TSMC and Visa.
 
 ## Build
 
@@ -24,6 +25,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/meta/`
 - `http://127.0.0.1:8765/msft/`
 - `http://127.0.0.1:8765/nvda/`
+- `http://127.0.0.1:8765/pm/`
 - `http://127.0.0.1:8765/schw/`
 - `http://127.0.0.1:8765/snps/`
 - `http://127.0.0.1:8765/spgi/`
@@ -114,7 +116,10 @@ Charts are ordered the way the note is actually used:
    intensity, the store count and square footage that are its whole growth
    engine, ten years of buybacks against the share count, and the three-bar
    cash structure that shows what is left for shareholders after the stores
-   are built.
+   are built; Philip Morris gets ten years of the smoke-free transition in
+   filed dollars, thirty-eight quarters of revenue against the two margins
+   that diverge across them, and the operating cash flow of a company whose
+   capital expenditure has never exceeded 17.4% of it in ten years.
 
 On the Alphabet, Meta and Microsoft pages these run on the ten-year record
 rather than eight quarters, because eight quarters cannot tell a trend from a
@@ -552,8 +557,94 @@ kind of number.
 **Microsoft, Alphabet, Mastercard, Visa and Interactive Brokers get no such
 record, and that is a
 
-TJX files the longest record on this site and the most one-sided, and it is the
-first page here whose company sells nothing to a data centre. Every quarterly
+Philip Morris files the longest record here — every quarterly earnings 8-K
+since the March 2008 spin-off carries a full-year EPS forecast, revised each
+quarter, seventy-one vintages across eighteen years — and it is the only
+company on this site that guides **the same earnings number at two horizons and
+on two definitions**. From the 2020 second quarter the releases add a
+next-quarter forecast, and in 2022–2023 the guided quarterly metric moved from
+reported diluted EPS to adjusted diluted EPS. Four records fall out of that,
+and they disagree.
+
+On the reported basis the record is the only two-sided one on this site: across
+sixteen years with a published range, the year landed **above the top seven
+times, inside four, and below the bottom five**. On the adjusted basis — same
+company, same release, same table — the next-quarter number has cleared the top
+**twelve times out of twelve** and the full year has missed once in six.
+
+The reason is written into the guidance rather than inferred, which is why the
+page is worth building. From the spin-off through the February 2022 release,
+every full-year forecast carried the same clause: it excludes future
+acquisitions, unanticipated asset impairment and exit-cost charges, and any
+unusual event. The number labelled GAAP was therefore never a forecast of GAAP;
+it was a GAAP number conditional on nothing unusual happening, and each of the
+five misses is a year in which something unusual happened. FY2024 is the clean
+case — reported EPS of US$4.52 against a final guidance of US$6.20–6.26,
+entirely a US$1.49 non-cash impairment of the deconsolidated Canadian affiliate
+recognised as a subsequent event after that guidance was published. The
+adjusted line for the same year cleared its range. This is the S&P Global
+finding ("the number that never misses is the one the company defines") over a
+record twice as long and at two horizons at once.
+
+Four things in that record are marked rather than smoothed. FY2008 is excluded
+outright: PMI spun off in March 2008 and guided that year on a pro-forma
+*adjusted* basis against a pro-forma 2007 base, so scoring it against reported
+EPS would be a basis error rather than a miss. FY2019 and the FY2020 opening
+were published as a floor with no upper bound ("forecast to be at least
+US$5.37"), so those years sit outside the band chart with a break marker —
+drawing a floor as a zero-width range invents a ceiling the company never
+published. On 2020-04-21 PMI **withdrew** the full-year forecast outright for
+one quarter and replaced it with a quarterly one, the only withdrawal in the
+record. And **the fourth quarter is never guided**: in twenty guided quarters
+the only Q4 is 2020's, which was itself a point ("around US$1.16") rather than
+a range, so the quarterly axis carries no Q4 between 2021 and 2025 and says so.
+
+Two more basis hazards had to be handled. The guided quarterly metric changes
+definition mid-record, and the 2022 second and third quarters were guided —
+and reported — on a *pro forma* adjusted basis excluding Russia and Ukraine,
+printed beside a group figure that differs. Each quarter is therefore scored
+inside the basis that applied to it, with a structural-break marker where the
+definition moves; a pro-forma guidance scored against the group actual sitting
+next to it in the same release is the plausible-and-wrong version of that
+chart. The same care applies to the currency decomposition: PMI prints its
+full-year adjusted EPS guidance twice, in dollars and excluding currency, and
+the two often move in opposite directions — FY2024's ex-currency midpoint rose
+US$0.39 across the year while the dollar midpoint rose US$0.10, and FY2026's
+ex-currency band is byte-identical across all three vintages published so far
+while the dollar midpoint fell US$0.12. FY2022 is left out of that chart alone,
+because its dollar row was the group and its ex-currency row the pro forma, so
+subtracting one from the other would compare two companies.
+
+One series on that page exists because the number is filed and the percentage
+everyone quotes is not: **net revenues split between combustible and smoke-free
+products, in dollars, from the 10-K segment note, FY2016 to FY2025**. The share
+runs 2.7% to 41.5% over ten years, and the shape is the finding — combustible
+revenue is 8% below where it started while smoke-free grew from US$733M to
+US$16,854M. The transition is additive, not substitutional. Two disclosure
+details travel with it rather than being cleaned away: the line was called
+"reduced-risk products" before 2019, and FY2020 and FY2021 were restated in the
+FY2022 10-K when Wellness and Healthcare moved into the smoke-free category.
+
+Three things that page refuses. **ZYN's US retail value share** (about 57% this
+quarter) reaches the earnings call and not the release, so it is named in the
+excluded list rather than plotted — the same rule that keeps fifteen quarters
+of webcast guidance off the Microsoft page. **Net debt to adjusted EBITDA** has
+a company-defined denominator PMI publishes annually and not in a quarterly
+filing, so the ratio cannot be recomputed; the company's own target is quoted
+in words. And the ZYN retail-offtake series ends in a hole rather than a zero:
+the company described the latest quarter as "flat to slightly growing" and gave
+no percentage, and filling in a zero would turn a phrase into a number a model
+could use.
+
+The segment charts on that page are four quarters long and cannot be extended.
+PMI replaced six geographic segments with three (International Smoke-Free,
+International Combustibles, U.S.) effective 2026Q1 and did not restate the
+history into a filing, so the only comparable prior-year quarters are the two
+restated columns the 2026 releases print beside the current ones. The page
+draws those four and declines to splice them onto the segments they replaced.
+
+TJX files the longest *quarterly* record on this site and the most one-sided,
+and it is the first page here whose company sells nothing to a data centre. Every quarterly
 earnings 8-K EX-99.1 ends with an Outlook paragraph, and from Q1 FY2013 onward
 that paragraph guides next-quarter diluted EPS in the same sentence structure —
 **52 guided quarters, 49 of them finished**. Pretax profit margin joins the

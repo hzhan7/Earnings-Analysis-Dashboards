@@ -30,6 +30,7 @@ series/*.json
 !series/msci.json
 !series/msft.json
 !series/nvda.json
+!series/pm.json
 !series/schw.json
 !series/snps.json
 !series/spgi.json

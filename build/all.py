@@ -11,8 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amzn, avgo, cdns, googl, ibkr, ma, mco, meta, msci, msft, nvda, schw, snps, spgi,
-    tjx, tsm, v,
+    amzn, avgo, cdns, googl, ibkr, ma, mco, meta, msci, msft, nvda, pm, schw, snps,
+    spgi, tjx, tsm, v,
 )
 from build.payload_guard import write_js  # noqa: E402
 
@@ -31,6 +31,7 @@ MODULES = {
     "msci": msci,
     "msft": msft,
     "nvda": nvda,
+    "pm": pm,
     "schw": schw,
     "snps": snps,
     "spgi": spgi,
@@ -47,6 +48,7 @@ GROUPS = [
     {"key": "payment_networks", "label": "支付网络", "order": 5},
     {"key": "brokerage_wealth", "label": "券商与财富管理", "order": 6},
     {"key": "consumer_retail", "label": "消费零售", "order": 7},
+    {"key": "consumer_staples", "label": "消费必需品与烟草", "order": 8},
 ]
 
 # Everything here is navigation copy, not analysis: it is what a reader sees
@@ -166,6 +168,17 @@ ENTRIES = [
         "cadence_label": "1 月制财年；本站按自然年季度标注",
         "headline_metrics": ["Revenue $81.6B", "Data Center +92%", "GM 75.0%"],
         "search_text": "nvda nvidia 英伟达 半导体 gpu ai 数据中心 hyperscale acie networking blackwell rubin",
+    },
+    {
+        "slug": "pm",
+        "ticker": "PM",
+        "name": "Philip Morris International",
+        "aliases": ["Philip Morris", "菲利普莫里斯", "IQOS", "ZYN"],
+        "group": "consumer_staples",
+        "cadence_label": "自然年季度；完整披露",
+        "headline_metrics": ["Revenue $11.19B", "无烟收入占比 41.5%", "Adj EPS $2.20"],
+        "search_text": ("pm philip morris 菲利普莫里斯 烟草 尼古丁 无烟 smoke-free iqos "
+                        "heets terea zyn 尼古丁袋 veev 电子烟 marlboro 卷烟 消费必需品 提价"),
     },
     {
         "slug": "schw",

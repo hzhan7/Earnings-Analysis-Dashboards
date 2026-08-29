@@ -1,0 +1,2060 @@
+{
+ "_provenance": "公司披露值逐项读自 SEC EDGAR 上 Philip Morris International Inc.（CIK 1413329）的申报文件：74 份季度业绩 8-K 的 EX-99.1 新闻稿（2008 年第一季度至 2026 年第二季度，全年与下季 EPS 指引、分部收入桥、经营指标）、10-K 与 10-Q 的 Segment Reporting 附注（按产品类别的净收入，2016–2025 年度值与 2025–2026 季度值），以及 XBRL companyfacts （合并损益、经营现金流、资本开支、每股股息）。财季第四季无 10-Q，故其收入、毛利与经营利润为全年减去前九个月；每股收益不可加总，第四季读自当期新闻稿的 EPS 调节表。",
+ "periods": [
+  "2024Q3",
+  "2024Q4",
+  "2025Q1",
+  "2025Q2",
+  "2025Q3",
+  "2025Q4",
+  "2026Q1",
+  "2026Q2"
+ ],
+ "period_ends": [
+  "2024-09-30",
+  "2024-12-31",
+  "2025-03-31",
+  "2025-06-30",
+  "2025-09-30",
+  "2025-12-31",
+  "2026-03-31",
+  "2026-06-30"
+ ],
+ "period_labels": [
+  "Q3 2024",
+  "Q4 2024",
+  "Q1 2025",
+  "Q2 2025",
+  "Q3 2025",
+  "Q4 2025",
+  "Q1 2026",
+  "Q2 2026"
+ ],
+ "financials": {
+  "net_revenues_usd_m": [
+   9911.0,
+   9706.0,
+   9301.0,
+   10140.0,
+   10845.0,
+   10362.0,
+   10146.0,
+   11192.0
+  ],
+  "gross_profit_usd_m": [
+   6545.0,
+   6283.0,
+   6270.0,
+   6866.0,
+   7358.0,
+   6788.0,
+   6905.0,
+   7659.0
+  ],
+  "operating_income_usd_m": [
+   3654.0,
+   3259.0,
+   3544.0,
+   3712.0,
+   4263.0,
+   3373.0,
+   3893.0,
+   4530.0
+  ],
+  "gross_margin_pct": [
+   66.04,
+   64.73,
+   67.41,
+   67.71,
+   67.85,
+   65.51,
+   68.06,
+   68.43
+  ],
+  "operating_margin_pct": [
+   36.87,
+   33.58,
+   38.1,
+   36.61,
+   39.31,
+   32.55,
+   38.37,
+   40.48
+  ],
+  "reported_diluted_eps_usd": [
+   1.97,
+   -0.38,
+   1.72,
+   1.95,
+   2.23,
+   1.37,
+   1.56,
+   1.8
+  ],
+  "adjusted_diluted_eps_usd": [
+   1.91,
+   1.55,
+   1.69,
+   1.91,
+   2.24,
+   1.7,
+   1.96,
+   2.2
+  ]
+ },
+ "long": {
+  "periods": [
+   "2017Q1",
+   "2017Q2",
+   "2017Q3",
+   "2017Q4",
+   "2018Q1",
+   "2018Q2",
+   "2018Q3",
+   "2018Q4",
+   "2019Q1",
+   "2019Q2",
+   "2019Q3",
+   "2019Q4",
+   "2020Q1",
+   "2020Q2",
+   "2020Q3",
+   "2020Q4",
+   "2021Q1",
+   "2021Q2",
+   "2021Q3",
+   "2021Q4",
+   "2022Q1",
+   "2022Q2",
+   "2022Q3",
+   "2022Q4",
+   "2023Q1",
+   "2023Q2",
+   "2023Q3",
+   "2023Q4",
+   "2024Q1",
+   "2024Q2",
+   "2024Q3",
+   "2024Q4",
+   "2025Q1",
+   "2025Q2",
+   "2025Q3",
+   "2025Q4",
+   "2026Q1",
+   "2026Q2"
+  ],
+  "period_labels": [
+   "Q1 2017",
+   "Q2 2017",
+   "Q3 2017",
+   "Q4 2017",
+   "Q1 2018",
+   "Q2 2018",
+   "Q3 2018",
+   "Q4 2018",
+   "Q1 2019",
+   "Q2 2019",
+   "Q3 2019",
+   "Q4 2019",
+   "Q1 2020",
+   "Q2 2020",
+   "Q3 2020",
+   "Q4 2020",
+   "Q1 2021",
+   "Q2 2021",
+   "Q3 2021",
+   "Q4 2021",
+   "Q1 2022",
+   "Q2 2022",
+   "Q3 2022",
+   "Q4 2022",
+   "Q1 2023",
+   "Q2 2023",
+   "Q3 2023",
+   "Q4 2023",
+   "Q1 2024",
+   "Q2 2024",
+   "Q3 2024",
+   "Q4 2024",
+   "Q1 2025",
+   "Q2 2025",
+   "Q3 2025",
+   "Q4 2025",
+   "Q1 2026",
+   "Q2 2026"
+  ],
+  "net_revenues_usd_m": [
+   6064.0,
+   6917.0,
+   7473.0,
+   8294.0,
+   6896.0,
+   7726.0,
+   7504.0,
+   7499.0,
+   6751.0,
+   7699.0,
+   7642.0,
+   7713.0,
+   7153.0,
+   6651.0,
+   7446.0,
+   7444.0,
+   7585.0,
+   7594.0,
+   8122.0,
+   8104.0,
+   7746.0,
+   7832.0,
+   8032.0,
+   8152.0,
+   8019.0,
+   8967.0,
+   9141.0,
+   9047.0,
+   8793.0,
+   9468.0,
+   9911.0,
+   9706.0,
+   9301.0,
+   10140.0,
+   10845.0,
+   10362.0,
+   10146.0,
+   11192.0
+  ],
+  "gross_profit_usd_m": [
+   3887.0,
+   4398.0,
+   4738.0,
+   5293.0,
+   4281.0,
+   4982.0,
+   4886.0,
+   4718.0,
+   4286.0,
+   5034.0,
+   5037.0,
+   4935.0,
+   4751.0,
+   4472.0,
+   5030.0,
+   4872.0,
+   5311.0,
+   5241.0,
+   5526.0,
+   5297.0,
+   5138.0,
+   5184.0,
+   5097.0,
+   4941.0,
+   4981.0,
+   5739.0,
+   5976.0,
+   5585.0,
+   5598.0,
+   6123.0,
+   6545.0,
+   6283.0,
+   6270.0,
+   6866.0,
+   7358.0,
+   6788.0,
+   6905.0,
+   7659.0
+  ],
+  "operating_income_usd_m": [
+   2416.0,
+   2737.0,
+   3088.0,
+   3340.0,
+   2426.0,
+   3093.0,
+   3156.0,
+   2702.0,
+   2050.0,
+   3187.0,
+   2788.0,
+   2506.0,
+   2789.0,
+   2731.0,
+   3243.0,
+   2905.0,
+   3444.0,
+   3129.0,
+   3455.0,
+   2947.0,
+   3298.0,
+   3056.0,
+   2968.0,
+   2924.0,
+   2731.0,
+   2566.0,
+   3370.0,
+   2889.0,
+   3045.0,
+   3444.0,
+   3654.0,
+   3259.0,
+   3544.0,
+   3712.0,
+   4263.0,
+   3373.0,
+   3893.0,
+   4530.0
+  ],
+  "gross_margin_pct": [
+   64.1,
+   63.58,
+   63.4,
+   63.82,
+   62.08,
+   64.48,
+   65.11,
+   62.92,
+   63.49,
+   65.39,
+   65.91,
+   63.98,
+   66.42,
+   67.24,
+   67.55,
+   65.45,
+   70.02,
+   69.02,
+   68.04,
+   65.36,
+   66.33,
+   66.19,
+   63.46,
+   60.61,
+   62.11,
+   64.0,
+   65.38,
+   61.73,
+   63.66,
+   64.67,
+   66.04,
+   64.73,
+   67.41,
+   67.71,
+   67.85,
+   65.51,
+   68.06,
+   68.43
+  ],
+  "operating_margin_pct": [
+   39.84,
+   39.57,
+   41.32,
+   40.27,
+   35.18,
+   40.03,
+   42.06,
+   36.03,
+   30.37,
+   41.39,
+   36.48,
+   32.49,
+   38.99,
+   41.06,
+   43.55,
+   39.02,
+   45.41,
+   41.2,
+   42.54,
+   36.36,
+   42.58,
+   39.02,
+   36.95,
+   35.87,
+   34.06,
+   28.62,
+   36.87,
+   31.93,
+   34.63,
+   36.38,
+   36.87,
+   33.58,
+   38.1,
+   36.61,
+   39.31,
+   32.55,
+   38.37,
+   40.48
+  ]
+ },
+ "annual": {
+  "years": [
+   2016,
+   2017,
+   2018,
+   2019,
+   2020,
+   2021,
+   2022,
+   2023,
+   2024,
+   2025
+  ],
+  "net_revenues_usd_m": [
+   26685.0,
+   28748.0,
+   29625.0,
+   29805.0,
+   28694.0,
+   31405.0,
+   31762.0,
+   35174.0,
+   37878.0,
+   40648.0
+  ],
+  "combustible_usd_m": [
+   25952.0,
+   25107.0,
+   25529.0,
+   24218.0,
+   21747.0,
+   22067.0,
+   21572.0,
+   22334.0,
+   23218.0,
+   23794.0
+  ],
+  "smoke_free_usd_m": [
+   733.0,
+   3640.0,
+   4096.0,
+   5587.0,
+   6947.0,
+   9338.0,
+   10190.0,
+   12840.0,
+   14660.0,
+   16854.0
+  ],
+  "smoke_free_share_pct": [
+   2.7469,
+   12.6618,
+   13.8262,
+   18.7452,
+   24.2106,
+   29.7341,
+   32.0824,
+   36.5042,
+   38.7032,
+   41.4633
+  ],
+  "reported_diluted_eps_usd": [
+   4.48,
+   3.88,
+   5.08,
+   4.61,
+   5.16,
+   5.83,
+   5.81,
+   5.02,
+   4.52,
+   7.26
+  ],
+  "adjusted_diluted_eps_usd": [
+   4.48,
+   4.72,
+   5.1,
+   5.19,
+   5.17,
+   6.08,
+   5.98,
+   6.01,
+   6.57,
+   7.54
+  ],
+  "operating_cash_flow_usd_m": [
+   8077.0,
+   8912.0,
+   9478.0,
+   10090.0,
+   9812.0,
+   11967.0,
+   10803.0,
+   9204.0,
+   12217.0,
+   12233.0
+  ],
+  "capex_usd_m": [
+   1172.0,
+   1548.0,
+   1436.0,
+   852.0,
+   602.0,
+   748.0,
+   1077.0,
+   1321.0,
+   1444.0,
+   1569.0
+  ],
+  "dividends_declared_per_share_usd": [
+   4.12,
+   4.22,
+   4.49,
+   4.62,
+   4.74,
+   4.9,
+   5.04,
+   5.14,
+   5.3,
+   5.64
+  ]
+ },
+ "annual_guidance": {
+  "years": [
+   2009,
+   2010,
+   2011,
+   2012,
+   2013,
+   2014,
+   2015,
+   2016,
+   2017,
+   2018,
+   2019,
+   2020,
+   2021,
+   2022,
+   2023,
+   2024,
+   2025,
+   2026
+  ],
+  "records": [
+   {
+    "year": 2009,
+    "vintages": [
+     {
+      "release_date": "2009-02-04",
+      "form": "range",
+      "low": 2.85,
+      "high": 3.0,
+      "currency_eps": -0.8
+     },
+     {
+      "release_date": "2009-04-23",
+      "form": "range",
+      "low": 2.85,
+      "high": 3.0
+     },
+     {
+      "release_date": "2009-07-23",
+      "form": "range",
+      "low": 3.1,
+      "high": 3.2,
+      "currency_eps": -0.55
+     },
+     {
+      "release_date": "2009-10-22",
+      "form": "range",
+      "low": 3.2,
+      "high": 3.25,
+      "currency_eps": -0.52
+     }
+    ],
+    "withdrawn": [],
+    "actual_reported_eps": 3.24,
+    "first_guided": {
+     "release_date": "2009-02-04",
+     "form": "range",
+     "low": 2.85,
+     "high": 3.0,
+     "currency_eps": -0.8
+    },
+    "last_guided": {
+     "release_date": "2009-10-22",
+     "form": "range",
+     "low": 3.2,
+     "high": 3.25,
+     "currency_eps": -0.52
+    }
+   },
+   {
+    "year": 2010,
+    "vintages": [
+     {
+      "release_date": "2010-02-11",
+      "form": "range",
+      "low": 3.75,
+      "high": 3.85
+     },
+     {
+      "release_date": "2010-04-22",
+      "form": "range",
+      "low": 3.75,
+      "high": 3.85
+     },
+     {
+      "release_date": "2010-07-22",
+      "form": "range",
+      "low": 3.75,
+      "high": 3.85
+     },
+     {
+      "release_date": "2010-10-21",
+      "form": "range",
+      "low": 3.9,
+      "high": 3.95
+     }
+    ],
+    "withdrawn": [],
+    "actual_reported_eps": 3.92,
+    "first_guided": {
+     "release_date": "2010-02-11",
+     "form": "range",
+     "low": 3.75,
+     "high": 3.85
+    },
+    "last_guided": {
+     "release_date": "2010-10-21",
+     "form": "range",
+     "low": 3.9,
+     "high": 3.95
+    }
+   },
+   {
+    "year": 2011,
+    "vintages": [
+     {
+      "release_date": "2011-02-10",
+      "form": "range",
+      "low": 4.35,
+      "high": 4.45,
+      "currency_eps": 0.1
+     },
+     {
+      "release_date": "2011-04-21",
+      "form": null,
+      "currency_eps": 0.2
+     },
+     {
+      "release_date": "2011-07-21",
+      "form": null,
+      "currency_eps": 0.25
+     },
+     {
+      "release_date": "2011-10-20",
+      "form": "range",
+      "low": 4.75,
+      "high": 4.8,
+      "currency_eps": 0.2
+     }
+    ],
+    "withdrawn": [],
+    "actual_reported_eps": 4.85,
+    "first_guided": {
+     "release_date": "2011-02-10",
+     "form": "range",
+     "low": 4.35,
+     "high": 4.45,
+     "currency_eps": 0.1
+    },
+    "last_guided": {
+     "release_date": "2011-10-20",
+     "form": "range",
+     "low": 4.75,
+     "high": 4.8,
+     "currency_eps": 0.2
+    }
+   },
+   {
+    "year": 2012,
+    "vintages": [
+     {
+      "release_date": "2012-02-09",
+      "form": "range",
+      "low": 5.25,
+      "high": 5.35,
+      "currency_eps": -0.1
+     },
+     {
+      "release_date": "2012-04-19",
+      "form": "range",
+      "low": 5.2,
+      "high": 5.3,
+      "currency_eps": -0.15
+     },
+     {
+      "release_date": "2012-07-19",
+      "form": "range",
+      "low": 5.1,
+      "high": 5.2
+     },
+     {
+      "release_date": "2012-10-18",
+      "form": "range",
+      "low": 5.12,
+      "high": 5.18,
+      "currency_eps": -0.23
+     }
+    ],
+    "withdrawn": [],
+    "actual_reported_eps": 5.17,
+    "first_guided": {
+     "release_date": "2012-02-09",
+     "form": "range",
+     "low": 5.25,
+     "high": 5.35,
+     "currency_eps": -0.1
+    },
+    "last_guided": {
+     "release_date": "2012-10-18",
+     "form": "range",
+     "low": 5.12,
+     "high": 5.18,
+     "currency_eps": -0.23
+    }
+   },
+   {
+    "year": 2013,
+    "vintages": [
+     {
+      "release_date": "2013-02-07",
+      "form": "range",
+      "low": 5.68,
+      "high": 5.78,
+      "currency_eps": -0.06
+     },
+     {
+      "release_date": "2013-04-18",
+      "form": "range",
+      "low": 5.55,
+      "high": 5.65,
+      "currency_eps": -0.19
+     },
+     {
+      "release_date": "2013-07-18",
+      "form": "range",
+      "low": 5.43,
+      "high": 5.53,
+      "currency_eps": -0.31
+     },
+     {
+      "release_date": "2013-10-17",
+      "form": "range",
+      "low": 5.35,
+      "high": 5.4,
+      "currency_eps": -0.33
+     }
+    ],
+    "withdrawn": [],
+    "actual_reported_eps": 5.26,
+    "first_guided": {
+     "release_date": "2013-02-07",
+     "form": "range",
+     "low": 5.68,
+     "high": 5.78,
+     "currency_eps": -0.06
+    },
+    "last_guided": {
+     "release_date": "2013-10-17",
+     "form": "range",
+     "low": 5.35,
+     "high": 5.4,
+     "currency_eps": -0.33
+    }
+   },
+   {
+    "year": 2014,
+    "vintages": [
+     {
+      "release_date": "2014-02-06",
+      "form": "range",
+      "low": 5.02,
+      "high": 5.12,
+      "currency_eps": -0.71
+     },
+     {
+      "release_date": "2014-04-17",
+      "form": "range",
+      "low": 5.09,
+      "high": 5.19,
+      "currency_eps": -0.61
+     },
+     {
+      "release_date": "2014-07-17",
+      "form": "range",
+      "low": 4.87,
+      "high": 4.97,
+      "currency_eps": -0.61
+     },
+     {
+      "release_date": "2014-10-16",
+      "form": "range",
+      "low": 4.76,
+      "high": 4.81,
+      "currency_eps": -0.72
+     }
+    ],
+    "withdrawn": [],
+    "actual_reported_eps": 4.76,
+    "first_guided": {
+     "release_date": "2014-02-06",
+     "form": "range",
+     "low": 5.02,
+     "high": 5.12,
+     "currency_eps": -0.71
+    },
+    "last_guided": {
+     "release_date": "2014-10-16",
+     "form": "range",
+     "low": 4.76,
+     "high": 4.81,
+     "currency_eps": -0.72
+    }
+   },
+   {
+    "year": 2015,
+    "vintages": [
+     {
+      "release_date": "2015-02-05",
+      "form": "range",
+      "low": 4.27,
+      "high": 4.37,
+      "currency_eps": -1.15
+     },
+     {
+      "release_date": "2015-04-16",
+      "form": "range",
+      "low": 4.32,
+      "high": 4.42,
+      "currency_eps": -1.15
+     },
+     {
+      "release_date": "2015-07-16",
+      "form": "range",
+      "low": 4.32,
+      "high": 4.42,
+      "currency_eps": -1.15
+     },
+     {
+      "release_date": "2015-10-15",
+      "form": "range",
+      "low": 4.35,
+      "high": 4.4,
+      "currency_eps": -1.22
+     }
+    ],
+    "withdrawn": [],
+    "actual_reported_eps": 4.42,
+    "first_guided": {
+     "release_date": "2015-02-05",
+     "form": "range",
+     "low": 4.27,
+     "high": 4.37,
+     "currency_eps": -1.15
+    },
+    "last_guided": {
+     "release_date": "2015-10-15",
+     "form": "range",
+     "low": 4.35,
+     "high": 4.4,
+     "currency_eps": -1.22
+    }
+   },
+   {
+    "year": 2016,
+    "vintages": [
+     {
+      "release_date": "2016-02-04",
+      "form": "range",
+      "low": 4.25,
+      "high": 4.35,
+      "currency_eps": -0.6
+     },
+     {
+      "release_date": "2016-04-19",
+      "form": "range",
+      "low": 4.4,
+      "high": 4.5,
+      "currency_eps": -0.45
+     },
+     {
+      "release_date": "2016-07-19",
+      "form": "range",
+      "low": 4.45,
+      "high": 4.55,
+      "currency_eps": -0.4
+     },
+     {
+      "release_date": "2016-10-18",
+      "form": "range",
+      "low": 4.53,
+      "high": 4.58,
+      "currency_eps": -0.35
+     }
+    ],
+    "withdrawn": [],
+    "actual_reported_eps": 4.48,
+    "first_guided": {
+     "release_date": "2016-02-04",
+     "form": "range",
+     "low": 4.25,
+     "high": 4.35,
+     "currency_eps": -0.6
+    },
+    "last_guided": {
+     "release_date": "2016-10-18",
+     "form": "range",
+     "low": 4.53,
+     "high": 4.58,
+     "currency_eps": -0.35
+    }
+   },
+   {
+    "year": 2017,
+    "vintages": [
+     {
+      "release_date": "2017-02-02",
+      "form": "range",
+      "low": 4.7,
+      "high": 4.85,
+      "currency_eps": -0.18
+     },
+     {
+      "release_date": "2017-04-20",
+      "form": "range",
+      "low": 4.84,
+      "high": 4.99,
+      "currency_eps": -0.08
+     },
+     {
+      "release_date": "2017-07-20",
+      "form": "range",
+      "low": 4.78,
+      "high": 4.93,
+      "currency_eps": -0.14
+     },
+     {
+      "release_date": "2017-10-19",
+      "form": "range",
+      "low": 4.75,
+      "high": 4.8,
+      "currency_eps": -0.17
+     }
+    ],
+    "withdrawn": [],
+    "actual_reported_eps": 3.88,
+    "first_guided": {
+     "release_date": "2017-02-02",
+     "form": "range",
+     "low": 4.7,
+     "high": 4.85,
+     "currency_eps": -0.18
+    },
+    "last_guided": {
+     "release_date": "2017-10-19",
+     "form": "range",
+     "low": 4.75,
+     "high": 4.8,
+     "currency_eps": -0.17
+    }
+   },
+   {
+    "year": 2018,
+    "vintages": [
+     {
+      "release_date": "2018-02-08",
+      "form": "range",
+      "low": 5.2,
+      "high": 5.35,
+      "currency_eps": 0.16
+     },
+     {
+      "release_date": "2018-04-19",
+      "form": "range",
+      "low": 5.25,
+      "high": 5.4,
+      "currency_eps": 0.16
+     },
+     {
+      "release_date": "2018-07-19",
+      "form": "range",
+      "low": 5.02,
+      "high": 5.12,
+      "currency_eps": -0.07
+     },
+     {
+      "release_date": "2018-10-18",
+      "form": "range",
+      "low": 4.97,
+      "high": 5.02,
+      "currency_eps": -0.12
+     }
+    ],
+    "withdrawn": [],
+    "actual_reported_eps": 5.08,
+    "first_guided": {
+     "release_date": "2018-02-08",
+     "form": "range",
+     "low": 5.2,
+     "high": 5.35,
+     "currency_eps": 0.16
+    },
+    "last_guided": {
+     "release_date": "2018-10-18",
+     "form": "range",
+     "low": 4.97,
+     "high": 5.02,
+     "currency_eps": -0.12
+    }
+   },
+   {
+    "year": 2019,
+    "vintages": [
+     {
+      "release_date": "2019-02-07",
+      "form": "floor",
+      "low": 5.37,
+      "currency_eps": -0.14
+     },
+     {
+      "release_date": "2019-04-18",
+      "form": "floor",
+      "low": 4.87,
+      "currency_eps": -0.14
+     },
+     {
+      "release_date": "2019-07-18",
+      "form": "floor",
+      "low": 4.94,
+      "currency_eps": -0.14
+     },
+     {
+      "release_date": "2019-10-17",
+      "form": "floor",
+      "low": 4.73,
+      "currency_eps": -0.14
+     }
+    ],
+    "withdrawn": [],
+    "actual_reported_eps": 4.61,
+    "first_guided": {
+     "release_date": "2019-02-07",
+     "form": "floor",
+     "low": 5.37,
+     "currency_eps": -0.14
+    },
+    "last_guided": {
+     "release_date": "2019-10-17",
+     "form": "floor",
+     "low": 4.73,
+     "currency_eps": -0.14
+    }
+   },
+   {
+    "year": 2020,
+    "vintages": [
+     {
+      "release_date": "2020-02-06",
+      "form": "floor",
+      "low": 5.5,
+      "currency_eps": -0.04
+     },
+     {
+      "release_date": "2020-04-21",
+      "form": "withdrawn",
+      "currency_eps": -0.12
+     },
+     {
+      "release_date": "2020-07-21",
+      "form": "range",
+      "low": 4.84,
+      "high": 4.99,
+      "currency_eps": -0.31
+     },
+     {
+      "release_date": "2020-10-20",
+      "form": "range",
+      "low": 5.03,
+      "high": 5.08,
+      "adj_low": 5.05,
+      "adj_high": 5.1,
+      "xfx_low": 5.37,
+      "xfx_high": 5.42,
+      "currency_eps": -0.32
+     }
+    ],
+    "withdrawn": [
+     "2020-04-21"
+    ],
+    "actual_reported_eps": 5.16,
+    "first_guided": {
+     "release_date": "2020-02-06",
+     "form": "floor",
+     "low": 5.5,
+     "currency_eps": -0.04
+    },
+    "last_guided": {
+     "release_date": "2020-10-20",
+     "form": "range",
+     "low": 5.03,
+     "high": 5.08,
+     "adj_low": 5.05,
+     "adj_high": 5.1,
+     "xfx_low": 5.37,
+     "xfx_high": 5.42,
+     "currency_eps": -0.32
+    }
+   },
+   {
+    "year": 2021,
+    "vintages": [
+     {
+      "release_date": "2021-02-04",
+      "form": "range",
+      "low": 5.9,
+      "high": 6.0,
+      "adj_low": 5.9,
+      "adj_high": 6.0,
+      "xfx_low": 5.65,
+      "xfx_high": 5.75,
+      "currency_eps": 0.25
+     },
+     {
+      "release_date": "2021-04-20",
+      "form": "range",
+      "low": 5.93,
+      "high": 6.03,
+      "adj_low": 5.95,
+      "adj_high": 6.05,
+      "xfx_low": 5.75,
+      "xfx_high": 5.85,
+      "currency_eps": 0.2
+     },
+     {
+      "release_date": "2021-07-20",
+      "form": "range",
+      "low": 5.76,
+      "high": 5.86,
+      "adj_low": 5.97,
+      "adj_high": 6.07,
+      "xfx_low": 5.79,
+      "xfx_high": 5.89,
+      "currency_eps": 0.18
+     },
+     {
+      "release_date": "2021-10-19",
+      "form": "range",
+      "low": 5.77,
+      "high": 5.82,
+      "adj_low": 6.01,
+      "adj_high": 6.06,
+      "xfx_low": 5.84,
+      "xfx_high": 5.89,
+      "currency_eps": 0.17
+     }
+    ],
+    "withdrawn": [],
+    "actual_reported_eps": 5.83,
+    "first_guided": {
+     "release_date": "2021-02-04",
+     "form": "range",
+     "low": 5.9,
+     "high": 6.0,
+     "adj_low": 5.9,
+     "adj_high": 6.0,
+     "xfx_low": 5.65,
+     "xfx_high": 5.75,
+     "currency_eps": 0.25
+    },
+    "last_guided": {
+     "release_date": "2021-10-19",
+     "form": "range",
+     "low": 5.77,
+     "high": 5.82,
+     "adj_low": 6.01,
+     "adj_high": 6.06,
+     "xfx_low": 5.84,
+     "xfx_high": 5.89,
+     "currency_eps": 0.17
+    }
+   },
+   {
+    "year": 2022,
+    "vintages": [
+     {
+      "release_date": "2022-02-10",
+      "form": "range",
+      "low": 6.12,
+      "high": 6.3,
+      "adj_low": 6.12,
+      "adj_high": 6.3,
+      "xfx_low": 6.57,
+      "xfx_high": 6.75,
+      "currency_eps": -0.15
+     },
+     {
+      "release_date": "2022-04-21",
+      "form": "range",
+      "low": 5.39,
+      "high": 5.5,
+      "adj_low": 5.45,
+      "adj_high": 5.56,
+      "xfx_low": 5.98,
+      "xfx_high": 6.09,
+      "currency_eps": -0.15
+     },
+     {
+      "release_date": "2022-07-21",
+      "form": "range",
+      "low": 5.73,
+      "high": 5.88,
+      "adj_low": 5.9,
+      "adj_high": 6.05,
+      "xfx_low": 6.09,
+      "xfx_high": 6.2,
+      "currency_eps": -0.24
+     },
+     {
+      "release_date": "2022-10-20",
+      "form": "range",
+      "low": 5.47,
+      "high": 5.62,
+      "adj_low": 5.81,
+      "adj_high": 5.96,
+      "xfx_low": 6.09,
+      "xfx_high": 6.2
+     }
+    ],
+    "withdrawn": [],
+    "actual_reported_eps": 5.81,
+    "first_guided": {
+     "release_date": "2022-02-10",
+     "form": "range",
+     "low": 6.12,
+     "high": 6.3,
+     "adj_low": 6.12,
+     "adj_high": 6.3,
+     "xfx_low": 6.57,
+     "xfx_high": 6.75,
+     "currency_eps": -0.15
+    },
+    "last_guided": {
+     "release_date": "2022-10-20",
+     "form": "range",
+     "low": 5.47,
+     "high": 5.62,
+     "adj_low": 5.81,
+     "adj_high": 5.96,
+     "xfx_low": 6.09,
+     "xfx_high": 6.2
+    }
+   },
+   {
+    "year": 2023,
+    "vintages": [
+     {
+      "release_date": "2023-02-09",
+      "form": "range",
+      "low": 6.09,
+      "high": 6.21,
+      "adj_low": 6.25,
+      "adj_high": 6.37,
+      "xfx_low": 6.4,
+      "xfx_high": 6.52,
+      "currency_eps": -0.15
+     },
+     {
+      "release_date": "2023-04-20",
+      "form": "range",
+      "low": 5.88,
+      "high": 6.0,
+      "adj_low": 6.1,
+      "adj_high": 6.22,
+      "xfx_low": 6.4,
+      "xfx_high": 6.52,
+      "currency_eps": -0.3
+     },
+     {
+      "release_date": "2023-07-20",
+      "form": "range",
+      "low": 5.36,
+      "high": 5.45,
+      "adj_low": 6.13,
+      "adj_high": 6.22,
+      "xfx_low": 6.46,
+      "xfx_high": 6.55,
+      "currency_eps": -0.33
+     },
+     {
+      "release_date": "2023-10-19",
+      "form": "range",
+      "low": 4.95,
+      "high": 4.98,
+      "adj_low": 6.05,
+      "adj_high": 6.08,
+      "xfx_low": 6.58,
+      "xfx_high": 6.61,
+      "currency_eps": -0.53
+     }
+    ],
+    "withdrawn": [],
+    "actual_reported_eps": 5.02,
+    "first_guided": {
+     "release_date": "2023-02-09",
+     "form": "range",
+     "low": 6.09,
+     "high": 6.21,
+     "adj_low": 6.25,
+     "adj_high": 6.37,
+     "xfx_low": 6.4,
+     "xfx_high": 6.52,
+     "currency_eps": -0.15
+    },
+    "last_guided": {
+     "release_date": "2023-10-19",
+     "form": "range",
+     "low": 4.95,
+     "high": 4.98,
+     "adj_low": 6.05,
+     "adj_high": 6.08,
+     "xfx_low": 6.58,
+     "xfx_high": 6.61,
+     "currency_eps": -0.53
+    }
+   },
+   {
+    "year": 2024,
+    "vintages": [
+     {
+      "release_date": "2024-02-08",
+      "form": "range",
+      "low": 5.9,
+      "high": 6.02,
+      "adj_low": 6.32,
+      "adj_high": 6.44,
+      "xfx_low": 6.43,
+      "xfx_high": 6.55,
+      "currency_eps": -0.11
+     },
+     {
+      "release_date": "2024-04-23",
+      "form": "range",
+      "low": 5.7,
+      "high": 5.82,
+      "adj_low": 6.19,
+      "adj_high": 6.31,
+      "xfx_low": 6.55,
+      "xfx_high": 6.67,
+      "currency_eps": -0.36
+     },
+     {
+      "release_date": "2024-07-23",
+      "form": "range",
+      "low": 5.89,
+      "high": 6.01,
+      "adj_low": 6.33,
+      "adj_high": 6.45,
+      "xfx_low": 6.67,
+      "xfx_high": 6.79,
+      "currency_eps": -0.34
+     },
+     {
+      "release_date": "2024-10-22",
+      "form": "range",
+      "low": 6.2,
+      "high": 6.26,
+      "adj_low": 6.45,
+      "adj_high": 6.51,
+      "xfx_low": 6.85,
+      "xfx_high": 6.91,
+      "currency_eps": -0.4
+     }
+    ],
+    "withdrawn": [],
+    "actual_reported_eps": 4.52,
+    "first_guided": {
+     "release_date": "2024-02-08",
+     "form": "range",
+     "low": 5.9,
+     "high": 6.02,
+     "adj_low": 6.32,
+     "adj_high": 6.44,
+     "xfx_low": 6.43,
+     "xfx_high": 6.55,
+     "currency_eps": -0.11
+    },
+    "last_guided": {
+     "release_date": "2024-10-22",
+     "form": "range",
+     "low": 6.2,
+     "high": 6.26,
+     "adj_low": 6.45,
+     "adj_high": 6.51,
+     "xfx_low": 6.85,
+     "xfx_high": 6.91,
+     "currency_eps": -0.4
+    }
+   },
+   {
+    "year": 2025,
+    "vintages": [
+     {
+      "release_date": "2025-02-06",
+      "form": "range",
+      "low": 6.55,
+      "high": 6.68,
+      "adj_low": 7.04,
+      "adj_high": 7.17,
+      "xfx_low": 7.26,
+      "xfx_high": 7.39,
+      "currency_eps": -0.22
+     },
+     {
+      "release_date": "2025-04-23",
+      "form": "range",
+      "low": 7.01,
+      "high": 7.14,
+      "adj_low": 7.36,
+      "adj_high": 7.49,
+      "xfx_low": 7.26,
+      "xfx_high": 7.39,
+      "currency_eps": 0.1
+     },
+     {
+      "release_date": "2025-07-22",
+      "form": "range",
+      "low": 7.24,
+      "high": 7.37,
+      "adj_low": 7.43,
+      "adj_high": 7.56,
+      "xfx_low": 7.33,
+      "xfx_high": 7.46,
+      "currency_eps": 0.1
+     },
+     {
+      "release_date": "2025-10-21",
+      "form": "range",
+      "low": 7.39,
+      "high": 7.49,
+      "adj_low": 7.46,
+      "adj_high": 7.56,
+      "xfx_low": 7.36,
+      "xfx_high": 7.46,
+      "currency_eps": 0.1
+     }
+    ],
+    "withdrawn": [],
+    "actual_reported_eps": 7.26,
+    "first_guided": {
+     "release_date": "2025-02-06",
+     "form": "range",
+     "low": 6.55,
+     "high": 6.68,
+     "adj_low": 7.04,
+     "adj_high": 7.17,
+     "xfx_low": 7.26,
+     "xfx_high": 7.39,
+     "currency_eps": -0.22
+    },
+    "last_guided": {
+     "release_date": "2025-10-21",
+     "form": "range",
+     "low": 7.39,
+     "high": 7.49,
+     "adj_low": 7.46,
+     "adj_high": 7.56,
+     "xfx_low": 7.36,
+     "xfx_high": 7.46,
+     "currency_eps": 0.1
+    }
+   },
+   {
+    "year": 2026,
+    "vintages": [
+     {
+      "release_date": "2026-02-06",
+      "form": "range",
+      "low": 7.87,
+      "high": 8.02,
+      "adj_low": 8.38,
+      "adj_high": 8.53,
+      "xfx_low": 8.11,
+      "xfx_high": 8.26,
+      "currency_eps": 0.27
+     },
+     {
+      "release_date": "2026-04-22",
+      "form": "range",
+      "low": 7.56,
+      "high": 7.71,
+      "adj_low": 8.36,
+      "adj_high": 8.51,
+      "xfx_low": 8.11,
+      "xfx_high": 8.26,
+      "currency_eps": 0.25
+     },
+     {
+      "release_date": "2026-07-22",
+      "form": "range",
+      "low": 7.19,
+      "high": 7.34,
+      "adj_low": 8.26,
+      "adj_high": 8.41,
+      "xfx_low": 8.11,
+      "xfx_high": 8.26,
+      "currency_eps": 0.15
+     }
+    ],
+    "withdrawn": [],
+    "actual_reported_eps": null,
+    "first_guided": {
+     "release_date": "2026-02-06",
+     "form": "range",
+     "low": 7.87,
+     "high": 8.02,
+     "adj_low": 8.38,
+     "adj_high": 8.53,
+     "xfx_low": 8.11,
+     "xfx_high": 8.26,
+     "currency_eps": 0.27
+    },
+    "last_guided": {
+     "release_date": "2026-07-22",
+     "form": "range",
+     "low": 7.19,
+     "high": 7.34,
+     "adj_low": 8.26,
+     "adj_high": 8.41,
+     "xfx_low": 8.11,
+     "xfx_high": 8.26,
+     "currency_eps": 0.15
+    }
+   }
+  ],
+  "annual_adjusted_eps_actual": {
+   "2010": 3.87,
+   "2011": 4.88,
+   "2012": 5.22,
+   "2013": 5.4,
+   "2014": 5.02,
+   "2015": 4.42,
+   "2016": 4.48,
+   "2017": 4.72,
+   "2018": 5.1,
+   "2019": 5.19,
+   "2020": 5.17,
+   "2021": 6.08,
+   "2022": 5.98,
+   "2023": 6.01,
+   "2024": 6.57,
+   "2025": 7.54
+  },
+  "exclusion_clause_first": "2008-07-23",
+  "exclusion_clause_last": "2022-02-10"
+ },
+ "quarterly_guidance": [
+  {
+   "release_date": "2020-04-21",
+   "guided_period": "2020Q2",
+   "period_label": "Q2 2020",
+   "basis": "reported",
+   "point": false,
+   "low": 1.0,
+   "high": 1.1,
+   "currency_eps": -0.12,
+   "actual_eps": 1.25
+  },
+  {
+   "release_date": "2020-10-20",
+   "guided_period": "2020Q4",
+   "period_label": "Q4 2020",
+   "basis": "reported",
+   "point": true,
+   "low": 1.16,
+   "high": 1.16,
+   "currency_eps": -0.04,
+   "actual_eps": 1.27
+  },
+  {
+   "release_date": "2021-02-04",
+   "guided_period": "2021Q1",
+   "period_label": "Q1 2021",
+   "basis": "reported",
+   "point": true,
+   "low": 1.4,
+   "high": 1.4,
+   "currency_eps": 0.09,
+   "actual_eps": 1.55
+  },
+  {
+   "release_date": "2021-04-20",
+   "guided_period": "2021Q2",
+   "period_label": "Q2 2021",
+   "basis": "reported",
+   "point": false,
+   "low": 1.5,
+   "high": 1.55,
+   "currency_eps": 0.04,
+   "actual_eps": 1.39
+  },
+  {
+   "release_date": "2021-07-20",
+   "guided_period": "2021Q3",
+   "period_label": "Q3 2021",
+   "basis": "reported",
+   "point": false,
+   "low": 1.5,
+   "high": 1.55,
+   "currency_eps": 0.04,
+   "actual_eps": 1.55
+  },
+  {
+   "release_date": "2022-02-10",
+   "guided_period": "2022Q1",
+   "period_label": "Q1 2022",
+   "basis": "reported",
+   "point": false,
+   "low": 1.5,
+   "high": 1.55,
+   "currency_eps": -0.15,
+   "actual_eps": 1.5
+  },
+  {
+   "release_date": "2022-04-21",
+   "guided_period": "2022Q2",
+   "period_label": "Q2 2022",
+   "basis": "pro_forma_adjusted",
+   "point": false,
+   "low": 1.19,
+   "high": 1.24,
+   "currency_eps": -0.15,
+   "actual_eps": 1.32
+  },
+  {
+   "release_date": "2022-07-21",
+   "guided_period": "2022Q3",
+   "period_label": "Q3 2022",
+   "basis": "pro_forma_adjusted",
+   "point": false,
+   "low": 1.23,
+   "high": 1.28,
+   "currency_eps": -0.24,
+   "actual_eps": 1.33
+  },
+  {
+   "release_date": "2023-02-09",
+   "guided_period": "2023Q1",
+   "period_label": "Q1 2023",
+   "basis": "reported",
+   "point": false,
+   "low": 1.28,
+   "high": 1.33,
+   "currency_eps": -0.1,
+   "actual_eps": 1.28
+  },
+  {
+   "release_date": "2023-04-20",
+   "guided_period": "2023Q2",
+   "period_label": "Q2 2023",
+   "basis": "adjusted",
+   "point": false,
+   "low": 1.42,
+   "high": 1.47,
+   "currency_eps": -0.13,
+   "actual_eps": 1.6
+  },
+  {
+   "release_date": "2023-07-20",
+   "guided_period": "2023Q3",
+   "period_label": "Q3 2023",
+   "basis": "adjusted",
+   "point": false,
+   "low": 1.6,
+   "high": 1.65,
+   "currency_eps": -0.06,
+   "actual_eps": 1.67
+  },
+  {
+   "release_date": "2024-02-08",
+   "guided_period": "2024Q1",
+   "period_label": "Q1 2024",
+   "basis": "adjusted",
+   "point": false,
+   "low": 1.37,
+   "high": 1.42,
+   "currency_eps": -0.1,
+   "actual_eps": 1.5
+  },
+  {
+   "release_date": "2024-04-23",
+   "guided_period": "2024Q2",
+   "period_label": "Q2 2024",
+   "basis": "adjusted",
+   "point": false,
+   "low": 1.5,
+   "high": 1.55,
+   "currency_eps": -0.14,
+   "actual_eps": 1.59
+  },
+  {
+   "release_date": "2024-07-23",
+   "guided_period": "2024Q3",
+   "period_label": "Q3 2024",
+   "basis": "adjusted",
+   "point": false,
+   "low": 1.77,
+   "high": 1.82,
+   "currency_eps": -0.02,
+   "actual_eps": 1.91
+  },
+  {
+   "release_date": "2025-02-06",
+   "guided_period": "2025Q1",
+   "period_label": "Q1 2025",
+   "basis": "adjusted",
+   "point": false,
+   "low": 1.58,
+   "high": 1.63,
+   "currency_eps": -0.04,
+   "actual_eps": 1.69
+  },
+  {
+   "release_date": "2025-04-23",
+   "guided_period": "2025Q2",
+   "period_label": "Q2 2025",
+   "basis": "adjusted",
+   "point": false,
+   "low": 1.8,
+   "high": 1.85,
+   "currency_eps": 0.06,
+   "actual_eps": 1.91
+  },
+  {
+   "release_date": "2025-07-22",
+   "guided_period": "2025Q3",
+   "period_label": "Q3 2025",
+   "basis": "adjusted",
+   "point": false,
+   "low": 2.08,
+   "high": 2.13,
+   "currency_eps": 0.05,
+   "actual_eps": 2.24
+  },
+  {
+   "release_date": "2026-02-06",
+   "guided_period": "2026Q1",
+   "period_label": "Q1 2026",
+   "basis": "adjusted",
+   "point": false,
+   "low": 1.8,
+   "high": 1.85,
+   "currency_eps": 0.14,
+   "actual_eps": 1.96
+  },
+  {
+   "release_date": "2026-04-22",
+   "guided_period": "2026Q2",
+   "period_label": "Q2 2026",
+   "basis": "adjusted",
+   "point": false,
+   "low": 2.02,
+   "high": 2.07,
+   "currency_eps": 0.02,
+   "actual_eps": 2.2
+  },
+  {
+   "release_date": "2026-07-22",
+   "guided_period": "2026Q3",
+   "period_label": "Q3 2026",
+   "basis": "adjusted",
+   "point": false,
+   "low": 2.2,
+   "high": 2.25,
+   "currency_eps": -0.08,
+   "actual_eps": null
+  }
+ ],
+ "segments": {
+  "periods": [
+   "2025Q1",
+   "2025Q2",
+   "2026Q1",
+   "2026Q2"
+  ],
+  "period_labels": [
+   "Q1 2025",
+   "Q2 2025",
+   "Q1 2026",
+   "Q2 2026"
+  ],
+  "net_revenues_usd_m": {
+   "international_smoke_free": [
+    3076,
+    3395,
+    3836,
+    3877
+   ],
+   "international_combustibles": [
+    5326,
+    5883,
+    5688,
+    6459
+   ],
+   "us": [
+    899,
+    862,
+    622,
+    856
+   ]
+  },
+  "gross_profit_usd_m": {
+   "international_smoke_free": [
+    2087,
+    2319,
+    2684,
+    2716
+   ],
+   "international_combustibles": [
+    3499,
+    3936,
+    3842,
+    4388
+   ],
+   "us": [
+    685,
+    611,
+    380,
+    555
+   ]
+  },
+  "adjusted_gross_margin_pct": {
+   "pmi": [
+    67.5,
+    67.8,
+    68.1,
+    68.5
+   ],
+   "international_smoke_free": [
+    67.9,
+    68.3,
+    70.0,
+    70.1
+   ],
+   "international_combustibles": [
+    65.7,
+    66.9,
+    67.5,
+    67.9
+   ],
+   "us": [
+    76.6,
+    71.4,
+    61.9,
+    65.4
+   ]
+  },
+  "adjusted_operating_income_usd_m": [
+   3790,
+   4246,
+   4168,
+   4773
+  ],
+  "adjusted_oi_margin_pct": [
+   40.7,
+   41.9,
+   41.1,
+   42.6
+  ]
+ },
+ "revenue_bridge": {
+  "periods": [
+   "2026Q1",
+   "2026Q2"
+  ],
+  "period_labels": [
+   "Q1 2026",
+   "Q2 2026"
+  ],
+  "columns": [
+   "PMI",
+   "International Smoke-Free",
+   "International Combustibles",
+   "U.S."
+  ],
+  "2026Q1": {
+   "base": [
+    9301,
+    3076,
+    5326,
+    899
+   ],
+   "price": [
+    461,
+    88,
+    454,
+    -80
+   ],
+   "volume_mix_other": [
+    -206,
+    399,
+    -402,
+    -203
+   ],
+   "acq_div": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "currency": [
+    590,
+    273,
+    310,
+    7
+   ],
+   "end": [
+    10146,
+    3836,
+    5688,
+    622
+   ]
+  },
+  "2026Q2": {
+   "base": [
+    10140,
+    3395,
+    5883,
+    862
+   ],
+   "price": [
+    689,
+    86,
+    588,
+    15
+   ],
+   "volume_mix_other": [
+    81,
+    316,
+    -212,
+    -23
+   ],
+   "acq_div": [
+    -17,
+    -17,
+    0,
+    0
+   ],
+   "currency": [
+    299,
+    98,
+    200,
+    1
+   ],
+   "end": [
+    11192,
+    3877,
+    6459,
+    856
+   ]
+  }
+ },
+ "zyn": {
+  "periods": [
+   "2025Q2",
+   "2025Q3",
+   "2025Q4",
+   "2026Q1",
+   "2026Q2"
+  ],
+  "period_labels": [
+   "Q2 2025",
+   "Q3 2025",
+   "Q4 2025",
+   "Q1 2026",
+   "Q2 2026"
+  ],
+  "offtake_yoy_pct": [
+   26.0,
+   39.0,
+   23.0,
+   10.0,
+   null
+  ],
+  "offtake_latest_words": "大致持平至略增",
+  "shipment_words": [
+   "同比增长超过 40%，至 1.90 亿罐",
+   "同比增长 37%，至 2.05 亿罐",
+   "同比增长超过 19%，至 1.96 亿罐",
+   "同比下降 23.5%，至 23 亿袋（1.55 亿罐）",
+   "同比增长 1.8%，至 29 亿袋"
+  ]
+ },
+ "next_kpi": {
+  "quantified": [
+   {
+    "metric": "美国分部调整后毛利率",
+    "direction": "up",
+    "threshold": 63.0,
+    "unit": "pct",
+    "current": 65.4
+   },
+   {
+    "metric": "国际无烟分部调整后毛利率",
+    "direction": "up",
+    "threshold": 69.0,
+    "unit": "pct",
+    "current": 70.1
+   },
+   {
+    "metric": "集团调整后经营利润率",
+    "direction": "up",
+    "threshold": 41.0,
+    "unit": "pct",
+    "current": 42.6
+   },
+   {
+    "metric": "美国 ZYN 零售出货同比（Nielsen）",
+    "direction": "up",
+    "threshold": 8.0,
+    "unit": "pct",
+    "current": 10.0
+   },
+   {
+    "metric": "集团有机收入增速",
+    "direction": "up",
+    "threshold": 5.0,
+    "unit": "pct",
+    "current": 7.6
+   },
+   {
+    "metric": "国际无烟分部有机收入增速",
+    "direction": "up",
+    "threshold": 10.0,
+    "unit": "pct",
+    "current": 11.8
+   }
+  ],
+  "excluded": "另有四条本页<b>不接入</b>，原因各不相同：（1）<b>ZYN 美国零售价值份额</b> —— 本季约 57% 这个数只出现在业绩电话会上，业绩新闻稿里没有，本站不发布只在网络直播里出现、无法与第二个来源核对的数字。（2）<b>净债务 / 调整后 EBITDA</b> —— 调整后 EBITDA 是公司自定义口径，公司只按年披露、季度申报里没有，比率无法从申报复算；公司自己给的目标（2026 年底接近 2.0×）写在指引假设里，本页把它留在文字里而不画成线。（3）<b>ZYN Ultra 的净增量与自我蚕食</b> —— 公司明确以「只有两周数据、竞争敏感」为由不量化。（4）<b>本季自由现金流</b> —— 第二季 10-Q 于新闻稿发布两天后才提交，本页现金流序列因此只到年度层面。"
+ },
+ "sources": [
+  {
+   "label": "PMI 2026 年第二季度业绩新闻稿（8-K EX-99.1，含全年与下季 EPS 指引）",
+   "url": "https://www.sec.gov/Archives/edgar/data/1413329/000162828026049107/earningsreleasepm-ex991xq2.htm"
+  },
+  {
+   "label": "PMI 2026 年第二季度非 GAAP 口径说明与补充财务信息（8-K EX-99.2）",
+   "url": "https://www.sec.gov/Archives/edgar/data/1413329/000162828026049107/glossaryselectfininfoandno.htm"
+  },
+  {
+   "label": "PMI 截至 2026-06-30 的 Form 10-Q（分部与按产品类别的净收入附注）",
+   "url": "https://www.sec.gov/Archives/edgar/data/1413329/000162828026049493/pm-20260630.htm"
+  },
+  {
+   "label": "PMI 2025 年度 Form 10-K（按产品类别的净收入，2023–2025）",
+   "url": "https://www.sec.gov/Archives/edgar/data/1413329/000162828026005939/pm-20251231.htm"
+  },
+  {
+   "label": "SEC EDGAR：PMI 全部申报（CIK 1413329）",
+   "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001413329&type=8-K"
+  }
+ ]
+}
