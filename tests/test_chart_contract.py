@@ -221,6 +221,70 @@ class ExhibitPayloadContractTest(unittest.TestCase):
                 f"{label} yoy carries no finite value",
             )
 
+    def test_every_series_is_as_long_as_the_axis_it_is_plotted_against(self) -> None:
+        """The renderer zips series to `xlabels` by index, so a short one shifts.
+
+        `charts.js` walks `for (i = 0; i < n; i++)` with `n = xlabels.length`
+        and reads `values[i]` / `yoy.values[i]` at that same `i`. Nothing
+        compares the two lengths. A series one element short therefore does not
+        fail, does not warn, and does not produce a NaN -- the missing index is
+        `undefined`, every bar loop skips it as `v == null`, and `polyline()`
+        drops it. The chart draws. Every point after the gap is simply read
+        against the wrong period.
+
+        That makes it invisible to every gate this repo has. `payload_guard`
+        sees finite numbers. `build/all.py && git status` sees no drift,
+        because the builder generates the short series consistently and the
+        shell digest matches it. And `tests/render_check.js` sees no NaN,
+        because there is none -- which is the difference from AVGO Ex16: the
+        NaN at least left a mark in an attribute, and a shift leaves none.
+
+        Verified by mutating a builder rather than a payload -- the distinction
+        matters. Hand-editing `data/tsm.js` to drop one y/y point does go red,
+        but on `test_shell_versions_every_script_by_content`, i.e. on the shell
+        digest, not on the length; that is a false positive from editing a
+        generated file. Injecting the same defect at its real source
+        (`build/tsm.py`, `revenue_yoy_pct` -> `revenue_yoy_pct[1:]`, then
+        `build/all.py`) passed all 725 tests and `render_check.js` clean.
+
+        Asserted for `xlabels` as well as for `yoy`, since a short `values` is
+        the same defect one layer down -- and it is not hypothetical: this
+        assertion went red on its first run against `mco Ex9`, whose builder
+        appends the five cumulative add-back steps but never the seventh bar
+        the seventh label names, so the guidance bridge was published with its
+        result column missing and `US$16.50` printed under `业务处置收益`.
+
+        `tests/test_avgo_dashboard.py` checks the same widths for AVGO alone
+        and stays -- that one is page-level and names the company first; this
+        one is site-level and covers the other twenty-two. Site-wide that is
+        27 `gs_bar` y/y lines, 27 `line` blocks, 43 range_band `lo`/`hi`/
+        `actual` triples and every `groups` / `series` / `stacks` member, none
+        of which had a length check anywhere before this.
+        """
+        for label, exhibit in exhibits():
+            width = len(exhibit.get("xlabels") or [])
+            self.assertGreater(width, 0, f"{label} has no xlabels")
+            named = [("values", exhibit.get("values"))]
+            # `lo` / `hi` / `actual` are bare lists on range_band, and `actual`
+            # is a `{values: ...}` block on seasonality -- both are read as
+            # `x[i]` against the same `i`, so both shapes belong here.
+            for key in ("yoy", "line", "base", "actual", "lo", "hi"):
+                block = exhibit.get(key)
+                if isinstance(block, dict):
+                    named.append((key, block.get("values")))
+                elif isinstance(block, list):
+                    named.append((key, block))
+            for key in ("groups", "series", "stacks"):
+                for block in exhibit.get(key) or []:
+                    named.append((f"{key}:{block.get('name')}", block.get("values")))
+            for name, values in named:
+                if values is None:
+                    continue
+                self.assertEqual(
+                    len(values), width,
+                    f"{label} {name} has {len(values)} points for {width} xlabels",
+                )
+
     def test_the_gs_bar_census_this_file_was_written_against(self) -> None:
         """Pins the numbers quoted in the module docstring so they stay true.
 

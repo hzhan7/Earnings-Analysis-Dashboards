@@ -345,6 +345,11 @@ def next_watch(staging: dict) -> list[dict]:
     for _, delta in eps["addbacks"]:
         running = round(running + delta, 2)
         lo_vals.append(running)
+    # 第七根柱：`steps` 是 1 + 5 + 1，这个循环只产出 1 + 5。少的那一根正是
+    # 「调整后摊薄 EPS 指引」——本图存在的理由。渲染器按 xlabels 的长度走，
+    # vals[6] 是 undefined，被 `v == null` 静默跳过：没有 NaN、没有报错，
+    # 只是结果那一栏空着，而 US$16.50 印在「业务处置收益」头上。
+    lo_vals.append(running)
     bridge = {
         "ref": "EX_BRIDGE",
         "kind": "bars_labeled",
