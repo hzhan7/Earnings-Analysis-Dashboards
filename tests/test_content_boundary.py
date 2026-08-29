@@ -241,6 +241,75 @@ class ContentBoundaryTest(unittest.TestCase):
         self.assertEqual(home.count('class="hcard"'), len(ENTRIES))
         self.assertIn("8 季趋势", home)
 
+
+    def test_every_card_sits_under_the_group_it_registered(self) -> None:
+        """A card in the wrong group is invisible to every other check.
+
+        `index.html` is hand-written, and its cards are ordered **by group,
+        then alphabetically within the group** -- not by global slug order.
+        That is easy to get backwards, because `COMPANY_SLUGS` here and the
+        roster literal in `test_tsm_dashboard.py` are both global-alphabetical:
+        the same change touches two lists sorted one way and one sorted
+        another.
+
+        Nothing bound a card to the `<h2>` above it. `test_spgi_dashboard.py`
+        asserts each group's heading *exists*; `test_home_page_matches_roster`
+        asserts each slug's href *appears somewhere*; the counting assertion
+        above only counts. Verified by mutation on 2026-08-29: moving the
+        `skhynix` card out of 半导体与 AI 基础设施 and under 券商与财富管理 left
+        the entire suite green and the len/hcard/masthead triple reading
+        `26 26 26`. A reader would see a memory maker filed under brokerages.
+        """
+        home = (ROOT / "index.html").read_text(encoding="utf-8")
+        label_of = {group["key"]: group["label"] for group in GROUPS}
+        group_of = {entry["slug"]: entry.get("group") for entry in ENTRIES}
+        seen: dict[str, list[str]] = {}
+        current = None
+        for label, slug in re.findall(
+            r'<h2 class="hubgrp">([^<]*)</h2>|<a class="hcard" href="([a-z0-9]+)/"', home
+        ):
+            if label:
+                current = label.strip()
+                seen.setdefault(current, [])
+            else:
+                self.assertIsNotNone(current, f"{slug} card precedes every group heading")
+                seen[current].append(slug)
+        misfiled = [
+            f"{slug} is filed under {heading!r} but registers {label_of.get(group_of.get(slug))!r}"
+            for heading, slugs in seen.items()
+            for slug in slugs
+            if label_of.get(group_of.get(slug)) != heading
+        ]
+        self.assertEqual(misfiled, [], "\n".join(misfiled))
+        self.assertEqual(
+            sorted(s for slugs in seen.values() for s in slugs),
+            sorted(group_of),
+            "the cards on the home page are not the registered roster",
+        )
+
+    def test_cards_run_in_slug_order_inside_each_group(self) -> None:
+        """Which makes "where does my card go" a question with one answer.
+
+        Every group on the page is already sorted this way, and three sessions
+        adding a company at once need the insertion point to be derivable
+        rather than negotiated.
+        """
+        home = (ROOT / "index.html").read_text(encoding="utf-8")
+        unsorted = []
+        current = None
+        seen: dict[str, list[str]] = {}
+        for label, slug in re.findall(
+            r'<h2 class="hubgrp">([^<]*)</h2>|<a class="hcard" href="([a-z0-9]+)/"', home
+        ):
+            if label:
+                current = label.strip()
+                seen.setdefault(current, [])
+            else:
+                seen[current].append(slug)
+        for heading, slugs in seen.items():
+            if slugs != sorted(slugs):
+                unsorted.append(f"{heading}: {slugs} != {sorted(slugs)}")
+        self.assertEqual(unsorted, [], "\n".join(unsorted))
     def test_the_readme_lists_every_company_page(self) -> None:
         """`README.md`'s preview-URL list is hand-written and nothing read it.
 
