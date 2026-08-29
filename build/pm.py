@@ -637,9 +637,11 @@ def build_payload(staging: dict) -> dict:
     next_block = [headroom_exhibit(
         f"下季 {len(kpi)} 条阈值：当前值离阈值的余量",
         kpi, "current",
-        ("正值表示仍在安全侧。阈值为本地研究设定，<b>不是公司指引</b> —— "
+        ("正值表示仍在安全侧。阈值多为本地研究设定，<b>不是公司指引</b> —— "
          "公司自己的下季指引只有一条，就是调整后摊薄每股收益 US$2.20–2.25，"
          f"已经画在第一节的 Exhibit {{EX_Q_BAND}} 上。"
+         "唯一的例外是「集团有机收入增速」那条：5.0% 取的是公司全年有机收入指引"
+         "区间的下限，属于公司披露值，其余五条都是本地设定。"
          + staging["next_kpi"]["excluded"]),
         "当前值为 2026 年第二季度披露值（ZYN 零售出货为 2026 年第一季度，见下）；阈值为本地研究设定。")]
 
@@ -730,7 +732,11 @@ def build_payload(staging: dict) -> dict:
     tables.append({
         "n": first_table + 1,
         "title": "全年调整后每股收益指引：同一批年份、同一份新闻稿、另一个口径",
-        "headers": ["年度", "年初第一次指引", "当年最后一次指引", "全年实际", "对最后一次指引"],
+        # FY2020 has only one adjusted vintage (the October release), so the
+        # first column is "the first release that carried this basis", not
+        # "the February release" the reported-EPS table above it can promise.
+        "headers": ["年度", "首次给出该口径的指引", "当年最后一次指引", "全年实际",
+                    "对最后一次指引"],
         "rows": adj_rows,
     })
     tables.append({
