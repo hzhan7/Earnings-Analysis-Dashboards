@@ -2,8 +2,8 @@
 
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
-Cadence, Interactive Brokers, Mastercard, Meta, Microsoft, NVIDIA, S&P Global,
-Synopsys, TSMC and Visa.
+Cadence, Interactive Brokers, Mastercard, Meta, Microsoft, Moody's, NVIDIA,
+S&P Global, Synopsys, TSMC and Visa.
 
 ## Build
 
@@ -19,6 +19,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/googl/`
 - `http://127.0.0.1:8765/ibkr/`
 - `http://127.0.0.1:8765/ma/`
+- `http://127.0.0.1:8765/mco/`
 - `http://127.0.0.1:8765/meta/`
 - `http://127.0.0.1:8765/msft/`
 - `http://127.0.0.1:8765/nvda/`
@@ -91,12 +92,17 @@ Charts are ordered the way the note is actually used:
    full rate cycle rewrote, net interest margin against the earning assets that
    quadrupled under it, accounts and the equity each one carries, the Up-C wedge,
    operating leverage, and the realised fee per order, which ends the record
-   below where it starts; S&P Global gets the two legs of Ratings across a full
-   issuance cycle, its reported operating margin against the same margin with
-   disposition gains taken out, the revenue and segment structure the IHS Markit
-   merger rewrote, the six filed revenue types, the index assets its
-   asset-linked fees are charged on, and the buyback that ran at 4.6x operating
-   cash flow in the year the merger closed.
+   below where it starts; Moody's gets eight years of the operating margin
+   cycle its guidance rides, the widening and narrowing gap between GAAP and
+   adjusted EPS, the two cash-flow legs, and the adjusted operating income of
+   its two segments — one line that has not retraced in twenty-one quarters
+   and one that has travelled a full cycle inside them; S&P Global gets the
+   two legs of Ratings across a full issuance cycle, its reported operating
+   margin against the same margin with disposition gains taken out, the
+   revenue and segment structure the IHS Markit merger rewrote, the six filed
+   revenue types, the index assets its asset-linked fees are charged on, and
+   the buyback that ran at 4.6x operating cash flow in the year the merger
+   closed.
 
 On the Alphabet, Meta and Microsoft pages these run on the ten-year record
 rather than eight quarters, because eight quarters cannot tell a trend from a
@@ -165,8 +171,68 @@ disclosure stops rather than being padded:
 
 Amazon's, Cadence's, Synopsys', TSMC's, NVIDIA's and Meta's first sections are
 built out further than the others, because those six companies put a quarterly
-guidance range in a filing and the other three do not. Eight quarters cannot say whether
+guidance range in a filing. Eight quarters cannot say whether
 clearing a range is normal for a company; the full record can.
+
+Moody's is a **third** case rather than a member of either group, and its page is
+built out for that reason. It files no quarterly range at all, but it does file a
+numeric one — a **full-year outlook table** in the EX-99.1 of every earnings 8-K,
+set in February and revised in April, July and October. So the object its first
+section settles is a *year*, and the variable that turns out to matter is not
+whether the company cleared its range but **how far ahead it was standing when it
+drew one**. Against the final October range, seven finished years look like every
+other never-missed record here: adjusted diluted EPS landed above the top four
+times, inside three, and never once below. Against the initial February range the
+same seven years land above six times and below once — and **not once inside**.
+The February band has never contained the answer. The two vintages' mean absolute
+deviation from the guided midpoint is **13.3% in February and 1.9% in October** —
+a seventh of the error for the same metric, the same years, and the same company.
+
+The gap between those two tallies is the page, and 2022 is why. Debt issuance
+collapsed with rates, and because MIS revenue is issuance-driven and issuance is
+not a variable Moody's controls, the midpoint fell 34% between February and
+October — from US$12.65 to US$8.35 — before the actual cleared even that. So the
+February number is a bet on the debt markets and the October number is largely
+bookkeeping on a year three-quarters banked. **A "never missed the bottom" record
+means much less at a ten-week horizon than at a twelve-month one, and the page
+draws both bands rather than reporting one hit rate.** The same caution the
+Cadence page applies to guidance published four weeks into the quarter it guides,
+applied to a horizon that shrinks across the year instead of being short from the
+start.
+
+Three things license reading that table as arithmetic rather than as targets. The
+company prints its own previous guidance beside the current one with an explicit
+`NC` marker, so the revision path is disclosed by the filer and each release
+independently confirms the one before it. Every release reconciles GAAP diluted
+EPS to adjusted diluted EPS, operating margin to adjusted operating margin, and
+operating cash flow to free cash flow, with each bridging item named and
+quantified — and all three close exactly, to the cent and the tenth of a point.
+And what the table gives in *words* the page refuses to plot: revenue, operating
+expenses and ARR are guided as "increase in the high-single-digit percent range",
+which is not a range with endpoints, so those lines get no band and no hit rate.
+
+Two traps in that record are handled rather than smoothed. The two guidance
+columns **swap order** partway through the history — `Current` first until 2022,
+`Last Publicly Disclosed` first after — so a fixed column position silently
+produces the wrong series for half the record; the page reads the header. FY2018
+is excluded outright: the filing window opens in October 2018, so that year has
+only its final revision and no February setting, and counting it would put a stub
+year beside seven complete ones.
+
+Moody's segment columns swap the same way — MIS first until April 2023, MA first
+after — and its **segment margins are struck on total segment revenue while the
+page charts external revenue**. MIS bills MA about US$50M a quarter internally, so
+dividing adjusted operating income by the plotted revenue overstates MIS's margin
+by 2–3pp. Against total revenue the identity closes to within 0.05pp in all 21
+quarters, which is the rounding of the published percentage and nothing else.
+
+One series exists on this site because the number that decides the year is not one
+any filing prints as such: **MIS's share of revenue against its share of adjusted
+operating income.** Ratings run 44.6%–63.1% of revenue across 21 quarters but
+57.4%–83.0% of adjusted operating income — a minority of the top line in bad
+years and always the majority of the profit. That asymmetry is the mechanism
+behind the February guidance's error distribution, and neither share is a figure
+the company reports; both are two filed numbers divided.
 
 TSMC guides three numbers every quarter — revenue, gross margin and operating
 margin — and fifteen quarters pulled from the fifteen earnings 6-Ks themselves
