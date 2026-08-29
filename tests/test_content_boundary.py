@@ -290,9 +290,9 @@ class ContentBoundaryTest(unittest.TestCase):
     def test_the_readme_names_every_page_whose_fiscal_year_is_offset(self) -> None:
         """The calendar-quarter paragraph must name every page that needs it.
 
-        Each page whose fiscal year differs from the calendar one says so in its
-        own subtitle (`… 制财年，本站按自然年季度标注：本页 Q2 2026 即公司所称 …`),
-        and the README paragraph beginning "Quarters are labelled by calendar
+        Each company whose fiscal year differs from the calendar one carries
+        `本站按自然年季度标注` in its registry `cadence_label`, and the README
+        paragraph beginning "Quarters are labelled by calendar
         quarter" is where a reader goes to find the whole set. Nothing kept the
         two in step: the marker lives in a generated payload, the paragraph is
         hand-written prose, and no test read either.
@@ -305,8 +305,16 @@ class ContentBoundaryTest(unittest.TestCase):
         to compare against, so a missing clause is invisible in exactly the way
         CLAUDE.md §4 says that sentence's contents always have been.
 
-        Derived from the pages, not from the sentence -- the set is whatever
-        declares `制财年`, so a company added later joins it by existing.
+        Keyed on `cadence_label` in ENTRIES rather than on the generated
+        subtitle. Both are prose, but the registry field is the one that sits
+        beside the company and states what the site *does* ("relabelled to
+        calendar quarters") instead of describing a year-end month, and it is
+        the more complete of the two: the subtitle marker `制财年` misses
+        Microsoft, which is an offset filer and is named in the paragraph.
+        A prose key is still a key on wording, which is the weakness CLAUDE.md
+        §5 records; `assertGreaterEqual` below is what actually holds it up --
+        it is what caught the set silently shrinking from 8 to 7 when the
+        Micron page reworded its subtitle an hour after this landed.
         """
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         paragraphs = [p for p in readme.split("\n\n")
@@ -318,10 +326,7 @@ class ContentBoundaryTest(unittest.TestCase):
         offset = []
         for entry in ENTRIES:
             slug = entry["slug"]
-            payload = (ROOT / "data" / f"{slug}.js").read_text(encoding="utf-8")
-            body = payload[payload.index("{"):payload.rstrip().rstrip(";").rindex("}") + 1]
-            subtitle = json.loads(body).get("subtitle", "")
-            if "制财年" not in subtitle:
+            if "本站按自然年季度标注" not in (entry.get("cadence_label") or ""):
                 continue
             offset.append(slug)
             known = [entry["name"], *entry.get("aliases", [])]
@@ -334,7 +339,7 @@ class ContentBoundaryTest(unittest.TestCase):
                 named = re.search(rf"\b{re.escape(slug)}\b", para, re.I) is not None
             if not named:
                 missing.append(f"{slug} declares an offset fiscal year but the paragraph does not name it")
-        self.assertGreaterEqual(len(offset), 8, f"offset pages found: {offset}")
+        self.assertGreaterEqual(len(offset), 9, f"offset pages found: {offset}")
         self.assertEqual(missing, [], "\n".join(missing))
 
     def test_cards_run_in_slug_order_inside_each_group(self) -> None:
