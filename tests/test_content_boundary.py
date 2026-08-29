@@ -251,15 +251,21 @@ class ContentBoundaryTest(unittest.TestCase):
         raw innerHTML and legitimately carry markup -- 140 chart notes across
         the site do -- so they are deliberately not checked here.
 
-        **`notes` is escaped too and is deliberately NOT in this gate yet.**
-        It is left out because it is currently red, not because markup belongs
-        there: `data/cdns.js` carries five notes containing `<b>` and
-        `data/snps.js` two, and all seven render to readers as the literal
-        characters. Fixing them means editing `build/cdns.py` and
-        `build/snps.py`, which does not belong in the commit that adds a
-        different company. Strip those seven strings, then add
-        `payload.get("notes", [])` to the loop below -- do not conclude from
-        this exclusion that notes may carry markup.
+        `notes` is in this gate rather than excluded from it. It was the one
+        escaped slot that was actually red across the site: seventeen notes in
+        all -- `data/avgo.js` seven (fixed in `fde8497`), `data/cdns.js` five,
+        `data/schw.js` three, `data/snps.js` two -- every one of them reaching
+        the reader as the characters `<b>`. None of those seventeen sentences
+        was reused in an innerHTML slot, so the markup was dead in the source
+        as well as wrong in the output; the fix was to delete the tags, not to
+        strip them at build time. Adding a `<b>` back to a note in any of the
+        thirteen unwrapped builders turns this red.
+
+        **It cannot go red for `v`, `ibkr`, `mco` or `spgi`**, whose payloads
+        build notes as `[plain_text(p) for p in [...]]` and so strip any tag
+        before it reaches the payload this test reads. Those four are protected
+        by construction rather than by this assertion -- do not read a green
+        run as evidence that their builders carry no markup.
         """
         for path in published_files():
             name = path.relative_to(ROOT).as_posix()
@@ -269,6 +275,8 @@ class ContentBoundaryTest(unittest.TestCase):
                 path.read_text(encoding="utf-8").split(" = ", 1)[1].rstrip().rstrip(";\n"))
             for key in ("headline", "title", "subtitle", "tracker"):
                 self.assertNotIn("<", payload.get(key) or "", f"{name}.{key}")
+            for index, note in enumerate(payload.get("notes", [])):
+                self.assertNotIn("<", note, f"{name} note {index}")
             for section in payload.get("sections", []):
                 self.assertNotIn("<", section["title"], f"{name} section title")
                 self.assertNotIn("<", section.get("description") or "",
