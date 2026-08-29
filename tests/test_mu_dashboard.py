@@ -332,7 +332,14 @@ class MuGuidanceRecordTest(unittest.TestCase):
         markers = {**{word: 0 for word in self.ABOVE},
                    **{word: 1 for word in self.INSIDE},
                    **{word: 2 for word in self.BELOW}}
-        scope_re = re.compile(r"(\d+)\s*(?:个已完结)?季(?:里|有)")
+        # A scope marker is a quarter COUNT that is not itself a verdict --
+        # keyed on that rather than on the particles that happened to follow it
+        # in the sentences written first. Pinning `季里|季有` silently skipped
+        # `同样 27 季，收入指引 ...`, so the brief's revenue tally went unread
+        # and a mutation of it stayed green. The wording of prose is not a
+        # stable key; "is this number followed by a verdict?" is.
+        verdicts = "|".join(markers)
+        scope_re = re.compile(r"(\d+)\s*(?:个已完结)?季(?!\s*(?:" + verdicts + "))")
         mark_re = re.compile(r"(\d+)\s*季\s*(" + "|".join(markers) + ")")
 
         # The `brief` prints the same tallies in its own words. It was hand-typed
