@@ -90,7 +90,13 @@ def pct_change(current: float, comparison: float) -> float:
 
 
 def signed(value: float, digits: int = 1, suffix: str = "%") -> str:
-    return f"{value:+.{digits}f}{suffix}"
+    """``+3.0%`` / ``−17.0%``, with a typographic minus.
+
+    Python's ``+`` flag emits an ASCII hyphen, and this page's prose uses U+2212
+    throughout -- so a title built with the flag and a sentence built by hand
+    print two different characters for the same sign, side by side.
+    """
+    return f"{value:+.{digits}f}{suffix}".replace("-", "−")
 
 
 def rounded(values: list[float | None], digits: int = 6) -> list[float | None]:
@@ -161,7 +167,7 @@ def prior_threshold_charts(staging: dict) -> list[dict]:
             src_extra="阈值为上季本地研究设定，不是公司指引；当前值取自本季业绩 8-K 的 DIVISIONAL REVENUES 表。",
         ),
         threshold_exhibit(
-            f"大中华区收入同比（固定汇率）八季：本季 {china[-1]:.0f}%，好于公司自己的 −20% 指引，"
+            f"大中华区收入同比（固定汇率）八季：本季 {signed(china[-1], 0)}，好于公司自己的 −20% 指引，"
             "但仍在加仓门之外",
             periods, china, -15.0,
             fmt="pct0", ylab="%", actual_name="大中华区收入同比（固定汇率）",
@@ -175,7 +181,7 @@ def prior_threshold_charts(staging: dict) -> list[dict]:
             src_extra="各季业绩 8-K 的 DIVISIONAL REVENUES 表，公司同时印出报表与固定汇率两个增速。",
         ),
         threshold_exhibit(
-            f"北美收入同比（固定汇率）八季：本季 {america[-1]:.0f}%，连续第四季为正",
+            f"北美收入同比（固定汇率）八季：本季 {signed(america[-1], 0)}，连续第四季为正",
             periods, america, 5.0,
             fmt="pct0", ylab="%", actual_name="北美收入同比（固定汇率）",
             threshold_name="上季加仓门槛 +5%",
@@ -589,14 +595,14 @@ def next_quarter_charts(staging: dict) -> list[dict]:
             src_extra="阈值为本地研究设定，不是公司指引；当前值取自本季申报文件与自算。",
         ),
         threshold_exhibit(
-            f"毛利率同比（剔除关税退款）八季：本季 {yoy[-1]:+.2f} 个百分点，离 +50bp 的加仓门还差一截",
+            f"毛利率同比（剔除关税退款）八季：本季 {signed(yoy[-1], 2, ' 个百分点')}，离 +50bp 的加仓门还差一截",
             periods, yoy, 0.5,
             fmt="pp1", ylab="pp", actual_name="毛利率同比（剔除关税退款）D",
             threshold_name="下季加仓门槛 +50bp",
             note=(
                 "<b>这条线是下一季最先见分晓的一条。</b>管理层把毛利率转正的时点从 FY2027 Q2 "
                 "提前到 FY2027 Q1，说会「slightly positive」；加仓门设在 +50bp。"
-                f"本季 {yoy[-1]:+.2f} 个百分点已经比公司自己给的 −25 到 −75bp 好，"
+                f"本季 {signed(yoy[-1], 2, ' 个百分点')}已经比公司自己给的 −25 到 −75bp 好，"
                 "但仍是负的，而且这四季一路从 −4.1 个百分点收窄上来，还没有穿过零。"
                 "剔除的只有 IEEPA 退款；埋在销货成本里的遣散费用没有剔，剔了本季会再高 0.95 个百分点。"
             ),
