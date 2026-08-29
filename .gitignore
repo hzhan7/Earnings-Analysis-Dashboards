@@ -29,6 +29,7 @@ series/*.json
 !series/nvda.json
 !series/schw.json
 !series/snps.json
+!series/spgi.json
 !series/tsm.json
 !series/v.json
 config/

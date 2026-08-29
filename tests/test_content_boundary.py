@@ -102,7 +102,7 @@ def published_files() -> list[Path]:
 # discovery could never do that. The test below keeps it from drifting from the
 # roster it is supposed to mirror.
 COMPANY_SLUGS = ("amzn", "cdns", "googl", "ibkr", "ma", "meta", "msft", "nvda",
-                 "schw", "snps", "tsm", "v")
+                 "schw", "snps", "spgi", "tsm", "v")
 
 
 class ContentBoundaryTest(unittest.TestCase):

@@ -556,7 +556,7 @@ class TsmDashboardTest(unittest.TestCase):
         self.assertEqual(
             [item["slug"] for item in roster["items"]],
             ["amzn", "cdns", "googl", "ibkr", "ma", "meta", "msft", "nvda",
-             "schw", "snps", "tsm", "v"],
+             "schw", "snps", "spgi", "tsm", "v"],
         )
         shell = (ROOT / "tsm" / "index.html").read_text(encoding="utf-8")
         self.assertIn('../data/tsm.js', shell)
