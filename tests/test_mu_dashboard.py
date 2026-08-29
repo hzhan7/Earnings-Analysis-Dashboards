@@ -446,32 +446,62 @@ class MuExhibitContractTest(unittest.TestCase):
         cls.exhibits = [exhibit for section in cls.payload["sections"]
                         for exhibit in section["exhibits"]]
 
-    def test_every_bridge_column_carries_a_value(self) -> None:
-        """`charts.js` silently skips a bridge segment whose value is zero.
+    def test_every_bridge_column_has_something_drawn_in_it(self) -> None:
+        """Per column, not in aggregate -- and the aggregate version was green
+        while the chart was broken.
 
-        `if (!isNum(vb) || vb === 0) continue` -- so a leg worth exactly nothing
-        leaves a labelled column with no bar under it, and the chart then
-        contradicts its own axis while the payload stays finite, the build stays
-        byte-deterministic and the jsdom gate stays green. That is the MCO
-        defect, and it was live on this page: the diluted share count did not
-        move between the two quarters, so the share-count leg was exactly zero.
-        The builder now drops any leg that rounds to zero at the chart's own
-        precision; this asserts the axis and the marks agree however many legs
-        survive.
+        Two separate ways a bridge column ends up labelled and empty, both live
+        on this page at some point:
+
+        1. **A leg worth exactly zero.** `charts.js` runs
+           `if (!isNum(vb) || vb === 0) continue`, so a zero-valued segment
+           draws nothing while its label stays. The diluted share count did not
+           move between these two quarters, so that leg was exactly zero.
+        2. **`net` passed as a bare list.** `bridgeNet` starts
+           `if (ex.net && ex.net.values) return ex.net.values` -- a list is
+           truthy but `.values` is `undefined`, so it falls through to the
+           branch that sums the stacks. The result column has no stack segment
+           (its whole value IS the net), the sum is null, and the diamond is
+           never drawn. The title still names the number.
+
+        The first version of this test counted marks against columns **in
+        total**: 4 stack segments + 1 net = 5 promised, 5 filled elements found,
+        green -- while the fifth element was somewhere else entirely and the
+        result column was empty. An aggregate is satisfied by a mark in the
+        wrong place, which is the same mistake as counting SVGs instead of
+        checking each chart. So this walks the columns.
         """
         for exhibit in self.exhibits:
             if exhibit.get("kind") != "bridge_bar":
                 continue
+            net = exhibit.get("net")
+            # The shape, asserted directly: this is the mechanism, and it is
+            # invisible in the rendered output until you look column by column.
+            self.assertIsInstance(
+                net, dict,
+                "bridge `net` must be {'name': ..., 'values': [...]}; a bare "
+                "list is truthy at `ex.net &&` and undefined at `.values`, so "
+                "the renderer silently ignores it")
+            self.assertIn("values", net)
+            self.assertIn("name", net)
             width = len(exhibit["xlabels"])
-            marks = sum(1 for stack in exhibit["stacks"] for value in stack["values"]
-                        if value is not None and round(value, 2) != 0)
-            marks += sum(1 for value in exhibit["net"] if value is not None)
-            self.assertEqual(marks, width, exhibit["title"])
+            self.assertEqual(len(net["values"]), width)
+            for column, label in enumerate(exhibit["xlabels"]):
+                segments = [stack["values"][column] for stack in exhibit["stacks"]]
+                drawn = any(value is not None and round(value, 2) != 0
+                            for value in segments)
+                netted = net["values"][column] is not None
+                with self.subTest(column=label):
+                    self.assertTrue(
+                        drawn or netted,
+                        f"column {column} is labelled {label!r} and has neither a "
+                        "non-zero stack segment nor a net value: the renderer "
+                        "draws nothing there")
 
     def test_the_bridge_adds_up_to_the_quarter_it_names(self) -> None:
         exhibit = next(e for e in self.exhibits if e.get("kind") == "bridge_bar")
         legs = [value for value in exhibit["stacks"][0]["values"] if value is not None]
-        result = next(value for value in exhibit["net"] if value is not None)
+        result = next(value for value in exhibit["net"]["values"] if value is not None)
         self.assertAlmostEqual(sum(legs), result, places=2)
         fin = self.staging["financials"]
         self.assertAlmostEqual(result, fin["non_gaap_diluted_eps_usd"][-1], places=6)

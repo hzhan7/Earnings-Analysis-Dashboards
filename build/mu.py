@@ -649,7 +649,18 @@ def quarter_charts(staging: dict) -> list[dict]:
         "stacks": [{"name": "环比拆解", "color": "NAVY",
                     "values": rounded([prior_eps] + [value for _, value in drawn]
                                       + [None])}],
-        "net": rounded([None] * (len(drawn) + 1) + [this_eps]),
+        # `bridgeNet` reads `ex.net.values`, so a BARE LIST here is truthy at
+        # `ex.net &&` but yields `undefined` at `.values` -- it falls through to
+        # the "no net supplied" branch and sums the stacks instead. The result
+        # column has no stack segment (its whole value IS the net), so the sum is
+        # null and the diamond is never drawn: a labelled column with nothing in
+        # it, under a title that names the number. Same outcome as the zero-leg
+        # defect one comment up, reached a different way, and an aggregate
+        # "marks == columns" count does NOT see it -- the count came out right
+        # while the mark sat in the wrong column. The legend reads
+        # `ex.net.name` from the same object.
+        "net": {"name": f"{periods[-1]} 结果", "values":
+                rounded([None] * (len(drawn) + 1) + [this_eps])},
         "fmt": "usd2", "yfmt": "usd2", "label_fmt": "usd2",
         "ylab": "US$/股",
         "note": (
