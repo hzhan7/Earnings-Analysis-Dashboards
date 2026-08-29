@@ -3,8 +3,8 @@
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
 Broadcom, Cadence, Charles Schwab, Interactive Brokers, Mastercard, Meta,
-Microsoft, Moody's, NVIDIA, Philip Morris International, S&P Global, Synopsys,
-TJX, TSMC and Visa.
+Microsoft, Moody's, MSCI, NIKE, NVIDIA, Philip Morris International,
+S&P Global, Synopsys, TJX, TSMC and Visa.
 
 ## Build
 
@@ -23,7 +23,9 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/ma/`
 - `http://127.0.0.1:8765/mco/`
 - `http://127.0.0.1:8765/meta/`
+- `http://127.0.0.1:8765/msci/`
 - `http://127.0.0.1:8765/msft/`
+- `http://127.0.0.1:8765/nke/`
 - `http://127.0.0.1:8765/nvda/`
 - `http://127.0.0.1:8765/pm/`
 - `http://127.0.0.1:8765/schw/`
@@ -57,8 +59,12 @@ Live site: https://hzhan7.github.io/Earnings-Analysis-Dashboards/
   which the company calls FY2026 Q3; Broadcom's ends in early November, so its
   `Q1 2026` is the quarter ended 2026-05-03, which the company calls FY2026 Q2;
   Visa's ends in September, so its `Q2 2026`
-  is the quarter ended 2026-06-30, which the company also calls FY2026 Q3. Each
-  page says so in its subtitle and notes. Without one convention the
+  is the quarter ended 2026-06-30, which the company also calls FY2026 Q3;
+  NIKE's ends in May, so its `Q2 2026` is the quarter ended 2026-05-31, which
+  the company calls FY2026 Q4 — and because that year-end sits mid-quarter, the
+  offset is not constant across its own year: NIKE's fiscal Q1 and Q2 land in
+  the *previous* calendar year (`Q3` and `Q4`) while its Q3 and Q4 land in the
+  same one. Each page says so in its subtitle and notes. Without one convention the
   cross-company capex table would compare different three-month periods and look
   fine doing it.
 
@@ -119,7 +125,13 @@ Charts are ordered the way the note is actually used:
    are built; Philip Morris gets ten years of the smoke-free transition in
    filed dollars, thirty-eight quarters of revenue against the two margins
    that diverge across them, and the operating cash flow of a company whose
-   capital expenditure has never exceeded 17.4% of it in ten years.
+   capital expenditure has never exceeded 17.4% of it in ten years; NIKE gets
+   thirteen years of its direct-to-consumer share against the gross margin
+   that shift was supposed to buy, the two channels in dollars, thirty-two
+   quarters of the same share at quarterly resolution, the two
+   selling-and-administrative lines that carry the cost of running a direct
+   business, ten years of cash flow against capital returned, and the price it
+   actually paid for its own stock.
 
 On the Alphabet, Meta and Microsoft pages these run on the ten-year record
 rather than eight quarters, because eight quarters cannot tell a trend from a
@@ -695,6 +707,82 @@ into a figure means choosing a ratio, which is an assumption rather than
 arithmetic, so the de-tariffed earnings go in the excluded list instead, exactly
 as Ansys' quarterly revenue does on the Synopsys page.
 
+NIKE is the sharpest case of the same limit, and its page is built out because
+of what the company filed *instead*. Forty earnings releases from FY2017 Q1 to
+FY2026 Q4 were read end to end and **not one carries an operating outlook** —
+three carry a forward number of any kind, and those are a futures-order backlog,
+a buyback programme's start date and a restructuring charge estimate. The
+releases say so themselves: "Revised guidance will be provided on the conference
+call." So the object nine of these pages are built on does not exist here.
+
+What NIKE did file is longer-dated and, unusually on this site, **finished**.
+Three times it wrote a set of multi-year financial goals into the MD&A of its
+10-K — through fiscal 2020, through fiscal 2023, and through fiscal 2025 — and
+every window has closed, so the filed record settles all fourteen of them.
+**One was met.** The last vintage, set in July 2021, missed on all six, and two
+of its six asked for numbers the company has not printed once in the thirteen
+filed years: a gross margin in the high 40s against a record high of 46.2%, and
+an EBIT margin in the high teens against a record high of 15.5%. A third goal
+missed in the other direction — NIKE said it expected annual capital
+expenditures of "approximately 3% of annual revenues" and spent an average of
+1.51% over the four years, having been at 2.9% in the year before the sentence
+was written.
+
+The withdrawal is a census rather than an impression. The FY2022 10-K still
+refers to "our long-term financial goals" without restating one; the four 10-Ks
+since contain the phrases "financial goal" and "long-term financial" **zero
+times**, while the ROIC and EBIT-margin calculation tables those goals were
+struck on are still published every year. What disappeared is the target, not
+the measurement. A new set is due at the investor day announced for
+2026-11-16/17.
+
+Two things stop that record from being read more harshly than it deserves, and
+both are on the charts. NIKE states its goals in **words** — "high single-digit",
+"high 40s", "low thirties" — so the numeric band on each row is the page's
+reading, printed as such; where a verdict turns on that reading the page reports
+it as undecided instead of picking. And "on average, per year, through fiscal N"
+names no base year, which matters once: the fiscal-2023 EPS goal is met at
++22.5% from FY2018 and missed at +4.3% from FY2017, because FY2018's earnings
+carry the Tax Act's one-off charge at a 55.3% effective rate. That one is
+published as base-dependent rather than as a hit. The fiscal-2025 misses need no
+such care — they run 4 to 11 percentage points wide.
+
+The mechanism behind them is in the same filings, which is why the long section
+is built around it rather than around a template. **NIKE Direct went from 20.3%
+of NIKE Brand revenue in fiscal 2014 to 43.7% in fiscal 2023, and consolidated
+gross margin never made a new high after fiscal 2016** — the year the direct
+share was 25.8%. The channel mix moved exactly as the strategy promised; the
+gross margin it was supposed to buy did not arrive, and the
+selling-and-administrative ratio rose 3.2 points instead, almost entirely in
+operating overhead rather than marketing. In fiscal 2026 the shift reverses:
+NIKE Brand revenue grew 1% with wholesale up 6% and direct down 6%, and the
+company's own gross-margin bridge credits lower warehousing and logistics costs
+"primarily due to channel mix".
+
+There is one more record, eight quarters long and closed eight years ago, and it
+is the reason the page can say what NIKE's guidance behaved like rather than
+only that it stopped. From FY2017 Q1 to FY2018 Q4 NIKE furnished the earnings
+call's prepared remarks as a second Item 2.02 exhibit, and those carry real
+guidance. Of 34 next-quarter items only 10 are ranges with endpoints — 19 are
+words and 5 are single points — and of those 10, **two landed inside the range,
+five broke the bottom and three broke the top**. Every other guidance record on
+this site is one-sided, which is what lets those pages read the range as a floor
+the company publishes rather than a forecast. NIKE's is the exception: it misses
+in both directions, which is what an actual forecast looks like. Then, on
+2018-07-03, the exhibit stopped; the next four quarterly releases attach a press
+release and nothing else.
+
+Two figures the page corrects rather than carries. The local note put the fiscal
+fourth quarter's severance at about US$170M by reading the 10-Q's *three-month*
+charge of US$230M as a year-to-date figure; the filed nine-month number is
+US$304M against a year of US$385M, so the quarter carries **US$81M** — and its
+expense-line split is US$104M into cost of sales against a US$23M *release* from
+operating overhead. And the note flagged the US$686M tariff receivable as its
+largest open item, with collection timing and impairment risk unknown; the
+filed figure is US$684M, and the 10-K — published nine days after the note —
+states that substantially all of it was received after the year end, with no
+allowance recorded.
+
 **Microsoft, Alphabet, Mastercard and Visa get no such record, and that is a
 sourcing limit rather than an editorial choice.** Microsoft's own 8-K says in as
 many words that guidance is given on the earnings call and webcast, so nothing in
@@ -856,8 +944,20 @@ US$0.55 slide from its Q4 2023 high across ten quarters, and no net rise over th
 twenty-six the series holds. The commission line grows on order count while the
 realised fee per order falls, not with it.
 
-Eight of the series exist only on this site, because the number that decides the
+Ten of the series exist only on this site, because the number that decides the
 quarter is not one any filing prints:
+
+- NIKE's **direct-to-consumer share of NIKE Brand revenue**, plotted against the
+  gross margin over the same thirteen years. Both legs are filed — the numerator
+  and denominator sit in one MD&A table and the margin in another — and the
+  division is the whole argument: the share rose 23 points and the margin ended
+  below where it started. NIKE publishes the two tables on facing pages and
+  never the ratio.
+- NIKE's **fiscal-fourth-quarter severance by expense line**, which exists only
+  as the year in the 10-K minus the nine months in the 10-Q: US$81M in total,
+  US$104M of it in cost of sales against a US$23M release from operating
+  overhead. The company discloses the two endpoints and not the difference, and
+  the difference is what moves the quarter's gross margin.
 
 - Amazon's **two-leg decomposition of the operating-income beat**, above, and
   the **implied guided operating margin** it falls out of.
@@ -938,8 +1038,8 @@ the cross-reference without appearing in `_CASH_CAPEX_SOURCES`, and
 `test_cdns_is_not_in_the_cross_page_capex_table` pins exactly that. So the block
 is a standing site-wide reference — its title says `跨页对照` and it renders
 inside the collapsed audit drawer, not in the chart flow — rather than a claim
-that the page's company is in the AI supply chain. Visa, Mastercard and TJX
-carry it on the same terms. What TJX adds is a note saying so: the first pages
+that the page's company is in the AI supply chain. Visa, Mastercard, TJX and
+NIKE carry it on the same terms. What TJX adds is a note saying so: the first pages
 outside the chain shipped the block with no explanation, and a reader who meets
 a foundry table in an off-price retailer's drawer deserves one sentence telling
 them it is a site-wide reference.

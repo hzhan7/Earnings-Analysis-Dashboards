@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amzn, avgo, cdns, googl, ibkr, ma, mco, meta, msci, msft, nvda, pm, schw, snps,
+    amzn, avgo, cdns, googl, ibkr, ma, mco, meta, msci, msft, nke, nvda, pm, schw, snps,
     spgi, tjx, tsm, v,
 )
 from build.payload_guard import write_js  # noqa: E402
@@ -30,6 +30,7 @@ MODULES = {
     "meta": meta,
     "msci": msci,
     "msft": msft,
+    "nke": nke,
     "nvda": nvda,
     "pm": pm,
     "schw": schw,
@@ -158,6 +159,17 @@ ENTRIES = [
         "cadence_label": "6 月制财年；本站按自然年季度标注",
         "headline_metrics": ["Revenue $90.0B", "Azure +43%", "FCF $19.6B"],
         "search_text": "msft microsoft 微软 azure copilot m365 云 软件",
+    },
+    {
+        "slug": "nke",
+        "ticker": "NKE",
+        "name": "NIKE, Inc.",
+        "aliases": ["Nike", "耐克", "Jordan", "Converse"],
+        "group": "consumer_retail",
+        "cadence_label": "5 月制财年；本站按自然年季度标注",
+        "headline_metrics": ["Revenue $10.97B", "ex-退款 GM 40.2%", "直营占比 37.8%"],
+        "search_text": ("nke nike 耐克 运动鞋 服装 jordan converse 直营 dtc nike direct 批发 "
+                        "大中华区 关税 退款 ieepa 遣散 重组 投资者日 长期财务目标"),
     },
     {
         "slug": "nvda",
