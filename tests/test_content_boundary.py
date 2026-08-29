@@ -293,6 +293,72 @@ class ContentBoundaryTest(unittest.TestCase):
         )
         self.assertEqual(listed, sorted(slugs))
 
+    def test_the_readme_paragraph_names_every_company(self) -> None:
+        """The `Reviewed pages currently cover ...` sentence is its own mirror.
+
+        It drifts separately from the bullet list below it. Of the 35 commits
+        that touched README.md, 30 can be judged here (the rest predate one of
+        the two files), and four of those left this sentence short: `c7f846e`
+        had 13 names for 14 companies, `b379a9e` 16 for 17, `ad86a37` and
+        `6aba75a` 17 for 18. Those four are a strict subset of the five that
+        left the bullet list short, and the fifth is the proof that the two
+        drift on their own: at `a2b7dbe` this sentence named all 15 companies
+        while the list below it was missing one. Two hand-maintained rosters in
+        one file, each missed on its own occasions.
+
+        Matched on ENTRIES' own `name` and `aliases` rather than by counting
+        the names, and containment in either direction, because what this has
+        to survive is ordinary editing of English prose:
+
+          - the sentence writes `Meta`, `TJX` and `NIKE` where ENTRIES has
+            `Meta Platforms`, `The TJX Companies` and `NIKE, Inc.` -- prose
+            shorter than the registered name;
+          - writing `Costco Wholesale Corporation` for `Costco Wholesale` is
+            the same thing the other way round;
+          - three registered names contain a comma -- `NIKE, Inc.`,
+            `Nasdaq, Inc.` and `Cboe Global Markets, Inc.` -- so splitting on
+            commas and counting the pieces goes red on a correct sentence as
+            soon as anyone writes a company the way ENTRIES spells it. That
+            set only grows: zero comma-bearing names at 17 companies
+            (`fde8497`), two at 23 (`f3bf923`), three at 24 (`dad3f80`). A
+            count would have looked provably safe the whole way -- no
+            counterexample to mutate against -- and gone red years later for
+            whoever happened to register the next `..., Inc.`. A gate that
+            fires on a clean tree gets bypassed, and then it guards nothing.
+
+        The paragraph is read to the blank line, not to the first `.` at a line
+        end, for the same reason from the other side: seven registered names
+        carry a period (`Amazon.com`, `CME Group Inc.`, `MSCI Inc.`,
+        `Ferrari N.V.` and the three above). Stopping at `\.\n` truncates the
+        sentence the moment a wrap puts one of them last on a line, and every
+        company after the wrap is then reported missing -- a failure that names
+        the wrong company and sends the reader looking at the wrong end of the
+        paragraph.
+
+        Replayed over every commit that touched README.md: this catches all
+        four misses, names the company each time (`schw` once, `msci` three
+        times -- a count only ever says how many), and is ambiguous or falsely
+        red at none of them. If a future company is named in prose by nothing
+        resembling its `name` or any alias, the fix is to add that alias.
+
+        Bullet-list coverage is `test_the_readme_links_every_company_page`;
+        the semicolon-chained sentence further down is deliberately unguarded
+        -- it broke by becoming a dangling fragment, not by losing a company,
+        which neither a count nor a name can see.
+        """
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        match = re.search(r"Reviewed pages currently cover (.+?)\.\n\n", readme, re.S)
+        self.assertIsNotNone(match, "README no longer names the covered companies")
+        sentence = " ".join(match.group(1).split())
+        written = [name.strip() for name in re.split(r",\s*|\s+and\s+", sentence) if name.strip()]
+        for entry in ENTRIES:
+            known = [entry["name"], *entry.get("aliases", [])]
+            self.assertTrue(
+                any(w.lower() in k.lower() or k.lower() in w.lower()
+                    for w in written for k in known),
+                f"{entry['slug']} has a page but is not named in the README paragraph",
+            )
+
     def test_literal_text_fields_carry_no_markup(self) -> None:
         """Some payload fields are escaped or textContent'd; a tag prints raw.
 
