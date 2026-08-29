@@ -599,11 +599,14 @@ def build_payload(staging: dict) -> dict:
             "note": ("<b>这是恒等式，不是估计。</b>每股收益 = （营业利润 + 营业外净额）×（1 − 税率）"
                      "÷ 摊薄股数，所以同比增速精确地分解成四个相乘的因子；"
                      f"本季四条腿相乘得 {bridge['product_pct'][-1]:+.2f}%，"
-                     f"报出来的每股收益同比是 {bridge['reported_eps_yoy_pct'][-1]:+.2f}%，"
-                     "差额只有印在报表上的每股收益被四舍五入到分。"
+                     "与用申报的净利润和摊薄股数算出的每股收益同比完全相同；"
+                     f"而新闻稿印到分的 ${fin['diluted_eps_usd'][-1]:.2f} 对 "
+                     f"${fin['diluted_eps_usd'][-5]:.2f} 得到 "
+                     f"{pct_change(fin['diluted_eps_usd'][-1], fin['diluted_eps_usd'][-5]):+.2f}% —— "
+                     "两者相差的那一点就是那两个分位的四舍五入。"
                      f"<b>本季的读法：{bridge['reported_eps_yoy_pct'][-1]:+.1f}% 里有 "
                      f"{bridge['below_the_line_leg_pct'][-1] + bridge['tax_leg_pct'][-1]:+.1f}% "
-                     "来自经营之外</b> —— 利息收入（现金 US$"
+                     "来自经营之外</b> —— 利息收入（现金及短期投资 US$"
                      f"{bal['cash_and_short_term_investments_usd_m'][-1] / 1000:.1f}B）与更低的税率。"
                      "记录起点是这里而不是更早：FY2023 之前公司报表里还有少数股东权益一行，"
                      "分解需要第五条腿，两段不是同一个口径。"),
@@ -776,7 +779,7 @@ def build_payload(staging: dict) -> dict:
                      "不按它发布的季度。"
                      "<b>把这张图和第一节那两张放在一起，就是这家公司预测能力的两面：</b>"
                      "已完结的两个财年里，仓库数的<b>最后一次</b>估计与实际一个不差（"
-                     + "、".join(settled_estimates)
+                     + "；".join(settled_estimates)
                      + "），而同期的资本开支计划每年都差 5% 到 15%。"
                      "店的数量是它自己排的工期，花掉的钱不是。"
                      + DECK_SOURCE),
