@@ -340,6 +340,94 @@ class CostDashboardTest(unittest.TestCase):
         self.assertIn(f"{above} 年高于上限", band["title"])
         self.assertIn(f"{below} 年低于下限", band["title"])
 
+    def test_both_vintages_are_tallied_and_both_are_on_the_chart(self) -> None:
+        """The symmetry belongs to the opening vintage only.
+
+        Scored against each year's final 10-Q the same record leans one way.
+        Publishing only the opening tally would be choosing the vintage that
+        makes the finding, so both counts are pinned here and the band chart is
+        required to carry the second one.
+        """
+        record = self.source["capex_guidance"]
+
+        def tally(key):
+            counts = {"ABOVE": 0, "BELOW": 0, "INSIDE": 0}
+            for verdict, actual in zip(record[key], record["actual_capex_usd_m"]):
+                if actual is not None and verdict in counts:
+                    counts[verdict] += 1
+            return counts
+
+        opening, final = tally("verdict_vs_opening"), tally("verdict_vs_final")
+        self.assertEqual(opening, {"ABOVE": 5, "BELOW": 5, "INSIDE": 2})
+        self.assertEqual(final, {"ABOVE": 6, "BELOW": 3, "INSIDE": 4})
+        self.assertNotEqual(opening["ABOVE"] == opening["BELOW"],
+                            final["ABOVE"] == final["BELOW"],
+                            "the two vintages must not tell the same story")
+        band = next(ex for ex in self.by_section["settled"] if "资本开支计划与实际" in ex["title"])
+        self.assertIn("只对年初那一版成立", band["note"])
+        self.assertIn(f"{final['ABOVE']} 年高于上限", band["note"])
+
+    def test_the_regime_shift_is_not_overstated(self) -> None:
+        """Two of the early years are overshoots, so it is not a clean flip."""
+        record = self.source["capex_guidance"]
+        early_above = [year for year, verdict, actual
+                       in zip(record["guided_fiscal_years"], record["verdict_vs_opening"],
+                              record["actual_capex_usd_m"])
+                       if actual is not None and year < 2021 and verdict == "ABOVE"]
+        self.assertEqual(early_above, [2013, 2018])
+        dev = next(ex for ex in self.by_section["settled"] if "相对计划中值的偏离" in ex["title"])
+        # The note quotes the over-strong phrasing in order to reject it, so a
+        # substring ban would fire on the correction itself. Assert the counts
+        # it replaces it with, and that both early overshoots are named.
+        early = {"ABOVE": 0, "BELOW": 0, "INSIDE": 0}
+        late = dict(early)
+        for year, verdict, actual in zip(record["guided_fiscal_years"],
+                                         record["verdict_vs_opening"],
+                                         record["actual_capex_usd_m"]):
+            if actual is None or verdict not in early:
+                continue
+            (early if year < 2021 else late)[verdict] += 1
+        self.assertEqual(early, {"ABOVE": 2, "BELOW": 5, "INSIDE": 1})
+        self.assertEqual(late, {"ABOVE": 3, "BELOW": 0, "INSIDE": 1})
+        self.assertIn(f"{early['BELOW']} 年低于下限、{early['ABOVE']} 年高于上限", dev["note"])
+        self.assertIn("没有一年低于下限", dev["note"])
+        for year in early_above:
+            self.assertIn(f"FY{year}", dev["note"])
+
+    def test_the_hedged_wording_is_counted_not_assumed_away(self) -> None:
+        """"approximately $X to $Y" is not a hard bound; two overshoots sit
+        inside what the word plausibly covers, and the chart says which."""
+        record = self.source["capex_guidance"]
+        numeric = [i for i, lo in enumerate(record["guided_low_usd_m"]) if lo is not None]
+        hedged = [i for i in numeric
+                  if "approximately" in (record["figure_as_printed"][i] or "").lower()]
+        self.assertEqual((len(hedged), len(numeric)), (12, 13))
+        soft = [record["guided_fiscal_years"][i] for i in numeric
+                if record["actual_capex_usd_m"][i] is not None
+                and record["verdict_vs_opening"][i] == "ABOVE"
+                and record["actual_capex_usd_m"][i] / record["guided_high_usd_m"][i] - 1 < 0.05]
+        self.assertEqual(soft, [2013, 2024])
+        band = next(ex for ex in self.by_section["settled"] if "资本开支计划与实际" in ex["title"])
+        self.assertIn("approximately", band["note"])
+
+    def test_the_core_on_core_axis_describes_its_own_holes(self) -> None:
+        """A fiscal fourth quarter has no 10-Q sentence, but the supplemental
+        deck prints one from FY2024 Q3 on — so some annual holes are filled and
+        some are not, and the caption has to match the data rather than assert a
+        hole every year."""
+        core = self.source["core_on_core"]
+        q4 = [i for i, period in enumerate(core["periods"]) if period.startswith("Q3 ")]
+        filled = [i for i in q4 if core["change_bps"][i] is not None]
+        self.assertEqual((len(filled), len(q4)), (2, 6))
+        for index in filled:
+            self.assertIn("EX-99.2", core["value_source"][index])
+        for index in set(q4) - set(filled):
+            self.assertIsNone(core["value_source"][index])
+        chart = next(ex for ex in self.by_section["next_quarter"] if "核心商品" in ex["title"])
+        self.assertIn(f"{len(q4)} 个会计 Q4 有 {len(filled)} 个由它填上", chart["note"])
+        disclosed = sum(1 for value in core["change_bps"] if value is not None)
+        self.assertIn(f"{disclosed} 个有披露的季度", chart["title"])
+
     def test_the_qualitative_year_gets_no_band(self) -> None:
         """One 10-K guides "a similar amount" and gives no number. Turning a word
         into a range would be the page inventing the company's guidance."""

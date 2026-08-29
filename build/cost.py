@@ -181,6 +181,45 @@ def capex_charts(staging: dict) -> tuple[list[dict], dict]:
     above = [i for i in finished if actual[i] > high[i]]
     below = [i for i in finished if actual[i] < low[i]]
     inside = len(finished) - len(above) - len(below)
+
+    # The symmetry is a property of the OPENING vintage. Scored against each
+    # year's final 10-Q the same record leans one way, so both tallies are
+    # computed here and both go on the chart -- publishing only the flattering
+    # one would be choosing the vintage that makes the finding.
+    def tally(verdicts):
+        counts = {"ABOVE": 0, "BELOW": 0, "INSIDE": 0}
+        for verdict in verdicts:
+            if verdict in counts:
+                counts[verdict] += 1
+        counts["total"] = sum(counts[k] for k in ("ABOVE", "BELOW", "INSIDE"))
+        return counts
+
+    final = tally([verdict for verdict, a in zip(record["verdict_vs_final"], actual)
+                   if a is not None])
+    final_above, final_below = final["ABOVE"], final["BELOW"]
+    final_inside, final_total = final["INSIDE"], final["total"]
+
+    # "approximately $X to $Y" is not a hard bound, and two of the overshoots
+    # sit inside what the word plausibly covers. Counting them as breaches
+    # without saying so would read the wording more strictly than it is written.
+    hedged = sum(1 for lo in low if lo is not None)
+    hedged_approx = sum(1 for text in record["figure_as_printed"]
+                        if text and "approximately" in text.lower())
+    soft = [i for i in above if actual[i] / high[i] - 1 < 0.05]
+    soft_above = len(soft)
+    soft_above_labels = [labels[i] for i in soft]
+
+    # The regime shift is real but it is not a clean flip: the earliest settled
+    # year is itself an overshoot, so "underspent every year, then overspent
+    # every year" is false in both halves.
+    FLIP_YEAR = 2021
+    early = tally([record["verdict_vs_opening"][i] for i in finished
+                   if years[i] < FLIP_YEAR])
+    late = tally([record["verdict_vs_opening"][i] for i in finished
+                  if years[i] >= FLIP_YEAR])
+    early_above_labels = [labels[i] for i in finished
+                          if years[i] < FLIP_YEAR
+                          and record["verdict_vs_opening"][i] == "ABOVE"]
     qualitative = [labels[i] for i, flag in enumerate(record["is_qualitative"]) if flag]
     pending = [labels[i] for i, a in enumerate(actual) if a is None]
 
@@ -202,13 +241,20 @@ def capex_charts(staging: dict) -> tuple[list[dict], dict]:
         "ylab": "US$M",
         "note": (f"色块是{CAPEX_TIMING}公司在 10-K 里给出的下一财年资本开支区间，"
                  "菱形是那一年实际花掉的钱。"
-                 "<b>这是全站唯一一份两边一样会错的指引记录。</b>其他每一页的指引都是单边的 —— "
-                 "要么几乎从不跌破下限，要么几乎每期穿出上限；"
-                 f"这一份 {len(finished)} 年里 {len(below)} 年低于下限、{len(above)} 年高于上限，"
-                 "完全对称。原因是结构性的：资本开支计划不是对市场的承诺，"
-                 "少花不算失信、多花也不算超预期，所以没有把它设在容易达成位置的动机。"
-                 "<b>但对称不等于随机</b>：低于下限的年份集中在窗口前半段，"
-                 "高于上限的集中在后半段，这个转折见 Exhibit {EX_CAPEX_DEV}。"
+                 "<b>本站其他每一份指引记录都是单边的</b> —— 要么几乎从不跌破下限，"
+                 f"要么几乎每期穿出上限；这一份 {len(finished)} 年里 {len(below)} 年低于下限、"
+                 f"{len(above)} 年高于上限，两边一样多。"
+                 "原因是结构性的，而且这<b>不是一次同类比较</b>：别的页记录的是收入、利润或每股收益，"
+                 "那是对市场的预测；这一份记录的是支出，是公司给自己排的预算。"
+                 "少花不算失信、多花也不算超预期，所以没有把它设在容易达成位置的动机 —— "
+                 "分布对称的原因在这里，不在预测能力上。"
+                 f"<b>而且这句话只对年初那一版成立</b>：换成当年最后一版 10-Q，"
+                 f"{final_total} 个已结清年度是 {final_above} 年高于上限、{final_inside} 年落在区间内、"
+                 f"{final_below} 年低于下限，修订之后记录就偏向一边了（见 Exhibit {{EX_CAPEX_DEV}}）。"
+                 f"另一层软化在措辞里：{hedged} 个数字区间里有 {hedged_approx} 个印的是"
+                 "「approximately $X to $Y」，"
+                 f"而 {len(above)} 次高于上限里有 {soft_above} 次只超出上限不到 5%（"
+                 + "、".join(soft_above_labels) + "），落在这个词本身能覆盖的范围内。"
                  + (f"{'、'.join(qualitative)} 那一格没有色块 —— 那一年公司只说了要花"
                     "「a similar amount」，是一句话不是一个区间，本页不把词换算成数；"
                     "那年实际花的钱比上一年多 16.7%。" if qualitative else "")
@@ -258,9 +304,14 @@ def capex_charts(staging: dict) -> tuple[list[dict], dict]:
                  "而本站另外两页按年指引的公司（穆迪、标普全球）同一口径下能压到五分之一甚至七分之一。"
                  "对一家把计划写进 10-K、再逐季在 10-Q 里重写三遍的公司来说，"
                  "这说明它修订的是数字，不是把握。"
-                 "<b>更值得看的是柱子的方向在窗口中段整体翻了个面：</b>"
-                 "早年年年花不到自己的计划，近年年年超过 —— 同一段落、同一种句式，"
-                 "从「计划是个花不完的上限」变成「计划是个守不住的下限」。"
+                 "<b>更值得看的是柱子的重心在窗口中段移了位，但不是干净地翻面：</b>"
+                 f"FY{FLIP_YEAR} 之前的 {early['total']} 个已结清年度里 {early['BELOW']} 年低于下限、"
+                 f"{early['ABOVE']} 年高于上限、{early['INSIDE']} 年落在区间内；"
+                 f"之后的 {late['total']} 个里 {late['ABOVE']} 年高于上限、"
+                 f"{late['INSIDE']} 年落在区间内，没有一年低于下限。"
+                 "所以不是「早年年年花不到、近年年年超过」—— 早年那一段里 "
+                 + "、".join(early_above_labels) + " 就高于上限 —— "
+                 "真正的变化是「低于下限」这件事在窗口后半段再没发生过。"
                  f"窗口内偏离最大的一次是 {dev_labels[dev_open.index(biggest)]} 的 {biggest:+.1f}%。"
                  + CAPEX_LAG_NOTE),
         "src_extra": (CAPEX_SOURCE
@@ -699,6 +750,12 @@ def build_payload(staging: dict) -> dict:
     next_kpi = staging["next_kpi"]["quantified"]
     core_labels = [compact_period(period) for period in core["periods"]]
     core_bps = core["change_bps"]
+    # A fiscal fourth quarter has no 10-Q sentence, but the supplemental deck
+    # prints one from FY2024 Q3 on, so some of the annual holes are filled and
+    # some are not. Count both rather than describing the axis from memory.
+    q4_slots = sum(1 for period in core["periods"] if period.startswith("Q3 "))
+    deck_filled = sum(1 for period, source in zip(core["periods"], core["value_source"])
+                      if period.startswith("Q3 ") and source)
     filed_core = [v for v in core_bps if v is not None]
     negative_core = sum(1 for v in filed_core if v < 0)
     est = staging["warehouse_estimate"]
@@ -743,9 +800,16 @@ def build_payload(staging: dict) -> dict:
                      "decreased nine basis points.」"
                      "它把仓内附属与其他业务的销售占比变化和它们自己的毛利率都排除掉，"
                      "所以它是这家公司剔除汽油之后最干净的一条商品毛利率读数。"
-                     "<b>轴上每年缺一格</b>：会计 Q4 没有 10-Q，而 10-K 讲的是整个财年，"
+                     "<b>轴上的空格是会计 Q4</b>：它没有 10-Q，而 10-K 讲的是整个财年，"
                      "从不单说第四季度；本页不用「全年减去 36 周」去补那一格，"
                      "因为那样得到的是自算值而不是披露值。"
+                     f"<b>但最后 {deck_filled} 个会计 Q4 是有值的</b> —— 自 FY2024 Q3 起的 "
+                     "EX-99.2 补充材料按季给这个数，第四季度也给，所以窗口里 "
+                     f"{q4_slots} 个会计 Q4 有 {deck_filled} 个由它填上、其余 "
+                     f"{q4_slots - deck_filled} 个仍是空的。"
+                     "这两格的来源比其余的弱，值得说明：补充材料只印「Core on Core Sales」这一行，"
+                     "既不定义它，也不说它属于毛利率还是 SG&A 那张桥；而 10-Q 的那句话自带定义。"
+                     "两者在九个重叠季度里逐季相同，这是本页愿意用它补那两格的理由。"
                      "上季阈值是「回正或 ≥0」，本季 "
                      f"{core_bps[-1]:+.0f}bp，未兑现；"
                      "下季阈值是「不要连续两季 ≤−10bp」。"),

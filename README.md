@@ -1233,25 +1233,35 @@ year's capital expenditure as a dollar range, plus a warehouse-opening plan and
 warehouse count revised every quarter.
 
 Against the plan as first published, twelve settled years land **five above the
-range, two inside it and five below** — the only balanced record on this site.
-Every other guidance record here behaves like a floor: Cadence's revenue never
-missed in 42 quarters, Meta's never in 18, S&P Global's adjusted earnings per
-share never in seven years. Costco's misses run both ways in equal numbers, and
-the reason is structural rather than admirable: a capital plan is not a promise
-to anyone. Underspending it is not a failure and overspending it is not a beat,
-so nothing pushes it toward a number that will be cleared.
+range, two inside it and five below**. Every other guidance record here behaves
+like a floor — Cadence's revenue never missed in 42 quarters, Meta's never in
+18, S&P Global's adjusted earnings per share never in seven years — and this one
+does not. But that is **not a like-for-like comparison and the page says so**:
+the other records are forecasts of revenue, profit or earnings per share, made
+to the market; this one is a budget the company writes for itself. Underspending
+it is not a failure and overspending it is not a beat, so nothing pushes it
+toward a number that will be cleared. The symmetry is a fact about what kind of
+promise a capital plan is, not about how well Costco forecasts.
 
-Balanced is not the same as uninformative, and two other things the record says
-are sharper than the tally. The plan is **restated in every 10-Q**, three times a
-year, and the revision narrows the mean absolute error only from 9.1% to 5.5%;
-Moody's and S&P Global, guiding a year the same way, close their funnels to
-about a fifth or a seventh. A company that rewrites its number four times a year
-and still lands 5% from the last version is revising the number rather than the
-uncertainty. And the sign flips partway through: four of the five under-spends
-fall in fiscal 2014–2017, while every settled year from fiscal 2021 onward came
-in at or above the plan. The same paragraph, in the same section of the same
-document, went from a ceiling the company could not reach to a floor it could
-not hold.
+Three things qualify the tally, and all three are on the chart rather than in a
+footnote. **It holds only for the opening vintage.** The plan is restated in
+every 10-Q, and scored against each year's final 10-Q the same thirteen settled
+years land six above, four inside and three below — leaning one way. **The
+revision buys less than it looks like**: mean absolute error falls only from
+9.1% to 5.5%, where Moody's and S&P Global, guiding a year the same way, close
+their funnels to about a fifth or a seventh. A company that rewrites its number
+four times a year and still lands 5% from the last version is revising the
+number, not the uncertainty. And **twelve of the thirteen numeric ranges are
+printed "approximately $X to $Y"**; two of the five overshoots clear the top by
+under 5%, which is inside what that word plausibly covers, while the other three
+are 8–12% over.
+
+The regime does shift, but not cleanly, and the page had to be corrected on this
+before it shipped. Before fiscal 2021 the eight settled years are five below,
+two above and one inside; from fiscal 2021 they are three above and one inside
+with nothing below. So it is not "underspent every year, then overspent every
+year" — fiscal 2013 and fiscal 2018 are overshoots inside the early stretch.
+What actually changed is that falling below the floor stopped happening.
 
 The three records also disagree with each other in a way that is the page's
 point rather than a loose end. The *store count* Costco estimates every quarter
