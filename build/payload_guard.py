@@ -8,8 +8,18 @@ import re
 from pathlib import Path
 
 
+# The tail is the set of unit suffixes `UNIT_FORMATS` actually appends -- `pp`,
+# `bp`, `M`, `B`, `x`, plus `T` for the trillion magnitude -- and not "any one or two letters". Both spellings reject
+# every non-finite value this repo is able to format; `test_payload_guard.py`
+# proves that against `UNIT_FORMATS` itself, so a formatter added later with a
+# suffix this pattern does not know turns the suite red instead of quietly
+# escaping. Where the two spellings differ is on ordinary words that happen to
+# be `nan` or `inf` plus a letter or two, and this corpus is full of them: NAND
+# on every memory-maker page, the competitor Nanya, and `nano`, `info`, `infra`.
+# A gate that false-fails on the industry's own vocabulary gets bypassed with
+# `--no-verify`, and then it protects nothing.
 _BAD_TEXT = re.compile(
-    r"(?<![A-Za-z_])(?:nan|infinity|inf)(?:[A-Za-z]{1,2})?(?![A-Za-z_])",
+    r"(?<![A-Za-z_])(?:nan|infinity|inf)(?:pp|bp|[MBxT])?(?![A-Za-z_])",
     re.I,
 )
 
