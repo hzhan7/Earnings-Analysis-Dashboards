@@ -679,6 +679,12 @@ class MuPublishedArtefactTest(unittest.TestCase):
             # the site-wide README gate keys on this phrase in cadence_label
             self.assertIn("本站按自然年季度标注", text)
         self.assertIn("2026-09-03", self.payload["subtitle"])
+        # No count of how many past years ended in September: that number moves
+        # with the next 10-K and nothing on the page recomputes it. The rule and
+        # the filer record do not move, and the page is pinned to a quarter
+        # inside FY2026, so its year-end date does not either.
+        self.assertNotIn("近九个", self.payload["subtitle"])
+        self.assertIn("申报人记录 09-03", self.payload["subtitle"])
 
     def test_source_links_are_public_and_absolute(self) -> None:
         for item in self.payload["source_links"]:
