@@ -1,0 +1,705 @@
+{
+  "schema_version": "quarterly-series/samsung-v1",
+  "company": {
+    "ticker": "005930.KS",
+    "name": "Samsung Electronics Co., Ltd.",
+    "slug": "samsung",
+    "group": "semiconductor_ai",
+    "accounting_standard": "K-IFRS",
+    "currency": "KRW"
+  },
+  "currency": "KRW",
+  "_provenance": "三星电子不是 SEC 注册人：EDGAR 上 CIK 0000879316 名下 251 份申报全部是 SC 13D/13G、SC 14D1/14D9、Form 3/4 这类持股与要约表格，最新一份停在 2015-01-20，没有 20-F、没有 6-K、没有 F-1。本页所有数字因此来自两条韩国披露链：(1) 公司每季自行发布的 Earnings Release 简报（IR 网站，英文，含合并损益表、分部表、资产负债表、现金流量表四页附录）；(2) DART 电子公告（dart.fss.or.kr）的「연결재무제표 기준 영업(잠정)실적(공정공시)」。两条链互为独立读数：八个季度的合并营业收入与营业利润在两边逐季吻合。合并损益按十亿韩元记录（DART 억원 换算），分部与现金流按公司披露的兆韩元（조원）原样记录，两套精度不同是因为公司本身就用两种精度发布，不做统一。",
+  "periods": [
+    "Q3 2024",
+    "Q4 2024",
+    "Q1 2025",
+    "Q2 2025",
+    "Q3 2025",
+    "Q4 2025",
+    "Q1 2026",
+    "Q2 2026"
+  ],
+  "financials_krw_bn": {
+    "revenue": [
+      79098.731,
+      75788.269,
+      79140.503,
+      74566.317,
+      86061.747,
+      93837.371,
+      133873.444,
+      171499.47
+    ],
+    "cost_of_sales": [
+      49095.083,
+      47268.827,
+      51009.931,
+      49069.566,
+      52569.62,
+      49586.396,
+      51960.271,
+      52198.759
+    ],
+    "gross_profit": [
+      30003.648,
+      28519.442,
+      28130.572,
+      25496.751,
+      33492.127,
+      44250.975,
+      81913.173,
+      119300.711
+    ],
+    "sga_expenses": [
+      20820.277,
+      22026.739,
+      21445.3,
+      20820.694,
+      21326.065,
+      24177.315,
+      24680.376,
+      29808.299
+    ],
+    "rnd_expenses": [
+      8866.97,
+      10262.019,
+      9032.741,
+      9019.29,
+      8824.05,
+      10864.311,
+      11336.713,
+      16025.293
+    ],
+    "operating_profit": [
+      9183.371,
+      6492.703,
+      6685.272,
+      4676.057,
+      12166.062,
+      20073.66,
+      57232.797,
+      89492.412
+    ],
+    "profit_before_tax": [
+      10320.412,
+      7907.255,
+      9151.576,
+      5756.129,
+      13545.563,
+      21028.203,
+      58828.434,
+      94439.805
+    ],
+    "income_tax": [
+      219.508,
+      152.861,
+      928.698,
+      639.694,
+      1319.816,
+      1386.458,
+      11603.162,
+      22815.344
+    ],
+    "net_profit": [
+      10100.904,
+      7754.394,
+      8222.878,
+      5116.435,
+      12225.747,
+      19641.745,
+      47225.272,
+      71624.461
+    ],
+    "profit_owners": [
+      9781.547,
+      7576.133,
+      8028.407,
+      4934.034,
+      12006.461,
+      19292.054,
+      47101.19,
+      71269.468
+    ],
+    "eps_krw": [
+      1440,
+      1116,
+      1192,
+      737,
+      1802,
+      2909,
+      7123,
+      10849
+    ]
+  },
+  "segment_revenue_krw_tn": {
+    "dx": [
+      45.0,
+      40.5,
+      51.7,
+      43.6,
+      48.4,
+      44.3,
+      52.7,
+      48.0
+    ],
+    "mx_nw": [
+      30.5,
+      25.8,
+      37.0,
+      29.2,
+      34.1,
+      29.3,
+      38.1,
+      33.2
+    ],
+    "mx": [
+      30.0,
+      25.0,
+      36.2,
+      28.5,
+      33.5,
+      28.3,
+      37.5,
+      32.3
+    ],
+    "vd_da": [
+      14.1,
+      14.4,
+      14.5,
+      14.1,
+      13.9,
+      14.8,
+      14.3,
+      14.5
+    ],
+    "vd": [
+      7.6,
+      8.6,
+      7.8,
+      7.0,
+      7.3,
+      8.8,
+      7.7,
+      7.7
+    ],
+    "ds": [
+      29.3,
+      30.1,
+      25.1,
+      27.9,
+      33.1,
+      44.0,
+      81.7,
+      127.5
+    ],
+    "memory": [
+      22.3,
+      23.0,
+      19.1,
+      21.2,
+      26.7,
+      37.1,
+      74.8,
+      120.8
+    ],
+    "sdc": [
+      8.0,
+      8.1,
+      5.9,
+      6.4,
+      8.1,
+      9.5,
+      6.7,
+      7.5
+    ],
+    "harman": [
+      3.5,
+      3.9,
+      3.4,
+      3.8,
+      4.0,
+      4.6,
+      3.8,
+      4.6
+    ]
+  },
+  "segment_operating_profit_krw_tn": {
+    "dx": [
+      3.4,
+      2.3,
+      4.7,
+      3.3,
+      3.5,
+      1.3,
+      3.0,
+      -0.8
+    ],
+    "mx_nw": [
+      2.8,
+      2.1,
+      4.3,
+      3.1,
+      3.6,
+      1.9,
+      2.8,
+      -0.7
+    ],
+    "vd_da": [
+      0.5,
+      0.2,
+      0.3,
+      0.2,
+      -0.1,
+      -0.6,
+      0.2,
+      -0.01
+    ],
+    "ds": [
+      3.9,
+      2.9,
+      1.1,
+      0.4,
+      7.0,
+      16.4,
+      53.7,
+      89.2
+    ],
+    "sdc": [
+      1.5,
+      0.9,
+      0.5,
+      0.5,
+      1.2,
+      2.0,
+      0.4,
+      0.7
+    ],
+    "harman": [
+      0.4,
+      0.4,
+      0.3,
+      0.5,
+      0.4,
+      0.3,
+      0.2,
+      0.4
+    ]
+  },
+  "cash_flow_krw_tn": {
+    "operating": [
+      22.2,
+      22.02,
+      16.58,
+      17.31,
+      22.62,
+      28.8,
+      40.27,
+      105.08
+    ],
+    "depreciation": [
+      10.31,
+      10.73,
+      10.73,
+      10.56,
+      10.96,
+      11.36,
+      11.48,
+      12.11
+    ],
+    "capex_ppe": [
+      10.96,
+      15.09,
+      12.13,
+      13.04,
+      10.81,
+      11.55,
+      17.13,
+      14.11
+    ],
+    "dividends_paid": [
+      2.45,
+      2.46,
+      0.08,
+      4.9,
+      2.46,
+      2.45,
+      0.01,
+      6.21
+    ]
+  },
+  "balance_sheet_krw_bn": {
+    "receivables": [
+      44692.0,
+      43623.1,
+      44866.6,
+      43550.5,
+      50538.8,
+      51127.6,
+      82285.0,
+      96409.0
+    ],
+    "inventories": [
+      53356.8,
+      51754.9,
+      53220.3,
+      51037.4,
+      50332.4,
+      52636.8,
+      58278.4,
+      71389.1
+    ],
+    "total_assets": [
+      491307.3,
+      514532.0,
+      516376.7,
+      504875.2,
+      523659.6,
+      566942.1,
+      633339.6,
+      759480.5
+    ]
+  },
+  "net_cash_krw_tn": [
+    86.84,
+    93.32,
+    93.99,
+    86.7,
+    91.79,
+    100.61,
+    119.24,
+    167.59
+  ],
+  "final_release_dates": [
+    "2024-10-31",
+    "2025-01-31",
+    "2025-04-30",
+    "2025-07-31",
+    "2025-10-30",
+    "2026-01-29",
+    "2026-04-30",
+    "2026-07-30"
+  ],
+  "provisional_vs_final": {
+    "_note": "三星每季披露两次：季末后 1–2 周先发「연결재무제표 기준 영업(잠정)실적」速报，只给营业收入与营业利润；月末再发完整 Earnings Release（DART 上仍标注 잠정，因为它同样在外部审阅完成之前）。速报的营业收入按兆韩元取整发布，所以收入两次之间的差几乎全是取整，不是修正——本页因此只对营业利润作图。",
+    "quarters": [
+      "Q3 2025",
+      "Q4 2025",
+      "Q1 2026",
+      "Q2 2026"
+    ],
+    "flash_date": [
+      "2025-10-14",
+      "2026-01-08",
+      "2026-04-07",
+      "2026-07-07"
+    ],
+    "final_date": [
+      "2025-10-30",
+      "2026-01-29",
+      "2026-04-30",
+      "2026-07-30"
+    ],
+    "flash_revenue_krw_tn": [
+      86.0,
+      93.0,
+      133.0,
+      171.0
+    ],
+    "final_revenue_krw_tn": [
+      86.06,
+      93.84,
+      133.87,
+      171.5
+    ],
+    "flash_operating_profit_krw_tn": [
+      12.1,
+      20.0,
+      57.2,
+      89.4
+    ],
+    "final_operating_profit_krw_tn": [
+      12.17,
+      20.07,
+      57.23,
+      89.49
+    ]
+  },
+  "memory_bit_and_price": {
+    "_note": "公司对存储只给一件事的前瞻：下一季 DRAM 与 NAND 的出货 bit 环比增速，而且是定性措辞而非数字。价格（ASP）只在事后回顾时给，从不指引。下表的数值区间是本页对公司措辞的读数（D），公司本身没有给过数字。",
+    "band_mapping": {
+      "low single digit": [
+        1,
+        4
+      ],
+      "mid-single digit": [
+        4,
+        7
+      ],
+      "high single digit": [
+        7,
+        10
+      ],
+      "single digit": [
+        1,
+        10
+      ],
+      "low teens": [
+        10,
+        13
+      ]
+    },
+    "quarters": [
+      "Q4 2025",
+      "Q1 2026",
+      "Q2 2026"
+    ],
+    "dram_bit_guide_wording": [
+      null,
+      "limited to the low single digit",
+      "DRAM bit growth to increase by single-digit percentage Q-on-Q"
+    ],
+    "dram_bit_guide_low": [
+      null,
+      1.0,
+      1.0
+    ],
+    "dram_bit_guide_high": [
+      null,
+      4.0,
+      10.0
+    ],
+    "dram_bit_actual_wording": [
+      "bit shipments achieved a new record high consistent with our bit growth guidance from the previous quarter",
+      "we met our bit growth guidance for DRAM",
+      "our DRAM bit shipment increased by the low teens percentage compared to the previous quarter, exceeding our guidance"
+    ],
+    "dram_bit_actual": [
+      null,
+      2.5,
+      11.5
+    ],
+    "nand_bit_guide_wording": [
+      null,
+      "the shipment to increase by mid-single-digit percentages",
+      "bit growth is expected to be constrained at the low single-digit level Q-on-Q"
+    ],
+    "nand_bit_guide_low": [
+      null,
+      4.0,
+      1.0
+    ],
+    "nand_bit_guide_high": [
+      null,
+      7.0,
+      4.0
+    ],
+    "nand_bit_actual_wording": [
+      "NAND bit growth inevitably declined quarter-on-quarter. But this was already factored into our bit growth guidance",
+      "NAND bit growth increasing by a high single-digit percentage Q-on-Q",
+      "bit shipment increased by low single-digit percentage in line with our guidance"
+    ],
+    "nand_bit_actual": [
+      null,
+      8.5,
+      2.5
+    ],
+    "dram_asp_qoq_wording": [
+      "DRAM ASP increased by about 40% quarter-on-quarter",
+      "blended ASP rose by low 90% range Q-on-Q for DRAM",
+      "our ASP in the second quarter rose by mid-40% for DRAM"
+    ],
+    "dram_asp_qoq_pct": [
+      40.0,
+      91.0,
+      45.0
+    ],
+    "nand_asp_qoq_wording": [
+      "net ASP increased by mid-20% quarter-on-quarter",
+      "high 80% Q-on-Q for NAND",
+      "high 60% for NAND"
+    ],
+    "nand_asp_qoq_pct": [
+      25.0,
+      88.0,
+      65.0
+    ],
+    "next_quarter_guide": {
+      "quarter": "Q3 2026",
+      "wording": "as inventory levels for DRAM and NAND are significantly low, we expect Q-o-Q bit growth to be in the mid-single digit for DRAM and high single digit for NAND",
+      "dram_low": 4.0,
+      "dram_high": 7.0,
+      "nand_low": 7.0,
+      "nand_high": 10.0
+    }
+  },
+  "guidance": {
+    "_note": "三星不提供收入、毛利率或营业利润的数字指引，也没有任何 non-GAAP 调节表。下表是 2Q26 电话会上对 3Q26 与全年给出的全部前瞻，逐条为原话。",
+    "quarter": "Q3 2026",
+    "items": [
+      {
+        "metric": "DRAM 出货 bit（环比）",
+        "wording": "mid-single digit",
+        "quantified": "+4%～+7% D"
+      },
+      {
+        "metric": "NAND 出货 bit（环比）",
+        "wording": "high single digit",
+        "quantified": "+7%～+10% D"
+      },
+      {
+        "metric": "存储价格 ASP",
+        "wording": "公司对 3Q ASP 不给任何指引，既无数字也无方向词",
+        "quantified": "未披露"
+      },
+      {
+        "metric": "HBM4 销售额",
+        "wording": "we expect HBM4 sales increased by more than 3 full Q-on-Q in the third quarter",
+        "quantified": "环比 >3 倍"
+      },
+      {
+        "metric": "HBM4 占 HBM 收入（下半年）",
+        "wording": "HBM4 is expected to account for well over 60% of our total HBM revenue mix",
+        "quantified": ">60%"
+      },
+      {
+        "metric": "HBM 份额（下半年）",
+        "wording": "achieve HBM market share broadly in line with our overall DRAM market share",
+        "quantified": "≈ 自身 DRAM 份额"
+      },
+      {
+        "metric": "Foundry 全年收入",
+        "wording": "we expect to achieve double-digit or higher year-on-year revenue growth",
+        "quantified": "≥ 双位数 YoY"
+      },
+      {
+        "metric": "Foundry 先进制程收入占比（全年）",
+        "wording": "the revenue contribution from advanced nodes is projected to exceed 50%",
+        "quantified": ">50%"
+      },
+      {
+        "metric": "Foundry AI/HPC 占比",
+        "wording": "expand significantly from the high-teens percentage in 2025 to over 30% in 2026",
+        "quantified": "2025 高十几% → 2026 >30%"
+      },
+      {
+        "metric": "全年资本开支",
+        "wording": "the DS division will continue to strengthen its core technology through both the optimized CapEx and productive R&D investments",
+        "quantified": "未披露（上季口径为 substantial YoY increase）"
+      },
+      {
+        "metric": "供需展望",
+        "wording": "The supply constraints are expected to become even more severe in 2027 than 2026, reinforcing our view that the supply shortage will persist through 2028",
+        "quantified": "短缺持续至 2028"
+      },
+      {
+        "metric": "MX 智能手机全年出货",
+        "wording": "annual smartphone shipments are expected to decline as demand softens amid macroeconomic uncertainty and rising memory prices",
+        "quantified": "全年出货下降"
+      }
+    ]
+  },
+  "next_kpi": {
+    "as_of": "Q2 2026",
+    "entries": [
+      {
+        "metric": "合并营业利润率",
+        "direction": "up",
+        "threshold": 35.0,
+        "unit": "pct",
+        "current": 52.18,
+        "why": "存储价格环比涨幅正在收敛，卖方对 3Q26 的假设落在 +12%～+20%；跌破 35% 意味着周期已经翻转而不只是减速"
+      },
+      {
+        "metric": "Memory 占合并收入",
+        "direction": "down",
+        "threshold": 75.0,
+        "unit": "pct",
+        "current": 70.44,
+        "why": "八季从 28.2% 升到 70.4%，集团已经变成一家存储公司；越过 75% 意味着其余业务对集团业绩不再有对冲作用"
+      },
+      {
+        "metric": "DX 分部营业利润率",
+        "direction": "up",
+        "threshold": 1.0,
+        "unit": "pct",
+        "current": -1.67,
+        "why": "本季首次转负，原因是自家 DS 涨价推高自家 DX 的物料成本；管理层预期这一压力延续至下半年"
+      },
+      {
+        "metric": "库存天数",
+        "direction": "down",
+        "threshold": 130.0,
+        "unit": "days",
+        "current": 124.5,
+        "why": "本季从 100.9 天跳到 124.5 天，其中含奖金计提资本化进在产品的部分；继续上行会稀释「行业缺货」这一叙事"
+      },
+      {
+        "metric": "现金 CapEx / 经营现金流",
+        "direction": "down",
+        "threshold": 40.0,
+        "unit": "pct",
+        "current": 13.43,
+        "why": "经营现金流暴涨把这一比率压到八季最低；公司同时说全年 capex 会 substantial 增长，两者迟早要收敛"
+      },
+      {
+        "metric": "SDC 分部营业利润率",
+        "direction": "up",
+        "threshold": 8.0,
+        "unit": "pct",
+        "current": 9.33,
+        "why": "8.6 代 IT OLED 线 7 月起量产，管理层主动说初期固定成本会有 short-term impacts"
+      },
+      {
+        "metric": "股东回报 / 自由现金流",
+        "direction": "up",
+        "threshold": 25.0,
+        "unit": "pct",
+        "current": 13.02,
+        "why": "现行政策承诺 returning 50% of free cash flow；自由现金流一个季度涨到 91 兆韩元后，这个比例掉到 13%"
+      },
+      {
+        "metric": "有效税率",
+        "direction": "down",
+        "threshold": 27.0,
+        "unit": "pct",
+        "current": 24.16,
+        "why": "八季从 2.1% 升到 24.2%，递延所得税资产的缓冲已经用完，再上行会直接吃掉净利增速"
+      }
+    ]
+  },
+  "sources": [
+    {
+      "label": "Samsung IR — Earnings Release 列表页",
+      "url": "https://www.samsung.com/global/ir/financial-information/earnings-release/"
+    },
+    {
+      "label": "Samsung 2Q 2026 Earnings Release（英文，含四页财务附录）",
+      "url": "https://images.samsung.com/is/content/samsung/assets/global/ir/docs/2026_2Q_conference_eng.pdf"
+    },
+    {
+      "label": "Samsung 1Q 2026 Earnings Release",
+      "url": "https://images.samsung.com/is/content/samsung/assets/global/ir/docs/2026_1Q_conference_eng.pdf"
+    },
+    {
+      "label": "Samsung 4Q 2025 Earnings Release",
+      "url": "https://images.samsung.com/is/content/samsung/assets/global/ir/docs/2025_4Q_conference_eng.pdf"
+    },
+    {
+      "label": "DART 电子公告 — 삼성전자 공시 검색",
+      "url": "https://dart.fss.or.kr/dsab007/main.do"
+    },
+    {
+      "label": "Samsung IR — Financial Statements（K-IFRS 连结）",
+      "url": "https://www.samsung.com/global/ir/financial-information/audit-report/"
+    }
+  ],
+  "annual_disclosed_2025": {
+    "_note": "这些是 4Q 2025 Earnings Release 年度列里公司自己给出的 2025 全年数，与本页逐季序列取自表的不同部分，因此「四季合计 == 年度披露」是真正的交叉验证，不是把同一个输入读两次。",
+    "revenue_krw_tn": 333.6,
+    "operating_profit_krw_tn": 43.6,
+    "cfo_krw_tn": 85.32,
+    "depreciation_krw_tn": 43.61,
+    "capex_ppe_krw_tn": 47.52
+  }
+}

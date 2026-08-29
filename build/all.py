@@ -12,7 +12,7 @@ sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
     amzn, avgo, axp, cboe, cdns, cme, cost, googl, ibkr, ma, mco, meta, msci,
-    msft, mu, ndaq, nke, nvda, pm, race, schw, skhynix, snps,
+    msft, mu, ndaq, nke, nvda, pm, race, samsung, schw, skhynix, snps,
     spgi, tjx, tsm, v,
 )
 from build.payload_guard import write_js  # noqa: E402
@@ -41,6 +41,7 @@ MODULES = {
     "nvda": nvda,
     "pm": pm,
     "race": race,
+    "samsung": samsung,
     "schw": schw,
     "skhynix": skhynix,
     "snps": snps,
@@ -283,6 +284,18 @@ ENTRIES = [
         "headline_metrics": ["Net revenues \u20ac1,938M", "EBIT margin 31.2%", "\u51fa\u8d27 3,366 \u53f0"],
         "search_text": ("race ferrari \u6cd5\u62c9\u5229 \u8dc3\u9a6c \u5962\u4f88\u54c1 \u8c6a\u534e\u6c7d\u8f66 \u8dd1\u8f66 "
                         "\u4e2a\u6027\u5316 personalization \u51fa\u8d27 shipments f1 \u4e00\u7ea7\u65b9\u7a0b\u5f0f ifrs \u6b27\u5143 20-f 6-k"),
+    },
+    {
+        "slug": "samsung",
+        "ticker": "005930.KS",
+        "name": "Samsung Electronics",
+        "aliases": ["Samsung", "三星", "三星电子", "삼성전자"],
+        "group": "semiconductor_ai",
+        "cadence_label": "自然年季度；季末速报与月末完整财报分两次披露",
+        "headline_metrics": ["Revenue 171.5 兆韩元", "Memory 占收入 70.4%", "营业利润率 52.2%"],
+        "search_text": ("samsung 三星 三星电子 삼성전자 005930 半导体 存储 内存 dram nand "
+                        "hbm hbm4 服务器 ssd 代工 foundry 晶圆 系统lsi 手机 galaxy mx "
+                        "面板 oled sdc harman 韩国 韩元 krw k-ifrs dart 存储周期 涨价"),
     },
     {
         "slug": "schw",

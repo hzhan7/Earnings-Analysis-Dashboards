@@ -5,7 +5,7 @@ chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
 American Express, Broadcom, Cadence, Cboe Global Markets, Charles Schwab,
 CME Group, Costco, Ferrari, Interactive Brokers, Mastercard, Meta, Micron,
 Microsoft, Moody's, MSCI, Nasdaq, NIKE, NVIDIA, Philip Morris International,
-S&P Global, SK hynix, Synopsys, TJX, TSMC and Visa.
+S&P Global, Samsung Electronics, SK hynix, Synopsys, TJX, TSMC and Visa.
 
 ## Build
 
@@ -36,6 +36,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/nvda/`
 - `http://127.0.0.1:8765/pm/`
 - `http://127.0.0.1:8765/race/`
+- `http://127.0.0.1:8765/samsung/`
 - `http://127.0.0.1:8765/schw/`
 - `http://127.0.0.1:8765/skhynix/`
 - `http://127.0.0.1:8765/snps/`
@@ -212,13 +213,20 @@ Charts are ordered the way the note is actually used:
    that moves against it, the slope that turns a 1% move in contracts into a
    0.66% move in revenue, the slice of the clearing fee its published volumes
    do not cover, and the basis points it keeps out of the interest earned on
-   client collateral; and Micron gets the fifteen fiscal years its record
+   client collateral; Micron gets the fifteen fiscal years its record
    quarter has to be read against — an annual gross margin running from −9.1%
    to 58.9% across them, against 84.6% in the quarter this page reports — the
    capital intensity whose peaks land on the revenue troughs rather than on
    its peaks, the three cash-flow lines whose capital-expenditure leg has not yet
    turned, and nineteen quarters of inventory measured against cost of goods
-   sold rather than against a selling price that has multiplied.
+   sold rather than against a selling price that has multiplied;
+   and Samsung Electronics gets the one number the company
+   actually guides -- next quarter's DRAM and NAND bit shipments, and only as a
+   phrase -- beside the price it never guides, the eight quarters in which
+   Memory went from twenty-eight per cent of group revenue to seventy, the
+   handset division's first operating loss, caused by its own semiconductor
+   division's prices, and the intersegment elimination the segment table has no
+   line for.
 
 On the Alphabet, Meta and Microsoft pages these run on the ten-year record
 rather than eight quarters, because eight quarters cannot tell a trend from a
