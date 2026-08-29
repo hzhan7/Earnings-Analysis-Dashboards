@@ -11,8 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amzn, avgo, cdns, googl, ibkr, ma, mco, meta, msci, msft, ndaq, nke, nvda,
-    pm, race, schw, snps,
+    amzn, avgo, axp, cdns, googl, ibkr, ma, mco, meta, msci, msft, ndaq, nke,
+    nvda, pm, race, schw, snps,
     spgi, tjx, tsm, v,
 )
 from build.payload_guard import write_js  # noqa: E402
@@ -23,6 +23,7 @@ DATA_DIR = ROOT / "data"
 MODULES = {
     "amzn": amzn,
     "avgo": avgo,
+    "axp": axp,
     "cdns": cdns,
     "googl": googl,
     "ibkr": ibkr,
@@ -80,6 +81,17 @@ ENTRIES = [
         "cadence_label": "11 月制财年；本站按自然年季度标注",
         "headline_metrics": ["Revenue $22.19B", "AI 半导体 $10.8B", "EBITDA 利润率 68.7%"],
         "search_text": "avgo broadcom 博通 半导体 ai xpu 定制加速器 asic networking 以太网 tomahawk jericho vmware 基础设施软件 vcf",
+    },
+    {
+        "slug": "axp",
+        "ticker": "AXP",
+        "name": "American Express Company",
+        "aliases": ["American Express", "美国运通", "运通"],
+        "group": "payment_networks",
+        "cadence_label": "自然年季度；全年指引逐季修订",
+        "headline_metrics": ["Revenue $19.6B", "净卡费 +15.4%", "VCE 占收入 44.6%"],
+        "search_text": ("axp american express 美国运通 运通 支付 卡组织 发卡行 高端 platinum 白金卡 "
+                        "年费 卡费 折扣率 商户 消费额 billed business 拨备 准备金 信用卡 cet1"),
     },
     {
         "slug": "cdns",

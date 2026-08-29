@@ -21,6 +21,7 @@ tmp/
 series/*.json
 !series/amzn.json
 !series/avgo.json
+!series/axp.json
 !series/cdns.json
 !series/googl.json
 !series/ibkr.json

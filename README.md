@@ -2,9 +2,10 @@
 
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
-Broadcom, Cadence, Charles Schwab, Ferrari, Interactive Brokers, Mastercard,
-Meta, Microsoft, Moody's, MSCI, Nasdaq, NIKE, NVIDIA,
-Philip Morris International, S&P Global, Synopsys, TJX, TSMC and Visa.
+American Express, Broadcom, Cadence, Charles Schwab, Ferrari,
+Interactive Brokers, Mastercard, Meta, Microsoft, Moody's, MSCI, Nasdaq,
+NIKE, NVIDIA, Philip Morris International, S&P Global, Synopsys, TJX, TSMC
+and Visa.
 
 ## Build
 
@@ -17,6 +18,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 
 - `http://127.0.0.1:8765/amzn/`
 - `http://127.0.0.1:8765/avgo/`
+- `http://127.0.0.1:8765/axp/`
 - `http://127.0.0.1:8765/cdns/`
 - `http://127.0.0.1:8765/googl/`
 - `http://127.0.0.1:8765/ibkr/`
@@ -136,12 +138,14 @@ Charts are ordered the way the note is actually used:
    quarters of the same share at quarterly resolution, the two
    selling-and-administrative lines that carry the cost of running a direct
    business, ten years of cash flow against capital returned, and the price it
-   actually paid for its own stock.
-
-   are built; Nasdaq gets forty-six quarters of its two operating margins and
+   actually paid for its own stock; Nasdaq gets forty-six quarters of its two operating margins and
    the amortization gap between them, the same window showing the trading
    business shrinking from 37% of net revenue to 23%, and the index assets that
-   went from US$114B to over a trillion.
+   went from US$114B to over a trillion; American Express gets
+   thirty-eight quarters of the two prices it charges — the annual fee per
+   card against the merchant discount rate — the four revenue legs those two
+   prices land in, and the wedge between net income and earnings per share
+   that its buyback opens.
 
 On the Alphabet, Meta and Microsoft pages these run on the ten-year record
 rather than eight quarters, because eight quarters cannot tell a trend from a
@@ -663,6 +667,68 @@ one quarter as an inequality (`over $4.4 billion`) and in another not as a level
 at all. The page plots the six readings it has, in a chart kept deliberately
 apart from the formal record, and says on the chart why they are not the same
 kind of number.
+
+American Express files an annual outlook too — full-year revenue growth and
+full-year EPS, in the CEO's quote in the EX-99.1 of every earnings 8-K, revised
+once a quarter across eleven fiscal years and 43 releases. **It is the first
+record on this site that cannot be settled**, and that is the page rather than a
+caveat on it. Six of the eleven years have no honest answer: FY2016 printed a
+GAAP range and an ex-restructuring range for the same year; FY2017's guidance of
+$5.80–$5.90 is not comparable to a GAAP result of $2.97 after the Tax Act;
+FY2018 changed basis mid-year to adjusted EPS with the release stating a GAAP
+reconciliation was unavailable; FY2020 was withdrawn — not in an earnings 8-K
+but in a separate Item 7.01 filing on 2020-03-17, so reading only the earnings
+set reports it as "never guided" rather than "guided, then withdrawn"; FY2021
+was never guided at all, and seven consecutive releases carry no annual number
+of either kind; FY2026 is still open.
+
+What survives is a two-sided answer that exists only because both metrics sit in
+the same sentence of the same release. In the five years where EPS settles it
+**never landed below its range** — four inside, one above. In the six where
+revenue growth settles it **landed below its floor once**, in FY2023. The number
+management can steer clears its range; the number it cannot does not, and the
+page's second section is the mechanism: the year-over-year change in pretax
+income splits exactly two ways, an operating leg and a provision leg, and in the
+latest quarter the provision line carries US$321M of a US$521M increase.
+
+The FY2023 miss is itself a basis question rather than a verdict. Guidance was
+15%–17% and the company reported "up 14 percent (15 percent FX-adjusted)": the
+FX-adjusted figure lands exactly on the floor and the reported one does not. The
+page settles it on the reported basis and prints both. Two neighbouring years
+are handled the other way and reported as landing *on* the bound rather than
+under it — FY2019 delivered 7.98% against a floor of 8 and FY2024 delivered
+8.98% against a point of 9. Both guidance and result are stated by the company
+only in whole percentage points, so the band and the diamond are drawn in whole
+percentage points; settling a promise written to the point against a quotient
+carried to two decimals invents a precision the promise never had. The exact
+quotients are in the audit drawer.
+
+One American Express series exists on this site because the company stopped
+publishing the number. Its **average discount rate** — the price it charges
+merchants — appears in the statistical tables every quarter from 2015 to the
+Q4 2022 release and never again. Over the 24 quarters inside this page's window
+it runs 2.43% to 2.34%. The obvious continuation is not published as one: the
+company's footnote computes that rate on proprietary *and* network-partner
+volume net of what a third-party acquirer retains, so it is not discount revenue
+over billed business, and in the eight quarters where both exist the derived
+ratio sits a steady 3.9–5.0bp below the printed one. Joining them would draw
+that offset as a step at the quarter the disclosure ended. The derived ratio is
+plotted separately and starts at 2021Q1, because in 2020 its numerator still
+contains processed revenue while its denominator had already been recast to
+proprietary-only — old numerator over new denominator reads as a price rise that
+never happened, and no filed identity catches it.
+
+Two further windows on that page are the length of the disclosure rather than a
+choice. **VCE** — the company's own defined aggregate of Card Member rewards,
+business development and Card Member services — runs 22 quarters, because
+business development only left the combined `Marketing and business development`
+line in the April 2022 release and only 2021 was recast. The **four current
+segments** run 26 quarters, from the appendix in the October 2022 release that
+recast them back to 2020Q1; before that the company reported a different
+three-segment structure it never recast. And the whole page starts at 2017Q1
+rather than earlier because ASC 606 restated 2017 in the company's own tables
+and never restated 2016 — Q1 2017 discount revenue is 4,519 in the January 2018
+release and 5,387 in the April 2018 one.
 
 **Microsoft, Alphabet, Mastercard, Visa and Interactive Brokers get no such
 record, and that is a
