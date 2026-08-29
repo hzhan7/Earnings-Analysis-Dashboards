@@ -11,7 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amzn, cdns, googl, ibkr, ma, meta, msft, nvda, schw, snps, spgi, tsm, v,
+    amzn, avgo, cdns, googl, ibkr, ma, mco, meta, msci, msft, nvda, schw, snps, spgi,
+    tjx, tsm, v,
 )
 from build.payload_guard import write_js  # noqa: E402
 
@@ -20,16 +21,20 @@ DATA_DIR = ROOT / "data"
 
 MODULES = {
     "amzn": amzn,
+    "avgo": avgo,
     "cdns": cdns,
     "googl": googl,
     "ibkr": ibkr,
     "ma": ma,
+    "mco": mco,
     "meta": meta,
+    "msci": msci,
     "msft": msft,
     "nvda": nvda,
     "schw": schw,
     "snps": snps,
     "spgi": spgi,
+    "tjx": tjx,
     "tsm": tsm,
     "v": v,
 }
@@ -41,6 +46,7 @@ GROUPS = [
     {"key": "financial_data_indices", "label": "金融数据、评级与指数", "order": 4},
     {"key": "payment_networks", "label": "支付网络", "order": 5},
     {"key": "brokerage_wealth", "label": "券商与财富管理", "order": 6},
+    {"key": "consumer_retail", "label": "消费零售", "order": 7},
 ]
 
 # Everything here is navigation copy, not analysis: it is what a reader sees
@@ -57,6 +63,16 @@ ENTRIES = [
         "cadence_label": "自然年季度；完整披露",
         "headline_metrics": ["Revenue $200.6B", "AWS +37%", "TTM FCF -$7.6B"],
         "search_text": "amzn amazon 亚马逊 aws 云 电商 零售 广告 互联网 trainium prime",
+    },
+    {
+        "slug": "avgo",
+        "ticker": "AVGO",
+        "name": "Broadcom",
+        "aliases": ["Broadcom", "博通", "VMware"],
+        "group": "semiconductor_ai",
+        "cadence_label": "11 月制财年；本站按自然年季度标注",
+        "headline_metrics": ["Revenue $22.19B", "AI 半导体 $10.8B", "EBITDA 利润率 68.7%"],
+        "search_text": "avgo broadcom 博通 半导体 ai xpu 定制加速器 asic networking 以太网 tomahawk jericho vmware 基础设施软件 vcf",
     },
     {
         "slug": "cdns",
@@ -100,6 +116,17 @@ ENTRIES = [
         "search_text": "ma mastercard 万事达 支付 网络 跨境 清算 返点 激励 增值服务 vas 发卡行 收单 稳定币",
     },
     {
+        "slug": "mco",
+        "ticker": "MCO",
+        "name": "Moody's Corporation",
+        "aliases": ["Moody's", "穆迪", "评级"],
+        "group": "financial_data_indices",
+        "cadence_label": "自然年季度；全年指引逐季修订",
+        "headline_metrics": ["Revenue $2.19B", "MIS adj OpM 68.3%", "调整后 EPS $4.68"],
+        "search_text": ("mco moodys 穆迪 评级 信用评级 mis ma 债券 发行量 issuance "
+                        "arr 订阅 金融数据 指数 全年指引"),
+    },
+    {
         "slug": "meta",
         "ticker": "META",
         "name": "Meta Platforms",
@@ -108,6 +135,17 @@ ENTRIES = [
         "cadence_label": "自然年季度；完整披露",
         "headline_metrics": ["Revenue $60.8B", "Ads +27.5%", "FCF $0.8B"],
         "search_text": "meta facebook instagram whatsapp 脸书 广告 reality labs 互联网",
+    },
+    {
+        "slug": "msci",
+        "ticker": "MSCI",
+        "name": "MSCI Inc.",
+        "aliases": ["MSCI", "明晟", "指数"],
+        "group": "financial_data_indices",
+        "cadence_label": "自然年季度；完整披露",
+        "headline_metrics": ["Revenue $867M", "ETF AUM $2,818B", "Adj EBITDA 62.1%"],
+        "search_text": ("msci 明晟 指数 index analytics 分析 可持续 sustainability climate "
+                        "私募资产 private assets etf aum 基点费率 run rate 留存率 订阅 资产型费用"),
     },
     {
         "slug": "msft",
@@ -159,6 +197,16 @@ ENTRIES = [
         "headline_metrics": ["Revenue $4.15B", "Ratings 交易性 +25%", "调整后 EPS $4.83"],
         "search_text": ("spgi s&p global 标普全球 标普 评级 信用评级 指数 ratings indices "
                         "market intelligence 大宗商品 能源 mobility 分拆 发行量 订阅"),
+    },
+    {
+        "slug": "tjx",
+        "ticker": "TJX",
+        "name": "The TJX Companies",
+        "aliases": ["TJ Maxx", "Marshalls", "HomeGoods", "TK Maxx", "折扣零售"],
+        "group": "consumer_retail",
+        "cadence_label": "1 月制财年；本站按自然年季度标注",
+        "headline_metrics": ["Revenue $15.18B", "Comp +4%", "Adj EPS $1.22"],
+        "search_text": "tjx tj maxx marshalls homegoods winners tk maxx sierra homesense 折扣零售 off-price 服装 家居 零售 关税 marmaxx",
     },
     {
         "slug": "tsm",

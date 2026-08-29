@@ -13,6 +13,8 @@ on every push. A hook that fails on a normal quarter roll gets bypassed with
 
 from __future__ import annotations
 
+import json
+import re
 import subprocess
 import sys
 import unittest
@@ -28,7 +30,7 @@ sys.path.insert(0, str(ROOT))
 # so `hooks/pre-push` keeps its budget. What it buys is the test below: with no
 # ENTRIES to compare against, the slug list is only ever checked by hand, which
 # is how NVDA stayed off it while three other companies were added to it.
-from build.all import ENTRIES, GROUPS  # noqa: E402
+from build.all import ENTRIES, GROUPS, MODULES  # noqa: E402
 
 # Lower-cased substrings that must never reach a published file.
 #
@@ -101,8 +103,10 @@ def published_files() -> list[Path]:
 # the point is to fail when discovery stops finding one, and a list derived from
 # discovery could never do that. The test below keeps it from drifting from the
 # roster it is supposed to mirror.
-COMPANY_SLUGS = ("amzn", "cdns", "googl", "ibkr", "ma", "meta", "msft", "nvda",
-                 "schw", "snps", "spgi", "tsm", "v")
+COMPANY_SLUGS = (
+    "amzn", "avgo", "cdns", "googl", "ibkr", "ma", "mco", "meta", "msci",
+    "msft", "nvda", "schw", "snps", "spgi", "tjx", "tsm", "v",
+)
 
 
 class ContentBoundaryTest(unittest.TestCase):
@@ -184,6 +188,92 @@ class ContentBoundaryTest(unittest.TestCase):
         orders = [group["order"] for group in GROUPS]
         self.assertEqual(orders, sorted(orders), [g["key"] for g in GROUPS])
         self.assertEqual(len(orders), len(set(orders)), "duplicate order values")
+
+    def test_modules_and_entries_register_the_same_companies(self) -> None:
+        """A conflict hunk can split *inside* one ENTRIES dict, and Python
+        silently keeps the last duplicate key rather than erroring:
+
+            {'slug': 'spgi', 'x': 1, 'slug': 'msci'}  ->  {'slug': 'msci', ...}
+
+        so a "keep both sides" resolution can merge two companies into one and
+        parse cleanly. `msci` sorts between `meta` and `msft` and `spgi` between
+        `snps` and `tsm`, so several of the companies added in parallel are
+        adjacent in this list and exposed to it.
+
+        The two directions fail differently, which is why this asserts both:
+        a slug in ENTRIES with no module raises `KeyError` in `roster_payload`
+        and is loud, while a module with no ENTRIES row is **silent** -- the
+        page builds, its payload and shell are written, and it is simply absent
+        from the roster and from every page's nav. That is the same "a page
+        nobody can reach" failure a missing group key produces.
+
+        Grepping does not catch the swallow either: the source still contains
+        the right number of `"slug":` lines, because both are inside one dict.
+        """
+        entries = [entry["slug"] for entry in ENTRIES]
+        self.assertEqual(len(entries), len(set(entries)), entries)
+        self.assertEqual(list(MODULES), entries)
+
+    def test_the_home_page_counts_the_companies_it_lists(self) -> None:
+        """`index.html`'s masthead count is hand-written and nothing read it.
+
+        Every session adding a company has to change that number, and each one
+        reads the current value and writes value+1 -- so identical edits to one
+        line merge with no conflict and the site advertises one fewer company
+        than it renders. `test_home_page_matches_roster` iterates the roster
+        asserting each item's href, label and date, but never counts them, so it
+        stays green with the number wrong.
+
+        Asserted against `len(ENTRIES)` rather than against `data/roster.js`, to
+        keep this file's deliberately minimal imports and to avoid coupling a
+        push gate to build order; `test_published_payload_roster_and_shell` is
+        what ties the roster payload back to ENTRIES.
+
+        The second figure in that line is the eight-quarter window, not a
+        company count, and must not move.
+        """
+        home = (ROOT / "index.html").read_text(encoding="utf-8")
+        stated = re.search(r"(\d+) 家公司", home)
+        self.assertIsNotNone(stated, "masthead no longer states a company count")
+        self.assertEqual(int(stated.group(1)), len(ENTRIES))
+        self.assertEqual(home.count('class="hcard"'), len(ENTRIES))
+        self.assertIn("8 季趋势", home)
+
+    def test_literal_text_fields_carry_no_markup(self) -> None:
+        """Some payload fields are escaped or textContent'd; a tag prints raw.
+
+        `page.js` sets `headline`, `title`, `subtitle` and `tracker` with
+        `node.textContent`, and runs `section.title`, `section.description`,
+        every `notes` entry and every table title/header/cell through `esc()`.
+        Markup in any of them reaches the reader as the literal characters
+        `<b>`. `brief`, `footer` and each exhibit's `note` / `src_extra` are
+        raw innerHTML and legitimately carry markup -- 140 chart notes across
+        the site do -- so they are deliberately not checked here.
+
+        **`notes` is escaped too and is deliberately NOT in this gate yet.**
+        It is left out because it is currently red, not because markup belongs
+        there: `data/cdns.js` carries five notes containing `<b>` and
+        `data/snps.js` two, and all seven render to readers as the literal
+        characters. Fixing them means editing `build/cdns.py` and
+        `build/snps.py`, which does not belong in the commit that adds a
+        different company. Strip those seven strings, then add
+        `payload.get("notes", [])` to the loop below -- do not conclude from
+        this exclusion that notes may carry markup.
+        """
+        for path in published_files():
+            name = path.relative_to(ROOT).as_posix()
+            if not name.startswith("data/") or name == "data/roster.js":
+                continue
+            payload = json.loads(
+                path.read_text(encoding="utf-8").split(" = ", 1)[1].rstrip().rstrip(";\n"))
+            for key in ("headline", "title", "subtitle", "tracker"):
+                self.assertNotIn("<", payload.get(key) or "", f"{name}.{key}")
+            for section in payload.get("sections", []):
+                self.assertNotIn("<", section["title"], f"{name} section title")
+                self.assertNotIn("<", section.get("description") or "",
+                                 f"{name} section {section['id']} description")
+            for table in payload.get("tables", []):
+                self.assertNotIn("<", table["title"], f"{name} table {table['n']}")
 
     def test_no_published_file_contains_forbidden_text(self) -> None:
         for path in published_files():

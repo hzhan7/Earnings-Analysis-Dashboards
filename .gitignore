@@ -20,16 +20,20 @@ tmp/
 # the new series file silently (rc=0, absent from `git diff --cached`).
 series/*.json
 !series/amzn.json
+!series/avgo.json
 !series/cdns.json
 !series/googl.json
 !series/ibkr.json
 !series/ma.json
+!series/mco.json
 !series/meta.json
+!series/msci.json
 !series/msft.json
 !series/nvda.json
 !series/schw.json
 !series/snps.json
 !series/spgi.json
+!series/tjx.json
 !series/tsm.json
 !series/v.json
 config/
