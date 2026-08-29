@@ -573,10 +573,11 @@ company, same release, same table — the next-quarter number has cleared the to
 **twelve times out of twelve** and the full year has missed once in six.
 
 The reason is written into the guidance rather than inferred, which is why the
-page is worth building. From the spin-off through the February 2022 release,
-every full-year forecast carried the same clause: it excludes future
+page is worth building. Across the 56 releases from April 2008 to February
+2022, 54 attached the same clause to the forecast: it excludes future
 acquisitions, unanticipated asset impairment and exit-cost charges, and any
-unusual event. The number labelled GAAP was therefore never a forecast of GAAP;
+unusual event. (The two exceptions are 2008-10-22 and the April 2020
+withdrawal, which published no annual forecast at all.) The number labelled GAAP was therefore never a forecast of GAAP;
 it was a GAAP number conditional on nothing unusual happening, and each of the
 five misses is a year in which something unusual happened. FY2024 is the clean
 case — reported EPS of US$4.52 against a final guidance of US$6.20–6.26,
