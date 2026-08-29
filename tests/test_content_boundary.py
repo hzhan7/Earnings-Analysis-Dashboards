@@ -104,7 +104,8 @@ def published_files() -> list[Path]:
 # discovery could never do that. The test below keeps it from drifting from the
 # roster it is supposed to mirror.
 COMPANY_SLUGS = (
-    "amzn", "avgo", "axp", "cdns", "cost", "googl", "ibkr", "ma", "mco",
+    "amzn", "avgo", "axp", "cboe", "cdns", "cost", "googl", "ibkr", "ma",
+    "mco",
     "meta", "msci", "msft", "ndaq", "nke", "nvda", "pm", "race", "schw",
     "snps", "spgi", "tjx", "tsm", "v",
 )

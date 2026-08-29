@@ -22,6 +22,7 @@ series/*.json
 !series/amzn.json
 !series/avgo.json
 !series/axp.json
+!series/cboe.json
 !series/cdns.json
 !series/cost.json
 !series/googl.json

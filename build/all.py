@@ -11,8 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amzn, avgo, axp, cdns, cost, googl, ibkr, ma, mco, meta, msci, msft, ndaq, nke,
-    nvda, pm, race, schw, snps,
+    amzn, avgo, axp, cboe, cdns, cost, googl, ibkr, ma, mco, meta, msci, msft,
+    ndaq, nke, nvda, pm, race, schw, snps,
     spgi, tjx, tsm, v,
 )
 from build.payload_guard import write_js  # noqa: E402
@@ -24,6 +24,7 @@ MODULES = {
     "amzn": amzn,
     "avgo": avgo,
     "axp": axp,
+    "cboe": cboe,
     "cdns": cdns,
     "cost": cost,
     "googl": googl,
@@ -56,6 +57,7 @@ GROUPS = [
     {"key": "consumer_retail", "label": "消费零售", "order": 7},
     {"key": "consumer_staples", "label": "消费必需品与烟草", "order": 8},
     {"key": "luxury_brands", "label": "奢侈品与豪华汽车", "order": 9},
+    {"key": "exchanges", "label": "交易所", "order": 10},
 ]
 
 # Everything here is navigation copy, not analysis: it is what a reader sees
@@ -93,6 +95,18 @@ ENTRIES = [
         "headline_metrics": ["Revenue $19.6B", "净卡费 +15.4%", "VCE 占收入 44.6%"],
         "search_text": ("axp american express 美国运通 运通 支付 卡组织 发卡行 高端 platinum 白金卡 "
                         "年费 卡费 折扣率 商户 消费额 billed business 拨备 准备金 信用卡 cet1"),
+    },
+    {
+        "slug": "cboe",
+        "ticker": "CBOE",
+        "name": "Cboe Global Markets, Inc.",
+        "aliases": ["Cboe", "芝加哥期权交易所", "VIX", "SPX"],
+        "group": "exchanges",
+        "cadence_label": "自然年季度；全年指引逐季修订",
+        "headline_metrics": ["Net revenue $731.6M", "Multi-listed RPC $0.064", "调整后 OpM 70.4%"],
+        "search_text": ("cboe 芝加哥期权交易所 交易所 期权 指数期权 spx vix 0dte 波动率 "
+                        "multi-listed 做市返点 市占率 每合约收入 rpc adv 日均成交量 "
+                        "data vantage 市场数据 期货 外汇 场外大宗 ats section 31 规费 事件合约"),
     },
     {
         "slug": "cdns",

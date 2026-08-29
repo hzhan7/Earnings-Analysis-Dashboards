@@ -2,10 +2,10 @@
 
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
-American Express, Broadcom, Cadence, Charles Schwab, Costco, Ferrari,
-Interactive Brokers, Mastercard, Meta, Microsoft, Moody's, MSCI, Nasdaq,
-NIKE, NVIDIA, Philip Morris International, S&P Global, Synopsys, TJX, TSMC
-and Visa.
+American Express, Broadcom, Cadence, Cboe Global Markets, Charles Schwab,
+Costco, Ferrari, Interactive Brokers, Mastercard, Meta, Microsoft, Moody's,
+MSCI, Nasdaq, NIKE, NVIDIA, Philip Morris International, S&P Global, Synopsys,
+TJX, TSMC and Visa.
 
 ## Build
 
@@ -19,6 +19,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/amzn/`
 - `http://127.0.0.1:8765/avgo/`
 - `http://127.0.0.1:8765/axp/`
+- `http://127.0.0.1:8765/cboe/`
 - `http://127.0.0.1:8765/cdns/`
 - `http://127.0.0.1:8765/cost/`
 - `http://127.0.0.1:8765/googl/`
@@ -188,7 +189,11 @@ Charts are ordered the way the note is actually used:
    splits into across thirteen years, the gross margin against the SG&A rate
    that is the one of the two that actually moved, how long a single
    membership-fee increase takes to finish arriving, and what a retailer
-   running at 2% capital intensity does with the cash it keeps.
+   running at 2% capital intensity does with the cash it keeps; and Cboe gets
+   the fourteen-year adjusted operating margin, the fifty-nine quarters of
+   index-option volume against a per-contract price that never had to be
+   discounted, the second revenue split the company publishes alongside its
+   segments, and the buyback against the price it actually paid.
 
 On the Alphabet, Meta and Microsoft pages these run on the ten-year record
 rather than eight quarters, because eight quarters cannot tell a trend from a
