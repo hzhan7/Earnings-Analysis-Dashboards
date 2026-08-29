@@ -51,6 +51,11 @@
      yoy     {values,color,yfmt,name}
                        kind:'gs_bar' 的次轴同比折线（同 gsx.lvl_bar）。给了就画次轴 y/y
                        并**不画 12 个月均线**；没给维持现状。右轴刻度与折线同色。
+     avg12   number    kind:'gs_bar'（未给 yoy 时）与 kind:'gs_line_avg' 的横向参考虚线。
+                       引擎**不自己算这个均值**，只画 payload 给的数。三条路径——画线、
+                       算 y 轴范围、图例——都以 isNum(avg12) 为条件：给了才有线也才有图例，
+                       两个字段都不给就是一张干净的柱图。别把「没给 yoy」当成「有均值」，
+                       那正是 AVGO Ex16 画出 y1="NaN" 的那条线的由来。
    ========================================================================== */
 (function () {
   'use strict';
@@ -858,7 +863,7 @@
       else { var rr0 = (mx - mn) || 1; y0 = mn - rr0 * 0.12; y1 = mx + rr0 * 0.10; }
     }
     else if (kind === 'gs_line' || kind === 'gs_line_avg') {
-      if (avg != null) { mn = Math.min(mn, avg); mx = Math.max(mx, avg); }
+      if (isNum(avg)) { mn = Math.min(mn, avg); mx = Math.max(mx, avg); }
       var rr = (mx - mn) || 1, pd = kind === 'gs_line_avg' ? 0.35 : 0.30;
       y0 = mn - rr * pd; y1 = mx + rr * pd;
     } else if (kind === 'lines_endlabels') {
@@ -1241,7 +1246,14 @@
          给了 ex.yoy 就画 y/y 折线并**不画均线** —— 两条一起画太挤，而且它们回答的是
          同一个问题的两种说法，读者要在同一张图上分辨两条横向线的含义。
          没给就完全维持现状（默认关闭，不动任何已上线的页面）。 */
-      if (!yoyS) {
+      /* isNum(avg)：这条均线的值是 payload 给的（ex.avg12），引擎不自己算，
+         所以「没给 yoy」不等于「有均值可画」。全站 27 张 gs_bar 里 26 张给了 yoy、
+         **一张都没给过 avg12**，于是这个分支从来没有被真实数据走通过；唯一走到这里的
+         AVGO Ex16 两个字段都没有，Y(undefined) 得到 NaN，浏览器把整个 <line> 静默丢掉。
+         静默是关键：没有报错、没有空白、图看着完全正常，475 条测试与 payload_guard
+         全绿——guard 扫的是 payload 里的非有限值，而这个 NaN 是在渲染器的算术里出生的。
+         没有值就不画这条线（图例同此，见 legendHTML）。 */
+      if (!yoyS && isNum(avg)) {
         /* 均线**必须画在数值标签之前**。它按构造就落在柱子中段附近，凡是当月值接近
            12 个月均值的月份，标签必然被这条横线拦腰划掉 —— 两轮独立人眼审查都把这条
            列为 blocker（SCHW Ex12 三个数连着被划、LPLA Ex16 连续 9 个百分比被划断）。
@@ -1295,7 +1307,10 @@
       var fv = fmtOf(ex.fmt);
       var dmn = Math.min.apply(null, ex.values), dmx = Math.max.apply(null, ex.values);
       var rngv = (dmx - dmn) || 1;
-      if (kind === 'gs_line_avg') {
+      /* 同 gs_bar 的均线：值来自 ex.avg12，没给就既画不出线也标不出数
+         （Y(undefined) 是 NaN，fv(undefined) 印出字面的 "NaN"）。全站现在一张
+         gs_line_avg 都没有，所以这里改的是一条尚未上线的路径——趁它还没有读者时补上。 */
+      if (kind === 'gs_line_avg' && isNum(avg)) {
         el('line', { x1: M.l, x2: M.l + pw, y1: Y(avg), y2: Y(avg), stroke: C.BLUE,
           'stroke-width': 1.4, 'stroke-dasharray': '6 4' }, g);
         txt(g, M.l + pw + 4, Y(avg) + 3.2, fv(avg), { size: 8.5, anchor: 'start', fill: C.MBLUE });
@@ -1859,10 +1874,13 @@
       /* 给了 ex.yoy 就是次轴同比折线，均线那条虚线根本没画，图例也不能留 */
       var yl = rhsOf(ex);
       if (yl) items.push(['line', col(yl.color || 'GOLD'), yl.name || 'y/y (RHS)']);
-      else items.push(['dash', C.NAVY, 'Prior 12mo Avg.']);
+      /* 两个字段都没给时这里原来照样印一条「Prior 12mo Avg.」的深蓝虚线色块——
+         这是同一处缺陷里**读者真的看得见**的那一半：线被浏览器丢掉了，图例还在指认它。
+         AVGO Ex16 的图例八个月来一直这样。条件与上面画线的条件必须一致。 */
+      else if (isNum(ex.avg12)) items.push(['dash', C.NAVY, 'Prior 12mo Avg.']);
     } else if (ex.kind === 'gs_line_avg') {
       items.push(['line', C.NAVY, ex.legend]);
-      items.push(['dash', C.BLUE, ex.avg_label || 'Prior 12mo Avg.']);
+      if (isNum(ex.avg12)) items.push(['dash', C.BLUE, ex.avg_label || 'Prior 12mo Avg.']);
     } else if (ex.kind === 'stacked_dual') {
       for (i = 0; i < ex.stacks.length; i++)
         items.push(['sq', col(ex.stacks[i].color), ex.stacks[i].name]);

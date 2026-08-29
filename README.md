@@ -42,6 +42,32 @@ Open `http://127.0.0.1:8765/`, then choose:
 
 Live site: https://hzhan7.github.io/Earnings-Analysis-Dashboards/
 
+## Verification
+
+```bash
+python3 -m unittest discover -s tests -q
+```
+
+The suite reads payloads and source; it does not render anything. That gap is
+real: `build/payload_guard.py` rejects a non-finite number *in a payload*, so a
+NaN produced one call later, inside `assets/charts.js`, passes every check.
+AVGO Exhibit 16 shipped `<line y1="NaN">` that way — the browser drops such an
+element with no console message, so the chart looked finished while its dashed
+reference line was simply absent and the legend went on naming it.
+
+`tests/render_check.js` closes that gap by loading all 17 pages under jsdom the
+way a browser does and failing on any non-finite value that reaches an SVG
+attribute or a chart label. It is the one thing here with a third-party
+dependency, so it is not vendored and `tests/test_rendered_svg.py` skips when
+jsdom is absent:
+
+```bash
+npm --prefix tests install
+```
+
+`tests/test_chart_contract.py` pins the same class from source and payloads with
+no dependency at all, and is what actually runs on a fresh clone.
+
 ## Content boundary
 
 - Inputs: the local Earnings Analysis note plus company-reported quarterly data.

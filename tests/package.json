@@ -1,0 +1,11 @@
+{
+  "name": "earnings-analysis-dashboards-render-check",
+  "private": true,
+  "description": "jsdom only, and only for tests/render_check.js. The site itself is zero-dependency static HTML and must stay buildable with python3 alone.",
+  "scripts": {
+    "check": "node render_check.js .."
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1"
+  }
+}

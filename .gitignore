@@ -49,3 +49,11 @@ build/ingest_local.py
 # GitHub Pages serves every tracked file, so design notes that describe the
 # local Earnings Analysis vault stay out of the tree.
 docs/
+
+# `tests/render_check.js` renders every page under jsdom -- the only gate in the
+# suite that looks at a chart instead of at a payload. jsdom is the repo's one
+# third-party dependency and it stays out of the tree: `tests/package.json` and
+# its lockfile are committed, the 39 installed packages are not. GitHub Pages
+# serves every tracked file, so a vendored node_modules would be published.
+#   npm --prefix tests install
+node_modules/
