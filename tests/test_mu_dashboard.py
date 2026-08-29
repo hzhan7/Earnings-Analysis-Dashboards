@@ -667,8 +667,18 @@ class MuPublishedArtefactTest(unittest.TestCase):
         self.assertEqual(entry["ticker"], self.payload["company"]["ticker"])
         self.assertEqual(entry["name"], self.payload["company"]["name"])
         self.assertEqual(entry["group"], self.payload["company"]["group"])
-        self.assertIn("8 月底制财年", entry["cadence_label"])
-        self.assertIn("8 月底制财年", self.payload["subtitle"])
+        # Not "late August": the year ends the Thursday nearest 31 August, which
+        # fell in September in three of the nine filed years and does so again in
+        # FY2026 (2026-09-03 -- SEC records this filer's fiscalYearEnd as 0903).
+        # The shorthand was copied out of here into README prose, where it became
+        # a claim about specific dates; an approximation in a short field does not
+        # stay in the short field.
+        for text in (entry["cadence_label"], self.payload["subtitle"]):
+            self.assertIn("最接近 8 月 31 日的星期四", text)
+            self.assertNotIn("8 月底制财年", text)
+            # the site-wide README gate keys on this phrase in cadence_label
+            self.assertIn("本站按自然年季度标注", text)
+        self.assertIn("2026-09-03", self.payload["subtitle"])
 
     def test_source_links_are_public_and_absolute(self) -> None:
         for item in self.payload["source_links"]:

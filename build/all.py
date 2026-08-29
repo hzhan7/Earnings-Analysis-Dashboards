@@ -223,7 +223,7 @@ ENTRIES = [
         "name": "Micron Technology, Inc.",
         "aliases": ["Micron", "美光", "内存", "存储器"],
         "group": "semiconductor_ai",
-        "cadence_label": "8 月底制财年；本站按自然年季度标注",
+        "cadence_label": "财年末为最接近 8 月 31 日的星期四；本站按自然年季度标注",
         "headline_metrics": ["Revenue $41.46B", "non-GAAP GM 84.9%", "\u9500\u8d27\u6210\u672c\u73af\u6bd4 +4.8%"],
         "search_text": ("mu micron 美光 内存 存储器 半导体 dram nand hbm 闪存 "
                         "颗粒 位元 售价 asp 周期 涨价 数据中心 服务器 ssd "
