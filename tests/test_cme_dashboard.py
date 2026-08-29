@@ -412,12 +412,14 @@ class CmeDashboardTest(unittest.TestCase):
             for exhibit in section["exhibits"]:
                 width = len(exhibit["xlabels"])
                 blocks = [exhibit.get("values")]
-                for key in ("bar", "line", "yoy", "actual", "lo", "hi"):
+                # `net` belongs in this group, not appended raw: `bridgeNet` in
+                # charts.js reads `ex.net.values`, so a bare list is the broken
+                # shape and this test used to require it.
+                for key in ("bar", "line", "yoy", "actual", "lo", "hi", "net"):
                     block = exhibit.get(key)
                     blocks.append(block.get("values") if isinstance(block, dict) else block)
                 for key in ("series", "groups", "stacks"):
                     blocks.extend(b.get("values") for b in exhibit.get(key) or [])
-                blocks.append(exhibit.get("net"))
                 for values in blocks:
                     if values is not None:
                         self.assertEqual(len(values), width, exhibit["title"])

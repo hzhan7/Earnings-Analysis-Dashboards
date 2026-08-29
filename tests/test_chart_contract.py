@@ -269,7 +269,12 @@ class ExhibitPayloadContractTest(unittest.TestCase):
             # `lo` / `hi` / `actual` are bare lists on range_band, and `actual`
             # is a `{values: ...}` block on seasonality -- both are read as
             # `x[i]` against the same `i`, so both shapes belong here.
-            for key in ("yoy", "line", "base", "actual", "lo", "hi"):
+            # `net` is read at the same `i` as everything else (`bridgeNet`
+            # returns a per-column list), but it was missing from this tuple
+            # entirely, so no site-level check ever measured it: NKE Ex9's net
+            # was unchecked outright, and CME Ex5's only by a page-level
+            # assertion that required the broken bare-list shape.
+            for key in ("yoy", "line", "base", "actual", "lo", "hi", "net"):
                 block = exhibit.get(key)
                 if isinstance(block, dict):
                     named.append((key, block.get("values")))
@@ -415,6 +420,76 @@ class RenderGateRegexTest(unittest.TestCase):
             hits,
             "no payload contains `nan` any more; re-read this class before "
             "simplifying the render gate's pattern")
+
+
+class BridgeNetContractTest(unittest.TestCase):
+    """`bridge_bar` reads its net from `ex.net.values`, not from `ex.net`.
+
+    `bridgeNet` in `assets/charts.js` starts `if (ex.net && ex.net.values)`, and
+    the legend reads `ex.net.name` beside it. A payload that supplies `net` as a
+    bare list therefore satisfies the truthiness test, misses `.values`, and
+    falls through to summing the stacks -- which is exactly the branch the
+    object form exists to override. A waterfall's closing column carries no
+    stack segment (its whole value *is* the net), so that column sums to null,
+    `isNum(netv[i])` is false, and no diamond is drawn.
+
+    Both `bridge_bar` exhibits on the site shipped that way. CME Exhibit 5 and
+    NKE Exhibit 9 each rendered three bars under four x labels: the closing
+    column had its label, its tooltip hit-area and nothing else, while the
+    legend advertised a `Net change` series -- the default name, because
+    `ex.net.name` was undefined too -- that appeared nowhere on the canvas. It
+    is the MCO Exhibit 9 ending reached by a different road, and every existing
+    check was green: the values are finite, the build is deterministic, the
+    render gate finds no NaN and no empty card, and `len(values) == len(xlabels)`
+    holds because the missing entry is a `None`, not a missing element.
+
+    Three independent builders wrote the bare list -- CME and NKE months apart,
+    and MU on a branch being written the day this gate was added, whose closing
+    column renders empty under a title that promises `US$12.20 -> US$25.11`.
+    That is the part worth reacting to: a contract three authors get wrong the
+    same way is not being guarded by being documented. Both assertions below are
+    derived from what the renderer reads, not from what the payloads happen to
+    contain.
+    """
+
+    def bridges(self) -> list[tuple[str, dict]]:
+        return [(label, ex) for label, ex in exhibits() if ex.get("kind") == "bridge_bar"]
+
+    def test_the_site_still_has_a_bridge_to_check(self) -> None:
+        """Both assertions below pass vacuously if the census goes to zero."""
+        self.assertGreaterEqual(len(self.bridges()), 2, "bridge_bar exhibits")
+
+    def test_every_bridge_net_is_the_shape_the_renderer_reads(self) -> None:
+        wrong = []
+        for label, ex in self.bridges():
+            if "net" not in ex:
+                continue  # legitimate: the engine then sums the stacks
+            net = ex["net"]
+            if not isinstance(net, dict) or not isinstance(net.get("values"), list):
+                wrong.append(f"{label}: net is {type(net).__name__}, "
+                             f"renderer reads net.values")
+                continue
+            if len(net["values"]) != len(ex.get("xlabels") or []):
+                wrong.append(f"{label}: net.values has {len(net['values'])} entries "
+                             f"for {len(ex.get('xlabels') or [])} x labels")
+        self.assertEqual(wrong, [], "\n".join(wrong))
+
+    def test_every_bridge_column_has_something_to_draw(self) -> None:
+        """Each x label names a column; a column with neither a stack segment
+        nor a net value draws a label over empty canvas."""
+        blank = []
+        for label, ex in self.bridges():
+            xlabels = ex.get("xlabels") or []
+            net = ex.get("net")
+            netvals = net.get("values") if isinstance(net, dict) else (net if isinstance(net, list) else [])
+            for i, name in enumerate(xlabels):
+                legs = [st["values"][i] for st in ex.get("stacks", [])
+                        if isinstance(st.get("values"), list) and i < len(st["values"])]
+                drawn = [v for v in legs if isinstance(v, (int, float)) and v != 0]
+                netv = netvals[i] if isinstance(netvals, list) and i < len(netvals) else None
+                if not drawn and not isinstance(netv, (int, float)):
+                    blank.append(f"{label} column {i} ({name!r}) has a label and nothing to draw")
+        self.assertEqual(blank, [], "\n".join(blank))
 
 
 if __name__ == "__main__":

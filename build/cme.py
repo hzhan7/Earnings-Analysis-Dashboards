@@ -295,7 +295,8 @@ def quarter_section(staging: dict) -> list[dict]:
                     f"{labels[-1]} 期货与期权清算费"],
         "stacks": [{"name": "环比拆解", "color": "NAVY",
                     "values": rounded([prev_fees, volume_effect, rate_effect, None])}],
-        "net": rounded([None, None, None, fees]),
+        "net": {"name": f"{labels[-1]} 清算费（净额）",
+                "values": rounded([None, None, None, fees])},
         "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
         "ylab": "US$M",
         "note": (
