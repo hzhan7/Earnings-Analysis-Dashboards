@@ -11,8 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amzn, avgo, cdns, googl, ibkr, ma, mco, meta, msci, msft, nke, nvda, pm, race,
-    schw, snps,
+    amzn, avgo, cdns, googl, ibkr, ma, mco, meta, msci, msft, ndaq, nke, nvda,
+    pm, race, schw, snps,
     spgi, tjx, tsm, v,
 )
 from build.payload_guard import write_js  # noqa: E402
@@ -31,6 +31,7 @@ MODULES = {
     "meta": meta,
     "msci": msci,
     "msft": msft,
+    "ndaq": ndaq,
     "nke": nke,
     "nvda": nvda,
     "pm": pm,
@@ -162,6 +163,18 @@ ENTRIES = [
         "cadence_label": "6 月制财年；本站按自然年季度标注",
         "headline_metrics": ["Revenue $90.0B", "Azure +43%", "FCF $19.6B"],
         "search_text": "msft microsoft 微软 azure copilot m365 云 软件",
+    },
+    {
+        "slug": "ndaq",
+        "ticker": "NDAQ",
+        "name": "Nasdaq, Inc.",
+        "aliases": ["Nasdaq", "纳斯达克", "交易所"],
+        "group": "financial_data_indices",
+        "cadence_label": "自然年季度；仅指引费用与税率",
+        "headline_metrics": ["Net revenue $1.50B", "ETP AUM $1,114B", "Non-GAAP OpM 57.3%"],
+        "search_text": ("ndaq nasdaq 纳斯达克 交易所 上市 listing 指数 index etp aum "
+                        "金融科技 fintech verafin adenza calypso axiomsl 反金融犯罪 "
+                        "监管科技 arr 订阅 做市返点 section 31 规费 市占率"),
     },
     {
         "slug": "nke",

@@ -3,8 +3,8 @@
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
 Broadcom, Cadence, Charles Schwab, Ferrari, Interactive Brokers, Mastercard,
-Meta, Microsoft, Moody's, MSCI, NIKE, NVIDIA, Philip Morris International,
-S&P Global, Synopsys, TJX, TSMC and Visa.
+Meta, Microsoft, Moody's, MSCI, Nasdaq, NIKE, NVIDIA,
+Philip Morris International, S&P Global, Synopsys, TJX, TSMC and Visa.
 
 ## Build
 
@@ -25,6 +25,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/meta/`
 - `http://127.0.0.1:8765/msci/`
 - `http://127.0.0.1:8765/msft/`
+- `http://127.0.0.1:8765/ndaq/`
 - `http://127.0.0.1:8765/nke/`
 - `http://127.0.0.1:8765/nvda/`
 - `http://127.0.0.1:8765/pm/`
@@ -136,6 +137,11 @@ Charts are ordered the way the note is actually used:
    selling-and-administrative lines that carry the cost of running a direct
    business, ten years of cash flow against capital returned, and the price it
    actually paid for its own stock.
+
+   are built; Nasdaq gets forty-six quarters of its two operating margins and
+   the amortization gap between them, the same window showing the trading
+   business shrinking from 37% of net revenue to 23%, and the index assets that
+   went from US$114B to over a trillion.
 
 On the Alphabet, Meta and Microsoft pages these run on the ten-year record
 rather than eight quarters, because eight quarters cannot tell a trend from a
@@ -434,8 +440,10 @@ the rest, which shows the US$105M of raises breaking down into US$80M of Ansys
 and US$25M of everything else — and names the quarterly split in the excluded
 list instead of deriving it.
 
-S&P Global files the only **annual** guidance record on this site, and it
-produces the sharpest two-sided answer of any of them. It has never published a
+S&P Global was the first **annual** guidance record on this site — Nasdaq is the
+other one, and the two are not the same object, because S&P Global guides
+earnings and Nasdaq guides only costs. S&P Global
+produces the sharpest two-sided answer of the earnings records. It has never published a
 quarterly outlook at all; what it files, in the EX-99.1 of every quarterly
 earnings 8-K, is a full-year outlook that it then revises once a quarter. So the
 object the six pages above are built on does not exist here, and the honest
@@ -499,6 +507,92 @@ revenue prints US$3,755M in both the 2025 and the 2026 10-Q, unchanged. The page
 carries no bridge across the rebase - the US$1.98 per-share add-back the company
 disclosed is for FY2025, not FY2026, and using it as a FY2026 bridge would be
 the publisher's invention rather than the company's disclosure.
+
+Nasdaq guides **two numbers and no others**, and neither of them is a forecast of
+the business. It has never published revenue guidance, EPS guidance or margin
+guidance; what it files in every earnings release is a full-year **non-GAAP
+operating expense** range and a full-year **non-GAAP effective tax rate** range,
+with a standing footnote saying no GAAP equivalent will be provided. So the object
+this page's first section settles is the company's own budget, and the question
+"did it hit its guidance" means something different from what it means on every
+other page here.
+
+The record is one-sided in both directions, and they are opposite directions.
+Against the year's **last** range, full-year non-GAAP operating expense landed
+inside 7 times in eleven finished years and above it 4 times — and **not once
+below**. The floor of the expense band has never bound: Nasdaq has never spent
+less than it told you it would. Against the same final vintage the non-GAAP tax
+rate landed inside 5 times in seven years and below twice, and **not once above**
+— and three of those five "inside" verdicts sit exactly on the range's lower
+edge. One guided number is never beaten downward and the other is never missed
+upward.
+
+Against the year's **first** range the expense record stops being one-sided:
+5 inside, 3 above, 3 below. The mean absolute distance from the guided midpoint
+runs 2.84% in January against 0.97% in October, and the range narrows from US$60M
+wide to US$22M. That gap is the page. Most of what reads as discipline in the
+October record is the ten months already banked when it is published, which is
+the same caution the Cadence and S&P Global pages apply to their own never-missed
+records.
+
+Four caveats are carried on the charts rather than smoothed away, because three
+of the four "above" verdicts and two of the three "below" ones have an
+explanation. FY2022 clears the top of its final range by exactly US$1M. FY2023's
+final range was set on 2023-10-18 and the Adenza acquisition closed two weeks
+later, so the actual carries two months of a business the guidance did not.
+FY2020's overshoot was pre-announced in a **separate 8-K filed twelve days after
+the guided year had already ended** — a volume-statistics release that said
+expenses would exceed the top of the range by about US$45M against a US$1,414M
+actual, which is guidance issued with zero days remaining and is not counted as a
+vintage here. And FY2018 and FY2019 came in below their January ranges because
+businesses were sold mid-year, not because anyone economised. FY2017 is the one
+year whose actual moved: US$1,280M as first reported, US$1,271M after ASC 606 was
+adopted retrospectively, which flips it from inside its final range to below.
+The page uses the as-first-reported figure, because the guidance was written on
+the pre-606 basis, and says what the other reading would do to the tally.
+
+The second thing this page is about is that Nasdaq's **gross revenue line
+contains a government fee**. Its headline top line is "revenues less
+transaction-based expenses", and the two expenses subtracted are transaction
+rebates paid to liquidity providers and a line called brokerage, clearance and
+exchange fees. That second line ran US$274M in 2025Q1, then **US$6M in each of
+the next three quarters, then US$320M** — a swing that no earnings release
+anywhere in the corpus explains. It is the SEC's Section 31 fee, whose rate went
+to zero and came back, and the quarterly figures for it exist only in the MD&A
+tables of the 10-Q and 10-K: not XBRL-tagged, not in the R-files, so the primary
+document has to be parsed directly. What licenses the split is that the residual
+— the real brokerage and clearing cost — sits between US$4M and US$8M in every
+one of eighteen quarters. The 10-Q states the mechanism in its own words: the fee
+is recorded in revenue and in expense in equal amounts, so "there is no impact on
+our net revenues". Anyone quoting Nasdaq's total revenue growth is partly quoting
+a fee schedule; this quarter gross Market Services revenue grew 25.9% and the net
+line 11.1%, and the gap is almost entirely that.
+
+Two reporting-basis traps had to be handled rather than smoothed, and both were
+caught by an identity failing rather than by reading the releases. Nasdaq has run
+four segment structures since 2015 and reclassifies between them without always
+saying so, so taking each line's earliest sighting splices two bases: the segment
+revenues came out US$9M short of net revenue for three quarters, because Capital
+Access was being read from a January 2023 release still on the old structure while
+Financial Technology came from the 2024 release that restated the same quarter.
+Every quarter is now taken from a single release and the sum closes in all
+fifteen. The same trap in the ARR series is worse because it looks like news: read
+across releases, Capital Access ARR appears to grow 2.4x in one quarter, and the
+year-over-year rate comes out at 5.6% where the company's own release says 8% —
+Solovis was sold in October 2025 and the prior year restated. Growth rates on this
+page are read off the two columns printed side by side in one release. The
+company itself publishes both readings this quarter, 11% reported and 12%
+organic, and the difference is exactly that divestiture.
+
+Two things the page refuses to publish. Index revenue divided by ETP assets would
+print as a basis-point fee rate and is not one — that revenue also includes index
+options and futures licensing, which the company says has been doubling
+year-over-year, and Nasdaq has never disclosed a fee rate. And the pass-through
+ratio is drawn only over the fifteen quarters since 2022Q4, because before that
+the Market Services line included businesses carrying no transaction-based
+expense at all; the same 2022Q3 is US$305M on the old basis and US$245M on the
+new, and a single line through that would read a reclassification as a rise in
+the cost of doing business.
 
 One derivation on that page exists because the obvious form has a hole in it.
 S&P Global's income statement reads `revenue - expenses + gain on dispositions +
