@@ -287,6 +287,56 @@ class ContentBoundaryTest(unittest.TestCase):
             "the cards on the home page are not the registered roster",
         )
 
+    def test_the_readme_names_every_page_whose_fiscal_year_is_offset(self) -> None:
+        """The calendar-quarter paragraph must name every page that needs it.
+
+        Each page whose fiscal year differs from the calendar one says so in its
+        own subtitle (`… 制财年，本站按自然年季度标注：本页 Q2 2026 即公司所称 …`),
+        and the README paragraph beginning "Quarters are labelled by calendar
+        quarter" is where a reader goes to find the whole set. Nothing kept the
+        two in step: the marker lives in a generated payload, the paragraph is
+        hand-written prose, and no test read either.
+
+        Found on 2026-08-29 while landing Micron, whose page declares an
+        August fiscal year-end. It was absent from the paragraph -- and so were
+        **Costco and TJX**, which had been shipping that way since long before
+        that day. Five of the eight offset pages were named, three were not, and
+        every gate was green: the paragraph has no count to check and no roster
+        to compare against, so a missing clause is invisible in exactly the way
+        CLAUDE.md §4 says that sentence's contents always have been.
+
+        Derived from the pages, not from the sentence -- the set is whatever
+        declares `制财年`, so a company added later joins it by existing.
+        """
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        paragraphs = [p for p in readme.split("\n\n")
+                      if "Quarters are labelled by calendar quarter" in p]
+        self.assertEqual(len(paragraphs), 1,
+                         "the calendar-quarter paragraph is not findable")
+        para = paragraphs[0]
+        missing = []
+        offset = []
+        for entry in ENTRIES:
+            slug = entry["slug"]
+            payload = (ROOT / "data" / f"{slug}.js").read_text(encoding="utf-8")
+            body = payload[payload.index("{"):payload.rstrip().rstrip(";").rindex("}") + 1]
+            subtitle = json.loads(body).get("subtitle", "")
+            if "制财年" not in subtitle:
+                continue
+            offset.append(slug)
+            known = [entry["name"], *entry.get("aliases", [])]
+            named = any(k.lower() in para.lower() for k in known)
+            # `The TJX Companies` is named in prose as plain `TJX`, which is
+            # neither its registered name nor any alias. The slug is the
+            # registry's own short form, so accept it as a standalone word --
+            # length-gated so that `v` cannot match a stray letter.
+            if not named and len(slug) >= 3:
+                named = re.search(rf"\b{re.escape(slug)}\b", para, re.I) is not None
+            if not named:
+                missing.append(f"{slug} declares an offset fiscal year but the paragraph does not name it")
+        self.assertGreaterEqual(len(offset), 8, f"offset pages found: {offset}")
+        self.assertEqual(missing, [], "\n".join(missing))
+
     def test_cards_run_in_slug_order_inside_each_group(self) -> None:
         """Which makes "where does my card go" a question with one answer.
 

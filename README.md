@@ -113,6 +113,11 @@ no dependency at all, and is what actually runs on a fresh clone.
   `Q1 2026` is the quarter ended 2026-05-03, which the company calls FY2026 Q2;
   Visa's ends in September, so its `Q2 2026`
   is the quarter ended 2026-06-30, which the company also calls FY2026 Q3;
+  Costco's and Micron's both end in late August, so their `Q2 2026` are the
+  twelve weeks ended 2026-05-10 and the quarter ended 2026-05-28, which each
+  company calls FY2026 Q3; TJX's ends in January, so its `Q2 2026` is the
+  thirteen weeks ended 2026-08-01, which the company calls FY2027 Q2 — a fiscal
+  year numbered one ahead of the calendar year it mostly sits in;
   NIKE's ends in May, so its `Q2 2026` is the quarter ended 2026-05-31, which
   the company calls FY2026 Q4 — and because that year-end sits mid-quarter, the
   offset is not constant across its own year: NIKE's fiscal Q1 and Q2 land in
