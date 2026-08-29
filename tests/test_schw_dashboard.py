@@ -257,7 +257,7 @@ class SchwDashboardTest(unittest.TestCase):
                 self.assertNotIn(banned, text)
         # The notes may name them, but only inside the exclusion sentence.
         notes = " ".join(self.payload["notes"])
-        self.assertIn("<b>不发布</b>评级、目标价、估值倍数", notes)
+        self.assertIn("不发布评级、目标价、估值倍数", notes)
 
     def test_the_page_states_why_it_has_no_guidance_record(self) -> None:
         notes = " ".join(self.payload["notes"])
@@ -281,6 +281,31 @@ class SchwDashboardTest(unittest.TestCase):
             for label in exhibit.get("xlabels", []):
                 with self.subTest(title=exhibit["title"], label=label):
                     self.assertIsNone(month.search(str(label)))
+
+    def test_notes_carry_no_markup(self) -> None:
+        """`notes` is escaped on render; chart notes are not.
+
+        `page.js` builds the notes list as `'<li>' + esc(note) + '</li>'`, so a
+        tag there reaches the reader as literal `<b>` characters.  `charts.js`
+        concatenates `ex.note` and `ex.src_extra` raw, so markup in those is
+        correct and deliberate -- this asserts the difference rather than
+        banning tags from the payload.  Three notes shipped with `<b>` before
+        this test existed.
+        """
+        import re
+        tag = re.compile(r"</?[a-z][a-z0-9]*[^>]*>", re.I)
+        for index, note in enumerate(self.payload["notes"]):
+            with self.subTest(note=index):
+                self.assertIsNone(tag.search(note), f"notes[{index}] carries markup")
+        for field in ("headline", "title", "subtitle", "tracker"):
+            with self.subTest(field=field):
+                self.assertIsNone(tag.search(self.payload[field]))
+        for section in self.payload["sections"]:
+            with self.subTest(section=section["id"]):
+                self.assertIsNone(tag.search(section["title"]))
+                self.assertIsNone(tag.search(section["description"]))
+        # The raw-rendered fields keep theirs, and that is the point.
+        self.assertIn("<b>", self.payload["brief"])
 
     # ── published payload ────────────────────────────────────────────────────
     def test_published_payload_matches_a_rebuild(self) -> None:
