@@ -552,11 +552,15 @@ def build_payload(staging: dict) -> dict:
             "label_fmt": "f0c",
             "ylab": "US$M",
             "ylab2": "同比",
-            # `gs_bar` draws a twelve-period moving average when no `yoy` block
-            # is given, which is meaningless -- and arithmetically NaN -- on an
-            # eight-quarter series. Every other page here passes `yoy`; this one
-            # has a filed prior-year column to build it from, and the resulting
-            # line is the argument the chart is making.
+            # The twelve-period average line is opt-in: the engine never
+            # computes that average, it only draws a finite `avg12` handed to
+            # it by the payload, and the line, its contribution to the y-axis
+            # range and the legend key are all gated on that one condition
+            # (see the `avg12` entry in the assets/charts.js header). A
+            # `gs_bar` given neither field is simply a clean bar chart.
+            # So `yoy` is not here to suppress an average -- it is here
+            # because this one has a filed prior-year column to build it from,
+            # and the resulting line is the argument the chart is making.
             "yoy": {
                 "name": "同比增速 (RHS)",
                 "values": [round(pct_change(current, prior), 4) for current, prior
