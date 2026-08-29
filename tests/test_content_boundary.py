@@ -105,7 +105,8 @@ def published_files() -> list[Path]:
 # roster it is supposed to mirror.
 COMPANY_SLUGS = (
     "amzn", "avgo", "cdns", "googl", "ibkr", "ma", "mco", "meta", "msci",
-    "msft", "nke", "nvda", "pm", "schw", "snps", "spgi", "tjx", "tsm", "v",
+    "msft", "nke", "nvda", "pm", "race", "schw", "snps", "spgi", "tjx", "tsm",
+    "v",
 )
 
 

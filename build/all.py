@@ -11,7 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amzn, avgo, cdns, googl, ibkr, ma, mco, meta, msci, msft, nke, nvda, pm, schw, snps,
+    amzn, avgo, cdns, googl, ibkr, ma, mco, meta, msci, msft, nke, nvda, pm, race,
+    schw, snps,
     spgi, tjx, tsm, v,
 )
 from build.payload_guard import write_js  # noqa: E402
@@ -33,6 +34,7 @@ MODULES = {
     "nke": nke,
     "nvda": nvda,
     "pm": pm,
+    "race": race,
     "schw": schw,
     "snps": snps,
     "spgi": spgi,
@@ -50,6 +52,7 @@ GROUPS = [
     {"key": "brokerage_wealth", "label": "券商与财富管理", "order": 6},
     {"key": "consumer_retail", "label": "消费零售", "order": 7},
     {"key": "consumer_staples", "label": "消费必需品与烟草", "order": 8},
+    {"key": "luxury_brands", "label": "奢侈品与豪华汽车", "order": 9},
 ]
 
 # Everything here is navigation copy, not analysis: it is what a reader sees
@@ -191,6 +194,17 @@ ENTRIES = [
         "headline_metrics": ["Revenue $11.19B", "无烟收入占比 41.5%", "Adj EPS $2.20"],
         "search_text": ("pm philip morris 菲利普莫里斯 烟草 尼古丁 无烟 smoke-free iqos "
                         "heets terea zyn 尼古丁袋 veev 电子烟 marlboro 卷烟 消费必需品 提价"),
+    },
+    {
+        "slug": "race",
+        "ticker": "RACE",
+        "name": "Ferrari N.V.",
+        "aliases": ["Ferrari", "法拉利", "跃马"],
+        "group": "luxury_brands",
+        "cadence_label": "自然年季度；只报 6-K，无 10-Q",
+        "headline_metrics": ["Net revenues \u20ac1,938M", "EBIT margin 31.2%", "\u51fa\u8d27 3,366 \u53f0"],
+        "search_text": ("race ferrari \u6cd5\u62c9\u5229 \u8dc3\u9a6c \u5962\u4f88\u54c1 \u8c6a\u534e\u6c7d\u8f66 \u8dd1\u8f66 "
+                        "\u4e2a\u6027\u5316 personalization \u51fa\u8d27 shipments f1 \u4e00\u7ea7\u65b9\u7a0b\u5f0f ifrs \u6b27\u5143 20-f 6-k"),
     },
     {
         "slug": "schw",

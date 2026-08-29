@@ -32,6 +32,7 @@ series/*.json
 !series/nke.json
 !series/nvda.json
 !series/pm.json
+!series/race.json
 !series/schw.json
 !series/snps.json
 !series/spgi.json

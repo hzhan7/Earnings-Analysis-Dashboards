@@ -50,6 +50,12 @@ UNIT_FORMATS = {
     # EPS threshold is not printed as though it were eight million dollars.
     "times": lambda value: f"{value:.2f}x",
     "usd_eps": lambda value: f"{'−' if value < 0 else ''}${abs(value):.2f}",
+    # Ferrari is the first filer here that reports in a currency other than the
+    # US dollar, so its thresholds cannot borrow `usd_m` -- printing a euro
+    # figure with a dollar sign is a unit error a reader cannot see through.
+    "eur_m": lambda value: f"{'−' if value < 0 else ''}€{abs(value):,.0f}M",
+    "eur_bn": lambda value: f"{'−' if value < 0 else ''}€{abs(value):.2f}B",
+    "eur_eps": lambda value: f"{'−' if value < 0 else ''}€{abs(value):.2f}",
 }
 
 

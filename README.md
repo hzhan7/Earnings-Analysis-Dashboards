@@ -2,8 +2,8 @@
 
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
-Broadcom, Cadence, Charles Schwab, Interactive Brokers, Mastercard, Meta,
-Microsoft, Moody's, MSCI, NIKE, NVIDIA, Philip Morris International,
+Broadcom, Cadence, Charles Schwab, Ferrari, Interactive Brokers, Mastercard,
+Meta, Microsoft, Moody's, MSCI, NIKE, NVIDIA, Philip Morris International,
 S&P Global, Synopsys, TJX, TSMC and Visa.
 
 ## Build
@@ -28,6 +28,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/nke/`
 - `http://127.0.0.1:8765/nvda/`
 - `http://127.0.0.1:8765/pm/`
+- `http://127.0.0.1:8765/race/`
 - `http://127.0.0.1:8765/schw/`
 - `http://127.0.0.1:8765/snps/`
 - `http://127.0.0.1:8765/spgi/`
@@ -51,6 +52,9 @@ Live site: https://hzhan7.github.io/Earnings-Analysis-Dashboards/
   unverified customer-concentration estimates, local absolute paths, source
   PDFs, PPTs and transcripts.
 - `D` means Derived / 自算; it does not mean a company-defined non-GAAP metric.
+- Amounts are in the currency the filer reports in. Ferrari reports under IFRS
+  in euro, so its page is denominated in EUR and its figures are not addable to
+  the US-dollar pages.
 - Quarters are labelled by calendar quarter on every page. Microsoft's fiscal
   year ends in June, so its `Q2 2026` is the quarter ended 2026-06-30, which the
   company itself calls FY2026 Q4; NVIDIA's ends in late January, so its
@@ -782,6 +786,89 @@ largest open item, with collection timing and impairment risk unknown; the
 filed figure is US$684M, and the 10-K — published nine days after the note —
 states that substantially all of it was received after the year end, with no
 allowance recorded.
+
+Ferrari is the first company here that files **no 10-Q, no 10-K and no 8-K**. It
+is a Dutch-incorporated foreign private issuer reporting under IFRS in euro, so
+its annual filing is a 20-F and every quarterly figure it has ever published
+sits in the EX-99.1 of a results 6-K. The rendered-statement R-files the rest of
+this site leans on cover 10-Q and 10-K schedules, which Ferrari does not file,
+so the releases themselves are the entire source — and four of those accessions
+list no exhibit at all in their `index.json`, so the release has to be cut out
+of the complete submission text instead.
+
+What that exhibit contains is unusually complete: a three-month column beside
+the cumulative one in every release, shipments split four ways by region,
+revenue split by category, the full EBITDA and EBIT reconciliations, capex,
+industrial free cash flow and net industrial debt. So **42 consecutive quarters
+back to 2016Q1** come out of the releases with no differencing anywhere — the
+fourth quarter included, which on most pages here has to be derived.
+
+**And the guidance record it files has a shape no other page here carries.** The
+other guidance pages settle a range: did the reported number land inside it.
+Ferrari's full-year outlook mostly is not a range at all — it is a one-sided
+inequality. Across 31 vintages and five guided metrics, 69 readings are floors,
+31 are points, 6 are ceilings, and only 49 are two-sided ranges.
+
+The finding is what happens to that mix as a year runs. The opening, Q1 and Q2
+vintages carry 15 to 17 ranges each. The Q3 vintage — the one that settles the
+year, published in early November with about ten of twelve months already
+banked — carries **one range out of 35**. Every other year-end vintage is a
+floor, a point or a ceiling. In all five years where adjusted EBITDA opened as a
+two-sided range (FY2019 through FY2023) it ended that same year as a point or a
+floor, and from FY2024 the range is gone from the opening vintage too. **The
+guidance sheds its upper bound exactly as the year becomes knowable**, which is
+the opposite of a forecast narrowing onto an answer. That is why the page does
+not lead on a hit rate: against a floor, "never missed" is close to a tautology.
+What it plots instead is the distance above the floor, and the deviation of each
+finished year from *every* one of its four vintages, which shows the funnel
+closing from 11.3% average absolute error at the opening vintage to 3.4% at the
+last. Industrial free cash flow is the loosest of the five: even at the final
+vintage it sits 11.7% from the answer on average, and it has cleared its own
+number in all seven finished years.
+
+Three hazards on that page are handled rather than smoothed, and the first is
+the reason the year-sum test exists at all:
+
+- **The period columns swap sides.** Ferrari's 2016–2018 second- and
+  third-quarter releases print the cumulative block *left* of the row label and
+  the three-month block right of it; from 2019 the two are reversed. Reading a
+  fixed side puts half-year and nine-month figures into three years of quarterly
+  slots — and every within-quarter identity still closes while that is true,
+  because all the components go cumulative together. Only *four quarters must
+  sum to the filed year* catches it; that check now runs over 10 fiscal years
+  and 7 metrics and passes 70 of 70.
+- **The guidance column moves.** The outlook table puts the current-year
+  guidance in the last column in every release from 2018 to 2025 and in the
+  **first** column from 2026. A fixed position would have published the
+  prior-year actual, €7.15B, as the FY2026 revenue guidance. The page reads the
+  header row.
+- **A point guidance is settled at its printed precision.** FY2019 adjusted
+  EBITDA came in at €1.269B against a guided `~1.27`, three million euro under a
+  number the company printed to two decimals. That is recorded as landing *on*
+  the guidance, not below it — scoring it as a miss would apply a threshold
+  finer than the disclosure it is measured against, the same reason Mastercard's
+  currency-neutral threshold was retired.
+
+Two things the page refuses. **Personalisation as a share of Cars and spare
+parts revenue** is the number the local note leans on hardest and the one the
+company has never filed: it appears only as "over 20%" on earnings calls, never
+in a release. **Model-level shipments and ASP** are refused by the company as a
+matter of policy — asked directly, the CEO said Ferrari wants "to leave some
+blur". Both are named in the excluded list rather than estimated, and the page's
+own revenue-per-unit series is labelled as what it is: Cars and spare parts
+revenue over total shipments, which includes parts and personalisation in the
+numerator and only whole cars in the denominator, and is therefore not an ASP.
+
+One series on that page exists because the number that decides the quarter is
+not one any filing prints as such: **the quarterly depreciation and amortisation
+line against the run-rate the full-year guidance implies.** Ferrari's latest
+quarter set a record EBIT margin of 31.2% while its EBITDA margin *fell*, and
+the entire gap between those two facts is D&A, which at €150M is the lowest
+reading in eight quarters. Subtracting the half-year actual from the "more than
+€700M" the company put on the year gives an implied second-half average of
+€188M — within a million of what the company actually booked two quarters
+earlier. So the record margin sits below the depreciation line, and the page
+draws both legs rather than reporting the record.
 
 **Microsoft, Alphabet, Mastercard and Visa get no such record, and that is a
 sourcing limit rather than an editorial choice.** Microsoft's own 8-K says in as
