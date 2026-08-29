@@ -140,7 +140,7 @@ ENTRIES = [
         "name": "Costco Wholesale",
         "aliases": ["Costco", "好市多", "开市客", "仓储会员店"],
         "group": "consumer_retail",
-        "cadence_label": "8 月底制财年；本站按自然年季度标注",
+        "cadence_label": "财年末为最接近 8 月 31 日的星期日；本站按自然年季度标注",
         "headline_metrics": ["Revenue $70.5B", "调整后 comp +6.6%", "会员费/营业利润 51%"],
         "search_text": ("cost costco 好市多 开市客 仓储会员店 零售 会员费 续费率 executive "
                         "同店销售 comp 汽油 加油站 自有品牌 kirkland 药房 电商 仓库 山姆"),
@@ -346,7 +346,7 @@ ENTRIES = [
         "name": "The TJX Companies",
         "aliases": ["TJ Maxx", "Marshalls", "HomeGoods", "TK Maxx", "折扣零售"],
         "group": "consumer_retail",
-        "cadence_label": "1 月制财年；本站按自然年季度标注",
+        "cadence_label": "财年末为最接近 1 月 31 日的星期六；本站按自然年季度标注",
         "headline_metrics": ["Revenue $15.18B", "Comp +4%", "Adj EPS $1.22"],
         "search_text": "tjx tj maxx marshalls homegoods winners tk maxx sierra homesense 折扣零售 off-price 服装 家居 零售 关税 marmaxx",
     },

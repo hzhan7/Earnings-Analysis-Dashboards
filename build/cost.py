@@ -1268,7 +1268,7 @@ def build_payload(staging: dict) -> dict:
         "subtitle": (
             f"十二周截至 {staging['latest']['period_end']} · 发布 "
             f"{staging['latest']['release_date']} · US GAAP · 未审计 · "
-            "8 月底制财年，本站按自然年季度标注：本页 Q2 2026 即公司所称 FY2026 Q3"
+            "财年末为最接近 8 月 31 日的星期日，本站按自然年季度标注：本页 Q2 2026 即公司所称 FY2026 Q3"
         ),
         "headline": (
             f"总收入 US${revenue[-1]:,.0f}M、同比 {signed(fin['total_revenue_yoy_pct'][-1])}，"

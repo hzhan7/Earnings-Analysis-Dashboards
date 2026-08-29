@@ -907,7 +907,7 @@ def build_payload(staging: dict) -> dict:
         "title": "The TJX Companies (TJX)：Q2 2026 季报仪表盘",
         "subtitle": (
             "十三周截至 2026-08-01 · 发布 2026-08-19 · US GAAP · 未审计 · "
-            "1 月制财年，本站按自然年季度标注：本页 Q2 2026 即公司所称 FY2027 Q2"
+            "财年末为最接近 1 月 31 日的星期六，本站按自然年季度标注：本页 Q2 2026 即公司所称 FY2027 Q2"
         ),
         "headline": (
             f"净销售额 US${sales[-1]:,}M、同比 {signed(fin['net_sales_yoy_pct'][-1])}，"
