@@ -367,32 +367,108 @@ class CostDashboardTest(unittest.TestCase):
         self.assertIn("只对年初那一版成立", band["note"])
         self.assertIn(f"{final['ABOVE']} 年高于上限", band["note"])
 
-    def test_the_regime_shift_is_not_overstated(self) -> None:
-        """Two of the early years are overshoots, so it is not a clean flip."""
-        record = self.source["capex_guidance"]
-        early_above = [year for year, verdict, actual
-                       in zip(record["guided_fiscal_years"], record["verdict_vs_opening"],
-                              record["actual_capex_usd_m"])
-                       if actual is not None and year < 2021 and verdict == "ABOVE"]
-        self.assertEqual(early_above, [2013, 2018])
+    def test_the_full_record_is_drawn_and_contradicts_the_short_window(self) -> None:
+        """The symmetry is a property of the recent twelve years.
+
+        Over the whole filed record the misses lean one way, so the deviation
+        chart carries all thirty settled years and says so. Publishing only the
+        window in which the finding holds would be choosing the window that
+        makes it.
+        """
+        full = self.source["capex_record_full"]
+        years = full["guided_fiscal_years"]
+        self.assertEqual((years[0], years[-1]), (1995, 2026))
+        self.assertEqual(years, list(range(1995, 2027)), "contiguous, no gaps")
+
+        settled = [i for i, v in enumerate(full["deviation_vs_opening_pct"]) if v is not None]
+        self.assertEqual(len(settled), 30)
+
+        def tally(indexes):
+            counts = {"ABOVE": 0, "BELOW": 0, "INSIDE": 0}
+            for i in indexes:
+                counts[full["verdict_vs_opening"][i]] += 1
+            return counts
+
+        whole = tally(settled)
+        early = tally([i for i in settled if years[i] < 2013])
+        late = tally([i for i in settled if years[i] >= 2013])
+        self.assertEqual(whole, {"BELOW": 15, "INSIDE": 5, "ABOVE": 10})
+        self.assertEqual(early, {"BELOW": 10, "INSIDE": 3, "ABOVE": 5})
+        self.assertEqual(late, {"BELOW": 5, "INSIDE": 2, "ABOVE": 5})
+        # The point of drawing both: the halves must not agree, or the short
+        # window would have been a fair sample after all.
+        self.assertEqual(late["ABOVE"], late["BELOW"])
+        self.assertNotEqual(early["ABOVE"], early["BELOW"])
+
+        # Every verdict is recomputable from the endpoints it was scored on.
+        for i in settled:
+            actual = full["actual_usd_m"][i]
+            lo, hi = full["guided_low_usd_m"][i], full["guided_high_usd_m"][i]
+            expected = "ABOVE" if actual > hi else "BELOW" if actual < lo else "INSIDE"
+            with self.subTest(year=years[i]):
+                self.assertEqual(full["verdict_vs_opening"][i], expected)
+
         dev = next(ex for ex in self.by_section["settled"] if "相对计划中值的偏离" in ex["title"])
-        # The note quotes the over-strong phrasing in order to reject it, so a
-        # substring ban would fire on the correction itself. Assert the counts
-        # it replaces it with, and that both early overshoots are named.
-        early = {"ABOVE": 0, "BELOW": 0, "INSIDE": 0}
-        late = dict(early)
-        for year, verdict, actual in zip(record["guided_fiscal_years"],
-                                         record["verdict_vs_opening"],
-                                         record["actual_capex_usd_m"]):
-            if actual is None or verdict not in early:
-                continue
-            (early if year < 2021 else late)[verdict] += 1
-        self.assertEqual(early, {"ABOVE": 2, "BELOW": 5, "INSIDE": 1})
-        self.assertEqual(late, {"ABOVE": 3, "BELOW": 0, "INSIDE": 1})
-        self.assertIn(f"{early['BELOW']} 年低于下限、{early['ABOVE']} 年高于上限", dev["note"])
-        self.assertIn("没有一年低于下限", dev["note"])
-        for year in early_above:
+        self.assertEqual(len(dev["xlabels"]), len(years))
+        self.assertIn(f"{len(settled)} 个已完结年度", dev["title"])
+        self.assertIn("不是这家公司的性质", dev["note"])
+        band = next(ex for ex in self.by_section["settled"] if "资本开支计划与实际" in ex["title"])
+        self.assertIn("但这只是最近这一段", band["note"])
+
+    def test_the_hit_rate_excludes_the_years_with_no_range_to_hit(self) -> None:
+        """Three years are guided as a single number. A point has no width, so
+        counting those as "missed the range" is what makes the two eras look
+        identical -- the same category error the NVIDIA page avoids for opex."""
+        full = self.source["capex_record_full"]
+        years = full["guided_fiscal_years"]
+        settled = [i for i, v in enumerate(full["deviation_vs_opening_pct"]) if v is not None]
+        points = [years[i] for i in settled if full["guidance_shape"][i] == "point"]
+        self.assertEqual(points, [2009, 2010, 2011])
+        for i in settled:
+            if full["guidance_shape"][i] == "point":
+                self.assertEqual(full["guided_low_usd_m"][i], full["guided_high_usd_m"][i])
+                self.assertNotEqual(full["verdict_vs_opening"][i], "INSIDE")
+
+        def rate(lo, hi):
+            ranged = [i for i in settled if full["guidance_shape"][i] == "range"
+                      and lo <= years[i] <= hi]
+            return sum(1 for i in ranged
+                       if full["verdict_vs_opening"][i] == "INSIDE"), len(ranged)
+
+        self.assertEqual(rate(0, 2012), (3, 15))
+        self.assertEqual(rate(2013, 9999), (2, 12))
+        dev = next(ex for ex in self.by_section["settled"] if "相对计划中值的偏离" in ex["title"])
+        for year in points:
             self.assertIn(f"FY{year}", dev["note"])
+
+    def test_the_two_averages_are_taken_over_the_same_years(self) -> None:
+        """The revision only narrows the error on the years that have both
+        vintages; comparing the thirty-year spread against the recent window's
+        would flatter the revision by changing the sample underneath it."""
+        full = self.source["capex_record_full"]
+        both = [i for i, (a, b) in enumerate(zip(full["deviation_vs_opening_pct"],
+                                                 full["deviation_vs_final_pct"]))
+                if a is not None and b is not None]
+        self.assertEqual(len(both), 12)
+        opening = sum(abs(full["deviation_vs_opening_pct"][i]) for i in both) / len(both)
+        final = sum(abs(full["deviation_vs_final_pct"][i]) for i in both) / len(both)
+        self.assertGreater(opening, final)
+        self.assertLess(opening / final, 2.0, "the funnel closes by less than half")
+        dev = next(ex for ex in self.by_section["settled"] if "相对计划中值的偏离" in ex["title"])
+        self.assertIn(f"在两条腿都有的那 {len(both)} 年里", dev["note"])
+        self.assertIn("不要并排比", dev["note"])
+
+    def test_the_opening_plan_record_is_not_extended_and_says_why(self) -> None:
+        """The pre-2010 opening plans are scoped to the US and Canada while the
+        filed opening count is worldwide, and the promised measure -- gross
+        openings in the US and Canada -- was never filed in any year. That is a
+        stronger reason to stop than "the wording changed", and the chart says
+        it rather than drawing a line across it."""
+        plan = self.source["warehouse_plan"]
+        self.assertGreaterEqual(min(plan["guided_fiscal_years"]), 2015)
+        chart = next(ex for ex in self.by_section["settled"] if "计划开店数" in ex["title"])
+        self.assertIn("美国与加拿大", chart["note"])
+        self.assertIn("从没申报过", chart["note"])
 
     def test_the_hedged_wording_is_counted_not_assumed_away(self) -> None:
         """"approximately $X to $Y" is not a hard bound; two overshoots sit

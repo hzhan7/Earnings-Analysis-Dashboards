@@ -139,18 +139,20 @@ CAPEX_SOURCE = (
 )
 
 WINDOW_NOTE = (
-    "<b>这个窗口是取数窗口，不是披露窗口。</b>同一段话可以一直回到 EDGAR 上最早的那份 "
-    "10-K（FY1994 那份，为 FY1995 给出「approximately $600 million to $700 million」），"
-    "本页目前画的是 FY2013 起的 14 个年度。两者之间有一处真实的口径差别："
-    "为 FY2007 之前的年度给计划时，公司把它拆成美加与国际两笔分别给出，"
-    "要相加才和现在这一个数可比。写在这里，是为了不让读者把图的左边缘读成披露的起点。"
+    "<b>这张图的窗口比记录短，理由是刻度而不是取数。</b>完整记录从 FY1995 起 —— "
+    "EDGAR 上最早那份 10-K 就带着这段话 —— 但那一年的计划是 US$550–700M，"
+    "而 FY2026 的是 US$6,000–6,500M；一条线性纵轴放不下三十年而不把早年的色块压成一根发丝。"
+    "<b>整段记录由下一张无量纲的偏离图承载</b>，那是本站 NVIDIA 页处理同一个问题的办法。"
+    "另外，FY2007 之前公司把计划拆成美加与国际两笔分别给出，本页取两笔之和（D）。"
 )
 
 CAPEX_LAG_NOTE = (
-    "<b>先读这两句，再读命中率。</b>其一，10-K 在每年 10 月初申报，而 Costco 的财年在 9 月初就开始，"
-    "所以这份计划是在<b>它所指引的那个财年已经开始之后</b>公布的，本记录里最早第 37 天、"
-    "最晚第 53 天。其二，它<b>不是只发一次</b>：每一季的 10-Q 都会把同一段重写一遍，"
-    "所以每个财年都有一版年初计划和最多三次修订。"
+    "<b>先读这两句，再读命中率。</b>其一，10-K 申报时，它所指引的那个财年<b>已经开始了</b> —— "
+    "Costco 的财年在 9 月初开始，而年报在 10 月甚至更晚才申报。近十四年是第 37 到 53 天，"
+    "更早的年份更晚：FY2007 之前的年报要到被指引财年的第 67 到 87 天才出来，"
+    "因为那时还没有大型加速申报人的 60 天期限。整段记录的区间是第 37 到 87 天。"
+    "其二，它<b>不是只发一次</b>：每一季的 10-Q 都会把同一段重写一遍，"
+    "所以每个财年都有一版年初计划和最多三次修订（本页只回溯到 FY2013）。"
     "本节把「年初那一版」与「当年最后一版」分开结清，因为两者的答案不一样。"
 )
 
@@ -176,16 +178,22 @@ def capex_charts(staging: dict) -> tuple[list[dict], dict]:
     low, high = record["guided_low_usd_m"], record["guided_high_usd_m"]
     actual = record["actual_capex_usd_m"]
 
+    full_record = staging["capex_record_full"]
+    full_settled = [i for i, v in enumerate(full_record["deviation_vs_opening_pct"])
+                    if v is not None]
+
     finished = [i for i, (a, lo) in enumerate(zip(actual, low))
                 if a is not None and lo is not None]
     above = [i for i in finished if actual[i] > high[i]]
     below = [i for i in finished if actual[i] < low[i]]
     inside = len(finished) - len(above) - len(below)
 
-    # The symmetry is a property of the OPENING vintage. Scored against each
-    # year's final 10-Q the same record leans one way, so both tallies are
-    # computed here and both go on the chart -- publishing only the flattering
-    # one would be choosing the vintage that makes the finding.
+    # The symmetry is a property of the OPENING vintage AND of the recent
+    # window. Scored against each year's final 10-Q, or across the whole
+    # thirty-year record, the same series leans one way -- so every tally the
+    # page states is computed here and all of them go on the charts. Publishing
+    # only the one that survives is choosing the condition that makes the
+    # finding.
     def tally(verdicts):
         counts = {"ABOVE": 0, "BELOW": 0, "INSIDE": 0}
         for verdict in verdicts:
@@ -198,6 +206,14 @@ def capex_charts(staging: dict) -> tuple[list[dict], dict]:
                    if a is not None])
     final_above, final_below = final["ABOVE"], final["BELOW"]
     final_inside, final_total = final["INSIDE"], final["total"]
+
+    whole = {"ABOVE": 0, "BELOW": 0, "INSIDE": 0}
+    for index in full_settled:
+        verdict = full_record["verdict_vs_opening"][index]
+        if verdict in whole:
+            whole[verdict] += 1
+    full_tally_text = (f"{len(full_settled)} 个已完结年度是 {whole['BELOW']} 年低于区间、"
+                       f"{whole['INSIDE']} 年落在区间内、{whole['ABOVE']} 年高于区间")
 
     # "approximately $X to $Y" is not a hard bound, and two of the overshoots
     # sit inside what the word plausibly covers. Counting them as breaches
@@ -242,15 +258,19 @@ def capex_charts(staging: dict) -> tuple[list[dict], dict]:
         "note": (f"色块是{CAPEX_TIMING}公司在 10-K 里给出的下一财年资本开支区间，"
                  "菱形是那一年实际花掉的钱。"
                  "<b>本站其他每一份指引记录都是单边的</b> —— 要么几乎从不跌破下限，"
-                 f"要么几乎每期穿出上限；这一份 {len(finished)} 年里 {len(below)} 年低于下限、"
+                 f"要么几乎每期穿出上限；这一段 {len(finished)} 年里 {len(below)} 年低于下限、"
                  f"{len(above)} 年高于上限，两边一样多。"
+                 "<b>但这只是最近这一段。</b>把窗口拉到 FY1995 起的完整记录，"
+                 f"{full_tally_text}，对称就没有了 —— 见 Exhibit {{EX_CAPEX_DEV}}。"
                  "原因是结构性的，而且这<b>不是一次同类比较</b>：别的页记录的是收入、利润或每股收益，"
                  "那是对市场的预测；这一份记录的是支出，是公司给自己排的预算。"
                  "少花不算失信、多花也不算超预期，所以没有把它设在容易达成位置的动机 —— "
                  "分布对称的原因在这里，不在预测能力上。"
-                 f"<b>而且这句话只对年初那一版成立</b>：换成当年最后一版 10-Q，"
+                 f"<b>而且这句话连在这一段里也只对年初那一版成立</b>：换成当年最后一版 10-Q，"
                  f"{final_total} 个已结清年度是 {final_above} 年高于上限、{final_inside} 年落在区间内、"
-                 f"{final_below} 年低于下限，修订之后记录就偏向一边了（见 Exhibit {{EX_CAPEX_DEV}}）。"
+                 f"{final_below} 年低于下限。"
+                 "<b>一句话经不起换窗口，也经不起换 vintage，那它就不是一个发现。</b>"
+                 "本页把两个都画出来，让读者自己看这句话在哪些条件下成立。"
                  f"另一层软化在措辞里：{hedged} 个数字区间里有 {hedged_approx} 个印的是"
                  "「approximately $X to $Y」，"
                  f"而 {len(above)} 次高于上限里有 {soft_above} 次只超出上限不到 5%（"
@@ -267,55 +287,111 @@ def capex_charts(staging: dict) -> tuple[list[dict], dict]:
     if pending:
         band["annot"] = f"{pending[-1]}：仅计划，实际值待披露"
 
-    dev_labels, dev_open, dev_final = [], [], []
-    for index, label in enumerate(labels):
-        if actual[index] is None:
-            continue
-        dev_labels.append(label)
-        opening = record["guided_midpoint_usd_m"][index]
-        closing = record["final_10q_midpoint_usd_m"][index]
-        dev_open.append(None if opening is None
-                        else round((actual[index] / opening - 1) * 100, 6))
-        dev_final.append(None if closing is None
-                         else round((actual[index] / closing - 1) * 100, 6))
-    open_abs = [abs(v) for v in dev_open if v is not None]
-    final_abs = [abs(v) for v in dev_final if v is not None]
-    biggest = max((v for v in dev_open if v is not None), key=abs)
+    # ── the deviation chart carries the WHOLE record, not the band's window ──
+    full = staging["capex_record_full"]
+    full_labels = [f"FY{year}" for year in full["guided_fiscal_years"]]
+    dev_open = full["deviation_vs_opening_pct"]
+    dev_final = full["deviation_vs_final_pct"]
+    settled = [i for i, v in enumerate(dev_open) if v is not None]
+    full_tally = tally([full["verdict_vs_opening"][i] for i in settled])
+
+    # The two halves are the two harvests, FY1995-2012 and FY2013-2026 -- not
+    # the FLIP_YEAR split, which is about the recent window's own internal
+    # shift and would put 26 years on one side of this comparison and 4 on the
+    # other.
+    SPLIT_YEAR = 2013
+    early = tally([full["verdict_vs_opening"][i] for i in settled
+                   if full["guided_fiscal_years"][i] < SPLIT_YEAR])
+    late = tally([full["verdict_vs_opening"][i] for i in settled
+                  if full["guided_fiscal_years"][i] >= SPLIT_YEAR])
+
+    # A point guidance has no width, so a year guided as a point cannot land
+    # "inside" one; those years are excluded from the hit rate rather than
+    # counted as misses -- the distinction the NVIDIA page draws for its opex
+    # line. Counting them as misses is what makes the two eras look identical.
+    def inside_rate(lo_year, hi_year):
+        years = [i for i in settled
+                 if full["guidance_shape"][i] == "range"
+                 and lo_year <= full["guided_fiscal_years"][i] <= hi_year]
+        hits = sum(1 for i in years if full["verdict_vs_opening"][i] == "INSIDE")
+        return hits, len(years), hits / len(years) * 100
+
+    early_hits, early_ranged, early_rate = inside_rate(0, SPLIT_YEAR - 1)
+    late_hits, late_ranged, late_rate = inside_rate(SPLIT_YEAR, 9999)
+
+    # Both averages must be taken over the SAME years, or the comparison is the
+    # full record's spread against the recent window's.
+    both = [i for i in settled if dev_final[i] is not None]
+    open_abs_both = [abs(dev_open[i]) for i in both]
+    final_abs_both = [abs(dev_final[i]) for i in both]
+    open_abs_all = [abs(dev_open[i]) for i in settled]
+
+    # The direction runs in blocks rather than year to year, so the blocks are
+    # measured rather than described from memory.
+    def longest_run(predicate):
+        best, current = [], []
+        for i in settled:
+            if predicate(full["verdict_vs_opening"][i]):
+                current.append(full["guided_fiscal_years"][i])
+            else:
+                best, current = (current if len(current) > len(best) else best), []
+        return current if len(current) > len(best) else best
+
+    run_above = longest_run(lambda v: v == "ABOVE")
+    run_none = longest_run(lambda v: v != "ABOVE")
+    biggest = max((dev_open[i] for i in settled), key=abs)
+    points = [full_labels[i] for i in settled if full["guidance_shape"][i] == "point"]
+
     dev = {
         "ref": "EX_CAPEX_DEV",
         "kind": "grouped_bars",
-        "title": (f"实际资本开支相对计划中值的偏离：对年初那版平均差 "
-                  f"{sum(open_abs) / len(open_abs):.1f}%，对当年最后一版 "
-                  f"{sum(final_abs) / len(final_abs):.1f}%"),
-        "xlabels": dev_labels,
+        "title": (f"实际资本开支相对计划中值的偏离，{len(settled)} 个已完结年度："
+                  f"{full_tally['BELOW']} 年低于区间、{full_tally['INSIDE']} 年落在区间内、"
+                  f"{full_tally['ABOVE']} 年高于区间"),
+        "xlabels": full_labels,
         "xrot": 90,
         "groups": [
             {"name": "对 10-K 年初计划中值", "color": "GOLD", "values": dev_open},
             {"name": "对当年最后一次 10-Q 计划中值", "color": "NAVY", "values": dev_final},
         ],
-        "bar_labels": True,
+        "bar_labels": False,
         "fmt": "pct1",
         "label_fmt": "pct1",
         "ylab": "% vs 计划中值",
-        "note": ("正值 = 花得比计划中值多。两根柱之间的差就是「修订」这件事本身值多少。"
-                 f"<b>修订确实有用，但用处比看上去小：</b>平均绝对偏离从 "
-                 f"{sum(open_abs) / len(open_abs):.1f}% 收到 "
-                 f"{sum(final_abs) / len(final_abs):.1f}%，只压掉了不到一半 —— "
-                 "而本站另外两页按年指引的公司（穆迪、标普全球）同一口径下能压到五分之一甚至七分之一。"
-                 "对一家把计划写进 10-K、再逐季在 10-Q 里重写三遍的公司来说，"
-                 "这说明它修订的是数字，不是把握。"
-                 "<b>更值得看的是柱子的重心在窗口中段移了位，但不是干净地翻面：</b>"
-                 f"FY{FLIP_YEAR} 之前的 {early['total']} 个已结清年度里 {early['BELOW']} 年低于下限、"
-                 f"{early['ABOVE']} 年高于上限、{early['INSIDE']} 年落在区间内；"
-                 f"之后的 {late['total']} 个里 {late['ABOVE']} 年高于上限、"
-                 f"{late['INSIDE']} 年落在区间内，没有一年低于下限。"
-                 "所以不是「早年年年花不到、近年年年超过」—— 早年那一段里 "
-                 + "、".join(early_above_labels) + " 就高于上限 —— "
-                 "真正的变化是「低于下限」这件事在窗口后半段再没发生过。"
-                 f"窗口内偏离最大的一次是 {dev_labels[dev_open.index(biggest)]} 的 {biggest:+.1f}%。"
+        "note": ("正值 = 花得比计划中值多。"
+                 "<b>把上一张图的十二年放回三十年里，那份对称就不见了：</b>"
+                 f"整段记录是 {full_tally['BELOW']} 年低于区间对 {full_tally['ABOVE']} 年高于区间；"
+                 f"FY{SPLIT_YEAR} 之前的 {early['total']} 年是 {early['BELOW']} 比 {early['ABOVE']}，"
+                 f"之后的 {late['total']} 年才是 {late['BELOW']} 比 {late['ABOVE']} 的对半。"
+                 "所以「两边一样多」是最近这一段窗口的性质，不是这家公司的性质 —— "
+                 "本页上一张图因此把窗口写进了标题。"
+                 "<b>相对稳的是另一个数：区间被打中的频率。</b>"
+                 f"在以区间形式给出的年度里，前一段 {early_ranged} 年中了 {early_hits} 次"
+                 f"（{early_rate:.0f}%），后一段 {late_ranged} 年中了 {late_hits} 次"
+                 f"（{late_rate:.0f}%）—— 两段都在五分之一到六分之一之间。"
+                 "变的主要是错的方向，不是错的频率。"
+                 f"（{'、'.join(points)} 公司给的是单点而不是区间，没有宽度可落，"
+                 "只可能高于或低于，不计入这个频率；把它们算成「没中」正是让两段看起来一模一样的做法。）"
+                 "<b>而方向是成段走的，不是逐年抖动：</b>"
+                 f"FY{run_above[0]} 到 FY{run_above[-1]} 连续 {len(run_above)} 年高于区间，"
+                 f"FY{run_none[0]} 到 FY{run_none[-1]} 的 {len(run_none)} 年里一次都没有高过。"
+                 "<b>第二根柱只有近十二年有：</b>10-Q 里的季度修订本页只回溯到 "
+                 f"FY{full['final_vintage_from_fiscal_year']}，更早的年度没有采集，"
+                 "所以左边那一段只有年初计划这一条腿。"
+                 f"在两条腿都有的那 {len(both)} 年里，修订把平均绝对偏离从 "
+                 f"{sum(open_abs_both) / len(open_abs_both):.1f}% 收到 "
+                 f"{sum(final_abs_both) / len(final_abs_both):.1f}%，只压掉不到一半 —— "
+                 "本站另外两页按年指引的公司（穆迪、标普全球）同一口径下能压到五分之一甚至七分之一。"
+                 f"（整段三十年对年初计划的平均绝对偏离是 "
+                 f"{sum(open_abs_all) / len(open_abs_all):.1f}%，与上面那个数不是同一批年份，不要并排比。）"
+                 f"整段记录里偏离最大的一次是 "
+                 f"{full_labels[dev_open.index(biggest)]} 的 {biggest:+.1f}%。"
                  + CAPEX_LAG_NOTE),
         "src_extra": (CAPEX_SOURCE
-                      + "当年最后一版取自该财年第三季 10-Q 的同一段；"
+                      + "FY1995 至 FY2012 取自同一段落更早的版本，"
+                      "标题在那些年份是 Expansion Plans 或没有小标题；"
+                      "FY2007 之前的计划为美加与国际两笔之和（D）。"
+                      "当年最后一版取自该财年第三季 10-Q；"
                       "偏离 = 实际值 ÷ 计划区间中点 − 1，为本页自算（D）。"),
     }
 
@@ -403,7 +479,13 @@ def warehouse_plan_chart(staging: dict) -> dict:
                  "另一句（「and relocate up to M warehouses」），其余年份写成"
                  "「including M relocations」即计划之内。"
                  "本图在前一种年份把计划记为 N + M，好让两根柱子量的是同一件事。"
-                 "更早的 FY2013 与 FY2014 完全不接入：那两年的计划是区间而不是一个数，"
+                 "<b>更早的年度完全不接入，而理由比「口径变了」更硬：那个被承诺的量公司从没申报过。</b>"
+                 "FY2009 之前的十五份 10-K 把计划限定在<b>美国与加拿大</b>，国际开店写在后面另一句里、"
+                 "不在这个数里；而公司申报的实际开店数是全球口径，区域拆分只按<b>净</b>增给。"
+                 "所以「美加的毛新开」这个量在任何一年都没有被申报过 —— "
+                 "拿全球数去对美加计划，会把其中六年的判定翻面，还有两年（FY2000、FY2001）"
+                 "连方向都定不了。本页因此把那十五年整段留在外面，而不是画一条看起来连续的线。"
+                 "FY2013 与 FY2014 另有原因：那两年的计划是区间而不是一个数，"
                  "而且 FY2012 的开店数在两份 10-K 里一次记作净新增、一次记作新开，两条腿都不在一个口径上。"
                  + CAPEX_LAG_NOTE),
         "src_extra": ("与资本开支计划取自各年 10-K 的同一段；"
