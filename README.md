@@ -55,15 +55,27 @@ AVGO Exhibit 16 shipped `<line y1="NaN">` that way — the browser drops such an
 element with no console message, so the chart looked finished while its dashed
 reference line was simply absent and the legend went on naming it.
 
-`tests/render_check.js` closes that gap by loading all 17 pages under jsdom the
-way a browser does and failing on any non-finite value that reaches an SVG
-attribute or a chart label. It is the one thing here with a third-party
-dependency, so it is not vendored and `tests/test_rendered_svg.py` skips when
-jsdom is absent:
+`tests/render_check.js` closes that gap by loading every published page under
+jsdom the way a browser does and failing on any non-finite value that reaches an
+SVG attribute or a chart label. It is the one thing here with a third-party
+dependency, so it is not vendored:
 
 ```bash
 npm --prefix tests install
 ```
+
+Once installed it also runs on its own, which is the quickest way to see which
+exhibit is at fault:
+
+```bash
+node tests/render_check.js
+```
+
+Without that install, `tests/test_rendered_svg.py` — the wrapper that runs it —
+skips rather than fails, and the suite still reports `OK (skipped=1)`. That
+single skip *is* the render gate not running, and the test total does **not**
+drop to show it, because a skipped test still counts in `Ran N`. Read the skip
+count, not the last line.
 
 `tests/test_chart_contract.py` pins the same class from source and payloads with
 no dependency at all, and is what actually runs on a fresh clone.

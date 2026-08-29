@@ -42,6 +42,7 @@ sys.path.insert(0, str(ROOT))
 from build.all import ENTRIES  # noqa: E402
 
 CHARTS = ROOT / "assets" / "charts.js"
+CHECK_JS = ROOT / "tests" / "render_check.js"
 
 # Renderer branches that no published payload reaches. Hand-written, and that
 # is the point: the whole failure above is what an unexercised branch does the
@@ -301,6 +302,119 @@ class ExhibitPayloadContractTest(unittest.TestCase):
                    if ex.get("kind") == "gs_bar" and not ex.get("yoy")
                    and "avg12" not in ex]
         self.assertEqual(neither, ["avgo Ex16"])
+
+
+class RenderGateRegexTest(unittest.TestCase):
+    """The one line of `tests/render_check.js` that decides what the gate sees.
+
+    `render_check.js` is the only check that looks at a rendered chart, and it
+    decides every one of its verdicts with a single regex. Nothing that runs on
+    a fresh clone reads that regex: `test_rendered_svg.py` only asserts the file
+    exists, and the gate itself does not run until someone has done
+    `npm --prefix tests install`.
+
+    That asymmetry is the reason this class exists. Breaking the pattern in the
+    obvious direction is loud -- widening it back to a plain substring match
+    turns all 23 pages red, because `.../Financial-Information/...` in the SEC
+    and IR links on every page contains `nan`. The dangerous edit is the
+    opposite one, and it is the edit somebody reaches for *after* being shown
+    those 23 false positives: tighten the pattern until `Financial` stops
+    matching, land on something like `/^(NaN|Infinity|undefined)$/`, and the
+    gate keeps passing while it quietly stops seeing `translate(NaN,3)` --
+    which is the shape the AVGO Exhibit 16 defect actually had. On a machine
+    without jsdom that weakening is invisible in every test, forever.
+
+    So the behavioural assertions below run against the pattern **extracted
+    from `render_check.js`**, never against a copy kept here -- a copy would be
+    a test of itself, the shape CLAUDE.md warns about. The literal pin comes
+    from the other direction: any edit at all to that line fails
+    `test_the_gate_ships_the_regex_this_file_reasons_about`, which is a prompt
+    to read this docstring before changing it, not a bug.
+    """
+
+    # Byte-for-byte what the `const BAD` declaration must read, flags included.
+    # No `i` flag is load-bearing: `Financial` contains a lower-case `nan`, so a
+    # case-insensitive variant of this pattern is red on every page.
+    EXPECTED = "/(^|[^A-Za-z])(NaN|Infinity|undefined)([^A-Za-z]|$)/"
+
+    # Values a browser drops or a reader sees. Every one is a shape the renderer
+    # can actually emit: bare from `Y(undefined)`, embedded in a coordinate list
+    # from `polyline`, inside `transform` from the rotated axis labels.
+    DISCARDED = (
+        "NaN", "81.2 NaN", "M0 NaN L4 2", "translate(NaN,3)",
+        "rotate(-90 NaN 12)", "Infinity", "-Infinity", "undefined",
+    )
+
+    # Substring hits that must NOT match. The first two are not hypothetical:
+    # they are in IR hostnames on the source lines of published pages, which is
+    # what made the naive version unusable.
+    ORDINARY = (
+        "https://investor.spglobal.com/financial-information",
+        "Financial Services", "S&P Global Market Intelligence",
+        "NaNny", "Infinityx", "undefineds",
+    )
+
+    @staticmethod
+    def shipped_literal() -> str:
+        """The regex literal `render_check.js` ships, exactly as written."""
+        source = CHECK_JS.read_text(encoding="utf-8")
+        match = re.search(r"^const BAD = (/.*/[a-z]*);$", source, re.M)
+        if match is None:
+            raise AssertionError(
+                "tests/render_check.js no longer declares `const BAD = /.../;` "
+                "on one line; the render gate's scan pattern cannot be checked")
+        return match.group(1)
+
+    @classmethod
+    def shipped_pattern(cls) -> "re.Pattern[str]":
+        """The shipped literal compiled with `re`, so the cases test the real one.
+
+        A JavaScript-only construct (a named group, a unicode property escape)
+        raises here rather than passing quietly. That is the right outcome: this
+        pattern has to stay expressible in both engines for the dependency-free
+        half of the suite to be able to check it at all.
+        """
+        literal = cls.shipped_literal()
+        body, _, flags = literal[1:].rpartition("/")
+        if "i" in flags:
+            raise AssertionError(
+                f"the render gate's regex carries an `i` flag ({literal}); "
+                "`Financial` contains `nan`, so that is red on every page")
+        return re.compile(body)
+
+    def test_the_gate_ships_the_regex_this_file_reasons_about(self) -> None:
+        self.assertEqual(
+            self.shipped_literal(), self.EXPECTED,
+            "tests/render_check.js changed its scan pattern. Read this class's "
+            "docstring, confirm the new one still rejects every value in "
+            "DISCARDED and accepts every value in ORDINARY, then re-pin it here.")
+
+    def test_it_matches_every_value_a_browser_would_discard(self) -> None:
+        pattern = self.shipped_pattern()
+        for value in self.DISCARDED:
+            with self.subTest(value=value):
+                self.assertRegex(value, pattern)
+
+    def test_it_matches_no_ordinary_word_on_a_published_page(self) -> None:
+        pattern = self.shipped_pattern()
+        for value in self.ORDINARY:
+            with self.subTest(value=value):
+                self.assertNotRegex(value, pattern)
+
+    def test_the_published_pages_contain_the_word_that_breaks_a_naive_scan(self) -> None:
+        """Keeps the reason above from becoming folklore.
+
+        The argument for the token boundary rests on `nan` really occurring
+        inside published text. If that ever stopped being true the boundary
+        would look like unmotivated complexity to the next reader, and this is
+        where they would find out otherwise.
+        """
+        hits = [slug for slug, payload in payloads()
+                if re.search(r"nan", json.dumps(payload, ensure_ascii=False))]
+        self.assertTrue(
+            hits,
+            "no payload contains `nan` any more; re-read this class before "
+            "simplifying the render gate's pattern")
 
 
 if __name__ == "__main__":
