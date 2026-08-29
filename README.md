@@ -1255,36 +1255,43 @@ year's capital expenditure as a dollar range, plus a warehouse-opening plan and
 — since 2024-05-30, in the EX-99.2 supplemental deck — a fiscal-year-end
 warehouse count revised every quarter.
 
-Against the plan as first published, twelve settled years land **five above the
-range, two inside it and five below**. Every other guidance record here behaves
-like a floor — Cadence's revenue never missed in 42 quarters, Meta's never in
-18, S&P Global's adjusted earnings per share never in seven years — and this one
-does not. But that is **not a like-for-like comparison and the page says so**:
-the other records are forecasts of revenue, profit or earnings per share, made
-to the market; this one is a budget the company writes for itself. Underspending
-it is not a failure and overspending it is not a beat, so nothing pushes it
-toward a number that will be cleared. The symmetry is a fact about what kind of
-promise a capital plan is, not about how well Costco forecasts.
+The record runs from the earliest 10-K on EDGAR — the fiscal 1994 one, guiding
+fiscal 1995 at "approximately $600 million to $700 million" — so there are
+**thirty settled years**, and they land **fifteen below the range, five inside
+it and ten above**. Recent history says something different from that: the
+twelve years from fiscal 2013 are exactly **five below, two inside, five above**,
+while the eighteen before them are ten below against five above. **The symmetry
+is a property of the recent window, not of the company**, and the page draws the
+whole record precisely so that the short window cannot be mistaken for the
+finding. The band chart stays on the recent years for scale — capex ran from
+US$531M to US$5,498M and a linear band over thirty years collapses the early era
+to a hairline — and the scale-free deviation chart carries all thirty, the same
+split the NVIDIA page makes for the same reason.
 
-Three things qualify the tally, and all three are on the chart rather than in a
-footnote. **It holds only for the opening vintage.** The plan is restated in
-every 10-Q, and scored against each year's final 10-Q the same thirteen settled
-years land six above, four inside and three below — leaning one way. **The
-revision buys less than it looks like**: mean absolute error falls only from
-9.1% to 5.5%, where Moody's and S&P Global, guiding a year the same way, close
-their funnels to about a fifth or a seventh. A company that rewrites its number
-four times a year and still lands 5% from the last version is revising the
-number, not the uncertainty. And **twelve of the thirteen numeric ranges are
-printed "approximately $X to $Y"**; two of the five overshoots clear the top by
-under 5%, which is inside what that word plausibly covers, while the other three
-are 8–12% over.
+What survives the longer window is not the direction but the **frequency**. Among
+the years guided as a range, three of the first fifteen landed inside it (20%)
+and two of the last twelve did (17%). Three years — fiscal 2009 to 2011 — were
+guided as a single number with no width at all, and are excluded from that rate
+rather than counted as misses; counting them as misses is exactly what makes the
+two eras look identical. What changes between the eras is direction, and it
+moves in blocks rather than year to year: fiscal 1997 through 2001 is five
+straight years above the range, and fiscal 2002 through 2012 is eleven years
+without a single one.
 
-The regime does shift, but not cleanly, and the page had to be corrected on this
-before it shipped. Before fiscal 2021 the eight settled years are five below,
-two above and one inside; from fiscal 2021 they are three above and one inside
-with nothing below. So it is not "underspent every year, then overspent every
-year" — fiscal 2013 and fiscal 2018 are overshoots inside the early stretch.
-What actually changed is that falling below the floor stopped happening.
+Three further things qualify the tally, all on the chart rather than in a
+footnote. **The plan is restated in every 10-Q**, and scored against each year's
+final revision the recent twelve land six above, four inside and three below —
+so the symmetry does not survive a change of vintage either. **The revision buys
+less than it looks like**: over the twelve years that have both vintages, mean
+absolute error falls only from 9.1% to 5.1%, where Moody's and S&P Global,
+guiding a year the same way, close their funnels to about a fifth or a seventh.
+And **twelve of the thirteen recent numeric ranges are printed "approximately
+$X to $Y"**; two of the five overshoots clear the top by under 5%, inside what
+that word plausibly covers, while the other three are 8–12% over.
+
+A sentence that does not survive a change of window, or a change of vintage, or
+a reading of the company's own hedge is not a finding. The page's answer is to
+draw all of them rather than to pick one.
 
 The three records also disagree with each other in a way that is the page's
 point rather than a loose end. The *store count* Costco estimates every quarter
@@ -1293,24 +1300,35 @@ settled fiscal years; the *dollars* those stores cost miss by 5% to 15% every
 year. It can tell you how many warehouses it will have and not what they will
 cost.
 
-Two things there are marked rather than smoothed. The 10-K is filed in early
-October and the fiscal year begins in early September, so the plan goes out 37
-to 53 days into the year it guides — the caveat Cadence and Broadcom carry, on
-an annual horizon. And the fiscal 2024 10-K guides fiscal 2025 as "a similar
-amount", with no number; that year is drawn with no band rather than an invented
-one, and it is the year capital expenditure rose 16.7%.
+Two things there are marked rather than smoothed. The 10-K is filed after the
+year it guides has already begun — 37 to 53 days in for the last fourteen years,
+and 67 to 87 for the years before fiscal 2007, which predate the large
+accelerated filer's sixty-day deadline. That is the caveat Cadence and Broadcom
+carry, on an annual horizon and a wider one. And the fiscal 2024 10-K guides
+fiscal 2025 as "a similar amount", with no number; that year is drawn with no
+band rather than an invented one, and it is the year capital expenditure rose
+16.7%.
 
 The opening plan is the one record on this site that gets a chart and **no hit
 rate**, because the sentence is not one object. Its qualifier moves four times
-across the window — a range, then "up to", then "approximately", then
+across the drawn window — a range, then "up to", then "approximately", then
 "approximately up to", then "up to" again — and the relocation clause flips
 between naming relocations as part of the plan and as an addition to it. The
 page plots the quantity (planned openings against actual openings, with the plan
 restated as N + M in the years relocations are additional) and says in as many
 words that a point estimate not reached and a ceiling not touched are not the
-same event. The two earliest guided years are dropped outright: their plan is a
-range rather than a number and their opening count is stated once as net-new and
-once as gross-new.
+same event.
+
+That record is deliberately **not** extended back the way the capital plan was,
+and the reason is stronger than a wording change: **the quantity the early plans
+promised was never filed**. The fifteen 10-Ks before fiscal 2009 scope the plan
+to the United States and Canada and put international openings in a separate
+sentence outside the number, while the opening count Costco files is worldwide
+and its regional split is given only net of closings. Gross openings in the US
+and Canada is a figure that does not exist in any filing. Scoring the scoped
+plan against the worldwide count flips six of those fifteen years and leaves two
+more with no determinable direction, so the page leaves the whole stretch out
+and says why instead of drawing a line across it.
 
 Costco's quarters also do not line up with the calendar and cannot be made to.
 Its fiscal year ends on the Sunday nearest 31 August, its first three quarters
