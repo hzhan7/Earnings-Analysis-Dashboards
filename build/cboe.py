@@ -124,6 +124,12 @@ def direction_steps(share: list, money: list) -> dict:
     same = opposite = 0
     verdicts = [None]
     for index in range(1, len(share)):
+        # A step needs both legs. The share line starts thirteen quarters into
+        # this record, so those steps have no verdict rather than a zero one.
+        if (share[index] is None or share[index - 1] is None
+                or money[index] is None or money[index - 1] is None):
+            verdicts.append(None)
+            continue
         ds = share[index] - share[index - 1]
         dm = money[index] - money[index - 1]
         if ds == 0 or dm == 0:
@@ -293,14 +299,15 @@ def settled_exhibits(staging: dict) -> tuple[list[dict], list[dict], dict]:
         "阈值为本地研究设定，不是公司指引；实际值取自 2026-07-31 业绩 8-K EX-99.1。",
     ))
 
-    div = staging["divergence"]
+    div = divergence_long(staging)
     share_threshold = next(e["threshold"] for e in entries
                            if e["metric"].startswith("Multi-listed"))
     charts.append(threshold_exhibit(
-        f"其中最关键的一条：Multi-listed 期权市占 {div['share_pct'][-1]:.1f}%，"
+        f"其中最关键的一条：Multi-listed 期权市占 "
+        f"{staging['divergence']['share_pct'][-1]:.1f}%，"
         f"从未跌破上季那条 {share_threshold:.0f}% 的线",
-        axis([compact(q) for q in div["quarters"]]),
-        rounded(div["share_pct"]),
+        axis([compact(q) for q in staging["divergence"]["quarters"]]),
+        rounded(staging["divergence"]["share_pct"]),
         share_threshold,
         fmt="pct1", ylab="%",
         actual_name="Multi-listed 期权市占", threshold_name=f"上季阈值 {share_threshold:.0f}%",
@@ -315,11 +322,48 @@ def settled_exhibits(staging: dict) -> tuple[list[dict], list[dict], dict]:
                         "numeric_years": numeric_years, "word_years": word_years}
 
 
+def divergence_long(staging: dict) -> dict:
+    """The multi-listed record over the whole KPI window, not the last 29.
+
+    `divergence` in the series file is exactly the tail of `kpi` plus one
+    derived column (daily revenue = ADV x RPC). Nothing about the earlier
+    quarters is missing or on another basis -- they are in `kpi` already -- so
+    the charts that carry this page's central argument run the full record and
+    the shorter block stays as the cross-check.
+    """
+    kpi = staging["kpi"]
+    built = {
+        "quarters": kpi["quarters"],
+        "period_labels": kpi["period_labels"],
+        "share_pct": kpi["multi_listed_share_pct"],
+        "adv_k": kpi["multi_listed_adv_k"],
+        "rpc_usd": kpi["multi_listed_rpc_usd"],
+    }
+    built["daily_revenue_usd_m"] = [
+        adv * 1000 * rpc / 1e6
+        for adv, rpc in zip(built["adv_k"], built["rpc_usd"])
+    ]
+    # The stored block has to agree with the rebuilt one everywhere they meet,
+    # or one of the two is wrong and the argument rests on the wrong half.
+    stored = staging["divergence"]
+    at = {quarter: index for index, quarter in enumerate(built["quarters"])}
+    for index, quarter in enumerate(stored["quarters"]):
+        position = at[quarter]
+        for key in ("share_pct", "adv_k", "rpc_usd", "daily_revenue_usd_m"):
+            assert abs(stored[key][index] - built[key][position]) < 2e-3, (quarter, key)
+    return built
+
+
 # ── section two: share against the money ────────────────────────────────────
 def highlight_exhibits(staging: dict) -> tuple[list[dict], dict]:
-    div = staging["divergence"]
+    div = divergence_long(staging)
     steps = direction_steps(div["share_pct"], div["daily_revenue_usd_m"])
     labels = axis([compact(q) for q in div["quarters"]])
+    # The share line starts at 2019Q2 -- Cboe did not print a multi-listed share
+    # separately before then -- while ADV and RPC, and so the money, run the
+    # whole window. One axis, two starts, both stated on the chart.
+    share_from = next(index for index, value in enumerate(div["share_pct"])
+                      if value is not None)
 
     charts = [{
         "ref": "EX_DIVERGE",
@@ -337,9 +381,17 @@ def highlight_exhibits(staging: dict) -> tuple[list[dict], dict]:
         "note": (
             "<b>这是本页的核心。</b>两条线来自公司同一张表的同一列季度："
             "橙线是被引用最多的市占率，柱子是 ADV 乘 RPC —— 这门生意每天真正收到的钱。"
-            f"窗口两端：市占从 {div['share_pct'][0]:.1f}% 落到 "
-            f"{div['share_pct'][-1]:.1f}%（{signed(div['share_pct'][-1] - div['share_pct'][0], 1, 'pp')}），"
-            f"日均收入从 US${div['daily_revenue_usd_m'][0]:.3f}M 升到 "
+            f"市占那条线自己的窗口（{div['period_labels'][share_from]} 起）两端："
+            f"从 {div['share_pct'][share_from]:.1f}% 落到 "
+            f"{div['share_pct'][-1]:.1f}%"
+            f"（{signed(div['share_pct'][-1] - div['share_pct'][share_from], 1, 'pp')}），"
+            f"同期日均收入从 US${div['daily_revenue_usd_m'][share_from]:.3f}M 升到 "
+            f"US${div['daily_revenue_usd_m'][-1]:.3f}M"
+            f"（{signed(pct_change(div['daily_revenue_usd_m'][-1], div['daily_revenue_usd_m'][share_from]), 0)}）。"
+            "<b>柱子比线长十三格，那不是缺数据。</b>"
+            "ADV 与 RPC 两条公司都从 2016Q1 起按季披露，所以钱这一侧回得到 2016；"
+            "而「multi-listed 市占」这个单独的百分比要到 2019Q2 才第一次印出来。"
+            f"把柱子自己的全窗口两端也放在这里：US${div['daily_revenue_usd_m'][0]:.3f}M → "
             f"US${div['daily_revenue_usd_m'][-1]:.3f}M"
             f"（{signed(pct_change(div['daily_revenue_usd_m'][-1], div['daily_revenue_usd_m'][0]), 0)}）。"
             f"<b>七年里份额掉了近四分之一，钱多了两倍出头。</b>"
@@ -531,7 +583,7 @@ def next_exhibits(staging: dict) -> list[dict]:
         "当前值为 2026Q2 披露值或本页自算；阈值为本地研究设定。",
     )]
 
-    div = staging["divergence"]
+    div = divergence_long(staging)
     money_threshold = next(e["threshold"] for e in entries
                            if e["metric"].startswith("Multi-listed 日均收入"))
     charts.append(threshold_exhibit(
@@ -551,12 +603,11 @@ def next_exhibits(staging: dict) -> list[dict]:
     long = staging["long"]
     opex_threshold = next(e["threshold"] for e in entries
                           if e["metric"].startswith("调整后营业费用"))
-    tail = 24
     charts.append(threshold_exhibit(
         f"季度调整后营业费用：本季 US${long['adj_opex'][-1]:.1f}M，"
         f"已越过上季设下的 US$215M",
-        axis([compact(q) for q in long["quarters"][-tail:]]),
-        rounded(long["adj_opex"][-tail:]),
+        axis([compact(q) for q in long["quarters"]]),
+        rounded(long["adj_opex"]),
         opex_threshold,
         fmt="f0c", ylab="US$M",
         actual_name="调整后营业费用（季）", threshold_name=f"阈值 US${opex_threshold:.0f}M",
@@ -565,7 +616,12 @@ def next_exhibits(staging: dict) -> list[dict]:
               "澳洲出售带来的 US$11M 减项 —— <b>同口径其实是上调</b>。"
               "上半年已经花掉 US$"
               f"{long['adj_opex'][-2] + long['adj_opex'][-1]:.1f}M，"
-              "按指引上限倒推，下半年只剩约每季 US$214M 的额度，低于本季的实际值。"),
+              "按指引上限倒推，下半年只剩约每季 US$214M 的额度，低于本季的实际值。"
+              f"<b>这条线自己的记录有 {len(long['quarters'])} 个季度</b>，"
+              f"从 {long['period_labels'][0]} 的 US${long['adj_opex'][0]:.1f}M 起 —— "
+              f"整段窗口里落在 US${opex_threshold:.0f}M 之上的有 "
+              f"{sum(1 for v in long['adj_opex'] if v > opex_threshold)} 季，"
+              "阈值守的是「下一季会不会继续超」，不是「历史上从未超过」。"),
         src_extra="各期业绩 8-K EX-99.1 的非 GAAP 调节表；指引取自同一份新闻稿的全年指引段。",
     ))
     return charts
@@ -697,7 +753,9 @@ def build_payload(staging: dict) -> dict:
 
     fin = staging["financials"]
     periods = staging["periods"]
-    div = staging["divergence"]
+    div = divergence_long(staging)
+    first_share = next(index for index, value in enumerate(div["share_pct"])
+                       if value is not None)
     seg = staging["segments"]
     guide = staging["annual_guidance_history"]
     steps = counts["steps"]
@@ -754,7 +812,8 @@ def build_payload(staging: dict) -> dict:
             f"Q{quarter[5]} {quarter[:4]}",
             f"{div['adv_k'][index]:,.0f}",
             f"${div['rpc_usd'][index]:.3f}",
-            f"{div['share_pct'][index]:.1f}%",
+            ("—" if div["share_pct"][index] is None
+             else f"{div['share_pct'][index]:.1f}%"),
             f"${div['daily_revenue_usd_m'][index]:.3f}M",
             verdict_step or "—",
         ])
@@ -829,18 +888,20 @@ def build_payload(staging: dict) -> dict:
             f"调整后营业利润率 {fin['adj_op_margin_pct'][-1]:.1f}%。"
             "但本页的对象不是这个季度 —— Cboe 每季在同一张表里印出市占率和每合约收入，"
             "而两者相乘才是这门生意每天挣到的钱。"
-            f"在公司同时披露这三个数的 {len(div['quarters'])} 个季度里，"
+            f"在公司同时披露这三个数的 "
+            f"{sum(1 for value in div['share_pct'] if value is not None)} 个季度里，"
             f"市占与日均收入的 {steps['steps']} 次环比有 {steps['opposite']} 次方向相反；"
-            f"整段窗口市占掉了 {abs(div['share_pct'][-1] - div['share_pct'][0]):.1f} 个百分点，"
+            f"那段窗口里市占掉了 "
+            f"{abs(div['share_pct'][-1] - div['share_pct'][first_share]):.1f} 个百分点，"
             f"日均收入却涨了 "
-            f"{pct_change(div['daily_revenue_usd_m'][-1], div['daily_revenue_usd_m'][0]):.0f}%。"
+            f"{pct_change(div['daily_revenue_usd_m'][-1], div['daily_revenue_usd_m'][first_share]):.0f}%。"
             "上一季那份分析把阈值设在市占率上，本季它没有触发，而同一门生意的日均收入环比少了 10.2%。"
         ),
         "brief": (
             '<h4>本季三条主线</h4><div class="takeaway-grid">'
             '<article><span>记录</span><b>份额与钱，七年里有六成的季度走反方向</b>'
             f'<p>{steps["steps"]} 次环比里 {steps["opposite"]} 次相反、{steps["same"]} 次同向。'
-            f'市占 {div["share_pct"][0]:.1f}% → {div["share_pct"][-1]:.1f}%，'
+            f'市占 {div["share_pct"][first_share]:.1f}% → {div["share_pct"][-1]:.1f}%，'
             f'日均收入 US${div["daily_revenue_usd_m"][0]:.3f}M → '
             f'US${div["daily_revenue_usd_m"][-1]:.3f}M。</p></article>'
             '<article><span>结不清</span><b>最想结清的那条指引，两个时代各有各的原因</b>'

@@ -127,7 +127,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amzn": 9, "avgo": 0, "axp": 5, "bc": 0, "cboe": 6, "cdns": 6, "cme": 14,
+    "amzn": 9, "avgo": 0, "axp": 5, "bc": 0, "cboe": 9, "cdns": 6, "cme": 14,
     "cost": 7, "googl": 11, "ibkr": 0, "ma": 0, "mc": 0, "mco": 0, "meta": 10,
     "msci": 0, "msft": 8, "mu": 2, "ndaq": 8, "nke": 7, "nvda": 4, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 0, "skhynix": 0, "snps": 3,
@@ -209,6 +209,40 @@ CONVERTED = {
                 "from 2017 split gross from proceeds. The four 2016 cells this "
                 "chart used to draw were the net measure under a gross heading, "
                 "so the chart now starts where its own basis does.",
+    },
+    "cboe": {
+        "最想结清的那条指引": "organic net revenue growth was guided as a number only for "
+                       "2022-2024; from 2025 the guidance is a phrase, and the page "
+                       "does not convert phrases into endpoints.",
+        "其中最关键的一条": "Cboe first printed a separate multi-listed options market "
+                     "share in the 2019Q2 release; ADV and RPC -- and so the money "
+                     "line beside it -- do run the whole window.",
+        "同一形状在股票撮合里重演": "the off-exchange block (share, ADV, net capture) begins "
+                          "2021Q1.",
+        "五个分部的净收入": "the current five-segment split begins 2021Q3; the earlier "
+                     "structure had different segments.",
+        "毛收入与净收入之间那道楔子": "the cost-of-revenue components that make the wedge are "
+                            "disclosed from 2017Q1.",
+        "公司自己的第二套口径": "Cboe began the derivatives / cash-and-spot / data-vantage "
+                       "categorisation in 2021Q1.",
+        "回购与股息": "the capital block starts 2017Q1.",
+    },
+    "ndaq": {
+        "全年非 GAAP 有效税率": "Nasdaq began guiding a non-GAAP tax-rate range for FY2019.",
+        "FY2026 费用指引的三次发布": "three guidance vintages for one fiscal year -- the axis "
+                            "is release dates, not quarters.",
+        "「经纪、清算与交易所费用」拆开看": "the Section 31 fee split is disclosed from 2022Q1.",
+        "Market Services 毛收入的去向": "the 2022 reorganisation moved Trade Management "
+                                "Services out of Market Services, so the denominator "
+                                "changed; 2022Q3 reads 305 on the old basis and 245 "
+                                "on the new one.",
+        "三个分部的净收入": "same 2022Q4 segment floor.",
+        "Financial Technology 的三条子线": "same segment floor; one sub-line begins later "
+                                  "still and is left empty rather than filled.",
+        "Index：挂钩纳斯达克指数的 ETP AUM": "the Index revenue line was re-drawn in the 2018Q2 "
+                                   "Information Services split; the 43-quarter AUM "
+                                   "series is published on its own chart.",
+        "ARR 两条腿": "Nasdaq began giving ARR by segment in 2023Q1.",
     },
     "meta": {
         "收入指引兑现": "Meta published no quarterly revenue outlook range before the "
