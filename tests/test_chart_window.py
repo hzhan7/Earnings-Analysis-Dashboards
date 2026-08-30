@@ -127,7 +127,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amzn": 9, "avgo": 0, "axp": 5, "bc": 0, "cboe": 9, "cdns": 6, "cme": 14,
+    "amzn": 9, "avgo": 0, "axp": 5, "bc": 0, "cboe": 9, "cdns": 9, "cme": 14,
     "cost": 7, "googl": 11, "ibkr": 21, "ma": 16, "mc": 0, "mco": 7, "meta": 10,
     "msci": 9, "msft": 8, "mu": 2, "ndaq": 8, "nke": 7, "nvda": 4, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 10, "skhynix": 0, "snps": 3,
@@ -325,6 +325,44 @@ CONVERTED = {
         "十年门店数与总面积": "annual.",
         "十年回购与股数": "annual.",
         "十年经营现金流、资本开支与股东回报": "annual.",
+    },
+    "cdns": {
+        # Three families. The guidance *bands* are drawn on the recent twenty by
+        # design, and the chart says so on itself: revenue went from US$0.45B to
+        # US$1.58B over this record while the guided band stayed a few million
+        # wide, so on a linear dollar axis the early bands are one or two pixels.
+        # The full 43-quarter record is on the deviation chart beside each one,
+        # in a unit that does not depend on magnitude.
+        "收入（本图仅近 20 季）": "the band is drawn on the recent twenty because a "
+                          "US$5M band on a US$450M quarter and the same band on a "
+                          "US$1,580M quarter are the same proportion and a very "
+                          "different number of pixels; all 43 quarters are on the "
+                          "deviation chart.",
+        "非 GAAP 营业利润率（本图仅近 20 季）": "same reason, same pairing.",
+        "非 GAAP EPS（本图仅近 20 季）": "same reason, same pairing.",
+        # Then the disclosure floors.
+        "季末 backlog": "Cadence's backlog definition rests on ASC 606 remaining "
+                    "performance obligations, which do not exist before 2018Q1; "
+                    "the 2017 year-end figure is annual and has no quarterly "
+                    "series behind it.",
+        "backlog 创纪录": "same RPO floor.",
+        "backlog / 过去四季收入": "same RPO floor.",
+        "中国收入 $": "the 2016-2017 geographic disclosure is Americas / Asia / EMEA / "
+                 "Japan with the United States singled out; China is not broken "
+                 "out at all, so this file carries Asia-ex-Japan instead.",
+        "中国收入占比": "same geographic floor.",
+        # And the metrics this file carries for the reviewed window only.
+        "单季经营现金流": "quarterly cash flow is carried for the reviewed window.",
+        "经营现金流 $635M": "same.",
+        "单季回购金额": "same.",
+        "单季回购 $200M": "same.",
+        "三条产品线的分化": "the three-category split is a later presentation; the "
+                     "2016-2017 releases group products differently.",
+        "GAAP 毛利率降到": "gross margin is carried for the reviewed window.",
+        "本季非 GAAP 营业利润率": "this chart pairs the quarterly series with two guided "
+                          "points, so it runs on the reviewed window plus two.",
+        "单季非 GAAP 营业利润率": "the threshold view of the same quarterly margin series, "
+                          "which this file carries for the reviewed window.",
     },
     "meta": {
         "收入指引兑现": "Meta published no quarterly revenue outlook range before the "

@@ -556,8 +556,9 @@ def build_payload(staging: dict) -> dict:
                 f"收入 ${revenue_shown[-1]:,.0f}M、同比 {revenue_yoy[-1]:.1f}%，"
                 f"但落在指引区间之内而不是之上"
             ),
-            "xlabels": labels,
-            "values": revenue_shown,
+            "xlabels": long_labels,
+            "xstep": LONG_STEP,
+            "values": long_revenue,
             "legend": "总收入",
             "fmt": "f0c",
             "yfmt": "f0c",
@@ -566,11 +567,15 @@ def build_payload(staging: dict) -> dict:
             "ylab2": "同比增速",
             "yoy": {
                 "name": "同比增速 (RHS)",
-                "values": revenue_yoy,
+                "values": long_revenue_yoy,
                 "color": "GREEN",
                 "yfmt": "pct1",
             },
             "note": (
+                "<b>这条柱子跨着一道准则的坎。</b>Cadence 2018 财年首日以 modified "
+                "retrospective 采用 ASC 606，2017 及以前不重述 —— 2018Q1 在两套准则下都被"
+                "披露过，所以坎有多高是量得出来的：收入 525.5（605）对 517.3（606）。"
+                "同比线在 2018 那四季因此跨基数，读它要连着这句话一起读。"
                 f"本季指引区间 ${quarter_guide_low:,.0f}–{quarter_guide_high:,.0f}M，"
                 f"实际 ${revenue_shown[-1]:,.0f}M，仅高出中值 "
                 f"{pct_change(revenue_shown[-1], quarter_guide_mid):+.1f}%；"
