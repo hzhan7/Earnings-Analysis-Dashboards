@@ -130,7 +130,7 @@ REACH_2016 = {
     "amzn": 3, "avgo": 0, "axp": 2, "bc": 0, "cboe": 6, "cdns": 6, "cme": 13,
     "cost": 7, "googl": 1, "ibkr": 0, "ma": 0, "mc": 0, "mco": 0, "meta": 0,
     "msci": 0, "msft": 3, "mu": 2, "ndaq": 8, "nke": 7, "nvda": 4, "pm": 4,
-    "race": 5, "rms": 0, "samsung": 0, "schw": 0, "skhynix": 0, "snps": 3,
+    "race": 9, "rms": 0, "samsung": 0, "schw": 0, "skhynix": 0, "snps": 3,
     "spgi": 2, "tjx": 1, "tsm": 18, "v": 4,
 }
 
@@ -139,6 +139,20 @@ REACH_2016 = {
 # that stops it. An entry that no longer matches a short exhibit fails too --
 # otherwise the list would slowly fill with excuses for charts that were fixed.
 CONVERTED = {
+    "race": {
+        # Ferrari guided only shipments, revenue, adjusted EBITDA and net debt
+        # before 2019 -- twelve outlooks read one by one. No EPS or industrial
+        # free cash flow guidance means no settlement to draw, and the axis of
+        # these four is fiscal years, not quarters.
+        "调整后 EBITDA": "annual guidance axis; the company first guided this metric for FY2019.",
+        "调整后摊薄 EPS：": "annual guidance axis; EPS was never guided before 2019.",
+        "工业自由现金流": "annual guidance axis; industrial FCF was disclosed as an actual "
+                  "from the start but only guided from 2019.",
+        "调整后摊薄 EPS 相对": "the deviation view of the same record, so the same floor.",
+        "美洲出货同比": "a year-on-year line starts one year into the record, because the "
+                  "first four quarters have no denominator. 2016 is the first year "
+                  "Ferrari reported as a listed company.",
+    },
     "cme": {
         "两条营业利润率": "CME first printed a Reconciliation of Adjusted Operating Income in "
                     "the 2025-10-22 release -- prompted by an SEC comment letter -- and "
@@ -212,14 +226,22 @@ class ChartWindowTest(unittest.TestCase):
                 if year <= TARGET_YEAR:
                     continue
                 title = exhibit["title"]
-                reason = next((why for key, why in excuses.items() if key in title), None)
-                self.assertIsNotNone(
-                    reason,
+                matched = [key for key in excuses if key in title]
+                self.assertTrue(
+                    matched,
                     f"{slug} Exhibit {exhibit['n']} starts in {year} and nothing says why: "
                     f"{title[:60]}",
                 )
-                self.assertTrue(reason.strip(), f"{slug}: empty reason for {title[:40]}")
-                short[next(k for k in excuses if k in title)] = True
+                # One key per chart. Overlapping keys ("调整后摊薄 EPS" also matches
+                # "调整后摊薄 EPS 相对…") make the match order-dependent, and the
+                # loser then looks unused below -- which is how this was found.
+                self.assertEqual(
+                    len(matched), 1,
+                    f"{slug}: {matched} all match one title; make the keys distinct",
+                )
+                self.assertTrue(excuses[matched[0]].strip(),
+                                f"{slug}: empty reason for {title[:40]}")
+                short[matched[0]] = True
             unused = sorted(set(excuses) - set(short))
             self.assertEqual(
                 unused, [],

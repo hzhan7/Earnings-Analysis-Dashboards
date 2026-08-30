@@ -155,13 +155,69 @@ class RaceDashboardTest(unittest.TestCase):
         self.assertTrue(all(value is None for value in engines[first_gap:]))
         self.assertTrue(all(value is not None for value in engines[:first_gap]))
 
-    def test_capex_starts_where_the_disclosure_starts(self) -> None:
+    def test_net_industrial_debt_is_the_level_not_the_change(self) -> None:
+        """Q2 2016 was published as +19 for a while. It is -763.
+
+        The Q2 2016 release prints `Net industrial debt (763) (782) 19` across
+        three columns -- Jun 30, Mar 31, and the *change* between them. This
+        page held the change as if it were the level, which turned EUR 763M of
+        net debt into EUR 19M of net cash and put a spike between two quarters
+        of -782 and -585.
+
+        The assertion is deliberately built on the arithmetic that explains the
+        mistake rather than on the corrected number alone: the value the old
+        page carried is exactly this quarter's change, so pinning both makes a
+        silent revert impossible and says what went wrong.
+        """
+        long = self.long
+        index = long["quarters"].index("Q2 2016")
+        level = long["net_industrial_debt_eur_m"]
+        self.assertEqual(level[index], -763.0)
+        self.assertEqual(level[index - 1], -782.0)
+        self.assertAlmostEqual(level[index] - level[index - 1], 19.0, places=6,
+                               msg="the number this page used to publish was the change")
+        # And the series does not swing across zero between neighbours anywhere
+        # else in 2016-2017, which is what made the old value look wrong.
+        for i in range(1, long["quarters"].index("Q4 2017") + 1):
+            self.assertFalse(
+                level[i - 1] < -300 < 0 < level[i],
+                f"{long['quarters'][i]}: net industrial debt jumped from deep net debt "
+                "to net cash in one quarter -- check whether a change column was read "
+                "as a level",
+            )
+        self.assertIn("Change", long["backfill_note"])
+
+    def test_capex_now_runs_the_whole_record_and_says_how(self) -> None:
+        """The quarterly Capex and R&D table only starts in 2019 -- the earlier
+        quarters are reconstructed, and the reconstruction has to be checkable.
+
+        Ferrari prints cumulative capex in each interim report and the full year
+        in the 20-F, so 2016-2018 comes out by differencing: Q1 is the printed
+        three-month column, Q2 and Q3 are cumulative differences, Q4 is the
+        20-F year less nine months. That is a derivation, so what is pinned here
+        is not the values but the two identities that make them publishable --
+        each year's four quarters summing to the printed full year, and the 2018
+        quarters matching the prior-year columns that the 2019 releases printed
+        independently.
+        """
         long = self.long
         capex = long["capex_eur_m"]
-        first = next(i for i, v in enumerate(capex) if v is not None)
-        self.assertEqual(long["quarters"][first], "Q1 2019")
-        self.assertTrue(all(v is not None for v in capex[first:]))
-        self.assertTrue(all(v is None for v in capex[:first]))
+        development = long["capitalised_development_eur_m"]
+        self.assertEqual(long["quarters"][0], "Q1 2016")
+        self.assertTrue(all(v is not None for v in capex), "capex has a hole")
+        # Capitalised development is missing exactly one quarter, and that is a
+        # disclosure gap rather than a reconstruction failure.
+        missing = [q for q, v in zip(long["quarters"], development) if v is None]
+        self.assertEqual(missing, ["Q1 2025"])
+        # The reconstruction identity, for the three years that needed it.
+        printed_full_year = {2016: (342, 141), 2017: (392, 185), 2018: (639, 318)}
+        for year, (capex_year, dev_year) in printed_full_year.items():
+            rows = [i for i, q in enumerate(long["quarters"]) if q.endswith(str(year))]
+            self.assertEqual(len(rows), 4, year)
+            self.assertAlmostEqual(sum(capex[i] for i in rows), capex_year, places=6, msg=year)
+            self.assertAlmostEqual(sum(development[i] for i in rows), dev_year, places=6, msg=year)
+        # And the page says the early quarters are derived rather than printed.
+        self.assertIn("累计相减", long["backfill_note"])
 
     # ── the annual guidance record ──────────────────────────────────────────
     def test_the_record_is_thirty_one_vintages_over_eight_fiscal_years(self) -> None:

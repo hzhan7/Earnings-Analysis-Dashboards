@@ -330,11 +330,15 @@ def guidance_charts(staging: dict) -> tuple[list[dict], list[dict]]:
 # ── section two: what moved this quarter ─────────────────────────────────────
 def quarter_charts(staging: dict) -> list[dict]:
     fin = staging["financials"]
-    labels = staging["periods"]
     long = staging["long_history"]
-    ebit_margin = fin["ebit_margin_pct"]
-    ebitda_margin = fin["ebitda_margin_pct"]
-    da = fin["da_eur_m"]
+    # Everything this section draws is already in `long_history` at forty-two
+    # quarters -- the eight-quarter `financials` block is the same disclosure,
+    # cut short. Four charts here used the short one for no reason other than
+    # that it was the first thing in the file.
+    labels = long["quarters"]
+    ebit_margin = long["ebit_margin_pct"]
+    ebitda_margin = long["ebitda_margin_pct"]
+    da = long["da_eur_m"]
     implied = 188.0
 
     wedge = {
@@ -349,13 +353,18 @@ def quarter_charts(staging: dict) -> list[dict]:
             {"name": "EBITDA 利润率", "values": rounded(ebitda_margin), "color": "BLUE"},
         ],
         "fmt": "pct1", "yfmt": "pct1", "label_fmt": "pct1", "end_label": True,
-        "ylab": "%",
+        "ylab": "%", "xstep": LONG_STEP,
         "note": ("<b>两条线背离本身就是答案。</b>本季 EBIT 利润率环比 "
                  f"{signed(ebit_margin[-1] - ebit_margin[-2], 1, 'pp')}，"
                  f"EBITDA 利润率却 {signed(ebitda_margin[-1] - ebitda_margin[-2], 1, 'pp')} —— "
                  "两者之间只隔着折旧摊销一项，所以这次的利润率纪录发生在折旧线<b>以下</b>，"
                  f"不是折旧线以上的经营改善。当季 D&A 为 €{da[-1]:,.0f}M，"
-                 f"是窗口内最低的一季，比上一季低 {abs(pct_change(da[-1], da[-2])):.1f}%（见 Exhibit {{EX_DA}}）。"),
+                 f"比上一季低 {abs(pct_change(da[-1], da[-2])):.1f}%（见 Exhibit {{EX_DA}}）。"
+                 f"<b>把窗口拉到 42 季，这条纪录才有参照</b>：EBIT 利润率从 "
+                 f"{labels[0]} 的 {ebit_margin[0]:.1f}% 一路抬到本季的 {ebit_margin[-1]:.1f}%，"
+                 f"十年最低 {min(ebit_margin):.1f}%"
+                 f"（{labels[ebit_margin.index(min(ebit_margin))]}）—— 这不是一次跳升，"
+                 "是一条走了十年的斜线，而两条线之间的距离（也就是折旧）一直在变宽。"),
         "src_extra": ("利润率为 EBIT ÷ 净收入、EBITDA ÷ 净收入，本页自算（D）；"
                       "两个分子与分母都是业绩新闻稿的披露值。"
                       "36 个公司自己印出利润率的季度里，自算值与印刷值最大差 0.14pp，即印刷精度本身。"),
@@ -448,7 +457,14 @@ def quarter_charts(staging: dict) -> list[dict]:
                  f"并重述了 2023 年可比数，所以长序列在那一季断开（见 Exhibit {{EX_L_MIX}}）。"),
         "src_extra": "各季业绩新闻稿的 Total net revenues 表。",
     }
-    return [wedge, da_chart, region_chart, unit_chart, mix_chart]
+    # `wedge`, `region_chart`, `unit_chart` and `mix_chart` used to live here on
+    # eight quarters -- and section four already drew the same four series on
+    # forty-two. Two charts of one series at two lengths is not two charts; the
+    # short ones are gone and the long ones carry the quarter's reading in their
+    # own captions. Only D&A stays here, because its red line is this quarter's
+    # guidance and has no long-run twin.
+    del wedge, region_chart, unit_chart, mix_chart
+    return [da_chart]
 
 
 # ── section three: what to watch next ────────────────────────────────────────
@@ -471,44 +487,65 @@ def next_quarter_charts(staging: dict) -> list[dict]:
     quarters = long["quarters"]
     yoy = [None if index < 4 else pct_change(americas[index], americas[index - 4])
            for index in range(len(americas))]
-    window = 16
+    # The series starts where a year-on-year first has a denominator, not eight
+    # or sixteen quarters back: 2016 is the first year in the record, so the
+    # first four cells have nothing to divide by.
+    first_yoy = 4
     exhibits.append(threshold_exhibit(
-        f"EBIT 利润率：当前 {fin['ebit_margin_pct'][-1]:.2f}%，阈值 28.00%",
-        labels, rounded(fin["ebit_margin_pct"]), 28.0,
-        fmt="pct1", ylab="%",
+        f"EBIT 利润率：当前 {long['ebit_margin_pct'][-1]:.2f}%，阈值 28.00%",
+        quarters, rounded(long["ebit_margin_pct"]), 28.0,
+        xstep=LONG_STEP, fmt="pct1", ylab="%",
         actual_name="EBIT 利润率", threshold_name="本地阈值",
         note=("红线是本地研究设定的撤回线，取 2025 年第三季的实际读数附近 —— "
               "低于它就不能再把下半年的降档只解释成折旧节奏。"
               "公司全年指引隐含的下半年利润率是 29.0%，比这条红线高一档，"
-              "两者的差就是本页留给「成本节奏」与「结构退潮」之间的判别区间。"),
+              "两者的差就是本页留给「成本节奏」与「结构退潮」之间的判别区间。"
+              "<b>放在 42 季里看，这条红线的位置才说得清</b>："
+              f"2016Q1 的 EBIT 利润率是 {long['ebit_margin_pct'][0]:.1f}%，"
+              f"这条线是 2021Q2 之后才被永久甩在身后的 —— 在那之前有 "
+              f"{sum(1 for v in long['ebit_margin_pct'] if v < 28.0)} 个季度低于它。"
+              "换句话说跌破 28% 不是回到未知领域，是回到 2021 年以前的常态。"),
         src_extra="EBIT 与净收入为披露值，利润率为本页自算（D）；阈值为本地研究设定。"))
 
     exhibits.append(threshold_exhibit(
-        f"单季 D&A：当前 €{fin['da_eur_m'][-1]:,.0f}M，阈值 €188M",
-        labels, rounded(fin["da_eur_m"]), 188.0,
-        fmt="f0c", ylab="€M",
+        f"单季 D&A：当前 €{long['da_eur_m'][-1]:,.0f}M，阈值 €188M",
+        quarters, rounded(long["da_eur_m"]), 188.0,
+        xstep=LONG_STEP, fmt="f0c", ylab="€M",
         actual_name="季度 D&A", threshold_name="全年指引隐含的 H2 季均",
         note=("这条与上一条必须配对读：单看利润率会被折旧节奏骗，"
               "单看 D&A 又不构成投资判断。红线是公司全年口径减去上半年实际得到的隐含季均，"
-              "不是公司给的季度指引。"),
+              "不是公司给的季度指引。"
+              f"42 季的窗口说明这条线的量级本身是新的：2016Q1 的季度 D&A 是 "
+              f"€{long['da_eur_m'][0]:,.0f}M，十年里翻了 "
+              f"{long['da_eur_m'][-1] / long['da_eur_m'][0]:.1f} 倍，"
+              "而资本化研发正是它的来源（见资本开支那一张）。"),
         src_extra="D&A 为披露值；隐含季均为本页自算（D）。"))
 
     exhibits.append(threshold_exhibit(
         f"美洲出货同比：当前 {yoy[-1]:.1f}%，阈值 −15.0%",
-        quarters[-window:], rounded(yoy[-window:]), -15.0,
-        fmt="pct1", ylab="同比 %",
+        quarters[first_yoy:], rounded(yoy[first_yoy:]), -15.0,
+        xstep=LONG_STEP, fmt="pct1", ylab="同比 %",
         actual_name="美洲出货同比", threshold_name="本地阈值",
         note=("公司把本季美洲的下滑解释为换代排产与「近市场先供」。"
               "这条线不能证伪那个解释，但它能把它变成可检验的："
               "如果是排产，随后的季度应当回补；如果同比降幅继续深于红线，"
               "就要按区域结构性再配置来建模。序列从有同比可算的那一季起画。"),
         src_extra="出货为披露值，同比为本页自算（D）；阈值为本地研究设定。"))
-    exhibits[-1]["xstep"] = 2
     return exhibits
 
 
 # ── section four: the long routine series ────────────────────────────────────
-def long_charts(staging: dict) -> list[dict]:
+def long_charts(staging: dict) -> tuple[list[dict], list[dict]]:
+    """The ten-year series, split into the four that belong beside the quarter
+    and the two that are genuinely routine.
+
+    The split is not cosmetic. Volume/price, margins, revenue mix and regional
+    shipments each answer a question the current quarter raises, so they belong
+    in section two -- and until this rebuild each of them was *also* drawn there
+    on eight quarters, which meant the page asked the reader to hold two windows
+    of the same series in their head. Cash and capex have no short twin and stay
+    where they were.
+    """
     long = staging["long_history"]
     quarters = long["quarters"]
     ship = long["shipments_units"]
@@ -532,7 +569,11 @@ def long_charts(staging: dict) -> list[dict]:
                  f"而每台车带来的车与零件收入涨了 {per_unit[-1] / per_unit[0]:.2f} 倍 —— "
                  "增长几乎全部来自单台价值而不是台数。"
                  "2020 年第二季那个坑是七周停产，不是需求。"
-                 "单台收入不是 ASP：分子含零件与个性化，分母只含整车。"),
+                 "单台收入不是 ASP：分子含零件与个性化，分母只含整车。"
+                 f"<b>本季这两条仍在走反方向</b>：出货同比 "
+                 f"{signed(pct_change(ship[-1], ship[-5]))}，单台车与零件收入同比 "
+                 f"{signed(pct_change(per_unit[-1], per_unit[-5]))} —— "
+                 "这不是本季独有的形态，是这条记录十年里的主旋律。"),
         "src_extra": "出货与 Cars and spare parts 收入取自 42 份季度业绩新闻稿；比值为本页自算（D）。",
     }
 
@@ -553,7 +594,13 @@ def long_charts(staging: dict) -> list[dict]:
                  "这两条画的是<b>报告口径</b>：2016 年有非经常调整项（Q2 与 Q4 两季 adjusted 高于 reported），"
                  "2017 年以后公司每份新闻稿都写明「adjusted 等于 reported」，"
                  "所以整段用报告口径既连续又与公司口径一致；"
-                 "全年指引的结算另用调整口径，两者不混。"),
+                 "全年指引的结算另用调整口径，两者不混。"
+                 f"<b>本季这两条背离本身就是答案</b>：EBIT 利润率环比 "
+                 f"{signed(ebit_margin[-1] - ebit_margin[-2], 1, 'pp')}、创下这 42 季的纪录 "
+                 f"{ebit_margin[-1]:.1f}%，而 EBITDA 利润率却 "
+                 f"{signed(ebitda_margin[-1] - ebitda_margin[-2], 1, 'pp')} —— "
+                 "两者之间只隔着折旧摊销一项，所以这次的纪录发生在折旧线<b>以下</b>，"
+                 f"不是折旧线以上的经营改善（见 Exhibit {{EX_DA}}）。"),
         "src_extra": "EBIT、EBITDA 与净收入为披露值，利润率为本页自算（D）。",
     }
 
@@ -579,7 +626,11 @@ def long_charts(staging: dict) -> list[dict]:
                  "剩余收入并入 Other，并在同一份新闻稿里重述了 2023 年的可比数；"
                  "本页把它留成空档而不是补零，因为补零会把一次列报变更画成一次业务消失。"
                  "四条腿在 2024 年之前相加等于合并净收入，之后前三条相加等于合并净收入，"
-                 "42 个季度逐季核对无差。"),
+                 "42 个季度逐季核对无差。"
+                 f"<b>本季 Other 同比 "
+                 f"{signed(pct_change(long['other_revenues_eur_m'][-1], long['other_revenues_eur_m'][-5]))}"
+                 "，是三条腿里最快的一条</b>，主因是向其他一级方程式车队出租引擎 —— "
+                 "也就是被并进来的那块业务本身。"),
         "src_extra": "各季业绩新闻稿的 Total net revenues 表；并表说明见 2024 年各期新闻稿脚注。",
     }
     if break_at is not None:
@@ -613,6 +664,11 @@ def long_charts(staging: dict) -> list[dict]:
                  f"{china[-1] / long['shipments_units'][-1] * 100:.1f}%。"
                  f"真正的落差是相对自己的高点：{quarters[peak_index]} 的 {china[peak_index]:,.0f} 台"
                  f"是这条线的峰值，本季只有它的 {china[-1] / china[peak_index] * 100:.0f}%。"
+                 f"<b>本季</b>美洲 {long['shipments_americas'][-1]:,.0f} 台、同比 "
+                 f"{signed(pct_change(long['shipments_americas'][-1], long['shipments_americas'][-5]))}，"
+                 f"EMEA 同比 "
+                 f"{signed(pct_change(long['shipments_emea'][-1], long['shipments_emea'][-5]))}，"
+                 "是唯一同比正增长的地区。"
                  "公司对此的口径是按订单先后交付、不按地域调配额。"
                  "地区名称在窗口内改过两次（Greater China → China, Hong Kong and Taiwan → "
                  "Mainland China, Hong Kong and Taiwan），口径未变，本页按同一条线画。"),
@@ -661,7 +717,7 @@ def long_charts(staging: dict) -> list[dict]:
                  f"所以它和 Exhibit {{EX_DA}} 是同一件事的两端。"),
         "src_extra": "各季业绩新闻稿的 Capex and R&D 表；资本开支不含 IFRS 16 使用权资产。",
     }
-    return [unit, margin, mix, region, cash, capex_chart]
+    return [unit, margin, mix, region], [cash, capex_chart]
 
 
 def build_payload(staging: dict) -> dict:
@@ -671,9 +727,9 @@ def build_payload(staging: dict) -> dict:
     record = staging["annual_guidance_history"]
 
     settled, settled_tables = guidance_charts(staging)
-    highlights = quarter_charts(staging)
+    structural, routine = long_charts(staging)
+    highlights = quarter_charts(staging) + structural
     next_block = next_quarter_charts(staging)
-    routine = long_charts(staging)
 
     exhibits = number_exhibits(settled + highlights + next_block + routine)
     resolve_exhibit_refs(exhibits)
@@ -786,13 +842,17 @@ def build_payload(staging: dict) -> dict:
                              "所以这一节先看指引的形状怎么随年份推进而变，再看七个已完结年度落在哪里。"),
              "exhibits": settled_ex},
             {"id": "quarter_highlights", "title": "二、本季重点",
-             "description": "利润率与折旧的背离、分地区出货的分化，以及量与价这一季再次走反方向。",
+             "description": ("利润率与折旧的背离、量与价的长期反向、收入结构的口径断点，"
+                             "以及分地区出货的分化。"
+                             "本节每一张都画在 2016Q1 起的 42 个季度上 —— 这四条序列"
+                             "此前在本页出现过两次：这里八季、第四节四十二季。"
+                             "同一条线画两种长度不是两张图，短的那一版已经去掉。"),
              "exhibits": highlight_ex},
             {"id": "next_quarter", "title": "三、下季要跟踪什么",
              "description": "四条可从申报复算的阈值，统一用「距阈值余量」口径；公司结构性不披露的两条写在这里。",
              "exhibits": next_ex},
             {"id": "routine", "title": "四、长期常规跟踪",
-             "description": "四十二个季度的量价结构、利润率、收入构成、地区出货、现金流与资本开支。",
+             "description": "四十二个季度的工业自由现金流、净工业头寸与资本开支。",
              "exhibits": routine_ex},
         ],
         "tables": tables,
