@@ -299,11 +299,17 @@ def build_payload(staging: dict) -> dict:
         "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
         "ylab": "US$B",
         "xstep": LONG_STEP,
-        "note": ("<b>这张图是这家公司的核心张力</b>：31 个季度里 AUM 从 US$696B 涨到 "
-                 f"US${aum[-1]:,.0f}B（约 {aum[-1] / aum[0]:.1f} 倍），"
+        "note": (f"<b>这张图是这家公司的核心张力</b>：{len(aum)} 个季度里 AUM 从 "
+                 f"US${aum[0]:,.0f}B 涨到 US${aum[-1]:,.0f}B"
+                 f"（约 {aum[-1] / aum[0]:.1f} 倍），"
                  f"同期期末基点费率从 {max(v for v in bp if v is not None):.2f}bp 降到 {bp[-1]:.2f}bp。"
                  "资产型费用收入是两者相乘，所以规模增长里有一部分被费率稀释掉了。"
-                 "费率序列自 2020Q2 起 —— 公司此前不披露这个数，图上因此从那里开始，不做回补。"),
+                 "<b>本页此前写着「费率序列自 2020Q2 起 —— 公司此前不披露这个数」，那句话是错的。</b>"
+                 "公司一直在业绩发布的 Table 7 里印它：2020Q1 那份的五季表就同时印着 "
+                 "2.71 / 2.82 / 2.81 / 2.85 / 2.88（2020Q1 与 2019 四季）。"
+                 "2020Q2 起标签从 Avg. 改成 Period-End，但脚注的定义文字一字未变，"
+                 "而且那一份自己的五季表里同时印着改名前后的五个数。"
+                 "所以那段空白是漏采，不是政策 —— 现在这条线和 AUM 一样回到 2016Q1。"),
         "src_extra": "各季业绩 8-K EX-99.1 的 Table 7；费率为公司披露的期末基点费率。",
     }
     rr_chart = {
@@ -312,14 +318,18 @@ def build_payload(staging: dict) -> dict:
         "title": (f"Run Rate 与收入的同比增速：Run Rate "
                   f"{pct_change(run_rate[-1], run_rate[-5]):+.1f}%，收入 "
                   f"{pct_change(revenue[-1], revenue[-5]):+.1f}%"),
-        "xlabels": long_labels[4:],
+        # The axis is the whole record and the first four quarters are holes:
+        # a year-on-year line has no base there, and cutting the axis instead
+        # would put this chart on a different window from every other one here.
+        "xlabels": long_labels,
         "series": [
             {"name": "Run Rate 同比", "color": "NAVY",
-             "values": rounded([pct_change(run_rate[i], run_rate[i - 4])
-                                for i in range(4, len(run_rate))])},
+             "values": [None] * 4 + rounded([pct_change(run_rate[i], run_rate[i - 4])
+                                             for i in range(4, len(run_rate))])},
             {"name": "收入同比", "color": "BLUE",
-             "values": rounded([pct_change(om["revenue_usd_m"][i], om["revenue_usd_m"][i - 4])
-                                for i in range(4, len(om["revenue_usd_m"]))])},
+             "values": [None] * 4 + rounded(
+                 [pct_change(om["revenue_usd_m"][i], om["revenue_usd_m"][i - 4])
+                  for i in range(4, len(om["revenue_usd_m"]))])},
         ],
         "fmt": "pct1", "yfmt": "pct1", "label_fmt": "pct1", "end_label": True,
         "ylab": "同比 %", "xstep": LONG_STEP,

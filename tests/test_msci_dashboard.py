@@ -207,11 +207,20 @@ class MsciDashboardTest(unittest.TestCase):
             self.assertAlmostEqual(sum(values), om["run_rate_total_usd_m"][index],
                                    delta=0.2, msg=quarter)
 
-    def test_the_long_series_is_thirty_one_contiguous_quarters(self) -> None:
+    def test_the_long_series_is_forty_two_contiguous_quarters(self) -> None:
         quarters = self.staging["operating_metrics"]["quarters"]
-        self.assertEqual(len(quarters), 31)
-        self.assertEqual(quarters[0], "2018Q4")
+        self.assertEqual(len(quarters), 42)
+        self.assertEqual(quarters[0], "2016Q1")
         self.assertEqual(quarters[-1], "2026Q2")
+        year, number = 2016, 1
+        for quarter in quarters:
+            self.assertEqual(quarter, f"{year}Q{number}")
+            number += 1
+            if number == 5:
+                year, number = year + 1, 1
+        for name, values in self.staging["operating_metrics"].items():
+            if isinstance(values, list):
+                self.assertEqual(len(values), 42, name)
 
     def test_series_that_start_late_are_holes_not_backfills(self) -> None:
         """The basis-point fee and the share count begin where disclosure does.
@@ -220,10 +229,19 @@ class MsciDashboardTest(unittest.TestCase):
         where the company's own figure starts and the notes say so.
         """
         om = self.staging["operating_metrics"]
-        fee = om["aum_basis_point_fee"]
-        self.assertIsNone(fee[0])
-        first = next(i for i, v in enumerate(fee) if v is not None)
-        self.assertTrue(all(v is not None for v in fee[first:]))
+        # Every run-rate sub-line and the basis-point fee start where MSCI began
+        # printing them. What must never happen is a hole in the middle: a late
+        # start is a disclosure fact, an interior gap is a dropped quarter.
+        for name, values in om.items():
+            if not isinstance(values, list) or not values:
+                continue
+            if all(isinstance(v, str) for v in values):
+                continue
+            reported = [i for i, v in enumerate(values) if v is not None]
+            self.assertTrue(reported, name)
+            span = range(reported[0], reported[-1] + 1)
+            self.assertEqual([i for i in span if values[i] is None], [], name)
+            self.assertEqual(reported[-1], len(values) - 1, name)
         shares = self.staging["financials"]["diluted_shares_m"]
         self.assertTrue(all(v is not None for v in shares[-6:]))
 

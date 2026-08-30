@@ -129,7 +129,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 REACH_2016 = {
     "amzn": 9, "avgo": 0, "axp": 5, "bc": 0, "cboe": 9, "cdns": 6, "cme": 14,
     "cost": 7, "googl": 11, "ibkr": 21, "ma": 16, "mc": 0, "mco": 7, "meta": 10,
-    "msci": 0, "msft": 8, "mu": 2, "ndaq": 8, "nke": 7, "nvda": 4, "pm": 6,
+    "msci": 9, "msft": 8, "mu": 2, "ndaq": 8, "nke": 7, "nvda": 4, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 0, "skhynix": 0, "snps": 3,
     "spgi": 2, "tjx": 1, "tsm": 18, "v": 14,
 }
@@ -271,6 +271,24 @@ CONVERTED = {
         "返点占比的同比变化": "same disaggregation floor, one more year in for the "
                       "year-on-year run-up.",
         "四条计费线": "the four assessment lines themselves.",
+    },
+    "msci": {
+        # Two floors. The annual guidance record starts with the FY2020 outlook
+        # -- MSCI began giving full-year ranges for operating expenses, adjusted
+        # EBITDA expenses and free cash flow then, and the axis is fiscal years.
+        # The three quarter charts below need the revenue split by type and by
+        # segment, which this file carries for the reviewed eight quarters only;
+        # the run-rate, AUM and margin series beside them do run from 2016Q1.
+        "营业费用：": "the annual expense guidance record starts with FY2020.",
+        "营业费用相对指引中值": "the deviation view of the same record.",
+        "调整后 EBITDA 费用：": "same annual record.",
+        "调整后 EBITDA 费用相对指引中值": "the deviation view of the same record.",
+        "自由现金流：": "same annual record.",
+        "自由现金流相对指引中值": "the deviation view of the same record.",
+        "三条收入腿": "revenue split into recurring subscription, asset-based fees and "
+                 "non-recurring is carried here for the reviewed eight quarters.",
+        "四个分部": "the four-segment revenue split is carried for the reviewed eight.",
+        "分部调整后 EBITDA 利润率": "same segment window.",
     },
     "meta": {
         "收入指引兑现": "Meta published no quarterly revenue outlook range before the "
