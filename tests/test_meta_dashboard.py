@@ -183,6 +183,34 @@ class MetaDashboardTest(unittest.TestCase):
                 got = long[long_key][index[f"{year}Q{quarter[1]}"]]
                 self.assertEqual(got, expected, f"{long_key} {period}")
 
+    def test_the_five_fourth_quarter_ad_holes_stay_holes(self) -> None:
+        """Impressions and price-per-ad have no Q4 reading for 2016-2020.
+
+        The 10-K states only the full-year change for those years, and the 8-K
+        did not carry the quarterly bullet until 2021Q4 -- so five fourth
+        quarters have no published figure. Interpolating them would be
+        invisible: the line would simply look continuous, and the two rates
+        multiply into an implied revenue growth that this page settles a
+        threshold on. The holes are pinned to exactly those five quarters.
+        """
+        long = self.source["long_history"]
+        quarters = long["quarters"]
+        expected = ["2016Q4", "2017Q4", "2018Q4", "2019Q4", "2020Q4"]
+        for key in ("ad_impressions_yoy_pct", "price_per_ad_yoy_pct"):
+            missing = [q for q, v in zip(quarters, long[key]) if v is None]
+            self.assertEqual(missing, expected, key)
+        # The two always come from the same sentence, so they are missing
+        # together -- a hole in one but not the other means a mis-parse.
+        for impressions, price in zip(long["ad_impressions_yoy_pct"],
+                                      long["price_per_ad_yoy_pct"]):
+            self.assertEqual(impressions is None, price is None)
+        self.assertIn("五个第四季留空", long["ad_metrics_note"])
+        # And the chart carries the holes rather than a bridged line.
+        chart = next(ex for ex in self.exhibits if "广告减速全部来自量" in ex["title"])
+        for series in chart["series"][1:]:
+            self.assertEqual(sum(1 for v in series["values"] if v is None), len(expected),
+                             series["name"])
+
     def test_undisclosed_quarters_stay_empty(self) -> None:
         """A series may not start before the company first published it.
 
@@ -298,7 +326,10 @@ class MetaDashboardTest(unittest.TestCase):
         for exhibit in self.by_section["next_quarter"][1:]:
             threshold = exhibit["series"][-1]["values"]
             self.assertEqual(len(set(threshold)), 1, exhibit["title"])
-            self.assertEqual(len(threshold), WINDOW, exhibit["title"])
+            # Each tracked metric runs on the longest window its own series
+            # has, so the threshold line is as long as that metric's axis --
+            # not a shared eight.
+            self.assertEqual(len(threshold), len(exhibit["xlabels"]), exhibit["title"])
 
     def test_adjusted_lines_match_the_value_the_threshold_is_settled_on(self) -> None:
         """Two thresholds are settled on the adjusted basis while the plotted
@@ -319,7 +350,10 @@ class MetaDashboardTest(unittest.TestCase):
         tail = margin_chart["series"][1]
         self.assertEqual(tail["values"][-1], round(adjusted / revenue[-1] * 100, 2))
         self.assertEqual(tail["values"][-2], round(margin_chart["series"][0]["values"][-2], 2))
-        self.assertEqual(tail["values"][:-2], [None] * (WINDOW - 2))
+        # The gold line exists only for the two quarters that have an adjusted
+        # reading; everything before it is a hole, however long the axis is now.
+        self.assertEqual(tail["values"][:-2], [None] * (len(tail["values"]) - 2))
+        self.assertGreaterEqual(len(tail["values"]), WINDOW)
 
         incremental_chart = next(
             ex for ex in self.by_section["next_quarter"] if "增量经营利润率" in ex["title"]

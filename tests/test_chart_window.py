@@ -128,7 +128,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
     "amzn": 3, "avgo": 0, "axp": 2, "bc": 0, "cboe": 6, "cdns": 6, "cme": 13,
-    "cost": 7, "googl": 1, "ibkr": 0, "ma": 0, "mc": 0, "mco": 0, "meta": 0,
+    "cost": 7, "googl": 1, "ibkr": 0, "ma": 0, "mc": 0, "mco": 0, "meta": 10,
     "msci": 0, "msft": 3, "mu": 2, "ndaq": 8, "nke": 7, "nvda": 4, "pm": 4,
     "race": 9, "rms": 0, "samsung": 0, "schw": 0, "skhynix": 0, "snps": 3,
     "spgi": 2, "tjx": 1, "tsm": 18, "v": 4,
@@ -139,6 +139,16 @@ REACH_2016 = {
 # that stops it. An entry that no longer matches a short exhibit fails too --
 # otherwise the list would slowly fill with excuses for charts that were fixed.
 CONVERTED = {
+    "meta": {
+        "收入指引兑现": "Meta published no quarterly revenue outlook range before the "
+                  "2022Q1 release; the record starts where the guidance does.",
+        "收入相对指引中值": "the deviation view of the same record, so the same floor.",
+        "FoA Other 单季收入": "segment revenue begins with the 2020Q4 release -- before that "
+                        "the categories did not exist.",
+        "两条非广告收入线": "same segment floor, long-run version.",
+        "折旧摊销同比": "a year-on-year line has no denominator for the first four quarters "
+                  "of the record, so it starts in 2017Q1.",
+    },
     "race": {
         # Ferrari guided only shipments, revenue, adjusted EBITDA and net debt
         # before 2019 -- twelve outlooks read one by one. No EPS or industrial

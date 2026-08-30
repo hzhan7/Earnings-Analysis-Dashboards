@@ -291,6 +291,30 @@ def build_payload(staging: dict) -> dict:
     long_foa_other = long["foa_other_revenue_usd_m"]
     segment_from = leading_gap(long_reality)
 
+    # The advertising engine, on the ten-year window. The two rate lines have
+    # five holes -- one per fourth quarter from 2016 through 2020 -- because
+    # the 10-K states only the full-year change and the 8-K did not carry the
+    # quarterly bullet until 2021Q4. Holes, not interpolation: a line drawn
+    # through them would invent five readings the company never gave.
+    long_advertising = long["advertising_revenue_usd_m"]
+    long_advertising_yoy = yoy(long_advertising)
+    long_impressions = long["ad_impressions_yoy_pct"]
+    long_price = long["price_per_ad_yoy_pct"]
+    ad_rate_holes = [
+        long_labels[index] for index, value in enumerate(long_impressions) if value is None
+    ]
+
+    # Capex on the company's own definition -- purchases of property and
+    # equipment plus finance-lease principal -- which is why it needed the lease
+    # line backfilled before this chart could run the whole record.
+    long_capex = [
+        purchases + lease
+        for purchases, lease in zip(long["capital_expenditures_usd_m"], long_lease)
+    ]
+    long_capex_intensity = [
+        capex / revenue * 100 for capex, revenue in zip(long_capex, long_revenue)
+    ]
+
     revenue_shown = shown(revenue)
     revenue_yoy = shown(yoy(revenue))
     advertising_yoy = shown(yoy(advertising))
@@ -337,35 +361,61 @@ def build_payload(staging: dict) -> dict:
     # it coincides with the GAAP line through last quarter (which had no
     # comparable one-off items) and separates only where the add-backs land.
     # Without it the plotted last point and the stated "current" value disagree.
-    def adjusted_tail(previous: float, current: float) -> dict:
+    def adjusted_tail(previous: float, current: float, length: int) -> dict:
         return {
             "name": "调整后（本季）D",
-            "values": [None] * (WINDOW - 2) + [round(previous, 2), round(current, 2)],
+            "values": [None] * (length - 2) + [round(previous, 2), round(current, 2)],
             "color": "GOLD",
         }
 
     # One entry per tracked metric, so §1 and §3 can each draw the metric's own
     # history under its own threshold instead of only a normalised bar.
+    # Each tracked metric now runs on the longest window its own series has,
+    # and carries the labels that go with it -- a shared eight-quarter axis was
+    # the only thing making these charts short.
+    long_operating = long["operating_income_usd_m"]
+    long_operating_margin = [
+        income / sales * 100 for income, sales in zip(long_operating, long_revenue)
+    ]
+    long_incremental_margin = [
+        None if index < 4 or long_revenue[index] == long_revenue[index - 4]
+        else (long_operating[index] - long_operating[index - 4])
+        / (long_revenue[index] - long_revenue[index - 4]) * 100
+        for index in range(len(long_revenue))
+    ]
+    long_volume_price = [
+        None if impressions is None or price is None
+        else ((1 + impressions / 100) * (1 + price / 100) - 1) * 100
+        for impressions, price in zip(long_impressions, long_price)
+    ]
+    segment_labels = long_labels[segment_from:]
     tracked = {
         "经营利润率（调整后）": (
-            operating_margin, "pct1", "经营利润率", "经营利润率（GAAP）",
+            long_labels, long_operating_margin, "pct1", "经营利润率", "经营利润率（GAAP）",
             adjusted_tail(
-                operating_margin[-2],
+                long_operating_margin[-2],
                 snapshot["adjusted_operating_income_usd_m"] / revenue[-1] * 100,
+                len(long_labels),
             ),
         ),
         "平均每条广告价格 YoY": (
-            shown(ads["price_per_ad_yoy_pct"]), "pct0", "同比", "平均每条广告价格 YoY", None,
+            long_labels, long_price, "pct0", "同比", "平均每条广告价格 YoY", None,
         ),
         "同比增量经营利润率": (
-            shown(incremental_margin), "pct1", "ΔOI / ΔRevenue", "同比增量经营利润率（GAAP）D",
-            adjusted_tail(incremental_margin[-2], adjusted_incremental_margin),
+            long_labels, long_incremental_margin, "pct1", "ΔOI / ΔRevenue",
+            "同比增量经营利润率（GAAP）D",
+            adjusted_tail(long_incremental_margin[-2], adjusted_incremental_margin,
+                          len(long_labels)),
         ),
         "广告量价乘积（隐含收入增速）": (
-            shown(volume_price_product), "pct1", "隐含同比", "量价乘积 D", None,
+            long_labels, long_volume_price, "pct1", "隐含同比", "量价乘积 D", None,
         ),
-        "FoA Other 单季收入": (foa_other_shown, "f0c", "$M", "FoA Other 收入", None),
-        "单季经营利润 vs FY2025 季均线": (operating_income_shown, "f0c", "$M", "单季经营利润", None),
+        "FoA Other 单季收入": (
+            segment_labels, long_foa_other[segment_from:], "f0c", "$M", "FoA Other 收入", None,
+        ),
+        "单季经营利润 vs FY2025 季均线": (
+            long_labels, long_operating, "f0c", "$M", "单季经营利润", None,
+        ),
     }
 
     def tracking_charts(entries, value_key, threshold_label, headline) -> list[dict]:
@@ -374,7 +424,7 @@ def build_payload(staging: dict) -> dict:
             metric = entry["metric"]
             if metric not in tracked:
                 continue
-            values, fmt, ylab, actual_name, adjusted = tracked[metric]
+            metric_labels, values, fmt, ylab, actual_name, adjusted = tracked[metric]
             side = "上方" if entry["direction"] == "up" else "下方"
             adjusted_note = (
                 ""
@@ -383,9 +433,10 @@ def build_payload(staging: dict) -> dict:
             )
             exhibit = threshold_exhibit(
                 headline(entry),
-                labels,
+                metric_labels,
                 values,
                 entry["threshold"],
+                xstep=LONG_STEP if len(metric_labels) > 16 else None,
                 fmt=fmt,
                 ylab=ylab,
                 actual_name=actual_name,
@@ -477,11 +528,12 @@ def build_payload(staging: dict) -> dict:
         {
             "kind": "gs_bar",
             "title": (
-                f"收入 ${revenue_shown[-1]:,.0f}M、同比 {revenue_yoy[-1]:.1f}%，"
-                f"较上季减速 {revenue_yoy[-1] - revenue_yoy[-2]:.1f}pp"
+                f"收入 ${long_revenue[-1]:,.0f}M、同比 {long_revenue_yoy[-1]:.1f}%，"
+                f"较上季减速 {long_revenue_yoy[-1] - long_revenue_yoy[-2]:.1f}pp"
             ),
-            "xlabels": labels,
-            "values": revenue_shown,
+            "xlabels": long_labels,
+            "xstep": LONG_STEP,
+            "values": long_revenue,
             "legend": "总收入",
             "fmt": "f0c",
             "yfmt": "f0c",
@@ -489,8 +541,8 @@ def build_payload(staging: dict) -> dict:
             "ylab": "$M",
             "ylab2": "同比增速",
             "yoy": {
-                "name": "同比增速 (RHS)",
-                "values": revenue_yoy,
+                "name": "同比增速 (RHS) D",
+                "values": long_revenue_yoy,
                 "color": "GREEN",
                 "yfmt": "pct1",
             },
@@ -504,12 +556,17 @@ def build_payload(staging: dict) -> dict:
         },
         {
             "kind": "lines",
-            "title": "广告减速全部来自量：曝光同比从 19% 降到 14%，单价两季都是 12%",
-            "xlabels": labels,
+            "title": (
+                f"广告减速全部来自量：曝光同比 {long_impressions[-1]:.0f}%，"
+                f"单价 {long_price[-1]:.0f}%，而十年里价这条线有 "
+                f"{sum(1 for v in long_price if v is not None and v < 0)} 个季度是负的"
+            ),
+            "xlabels": long_labels,
+            "xstep": LONG_STEP,
             "series": [
-                {"name": "广告收入 YoY D", "values": advertising_yoy, "color": "NAVY"},
-                {"name": "广告曝光 YoY", "values": shown(ads["ad_impressions_yoy_pct"]), "color": "MBLUE"},
-                {"name": "平均每条广告价格 YoY", "values": shown(ads["price_per_ad_yoy_pct"]), "color": "GOLD"},
+                {"name": "广告收入 YoY D", "values": long_advertising_yoy, "color": "NAVY"},
+                {"name": "广告曝光 YoY", "values": long_impressions, "color": "MBLUE"},
+                {"name": "平均每条广告价格 YoY", "values": long_price, "color": "GOLD"},
             ],
             "fmt": "pct1",
             "yfmt": "pct1",
@@ -524,6 +581,13 @@ def build_payload(staging: dict) -> dict:
                 f"同期 Family DAP 仅 {ads['family_daily_active_people_bn'][-1]:.2f}B、同比 "
                 f"{pct_change(ads['family_daily_active_people_bn'][-1], ads['family_daily_active_people_bn'][-5]):.0f}%，"
                 "曝光与用户之间约 11pp 的缺口来自广告负载与人均时长。"
+                "<b>十年的窗口把「量价谁在拉动」这个问题的答案换了两次</b>："
+                f"金色那条价格线有 {sum(1 for v in long_price if v is not None and v < 0)} 个季度为负"
+                f"（最低 {min(v for v in long_price if v is not None):.0f}%），"
+                "2019 到 2021 年是价在拉、量在拖，2022 年整年反过来，今天又回到量拖价拉。"
+                f"<b>价与量两条线上有五个缺口</b>（{'、'.join(ad_rate_holes)}）："
+                "那五年公司只在 10-K 里给全年变动，第四季的季度值不存在于任何申报，"
+                "本页留空而不是插值。"
             ),
             "src_extra": (
                 "曝光与单价同比为公司披露的百分比；广告收入 = 总收入 − Reality Labs − FoA Other，"
@@ -558,11 +622,13 @@ def build_payload(staging: dict) -> dict:
         {
             "kind": "diverging_bars",
             "title": (
-                f"单季自由现金流塌到 ${fcf_shown[-1]:,.0f}M，环比 "
-                f"{pct_change(fcf_shown[-1], fcf_shown[-2]):.1f}%"
+                f"单季自由现金流塌到 ${long_fcf[-1]:,.0f}M，环比 "
+                f"{pct_change(long_fcf[-1], long_fcf[-2]):.1f}% —— "
+                f"42 季里为负的有 {sum(1 for v in long_fcf if v is not None and v < 0)} 季"
             ),
-            "xlabels": labels,
-            "values": fcf_shown,
+            "xlabels": long_labels,
+            "xstep": LONG_STEP,
+            "values": long_fcf,
             "legend": "自由现金流",
             "positive_label": "正自由现金流",
             "negative_label": "负自由现金流",
@@ -575,6 +641,12 @@ def build_payload(staging: dict) -> dict:
                 f"经营现金流 ${q['operating_cash_flow'][-1]:,.0f}M 基本持平，"
                 f"资本开支却从 ${capex_shown[-2]:,.0f}M 跳到 ${capex_shown[-1]:,.0f}M；"
                 "同季净发债 $24,910M、回购连续第三季为 $0。"
+                f"<b>十年的窗口给这一格一个参照</b>：42 季里自由现金流的最高是 "
+                f"${max(v for v in long_fcf if v is not None):,.0f}M"
+                f"（{long_labels[long_fcf.index(max(v for v in long_fcf if v is not None))]}），"
+                f"最低 ${min(v for v in long_fcf if v is not None):,.0f}M"
+                f"（{long_labels[long_fcf.index(min(v for v in long_fcf if v is not None))]}）—— "
+                "本季不是这条线最差的一格，但它是唯一一次在收入仍在两位数增长时掉到这个水平。"
             ),
             "src_extra": source_note(
                 "FCF 按公司口径 = 经营现金流 − 购买物业及设备 − 融资租赁本金偿付"
@@ -583,11 +655,12 @@ def build_payload(staging: dict) -> dict:
         {
             "kind": "gs_bar",
             "title": (
-                f"资本开支 ${capex_shown[-1]:,.0f}M、占收入 {capex_intensity[-1]:.1f}%，"
-                f"较上季的 {capex_intensity[-2]:.1f}% 跳升"
+                f"资本开支 ${long_capex[-1]:,.0f}M、占收入 {long_capex_intensity[-1]:.1f}%，"
+                f"十年前是 {long_capex_intensity[0]:.1f}%"
             ),
-            "xlabels": labels,
-            "values": capex_shown,
+            "xlabels": long_labels,
+            "xstep": LONG_STEP,
+            "values": long_capex,
             "legend": "单季资本开支（含融资租赁）",
             "fmt": "f0c",
             "yfmt": "f0c",
@@ -596,11 +669,15 @@ def build_payload(staging: dict) -> dict:
             "ylab2": "占收入比",
             "yoy": {
                 "name": "CapEx / 收入 (RHS) D",
-                "values": capex_intensity,
+                "values": long_capex_intensity,
                 "color": "GOLD",
                 "yfmt": "pct1",
             },
             "note": (
+                f"<b>右轴那条占收入比是这张图的主角</b>：十年区间 "
+                f"{min(long_capex_intensity):.1f}%–{max(long_capex_intensity):.1f}%，"
+                f"2016Q1 是 {long_capex_intensity[0]:.1f}%，本季 {long_capex_intensity[-1]:.1f}% —— "
+                "资本强度翻了不止一倍，而这一步是 2023 年以后才发生的。"
                 f"H1 已实现 ${guidance['h1_2026_capex_usd_m']:,}M，全年指引下限 "
                 f"US${guidance['fy2026_capex_usd_bn'][0]}B 隐含 H2 还要再做 "
                 f"${guidance['fy2026_capex_usd_bn'][0] * 1000 - guidance['h1_2026_capex_usd_m']:,}M，"
