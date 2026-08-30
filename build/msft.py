@@ -145,6 +145,8 @@ def build_payload(staging: dict) -> dict:
         income / total * 100
         for income, total in zip(long["operating_income_usd_m"], long_revenue)
     ]
+    long_revenue_yoy = yoy(long_revenue)
+    long_other_income = long["other_income_expense_net_usd_m"]
     # Finance leases start a couple of quarters into the window rather than at
     # 2016Q1, so the chart carries its own shorter axis instead of two blanks.
     long_leases = long["finance_lease_additions_usd_m"]
@@ -203,14 +205,34 @@ def build_payload(staging: dict) -> dict:
         f"年度对照为 10-K 原句 FY2025 +{azure_annual['FY2025']}%、FY2026 +{azure_annual['FY2026']}%（报告口径）。"
     )
 
+    # Three of these five run the ten-year record and two do not, and the split
+    # is a disclosure split rather than a preference: Azure publishes a growth
+    # rate and no revenue, so there is no filed series to lengthen; Intelligent
+    # Cloud's *cost of revenue* -- the denominator of a segment gross margin --
+    # is only in the last eight quarters of this file. The other three are
+    # filed numbers or differences of filed numbers all the way back.
+    long_opex_yoy = yoy(long["operating_expenses_usd_m"])
+    long_buybacks = long["stock_repurchases_usd_m"]
+    long_free_cash_flow = [
+        operating - spend for operating, spend
+        in zip(long["operating_cash_flow_usd_m"], long_capex)
+    ]
     tracked = {
         "Azure 固定汇率增速": (
-            staging["azure_growth_cc_pct"], "pct0", "同比（固定汇率）", "Azure 增速",
+            labels, staging["azure_growth_cc_pct"], "pct0", "同比（固定汇率）", "Azure 增速",
         ),
-        "经营费用同比": (opex_yoy, "pct1", "同比", "经营费用 YoY D"),
-        "Intelligent Cloud 分部毛利率": (ic_gross_margin, "pct1", "分部毛利率", "IC 分部毛利率 D"),
-        "单季回购金额": (buybacks, "f0c", "$M", "单季回购"),
-        "单季自由现金流（报告口径）": (free_cash_flow, "f0c", "$M", "自由现金流 D"),
+        "经营费用同比": (long_labels, long_opex_yoy, "pct1", "同比", "经营费用 YoY D"),
+        "Intelligent Cloud 分部毛利率": (
+            labels, ic_gross_margin, "pct1", "分部毛利率", "IC 分部毛利率 D"),
+        "单季回购金额": (long_labels, long_buybacks, "f0c", "$M", "单季回购"),
+        "单季自由现金流（报告口径）": (
+            long_labels, long_free_cash_flow, "f0c", "$M", "自由现金流 D"),
+    }
+    FLOOR_NOTE = {
+        "Azure 固定汇率增速": "这条线只有八季，因为微软只公布 Azure 的增速、不公布它的收入，"
+                          "没有可以往回拉的申报序列。",
+        "Intelligent Cloud 分部毛利率": "这条线只有八季，因为分部**销货成本**只在最近八季里，"
+                                  "而它是这个毛利率的分母。",
     }
 
     def tracking_charts(entries, value_key, threshold_label, headline) -> list[dict]:
@@ -219,21 +241,30 @@ def build_payload(staging: dict) -> dict:
             metric = entry["metric"]
             if metric not in tracked:
                 continue
-            values, fmt, ylab, actual_name = tracked[metric]
+            metric_labels, values, fmt, ylab, actual_name = tracked[metric]
             side = "上方" if entry["direction"] == "up" else "下方"
+            reported = [value for value in values if value is not None]
+            unsafe = ((lambda value: value < entry["threshold"])
+                      if entry["direction"] == "up"
+                      else (lambda value: value > entry["threshold"]))
+            crossed = sum(1 for value in reported if unsafe(value))
             charts.append(threshold_exhibit(
                 headline(entry),
-                labels,
+                metric_labels,
                 values,
                 entry["threshold"],
                 fmt=fmt,
                 ylab=ylab,
                 actual_name=actual_name,
                 threshold_name=f"{threshold_label}（安全侧在{side}）",
+                xstep=LONG_STEP if len(metric_labels) > 16 else None,
                 note=(
                     f"阈值 {unit_text(entry['unit'], entry['threshold'])}，"
                     f"当前 {unit_text(entry['unit'], entry[value_key])}，"
                     f"余量 {headroom(entry['direction'], entry['threshold'], entry[value_key]):+.1f}%。"
+                    f"这条线自己的记录有 {len(reported)} 个季度，"
+                    f"其中 {crossed} 个落在阈值的不安全一侧。"
+                    + FLOOR_NOTE.get(metric, "")
                 ),
                 src_extra=(
                     "实际值来自各期 10-Q / 10-K 与当季 earnings release；"
@@ -298,8 +329,9 @@ def build_payload(staging: dict) -> dict:
                 f"收入 ${revenue_shown[-1]:,.0f}M、同比 {revenue_yoy[-1]:.1f}%，"
                 f"下季指引中点隐含 {signed(guidance_revenue_yoy)}"
             ),
-            "xlabels": labels,
-            "values": revenue_shown,
+            "xlabels": long_labels,
+            "xstep": LONG_STEP,
+            "values": long_revenue,
             "legend": "总收入",
             "fmt": "f0c",
             "yfmt": "f0c",
@@ -308,7 +340,7 @@ def build_payload(staging: dict) -> dict:
             "ylab2": "同比增速",
             "yoy": {
                 "name": "同比增速 (RHS)",
-                "values": revenue_yoy,
+                "values": long_revenue_yoy,
                 "color": "GREEN",
                 "yfmt": "pct1",
             },
@@ -316,6 +348,14 @@ def build_payload(staging: dict) -> dict:
                 f"高于市场预期区间 ${consensus['revenue_usd_m_range'][0]:,}–"
                 f"{consensus['revenue_usd_m_range'][1]:,}M；两个公开来源相差 $1,750M，"
                 "因此本页只确认「超预期方向」，不发布超预期幅度。"
+                f"<b>十年的窗口里这条同比线走过 "
+                f"{min(v for v in long_revenue_yoy if v is not None):.0f}% 到 "
+                f"{max(v for v in long_revenue_yoy if v is not None):.0f}%</b>，"
+                f"本季 {long_revenue_yoy[-1]:.1f}% 在这个区间的"
+                + ("上四分之一" if long_revenue_yoy[-1] >= sorted(
+                    v for v in long_revenue_yoy if v is not None)[
+                    int(0.75 * len([v for v in long_revenue_yoy if v is not None]))]
+                   else "中段") + "。"
             ),
             "src_extra": source_note("收入来自各期 10-Q / 10-K；同比与下季隐含同比为自算"),
         },
@@ -428,11 +468,13 @@ def build_payload(staging: dict) -> dict:
         {
             "kind": "diverging_bars",
             "title": (
-                f"其他收入（净）八季在 -$3,660M 与 +$9,971M 之间摆动，本季 "
+                f"其他收入（净）四十二季在 ${min(long_other_income):,.0f}M 与 "
+                f"+${max(long_other_income):,.0f}M 之间摆动，本季 "
                 f"{'+' if other_income[-1] >= 0 else '-'}${abs(other_income[-1]):,}M"
             ),
-            "xlabels": labels,
-            "values": other_income,
+            "xlabels": long_labels,
+            "xstep": LONG_STEP,
+            "values": long_other_income,
             "legend": "其他收入（净）",
             "positive_label": "净收益",
             "negative_label": "净损失",
@@ -444,6 +486,15 @@ def build_payload(staging: dict) -> dict:
             "note": (
                 "这条线几乎全部是非现金的权益法与估值变动，方向可逆——同一套会计方法在上一财年产生的是净损失。"
                 "跨期比较 GAAP 每股收益会被它系统性带偏，本页因此把经营利润与现金流放在前面。"
+                "<b>八季的窗口把这条线画成一个「最近变大了」的故事，四十二季不是。</b>"
+                f"2016–2022 年它长期在 ${min(long_other_income[:28]):,.0f}M 到 "
+                f"${max(long_other_income[:28]):,.0f}M 的窄带里，"
+                f"绝对值超过 $2,000M 的只有 "
+                f"{sum(1 for v in long_other_income[:28] if abs(v) > 2000)} 季；"
+                f"最近十四季里有 {sum(1 for v in long_other_income[28:] if abs(v) > 2000)} 季超过。"
+                "变大的是波幅，不是水平。"
+                "同一个季度会被多份申报重印，且数会变（2016 年 9 月止季 100 → 112），"
+                "本页一律取最后一次申报的值。"
             ),
             "src_extra": source_note("其他收入（净）来自各期利润表；本页不拆分其中的单笔投资"),
         },

@@ -209,10 +209,26 @@ class MsftDashboardTest(unittest.TestCase):
             tracked - charted,
             {"股东回报 / 调整后自由现金流", "已签约未起租租约 / 年收入"},
         )
+        # Two windows now, and which one a metric gets is decided by what is
+        # filed rather than by preference: Azure publishes a growth rate and no
+        # revenue, and Intelligent Cloud's segment cost of revenue -- the
+        # denominator of its gross margin -- only exists for the reviewed eight.
+        # Everything else is a filed number or a difference of filed numbers all
+        # the way back, so it runs the ten years.
+        SHORT_BY_DISCLOSURE = {"Azure 固定汇率增速", "Intelligent Cloud 分部毛利率"}
+        long_window = len(self.source["long_history"]["quarters"])
         for exhibit in self.by_section["next_quarter"][1:]:
             threshold = exhibit["series"][-1]["values"]
+            metric = exhibit["title"].split("：")[0]
             self.assertEqual(len(set(threshold)), 1, exhibit["title"])
-            self.assertEqual(len(threshold), WINDOW, exhibit["title"])
+            expected = WINDOW if metric in SHORT_BY_DISCLOSURE else long_window
+            self.assertEqual(len(threshold), expected, exhibit["title"])
+            self.assertEqual(len(exhibit["xlabels"]), expected, exhibit["title"])
+        # And the short ones say on themselves why they are short, so a reader
+        # does not have to guess whether the page just failed to fetch.
+        for exhibit in self.by_section["next_quarter"][1:]:
+            if exhibit["title"].split("：")[0] in SHORT_BY_DISCLOSURE:
+                self.assertIn("只有八季", exhibit["note"], exhibit["title"])
 
     def test_long_history_agrees_with_the_reviewed_quarters(self) -> None:
         """The ten-year series and the reviewed twelve must not disagree.
@@ -231,12 +247,28 @@ class MsftDashboardTest(unittest.TestCase):
             ("operating_cash_flow_usd_m", "operating_cash_flow"),
             ("depreciation_usd_m", "depreciation"),
             ("finance_lease_additions_usd_m", "finance_lease_additions"),
+            # Added when the threshold charts moved onto the ten-year record.
+            # Buybacks and other income are their own XBRL facts (the June
+            # quarters derived as year minus nine months); operating expenses is
+            # gross profit minus operating income, both of which are in the same
+            # block. All three overlap the reviewed twelve, so all three are
+            # checked here rather than trusted.
+            ("stock_repurchases_usd_m", "stock_repurchases"),
+            ("other_income_expense_net_usd_m", "other_income_expense_net"),
+            ("operating_expenses_usd_m", "operating_expenses"),
         ]
         for long_key, reviewed_key in pairs:
+            self.assertIn(long_key, long, long_key)
             for period, expected in zip(self.source["periods"], self.q[reviewed_key]):
                 quarter, year = period.split()
                 got = long[long_key][index[f"{year}Q{quarter[1]}"]]
                 self.assertEqual(got, expected, f"{long_key} {period}")
+        # Operating expenses is a derived line, so the identity it was derived
+        # from is asserted over the whole record, not only where it overlaps.
+        for i, quarter in enumerate(long["quarters"]):
+            self.assertAlmostEqual(
+                long["gross_profit_usd_m"][i] - long["operating_income_usd_m"][i],
+                long["operating_expenses_usd_m"][i], places=6, msg=quarter)
 
     def test_quarterly_depreciation_is_not_invented_before_disclosure(self) -> None:
         """Microsoft publishes depreciation annually far further back than it

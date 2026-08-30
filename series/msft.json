@@ -35,17 +35,160 @@
     "Q2 2026"
   ],
   "quarterly_usd_m": {
-    "revenue_total": [56517, 62020, 61858, 64727, 65585, 69632, 70066, 76441, 77673, 81273, 82886, 90007],
-    "gross_profit": [40215, 42397, 43353, 45043, 45486, 47833, 48147, 52427, 53630, 55295, 56058, 60482],
-    "operating_income": [26895, 27032, 27581, 27925, 30552, 31653, 32000, 34323, 37961, 38275, 38398, 40603],
-    "operating_expenses": [13320, 15365, 15772, 17118, 14934, 16180, 16147, 18104, 15669, 17020, 17660, 19879],
-    "other_income_expense_net": [389, -506, -854, -675, -283, -2288, -623, -1707, -3660, 9971, 942, 3444],
-    "operating_cash_flow": [30583, 18853, 31917, 37195, 34180, 22291, 37044, 42647, 45057, 35758, 46679, 55441],
-    "cash_paid_for_property_and_equipment": [9917, 9735, 10952, 13873, 14923, 15804, 16745, 17079, 19394, 29876, 30876, 35802],
-    "finance_lease_additions": [1704, 1796, 3421, 4712, 4332, 6435, 3241, 6503, 9147, 6330, 4009, 5122],
-    "stock_repurchases": [4831, 4000, 4213, 4210, 4107, 4986, 4781, 4546, 5650, 7415, 4627, 4579],
-    "dividends_paid": [5051, 5574, 5572, 5574, 5574, 6170, 6169, 6169, 6169, 6762, 6756, 6758],
-    "depreciation": [null, null, null, null, 4700, 5200, 5800, 6300, 7100, 7900, 9000, 10300]
+    "revenue_total": [
+      56517,
+      62020,
+      61858,
+      64727,
+      65585,
+      69632,
+      70066,
+      76441,
+      77673,
+      81273,
+      82886,
+      90007
+    ],
+    "gross_profit": [
+      40215,
+      42397,
+      43353,
+      45043,
+      45486,
+      47833,
+      48147,
+      52427,
+      53630,
+      55295,
+      56058,
+      60482
+    ],
+    "operating_income": [
+      26895,
+      27032,
+      27581,
+      27925,
+      30552,
+      31653,
+      32000,
+      34323,
+      37961,
+      38275,
+      38398,
+      40603
+    ],
+    "operating_expenses": [
+      13320,
+      15365,
+      15772,
+      17118,
+      14934,
+      16180,
+      16147,
+      18104,
+      15669,
+      17020,
+      17660,
+      19879
+    ],
+    "other_income_expense_net": [
+      389,
+      -506,
+      -854,
+      -675,
+      -283,
+      -2288,
+      -623,
+      -1707,
+      -3660,
+      9971,
+      942,
+      3444
+    ],
+    "operating_cash_flow": [
+      30583,
+      18853,
+      31917,
+      37195,
+      34180,
+      22291,
+      37044,
+      42647,
+      45057,
+      35758,
+      46679,
+      55441
+    ],
+    "cash_paid_for_property_and_equipment": [
+      9917,
+      9735,
+      10952,
+      13873,
+      14923,
+      15804,
+      16745,
+      17079,
+      19394,
+      29876,
+      30876,
+      35802
+    ],
+    "finance_lease_additions": [
+      1704,
+      1796,
+      3421,
+      4712,
+      4332,
+      6435,
+      3241,
+      6503,
+      9147,
+      6330,
+      4009,
+      5122
+    ],
+    "stock_repurchases": [
+      4831,
+      4000,
+      4213,
+      4210,
+      4107,
+      4986,
+      4781,
+      4546,
+      5650,
+      7415,
+      4627,
+      4579
+    ],
+    "dividends_paid": [
+      5051,
+      5574,
+      5572,
+      5574,
+      5574,
+      6170,
+      6169,
+      6169,
+      6169,
+      6762,
+      6756,
+      6758
+    ],
+    "depreciation": [
+      null,
+      null,
+      null,
+      null,
+      4700,
+      5200,
+      5800,
+      6300,
+      7100,
+      7900,
+      9000,
+      10300
+    ]
   },
   "segments_usd_m": {
     "periods": [
@@ -58,69 +201,248 @@
       "Q1 2026",
       "Q2 2026"
     ],
-    "productivity_revenue": [28317, 29437, 29944, 33112, 33020, 34116, 35013, 37847],
-    "intelligent_cloud_revenue": [24092, 25544, 26751, 29878, 30897, 32907, 34681, 39306],
-    "more_personal_computing_revenue": [13176, 14651, 13371, 13451, 13756, 14250, 13192, 12854],
-    "productivity_operating_income": [16516, 16885, 17379, 18993, 20407, 20599, 20973, 21900],
-    "intelligent_cloud_operating_income": [10503, 10851, 11095, 12140, 13391, 13873, 13753, 15955],
-    "more_personal_computing_operating_income": [3533, 3917, 3526, 3190, 4163, 3803, 3672, 2748],
-    "intelligent_cloud_cost_of_revenue": [8614, 9405, 10307, 11845, 12314, 13566, 15120, 16876],
+    "productivity_revenue": [
+      28317,
+      29437,
+      29944,
+      33112,
+      33020,
+      34116,
+      35013,
+      37847
+    ],
+    "intelligent_cloud_revenue": [
+      24092,
+      25544,
+      26751,
+      29878,
+      30897,
+      32907,
+      34681,
+      39306
+    ],
+    "more_personal_computing_revenue": [
+      13176,
+      14651,
+      13371,
+      13451,
+      13756,
+      14250,
+      13192,
+      12854
+    ],
+    "productivity_operating_income": [
+      16516,
+      16885,
+      17379,
+      18993,
+      20407,
+      20599,
+      20973,
+      21900
+    ],
+    "intelligent_cloud_operating_income": [
+      10503,
+      10851,
+      11095,
+      12140,
+      13391,
+      13873,
+      13753,
+      15955
+    ],
+    "more_personal_computing_operating_income": [
+      3533,
+      3917,
+      3526,
+      3190,
+      4163,
+      3803,
+      3672,
+      2748
+    ],
+    "intelligent_cloud_cost_of_revenue": [
+      8614,
+      9405,
+      10307,
+      11845,
+      12314,
+      13566,
+      15120,
+      16876
+    ],
     "recast_note": "FY2025 起分部口径经过一次重述；本表八季全部取自 FY2026 各期 10-Q / 10-K 的重述后可比列"
   },
-  "azure_growth_cc_pct": [34, 31, 35, 39, 39, 38, 39, 43],
+  "azure_growth_cc_pct": [
+    34,
+    31,
+    35,
+    39,
+    39,
+    38,
+    39,
+    43
+  ],
   "azure_growth_provenance": {
     "basis": "各季 earnings release 与电话会披露的固定汇率同比；公司不在财务报表中单列 Azure 收入，因此只有增速可用",
-    "annual_crosscheck_pct": {"FY2025": 34, "FY2026": 41},
+    "annual_crosscheck_pct": {
+      "FY2025": 34,
+      "FY2026": 41
+    },
     "note": "年度对照取自各年 10-K 的「Azure and other cloud services revenue grew …」原句（报告口径）；逐季序列按收入体量加权后与之一致"
   },
   "operating_kpi": {
     "commercial_rpo": {
-      "periods": ["Q2 2025", "Q3 2025", "Q4 2025", "Q1 2026", "Q2 2026"],
-      "level_usd_bn": [368, 392, 625, 627, 678],
-      "twelve_month_share_pct": [40, 25, 25, 25, 30],
+      "periods": [
+        "Q2 2025",
+        "Q3 2025",
+        "Q4 2025",
+        "Q1 2026",
+        "Q2 2026"
+      ],
+      "level_usd_bn": [
+        368,
+        392,
+        625,
+        627,
+        678
+      ],
+      "twelve_month_share_pct": [
+        40,
+        25,
+        25,
+        25,
+        30
+      ],
       "share_note": "12 个月内可确认比例：Q3 2025–Q1 2026 为电话会给出的「约 25%」，Q2 2026 为公司披露的「约 30%」，Q2 2025 为按本季口径反推的约 40%"
     },
     "copilot_paid_seats_m": {
-      "periods": ["Q4 2025", "Q1 2026", "Q2 2026"],
-      "values": [15, 20, 30]
+      "periods": [
+        "Q4 2025",
+        "Q1 2026",
+        "Q2 2026"
+      ],
+      "values": [
+        15,
+        20,
+        30
+      ]
     },
     "microsoft_cloud": {
-      "periods": ["Q2 2025", "Q3 2025", "Q1 2026", "Q2 2026"],
-      "revenue_usd_bn": [46.7, 49.1, 54.5, 59.3],
-      "gross_margin_pct": [68, 68, 66, 65]
+      "periods": [
+        "Q2 2025",
+        "Q3 2025",
+        "Q1 2026",
+        "Q2 2026"
+      ],
+      "revenue_usd_bn": [
+        46.7,
+        49.1,
+        54.5,
+        59.3
+      ],
+      "gross_margin_pct": [
+        68,
+        68,
+        66,
+        65
+      ]
     },
     "bookings_ex_largest_customer_yoy_pct": {
-      "periods": ["Q1 2026", "Q2 2026"],
-      "values": [7, 18]
+      "periods": [
+        "Q1 2026",
+        "Q2 2026"
+      ],
+      "values": [
+        7,
+        18
+      ]
     }
   },
   "fiscal_year_usd_m": {
-    "labels": ["FY2025", "FY2026"],
-    "period_end": ["2025-06-30", "2026-06-30"],
-    "revenue": [281724, 331839],
-    "operating_income": [128528, 155237],
-    "operating_cash_flow": [136162, 182935],
-    "cash_paid_for_property_and_equipment": [64551, 115948],
-    "finance_lease_additions": [20511, 24608],
-    "unpaid_capex_in_payables": [6900, 26700],
+    "labels": [
+      "FY2025",
+      "FY2026"
+    ],
+    "period_end": [
+      "2025-06-30",
+      "2026-06-30"
+    ],
+    "revenue": [
+      281724,
+      331839
+    ],
+    "operating_income": [
+      128528,
+      155237
+    ],
+    "operating_cash_flow": [
+      136162,
+      182935
+    ],
+    "cash_paid_for_property_and_equipment": [
+      64551,
+      115948
+    ],
+    "finance_lease_additions": [
+      20511,
+      24608
+    ],
+    "unpaid_capex_in_payables": [
+      6900,
+      26700
+    ],
     "unpaid_capex_in_payables_prior": 4300,
-    "stock_repurchases": [18420, 22271],
-    "dividends_paid": [24082, 26445],
-    "depreciation": [22000, 34300],
+    "stock_repurchases": [
+      18420,
+      22271
+    ],
+    "dividends_paid": [
+      24082,
+      26445
+    ],
+    "depreciation": [
+      22000,
+      34300
+    ],
     "depreciation_and_amortization_fy2026": 38534,
-    "contracted_not_yet_commenced_leases": [92700, 329100],
-    "cash_and_short_term_investments": [94565, 76843],
+    "contracted_not_yet_commenced_leases": [
+      92700,
+      329100
+    ],
+    "cash_and_short_term_investments": [
+      94565,
+      76843
+    ],
     "finance_lease_liabilities_fy2026": 66594,
     "debt_fy2026": 40294
   },
   "guidance": {
     "next_quarter_label": "Q3 2026（FY2027 Q1）",
-    "revenue_usd_m": [89850, 90950],
-    "cost_of_revenue_usd_m": [29600, 29800],
-    "operating_expenses_usd_m": [16800, 16900],
-    "intelligent_cloud_usd_m": [40950, 41250],
-    "productivity_usd_m": [36700, 37000],
-    "more_personal_computing_usd_m": [12200, 12700],
+    "revenue_usd_m": [
+      89850,
+      90950
+    ],
+    "cost_of_revenue_usd_m": [
+      29600,
+      29800
+    ],
+    "operating_expenses_usd_m": [
+      16800,
+      16900
+    ],
+    "intelligent_cloud_usd_m": [
+      40950,
+      41250
+    ],
+    "productivity_usd_m": [
+      36700,
+      37000
+    ],
+    "more_personal_computing_usd_m": [
+      12200,
+      12700
+    ],
     "azure_cc_growth_pct": 45,
     "capex_next_quarter": "高于 US$50B",
     "fy2027_revenue": "双位数增长（定性）",
@@ -130,30 +452,80 @@
     "cy2026_capex_usd_bn": 175,
     "cy2026_capex_prior_usd_bn": 190,
     "capex_restatement_reason": "数据中心与办公楼估计可使用年限由 15 年延长至 25 年后，部分融资租赁重分类为经营租赁；管理层明确「除该年限影响外，2026 自然年资本开支预期不变」",
-    "useful_life_years": [15, 25]
+    "useful_life_years": [
+      15,
+      25
+    ]
   },
   "market_expectation": {
     "label": "市场预期（财报前一致预期，来源不具名）",
     "as_of": "2026-07-29",
-    "revenue_usd_m_range": [87620, 89370],
+    "revenue_usd_m_range": [
+      87620,
+      89370
+    ],
     "non_gaap_eps_usd": 4.33,
     "post_earnings_price_change_pct": 9.0,
     "source_conflict_note": "两个公开来源的收入预期相差 US$1.75B，本页只发布区间并据此降低 beat 幅度的可信度"
   },
   "followup_closure": {
-    "labels": ["已验证", "部分验证", "被证伪"],
-    "counts": [2, 2, 1],
+    "labels": [
+      "已验证",
+      "部分验证",
+      "被证伪"
+    ],
+    "counts": [
+      2,
+      2,
+      1
+    ],
     "set_in": "Q1 2026"
   },
   "prior_kpi_settlement": {
     "set_in": "Q1 2026",
     "quantified": [
-      {"metric": "Azure 固定汇率增速", "direction": "up", "threshold": 40.0, "actual": 43.0, "unit": "pct"},
-      {"metric": "Microsoft Cloud 毛利率", "direction": "up", "threshold": 64.0, "actual": 65.0, "unit": "pct"},
-      {"metric": "12 个月内可确认 RPO 同比", "direction": "up", "threshold": 30.0, "actual": 37.0, "unit": "pct"},
-      {"metric": "商业签约额（剔除单一大客户）同比", "direction": "up", "threshold": 15.0, "actual": 18.0, "unit": "pct"},
-      {"metric": "M365 Copilot 付费席位", "direction": "up", "threshold": 25.0, "actual": 30.0, "unit": "million"},
-      {"metric": "经营费用同比", "direction": "down", "threshold": 10.0, "actual": 9.8, "unit": "pct"}
+      {
+        "metric": "Azure 固定汇率增速",
+        "direction": "up",
+        "threshold": 40.0,
+        "actual": 43.0,
+        "unit": "pct"
+      },
+      {
+        "metric": "Microsoft Cloud 毛利率",
+        "direction": "up",
+        "threshold": 64.0,
+        "actual": 65.0,
+        "unit": "pct"
+      },
+      {
+        "metric": "12 个月内可确认 RPO 同比",
+        "direction": "up",
+        "threshold": 30.0,
+        "actual": 37.0,
+        "unit": "pct"
+      },
+      {
+        "metric": "商业签约额（剔除单一大客户）同比",
+        "direction": "up",
+        "threshold": 15.0,
+        "actual": 18.0,
+        "unit": "pct"
+      },
+      {
+        "metric": "M365 Copilot 付费席位",
+        "direction": "up",
+        "threshold": 25.0,
+        "actual": 30.0,
+        "unit": "million"
+      },
+      {
+        "metric": "经营费用同比",
+        "direction": "down",
+        "threshold": 10.0,
+        "actual": 9.8,
+        "unit": "pct"
+      }
     ],
     "retired": [
       "「商业 RPO 总额同比」已退役：总额被单一大客户合约主导，无法反映底层商业健康",
@@ -164,12 +536,48 @@
   "next_kpi": {
     "for_period": "Q3 2026",
     "quantified": [
-      {"metric": "Azure 固定汇率增速", "direction": "up", "threshold": 42.0, "current": 43.0, "unit": "pct"},
-      {"metric": "Intelligent Cloud 分部毛利率", "direction": "up", "threshold": 56.0, "current": 57.07, "unit": "pct"},
-      {"metric": "单季回购金额", "direction": "up", "threshold": 3000.0, "current": 4579.0, "unit": "usd_m"},
-      {"metric": "单季自由现金流（报告口径）", "direction": "up", "threshold": 15000.0, "current": 19639.0, "unit": "usd_m"},
-      {"metric": "股东回报 / 调整后自由现金流", "direction": "down", "threshold": 100.0, "current": 103.2, "unit": "pct"},
-      {"metric": "已签约未起租租约 / 年收入", "direction": "down", "threshold": 100.0, "current": 99.2, "unit": "pct"}
+      {
+        "metric": "Azure 固定汇率增速",
+        "direction": "up",
+        "threshold": 42.0,
+        "current": 43.0,
+        "unit": "pct"
+      },
+      {
+        "metric": "Intelligent Cloud 分部毛利率",
+        "direction": "up",
+        "threshold": 56.0,
+        "current": 57.07,
+        "unit": "pct"
+      },
+      {
+        "metric": "单季回购金额",
+        "direction": "up",
+        "threshold": 3000.0,
+        "current": 4579.0,
+        "unit": "usd_m"
+      },
+      {
+        "metric": "单季自由现金流（报告口径）",
+        "direction": "up",
+        "threshold": 15000.0,
+        "current": 19639.0,
+        "unit": "usd_m"
+      },
+      {
+        "metric": "股东回报 / 调整后自由现金流",
+        "direction": "down",
+        "threshold": 100.0,
+        "current": 103.2,
+        "unit": "pct"
+      },
+      {
+        "metric": "已签约未起租租约 / 年收入",
+        "direction": "down",
+        "threshold": 100.0,
+        "current": 99.2,
+        "unit": "pct"
+      }
     ],
     "disclosure_gated": [
       "折旧年限 15→25 年在下季实际带来多少折旧节省：管理层只给了「对 FY2027 经营利润影响很小」的定性说法",
@@ -564,6 +972,141 @@
     "depreciation_first_reported": "2024Q3",
     "provenance": "42 个季度（2016Q1–2026Q2）来自 SEC EDGAR 上 Microsoft 的 10-Q / 10-K XBRL 事实（CIK 789019）。微软 6 月制财年，其财政第四季（4–6 月）不单独申报，由全年 − 前三季得到；现金流量表同样只按年初至今披露，逐季由相邻两个年初至今值相减。收入在 ASC 606 之前用 SalesRevenueNet、之后用 RevenueFromContractWithCustomerExcludingAssessedTax，两段在重叠季相等。融资租赁新增取 RightOfUseAssetObtainedInExchangeForFinanceLeaseLiability。与仓内已复核的 12 个季度逐格核对全部相同。",
     "depreciation_note": "季度折旧只能回到 2024Q3：微软的折旧披露在此之前是年度口径（可回溯到 2009 年），季度值公司从未给过，本页不拿年度数摊成季度。",
-    "finance_lease_note": "融资租赁新增回到 2016Q3。"
+    "finance_lease_note": "融资租赁新增回到 2016Q3。",
+    "stock_repurchases_usd_m": [
+      3857.0,
+      3677.0,
+      4362.0,
+      3599.0,
+      2062.0,
+      1765.0,
+      2570.0,
+      2008.0,
+      3781.0,
+      2362.0,
+      3744.0,
+      6413.0,
+      4753.0,
+      4633.0,
+      4912.0,
+      5206.0,
+      7059.0,
+      5791.0,
+      6743.0,
+      6535.0,
+      6930.0,
+      7177.0,
+      7684.0,
+      7433.0,
+      8822.0,
+      8757.0,
+      5573.0,
+      5459.0,
+      5509.0,
+      5704.0,
+      4831.0,
+      4000.0,
+      4213.0,
+      4210.0,
+      4107.0,
+      4986.0,
+      4781.0,
+      4546.0,
+      5650.0,
+      7415.0,
+      4627.0,
+      4579.0
+    ],
+    "buyback_provenance": "42 季全部来自 XBRL 的 us-gaap:PaymentsForRepurchaseOfCommonStock：31 季是申报里直接带三个月区间的事实，11 季（每个 6 月止的财政第四季）由「全年 − 前九个月」得到 —— 微软 6 月制财年，10-K 只按全年披露，两条腿都是申报值。与仓内已有的 12 个季度逐格核对，12/12 相同。",
+    "operating_expenses_usd_m": [
+      7526.0,
+      9555.0,
+      7369.0,
+      8020.0,
+      8429.0,
+      9467.0,
+      8552.0,
+      9175.0,
+      9258.0,
+      9964.0,
+      9224.0,
+      9790.0,
+      10060.0,
+      10900.0,
+      9963.0,
+      10657.0,
+      11071.0,
+      12287.0,
+      10276.0,
+      10985.0,
+      11613.0,
+      13066.0,
+      11433.0,
+      12521.0,
+      13381.0,
+      14902.0,
+      13152.0,
+      14860.0,
+      14377.0,
+      15140.0,
+      13320,
+      15365,
+      15772,
+      17118,
+      14934,
+      16180,
+      16147,
+      18104,
+      15669,
+      17020,
+      17660,
+      19879
+    ],
+    "operating_expenses_note": "营业费用 = 毛利 − 营业利润，两条腿都在本块里、都是申报值。与仓内 quarterly_usd_m.operating_expenses 的 12 个季度逐格核对。",
+    "other_income_expense_net_usd_m": [
+      -247.0,
+      259.0,
+      112.0,
+      117.0,
+      371.0,
+      276.0,
+      276.0,
+      490.0,
+      349.0,
+      301.0,
+      266.0,
+      127.0,
+      145.0,
+      191.0,
+      0.0,
+      194.0,
+      -132.0,
+      15.0,
+      248.0,
+      440.0,
+      188.0,
+      310.0,
+      286.0,
+      268.0,
+      -174.0,
+      -47.0,
+      54.0,
+      -60.0,
+      321.0,
+      473.0,
+      389.0,
+      -506.0,
+      -854.0,
+      -675.0,
+      -283.0,
+      -2288.0,
+      -623.0,
+      -1707.0,
+      -3660.0,
+      9971.0,
+      942.0,
+      3444.0
+    ],
+    "other_income_provenance": "42 季来自 XBRL 的 us-gaap:NonoperatingIncomeExpense：31 季是带三个月区间的申报事实，11 季（6 月止的财政第四季）由全年减前九个月得到。同一个季度被多份申报重印过（微软会在次年的比较列里改数，例如 2016 年 9 月止季 100 → 112），一律取**最后一次申报**的值，与本仓其余序列的惯例一致。与仓内 quarterly_usd_m 的 12 个季度逐格核对，12/12 相同。"
   }
 }

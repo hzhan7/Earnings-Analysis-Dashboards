@@ -129,7 +129,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 REACH_2016 = {
     "amzn": 3, "avgo": 0, "axp": 5, "bc": 0, "cboe": 6, "cdns": 6, "cme": 13,
     "cost": 7, "googl": 11, "ibkr": 0, "ma": 0, "mc": 0, "mco": 0, "meta": 10,
-    "msci": 0, "msft": 3, "mu": 2, "ndaq": 8, "nke": 7, "nvda": 4, "pm": 6,
+    "msci": 0, "msft": 8, "mu": 2, "ndaq": 8, "nke": 7, "nvda": 4, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 0, "skhynix": 0, "snps": 3,
     "spgi": 2, "tjx": 1, "tsm": 18, "v": 14,
 }
@@ -166,6 +166,21 @@ CONVERTED = {
         "backlog 创": "same RPO floor; this is the level-and-net-add view of it.",
         "Cloud 增速本季": "revenue by line begins with the 2018Q4 release.",
         "Search 增速本季": "revenue by line begins with the 2018Q4 release.",
+    },
+    "msft": {
+        # Four floors, all of them disclosure floors.
+        "Azure 固定汇率增速": "Microsoft publishes an Azure growth rate and no Azure "
+                        "revenue, so there is no filed series to lengthen.",
+        "Intelligent Cloud 分部毛利率": "the segment's cost of revenue -- the denominator "
+                                 "-- is only in the reviewed eight quarters.",
+        "Intelligent Cloud 本季首次超过": "segment revenue in this file covers the reviewed "
+                                  "eight quarters only.",
+        "商业剩余履约义务": "Microsoft began giving the commercial RPO split five quarters "
+                     "ago; earlier releases give the total and not the split.",
+        "FY2026 股东回报": "an annual ratio built from the 10-K, two fiscal years wide.",
+        "季度折旧": "quarterly depreciation only reaches 2024Q3 -- before that Microsoft "
+                "disclosed it annually and the page will not spread a year over four "
+                "quarters.",
     },
     "meta": {
         "收入指引兑现": "Meta published no quarterly revenue outlook range before the "
