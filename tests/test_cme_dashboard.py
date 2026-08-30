@@ -83,13 +83,62 @@ class CmeDashboardTest(unittest.TestCase):
         self.assertEqual(len(quarters), 54)
         self.assertEqual(quarters[0], "2013Q1")
         self.assertEqual(quarters[-1], "2026Q2")
+        # Where a series is allowed to have holes, and where the holes are. A
+        # series not listed here must be complete; a series listed here must
+        # actually have its holes in the stated range, so an entry cannot be
+        # used to wave through a gap somewhere else.
+        holes = {
+            # A line the company retired at 2018Q4. Holes, not backfills --
+            # see the fold test below.
+            "access_comm": ("2018Q4", "2026Q2"),
+            # Adjusted figures were backfilled to 2016Q1, which is where this
+            # site's window starts; 2013Q1-2015Q4 was not fetched. That is a
+            # scope decision, not a disclosure limit -- the reconciliation
+            # tables exist for those quarters too.
+            "adj_net_income": ("2013Q1", "2015Q4"),
+            "adj_diluted_eps": ("2013Q1", "2015Q4"),
+            "adj_basic_eps": ("2013Q1", "2015Q4"),
+        }
         for name, values in self.staging["long"].items():
+            if not isinstance(values, list):
+                continue          # provenance strings and the outlier record
             self.assertEqual(len(values), 54, name)
-            if name == "access_comm":
-                # A line the company retired at 2018Q4. Holes, not backfills --
-                # see the fold test below.
+            missing = [quarters[i] for i, v in enumerate(values) if v is None]
+            if name not in holes:
+                self.assertEqual(missing, [], name)
                 continue
-            self.assertTrue(all(v is not None for v in values), name)
+            low, high = holes[name]
+            # Equality, not containment. "The holes sit inside this range" would
+            # let a value appear in the middle of a declared gap without anyone
+            # noticing -- and a value that appears where the data was said not to
+            # exist is the one thing this check is for. Filling part of a hole
+            # is fine; it just has to be recorded here in the same commit.
+            self.assertEqual(missing, [q for q in quarters if low <= q <= high], name)
+
+    def test_the_tax_outlier_is_left_as_a_hole(self) -> None:
+        """2017Q4 is not a tax rate, so it is not drawn.
+
+        The deferred-tax remeasurement under the Tax Cuts and Jobs Act made that
+        quarter's income tax a large net credit; the effective rate computes to
+        -411%. Drawn on one axis with the rest it squeezes forty-one quarters
+        into the top few percent of the canvas -- a chart that passes every gate
+        and shows nothing. Nothing else on this page would notice if somebody
+        "fixed" the hole, so it is pinned here.
+        """
+        outlier = self.staging["long"]["effective_tax_outlier"]
+        self.assertEqual(outlier["quarter"], "2017Q4")
+        self.assertLess(outlier["value"], -100)
+        exhibits = [ex for section in self.payload["sections"] for ex in section["exhibits"]]
+        chart = next(ex for ex in exhibits if "GAAP 有效税率" in ex["title"])
+        drawn = [v for v in chart["series"][0]["values"] if v is not None]
+        self.assertEqual(len(chart["series"][0]["values"]) - len(drawn), 1)
+        self.assertNotIn(outlier["value"], chart["series"][0]["values"])
+        # With it out, the axis spans something a reader can use.
+        self.assertLess(max(drawn) - min(drawn), 40, "the drawn range blew up again")
+        self.assertGreater(min(drawn), 0)
+        # And the hole is where the record says it is.
+        index = chart["series"][0]["values"].index(None)
+        self.assertEqual(chart["xlabels"][index], "Q4 2017")
 
     def test_the_window_is_the_tail_of_the_long_series(self) -> None:
         """The two windows must not disagree about an overlapping quarter."""

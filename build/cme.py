@@ -243,17 +243,28 @@ def quarter_section(staging: dict) -> list[dict]:
     labels = staging["period_labels"]
     coll = staging["collateral"]
 
-    share = [100 * c / r for c, r in zip(fin["clearing_fees"], fin["total_revenues"])]
+    # The `long` block runs from 2013Q1; this site's window starts 2016Q1, which
+    # is index 12. Four of this section's charts read from here rather than from
+    # the eight-quarter `financials` block -- the same disclosure, forty-two
+    # quarters of it, already in the file.
+    LONG_FROM = lng["quarters"].index("2016Q1")
+    long_labels = lng["period_labels"][LONG_FROM:]
+
+    def span(name: str) -> list:
+        return lng[name][LONG_FROM:]
+
+    share = [100 * c / r for c, r in zip(span("clearing_fees"), span("total_revenues"))]
     mix = {
         "ref": "EX_MIX",
         "kind": "stacked_dual",
-        "title": (f"近八季三条收入线：清算与交易费 US${fin['clearing_fees'][-1]:,.1f}M，"
-                  f"占总收入 {share[-1]:.1f}%"),
-        "xlabels": labels,
+        "title": (f"十年三条收入线：清算与交易费 US${span('clearing_fees')[-1]:,.1f}M，"
+                  f"占总收入 {share[-1]:.1f}%（十年区间 {min(share):.1f}–{max(share):.1f}%）"),
+        "xlabels": long_labels,
+        "xstep": LONG_STEP,
         "stacks": [
-            {"name": "清算与交易费", "color": "NAVY", "values": rounded(fin["clearing_fees"])},
-            {"name": "行情数据与信息服务", "color": "MBLUE", "values": rounded(fin["market_data"])},
-            {"name": "其他收入", "color": "BLUE", "values": rounded(fin["other_revenue"])},
+            {"name": "清算与交易费", "color": "NAVY", "values": rounded(span("clearing_fees"))},
+            {"name": "行情数据与信息服务", "color": "MBLUE", "values": rounded(span("market_data"))},
+            {"name": "其他收入", "color": "BLUE", "values": rounded(span("other_revenue"))},
         ],
         # `stacked_dual` scales its right axis to `ticks(0, ymax || 60, 6)`,
         # not to the data. This share sits around 80%, so without a ymax the
@@ -267,14 +278,21 @@ def quarter_section(staging: dict) -> list[dict]:
             f"{signed(pct_change(fin['total_revenues'][-1], fin['total_revenues'][-5]))}，"
             f"而这一点点增长全部来自最窄的那条腿。</b>"
             f"清算与交易费同比 {signed(pct_change(fin['clearing_fees'][-1], fin['clearing_fees'][-5]))}，"
-            f"是窗口内第一次同比转负；行情数据同比 "
+            f"是<b>八季窗口内</b>第一次同比转负；行情数据同比 "
             f"{signed(pct_change(fin['market_data'][-1], fin['market_data'][-5]))}；"
             f"其他收入同比 {signed(pct_change(fin['other_revenue'][-1], fin['other_revenue'][-5]))}。"
             f"逐条相加：US${fin['market_data'][-1] - fin['market_data'][-5]:+,.1f}M 加上 "
             f"US${fin['other_revenue'][-1] - fin['other_revenue'][-5]:+,.1f}M，"
             f"再减去 US${abs(fin['clearing_fees'][-1] - fin['clearing_fees'][-5]):,.1f}M，"
-            f"得到 US${fin['total_revenues'][-1] - fin['total_revenues'][-5]:+,.1f}M。"),
-        "src_extra": "各季业绩新闻稿（8-K EX-99.1）的合并损益表；均为公司披露值。",
+            f"得到 US${fin['total_revenues'][-1] - fin['total_revenues'][-5]:+,.1f}M。"
+            f"<b>把窗口拉到十年，「第一次」这个说法就要收回</b>：这 42 季里清算与交易费"
+            f"同比为负的季度共 "
+            f"{sum(1 for i in range(4, len(span('clearing_fees'))) if span('clearing_fees')[i] < span('clearing_fees')[i - 4])} 个，"
+            "上一轮集中在 2019 到 2020 年之间。真正少见的不是同比转负 —— 是金色那条占比线"
+            f"降到 {share[-1]:.1f}%：十年高点 {max(share):.1f}%，它从 2016 年起单调下行，"
+            "行情数据那条腿一直在把它往下压。"),
+        "src_extra": ("42 季逐季读自各季业绩新闻稿（8-K EX-99.1）的合并损益表，均为公司披露值；"
+                      "占比为三条腿相除的自算值 D。"),
     }
 
     # The volume/price bridge, built from the company's own ADV, trading days
@@ -394,47 +412,60 @@ def quarter_section(staging: dict) -> list[dict]:
                       "序列正好只有八个季度）；许可费取自合并损益表。差额为 D。"),
     }
 
-    md_yoy = [pct_change(fin["market_data"][i], staging["long"]["market_data"][-8 - 4 + i])
-              for i in range(8)]
+    md_long = span("market_data")
+    md_yoy = [pct_change(value, lng["market_data"][LONG_FROM + index - 4])
+              for index, value in enumerate(md_long)]
+    md_records = sum(1 for index, value in enumerate(md_long)
+                     if value == max(md_long[:index + 1]))
     market_data = {
         "ref": "EX_MKTDATA",
         "kind": "bar_line_dual",
-        "title": (f"行情数据与信息服务 US${fin['market_data'][-1]:,.1f}M，"
-                  f"同比 {signed(md_yoy[-1])}，八个季度全部创纪录"),
-        "xlabels": labels,
+        "title": (f"行情数据与信息服务 US${md_long[-1]:,.1f}M，同比 {signed(md_yoy[-1])}，"
+                  f"42 季里 {md_records} 季创下当时的新高"),
+        "xlabels": long_labels,
+        "xstep": LONG_STEP,
         "bar": {"name": "行情数据与信息服务收入", "color": "MBLUE",
-                "values": rounded(fin["market_data"])},
+                "values": rounded(md_long)},
         "line": {"name": "同比 (RHS)", "color": "RED", "values": rounded(md_yoy), "yfmt": "pct1"},
         "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
         "ylab": "US$M", "rhs_label": "同比 %",
         "note": (
             "<b>这条线现在扛着 CME 全部的同比增长，而它的加速与成交量无关。</b>"
-            f"同比从 {md_yoy[0]:+.1f}% 一路走到 {md_yoy[-1]:+.1f}%，"
+            f"<b>但「一路创纪录」是八季窗口才成立的说法</b>：42 季里同比为负的有 "
+            f"{sum(1 for value in md_yoy if value < 0)} 季，最低 {min(md_yoy):+.1f}%"
+            f"（{long_labels[md_yoy.index(min(md_yoy))]}）—— 2016 到 2020 年这条线基本是平的，"
+            "加速是 2021 年以后的事。"
+            f"近八季同比从 {md_yoy[-8]:+.1f}% 走到 {md_yoy[-1]:+.1f}%，"
             f"环比 {signed(pct_change(fin['market_data'][-1], fin['market_data'][-2]))}。"
             "<b>本页不拆分这条线的价与量</b>：公司既不披露提价幅度，也不披露订阅数的绝对值，"
             "电话会上给过的「专业订阅数环比」与「同比」是两个不同口径的数，"
             "把它们当同一个序列相减会造出一个不存在的量增长。"
             "能从申报文件里读到的只有这条收入线本身，以及它在总收入里的占比 —— "
-            f"本季 {100 * fin['market_data'][-1] / fin['total_revenues'][-1]:.1f}%，"
-            "见 Exhibit {EX_MKTDATA_LONG} 的长序列。"),
-        "src_extra": "合并损益表的行情数据与信息服务一行；同比由本页对同一序列相除 D。",
+            f"本季 {100 * md_long[-1] / span('total_revenues')[-1]:.1f}%，"
+            f"十年前是 {100 * md_long[0] / span('total_revenues')[0]:.1f}%。"),
+        "src_extra": ("42 季逐季读自合并损益表的行情数据与信息服务一行；"
+                      "同比与占比由本页对同一序列相除 D。"),
     }
 
     eps = {
         "ref": "EX_EPS",
         "kind": "lines",
-        "title": (f"近八季两条摊薄每股收益：调整后 ${fin['adj_diluted_eps'][-1]:.2f}，"
-                  f"GAAP ${fin['diluted_eps'][-1]:.2f}"),
-        "xlabels": labels,
+        "title": (f"42 季两条摊薄每股收益：调整后 ${span('adj_diluted_eps')[-1]:.2f}，"
+                  f"GAAP ${span('diluted_eps')[-1]:.2f}"),
+        "xlabels": long_labels,
+        "xstep": LONG_STEP,
         "series": [
-            {"name": "调整后摊薄 EPS", "values": rounded(fin["adj_diluted_eps"]), "color": "NAVY"},
-            {"name": "GAAP 摊薄 EPS", "values": rounded(fin["diluted_eps"]), "color": "BLUE"},
+            {"name": "调整后摊薄 EPS", "values": rounded(span("adj_diluted_eps")), "color": "NAVY"},
+            {"name": "GAAP 摊薄 EPS", "values": rounded(span("diluted_eps")), "color": "BLUE"},
         ],
         "fmt": "usd2", "yfmt": "usd2", "label_fmt": "usd2", "end_label": True,
         "ylab": "US$/股",
         "note": (
             f"<b>本季 GAAP 与调整后的缺口收窄到 "
-            f"${fin['adj_diluted_eps'][-1] - fin['diluted_eps'][-1]:.2f}，是八季里最窄的一格。</b>"
+            f"${span('adj_diluted_eps')[-1] - span('diluted_eps')[-1]:.2f}</b> —— 而 42 季里最窄的是 "
+            f"${min(a - g for a, g in zip(span('adj_diluted_eps'), span('diluted_eps'))):.2f}，"
+            f"最宽 ${max(a - g for a, g in zip(span('adj_diluted_eps'), span('diluted_eps'))):.2f}"
+            "（2017Q4，那一格 GAAP 被税改的一次性重估抬到调整后之上，见 Exhibit {EX_TAX}）。"
             f"GAAP 有效税率 {fin['effective_tax_pct'][-1]:.2f}%，比上季的 "
             f"{fin['effective_tax_pct'][-2]:.2f}% 低 "
             f"{(fin['effective_tax_pct'][-2] - fin['effective_tax_pct'][-1]) * 100:.0f} 个基点，"
@@ -443,8 +474,9 @@ def quarter_section(staging: dict) -> list[dict]:
             f"摊薄股数从上季的 {fin['diluted_shares_k'][-2]:,.0f} 千股降到 "
             f"{fin['diluted_shares_k'][-1]:,.0f} 千股，"
             "上季含 2026-03-05 优先股转普通股的加权影响，两季分母口径不同。"),
-        "src_extra": ("GAAP 每股收益与摊薄股数取自合并损益表，调整后每股收益取自 Reconciliation "
-                      "of Adjusted Net Income 表；有效税率为所得税费用 ÷ 税前利润 D。"),
+        "src_extra": ("GAAP 每股收益与摊薄股数取自合并损益表，调整后每股收益取自各季业绩新闻稿的 "
+                      "Reconciliation of Adjusted Net Income 表（42 季，2016Q1 起）；"
+                      "有效税率为所得税费用 ÷ 税前利润 D。"),
     }
     return [mix, bridge, class_rpc, margin, opex, market_data, eps]
 
@@ -491,26 +523,45 @@ def next_section(staging: dict) -> list[dict]:
             f"{labels[fin['adj_margin_pct'].index(min(fin['adj_margin_pct']))]} 的 "
             f"{min(fin['adj_margin_pct']):.1f}%，本季 {fin['adj_margin_pct'][-1]:.1f}%。"
             "阈值 67.5% 是本页设定的，不是公司的任何披露："
-            f"它取窗口内最低的一格再往下一点，因此「跌破」意味着这八个季度里没有出现过的事。"),
+            f"它取窗口内最低的一格再往下一点，因此「跌破」意味着这八个季度里没有出现过的事。"
+            "<b>这张图停在八季，是本页唯一被披露挡住的地方</b>：CME 直到 2025-10-22 的"
+            "第三季业绩新闻稿才第一次印出「Reconciliation of Adjusted Operating Income」表，"
+            "而那张表只带一列去年同期，所以调整后营业利润最早只到 2024Q3。"
+            "（那张表的出现本身有出处：SEC 在 2025-09-12 的问询函里要求公司要么量化这个指标"
+            "并附对账、要么不再使用这个词。）分母那条总收入本页有 42 季，但两条腿必须同窗。"
+            "<b>不能拿一直都有的调整后净利润对账表反推</b> —— 公司自己的脚注写明两张表口径不同"
+            "（净利润那张不含递延薪酬、摊销含权益法部分），在两表并存的 2026Q2 实测差 "
+            "US$9.1M，折合利润率约 0.5 个百分点。"),
         src_extra="调整后营业利润 ÷ 总收入 D，分子取自各季业绩新闻稿的调整对账表。",
     )
     margin_line["ref"] = "EX_MARGIN_LINE"
 
+    lng = staging["long"]
+    rpc_from = lng["quarters"].index("2016Q1")
+    rpc_long = lng["rpc"][rpc_from:]
+    rpc_labels = lng["period_labels"][rpc_from:]
+    rpc_below = sum(1 for value in rpc_long if value < 0.670)
     rpc_line = threshold_exhibit(
         "平均每手费率对 $0.670 这条线",
-        labels, rounded(staging["long"]["rpc"][-8:]), 0.670,
+        rpc_labels, rounded(rpc_long), 0.670,
+        xstep=LONG_STEP,
         fmt="usd3", ylab="US$/手",
         actual_name="平均每手费率 RPC", threshold_name="阈值 $0.670",
         note=(
             "<b>这条线要和成交量一起读，单独看会给出相反的结论。</b>"
-            f"本季 ${staging['long']['rpc'][-1]:.3f}，比上季高 "
-            f"${staging['long']['rpc'][-1] - staging['long']['rpc'][-2]:.3f}，"
+            f"本季 ${rpc_long[-1]:.3f}，比上季高 ${rpc_long[-1] - rpc_long[-2]:.3f}，"
             "但 Exhibit {EX_ADV_LONG} 说明这个回升是成交量下滑的机械结果。"
+            f"<b>把窗口拉到 42 季，这条阈值线的性质就变了</b>：$0.670 在八季窗口里是"
+            f"「最低一格再往下一点」，而 2016Q1 起有 {rpc_below} 个季度落在它下面 —— "
+            f"费率从 {rpc_labels[0]} 的 ${rpc_long[0]:.3f} 一路下行到十年低点 "
+            f"${min(rpc_long):.3f}（{rpc_labels[rpc_long.index(min(rpc_long))]}）才回升到今天。"
+            "跌破它不是「没出现过的事」，是回到 2019–2021 年的常态。"
             "<b>所以真正有信息量的组合是「量回来了而费率没掉」</b>："
             f"若下季 ADV 回到 32,000 千手以上而费率仍不低于 $0.675，"
             "才说明存在与成交量无关的费率改善；"
             "若量价同时落到阈值以下，则说明连分级费率的缓冲也没兜住。"),
-        src_extra="各季业绩新闻稿五季表的 Average RPC 一行；阈值为本页设定。",
+        src_extra=("42 季逐季读自各季业绩新闻稿五季表的 Average RPC 一行；"
+                   "阈值为本页设定，不是公司的任何披露。"),
     )
     rpc_line["ref"] = "EX_RPC_LINE"
     return [bar, margin_line, rpc_line]
@@ -697,15 +748,24 @@ def routine_section(staging: dict) -> list[dict]:
     # canvas -- a chart that passes every gate and shows nothing. The window
     # therefore starts where the statutory rate does: 35% federal before 2018,
     # 21% after, which is two regimes rather than one series anyway.
-    tax_start = lng["quarters"].index("2018Q1")
+    tax_start = lng["quarters"].index("2016Q1")
     tax_labels = labels[tax_start:]
-    tax_values = lng["effective_tax_pct"][tax_start:]
-    pre = lng["effective_tax_pct"][:tax_start]
+    outlier = lng["effective_tax_outlier"]
+    outlier_at = lng["quarters"].index(outlier["quarter"]) - tax_start
+    tax_values = [
+        None if index == outlier_at else value
+        for index, value in enumerate(lng["effective_tax_pct"][tax_start:])
+    ]
+    reform_at = lng["quarters"].index("2018Q1") - tax_start
+    before = [v for i, v in enumerate(tax_values) if v is not None and i < reform_at]
+    after = [v for i, v in enumerate(tax_values) if v is not None and i >= reform_at]
+    low_after = next(i for i, v in enumerate(tax_values) if v == min(after))
     tax = {
         "ref": "EX_TAX",
         "kind": "lines",
-        "title": (f"{len(tax_labels)} 季 GAAP 有效税率（2018 年税改之后）：本季 "
-                  f"{tax_values[-1]:.1f}%"),
+        "title": (f"{len(tax_labels)} 季 GAAP 有效税率：税改前均值 "
+                  f"{sum(before) / len(before):.1f}%，税改后 {sum(after) / len(after):.1f}%，"
+                  f"本季 {tax_values[-1]:.1f}%"),
         "xlabels": tax_labels,
         "series": [
             {"name": "GAAP 有效税率", "values": rounded(tax_values), "color": "NAVY"},
@@ -713,21 +773,24 @@ def routine_section(staging: dict) -> list[dict]:
         "fmt": "pct1", "yfmt": "pct1", "label_fmt": "pct1", "end_label": True,
         "ylab": "%", "xstep": LONG_STEP,
         "note": (
-            "<b>这张图从 2018 年第一季度开始，而不是像本节其他图那样从 2013 年开始，"
-            "原因写在这里而不是留给读者猜。</b>"
-            f"2017 年第四季度美国税改一次性重估递延所得税负债，当季有效税率是 "
-            f"{min(pre):.1f}% —— 一个把其余五十三个季度压进画布顶端百分之五的数。"
-            "而且联邦法定税率本身在 2018 年 1 月从 35% 降到 21%，"
-            "跨越那一点的税率序列是两套制度而不是一条线。"
-            f"窗口内最低的一季是 {tax_labels[tax_values.index(min(tax_values))]} 的 "
-            f"{min(tax_values):.1f}%，最高的是 "
-            f"{tax_labels[tax_values.index(max(tax_values))]} 的 {max(tax_values):.1f}%；"
-            f"本季 {tax_values[-1]:.1f}%，比上季低 "
+            "<b>线上那个缺口是 2017 年第四季度，它是有意留空的。</b>"
+            f"美国税改当季一次性重估递延所得税负债，使所得税变成大额净收益，"
+            f"有效税率算出来是 {outlier['value']:.1f}% —— 那不是一个税率，"
+            "画进同一条线会把其余四十一格压进画布顶端百分之五。本页留空，不截轴、不平滑。"
+            "<b>缺口两侧是两套制度</b>：联邦法定税率 2018 年 1 月从 35% 降到 21%，"
+            f"图上表现为税改前 {len(before)} 季均值 {sum(before) / len(before):.1f}% "
+            f"与之后 {len(after)} 季的 {sum(after) / len(after):.1f}%，"
+            f"差 {sum(before) / len(before) - sum(after) / len(after):.1f}pp。"
+            "<b>这张图上一版从 2018Q1 起，正是为了避开那个缺口</b> —— "
+            "代价是把这一整级台阶也一起切掉了；本站的窗口现在自 2016Q1 起，"
+            "所以改成留一个看得见的洞，而不是一个看不见的起点。"
+            f"税改后最低的一季是 {tax_labels[low_after]} 的 {min(after):.1f}%，"
+            f"最高 {max(after):.1f}%；本季 {tax_values[-1]:.1f}%，比上季低 "
             f"{(tax_values[-2] - tax_values[-1]) * 100:.0f} 个基点。"
             "公司的调整口径把当季的离散税项整笔剔除，所以它只影响 GAAP 这一条线，"
             "不影响 Exhibit {EX_EPS} 里的调整后每股收益。"),
         "src_extra": ("所得税费用 ÷ 税前利润，两者均取自合并损益表 D。"
-                      "2013Q1 至 2017Q4 的读数仍在核对抽屉之外的原始序列里，只是不画在这张图上。"),
+                      "2013Q1–2015Q4 的读数仍在原始序列里，只是不画在这张图上。"),
     }
     class_adv = {
         "ref": "EX_CLASS_ADV",

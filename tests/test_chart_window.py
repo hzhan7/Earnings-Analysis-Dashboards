@@ -127,7 +127,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amzn": 3, "avgo": 0, "axp": 2, "bc": 0, "cboe": 6, "cdns": 6, "cme": 8,
+    "amzn": 3, "avgo": 0, "axp": 2, "bc": 0, "cboe": 6, "cdns": 6, "cme": 13,
     "cost": 7, "googl": 1, "ibkr": 0, "ma": 0, "mc": 0, "mco": 0, "meta": 0,
     "msci": 0, "msft": 3, "mu": 2, "ndaq": 8, "nke": 7, "nvda": 4, "pm": 4,
     "race": 5, "rms": 0, "samsung": 0, "schw": 0, "skhynix": 0, "snps": 3,
@@ -139,6 +139,19 @@ REACH_2016 = {
 # that stops it. An entry that no longer matches a short exhibit fails too --
 # otherwise the list would slowly fill with excuses for charts that were fixed.
 CONVERTED = {
+    "cme": {
+        "两条营业利润率": "CME first printed a Reconciliation of Adjusted Operating Income in "
+                    "the 2025-10-22 release -- prompted by an SEC comment letter -- and "
+                    "that table carries one prior-year column, so adjusted operating "
+                    "income begins at 2024Q3. The denominator has 42 quarters but both "
+                    "legs must share a window.",
+        "调整后营业费用（除许可费）": "same numerator, same 2024Q3 floor; the licensing leg alone "
+                            "has 54 quarters.",
+        "调整后营业利润率对": "same numerator again -- this is the threshold view of it.",
+        "抵押品净利差": "the two figures are first quantified in the 10-Q filed 2022-11-02, "
+                  "which carries 2022Q3 and the prior-year 2021Q3. Every earlier "
+                  "filing discusses the same items only qualitatively.",
+    },
     "tsm": {
         "收入（本图仅近": "dollar band; the guided number runs US$6.1B to US$45.8B, so the "
                      "early bands collapse to a few pixels on a linear axis. The "
