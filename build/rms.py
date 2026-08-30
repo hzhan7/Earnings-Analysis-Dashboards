@@ -226,7 +226,11 @@ def quarter_charts(staging: dict) -> list[dict]:
             {"name": f"{periods[latest]} 固定汇率", "color": "NAVY",
              "values": [sectors[key]["cc_pct"][latest] for key in SECTOR_ORDER]},
         ],
-        "bar_labels": True,
+        # Seven categories x two groups is fourteen value labels on one axis,
+        # and they overlap in a browser at the site's own font scale. The
+        # numbers are in the audit table instead, which is the site's
+        # standing answer to "the chart cannot hold this many".
+        "bar_labels": False,
         "fmt": "pct1", "label_fmt": "pct1",
         "ylab": "同比 %（固定汇率）",
         "note": ("<b>四个板块同时加速，这是本季管理层叙述的支点，也是最容易被过度解读的一格。</b>"
@@ -257,7 +261,11 @@ def quarter_charts(staging: dict) -> list[dict]:
             {"name": "占本季固定汇率增量", "color": "NAVY",
              "values": rounded([share[key] for key in SECTOR_ORDER], 2)},
         ],
-        "bar_labels": True,
+        # Seven categories x two groups is fourteen value labels on one axis,
+        # and they overlap in a browser at the site's own font scale. The
+        # numbers are in the audit table instead, which is the site's
+        # standing answer to "the chart cannot hold this many".
+        "bar_labels": False,
         "fmt": "pct1", "label_fmt": "pct1",
         "ylab": "占比 %",
         "note": ("<b>这张图是本页对「增长有多集中」的全部证据，也是本站少见的一种自算：</b>"
@@ -386,8 +394,11 @@ def half_year_charts(staging: dict) -> list[dict]:
         "kind": "bridge_bar",
         "title": (f"上半年经常性经营利润率 {start:.2f}% → {end:.2f}%：净降 "
                   f"{signed(end - start, 2, 'pp')}，其中减值一项就是 {signed(impair, 2, 'pp')}"),
-        "xlabels": ["毛利率", "销售及管理费用", "折旧与摊销", "减值损失",
-                    "免费股计划费用", "计提准备、其他与舍入", "合计变动"],
+        # Column labels are kept short on purpose: measured in a real browser,
+        # 「免费股计划费用」 and 「计提准备、其他与舍入」 overlapped each other on
+        # the 45-degree axis. Nothing in the payload or under jsdom sees that.
+        "xlabels": ["毛利率", "销管费用", "折旧与摊销", "减值损失",
+                    "免费股计划", "准备与舍入", "合计变动"],
         "xrot": 45,
         "stacks": [{
             "name": "对上半年利润率的影响",
@@ -415,7 +426,7 @@ def half_year_charts(staging: dict) -> list[dict]:
                  "这是管理层自己确认的一条反向证据。"
                  f"反方向的一项也要写出来：免费股计划费用从 €111M 降到 €89M，贡献 "
                  f"{signed(free_share, 2, 'pp')}，而该费用与公司股价挂钩，同期期间平均股价下跌 26.2%。"
-                 "最后一格是把计提准备、其他收支净额与合并报表的印刷舍入并在一起，"
+                 "最后一格「准备与舍入」是把计提准备净变动、其他收支净额与合并报表的印刷舍入并在一起，"
                  "让六项相加恰好等于净变动。"),
         "src_extra": "2026 半年度财务报告 §3.1 合并损益表与附注 4.4；各项占收入比重为本页自算 D。",
     }
@@ -434,11 +445,11 @@ def half_year_charts(staging: dict) -> list[dict]:
                   f"（{signed((six_now / six_before - 1) * 100)}），"
                   f"集团之所以是 {signed((total_now / total_before - 1) * 100)}，"
                   f"全靠未分配一栏摆动 €{unallocated['roi_2026'] - unallocated['roi_2025']:+,}M"),
-        "xlabels": [s["label"] for s in segments],
+        "xlabels": [s["label"] for s in operating],
         "xrot": 45,
         "groups": [
-            {"name": "上半年 2025", "color": "BLUE", "values": [s["roi_2025"] for s in segments]},
-            {"name": "上半年 2026", "color": "NAVY", "values": [s["roi_2026"] for s in segments]},
+            {"name": "上半年 2025", "color": "BLUE", "values": [s["roi_2025"] for s in operating]},
+            {"name": "上半年 2026", "color": "NAVY", "values": [s["roi_2026"] for s in operating]},
         ],
         "bar_labels": True,
         "fmt": "f0c", "label_fmt": "f0c",
@@ -449,6 +460,9 @@ def half_year_charts(staging: dict) -> list[dict]:
                  f"−€{abs(unallocated['roi_2025'])}M 翻正到 +€{unallocated['roi_2026']}M。"
                  "公司对未分配栏的定义是「免费股分配计划费用、未分配的中央成本与内部计费」，"
                  "而同期免费股计划费用降了 €22M。"
+                 "<b>未分配那一栏没有画在图上</b>：一根 €25M 的柱子挨着一根 €1,653M 的柱子"
+                 "既读不出高低、又会把自己的数值标签压到地区名上，它的两个数在标题里、"
+                 "在这段话里、也在核对抽屉的分部表里。"
                  "<b>所以「上半年利润还在增长」这句话，要成立必须把一个与本期经营无关的科目算进去。</b>"
                  "另外附注 3 自己写明：上半年的分部利润率<b>不含内部转移定价调整</b>，"
                  "这些调整对合并利润中性、将发生在下半年，且主要影响法国与亚太（除日本）——"

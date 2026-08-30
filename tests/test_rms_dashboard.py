@@ -311,10 +311,10 @@ class RmsPayloadTest(unittest.TestCase):
         """
         bridge = next(ex for ex in self.exhibits if ex["kind"] == "bridge_bar")
         legs = dict(zip(bridge["xlabels"], bridge["stacks"][0]["values"]))
-        self.assertLess(legs["销售及管理费用"], legs["减值损失"],
+        self.assertLess(legs["销管费用"], legs["减值损失"],
                         "SG&A is the larger drag; the note must not say otherwise")
-        self.assertLess(abs(legs["毛利率"] + legs["销售及管理费用"]), 0.01)
-        inside = {k: legs[k] for k in ("折旧与摊销", "减值损失", "免费股计划费用")}
+        self.assertLess(abs(legs["毛利率"] + legs["销管费用"]), 0.01)
+        inside = {k: legs[k] for k in ("折旧与摊销", "减值损失", "免费股计划")}
         self.assertEqual(min(inside, key=lambda k: inside[k]), "减值损失")
         net = next(v for v in bridge["net"]["values"] if v is not None)
         self.assertGreater(abs(legs["减值损失"] / net), 0.9)
@@ -371,19 +371,19 @@ class RmsPayloadTest(unittest.TestCase):
         """A threshold left at last quarter's reading would show a stale bar."""
         latest = len(self.staging["periods"]) - 1
         by_metric = {
-            "集团收入 cc 增速": self.staging["group_revenue"]["cc_pct"][latest],
-            "皮具与马具 cc 增速": self.staging["by_sector"]["leather_goods_saddlery"]["cc_pct"][latest],
-            "亚太（除日本）cc 增速": self.staging["by_region"]["asia_pacific_ex_japan"]["cc_pct"][latest],
+            "集团 cc 增速": self.staging["group_revenue"]["cc_pct"][latest],
+            "皮具 cc 增速": self.staging["by_sector"]["leather_goods_saddlery"]["cc_pct"][latest],
+            "亚太 cc 增速": self.staging["by_region"]["asia_pacific_ex_japan"]["cc_pct"][latest],
             "美洲 cc 增速": self.staging["by_region"]["americas"]["cc_pct"][latest],
-            "其他（中东）cc 增速": self.staging["by_region"]["other_middle_east"]["cc_pct"][latest],
-            "香水与美妆 cc 增速": self.staging["by_sector"]["perfume_beauty"]["cc_pct"][latest],
+            "中东 cc 增速": self.staging["by_region"]["other_middle_east"]["cc_pct"][latest],
+            "香水 cc 增速": self.staging["by_sector"]["perfume_beauty"]["cc_pct"][latest],
         }
         entries = {entry["metric"]: entry for entry in self.staging["next_kpi"]["quantified"]}
-        self.assertEqual(set(by_metric) | {"皮具占集团 cc 增量比重"}, set(entries))
+        self.assertEqual(set(by_metric) | {"皮具增量占比"}, set(entries))
         for metric, expected in by_metric.items():
             self.assertEqual(entries[metric]["current"], expected, metric)
         increments, total = rms.cc_increments(self.staging["by_sector"], rms.SECTOR_ORDER, latest)
-        self.assertAlmostEqual(entries["皮具占集团 cc 增量比重"]["current"],
+        self.assertAlmostEqual(entries["皮具增量占比"]["current"],
                                increments["leather_goods_saddlery"] / total * 100, places=1)
 
     def test_every_threshold_can_be_settled_by_a_revenue_only_release(self) -> None:
@@ -394,6 +394,10 @@ class RmsPayloadTest(unittest.TestCase):
             self.assertTrue(
                 any(word in entry["metric"] for word in ("增速", "增量")),
                 entry["metric"])
+            # These names are also the x labels of the headroom chart. Measured
+            # in a browser, anything much longer overlaps its neighbour on that
+            # axis, and no gate in this repo looks at a text bounding box.
+            self.assertLessEqual(len(entry["metric"]), 9, entry["metric"])
         self.assertGreaterEqual(len(self.staging["next_kpi"]["full_year_only"]), 4)
 
     # ── boundary ────────────────────────────────────────────────────────────

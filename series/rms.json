@@ -216,7 +216,7 @@
     },
     "other_hermes_sectors": {
       "label_en": "Other Hermès sectors",
-      "label": "其他爱马仕板块（珠宝与家居）",
+      "label": "珠宝与家居",
       "revenue_eur_m": [
         455,
         488,
@@ -348,7 +348,7 @@
     },
     "other_products": {
       "label_en": "Other products",
-      "label": "其他产品（代工与 John Lobb 等）",
+      "label": "其他产品",
       "revenue_eur_m": [
         76,
         104,
@@ -1136,7 +1136,7 @@
     "settles_on": "2026-10-22",
     "quantified": [
       {
-        "metric": "集团收入 cc 增速",
+        "metric": "集团 cc 增速",
         "direction": "up",
         "threshold": 5.6,
         "unit": "pct",
@@ -1144,7 +1144,7 @@
         "why": "5.6% 是 2026 年第一季的水平。第二季加速到 6.7%，若第三季回到 5.6% 或更低，「经营动能在加速」这一读法就该被撤销 —— 加速只剩一个季度，属波动而非拐点。"
       },
       {
-        "metric": "皮具与马具 cc 增速",
+        "metric": "皮具 cc 增速",
         "direction": "up",
         "threshold": 9.0,
         "unit": "pct",
@@ -1152,7 +1152,7 @@
         "why": "它是集团唯一的增长引擎：本季贡献了 69.3% 的固定汇率增量。跌破 9% 意味着承重柱本身在减速，而其余板块没有一个大到能接手。"
       },
       {
-        "metric": "皮具占集团 cc 增量比重",
+        "metric": "皮具增量占比",
         "direction": "down",
         "threshold": 60.0,
         "unit": "pct",
@@ -1160,7 +1160,7 @@
         "why": "增速与集中度要一起看。皮具增速达标但集中度不降，说明增长仍是单点支撑；回落到 60% 以下才说明其余板块开始出力。"
       },
       {
-        "metric": "亚太（除日本）cc 增速",
+        "metric": "亚太 cc 增速",
         "direction": "up",
         "threshold": 5.0,
         "unit": "pct",
@@ -1176,7 +1176,7 @@
         "why": "美洲占上半年收入 19.4% 却贡献了 45.3% 的固定汇率增量，是当前的实际支点，而它已从第一季的 17.2% 减速到 13.7%，是六个地区里减速最快的一个。"
       },
       {
-        "metric": "其他（中东）cc 增速",
+        "metric": "中东 cc 增速",
         "direction": "up",
         "threshold": -1.0,
         "unit": "pct",
@@ -1184,7 +1184,7 @@
         "why": "连续两个季度为负但降幅在收窄（−5.9% → −2.4%）。回到 −1% 以上才算触底，再度走阔则说明这不是基数问题。"
       },
       {
-        "metric": "香水与美妆 cc 增速",
+        "metric": "香水 cc 增速",
         "direction": "up",
         "threshold": -5.0,
         "unit": "pct",
