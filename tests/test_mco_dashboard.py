@@ -198,11 +198,65 @@ class McoDashboardTest(unittest.TestCase):
                 ann["operating_cash_flow_usd_m"][i] - ann["capex_usd_m"][i],
                 ann["free_cash_flow_usd_m"][i], places=1, msg=f"FY{year}")
 
-    def test_adjusted_eps_exceeds_gaap_eps_every_year(self) -> None:
+    def test_adjusted_eps_exceeds_gaap_eps_in_every_year_that_has_one(self) -> None:
+        """The add-backs only ever go one way -- where both figures exist.
+
+        FY2016 and FY2017 have a GAAP diluted EPS and no adjusted one. That is
+        deliberate: Moody's redefines the adjusted measure from year to year,
+        this file's adjusted record starts at FY2018, and neither substituting
+        GAAP nor summing four quarterly adjusted EPS (EPS is not additive)
+        would produce a figure the company ever published. So the two years are
+        holes, and this test asserts the relation only where both legs are real
+        -- while still pinning that the holes are exactly those two years, so a
+        future gap cannot hide behind the same exemption.
+        """
         ann = self.source["annual_actuals"]
+        missing = [year for year, value
+                   in zip(ann["fiscal_years"], ann["adjusted_diluted_eps_usd"])
+                   if value is None]
+        self.assertEqual(missing, [2016, 2017])
+        self.assertIn("EPS 不可加", ann["adjusted_eps_hole_note"])
         for i, year in enumerate(ann["fiscal_years"]):
+            if ann["adjusted_diluted_eps_usd"][i] is None:
+                continue
             self.assertGreater(ann["adjusted_diluted_eps_usd"][i],
                                ann["diluted_eps_usd"][i], f"FY{year}")
+
+    def test_the_settlement_year_is_on_the_chart_rather_than_smoothed(self) -> None:
+        """The reason the annual charts were worth lengthening.
+
+        On the eight-year window that started at FY2018, Moody's operating
+        margin never leaves the 34-46% band and the story is a steady business
+        with one COVID-era dip. FY2016 is outside that band by a distance: a
+        one-off charge tied to the DOJ settlement put operating income at 638.7
+        on revenue of 3,604.2, and FY2017's operating cash flow is where that
+        money actually left. Both are filed figures, and pinning them here is
+        what stops a later rebuild from quietly trimming the window back to the
+        comfortable part.
+        """
+        ann = self.source["annual_actuals"]
+        self.assertEqual(ann["fiscal_years"][0], 2016)
+        # The stored margin is a ratio of two stored legs, so it is checked
+        # against them rather than read. Without this the margin and the income
+        # it comes from can drift apart and every assertion below still passes.
+        for year, income, revenue, margin in zip(
+                ann["fiscal_years"], ann["operating_income_usd_m"],
+                ann["revenue_usd_m"], ann["operating_margin_pct"]):
+            self.assertAlmostEqual(income / revenue * 100, margin, places=1,
+                                   msg=f"FY{year}")
+        # ...and free cash flow is the other derived leg, same treatment.
+        for year, ocf, capex, fcf in zip(
+                ann["fiscal_years"], ann["operating_cash_flow_usd_m"],
+                ann["capex_usd_m"], ann["free_cash_flow_usd_m"]):
+            self.assertAlmostEqual(ocf - capex, fcf, delta=1.0, msg=f"FY{year}")
+        margins = dict(zip(ann["fiscal_years"], ann["operating_margin_pct"]))
+        self.assertLess(margins[2016], 20.0)
+        self.assertGreater(min(value for year, value in margins.items()
+                               if year >= 2018), 30.0)
+        cash = dict(zip(ann["fiscal_years"], ann["operating_cash_flow_usd_m"]))
+        self.assertLess(cash[2017], cash[2016])
+        self.assertLess(cash[2017], min(value for year, value in cash.items()
+                                        if year >= 2018))
 
     # ── page shape and boundary ─────────────────────────────────────────────
     def test_four_sections_with_exhibits_numbered_in_render_order(self) -> None:

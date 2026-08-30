@@ -128,7 +128,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
     "amzn": 9, "avgo": 0, "axp": 5, "bc": 0, "cboe": 9, "cdns": 6, "cme": 14,
-    "cost": 7, "googl": 11, "ibkr": 0, "ma": 0, "mc": 0, "mco": 0, "meta": 10,
+    "cost": 7, "googl": 11, "ibkr": 0, "ma": 0, "mc": 0, "mco": 7, "meta": 10,
     "msci": 0, "msft": 8, "mu": 2, "ndaq": 8, "nke": 7, "nvda": 4, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 0, "skhynix": 0, "snps": 3,
     "spgi": 2, "tjx": 1, "tsm": 18, "v": 14,
@@ -243,6 +243,16 @@ CONVERTED = {
                                    "Information Services split; the 43-quarter AUM "
                                    "series is published on its own chart.",
         "ARR 两条腿": "Nasdaq began giving ARR by segment in 2023Q1.",
+    },
+    "mco": {
+        # All five are the same record: Moody's began publishing a full-year
+        # adjusted-EPS range with the FY2019 outlook. The axis is fiscal years,
+        # not quarters, and there is nothing earlier to score.
+        "调整后摊薄 EPS（对末次指引）": "the annual adjusted-EPS guidance record starts FY2019.",
+        "调整后摊薄 EPS（对初始指引）": "same record, read at its first vintage.",
+        "调整后摊薄 EPS（2 月那版）": "the deviation view of the February vintage.",
+        "调整后摊薄 EPS（10 月那版）": "the deviation view of the October vintage.",
+        "每一年的指引中值怎么被改到实际值上": "the same record again, as a revision path.",
     },
     "meta": {
         "收入指引兑现": "Meta published no quarterly revenue outlook range before the "

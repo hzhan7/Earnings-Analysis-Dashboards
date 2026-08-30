@@ -558,7 +558,9 @@ def build_payload(staging: dict) -> dict:
             "rows": [[f"FY{y}",
                       f"{ann['revenue_usd_m'][i]:,.0f}", f"{ann['operating_income_usd_m'][i]:,.0f}",
                       f"{ann['operating_margin_pct'][i]:.1f}%",
-                      f"{ann['diluted_eps_usd'][i]:.2f}", f"{ann['adjusted_diluted_eps_usd'][i]:.2f}",
+                      f"{ann['diluted_eps_usd'][i]:.2f}",
+                      ("—" if ann["adjusted_diluted_eps_usd"][i] is None
+                       else f"{ann['adjusted_diluted_eps_usd'][i]:.2f}"),
                       f"{ann['operating_cash_flow_usd_m'][i]:,.0f}", f"{ann['capex_usd_m'][i]:,.0f}",
                       f"{ann['free_cash_flow_usd_m'][i]:,.0f}"]
                      for i, y in enumerate(ann["fiscal_years"])],
