@@ -47,6 +47,7 @@ sys.path.insert(0, str(ROOT))
 
 from build.board import (  # noqa: E402
     ai_capex_cycle_table,
+    headroom as headroom_value,
     headroom_exhibit,
     number_exhibits,
     threshold_exhibit,
@@ -212,6 +213,13 @@ def quarter_charts(staging: dict) -> list[dict]:
               for key in SECTOR_ORDER}
     accelerating = [k for k in SECTOR_ORDER if deltas[k] > 0]
     biggest_drop = min(SECTOR_ORDER, key=lambda k: deltas[k])
+    # How much of the acceleration is the base rather than the quarter: a line
+    # whose previous reading was the low of the whole window has an easier
+    # comparison than one that accelerated from mid-range. Counted rather than
+    # asserted -- the sentence that used to say "three of the four" was typed by
+    # hand and was wrong by one.
+    off_the_low = [k for k in accelerating
+                   if sectors[k]["cc_pct"][latest - 1] == min(sectors[k]["cc_pct"])]
     sector_pace = {
         "ref": "EX_SECTOR_PACE",
         "kind": "grouped_bars",
@@ -231,8 +239,10 @@ def quarter_charts(staging: dict) -> list[dict]:
         "ylab": "同比 %（固定汇率）",
         "note": ("<b>四个板块同时加速，这是本季管理层叙述的支点，也是最容易被过度解读的一格。</b>"
                  "皮具从 +9.4% 到 +10.2%，成衣从 +0.4% 到 +3.6%，丝绸从 +7.8% 到 +12.2%，"
-                 "钟表从 −3.7% 到 +4.4%。但四条里有三条的上季读数是本窗口的低点，"
-                 "即加速的一半来自比较基数 —— 公司自己在电话会上用的措辞是"
+                 "钟表从 −3.7% 到 +4.4%。但这四条里有 "
+                 f"{len(off_the_low)} 条（{'、'.join(sectors[k]['label'] for k in off_the_low)}）"
+                 "的上季读数正好是本窗口的低点，"
+                 "即加速有一部分来自比较基数 —— 公司自己在电话会上用的措辞是"
                  "「有时候是去年太差，才让今年的百分比好看，但销量本身并没有那么好」。"
                  f"另一侧同样要写出来：{sectors[biggest_drop]['label']}是七个板块里唯一负增长的一个，"
                  "环比掉了 9.7pp，而公司在新闻稿与电话会里都没有解释原因。"),
@@ -304,6 +314,10 @@ def quarter_charts(staging: dict) -> list[dict]:
         "src_extra": SOURCE_QUARTER + "（增量权重为本页自算 D）",
     }
 
+    peak = periods.index("Q4 2024")
+    double_digit = [k for k in SECTOR_ORDER if sectors[k]["cc_pct"][peak] >= 10.0]
+    watches = sectors["watches"]["cc_pct"]
+    watch_positive = sum(1 for v in watches[-4:] if v > 0)
     sector_trend = {
         "ref": "EX_SECTOR_TREND",
         "kind": "lines",
@@ -316,10 +330,15 @@ def quarter_charts(staging: dict) -> list[dict]:
         ],
         "fmt": "pct1", "yfmt": "pct1", "label_fmt": "pct1", "end_label": True,
         "ylab": "同比 %（固定汇率）",
-        "note": ("七条线在 2024 年第四季全部在两位数以上，此后一起下台阶 —— "
+        "note": (f"{periods[peak]} 那一格是本窗口的顶：七条线里有 {len(double_digit)} 条在两位数以上"
+                 f"（最低的两条是{sectors['silk_textiles']['label']} "
+                 f"{sectors['silk_textiles']['cc_pct'][peak]:.1f}% 与"
+                 f"{sectors['watches']['label']} {sectors['watches']['cc_pct'][peak]:.1f}%），"
+                 "此后一起下台阶 —— "
                  "所以本季的「四个板块同时加速」要放在这个背景里读：<b>是从低位反弹，不是回到原来的斜率</b>。"
-                 "钟表那条线的形状最值得单独看：连续多季两位数负增长之后，"
-                 "最近三季转正，但它只有集团收入的 3.3%，对集团的贡献停在 2.2%。"
+                 "钟表那条线的形状最值得单独看：窗口前段是连续的两位数负增长，"
+                 f"最近四季里有 {watch_positive} 季为正但仍在正负之间来回，"
+                 "而它只有集团收入的 3.3%，对集团的贡献停在 2.2%。"
                  "香水与美妆是唯一一条本季仍在零以下并且还在下探的线。"
                  "纵轴不自 0 起，但没有任何点被截掉。"),
         "src_extra": SOURCE_QUARTER,
@@ -535,15 +554,22 @@ def half_year_charts(staging: dict) -> list[dict]:
 def next_quarter_charts(staging: dict) -> list[dict]:
     periods = staging["periods"]
     kpi = staging["next_kpi"]
+    # Every count and every name below is read out of the threshold list rather
+    # than typed beside it. A tally printed in a title has nothing checking it,
+    # which is how this page shipped four wrong ones in its first draft.
+    entries = kpi["quantified"]
+    breached = [e for e in entries
+                if headroom_value(e["direction"], e["threshold"], e["current"]) < 0]
+    later = kpi["full_year_only"]
     headroom = headroom_exhibit(
-        "下季七条阈值的余量：本季已有三条落在阈值的另一侧",
-        kpi["quantified"], "current",
-        note=("七条全部是收入类，因为 <b>2026-10-22 的第三季度公告只有收入</b> —— "
+        f"下季 {len(entries)} 条阈值的余量：本季已有 {len(breached)} 条落在阈值的另一侧",
+        entries, "current",
+        note=(f"{len(entries)} 条全部是收入类，因为 <b>{kpi['settles_on']} 的第三季度公告只有收入</b> —— "
               "没有损益表、没有现金流量表、没有资产负债表，所以任何「第三季度利润率」都不存在。"
-              "利润与投资类的四条要等 2027 年 2 月的全年业绩，列在核对抽屉里。"
+              f"利润与投资类的 {len(later)} 条要等 2027 年 2 月的全年业绩，列在核对抽屉里。"
               "阈值方向统一为「正值 = 仍在安全侧」，各条的原始单位见核对表。"
-              "越过阈值的三条分别是亚太（除日本）、中东与香水与美妆 —— "
-              "前两条是地区，第三条是板块，彼此不重叠，所以它们是三个独立的坏读数，不是同一个。"),
+              f"越过阈值的是{'、'.join(e['metric'] for e in breached)}，"
+              f"共 {len(breached)} 条，彼此不重叠。"),
         src_extra="阈值为本页本地研究设定，不是公司指引；公司不发布任何数字化指引。",
     )
 
@@ -555,7 +581,8 @@ def next_quarter_charts(staging: dict) -> list[dict]:
         actual_name="亚太（除日本）固定汇率增速", threshold_name="本页阈值 5.0%",
         note=("这条线为什么值得单独画：该地区占上半年集团收入 43.3%、"
               "占分部经常性经营利润 49.3%，是集团利润率的第一决定变量，"
-              "而它在八个季度里有五季低于 5%。"
+              f"而它在这 {len(periods)} 个季度里有 "
+              f"{sum(1 for v in apac['cc_pct'] if v < 5.0)} 季低于 5%。"
               "阈值取 5% 的理由是可审计的：分析师在电话会上按亚太约 5% 的提价幅度提问，"
               "管理层没有否认这个量级，所以固定汇率增速回到 5% 以上"
               "大致对应销量不再下滑 —— 这是<b>推断</b>，公司从不披露量价拆分，也从不单独披露大中华区增速。"
@@ -691,7 +718,7 @@ def build_payload(staging: dict) -> dict:
         },
         {
             "n": first_table + 6,
-            "title": "电话会上给出的六条数字化「准指引」（不是新闻稿里的书面指引）",
+            "title": f"电话会上给出的 {len(staging['quasi_guidance'])} 条数字化「准指引」（不是新闻稿里的书面指引）",
             "headers": ["项目", "数值", "对下半年的方向", "何时可结算", "限定"],
             "rows": [[q["item"], q["value"], q["direction"], q["settles"], q["note"]]
                      for q in staging["quasi_guidance"]],
@@ -700,7 +727,7 @@ def build_payload(staging: dict) -> dict:
                         staging["next_kpi"]["quantified"], "current", "当前值"),
         {
             "n": first_table + 8,
-            "title": "只有全年业绩才能结算的四条（2027-02-11）",
+            "title": f"只有全年业绩才能结算的 {len(staging['next_kpi']['full_year_only'])} 条（2027-02-11）",
             "headers": ["指标", "当前值", "阈值", "为什么"],
             "rows": [[k["metric"], k["current"], k["threshold"], k["why"]]
                      for k in staging["next_kpi"]["full_year_only"]],
@@ -793,8 +820,11 @@ def build_payload(staging: dict) -> dict:
                              "把其中任何一个数称作「第二季度」都是错的。"),
              "exhibits": half_ex},
             {"id": "next_quarter", "title": "四、下季要跟踪什么",
-             "description": ("七条可在 2026-10-22 第三季度收入公告上结算的阈值，统一用「距阈值余量」口径；"
-                             "利润与投资类的四条要等 2027-02-11 的全年业绩，收在核对抽屉里。"),
+             "description": (f"{len(staging['next_kpi']['quantified'])} 条可在 "
+                             f"{staging['next_kpi']['settles_on']} 第三季度收入公告上结算的阈值，"
+                             "统一用「距阈值余量」口径；利润与投资类的 "
+                             f"{len(staging['next_kpi']['full_year_only'])} 条要等 2027-02-11 的全年业绩，"
+                             "收在核对抽屉里。"),
              "exhibits": next_ex},
         ],
         "tables": tables,

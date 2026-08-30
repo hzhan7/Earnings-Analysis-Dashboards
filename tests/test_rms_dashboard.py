@@ -509,6 +509,89 @@ class RmsPayloadTest(unittest.TestCase):
         self.assertNotIn("stacked_dual", kinds)
         self.assertEqual(kinds, {"lines", "diverging_bars", "grouped_bars", "bridge_bar"})
 
+    # ── counts printed in prose ─────────────────────────────────────────────
+    def test_every_tally_the_page_prints_is_the_tally_in_the_data(self) -> None:
+        """A number inside a sentence has nothing checking it.
+
+        The first draft of this page printed five of them by hand and **all five
+        were wrong**: the threshold chart said three lines had been breached when
+        four had, the Asia-Pacific note said five quarters of eight were below
+        the threshold when four were, the métier trend note said all seven lines
+        were double-digit in the peak quarter when five were and said watches had
+        been positive three quarters running when it had alternated, and the
+        acceleration note said three of the four accelerating lines came off a
+        window low when two did. Every gate was green for all five: they are
+        finite strings in a note, so `payload_guard` sees nothing, the render
+        gate sees nothing, and no assertion read them.
+
+        So each one is now derived in the builder, and this reads the number back
+        out of the rendered sentence and re-derives it here from the staging by a
+        different route. Two independent paths to the same integer is the point;
+        asserting the builder against itself would not be.
+        """
+        text = {ex["n"]: ex["title"] + " " + ex["note"] for ex in self.exhibits}
+        latest = len(self.staging["periods"]) - 1
+        sectors = self.staging["by_sector"]
+
+        # Ex5: accelerating lines whose previous reading was the window low
+        off_low = sum(1 for k in rms.SECTOR_ORDER
+                      if sectors[k]["cc_pct"][latest] > sectors[k]["cc_pct"][latest - 1]
+                      and sectors[k]["cc_pct"][latest - 1] == min(sectors[k]["cc_pct"]))
+        self.assertIn(f"这四条里有 {off_low} 条", text[5])
+
+        # Ex8: double-digit lines in the window's peak quarter
+        peak = self.staging["periods"].index("Q4 2024")
+        double = sum(1 for k in rms.SECTOR_ORDER if sectors[k]["cc_pct"][peak] >= 10.0)
+        self.assertIn(f"七条线里有 {double} 条在两位数以上", text[8])
+        watches = sectors["watches"]["cc_pct"]
+        self.assertIn(f"最近四季里有 {sum(1 for v in watches[-4:] if v > 0)} 季为正", text[8])
+
+        # Ex14: how many thresholds are on the wrong side of their own line
+        breached = [e for e in self.staging["next_kpi"]["quantified"]
+                    if headroom(e["direction"], e["threshold"], e["current"]) < 0]
+        self.assertIn(f"本季已有 {len(breached)} 条落在阈值的另一侧", text[14])
+        self.assertIn(f"共 {len(breached)} 条", text[14])
+        for entry in breached:
+            self.assertIn(entry["metric"], text[14])
+
+        # Ex15: quarters below the Asia-Pacific threshold
+        apac = self.staging["by_region"]["asia_pacific_ex_japan"]["cc_pct"]
+        self.assertIn(f"{sum(1 for v in apac if v < 5.0)} 季低于 5%", text[15])
+
+    def test_the_section_and_table_headings_count_their_own_contents(self) -> None:
+        kpi = self.staging["next_kpi"]
+        section = next(s for s in self.payload["sections"] if s["id"] == "next_quarter")
+        self.assertIn(f"{len(kpi['quantified'])} 条可在", section["description"])
+        self.assertIn(f"{len(kpi['full_year_only'])} 条要等", section["description"])
+        quasi = next(t for t in self.payload["tables"] if "准指引" in t["title"])
+        self.assertIn(f"{len(quasi['rows'])} 条", quasi["title"])
+        later = next(t for t in self.payload["tables"] if "只有全年业绩" in t["title"])
+        self.assertIn(f"{len(later['rows'])} 条", later["title"])
+
+    def test_every_year_on_year_pair_on_the_half_year_clock_is_same_named(self) -> None:
+        """A half-year series indexes 「a year earlier」 differently from a
+        quarterly one, and a chart whose x axis is a list of regions hides the
+        time span inside the title. Both ends of every such comparison on this
+        page have to be two halves with the same name, or two full years.
+        """
+        halves = {h["label"]: h for h in self.staging["half_years"]}
+        # Ex11 takes its two ends from two columns the segment note itself heads
+        # H1 2026 and H1 2025, so there is no index arithmetic to get wrong --
+        # asserted here so a later rewrite cannot quietly introduce some.
+        for row in self.staging["h1_segments"]:
+            self.assertEqual(set(row) & {"roi_2026", "roi_2025"}, {"roi_2026", "roi_2025"})
+        # Ex13's implied second half is the filed year minus the filed first
+        # half of the SAME year, and it is compared against the same-named half.
+        for year in ("2023", "2024", "2025"):
+            self.assertEqual(
+                halves[f"H2 {year}"]["operating_investments_eur_m"],
+                self.staging["full_years"][year]["operating_investments_eur_m"]
+                - halves[f"H1 {year}"]["operating_investments_eur_m"], year)
+        capex = next(ex for ex in self.exhibits if ex.get("ref") == "EX_CAPEX")
+        self.assertEqual(capex["xlabels"], ["2023", "2024", "2025", "2026"])
+        for group in capex["groups"]:
+            self.assertEqual(len(group["values"]), 4)
+
     def test_the_published_payload_matches_a_fresh_build(self) -> None:
         published = js_payload(ROOT / "data" / "rms.js", "window.DASH")
         self.assertEqual(published, self.payload)
