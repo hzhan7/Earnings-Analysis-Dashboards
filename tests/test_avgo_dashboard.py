@@ -466,10 +466,16 @@ class AvgoDashboardTest(unittest.TestCase):
         self.assertIn("Broadcom", home)
         cards = home.count('class="hcard"')
         self.assertEqual(cards, len(ENTRIES))
-        masthead = re.search(r'<span class="meta">(\d+) 家公司 · (\d+) 季趋势</span>', home)
+        # The masthead used to read "N 家公司 · 8 季趋势". The window is being
+        # pulled from eight quarters to forty-two, so the second half now states
+        # progress instead of one number; the company count is still the first
+        # number and is still pinned to the roster.
+        masthead = re.search(r'<span class="meta">(\d+) 家公司 · ([^<]*)</span>', home)
         self.assertIsNotNone(masthead, "masthead count line changed shape")
         self.assertEqual(int(masthead.group(1)), len(ENTRIES))
-        self.assertEqual(int(masthead.group(2)), 8, "the second number is the window, not a count")
+        self.assertNotIn("8 季趋势", masthead.group(2),
+                         "the eight-quarter claim is no longer true of this site")
+        self.assertIn("42 季", masthead.group(2))
 
     def test_the_shell_links_the_payload_by_content_hash(self) -> None:
         """Every `?v=` in the committed shell must be that file's CURRENT digest.

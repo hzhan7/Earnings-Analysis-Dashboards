@@ -239,7 +239,34 @@ class ContentBoundaryTest(unittest.TestCase):
         self.assertIsNotNone(stated, "masthead no longer states a company count")
         self.assertEqual(int(stated.group(1)), len(ENTRIES))
         self.assertEqual(home.count('class="hcard"'), len(ENTRIES))
-        self.assertIn("8 季趋势", home)
+        # The window is being pulled from eight quarters to forty-two, so the
+        # masthead states progress rather than a single number. What is pinned
+        # is that the two counts it prints are the two counts that are true:
+        # how many pages already carry a 42-quarter chart, and how many of the
+        # site's time-axis charts reach 2016.
+        import json as _json
+        from pathlib import Path as _Path
+        sys.path.insert(0, str(ROOT / "tests"))
+        from test_chart_window import first_year as _first_year  # noqa: E402
+        pages_with_long = reached = total = 0
+        for path in sorted((ROOT / "data").glob("*.js")):
+            if path.name == "roster.js":
+                continue
+            payload = _json.loads(
+                path.read_text(encoding="utf-8").split("window.DASH = ", 1)[1]
+                .rstrip().rstrip(";"))
+            longest = 0
+            for section in payload["sections"]:
+                for exhibit in section["exhibits"]:
+                    year = _first_year(exhibit)
+                    if year is None:
+                        continue
+                    total += 1
+                    reached += year <= 2016
+                    longest = max(longest, len(exhibit.get("xlabels") or []))
+            pages_with_long += longest >= 42
+        self.assertIn(f"{pages_with_long} 家已有 42 季", home)
+        self.assertIn(f"{total} 张时间轴图里 {reached} 张已经到位", home)
 
 
     def test_every_card_sits_under_the_group_it_registered(self) -> None:
