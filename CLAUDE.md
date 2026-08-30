@@ -68,6 +68,21 @@ git show origin/main:build/all.py | grep -c '"key": "<你的键>"'
    里那个**有序**的 roster 字面量。按序插入，不要追加。
 6. **`README.md`** —— 开头的公司清单、`http://127.0.0.1:8765/<slug>/` 那份列表，
    以及那句用分号一路串下来的长句（见 §4 第 3 条）。
+7. **`tests/test_chart_contract.py` 的 `test_the_gs_bar_census_this_file_was_written_against`**
+   —— **只在你新增了 `gs_bar` 时才动，但那时必须动**。它写死四个字面量(当前
+   `27 / 26 / 0 / ["avgo Ex16"]`)，加一张 `gs_bar` 至少动其中两个。它是这七处里最像
+   增量法靶子的一处：**没有任何东西会告诉你别人也加了几张**，而 `index.html` 那种
+   「重数一下就自查」的便利这里没有。判据是重跑普查、把结果写进去，**绝不在 27 上加数**：
+
+   ```bash
+   python3 -c "import sys;sys.path.insert(0,'.');from tests.test_chart_contract import exhibits;b=[(l,e) for l,e in exhibits() if e.get('kind')=='gs_bar'];print(len(b), sum(1 for _,e in b if e.get('yoy')), sum(1 for _,e in b if 'avg12' in e), [l for l,e in b if not e.get('yoy') and 'avg12' not in e])"
+   ```
+
+   并发时三个人写的是**同一行**，所以 git 大概率会停下来 —— 而按 §4.2 实测过的那条，
+   **git 停下来的那次更容易骗人**：解完冲突拿到一棵「已解决」的树，四个数仍然可能是错的，
+   而你多了一份「git 检查过了」的安心。第四个断言 `neither == ["avgo Ex16"]` 不是普通
+   计数，它是「avg12 分支从未被真实数据走过」这个论断的**证据**，而那正是它周围几条闸门
+   成立的理由 —— 往那个列表里加一项就是在改论据，要连同论述一起改。
 
 还有一条不是"改"而是"带上"：**`ai_capex_cycle_table` 每一页都要发布**，包括
 和 AI 供应链毫无关系的公司（Visa、Mastercard、TJX、Ferrari 都带着）。它不是图，
