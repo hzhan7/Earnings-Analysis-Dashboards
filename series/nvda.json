@@ -1,195 +1,213 @@
 {
-  "_provenance": "所有公司披露值逐季读自 SEC EDGAR 上 NVIDIA（CIK 1045810）的 24 份季度业绩 8-K：每份含 EX-99.1 新闻稿（Outlook 段给下一季指引，另有合并损益表、GAAP/non-GAAP 对账表与资产负债表）与 CFO commentary（市场平台收入拆分、Data Center compute/networking、现金流与 DSO）。派生值均已对损益表恒等式或公司披露的合计数核对，见 tests/test_nvda_dashboard.py。",
+  "_provenance": "八季公司披露值逐季读自 SEC EDGAR 上 NVIDIA（CIK 1045810）的季度业绩 8-K（EX-99.1 新闻稿与 EX-99.2 CFO commentary）。自本季（FY2027 Q2，acc 0001045810-26-000075）起，10-Q 首次成为本页的承重来源：子分部重述、供应与产能承诺、担保最大敞口、单一客户集中度、海外收入占比、客户预付款六项只在 10-Q 里，8-K 完全没有。42 季长序列（2016Q1 起）逐季读自各季 8-K 的合并损益表三个月列（财年第四季取每年 2 月全年 8-K 里与全年列并排印出的 Q4 三个月列），并与各财年 10-K 全年数逐年勾稽。重述后（含股权激励费用）的 non-GAAP 历史取自公司 IR 的《Non-GAAP Historical Financial Tables including Stock-Based Compensation Expense》（随 FY2026 Q4 业绩发布，覆盖 FY2026 四季）与各季 8-K 对账表；FY2025 两季公司未按新口径印出，本页按同一机械规则自算并已用 FY2025 年度列闭合校验。",
   "periods": [
-    "Q2 2024",
     "Q3 2024",
     "Q4 2024",
     "Q1 2025",
     "Q2 2025",
     "Q3 2025",
     "Q4 2025",
-    "Q1 2026"
+    "Q1 2026",
+    "Q2 2026"
   ],
   "period_ends": [
-    "2024-07-28",
     "2024-10-27",
     "2025-01-26",
     "2025-04-27",
     "2025-07-27",
     "2025-10-26",
     "2026-01-25",
-    "2026-04-26"
+    "2026-04-26",
+    "2026-07-26"
   ],
   "fiscal_labels": [
-    "FY2025Q2",
     "FY2025Q3",
     "FY2025Q4",
     "FY2026Q1",
     "FY2026Q2",
     "FY2026Q3",
     "FY2026Q4",
-    "FY2027Q1"
+    "FY2027Q1",
+    "FY2027Q2"
   ],
   "financials": {
     "revenue_usd_m": [
-      30040.0,
       35082.0,
       39331.0,
       44062.0,
       46743.0,
       57006.0,
       68127.0,
-      81615.0
+      81615.0,
+      96221.0
     ],
     "revenue_yoy_pct": [
-      122.4032,
       93.6093,
       77.9442,
       69.1829,
       55.6025,
       62.4936,
       73.2145,
-      85.2276
+      85.2276,
+      105.8511
     ],
     "gaap_gross_margin_pct": [
-      75.1465,
       74.5568,
       73.0289,
       60.5238,
       72.4237,
       73.4116,
       74.9967,
-      74.9335
+      74.9335,
+      74.9753
     ],
     "gaap_operating_margin_pct": [
-      62.0573,
       62.3368,
       61.107,
       49.1081,
       60.8433,
       63.1688,
       65.0241,
-      65.5958
-    ],
-    "non_gaap_gross_margin_pct": [
-      75.6625,
-      75.0299,
-      73.4637,
-      60.955,
-      72.6526,
-      73.6186,
-      75.167,
-      75.0254
+      65.5958,
+      66.2371
     ],
     "gaap_opex_usd_m": [
-      3932.0,
       4287.0,
       4689.0,
       5030.0,
       5413.0,
       5839.0,
       6794.0,
-      7621.0
-    ],
-    "non_gaap_opex_usd_m": [
-      2792.0,
-      3046.0,
-      3378.0,
-      3583.0,
-      3795.0,
-      4215.0,
-      5102.0,
-      7449.0
+      7621.0,
+      8408.0
     ],
     "gaap_operating_income_usd_m": [
-      18642.0,
       21869.0,
       24034.0,
       21638.0,
       28440.0,
       36010.0,
       44299.0,
-      53536.0
+      53536.0,
+      63734.0
     ],
     "gaap_net_income_usd_m": [
-      16599.0,
       19309.0,
       22091.0,
       18775.0,
       26422.0,
       31910.0,
       42960.0,
-      58321.0
+      58321.0,
+      59688.0
+    ],
+    "non_gaap_gross_profit_usd_m": [
+      26272,
+      28841,
+      26794,
+      33902,
+      41897,
+      51140,
+      61232,
+      72188
+    ],
+    "non_gaap_gross_margin_pct": [
+      74.8874,
+      73.3289,
+      60.8098,
+      72.5285,
+      73.4958,
+      75.0657,
+      75.0254,
+      75.0231
+    ],
+    "non_gaap_opex_usd_m": [
+      4248,
+      4646,
+      4993,
+      5361,
+      5800,
+      6666,
+      7449,
+      8232
     ],
     "non_gaap_operating_income_usd_m": [
-      19937.0,
-      23276.0,
-      25516.0,
-      23275.0,
-      30165.0,
-      37752.0,
-      46107.0,
-      53783.0
+      22024,
+      24195,
+      21801,
+      28541,
+      36097,
+      44474,
+      53783,
+      63956
     ],
     "non_gaap_net_income_usd_m": [
-      16952.0,
-      20010.0,
-      22066.0,
-      19894.0,
-      25783.0,
-      31767.0,
-      39552.0,
-      45548.0
-    ]
+      null,
+      null,
+      19094,
+      24763,
+      30979,
+      38969,
+      45548,
+      53954
+    ],
+    "non_gaap_basis_note": "全部八季为重述后口径（non-GAAP 不再剔除股权激励费用）。FY2026 四季（本页 Q1–Q4 2025）与 FY2027 两季（Q1–Q2 2026）为公司印出值；FY2025 两季（本页 Q3–Q4 2024）公司从未按新口径印出，本页按同一机械规则自算：非 GAAP 毛利 = 原口径非 GAAP 毛利 − 该季销货成本内的股权激励费用，非 GAAP 营业费用 = 原口径 + 该季营业费用内的股权激励费用，两项均逐季印在当季8-K 的对账表上。该规则在公司印出的四个季度上逐百万精确复现，年度合计与公司印出的 FY2025 列差 1（各季独立取整）。非 GAAP 净利与每股收益不适用该规则 —— 非 GAAP 调整的所得税影响换了算法（实测 FY2026 Q3 天真加回差 867、Q4 差 1,050），故 Q3–Q4 2024 两季留空。"
   },
   "market_platform_usd_m": {
     "data_center": [
-      26272.0,
       30771.0,
       35580.0,
       39112.0,
       41096.0,
       51215.0,
       62314.0,
-      75246.0
-    ],
-    "hyperscale": [
-      10622,
-      13390,
-      19094,
-      17599,
-      23883,
-      30340,
-      33814,
-      37869
-    ],
-    "acie": [
-      15650,
-      17381,
-      16486,
-      21513,
-      17213,
-      20875,
-      28500,
-      37377
+      75246.0,
+      89023.0
     ],
     "edge_computing": [
-      3768.0,
       4311.0,
       3751.0,
       4950.0,
       5647.0,
       5791.0,
       5813.0,
-      6369.0
-    ],
-    "filed_split_quarters": [
-      "Q1 2026",
-      "Q4 2025",
-      "Q1 2025"
+      6369.0,
+      7198.0
     ]
   },
-  "data_center_split_usd_m": {
+  "dc_customer_mix": {
+    "quarters": [
+      "Q2 2025",
+      "Q1 2026",
+      "Q2 2026"
+    ],
+    "hyperscale": [
+      24168,
+      43050,
+      48710
+    ],
+    "acie": [
+      16928,
+      32196,
+      40313
+    ],
+    "q1_2026_as_originally_filed": {
+      "hyperscale": 37869,
+      "acie": 37377
+    },
+    "note": "公司在 FY2027 Q2 把一家客户由 ACIE 重分类进 Hyperscale，并追溯重述历史。10-Q 原文：「During the second quarter of fiscal year 2027, we reclassified a company from AI Clouds, Industrial, & Enterprise (ACIE) to Hyperscale due to a change in their business model and recast the prior period revenue associated with this company.」重述后的值只在本季 10-Q 的三列里印出（Q2 2026 / Q1 2026 / Q2 2025），Q3 2025 与 Q4 2025 在新口径下不存在于任何申报，也无法由两个已披露数相减得到，故本块只有三季。Data Center 合计与 Edge Computing 不受这次重分类影响。"
+  },
+  "discontinued_dc_split_usd_m": {
+    "quarters": [
+      "Q2 2024",
+      "Q3 2024",
+      "Q4 2024",
+      "Q1 2025",
+      "Q2 2025",
+      "Q3 2025",
+      "Q4 2025",
+      "Q1 2026"
+    ],
     "compute": [
       22600.0,
       27600.0,
@@ -209,61 +227,63 @@
       8187.0,
       10980.0,
       14800.0
-    ]
+    ],
+    "note": "公司自 FY2027 Q2 起不再披露 Data Center 内部的 compute / networking 拆分，本季 8-K、CFO commentary 与 10-Q 三处都没有；管理层在电话会上只说 networking 收入环比增长 18%。本序列到 Q1 2026 为止，不做外推。"
   },
   "cash_flow_usd_m": {
     "operating_cash_flow": [
-      14489.0,
       17629.0,
       16628.0,
       27414.0,
       15365.0,
       23750.0,
       36190.0,
-      50344.0
+      50344.0,
+      24077.0
     ],
     "free_cash_flow": [
-      13483.0,
       16787.0,
       15519.0,
       26135.0,
       13450.0,
       22089.0,
       34902.0,
-      48554.0
+      48554.0,
+      21341.0
     ]
   },
   "working_capital": {
     "dso_days": [
-      43,
-      46,
-      53,
-      46,
-      54,
-      53,
-      51,
-      45
+      45.8943,
+      53.3654,
+      45.7086,
+      54.137,
+      53.3028,
+      51.3806,
+      45.3913,
+      59.6374
     ],
     "accounts_receivable_usd_m": [
-      14132.0,
       17693.0,
       23065.0,
       22132.0,
       27808.0,
       33391.0,
       38466.0,
-      40710.0
+      40710.0,
+      63059.0
     ],
     "inventories_usd_m": [
-      6675.0,
       7654.0,
       10080.0,
       11333.0,
       14962.0,
       19784.0,
       21403.0,
-      25797.0
-    ]
+      25797.0,
+      31575.0
+    ],
+    "dso_note": "DSO = 期末应收账款净额 ÷ 当季净收入 × 91，八季同一公式。公司本季在 CFO commentary 里印的是整数 60 天。"
   },
   "quarterly_guidance_history": {
     "quarters": [
@@ -290,7 +310,8 @@
       "Q3 2025",
       "Q4 2025",
       "Q1 2026",
-      "Q2 2026"
+      "Q2 2026",
+      "Q3 2026"
     ],
     "guide_revenue_usd_bn": [
       4.4,
@@ -316,9 +337,11 @@
       54.0,
       65.0,
       78.0,
-      91.0
+      91.0,
+      108.0
     ],
     "revenue_band_pct": [
+      2.0,
       2.0,
       2.0,
       2.0,
@@ -368,7 +391,8 @@
       73.3,
       74.8,
       74.9,
-      74.9
+      74.9,
+      74.0
     ],
     "non_gaap_gm_guide_pct": [
       65.5,
@@ -394,9 +418,11 @@
       73.5,
       75.0,
       75.0,
-      75.0
+      75.0,
+      74.0
     ],
     "gm_band_bp": [
+      50.0,
       50.0,
       50.0,
       50.0,
@@ -446,7 +472,8 @@
       5.9,
       6.7,
       7.7,
-      8.5
+      8.5,
+      9.2
     ],
     "non_gaap_opex_guide_usd_bn": [
       1.09,
@@ -472,7 +499,8 @@
       4.2,
       5.0,
       7.5,
-      8.3
+      8.3,
+      9.0
     ],
     "actual_revenue_usd_m": [
       4726.0,
@@ -498,6 +526,7 @@
       57006.0,
       68127.0,
       81615.0,
+      96221.0,
       null
     ],
     "actual_gaap_gm_pct": [
@@ -524,6 +553,7 @@
       73.4116,
       74.9967,
       74.9335,
+      74.9753,
       null
     ],
     "actual_non_gaap_gm_pct": [
@@ -550,6 +580,7 @@
       73.6186,
       75.167,
       75.0254,
+      75.0231,
       null
     ],
     "actual_non_gaap_opex_usd_m": [
@@ -576,6 +607,7 @@
       4215.0,
       5102.0,
       7449.0,
+      8232.0,
       null
     ],
     "actual_non_gaap_operating_income_usd_m": [
@@ -602,11 +634,29 @@
       37752.0,
       46107.0,
       53783.0,
+      63956.0,
       null
     ]
   },
   "long_history": {
     "quarters": [
+      "Q1 2016",
+      "Q2 2016",
+      "Q3 2016",
+      "Q4 2016",
+      "Q1 2017",
+      "Q2 2017",
+      "Q3 2017",
+      "Q4 2017",
+      "Q1 2018",
+      "Q2 2018",
+      "Q3 2018",
+      "Q4 2018",
+      "Q1 2019",
+      "Q2 2019",
+      "Q3 2019",
+      "Q4 2019",
+      "Q1 2020",
       "Q2 2020",
       "Q3 2020",
       "Q4 2020",
@@ -630,9 +680,27 @@
       "Q2 2025",
       "Q3 2025",
       "Q4 2025",
-      "Q1 2026"
+      "Q1 2026",
+      "Q2 2026"
     ],
     "revenue_usd_m": [
+      1305.0,
+      1428.0,
+      2004.0,
+      2173.0,
+      1937.0,
+      2230.0,
+      2636.0,
+      2911.0,
+      3207.0,
+      3123.0,
+      3181.0,
+      2205.0,
+      2220.0,
+      2579.0,
+      3014.0,
+      3105.0,
+      3080.0,
       3866.0,
       4726.0,
       5003.0,
@@ -656,9 +724,27 @@
       46743.0,
       57006.0,
       68127.0,
-      81615.0
+      81615.0,
+      96221.0
     ],
     "gaap_gross_margin_pct": [
+      57.5479,
+      57.8431,
+      59.0319,
+      59.9632,
+      59.3702,
+      58.3857,
+      59.522,
+      61.8688,
+      64.4839,
+      63.2405,
+      60.3898,
+      54.7392,
+      58.3784,
+      59.7518,
+      63.57,
+      64.8953,
+      65.0649,
       58.8464,
       62.6322,
       63.1021,
@@ -682,9 +768,27 @@
       72.4237,
       73.4116,
       74.9967,
-      74.9335
+      74.9335,
+      74.9753
     ],
     "gaap_operating_margin_pct": [
+      18.7739,
+      22.1989,
+      31.8862,
+      33.7322,
+      28.6009,
+      30.852,
+      33.953,
+      36.8602,
+      40.3804,
+      37.0477,
+      33.26,
+      13.3333,
+      16.1261,
+      22.1404,
+      30.7565,
+      31.8841,
+      31.6883,
       16.8391,
       29.581,
       30.1219,
@@ -708,9 +812,27 @@
       60.8433,
       63.1688,
       65.0241,
-      65.5958
+      65.5958,
+      66.2371
     ],
     "opex_intensity_pct": [
+      38.7739,
+      35.6443,
+      27.1457,
+      26.231,
+      30.7692,
+      27.5336,
+      25.569,
+      25.0086,
+      24.1035,
+      26.1928,
+      27.1298,
+      41.4059,
+      42.2523,
+      37.6115,
+      32.8135,
+      33.0113,
+      33.3766,
       42.0072,
       33.0512,
       32.9802,
@@ -734,175 +856,292 @@
       11.5803,
       10.2428,
       9.9726,
-      9.3377
+      9.3377,
+      8.7382
     ],
-    "provenance": "24 季全部取 GAAP 口径：GAAP 毛利率与营业利润率的定义在整个窗口内未变，而 non-GAAP 自 FY27 Q1 起改为<b>包含</b>股权激励费用并重述历史，把两种口径接成一条线会在该处砸出纯定义性的落差。"
+    "provenance": "42 季全部取 GAAP 口径：GAAP 毛利率与营业利润率的定义在整个窗口内未变，而 non-GAAP 自 FY2027 Q1 起改为包含股权激励费用，两种口径接成一条线会在变更处砸出纯定义性的落差。"
   },
   "restated_comparatives": {
     "quarters": [
+      "Q2 2026",
       "Q1 2026",
-      "Q4 2025",
-      "Q1 2025"
+      "Q2 2025"
     ],
     "non_gaap_operating_income_usd_m": [
+      63956,
       53783,
-      44474,
-      21801
+      28541
     ],
     "non_gaap_net_income_usd_m": [
+      53954,
       45548,
-      38969,
-      19094
+      24763
     ],
     "non_gaap_eps_usd": [
+      2.22,
       1.87,
-      1.59,
-      0.78
+      1.01
     ],
     "gaap_operating_income_usd_m": [
+      63734,
       53536,
-      44299,
-      21638
+      28440
     ],
     "gaap_net_income_usd_m": [
+      59688,
       58321,
-      42960,
-      18775
+      26422
     ],
     "gaap_eps_usd": [
+      2.46,
       2.39,
-      1.76,
-      0.76
+      1.08
     ],
     "gaap_total_other_income_usd_m": [
+      7773,
       16367,
-      6098,
-      272
+      2766
     ],
     "equity_securities_gains_usd_m": [
+      7771,
       15936,
-      5491,
-      -175
+      2247
     ],
-    "note": "自 FY27 Q1 起 non-GAAP 不再剔除股权激励费用，历史 non-GAAP 已由公司重述：Q4 2025 的 non-GAAP EPS 由当时口径的 $1.62 重述为 $1.59。本组三列同取 Q1 FY27 对账表，口径一致。"
+    "note": "三季同取 FY2027 Q2 业绩 8-K 的合并损益表与 GAAP/non-GAAP 对账表，均为重述后 non-GAAP 口径（含股权激励费用）。股权证券收益为现金流量表的「Gains from equity securities, net」当季列，Q2 2025 取自本季 8-K 的上年同期列。GAAP 其他收入净额 = 税前利润 − 营业利润。"
+  },
+  "fcf_conversion": {
+    "quarters": [
+      "Q1 2025",
+      "Q2 2025",
+      "Q3 2025",
+      "Q4 2025",
+      "Q1 2026",
+      "Q2 2026"
+    ],
+    "values_pct": [
+      136.8755,
+      54.3149,
+      71.3031,
+      89.5635,
+      106.5996,
+      39.5541
+    ],
+    "note": "自由现金流 ÷ 当季 non-GAAP 净利润。Q3–Q4 2024 两季缺分母 —— 公司从未按重述后口径印出那两季的 non-GAAP 净利，而该项不能像毛利率与营业费用那样机械推算（见 financials 的口径说明）。"
+  },
+  "customer_concentration": {
+    "quarters": [
+      "Q3 2024",
+      "Q1 2025",
+      "Q2 2025",
+      "Q3 2025",
+      "Q1 2026",
+      "Q2 2026"
+    ],
+    "largest_direct_customer_pct": [
+      12,
+      16,
+      23,
+      22,
+      21,
+      16
+    ],
+    "customers_at_or_above_10pct": [
+      3,
+      2,
+      2,
+      4,
+      3,
+      1
+    ],
+    "missing_quarters": [
+      "Q4 2024",
+      "Q4 2025"
+    ],
+    "note": "单一最大直接客户占总收入比重，逐季读自各季 10-Q 的 Concentration of Revenue 附注三个月列。两个财年第四季（本页 Q4 2024、Q4 2025）没有季度值：10-K 只印全年，而客户字母代号按公司自己的说明「may represent different customers than those reported in a previous period」，全年减前九个月既没有确定的被减数，四舍五入也把结果撑成 5pp 宽的区间（Q4 2024 隐含 9.2%–14.8%，横跨 10% 披露门槛本身）。本页留空，不推算。"
+  },
+  "balance_sheet_exposure": {
+    "as_of": "2026-07-26",
+    "supply_and_capacity_commitments_usd_bn": {
+      "current": 279.0,
+      "prior_quarter": 119.0
+    },
+    "total_future_commitments_usd_bn": 366.0,
+    "additional_commitments_usd_bn": 56.0,
+    "guarantee_max_exposure_usd_bn": {
+      "total": 108.5,
+      "sb_energy": 105.0,
+      "land_power_shell_ai_clouds_current": 3.529,
+      "land_power_shell_ai_clouds_prior_fy_end": 3.53
+    },
+    "long_term_debt_usd_m": {
+      "current": 32366,
+      "prior_fy_end": 7469
+    },
+    "senior_notes_issued_june_2026_usd_m": 25000,
+    "senior_notes_tranches": 7,
+    "non_marketable_securities_usd_m": 51157,
+    "marketable_equity_securities_usd_m": 42783,
+    "customer_advances_usd_m": {
+      "current": 2800,
+      "prior_fy_end": 160
+    },
+    "shareholders_equity_usd_m": 228984,
+    "note": "全部取自 FY2027 Q2 10-Q（acc 0001045810-26-000075）。担保一栏要读清楚：原有的 AI 云土地/电力/厂房担保是 3,529（2026-07-26）对 3,530（2026-01-25），基本持平；新增的 105.0 全部来自 SB Energy，且该笔签于资产负债表日之后，公司把它并进了标题注明含期后事项的那张表。上一季 10-Q 没有任何担保上限披露，所以本项没有可比的上季基数。"
+  },
+  "capital_return_usd_m": {
+    "quarters": [
+      "Q2 2026"
+    ],
+    "buyback": [
+      19732
+    ],
+    "dividends": [
+      6047
+    ],
+    "total": [
+      25779
+    ],
+    "half_year": {
+      "buyback": 39044,
+      "dividends": 6290,
+      "free_cash_flow": 69895
+    },
+    "next_quarterly_dividend_per_share_usd": 0.25,
+    "note": "回购与分红为现金流量表的现金支付额；公司在新闻稿里用的是约数「approximately $26.0 billion」。本季回报 25,779 相当于当季自由现金流 21,341 的 120.8%。"
   },
   "total_supply_usd_bn": {
     "quarters": [
       "Q4 2025",
-      "Q1 2026"
+      "Q1 2026",
+      "Q2 2026"
     ],
     "inventory": [
       21.403,
-      25.797
+      25.797,
+      31.575
     ],
     "supply_related_commitments": [
       95.2,
-      119.0
+      119.0,
+      279.0
     ],
-    "note": "存货为资产负债表原值；供应相关承诺为公司在电话会/10-Q 披露的口径，本页只接入这两季，因为更早的季度未以同一口径披露，不做回溯拼接。"
+    "note": "存货为各季资产负债表原值；供应与产能承诺为公司在 10-Q 与业绩电话会披露的口径。更早的季度未以同一口径披露（FY2026 Q2 只有一张把零部件、许可、投资、长期资产、供应与产能协议、云服务混在一起的单一合计表），所以本块只有三季，不做回溯拼接。"
   },
   "market_expectation": {
-    "as_of": "2026-05-20 财报发布前",
-    "revenue_usd_m": 78970,
-    "non_gaap_eps_usd": 1.77,
-    "basis": "取自本地分析稿所采用的公开隐含一致预期（营收 US$78.97B、non-GAAP EPS $1.77），不具名、不引用任何卖方机构；仅作为带日期的对照点。"
+    "as_of": "2026-08-26 财报发布前",
+    "revenue_usd_m": 92100,
+    "non_gaap_eps_usd": 2.09,
+    "basis": "取自本地分析稿所采用的公开隐含一致预期（营收 US$92.1B、non-GAAP EPS $2.09），不具名、不引用。分析稿自己注明这两个数来自二手财经媒体转述而非终端原始值，因此「超出预期」的绝对幅度有 ±1% 量级的不确定性。"
   },
   "guidance": {
-    "q1_actual": {
-      "revenue_usd_m": 81615,
+    "q2_actual": {
+      "revenue_usd_m": 96221,
       "non_gaap_gross_margin_pct": 75.0,
-      "non_gaap_opex_usd_bn": 7.449
+      "non_gaap_opex_usd_bn": 8.232
     },
-    "q2_new": {
-      "revenue_usd_bn": 91.0,
+    "q3_new": {
+      "revenue_usd_bn": 108.0,
       "revenue_band_pct": 2.0,
-      "gaap_gross_margin_pct": 74.9,
-      "non_gaap_gross_margin_pct": 75.0,
+      "gaap_gross_margin_pct": 74.0,
+      "non_gaap_gross_margin_pct": 74.0,
       "gross_margin_band_bp": 50,
-      "gaap_opex_usd_bn": 8.5,
-      "non_gaap_opex_usd_bn": 8.3
+      "gaap_opex_usd_bn": 9.2,
+      "non_gaap_opex_usd_bn": 9.0
     },
     "fy27_tax_rate_pct": [
       16.0,
       18.0
     ],
     "fy27_prior_tax_rate_pct": [
-      17.0,
-      19.0
+      16.0,
+      18.0
     ],
-    "china_dc_compute_assumed": 0
+    "tax_rate_change": "重申",
+    "china_dc_compute_assumed": 0,
+    "call_only": {
+      "note": "以下四条只出现在业绩电话会，任何申报里都没有，故不进本页任何图，只在本条列出：FY2028 收入增长「approximately 70%」、FY2027 Q4 毛利率 71%–72%（公司称本轮见底）、FY2028 毛利率 72%–73%、FY2027 全年营业费用增速「low 50s」%。"
+    }
   },
   "followup_closure": {
     "labels": [
       "已验证",
       "部分验证",
-      "仍未披露",
+      "被证伪",
       "未兑现"
     ],
     "counts": [
-      4,
-      4,
+      3,
+      1,
       1,
       1
     ],
-    "note": "上季 10 条待验证问题的闭环结果。已验证 4 条：环比绝对增量重新加速、Vera Rubin 仍 on track、毛利率守住 mid-70s、non-GAAP 口径桥接。仍未披露的一条是战略投资的金额与回报口径；未兑现的一条是中国 H200 收入。"
+    "total": 6,
+    "note": "上季 6 条待验证问题的闭环结果。3 条强验证：收入超自身指引 5.7%、Vera Rubin 已进入量产出货、战略投资与供应承诺全面膨胀。1 条部分验证：Networking 并未快于 compute，且公司自本季起停止披露该拆分。1 条被证伪：ACIE 没有超过 Hyperscale —— 而且这条指标的基数被公司重述过，本页据此把它退役。1 条未兑现：中国 Data Center compute 收入仍为零。"
   },
   "next_kpi": {
     "quantified": [
       {
-        "metric": "ACIE 占 Data Center",
+        "metric": "DSO",
+        "direction": "down",
+        "threshold": 70.0,
+        "unit": "days1",
+        "current": 59.6374
+      },
+      {
+        "metric": "FCF / non-GAAP 净利转化率",
         "direction": "up",
         "threshold": 50.0,
         "unit": "pct",
-        "current": 49.67
-      },
-      {
-        "metric": "Networking 占 Data Center",
-        "direction": "up",
-        "threshold": 20.0,
-        "unit": "pct",
-        "current": 19.67
+        "current": 39.5541
       },
       {
         "metric": "non-GAAP 毛利率",
         "direction": "up",
-        "threshold": 74.5,
+        "threshold": 73.5,
         "unit": "pct",
-        "current": 75.03
+        "current": 75.0231
       },
       {
-        "metric": "DSO",
+        "metric": "担保最大总敞口",
         "direction": "down",
-        "threshold": 60.0,
-        "unit": "days",
-        "current": 45.0
-      },
-      {
-        "metric": "存货 + 供应承诺",
-        "direction": "down",
-        "threshold": 165.0,
+        "threshold": 150.0,
         "unit": "usd_bn",
-        "current": 144.8
+        "current": 108.5
+      },
+      {
+        "metric": "单一最大直接客户占比",
+        "direction": "down",
+        "threshold": 20.0,
+        "unit": "pct",
+        "current": 16.0
       }
     ],
-    "excluded": "另有 3 条要等披露才能判定：Q2 实际收入（阈值 US$92.8B / US$95B，本季无可比当前值）、Vera Rubin Q3 量产出货金额（公司尚未给量化口径）、中国 Data Center compute 收入（基线为 0，任何金额都是纯 upside）。"
+    "table_only": [
+      "担保最大总敞口"
+    ],
+    "excluded": "另有四条来自业绩电话会、任何申报里都没有，因此不设阈值图：FY2028 收入增长「约 70%」、Q4 2026 毛利率指引 71%–72%、FY2028 毛利率 72%–73%、FY2027 营业费用增速「low 50s」%。",
+    "retired": "上季的两条占比阈值本季退役。「ACIE 占 Data Center」的基数被公司在本季重分类并追溯重述，同一个季度在两套口径下得出方向相反的结论；「Networking 占 Data Center」的分子公司已停止披露。两条都建在管理层的呈现层上 —— 公司可以重画的口径 —— 而本季五条全部改建在 10-Q 的原始项（应收、现金流、承诺与担保、客户集中度）上，这类项不能被重分类。"
   },
   "sources": [
     {
-      "label": "NVIDIA Q1 FY2027 业绩新闻稿（8-K EX-99.1）",
+      "label": "NVIDIA Q2 FY2027 业绩新闻稿（8-K EX-99.1）",
+      "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000073/q2fy27pr.htm"
+    },
+    {
+      "label": "NVIDIA Q2 FY2027 CFO Commentary（8-K EX-99.2）",
+      "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000073/q2fy27cfocommentary.htm"
+    },
+    {
+      "label": "NVIDIA Q2 FY2027 Form 10-Q（分部重述、承诺与担保、客户集中度）",
+      "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000075/nvda-20260726.htm"
+    },
+    {
+      "label": "NVIDIA Q1 FY2027 业绩新闻稿（上季口径对照）",
       "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000051/q1fy27pr.htm"
     },
     {
-      "label": "NVIDIA Q1 FY2027 CFO Commentary（8-K EX-99.2）",
-      "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000051/q1fy27cfocommentary.htm"
-    },
-    {
-      "label": "NVIDIA Q1 FY2027 官方业绩公告（IR）",
-      "url": "https://investor.nvidia.com/news/press-release-details/2026/NVIDIA-Announces-Financial-Results-for-First-Quarter-Fiscal-2027/default.aspx"
-    },
-    {
-      "label": "SEC EDGAR：NVIDIA 全部申报（CIK 1045810）",
-      "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001045810&type=8-K"
+      "label": "NVIDIA 投资者关系（季度业绩归档）",
+      "url": "https://investor.nvidia.com/financial-reports/default.aspx"
     }
   ]
 }

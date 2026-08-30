@@ -158,7 +158,9 @@ Charts are ordered the way the note is actually used:
    capex definition; Cadence gets the ASC 606 revenue record, ten years of
    margin, the same margin with stock compensation put back as a cost, the
    operating leverage that produced it, and the coverage multiple behind its
-   record backlog; NVIDIA gets six years of margins and operating leverage
+   record backlog; NVIDIA gets ten and a half years of margins and operating
+   leverage — 42 quarters back to 2016Q1, long enough to contain the 2018
+   crypto unwind and the 2022 gaming de-stock rather than starting after them —
    plus the inventory-and-supply-commitment block that carries its real capital
    intensity; Broadcom gets its two engines' segment operating margins, the
    capital intensity a fab-lite designer actually runs on, cash conversion, and
@@ -404,15 +406,15 @@ company, and shows why the answer depends on the profit line — a headline EPS
 beat of +12.2% is +2.2% once the quarter's one-off disposal gain comes out.
 
 NVIDIA guides revenue ±2%, both gross margins ±50bp and both operating expense
-lines, so its record runs 23 finished quarters back to 2020, read from the 24
+lines, so its record runs 24 finished quarters back to 2020, read from the 25
 quarterly earnings 8-Ks. Its shape is the opposite of TSMC's, and the contrast
 is why the page is worth the build-out: **revenue cleared the top of its band in
-20 of 23 quarters, but gross margin sat inside its band in 15 of 23 and broke
+21 of 24 quarters, but gross margin sat inside its band in 16 of 24 and broke
 the bottom three times** — by 21.3pp, 8.9pp and 10.0pp. So the revenue guidance
 behaves like a floor and the margin guidance like a genuine forecast, and the
 page has to say both things at once rather than settling on one verdict.
 Operating expenses are the third answer again: guided as a single number with no
-range at all, and landing above it 12 times and below it 11 — as close to
+range at all, and landing above it 12 times and below it 12 — as close to
 unbiased as this record gets.
 
 Each of the three gets the same pair, level chart then deviation chart, grouped
@@ -431,8 +433,8 @@ still positive. The company's operating disappointments have come from cost and
 write-downs, never from demand.
 
 Two hazards had to be handled rather than smoothed over. NVIDIA's dollar band
-chart is drawn over eight quarters, not 23, because revenue grew from US$4.4B to
-US$91B and a ±2% band collapses to a few pixels at the left edge of a linear
+chart is drawn over eight quarters, not 24, because the guided number grew from
+US$4.4B to US$108B and a ±2% band collapses to a few pixels at the left edge of a linear
 axis; the full record is carried by the scale-free deviation chart instead, and
 the page says so on the chart. And NVIDIA changed its non-GAAP definition in
 FY2027 Q1 to include stock-based compensation, restating history — so the long
@@ -1551,16 +1553,19 @@ carries its **Data Center** line as a middle column: hyperscaler cash capex →
 the accelerator revenue it lands in → the foundry quarter that has to build it.
 Data Center rather than total revenue, because a hyperscaler's capex does not
 buy game consoles. Over these eight quarters the four hyperscalers' capex grew
-2.8x, NVIDIA's Data Center 2.4x and TSMC's revenue 1.7x — the same wave,
-attenuating as it moves upstream.
+2.8x, NVIDIA's Data Center 2.9x and TSMC's revenue 1.7x. The middle column
+overtaking the left one is new this quarter: the window used to read 2.8x /
+2.4x / 1.7x, a wave attenuating as it moved upstream, and the reading only
+changed because NVIDIA's own quarter landed. Attenuation still holds at the
+foundry end; it no longer holds between capex and the accelerator.
 
 One caveat travels in the column header rather than being corrected away:
 NVIDIA's quarters end about four weeks after the calendar quarters the rest of
 the table uses (late April against 31 March), so a row compares periods that do
 not exactly coincide. Shifting a reported quarter onto another company's
 calendar would mean inventing a number, which is worse than an offset a reader
-can see. The most recent row is a dash because NVIDIA has not reported that
-quarter yet.
+can see. A row shows a dash whenever NVIDIA has not yet reported the quarter the
+rest of the table already carries; every row of the current window is filled.
 
 Each company has a reviewed source series and a company-specific builder. The
 shared `build/all.py` entry point rebuilds every company payload, their thin

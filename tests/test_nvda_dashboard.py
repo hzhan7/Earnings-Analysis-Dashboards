@@ -42,35 +42,67 @@ class NvdaDashboardTest(unittest.TestCase):
         }
 
     # ── shape ────────────────────────────────────────────────────────────────
+    # Series that are eight quarters long *and* complete. Anything with a hole
+    # is listed in DECLARED_HOLES below with the reason, so a hole that appears
+    # without being declared turns this red rather than being absorbed.
+    DECLARED_HOLES = {
+        # NVIDIA never printed FY2025's quarters on the post-restatement
+        # non-GAAP basis, and net income cannot be derived the way margin and
+        # opex can -- the tax line changed algorithm. See the basis note.
+        "financials.non_gaap_net_income_usd_m": 2,
+    }
+
     def test_all_historical_series_have_eight_quarters(self) -> None:
         self.assertEqual(len(self.source["periods"]), 8)
         for group in [
             "financials",
             "market_platform_usd_m",
-            "data_center_split_usd_m",
             "cash_flow_usd_m",
             "working_capital",
         ]:
             for name, values in self.source[group].items():
-                if not isinstance(values, list) or name == "filed_split_quarters":
+                if not isinstance(values, list):
                     continue
-                self.assertEqual(len(values), 8, f"{group}.{name}")
+                key = f"{group}.{name}"
+                self.assertEqual(len(values), 8, key)
+                holes = sum(1 for value in values if value is None)
+                self.assertEqual(holes, self.DECLARED_HOLES.get(key, 0), key)
                 self.assertTrue(
-                    all(value is not None and math.isfinite(value) for value in values),
-                    f"{group}.{name}",
+                    all(math.isfinite(value) for value in values if value is not None),
+                    key,
                 )
+        # The declared hole has to be explained where a reader meets it.
+        self.assertIn("留空", self.source["financials"]["non_gaap_basis_note"])
+
+    def test_the_long_series_reaches_back_to_2016(self) -> None:
+        """The long-run charts are the ones that carry the cycle, so they start
+        far enough back to contain one. Anything shorter turns the 2022
+        de-stocking trough into the beginning of the record rather than an
+        episode inside it."""
+        long = self.source["long_history"]
+        self.assertEqual(long["quarters"][0], "Q1 2016")
+        self.assertEqual(long["quarters"][-1], self.source["periods"][-1])
+        self.assertEqual(len(long["quarters"]), 42)
+        for name, values in long.items():
+            if isinstance(values, list):
+                self.assertEqual(len(values), 42, name)
+        # The 24 quarters this file used to assert against are still there and
+        # unchanged: extending a series must not restate the part that existed.
+        overlap = long["quarters"].index("Q2 2020")
+        self.assertEqual(long["revenue_usd_m"][overlap], 3866)
+        self.assertEqual(long["quarters"][overlap:][:3], ["Q2 2020", "Q3 2020", "Q4 2020"])
 
     def test_the_guided_record_is_one_row_per_quarter(self) -> None:
         guide = self.source["quarterly_guidance_history"]
         length = len(guide["quarters"])
-        self.assertEqual(length, 24)
+        self.assertEqual(length, 25)
         for name, values in guide.items():
             self.assertEqual(len(values), length, name)
         # The record ends on a quarter that has been guided but not reported;
         # everything before it must be complete.
         self.assertIsNone(guide["actual_revenue_usd_m"][-1])
         self.assertTrue(all(value is not None for value in guide["actual_revenue_usd_m"][:-1]))
-        self.assertEqual(guide["quarters"][-1], "Q2 2026")
+        self.assertEqual(guide["quarters"][-1], "Q3 2026")
         # The eight-quarter window is the tail of the guided record.
         self.assertEqual(guide["quarters"][-9:-1], self.source["periods"])
 
@@ -86,20 +118,45 @@ class NvdaDashboardTest(unittest.TestCase):
 
     # ── identities the filings have to satisfy ───────────────────────────────
     def test_data_center_sub_markets_sum_to_the_filed_total(self) -> None:
-        """Hyperscale + ACIE = Data Center, every quarter.
+        """Hyperscale + ACIE = Data Center, on both sides of the restatement.
 
-        Five of the eight sub-market splits are NVIDIA's restatement as recorded
-        in the local analysis note rather than a cell in a filing this repo
-        read; this identity is what makes them publishable, because the Data
-        Center total on the right-hand side was read from that quarter's own 8-K.
+        This identity is what makes the split publishable at all: the Data
+        Center total on the right-hand side is read from that quarter's own
+        filing, so a mis-transcribed sub-market cannot hide. It has to hold for
+        the recast values *and* for the ones Q1 FY2027 originally filed --
+        both add to the same total, which is exactly why the reclassification
+        is invisible to anyone reading only the Data Center line.
         """
+        mix = self.source["dc_customer_mix"]
         platform = self.source["market_platform_usd_m"]
-        for index, period in enumerate(self.source["periods"]):
+        by_period = dict(zip(self.source["periods"], platform["data_center"]))
+        for index, period in enumerate(mix["quarters"]):
             self.assertEqual(
-                platform["hyperscale"][index] + platform["acie"][index],
-                platform["data_center"][index],
+                mix["hyperscale"][index] + mix["acie"][index],
+                by_period[period],
                 period,
             )
+        filed = mix["q1_2026_as_originally_filed"]
+        self.assertEqual(filed["hyperscale"] + filed["acie"], by_period["Q1 2026"])
+        # The restatement moved a real amount, in one direction, and left the
+        # total alone. If this ever nets to zero the two bases are the same and
+        # the exhibit is claiming a difference that is not there.
+        recast_index = mix["quarters"].index("Q1 2026")
+        shift = mix["hyperscale"][recast_index] - filed["hyperscale"]
+        self.assertGreater(shift, 0)
+        self.assertEqual(shift, filed["acie"] - mix["acie"][recast_index])
+
+    def test_the_recast_gap_is_left_open_not_bridged(self) -> None:
+        """Q3/Q4 2025 have no restated split, so they are absent, not guessed."""
+        mix = self.source["dc_customer_mix"]
+        self.assertEqual(mix["quarters"], ["Q2 2025", "Q1 2026", "Q2 2026"])
+        for missing in ("Q3 2025", "Q4 2025"):
+            self.assertNotIn(missing, mix["quarters"])
+        self.assertIn("无法由两个已披露数相减得到", mix["note"])
+        self.assertTrue(
+            any("不再画这条八季序列" in note for note in self.payload["notes"]),
+            "the page does not say why the eight-quarter split is gone",
+        )
 
     def test_edge_computing_is_revenue_less_data_center(self) -> None:
         platform = self.source["market_platform_usd_m"]
@@ -110,16 +167,74 @@ class NvdaDashboardTest(unittest.TestCase):
                 revenue[index] - platform["data_center"][index],
                 period,
             )
-        # The one quarter NVIDIA filed an Edge Computing line, it agrees.
-        self.assertEqual(platform["edge_computing"][-1], 6369)
+        # The value NVIDIA filed for the quarter this page reports.
+        self.assertEqual(platform["edge_computing"][-1], 7198)
 
     def test_compute_and_networking_sum_to_data_center(self) -> None:
-        """Within the US$0.1B the company rounds those two lines to."""
-        split = self.source["data_center_split_usd_m"]
+        """Within the US$0.1B the company rounds those two lines to.
+
+        The series is frozen -- NVIDIA stopped publishing the split this
+        quarter -- so this checks the quarters that overlap the current window
+        and then checks that the freeze is disclosed rather than extrapolated.
+        """
+        split = self.source["discontinued_dc_split_usd_m"]
         platform = self.source["market_platform_usd_m"]
-        for index, period in enumerate(self.source["periods"]):
+        by_period = dict(zip(self.source["periods"], platform["data_center"]))
+        overlap = 0
+        for index, period in enumerate(split["quarters"]):
+            if period not in by_period:
+                continue
+            overlap += 1
             total = split["compute"][index] + split["networking"][index]
-            self.assertLess(abs(total - platform["data_center"][index]), 110, period)
+            self.assertLess(abs(total - by_period[period]), 110, period)
+        self.assertGreaterEqual(overlap, 6, "the two windows stopped overlapping")
+        self.assertEqual(split["quarters"][-1], "Q1 2026")
+        self.assertNotIn(self.source["periods"][-1], split["quarters"])
+        self.assertIn("不做外推", split["note"])
+
+    def test_year_on_year_copy_compares_the_same_quarter(self) -> None:
+        """Four quarters back is index -5, not -4.
+
+        The window is eight contiguous quarters, so an off-by-one here still
+        produces a plausible growth rate against the wrong base -- the kind of
+        error that survives a read-through. This pins the two YoY figures the
+        market-platform exhibit prints against the series they claim to be.
+        """
+        periods = self.source["periods"]
+        self.assertEqual(periods[-5].split()[0], periods[-1].split()[0])
+        self.assertEqual(int(periods[-5].split()[1]) + 1, int(periods[-1].split()[1]))
+        platform = self.source["market_platform_usd_m"]
+        chart = next(ex for ex in self.by_section["quarter_highlights"]
+                     if ex["title"].startswith("Data Center US$"))
+        for series in ("data_center", "edge_computing"):
+            growth = platform[series][-1] / platform[series][-5] * 100 - 100
+            self.assertIn(f"同比 +{growth:.1f}%", chart["note"], series)
+        # And the headline YoY on the revenue chart is the one the series carries.
+        revenue_chart = next(ex for ex in self.by_section["quarter_highlights"]
+                             if ex["kind"] == "gs_bar")
+        stated = self.source["financials"]["revenue_yoy_pct"][-1]
+        revenue = self.source["financials"]["revenue_usd_m"]
+        self.assertAlmostEqual(stated, revenue[-1] / revenue[-5] * 100 - 100, places=3)
+        self.assertIn(f"+{stated:.1f}%", revenue_chart["title"])
+
+    def test_the_margin_high_water_claim_is_measured(self) -> None:
+        """74.98 against 75.00 is a claim one decimal cannot check.
+
+        Gross margin this quarter is two hundredths of a point below the
+        window's best, and the page prints both to one decimal as 75.0. The
+        title must therefore be derived from the series rather than written.
+        """
+        financials = self.source["financials"]
+        chart = next(ex for ex in self.by_section["quarter_highlights"]
+                     if ex.get("kind") == "lines" and "GAAP 毛利率" in ex["title"])
+        gross_is_high = (financials["gaap_gross_margin_pct"][-1]
+                         == max(financials["gaap_gross_margin_pct"]))
+        operating_is_high = (financials["gaap_operating_margin_pct"][-1]
+                             == max(financials["gaap_operating_margin_pct"]))
+        self.assertFalse(gross_is_high, "the case this test exists for has gone away")
+        self.assertTrue(operating_is_high)
+        self.assertIn("营业利润率是这八季的高点", chart["title"])
+        self.assertNotIn("两条都是这八季的高点", chart["title"])
 
     def test_the_operating_income_decomposition_is_an_identity(self) -> None:
         """actual − implied = revenue leg + margin leg + opex leg, exactly.
@@ -169,59 +284,183 @@ class NvdaDashboardTest(unittest.TestCase):
         platform = self.source["market_platform_usd_m"]
         working = self.source["working_capital"]
         cash = self.source["cash_flow_usd_m"]
-        self.assertEqual(financials["revenue_usd_m"][-1], 81615)
-        self.assertEqual(financials["revenue_usd_m"][-2], 68127)
-        self.assertEqual(financials["gaap_operating_income_usd_m"][-1], 53536)
-        self.assertEqual(financials["non_gaap_operating_income_usd_m"][-1], 53783)
-        self.assertEqual(platform["data_center"][-1], 75246)
-        self.assertEqual(platform["hyperscale"][-1], 37869)
-        self.assertEqual(platform["acie"][-1], 37377)
-        self.assertEqual(working["dso_days"][-1], 45)
-        self.assertEqual(working["inventories_usd_m"][-1], 25797)
-        self.assertEqual(working["accounts_receivable_usd_m"][-1], 40710)
-        self.assertEqual(cash["free_cash_flow"][-1], 48554)
-        self.assertEqual(cash["operating_cash_flow"][-1], 50344)
+        mix = self.source["dc_customer_mix"]
+        self.assertEqual(financials["revenue_usd_m"][-1], 96221)
+        self.assertEqual(financials["revenue_usd_m"][-2], 81615)
+        self.assertEqual(financials["gaap_operating_income_usd_m"][-1], 63734)
+        self.assertEqual(financials["gaap_net_income_usd_m"][-1], 59688)
+        self.assertEqual(financials["gaap_opex_usd_m"][-1], 8408)
+        self.assertEqual(financials["non_gaap_opex_usd_m"][-1], 8232)
+        self.assertEqual(financials["non_gaap_operating_income_usd_m"][-1], 63956)
+        self.assertEqual(financials["non_gaap_net_income_usd_m"][-1], 53954)
+        self.assertEqual(platform["data_center"][-1], 89023)
+        self.assertEqual(mix["hyperscale"][-1], 48710)
+        self.assertEqual(mix["acie"][-1], 40313)
+        self.assertEqual(working["inventories_usd_m"][-1], 31575)
+        self.assertEqual(working["accounts_receivable_usd_m"][-1], 63059)
+        self.assertEqual(cash["free_cash_flow"][-1], 21341)
+        self.assertEqual(cash["operating_cash_flow"][-1], 24077)
+        # Income-statement identities, so a mis-typed line cannot pass.
+        self.assertEqual(financials["non_gaap_gross_profit_usd_m"][-1]
+                         - financials["non_gaap_opex_usd_m"][-1],
+                         financials["non_gaap_operating_income_usd_m"][-1])
         # Rounded percentages the company printed in the same release.
-        self.assertAlmostEqual(financials["gaap_gross_margin_pct"][-1], 74.9, places=1)
+        self.assertAlmostEqual(financials["gaap_gross_margin_pct"][-1], 75.0, places=1)
         self.assertAlmostEqual(financials["non_gaap_gross_margin_pct"][-1], 75.0, places=1)
+        # DSO is the quarter's headline balance-sheet fact and the first KPI,
+        # so it is pinned to one decimal and to its own formula.
+        self.assertAlmostEqual(working["dso_days"][-1], 59.6, places=1)
+        self.assertAlmostEqual(working["dso_days"][-2], 45.4, places=1)
+        for index, period in enumerate(self.source["periods"]):
+            self.assertAlmostEqual(
+                working["dso_days"][index],
+                working["accounts_receivable_usd_m"][index]
+                / financials["revenue_usd_m"][index] * 91,
+                places=3,
+                msg=period,
+            )
+
+    def test_the_derived_non_gaap_quarters_reproduce_the_published_ones(self) -> None:
+        """Two quarters of the non-GAAP series are this page's arithmetic.
+
+        NVIDIA restated its non-GAAP basis but only ever printed six of these
+        eight quarters on the new one. The other two are derived by the same
+        mechanical rule, and the rule is only usable because it reproduces the
+        six published quarters exactly -- so that is what is checked, not the
+        two derived values themselves.
+        """
+        financials = self.source["financials"]
+        published = {
+            "Q1 2025": (26794, 4993, 21801),
+            "Q2 2025": (33902, 5361, 28541),
+            "Q3 2025": (41897, 5800, 36097),
+            "Q4 2025": (51140, 6666, 44474),
+            "Q1 2026": (61232, 7449, 53783),
+            "Q2 2026": (72188, 8232, 63956),
+        }
+        for period, (gross, opex, operating) in published.items():
+            index = self.source["periods"].index(period)
+            self.assertEqual(financials["non_gaap_gross_profit_usd_m"][index], gross, period)
+            self.assertEqual(financials["non_gaap_opex_usd_m"][index], opex, period)
+            self.assertEqual(
+                financials["non_gaap_operating_income_usd_m"][index], operating, period)
+        # Every quarter, published or derived, satisfies the same identity.
+        for index, period in enumerate(self.source["periods"]):
+            self.assertEqual(
+                financials["non_gaap_gross_profit_usd_m"][index]
+                - financials["non_gaap_opex_usd_m"][index],
+                financials["non_gaap_operating_income_usd_m"][index],
+                period,
+            )
+            self.assertAlmostEqual(
+                financials["non_gaap_gross_margin_pct"][index],
+                financials["non_gaap_gross_profit_usd_m"][index]
+                / financials["revenue_usd_m"][index] * 100,
+                places=3,
+                msg=period,
+            )
+        self.assertIn("机械规则", financials["non_gaap_basis_note"])
 
     def test_current_guidance_matches_the_outlook_paragraph(self) -> None:
-        guide = self.source["guidance"]["q2_new"]
-        self.assertEqual(guide["revenue_usd_bn"], 91.0)
+        guide = self.source["guidance"]["q3_new"]
+        self.assertEqual(guide["revenue_usd_bn"], 108.0)
         self.assertEqual(guide["revenue_band_pct"], 2.0)
-        self.assertEqual(guide["non_gaap_gross_margin_pct"], 75.0)
-        self.assertEqual(guide["non_gaap_opex_usd_bn"], 8.3)
+        self.assertEqual(guide["gaap_gross_margin_pct"], 74.0)
+        self.assertEqual(guide["non_gaap_gross_margin_pct"], 74.0)
+        self.assertEqual(guide["gaap_opex_usd_bn"], 9.2)
+        self.assertEqual(guide["non_gaap_opex_usd_bn"], 9.0)
         history = self.source["quarterly_guidance_history"]
-        pending = history["quarters"].index("Q2 2026")
-        self.assertEqual(history["guide_revenue_usd_bn"][pending], 91.0)
-        self.assertEqual(history["non_gaap_opex_guide_usd_bn"][pending], 8.3)
+        pending = history["quarters"].index("Q3 2026")
+        self.assertEqual(history["guide_revenue_usd_bn"][pending], 108.0)
+        self.assertEqual(history["non_gaap_opex_guide_usd_bn"][pending], 9.0)
+        # The gross-margin guide came down this quarter; the page must not
+        # print it as a reaffirmation.
+        reported = history["quarters"].index("Q2 2026")
+        self.assertLess(guide["non_gaap_gross_margin_pct"],
+                        history["non_gaap_gm_guide_pct"][reported])
+
+    def test_call_only_guidance_stays_out_of_the_charts(self) -> None:
+        """The forward numbers everyone quotes this quarter are call-only.
+
+        FY2028 revenue growth, the Q4 and FY2028 gross-margin ranges and the
+        full-year opex wording appear in no filing. They are the most quotable
+        things NVIDIA said, which is exactly why the page has to keep them off
+        the exhibits rather than trust itself to remember.
+        """
+        self.assertIn("call_only", self.source["guidance"])
+        excluded = self.source["next_kpi"]["excluded"]
+        for figure in ["70%", "71%–72%", "72%–73%", "low 50s"]:
+            self.assertIn(figure, excluded, figure)
+        # Each one may appear exactly where it is declared out of scope, and
+        # nowhere else in the exhibits. Asserting "not present at all" would
+        # fire on the disclosure itself and get switched off.
+        for exhibit in self.exhibits:
+            body = " ".join(str(exhibit.get(field, "")) for field in
+                            ("title", "note", "legend", "ylab"))
+            for figure in ["71%–72%", "72%–73%", "low 50s"]:
+                self.assertNotIn(figure, body, f"{figure} in {exhibit['title']}")
+            source_line = str(exhibit.get("src_extra", ""))
+            if figure in source_line:
+                self.assertIn("不设阈值图", source_line)
+        self.assertTrue(
+            any("只出现在电话会" in note for note in self.payload["notes"]),
+            "the call-only boundary is not stated in the notes",
+        )
 
     def test_the_restatement_is_recorded_not_smoothed(self) -> None:
-        """Q4 2025's non-GAAP EPS is the restated $1.59, and the page says so.
+        """Both bases of the reclassified split reach the page, and are labelled.
 
-        Publishing $1.62 next to $1.87 would overstate the quarter's sequential
-        improvement; publishing $1.59 without saying it was restated would look
-        like a typo against every contemporaneous source.
+        Publishing only the recast numbers would make this quarter's ACIE growth
+        look like a step change in the business; publishing only the originally
+        filed ones would contradict the current 10-Q. The page has to carry both
+        and say which is which.
         """
         restated = self.source["restated_comparatives"]
-        self.assertEqual(restated["quarters"], ["Q1 2026", "Q4 2025", "Q1 2025"])
-        self.assertEqual(restated["non_gaap_eps_usd"], [1.87, 1.59, 0.78])
-        self.assertIn("1.62", restated["note"])
+        self.assertEqual(restated["quarters"], ["Q2 2026", "Q1 2026", "Q2 2025"])
+        self.assertEqual(restated["non_gaap_eps_usd"], [2.22, 1.87, 1.01])
+        mix = self.source["dc_customer_mix"]
+        blob = json.dumps(self.payload, ensure_ascii=False)
+        for value in (mix["q1_2026_as_originally_filed"]["hyperscale"] / 1000,
+                      mix["hyperscale"][mix["quarters"].index("Q1 2026")] / 1000):
+            self.assertIn(f"{value:.2f}", blob, value)
+        self.assertIn("reclassified", mix["note"])
         self.assertTrue(
-            any("1.62" in note for note in self.payload["notes"]),
-            "the restatement is not disclosed in the page notes",
+            any("重分类并追溯重述" in note for note in self.payload["notes"]),
+            "the reclassification is not disclosed in the page notes",
         )
 
     def test_equity_gains_explain_the_gaap_wedge(self) -> None:
+        """The wedge is the same item as last quarter, running the other way.
+
+        Last quarter equity gains pushed GAAP net income above non-GAAP; this
+        quarter they fell US$8.2B and GAAP net income grew 2% on a quarter whose
+        operating income grew 19%. Pinning the direction matters more than
+        pinning the level -- an exhibit that only ever showed the flattering
+        direction would have told the reader nothing when it reversed.
+        """
         restated = self.source["restated_comparatives"]
-        self.assertEqual(restated["equity_securities_gains_usd_m"][0], 15936)
-        # A year ago equity securities were a net loss, so GAAP sat below
-        # non-GAAP; that reversal is the point of Exhibit 14.
-        self.assertLess(restated["equity_securities_gains_usd_m"][2], 0)
-        self.assertLess(restated["gaap_net_income_usd_m"][2],
-                        restated["non_gaap_net_income_usd_m"][2])
-        self.assertGreater(restated["gaap_net_income_usd_m"][0],
-                           restated["non_gaap_net_income_usd_m"][0])
+        current, prior = 0, 1
+        self.assertEqual(restated["equity_securities_gains_usd_m"][current], 7771)
+        self.assertEqual(restated["equity_securities_gains_usd_m"][prior], 15936)
+        self.assertLess(restated["equity_securities_gains_usd_m"][current],
+                        restated["equity_securities_gains_usd_m"][prior])
+        # GAAP still sits above non-GAAP, but the sequential *growth* ranking
+        # flipped: that flip is the whole point of the exhibit.
+        self.assertGreater(restated["gaap_net_income_usd_m"][current],
+                           restated["non_gaap_net_income_usd_m"][current])
+        gaap_growth = (restated["gaap_net_income_usd_m"][current]
+                       / restated["gaap_net_income_usd_m"][prior])
+        core_growth = (restated["non_gaap_net_income_usd_m"][current]
+                       / restated["non_gaap_net_income_usd_m"][prior])
+        operating_growth = (restated["gaap_operating_income_usd_m"][current]
+                            / restated["gaap_operating_income_usd_m"][prior])
+        self.assertLess(gaap_growth, core_growth)
+        self.assertLess(gaap_growth, operating_growth)
+        # Other income net is pretax income less operating income, and equity
+        # gains are almost all of it -- which is what localises the wedge.
+        self.assertGreater(
+            restated["equity_securities_gains_usd_m"][current]
+            / restated["gaap_total_other_income_usd_m"][current], 0.99)
 
     # ── page assembly ────────────────────────────────────────────────────────
     def test_exhibits_are_numbered_in_render_order(self) -> None:
@@ -251,18 +490,36 @@ class NvdaDashboardTest(unittest.TestCase):
         """A threshold with a plottable series gets a chart; one without is disclosed."""
         next_charts = self.by_section["next_quarter"]
         quantified = self.source["next_kpi"]["quantified"]
-        # One overview bar plus one chart per metric that has an eight-quarter
-        # series. 存货 + 供应承诺 has only two disclosed points, so it is not
-        # plotted -- and the overview has to say so.
-        self.assertEqual(len(next_charts), 1 + 4)
+        table_only = set(self.source["next_kpi"]["table_only"])
+        # One overview bar plus one chart per metric that has a series. The
+        # guarantee exposure has a single disclosed point -- last quarter's
+        # 10-Q made no such disclosure at all -- so it is table-only, and that
+        # has to be declared rather than silently dropped.
+        self.assertEqual(len(next_charts), 1 + len(quantified) - len(table_only))
         plotted = " ".join(chart["title"] for chart in next_charts[1:])
         for entry in quantified:
-            if entry["metric"] == "存货 + 供应承诺":
+            if entry["metric"] in table_only:
                 self.assertNotIn(entry["metric"], plotted)
             else:
                 self.assertIn(entry["metric"], plotted)
-        self.assertIn("Vera Rubin", next_charts[0]["src_extra"])
-        self.assertIn("中国", next_charts[0]["src_extra"])
+        # Every table-only name is a real KPI, not a stale entry.
+        self.assertTrue(table_only <= {entry["metric"] for entry in quantified})
+        self.assertIn("电话会", next_charts[0]["src_extra"])
+
+    def test_a_kpi_without_a_series_cannot_be_dropped_silently(self) -> None:
+        """The previous build skipped unmatched KPIs with `continue`.
+
+        That is the failure mode this page has just lived through in another
+        form: a metric disappears from the section and nothing anywhere says it
+        did. Adding a KPI with no series must now raise.
+        """
+        broken = json.loads(json.dumps(self.source))
+        broken["next_kpi"]["quantified"].append(
+            {"metric": "没有序列的指标", "direction": "up",
+             "threshold": 1.0, "unit": "pct", "current": 2.0}
+        )
+        with self.assertRaises(KeyError):
+            build_payload(broken)
 
     def test_headroom_signs_follow_the_threshold_direction(self) -> None:
         overview = self.by_section["next_quarter"][0]
@@ -282,18 +539,19 @@ class NvdaDashboardTest(unittest.TestCase):
             for metric, value in zip(overview["xlabels"], overview["values"])
             if value < 0
         }
-        self.assertEqual(
-            set(breached), {"ACIE 占 Data Center", "Networking 占 Data Center"}, breached)
-        for metric, value in breached.items():
-            # Headroom is percent *of the threshold*, not percentage points:
-            # 19.67 against a 20 line is -1.7%, which is 0.33pp short.
-            self.assertGreater(value, -2.0, f"{metric} is barely short, not broken")
+        # Exactly one line is over this quarter, and it is the cash-conversion
+        # one. Pinning which one is the point -- an overview where everything is
+        # green by construction would say nothing.
+        self.assertEqual(set(breached), {"FCF / non-GAAP 净利转化率"}, breached)
+        self.assertLess(breached["FCF / non-GAAP 净利转化率"], -15.0,
+                        "this is a real breach, not a rounding miss")
+        self.assertIn("已经越线", overview["title"])
 
     def test_the_guided_record_table_covers_every_quarter(self) -> None:
         table = next(item for item in self.payload["tables"] if "指引兑现全表" in item["title"])
         self.assertEqual(len(table["rows"]),
                          len(self.source["quarterly_guidance_history"]["quarters"]))
-        self.assertEqual(table["rows"][-1][0], "Q2 2026")
+        self.assertEqual(table["rows"][-1][0], "Q3 2026")
         # The pending quarter has a guided range and nothing else.
         self.assertEqual(table["rows"][-1][2], "—")
 
@@ -349,14 +607,21 @@ class NvdaDashboardTest(unittest.TestCase):
     def test_calendar_labelling_is_stated_because_the_fiscal_year_differs(self) -> None:
         self.assertIn("FY2027", self.payload["subtitle"])
         self.assertTrue(
-            any("FY2027 Q1" in note for note in self.payload["notes"]),
+            any("FY2027 Q2" in note for note in self.payload["notes"]),
             "the fiscal/calendar convention is not disclosed in the notes",
         )
 
     # ── boundary ─────────────────────────────────────────────────────────────
     def test_market_expectation_is_dated_and_unattributed(self) -> None:
         consensus = self.source["market_expectation"]
-        self.assertIn("2026-05-20", consensus["as_of"])
+        self.assertIn("2026-08-26", consensus["as_of"])
+        # The note itself flags that this quarter's consensus is second-hand;
+        # the page has to carry that caveat rather than quietly drop it.
+        self.assertIn("二手", consensus["basis"])
+        self.assertTrue(
+            any("二手转述" in note for note in self.payload["notes"]),
+            "the consensus caveat is not disclosed in the notes",
+        )
         blob = json.dumps(self.payload, ensure_ascii=False).lower()
         for vendor in ["seeking alpha", "visible alpha", "factset", "bloomberg",
                        "s&p global", "morgan stanley", "goldman", "bernstein",
@@ -384,8 +649,9 @@ class NvdaDashboardTest(unittest.TestCase):
     def test_derived_values_are_marked(self) -> None:
         """Anything this page computed carries the D marker somewhere visible."""
         for table_title, column in [
-            ("八季度市场平台与 Data Center 拆分", "ACIE 占 DC"),
-            ("八季度现金流与营运资金", "FCF / non-GAAP 净利"),
+            ("八季度市场平台与客户集中度", "占收入"),
+            ("八季度现金流与营运资金", "FCF / 收入"),
+            ("八季度现金流与营运资金", "DSO"),
         ]:
             table = next(item for item in self.payload["tables"]
                          if item["title"] == table_title)

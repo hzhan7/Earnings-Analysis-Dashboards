@@ -42,6 +42,13 @@ UNIT_FORMATS = {
     "usd_m": lambda value: f"{'−' if value < 0 else ''}${abs(value):,.0f}M",
     "usd_bn": lambda value: f"{'−' if value < 0 else ''}US${abs(value):.1f}B",
     "days": lambda value: f"{value:.0f}天",
+    # NVDA's DSO threshold band is 52 / 55-62 / 70 and the quarter that
+    # prompted it moved the metric from 45.4 to 59.6. Rounded to whole days
+    # that reads "60", which is both the company's own printed figure and
+    # exactly the number the reader would then compare against a 60 boundary
+    # this page does not use. The tenth is the difference between a threshold
+    # table that matches its own chart and one that does not.
+    "days1": lambda value: f"{value:.1f}天",
     "fx": lambda value: f"{value:.2f}",
     "million": lambda value: f"{value:.0f}M",
     # Cadence settles two thresholds that are neither money nor a rate: a
