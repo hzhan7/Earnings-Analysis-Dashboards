@@ -463,6 +463,27 @@ def build_payload(staging: dict) -> dict:
     # window is per metric: a threshold chart with forty-two 90-degree labels is
     # a hairbrush, so the long series are cut to the span that still answers
     # "how did it get here".
+    # AWS revenue and AWS segment operating income are in `long_history` for all
+    # forty-two quarters -- the thirty-quarter `segments` block is the *three*
+    # segment tables, and it is the North America / International half of that
+    # block that starts in 2019Q1, not AWS. So every AWS line here runs the ten
+    # years and only the North America line keeps the shorter window.
+    long_aws_revenue = long["aws_revenue_usd_m"]
+    long_aws_income = long["aws_operating_income_usd_m"]
+    long_aws_margin = [income / total * 100
+                       for income, total in zip(long_aws_income, long_aws_revenue)]
+    long_aws_yoy = yoy(long_aws_revenue)
+    long_aws_sequential = sequential(long_aws_revenue)
+    long_quarter_labels = [compact_long(quarter) for quarter in long["quarters"]]
+    # Where the two blocks overlap they have to agree, or one of them is wrong.
+    seg_at = {period: index for index, period in enumerate(seg_periods)}
+    for index, quarter in enumerate(long["quarters"]):
+        if quarter in seg_at:
+            assert abs(long_aws_revenue[index]
+                       - aws_revenue[seg_at[quarter]]) < 0.01, quarter
+            assert abs(long_aws_income[index]
+                       - aws_income[seg_at[quarter]]) < 0.01, quarter
+
     net_capex_series = quarterly["net_capex"]
     long_group_margin = [
         income / total * 100
@@ -474,21 +495,26 @@ def build_payload(staging: dict) -> dict:
         in zip(backlog["level_usd_bn"], backlog["level_usd_bn"][1:])
     ]
     tracked = {
-        "AWS 收入同比": (seg_labels, rounded(aws_yoy), "pct1", "同比增速", "AWS 收入同比 D", ""),
-        "AWS 分部经营利润率": (seg_labels, rounded(aws_margin), "pct1", "利润率",
+        "AWS 收入同比": (long_quarter_labels, rounded(long_aws_yoy), "pct1", "同比增速",
+                        "AWS 收入同比 D",
+                        "<b>这条线的三十季版本看不到 AWS 增速最高的那一段</b>："
+                        f"窗口内最高是 {max(v for v in long_aws_yoy if v is not None):.0f}%，"
+                        "出现在 2016–2018 年，那时它的基数只有现在的十几分之一。"),
+        "AWS 分部经营利润率": (long_quarter_labels, rounded(long_aws_margin), "pct1", "利润率",
                               "AWS 经营利润率 D",
                               "线上是报告口径；剔除本季 US$551M 能源衍生品收益后为 "
-                              f"38.1%，同样在阈值之上。"),
+                              f"38.1%，同样在阈值之上。"
+                              f"四十二季区间 {min(long_aws_margin):.1f}–{max(long_aws_margin):.1f}%。"),
         "集团经营利润率": (
-            [compact_long(quarter) for quarter in long["quarters"]][-24:],
-            rounded(long_group_margin[-24:]),
+            long_quarter_labels, rounded(long_group_margin),
             "pct1", "利润率", "集团经营利润率 D", "",
         ),
         "TTM 自由现金流": (cash_labels, rounded(fcf_bn), "usd0", "US$B",
                           "TTM 自由现金流（公司披露）", ""),
         "AWS 环比收入增量": (
-            seg_labels,
-            rounded([None if value is None else value / 1000 for value in aws_sequential]),
+            long_quarter_labels,
+            rounded([None if value is None else value / 1000
+                     for value in long_aws_sequential]),
             "usd1", "US$B", "AWS 环比收入增量 D", "",
         ),
         "AWS backlog 单季净增": (
@@ -498,6 +524,8 @@ def build_payload(staging: dict) -> dict:
         ),
         "北美分部经营利润率": (seg_labels, rounded(na_margin), "pct1", "利润率",
                               "北美经营利润率 D",
+                              "<b>只有这一条留在三十季</b>：北美与国际两个分部的季度表"
+                              "从 2019Q1 起才有，AWS 那几条则回到 2016Q1。"
                               "线上是报告口径；剔除 US$640M 关税退款后本季为 7.30%，"
                               "低于去年同期的 7.51%。"),
         "单季现金 CapEx（净额，超过即偏离隐含节奏）": (
@@ -621,18 +649,19 @@ def build_payload(staging: dict) -> dict:
                 f"AWS 收入 US${aws_revenue[-1] / 1000:.1f}B，环比增量 US${aws_increment / 1000:.2f}B —— "
                 f"是此前最大单季增量的 {aws_increment / largest_prior_increment:.1f} 倍"
             ),
-            "xlabels": seg_labels[-WINDOW:],
+            "xlabels": long_quarter_labels,
+            "xstep": LONG_STEP,
             "bar": {
                 "name": "AWS 收入",
                 "color": "NAVY",
-                "values": [value / 1000 for value in aws_revenue[-WINDOW:]],
+                "values": [value / 1000 for value in long_aws_revenue],
                 "yfmt": "usd0",
             },
             "line": {
                 "name": "环比绝对增量 (RHS) D",
                 "color": "RED",
                 "values": [None if value is None else value / 1000
-                           for value in aws_sequential[-WINDOW:]],
+                           for value in long_aws_sequential],
                 "yfmt": "usd1",
             },
             "fmt": "usd0",
@@ -646,6 +675,9 @@ def build_payload(staging: dict) -> dict:
                 "上季正是用「高基数所以难加速」推断出了方向相反的结论。"
                 f"环比增量直接映射产能上线速度：本季 US${aws_increment / 1000:.2f}B，"
                 f"同比增速 {aws_yoy[-1]:.1f}%（公司披露的固定汇率口径为 37%）。"
+                "<b>八季的窗口把「此前最大单季增量」限定在了最近两年里。</b>"
+                "拉到四十二季，这条红线在 2016–2018 年长期只有几亿美元一格，"
+                f"整个窗口的负增量只有 {sum(1 for v in long_aws_sequential if v is not None and v < 0)} 次。"
             ),
             "src_extra": source_note(
                 "AWS 分部收入来自各期 8-K EX-99.1 的 Supplemental 表与 10-Q 分部附注；环比增量为自算"),
@@ -790,12 +822,15 @@ def build_payload(staging: dict) -> dict:
                 f"单季经营现金流 US${operating_cash_flow[-1] / 1000:.1f}B，"
                 f"被 US${capex[-1] / 1000:.1f}B 的资本开支盖过"
             ),
-            "xlabels": labels,
+            "xlabels": long_quarter_labels,
+            "xstep": LONG_STEP,
             "groups": [
                 {"name": "经营现金流", "color": "NAVY",
-                 "values": [value / 1000 for value in shown(operating_cash_flow)]},
-                {"name": "购买物业及设备", "color": "GOLD",
-                 "values": [value / 1000 for value in shown(capex)]},
+                 "values": [value / 1000
+                            for value in long["operating_cash_flow_usd_m"]]},
+                {"name": "购买物业及设备（gross）", "color": "GOLD",
+                 "values": [None if value is None else value / 1000
+                            for value in long_capex]},
             ],
             "fmt": "usd0",
             "label_fmt": "usd0",
@@ -808,6 +843,12 @@ def build_payload(staging: dict) -> dict:
                 "同季计入应付账款但尚未支付的资本开支还增加了 "
                 f"US${snapshot['increase_in_unpaid_capex_usd_m'][-1] / 1000:.1f}B，"
                 "也就是现金口径本身还落后于已经建成的资产。"
+                "<b>两条柱子交叉的那一刻在八季的窗口里看不到。</b>"
+                "四十二季里资本开支高于经营现金流的季度共有 "
+                f"{sum(1 for a, b in zip(long_capex, long['operating_cash_flow_usd_m']) if a is not None and a > b)} 个，"
+                "其中最近这一串是连着的。"
+                "<b>资本开支那条柱子在 2016 年是空的，那是刚修掉的一处混口径</b>："
+                + long["capital_expenditures_basis"]["why_2016_is_empty"]
             ),
             "src_extra": source_note("经营现金流与资本开支为各期现金流量表的三个月申报值"),
         },

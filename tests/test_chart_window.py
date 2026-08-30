@@ -127,7 +127,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amzn": 3, "avgo": 0, "axp": 5, "bc": 0, "cboe": 6, "cdns": 6, "cme": 13,
+    "amzn": 9, "avgo": 0, "axp": 5, "bc": 0, "cboe": 6, "cdns": 6, "cme": 13,
     "cost": 7, "googl": 11, "ibkr": 0, "ma": 0, "mc": 0, "mco": 0, "meta": 10,
     "msci": 0, "msft": 8, "mu": 2, "ndaq": 8, "nke": 7, "nvda": 4, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 0, "skhynix": 0, "snps": 3,
@@ -181,6 +181,34 @@ CONVERTED = {
         "季度折旧": "quarterly depreciation only reaches 2024Q3 -- before that Microsoft "
                 "disclosed it annually and the page will not spread a year over four "
                 "quarters.",
+    },
+    "amzn": {
+        # Two floors: the guidance record and the segment tables. Both are the
+        # earliest quarter the disclosure exists in, not the earliest fetched.
+        "净销售额": "the quarterly outlook record in this file starts with the 2017Q3 "
+                "release.",
+        "经营利润：": "same guidance record.",
+        "经营利润相对指引中值": "the deviation view of the same record; its own floor is "
+                        "later because Amazon only began giving an operating-income "
+                        "range in the 2021Q3 release.",
+        "把「超出自身指引」拆成两条腿": "same guidance record.",
+        "指引隐含的经营利润率": "same guidance record.",
+        "TTM 自由现金流": "Amazon's own trailing free-cash-flow figure, as the company "
+                     "prints it, from the 2019Q1 release on.",
+        "三个分部的经营利润率": "the North America and International segment tables begin "
+                        "2019Q1; only AWS reaches 2016.",
+        "北美分部经营利润率": "same segment floor.",
+        "广告同比": "the seven product-line disaggregation begins with the 2020Q3 release.",
+        "AWS backlog 单季净增": "Amazon has given the AWS backlog balance for four quarters.",
+        "单季现金 CapEx（净额": "the net measure needs proceeds from sales and incentives, "
+                          "which this file carries for twelve quarters.",
+        "总收入同比": "a year-on-year line has no base for 2016Q1-Q4; the record starts "
+                  "2017Q1.",
+        "资本强度": "quarterly *gross* capital expenditure does not exist for 2016 -- "
+                "Amazon's 2016 cash-flow statements print one net line and only "
+                "from 2017 split gross from proceeds. The four 2016 cells this "
+                "chart used to draw were the net measure under a gross heading, "
+                "so the chart now starts where its own basis does.",
     },
     "meta": {
         "收入指引兑现": "Meta published no quarterly revenue outlook range before the "

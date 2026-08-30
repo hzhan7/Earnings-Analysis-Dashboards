@@ -154,11 +154,28 @@ class AmznDashboardTest(unittest.TestCase):
                 capex[key], self.q["purchases_of_property_and_equipment"][index], period)
 
     def test_undisclosed_quarters_stay_empty(self) -> None:
-        """Holes are disclosed, not filled: 2016Q1 has no filed quarterly capex
-        or depreciation, and finance-lease principal begins with ASC 842."""
+        """Holes are disclosed, not filled.
+
+        Capital expenditure now starts a full year later than it used to, and
+        the reason is a basis break rather than a missing filing: Amazon's 2016
+        cash-flow statements print one *net* line (after proceeds from sales and
+        incentives) and only from 2017 do they split gross from proceeds. The
+        four 2016 cells this series used to carry were the net measure sitting
+        under a gross heading, and 2016Q4 was worse still -- the restated annual
+        gross minus the old-basis nine-month net, two different quantities.
+        Quarterly gross for 2016 does not exist in any filing, so the cells are
+        empty and the net figures live in their own block with their sources.
+        """
         long = self.source["long_history"]
         first = long["quarters"].index(long["capex_first_reported"])
-        self.assertIsNone(long["capital_expenditures_usd_m"][first - 1])
+        self.assertEqual(long["capex_first_reported"], "2017Q1")
+        self.assertEqual(long["capital_expenditures_usd_m"][:first], [None] * 4)
+        basis = long["capital_expenditures_basis"]
+        self.assertEqual(basis["starts"], "2017Q1")
+        self.assertEqual(len(basis["net_2016_usd_m"]), 4)
+        # The net figures are kept because they are real, and checked because
+        # they are the thing that was previously mistaken for gross.
+        self.assertAlmostEqual(sum(basis["net_2016_usd_m"]), 6736.0, places=6)
         self.assertTrue(
             all(value is not None for value in long["capital_expenditures_usd_m"][first:]))
         lease_first = long["quarters"].index(long["finance_lease_first_reported"])
