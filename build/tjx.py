@@ -362,9 +362,16 @@ def build_payload(staging: dict) -> dict:
     # drawn rather than one being plotted and the other captioned.
     gross_settled = [adjusted_gross[i] if adjusted_gross[i] is not None else gross[i]
                      for i in range(len(gross))]
-    inventory_yoy = [None if index < 4 else
-                     pct_change(inventory_per_store[index], inventory_per_store[index - 4])
-                     for index in range(len(inventory_per_store))]
+    # Inventory per store is one of the six series this file carries for the
+    # reviewed eight quarters only, so its year-on-year line is a hole wherever
+    # either leg is.
+    inventory_yoy = [
+        None if index < 4
+        or inventory_per_store[index] is None
+        or inventory_per_store[index - 4] is None
+        else pct_change(inventory_per_store[index], inventory_per_store[index - 4])
+        for index in range(len(inventory_per_store))
+    ]
 
     # ── section 1: last quarter's thresholds, then the guided record ─────────
     settled_ex = [
@@ -385,8 +392,16 @@ def build_payload(staging: dict) -> dict:
             src_extra="阈值为上季本地研究设定，不是公司指引；当前值取自本季业绩 8-K 与自算。",
         ),
         threshold_exhibit(
-            "合并同店销售八季：本季 +4%，压着阈值过线",
-            labels, [float(value) for value in comp["consolidated"]], 4.0,
+            # Twelve of the forty-two quarters have no consolidated comp at all:
+            # the Q1 FY2021 release printed none, seven quarters of 2020-2021
+            # published only an "open-only" comp (sales measured against stores
+            # that were actually open, which is a different measure), and the
+            # 2022 releases gave U.S. comps only. Those are holes, not zeros.
+            f"合并同店销售 {sum(1 for v in comp['consolidated'] if v is not None)} 季"
+            f"（共 {len(labels)} 季）：本季 +4%，压着阈值过线",
+            labels,
+            [None if value is None else float(value) for value in comp["consolidated"]],
+            4.0,
             fmt="pct0", ylab="%", actual_name="合并 comp", threshold_name="上季阈值 4%",
             note=(
                 "上季设的门槛是「≥4% 才算指引折价的模式延续」。本季报出来正好 +4%，"
@@ -397,7 +412,7 @@ def build_payload(staging: dict) -> dict:
         ),
         threshold_exhibit(
             "Marmaxx 同店销售八季：本季 +1%，八季最低，且是唯一交易笔数为负的分部",
-            labels, [float(value) for value in comp["marmaxx"]], 2.0,
+            labels, [None if value is None else float(value) for value in comp["marmaxx"]], 2.0,
             fmt="pct0", ylab="%", actual_name="Marmaxx comp",
             threshold_name="管理层承诺的 Q4 下沿 2%",
             note=(
@@ -563,7 +578,12 @@ def build_payload(staging: dict) -> dict:
             # and the resulting line is the argument the chart is making.
             "yoy": {
                 "name": "同比增速 (RHS)",
-                "values": [round(pct_change(current, prior), 4) for current, prior
+                # The prior-year column is one of the six series carried for the
+                # reviewed eight quarters only, so this line is a hole wherever
+                # its own comparison base is.
+                "values": [None if current is None or prior is None
+                           else round(pct_change(current, prior), 4)
+                           for current, prior
                            in zip(seg["general_corporate_expense"],
                                   seg["general_corporate_expense_prior_year"])],
                 "color": "GREEN",
@@ -591,9 +611,10 @@ def build_payload(staging: dict) -> dict:
             ),
             "xlabels": labels,
             "bar": {"name": "每店存货 D", "color": "BLUE",
-                    "values": [round(value / 1000, 4) for value in inventory_per_store]},
+                    "values": [None if value is None else round(value / 1000, 4)
+                       for value in inventory_per_store]},
             "line": {"name": "合并 comp", "color": "RED",
-                     "values": [float(value) for value in comp["consolidated"]]},
+                     "values": [None if value is None else float(value) for value in comp["consolidated"]]},
             "fmt": "usd2",
             "yfmt": "usd2",
             "label_fmt": "usd2",
@@ -822,10 +843,10 @@ def build_payload(staging: dict) -> dict:
             staging["fiscal_labels"][index],
             staging["period_ends"][index],
             f"${sales[index]:,}M",
-            f"{fin['net_sales_yoy_pct'][index]:+.1f}%",
-            f"{comp['consolidated'][index]:+.0f}%",
+            ("—" if fin["net_sales_yoy_pct"][index] is None else ("—" if fin['net_sales_yoy_pct'][index] is None else f"{fin['net_sales_yoy_pct'][index]:+.1f}%")),
+            ("—" if comp['consolidated'][index] is None else f"{comp['consolidated'][index]:+.0f}%"),
             f"{gross[index]:.2f}%",
-            f"{fin['sga_pct_of_sales'][index]:.2f}%",
+            ("—" if fin['sga_pct_of_sales'][index] is None else f"{fin['sga_pct_of_sales'][index]:.2f}%"),
             f"{pretax_margin[index]:.2f}%",
             f"${eps[index]:.2f}",
             (f"${fin['adjusted_diluted_eps_usd'][index]:.2f}"

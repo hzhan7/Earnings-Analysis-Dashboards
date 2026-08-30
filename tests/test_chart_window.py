@@ -131,7 +131,7 @@ REACH_2016 = {
     "cost": 7, "googl": 11, "ibkr": 21, "ma": 16, "mc": 0, "mco": 7, "meta": 10,
     "msci": 9, "msft": 8, "mu": 2, "ndaq": 8, "nke": 7, "nvda": 4, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 10, "skhynix": 0, "snps": 3,
-    "spgi": 2, "tjx": 1, "tsm": 18, "v": 14,
+    "spgi": 2, "tjx": 8, "tsm": 18, "v": 14,
 }
 
 # Pages whose migration is finished. For these the strict rule applies: every
@@ -307,6 +307,24 @@ CONVERTED = {
                        "acquisition rather than asset gathering.",
         "经营杠杆": "a twenty-quarter view by design; the underlying revenue and "
                 "expense lines do run the whole record.",
+    },
+    "tjx": {
+        # Two floors. The quarterly guidance record on EDGAR starts with the
+        # FY2023 releases -- before that TJX gave its next-quarter pretax-margin
+        # and comp guidance in the CFO's prepared remarks on the call, which is
+        # not a filed document and this site does not read. The four ten-year
+        # charts run on fiscal years, not quarters, and ten years of them is the
+        # whole of `long_history`.
+        "摊薄每股收益（近 16 季）": "the filed next-quarter EPS guidance record starts with "
+                          "the FY2023 releases.",
+        "税前利润率：": "same guidance record; earlier quarters guided it only on the call.",
+        "税前利润率相对指引中值": "the deviation view of the same record.",
+        "合并同店销售：": "same guidance record.",
+        "合并同店销售相对指引中值": "the deviation view of the same record.",
+        "十年税前利润率与资本强度": "an annual chart -- ten fiscal years, not quarters.",
+        "十年门店数与总面积": "annual.",
+        "十年回购与股数": "annual.",
+        "十年经营现金流、资本开支与股东回报": "annual.",
     },
     "meta": {
         "收入指引兑现": "Meta published no quarterly revenue outlook range before the "

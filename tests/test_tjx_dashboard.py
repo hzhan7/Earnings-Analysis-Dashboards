@@ -59,14 +59,46 @@ class TjxDashboardTest(unittest.TestCase):
         cls.seg = cls.source["segments_usd_m"]
 
     # ── shape ────────────────────────────────────────────────────────────────
-    def test_the_window_is_eight_quarters_and_complete(self) -> None:
-        self.assertEqual(len(self.source["periods"]), 8)
+    def test_the_window_is_forty_two_quarters_and_says_where_it_is_thin(self) -> None:
+        """Every block is on one axis; six series are thin and are named.
+
+        The six carried for the reviewed eight quarters only are listed in
+        `short_series_notes`, each with its reason. Comparable sales is thin in
+        a different way and for a stated reason too: twelve of the forty-two
+        quarters have no consolidated comp at all -- one release printed none,
+        seven published only an "open-only" comp against stores that were
+        actually open, and the 2022 releases gave U.S. comps only.
+        """
+        periods = self.source["periods"]
+        self.assertEqual(len(periods), 42)
+        self.assertEqual(periods[0], "Q1 2016")
+        self.assertEqual(periods[-1], "Q2 2026")
+        thin = set(self.source["short_series_notes"])
         for group in ("financials", "segments_usd_m", "segment_margins_pct",
                       "comparable_sales_pct", "operations"):
             for key, values in self.source[group].items():
                 if key.startswith("_") or not isinstance(values, list):
                     continue
-                self.assertEqual(len(values), 8, f"{group}.{key}")
+                self.assertEqual(len(values), 42, f"{group}.{key}")
+                reported = sum(1 for value in values if value is not None)
+                if key in thin:
+                    # Thin means "only within the reviewed eight"; some of these
+                    # are sparser still, because the company gives an adjusted
+                    # figure only in quarters that have an adjusting item.
+                    self.assertLessEqual(reported, 8, f"{group}.{key}")
+                    self.assertEqual(
+                        [i for i, v in enumerate(values) if v is not None],
+                        [i for i in range(len(values) - 8, len(values))
+                         if values[i] is not None],
+                        f"{group}.{key}: values must sit inside the last eight")
+                elif group == "comparable_sales_pct":
+                    self.assertGreaterEqual(reported, 30, f"{group}.{key}")
+                elif key in ("other_charges_usd_m", "adjusted_pretax_margin_pct"):
+                    continue
+                elif key == "net_sales_yoy_pct":
+                    self.assertEqual(reported, 38, "no year-ago base for 2016")
+                else:
+                    self.assertEqual(reported, 42, f"{group}.{key}")
 
     def test_calendar_labels_map_onto_the_fiscal_ones(self) -> None:
         """TJX's FY(N) Qk is this page's Qk (N-1); a slip here silently
@@ -80,13 +112,27 @@ class TjxDashboardTest(unittest.TestCase):
 
     # ── statement identities ─────────────────────────────────────────────────
     def test_income_statement_closes_to_the_dollar(self) -> None:
+        """Sales - cost - SG&A - other charges + net interest = pretax income.
+
+        The "other charges" term is the one the eight-quarter window never
+        needed: six of the forty-two quarters carry a named line between SG&A
+        and pretax (impairment, litigation, restructuring), and without it the
+        identity misses by the whole charge -- 82.9 in Q3 2016, 312.2 in Q4 2020.
+        """
         fin = self.fin
         for index, period in enumerate(self.source["periods"]):
             derived = (fin["net_sales_usd_m"][index]
                        - fin["cost_of_sales_usd_m"][index]
                        - fin["sga_usd_m"][index]
+                       - (fin["other_charges_usd_m"][index] or 0.0)
                        + fin["interest_income_net_usd_m"][index])
-            self.assertEqual(derived, fin["pretax_income_usd_m"][index], period)
+            # assertEqual on floats: this passed on eight quarters and started
+            # failing at 824.9689999999998 != 824.969 the moment the record grew.
+            # The identity is exact in the filing; binary addition of
+            # three-decimal dollars is not, so the tolerance is a hundredth of a
+            # million -- far tighter than any real misread.
+            self.assertAlmostEqual(derived, fin["pretax_income_usd_m"][index],
+                                   delta=0.01, msg=period)
 
     def test_segment_bridge_closes_to_the_dollar(self) -> None:
         """Σ segment profit − corporate expense + net interest = pretax income.
@@ -101,17 +147,29 @@ class TjxDashboardTest(unittest.TestCase):
         for index, period in enumerate(self.source["periods"]):
             total = sum(seg[f"{name}_profit"][index] for name in
                         ("marmaxx", "homegoods", "canada", "international"))
-            self.assertEqual(total, seg["total_segment_profit"][index], period)
-            derived = (total - seg["general_corporate_expense"][index]
+            self.assertAlmostEqual(total, seg["total_segment_profit"][index],
+                                   delta=0.01, msg=period)
+            # ...and the "other charges" term sits below total segment profit in
+            # five of the six quarters that have one -- but not in Q4 2017,
+            # where the impairment was booked *inside* Marmaxx and is therefore
+            # already in the segment total. A fixed formula misses that quarter
+            # by 99.25, which is 8.9% of its pretax income and would look like a
+            # data error rather than a presentation one.
+            charge = fin["other_charges_usd_m"][index] or 0.0
+            if period in self.source["other_charges_note"]["inside_a_segment"]:
+                charge = 0.0
+            derived = (total - seg["general_corporate_expense"][index] - charge
                        + fin["interest_income_net_usd_m"][index])
-            self.assertEqual(derived, fin["pretax_income_usd_m"][index], period)
+            self.assertAlmostEqual(derived, fin["pretax_income_usd_m"][index],
+                                   delta=0.01, msg=period)
 
     def test_segment_sales_sum_to_consolidated_net_sales(self) -> None:
         seg, fin = self.seg, self.fin
         for index, period in enumerate(self.source["periods"]):
             total = sum(seg[f"{name}_sales"][index] for name in
                         ("marmaxx", "homegoods", "canada", "international"))
-            self.assertEqual(total, fin["net_sales_usd_m"][index], period)
+            self.assertAlmostEqual(total, fin["net_sales_usd_m"][index],
+                                   delta=0.01, msg=period)
 
     def test_half_year_sales_match_the_two_quarters_the_company_printed(self) -> None:
         """The H1 figures are used for the corporate-expense argument, so they
@@ -136,10 +194,12 @@ class TjxDashboardTest(unittest.TestCase):
         seg = self.seg
         current, prior = (seg["general_corporate_expense"],
                           seg["general_corporate_expense_prior_year"])
-        self.assertEqual(len(prior), 8)
-        for index in range(4, 8):
-            self.assertEqual(prior[index], current[index - 4],
-                             self.source["periods"][index])
+        reported = [i for i, value in enumerate(prior) if value is not None]
+        self.assertEqual(len(reported), 8)
+        self.assertEqual(reported[-1], len(prior) - 1)
+        for index in reported[4:]:
+            self.assertAlmostEqual(prior[index], current[index - 4], delta=0.01,
+                                   msg=self.source["periods"][index])
 
     def test_the_corporate_expense_chart_carries_a_yoy_line(self) -> None:
         """`gs_bar` draws a twelve-period moving average unless a `yoy` block is
@@ -152,8 +212,17 @@ class TjxDashboardTest(unittest.TestCase):
                      if ex["kind"] == "gs_bar")
         self.assertIn("yoy", chart)
         values = chart["yoy"]["values"]
-        self.assertEqual(len(values), 8)
-        for value in values:
+        self.assertEqual(len(values), len(chart["xlabels"]))
+        reported = [value for value in values if value is not None]
+        self.assertEqual(len(reported), 8,
+                         "the line needs both this year's and last year's "
+                         "corporate expense, and the prior-year column is only "
+                         "carried for the reviewed eight quarters")
+        self.assertEqual(
+            [index for index, value in enumerate(values) if value is not None],
+            list(range(len(values) - 8, len(values))),
+            "and they are the last eight, not a scattered set")
+        for value in reported:
             self.assertIsInstance(value, float)
         self.assertAlmostEqual(values[-1], (242 / 182 - 1) * 100, places=3)
 
@@ -167,6 +236,9 @@ class TjxDashboardTest(unittest.TestCase):
             self.assertAlmostEqual(
                 fin["pretax_margin_pct"][index],
                 fin["pretax_income_usd_m"][index] / sales * 100, places=3, msg=period)
+            if ops["merchandise_inventories_usd_m"][index] is None:
+                self.assertIsNone(ops["inventory_per_store_usd_k"][index], period)
+                continue
             self.assertAlmostEqual(
                 ops["inventory_per_store_usd_k"][index],
                 ops["merchandise_inventories_usd_m"][index] * 1000
