@@ -248,7 +248,10 @@ CONVERTED = {
         # All five are the same record: Moody's began publishing a full-year
         # adjusted-EPS range with the FY2019 outlook. The axis is fiscal years,
         # not quarters, and there is nothing earlier to score.
-        "调整后摊薄 EPS（对末次指引）": "the annual adjusted-EPS guidance record starts FY2019.",
+        "调整后摊薄 EPS（对末次指引）": "not fetched yet, not absent: Moody's 2018-02-09 release "
+                          "guides FY2018 diluted EPS at $7.20-$7.40 and adjusted "
+                          "diluted EPS at $7.65-$7.85. This file's record starts "
+                          "FY2019 because that is where the extraction started.",
         "调整后摊薄 EPS（对初始指引）": "same record, read at its first vintage.",
         "调整后摊薄 EPS（2 月那版）": "the deviation view of the February vintage.",
         "调整后摊薄 EPS（10 月那版）": "the deviation view of the October vintage.",
@@ -279,7 +282,10 @@ CONVERTED = {
         # The three quarter charts below need the revenue split by type and by
         # segment, which this file carries for the reviewed eight quarters only;
         # the run-rate, AUM and margin series beside them do run from 2016Q1.
-        "营业费用：": "the annual expense guidance record starts with FY2020.",
+        "营业费用：": "not fetched yet, not absent: MSCI's 2019-01-31 release guides "
+                "full-year 2019 total operating expenses at $772-800M and adjusted "
+                "EBITDA expenses at $685-705M -- the same two metrics this chart "
+                "scores. FY2020 is where the extraction started.",
         "营业费用相对指引中值": "the deviation view of the same record.",
         "调整后 EBITDA 费用：": "same annual record.",
         "调整后 EBITDA 费用相对指引中值": "the deviation view of the same record.",
@@ -315,9 +321,13 @@ CONVERTED = {
         # not a filed document and this site does not read. The four ten-year
         # charts run on fiscal years, not quarters, and ten years of them is the
         # whole of `long_history`.
-        "摊薄每股收益（近 16 季）": "the filed next-quarter EPS guidance record starts with "
-                          "the FY2023 releases.",
-        "税前利润率：": "same guidance record; earlier quarters guided it only on the call.",
+        "摊薄每股收益（近 16 季）": "not fetched yet, not absent: TJX's 2019-05-21 EX-99.1 gives "
+                          "a second-quarter EPS outlook and the comp-sales growth it "
+                          "rests on, in the filed exhibit. FY2023 is where the "
+                          "extraction started, not where the disclosure does.",
+        "税前利润率：": "same record. The earlier claim that pre-FY2023 quarters guided "
+                 "this only on the call is withdrawn -- the FY2020 exhibits carry a "
+                 "next-quarter outlook.",
         "税前利润率相对指引中值": "the deviation view of the same record.",
         "合并同店销售：": "same guidance record.",
         "合并同店销售相对指引中值": "the deviation view of the same record.",
@@ -428,6 +438,180 @@ CONVERTED = {
 }
 
 
+FLOOR_KIND = {
+    # Why each exemption is short, in four kinds. The kind matters more than the
+    # prose: three of these entries used to read like "the company never
+    # published this earlier" when what was true was "this repo has not fetched
+    # it yet", and that difference is the whole point of the ratchet. Moody's
+    # guided FY2018 adjusted EPS on 2018-02-09 (.65-.85), MSCI guided FY2019
+    # operating expenses on 2019-01-31, and TJX gave next-quarter EPS and comp
+    # guidance in its FY2020 8-K exhibits -- all three were written down here as
+    # "the record starts at" and all three were wrong.
+    #
+    #   "disclosure" -- a pre-floor filing was read and the figure is not in it
+    #   "design"     -- deliberately short for a rendering reason, not a data one
+    #   "coverage"   -- the filings have it; this repo has not fetched it yet
+    #   "unverified" -- the reason was inherited and no pre-floor filing was read
+    #
+    #  and  are a to-do list, not an answer. The test below
+    # prints them so they cannot quietly become permanent.
+    'amzn': {
+        '净销售额': 'coverage',
+        '经营利润：': 'coverage',
+        '经营利润相对指引中值': 'unverified',
+        '把「超出自身指引」拆成两条腿': 'coverage',
+        '指引隐含的经营利润率': 'coverage',
+        'TTM 自由现金流': 'coverage',
+        '三个分部的经营利润率': 'coverage',
+        '北美分部经营利润率': 'coverage',
+        '广告同比': 'unverified',
+        'AWS backlog 单季净增': 'unverified',
+        '单季现金 CapEx（净额': 'coverage',
+        '总收入同比': 'coverage',
+        '资本强度': 'disclosure',
+    },
+    'cboe': {
+        '最想结清的那条指引': 'disclosure',
+        '其中最关键的一条': 'disclosure',
+        '同一形状在股票撮合里重演': 'unverified',
+        '五个分部的净收入': 'unverified',
+        '毛收入与净收入之间那道楔子': 'unverified',
+        '公司自己的第二套口径': 'unverified',
+        '回购与股息': 'unverified',
+    },
+    'cdns': {
+        '收入（本图仅近 20 季）': 'design',
+        '非 GAAP 营业利润率（本图仅近 20 季）': 'design',
+        '非 GAAP EPS（本图仅近 20 季）': 'design',
+        '季末 backlog': 'disclosure',
+        'backlog 创纪录': 'disclosure',
+        'backlog / 过去四季收入': 'disclosure',
+        '中国收入 $': 'disclosure',
+        '中国收入占比': 'disclosure',
+        '单季经营现金流': 'coverage',
+        '经营现金流 $635M': 'coverage',
+        '单季回购金额': 'coverage',
+        '单季回购 $200M': 'coverage',
+        '三条产品线的分化': 'unverified',
+        'GAAP 毛利率降到': 'coverage',
+        '本季非 GAAP 营业利润率': 'coverage',
+        '单季非 GAAP 营业利润率': 'coverage',
+    },
+    'cme': {
+        '调整后营业费用（除许可费）': 'disclosure',
+        '调整后营业利润率对': 'disclosure',
+        '抵押品净利差': 'disclosure',
+    },
+    'googl': {
+        'Cloud 收入 YoY': 'disclosure',
+        'Cloud 经营利润率': 'disclosure',
+        'Search & other YoY': 'disclosure',
+        'Cloud backlog 环比': 'disclosure',
+        'Cloud backlog 单季净增': 'disclosure',
+        'backlog 创': 'disclosure',
+        'Cloud 增速本季': 'disclosure',
+        'Search 增速本季': 'disclosure',
+    },
+    'ma': {
+        '净收入的同比增量拆成三条腿': 'disclosure',
+        '毛计费的同比增量': 'disclosure',
+        '返点占毛计费从': 'disclosure',
+        '返点占比的同比变化': 'disclosure',
+        '四条计费线': 'disclosure',
+    },
+    'mco': {
+        '调整后摊薄 EPS（对末次指引）': 'coverage',
+        '调整后摊薄 EPS（对初始指引）': 'coverage',
+        '调整后摊薄 EPS（2 月那版）': 'coverage',
+        '调整后摊薄 EPS（10 月那版）': 'coverage',
+        '每一年的指引中值怎么被改到实际值上': 'coverage',
+    },
+    'meta': {
+        '收入指引兑现': 'disclosure',
+        '收入相对指引中值': 'disclosure',
+        'FoA Other 单季收入': 'disclosure',
+        '两条非广告收入线': 'disclosure',
+        '折旧摊销同比': 'coverage',
+    },
+    'msci': {
+        '营业费用：': 'coverage',
+        '营业费用相对指引中值': 'coverage',
+        '调整后 EBITDA 费用：': 'coverage',
+        '调整后 EBITDA 费用相对指引中值': 'coverage',
+        '自由现金流：': 'coverage',
+        '自由现金流相对指引中值': 'coverage',
+        '三条收入腿': 'coverage',
+        '四个分部': 'coverage',
+        '分部调整后 EBITDA 利润率': 'coverage',
+    },
+    'msft': {
+        'Azure 固定汇率增速': 'disclosure',
+        'Intelligent Cloud 分部毛利率': 'coverage',
+        'Intelligent Cloud 本季首次超过': 'coverage',
+        '商业剩余履约义务': 'unverified',
+        'FY2026 股东回报': 'design',
+        '季度折旧': 'disclosure',
+    },
+    'ndaq': {
+        '全年非 GAAP 有效税率': 'unverified',
+        'FY2026 费用指引的三次发布': 'design',
+        '「经纪、清算与交易所费用」拆开看': 'unverified',
+        'Market Services 毛收入的去向': 'disclosure',
+        '三个分部的净收入': 'disclosure',
+        'Financial Technology 的三条子线': 'disclosure',
+        'Index：挂钩纳斯达克指数的 ETP AUM': 'disclosure',
+        'ARR 两条腿': 'unverified',
+    },
+    'nke': {
+        '大中华区收入同比（固定汇率）': 'coverage',
+        '北美收入同比（固定汇率）': 'coverage',
+        '投入资本回报率': 'design',
+        '应收账款': 'coverage',
+        '三年遣散与重组费用': 'disclosure',
+        '毛利率同比（剔除关税退款）': 'disclosure',
+        '三十二个季度的直营占比': 'unverified',
+        '十年经营现金流': 'design',
+        '十年回购与资本强度': 'design',
+        '回购的成交均价': 'design',
+    },
+    'race': {
+        '调整后 EBITDA': 'disclosure',
+        '调整后摊薄 EPS：': 'disclosure',
+        '工业自由现金流': 'disclosure',
+        '调整后摊薄 EPS 相对': 'disclosure',
+        '美洲出货同比': 'disclosure',
+    },
+    'schw': {
+        'NIM（环比是否恢复增长）': 'coverage',
+        'NIM：': 'coverage',
+        '调整后 Tier 1 杠杆率': 'disclosure',
+        '五条收入线': 'disclosure',
+        '季度净新增资产按渠道': 'design',
+        '经营杠杆': 'design',
+    },
+    'tjx': {
+        '摊薄每股收益（近 16 季）': 'coverage',
+        '税前利润率：': 'coverage',
+        '税前利润率相对指引中值': 'coverage',
+        '合并同店销售：': 'coverage',
+        '合并同店销售相对指引中值': 'coverage',
+        '十年税前利润率与资本强度': 'design',
+        '十年门店数与总面积': 'design',
+        '十年回购与股数': 'design',
+        '十年经营现金流、资本开支与股东回报': 'design',
+    },
+    'tsm': {
+        '收入（本图仅近': 'design',
+        'HPC 占比（集中度）': 'disclosure',
+        'HPC 从': 'disclosure',
+        '2nm 占晶圆收入': 'disclosure',
+    },
+    'v': {
+        '美国以外贡献净收入': 'disclosure',
+    },
+}
+
+
 class ChartWindowTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -469,6 +653,60 @@ class ChartWindowTest(unittest.TestCase):
             "REACH_2016 in this file so the count lands in the commit that earned it:\n  "
             + "\n  ".join(moved),
         )
+
+    def test_every_exemption_declares_what_kind_of_floor_it_is(self) -> None:
+        """The prose alone was not enough, and it failed three times.
+
+        An exemption saying "the record starts at 2019" reads as a fact about
+        the company. Three of them were facts about this repo instead:
+
+          * Moody's 2018-02-09 release guides FY2018 adjusted diluted EPS at
+            $7.65-$7.85, so "the annual record starts FY2019" was a fetch floor.
+          * MSCI's 2019-01-31 release guides FY2019 total operating expenses at
+            $772-800M -- exactly the metric the page scores.
+          * TJX's FY2020 8-K exhibits give next-quarter EPS and comp guidance,
+            so "earlier quarters guided it only on the call" was wrong.
+
+        None of those was caught by reading the sentence, because all three
+        sentences were well-formed. `FLOOR_KIND` makes the claim explicit and
+        separable: a "disclosure" floor asserts something about the filings and
+        has to have been checked against one; a "coverage" floor asserts nothing
+        except that the work is not done.
+        """
+        for slug, exemptions in CONVERTED.items():
+            kinds = FLOOR_KIND.get(slug, {})
+            self.assertEqual(
+                sorted(exemptions), sorted(kinds),
+                f"{slug}: every exemption needs a FLOOR_KIND and vice versa")
+            for title, kind in kinds.items():
+                self.assertIn(kind, ("disclosure", "design", "coverage", "unverified"),
+                              f"{slug} / {title}")
+
+    def test_the_unfinished_exemptions_stay_visible(self) -> None:
+        """Two of the four kinds are a to-do list; this is where it is printed.
+
+        A `coverage` or `unverified` floor is not an answer to "why does this
+        chart stop in 2019" -- it is a note that nobody has answered it yet. The
+        count is pinned so that clearing one is a deliberate edit here, and so
+        that adding one is too.
+        """
+        pending = [(slug, title, kind)
+                   for slug, kinds in sorted(FLOOR_KIND.items())
+                   for title, kind in kinds.items()
+                   if kind in ("coverage", "unverified")]
+        by_kind = {}
+        for slug, title, kind in pending:
+            by_kind.setdefault(kind, []).append(f"{slug}/{title}")
+        self.assertEqual(len(by_kind.get("coverage", [])), 43,
+                         "charts whose data exists and has not been fetched")
+        self.assertEqual(len(by_kind.get("unverified", [])), 14,
+                         "charts whose stated reason has never been checked "
+                         "against a pre-floor filing")
+        # ...and the two settled kinds, so the split cannot drift silently.
+        settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
+                   if kind in ("disclosure", "design")]
+        self.assertEqual(settled.count("disclosure"), 47)
+        self.assertEqual(settled.count("design"), 16)
 
     def test_converted_pages_have_no_unexplained_short_axis(self) -> None:
         for slug, excuses in CONVERTED.items():
