@@ -62,53 +62,113 @@ class MaDashboardTest(unittest.TestCase):
         cls.q = cls.source["quarterly_usd_m"]
         cls.annual = cls.source["annual_usd_m"]
         cls.periods = cls.source["periods"]
+        # The page now carries two windows. `periods` is the whole record; the
+        # revenue disaggregation -- and everything derived from it -- starts
+        # where Mastercard first published it.
+        cls.dis_from = next(
+            index for index, value
+            in enumerate(cls.pn["payment_network_net_revenue"]) if value is not None)
+        cls.dis_periods = cls.periods[cls.dis_from:]
         cls.gross = [
             sum(cls.pn[line][index] for line in ASSESSMENT_LINES)
-            for index in range(WINDOW)
+            for index in range(cls.dis_from, len(cls.periods))
         ]
         cls.rebates = [
             gross - net
-            for gross, net in zip(cls.gross, cls.pn["payment_network_net_revenue"])
+            for gross, net
+            in zip(cls.gross, cls.pn["payment_network_net_revenue"][cls.dis_from:])
         ]
 
-    def test_eighteen_quarter_base_is_complete(self) -> None:
-        self.assertEqual(len(self.periods), WINDOW)
-        self.assertEqual(self.periods[0], "Q1 2022")
+    def test_the_record_is_forty_two_quarters_and_the_split_is_eighteen(self) -> None:
+        """Two windows, and which series gets which is a disclosure fact.
+
+        Everything on the income statement, the balance sheet, the cash-flow
+        statement and the three key drivers runs from 2016Q1. The revenue
+        *disaggregation* -- four assessment lines, the payment-network /
+        value-added-services split, and the per-line currency-neutral growth
+        rates -- exists only from 2022Q1: no 10-Q from 2018Q1 to 2023Q3 and no
+        10-K from FY2018 to FY2025 carries those lines in its revenue note, no
+        2016-2022 release disaggregates revenue at all, and 2016-2017 has no
+        revenue note (ASC 606 was adopted modified-retrospective on 2018-01-01).
+        """
+        self.assertEqual(len(self.periods), 42)
+        self.assertEqual(self.periods[0], "Q1 2016")
+        self.assertEqual(len(self.dis_periods), WINDOW)
+        self.assertEqual(self.dis_periods[0], "Q1 2022")
+        # The split is exactly the ten fields named in the series file, and the
+        # holes are exactly the quarters before the split -- not a ragged edge.
+        for field in self.source["not_backfilled"]["fields"]:
+            block, key = field.split(".")
+            values = self.source[block][key]
+            self.assertEqual(values[:self.dis_from], [None] * self.dis_from, field)
+            if block == "payment_network_usd_m":
+                # The dollar lines are complete once they start.
+                self.assertTrue(all(v is not None for v in values[self.dis_from:]),
+                                field)
+            else:
+                # The currency-neutral rates have their own holes inside the
+                # window, pinned by their own test.
+                self.assertTrue(any(v is not None for v in values[self.dis_from:]),
+                                field)
+        # ...and total net revenue, which is not part of the split, is whole.
+        self.assertTrue(all(v is not None for v in self.pn["total_net_revenue"]))
         self.assertEqual(self.periods[-1], "Q2 2026")
-        for name, values in list(self.pn.items()) + list(self.q.items()):
-            self.assertEqual(len(values), WINDOW, name)
-            self.assertTrue(all(isinstance(v, (int, float)) for v in values), name)
-            self.assertTrue(all(math.isfinite(v) for v in values), name)
-        for name, values in self.source["per_share"].items():
-            self.assertEqual(len(values), WINDOW, name)
-            self.assertTrue(all(v is not None and math.isfinite(v) for v in values), name)
-        for name, values in self.source["balance_sheet_usd_m"].items():
-            self.assertEqual(len(values), WINDOW, name)
+        holes = set(self.source["not_backfilled"]["fields"])
+        for block in ("payment_network_usd_m", "quarterly_usd_m", "per_share",
+                      "balance_sheet_usd_m"):
+            for name, values in self.source[block].items():
+                if not isinstance(values, list):
+                    continue
+                self.assertEqual(len(values), 42, f"{block}.{name}")
+                reported = [v for v in values if v is not None]
+                if f"{block}.{name}" not in holes:
+                    # Two per-share cells are genuinely absent: the SEC removed
+                    # the quarterly-data note in 2021, so the fourth quarters of
+                    # 2020 and 2021 have no filed EPS or weighted share count,
+                    # and neither is additive.
+                    self.assertGreaterEqual(len(reported), 40, f"{block}.{name}")
+                self.assertTrue(all(math.isfinite(v) for v in reported),
+                                f"{block}.{name}")
+        # The three key drivers are release metrics and run the whole record.
         for name, values in self.source["key_drivers_local_pct"].items():
-            self.assertEqual(len(values), WINDOW, name)
+            self.assertEqual(len(values), 42, name)
+            self.assertTrue(all(v is not None for v in values), name)
 
     def test_quarterly_series_reconcile_with_the_full_year(self) -> None:
         """Every fourth quarter is `full year − nine months`, so the four
         quarters of each closed year have to add back to the filed annual."""
         years = self.annual["years"]
+        offset = self.periods.index(f"Q1 {years[0]}")
         for name, values in list(self.pn.items()) + list(self.q.items()):
             if name not in self.annual:
                 continue
             for position, year in enumerate(years):
-                self.assertEqual(
-                    sum(values[position * 4:position * 4 + 4]),
-                    self.annual[name][position],
-                    f"{year} {name}",
-                )
+                window = values[offset + position * 4:offset + position * 4 + 4]
+                if any(value is None for value in window):
+                    continue
+                self.assertEqual(sum(window), self.annual[name][position],
+                                 f"{year} {name}")
 
     def test_payment_network_and_vas_add_to_reported_net_revenue(self) -> None:
+        """Where the split exists it must close on the total that always exists.
+
+        Total net revenue is the income statement's first line and runs the
+        whole record; the two halves start at 2022Q1. The identity is asserted
+        exactly on the quarters that have both halves, and the quarters that do
+        not are pinned as holes rather than skipped silently.
+        """
+        checked = 0
         for index, period in enumerate(self.periods):
-            self.assertEqual(
-                self.pn["payment_network_net_revenue"][index]
-                + self.pn["value_added_services_net_revenue"][index],
-                self.pn["total_net_revenue"][index],
-                period,
-            )
+            network = self.pn["payment_network_net_revenue"][index]
+            vas = self.pn["value_added_services_net_revenue"][index]
+            if network is None or vas is None:
+                self.assertIsNone(network, period)
+                self.assertIsNone(vas, period)
+                self.assertIsNotNone(self.pn["total_net_revenue"][index], period)
+                continue
+            checked += 1
+            self.assertEqual(network + vas, self.pn["total_net_revenue"][index], period)
+        self.assertEqual(checked, WINDOW)
 
     def test_the_derived_rebate_reproduces_the_companys_published_growth(self) -> None:
         """The only external check the rebate series has.
@@ -136,7 +196,7 @@ class MaDashboardTest(unittest.TestCase):
         gross_leg, rebate_leg, vas_leg = (group["values"] for group in chart["groups"])
         self.assertEqual(len(gross_leg), WINDOW - 4)
         for offset in range(WINDOW - 4):
-            index = offset + 4
+            index = self.dis_from + offset + 4
             reported = (
                 self.pn["total_net_revenue"][index] - self.pn["total_net_revenue"][index - 4]
             )
@@ -187,9 +247,15 @@ class MaDashboardTest(unittest.TestCase):
         """The company publishes each assessment line's currency-neutral growth
         only for the quarter just reported, and 2022 predates the presentation,
         so the holes are the four 2022 quarters plus every fourth quarter."""
+        # Three reasons a cell is empty, and they are different reasons:
+        # before 2022Q1 the disaggregation does not exist at all; 2022 predates
+        # the currency-neutral presentation of it; and from 2023 the company
+        # gives these rates only for the quarter just reported, so each fourth
+        # quarter -- reported in the annual release -- has none.
         expected = {
             index for index, period in enumerate(self.periods)
-            if period.endswith("2022") or period.startswith("Q4")
+            if index < self.dis_from or period.endswith("2022")
+            or (index > self.dis_from + 4 and period.startswith("Q4"))
         }
         for name, values in self.source["assessment_currency_neutral_growth_pct"].items():
             self.assertEqual(
@@ -199,6 +265,7 @@ class MaDashboardTest(unittest.TestCase):
             )
         spread = next(ex for ex in self.exhibits if ex.get("ref") == "EX_SPREAD")
         for series in spread["series"]:
+            self.assertEqual(len(series["values"]), len(self.periods))
             self.assertEqual(
                 {index for index, value in enumerate(series["values"]) if value is None},
                 expected,
@@ -207,7 +274,7 @@ class MaDashboardTest(unittest.TestCase):
 
     def test_repurchase_price_is_the_two_filed_numbers_divided(self) -> None:
         per_share = self.source["per_share"]
-        latest = WINDOW - 1
+        latest = len(self.periods) - 1
         price = self.q["stock_repurchases"][latest] / per_share["shares_repurchased_m"][latest]
         self.assertAlmostEqual(price, 499.80, delta=0.01)
         current = next(

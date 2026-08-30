@@ -128,7 +128,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
     "amzn": 9, "avgo": 0, "axp": 5, "bc": 0, "cboe": 9, "cdns": 6, "cme": 14,
-    "cost": 7, "googl": 11, "ibkr": 0, "ma": 0, "mc": 0, "mco": 7, "meta": 10,
+    "cost": 7, "googl": 11, "ibkr": 0, "ma": 16, "mc": 0, "mco": 7, "meta": 10,
     "msci": 0, "msft": 8, "mu": 2, "ndaq": 8, "nke": 7, "nvda": 4, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 0, "skhynix": 0, "snps": 3,
     "spgi": 2, "tjx": 1, "tsm": 18, "v": 14,
@@ -253,6 +253,24 @@ CONVERTED = {
         "调整后摊薄 EPS（2 月那版）": "the deviation view of the February vintage.",
         "调整后摊薄 EPS（10 月那版）": "the deviation view of the October vintage.",
         "每一年的指引中值怎么被改到实际值上": "the same record again, as a revision path.",
+    },
+    "ma": {
+        # One floor, five charts. Mastercard's revenue disaggregation -- the four
+        # assessment lines and the payment-network / value-added-services split
+        # -- exists only from 2022Q1. No 10-Q from 2018Q1 to 2023Q3 and no 10-K
+        # from FY2018 to FY2025 carries those lines in its revenue note; no
+        # release from 2016 to 2022 disaggregates revenue at all; and 2016-2017
+        # has no revenue note, because ASC 606 was adopted modified-retrospective
+        # on 2018-01-01 and the earlier years were never restated. Everything
+        # else on this page -- income statement, balance sheet, cash flow, and
+        # the three key drivers -- does run from 2016Q1.
+        "净收入的同比增量拆成三条腿": "the rebate leg needs gross billings, which is the sum "
+                          "of the four assessment lines.",
+        "毛计费的同比增量": "same disaggregation floor.",
+        "返点占毛计费从": "same disaggregation floor.",
+        "返点占比的同比变化": "same disaggregation floor, one more year in for the "
+                      "year-on-year run-up.",
+        "四条计费线": "the four assessment lines themselves.",
     },
     "meta": {
         "收入指引兑现": "Meta published no quarterly revenue outlook range before the "

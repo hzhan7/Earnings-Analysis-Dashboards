@@ -56,6 +56,9 @@ DATA_DIR = ROOT / "data"
 WINDOW = 18
 # Four quarters of base are needed before any year-over-year line exists.
 YOY_FROM = 4
+# The disaggregation window is its own record, so its year-on-year run-up is
+# counted from its own start rather than from the page's.
+DIS_YOY_FROM = 4
 
 ASSESSMENT_LINES = (
     "domestic_assessments",
@@ -114,14 +117,33 @@ def build_payload(staging: dict) -> dict:
     crosscheck = staging["adjusted_margin_crosscheck"]
 
     net_revenue = pn["total_net_revenue"]
-    network_net = pn["payment_network_net_revenue"]
-    vas = pn["value_added_services_net_revenue"]
+
+    # ── Two windows on this page, and the split is a disclosure split ────────
+    # Everything on the income statement, the balance sheet, the cash flow and
+    # the three key drivers runs the whole record. The revenue *disaggregation*
+    # -- the four assessment lines, the payment-network and value-added-services
+    # split, and the per-line currency-neutral growth rates -- does not exist
+    # before 2022Q1 in any filing: Mastercard's revenue note carries none of
+    # those lines in any 10-Q from 2018Q1 to 2023Q3 or any 10-K from FY2018 to
+    # FY2025, no release in 2016-2022 disaggregates revenue at all, and 2016-2017
+    # has no revenue note (ASC 606 was adopted modified-retrospective on
+    # 2018-01-01). The repo's own 2022 quarters can only have come from the
+    # restated comparatives in the 2023 filings, which is where they start.
+    dis_from = next(index for index, value
+                    in enumerate(pn["payment_network_net_revenue"])
+                    if value is not None)
+    dis_labels = labels[dis_from:]
+    dis_periods = periods[dis_from:]
+    network_net = pn["payment_network_net_revenue"][dis_from:]
+    vas = pn["value_added_services_net_revenue"][dis_from:]
+    dis_net_revenue = net_revenue[dis_from:]
 
     # ── The one derived line the whole page rests on ─────────────────────────
     # Gross billings is the sum of the four printed assessment lines; the
     # payment network is printed net of rebates. The difference is therefore
     # the rebate, from two filed numbers and no estimate.
-    gross = [sum(pn[line][index] for line in ASSESSMENT_LINES) for index in range(len(periods))]
+    gross = [sum(pn[line][index] for line in ASSESSMENT_LINES)
+             for index in range(dis_from, len(periods))]
     rebates = [g - n for g, n in zip(gross, network_net)]
     rebate_ratio = [r / g * 100 for r, g in zip(rebates, gross)]
     ratio_change = increments(rebate_ratio)
@@ -132,8 +154,8 @@ def build_payload(staging: dict) -> dict:
     network_step = increments(network_net)
     rebate_step = increments(rebates)
     vas_step = increments(vas)
-    net_step = increments(net_revenue)
-    vas_share = [v / total * 100 for v, total in zip(vas, net_revenue)]
+    net_step = increments(dis_net_revenue)
+    vas_share = [v / total * 100 for v, total in zip(vas, dis_net_revenue)]
 
     # The company's own adjusted operating margin, rebuilt from filed lines:
     # its only operating-expense adjustments are the litigation provision (its
@@ -169,8 +191,12 @@ def build_payload(staging: dict) -> dict:
             q["prepaid_expense_cash_outflow"], q["amortization_of_customer_incentives"]
         )
     ]
+    # Mastercard bought back nothing in 2020Q2 -- the COVID suspension -- so the
+    # implied price is undefined there rather than zero. A zero would be drawn
+    # as "they paid nothing per share", which is a different and false claim.
     repurchase_price = [
-        cost / count for cost, count in zip(q["stock_repurchases"], ps["shares_repurchased_m"])
+        None if not count or cost is None else cost / count
+        for cost, count in zip(q["stock_repurchases"], ps["shares_repurchased_m"])
     ]
     total_debt = [
         short + long for short, long in zip(bs["short_term_debt"], bs["long_term_debt"])
@@ -220,10 +246,11 @@ def build_payload(staging: dict) -> dict:
     }
 
     plateau = [value for value in network_step[-7:]]
-    ratio_up = sum(1 for value in ratio_change[YOY_FROM:] if value > 0)
-    ratio_down = len(ratio_change) - YOY_FROM - ratio_up
+    ratio_up = sum(1 for value in ratio_change[DIS_YOY_FROM:] if value > 0)
+    ratio_down = len(ratio_change) - DIS_YOY_FROM - ratio_up
     latest = len(periods) - 1
-    worst_ratio_move = min(ratio_change[YOY_FROM:])
+    dis_latest = len(dis_periods) - 1
+    worst_ratio_move = min(ratio_change[DIS_YOY_FROM:])
 
     # Two "how long has this been true" counts the copy quotes; both are read
     # off the series rather than typed, so a new quarter cannot leave them stale.
@@ -257,10 +284,15 @@ def build_payload(staging: dict) -> dict:
     def source_note(detail: str) -> str:
         return f"{detail}；历史期同口径。自算项目均可在核对表中复核。"
 
+    # Three of the four run the whole record; the rebate ratio cannot, because
+    # its denominator is the revenue disaggregation. It is padded to the same
+    # axis rather than given a shorter one, so the four threshold charts stay
+    # comparable and the gap is visible instead of implied.
     tracked = {
         "单季回购金额": (q["stock_repurchases"], "f0c", "$M", "单季回购"),
         "回购隐含均价": (repurchase_price, "usd0", "$/股", "隐含均价 D"),
-        "返点占毛计费比率": (rebate_ratio, "pct1", "占毛计费", "返点占比 D"),
+        "返点占毛计费比率": ([None] * dis_from + rebate_ratio,
+                        "pct1", "占毛计费", "返点占比 D"),
         "年初至今经营现金流 / 净利润": (ytd_conversion, "pct1", "累计比率", "年初至今 OCF / 净利润 D"),
     }
 
@@ -272,6 +304,10 @@ def build_payload(staging: dict) -> dict:
                 continue
             values, fmt, ylab, actual_name = tracked[metric]
             side = "上方" if entry["direction"] == "up" else "下方"
+            reported = [value for value in values if value is not None]
+            unsafe = ((lambda value: value < entry["threshold"])
+                      if entry["direction"] == "up"
+                      else (lambda value: value > entry["threshold"]))
             charts.append(threshold_exhibit(
                 headline(entry),
                 labels,
@@ -332,7 +368,7 @@ def build_payload(staging: dict) -> dict:
             "actual",
             (
                 "正值 = 仍在安全侧。四条都过了，但本季移动的是另外两处："
-                f"返点占毛计费同比再升 {ratio_change[latest]:+.2f}pp，"
+                f"返点占毛计费同比再升 {ratio_change[dis_latest]:+.2f}pp，"
                 f"上半年经营现金流同比 {pct_change(sum(q['operating_cash_flow'][-2:]), sum(q['operating_cash_flow'][-6:-4])):.1f}%、"
                 f"净利润 {pct_change(sum(q['net_income'][-2:]), sum(q['net_income'][-6:-4])):+.1f}%。"
                 "<b>上季五条阈值全部落在损益表和外部环境上，没有一条指向现金流量表</b>，"
@@ -397,16 +433,16 @@ def build_payload(staging: dict) -> dict:
             "ref": "EX_LEGS",
             "kind": "grouped_bars",
             "title": (
-                f"净收入的同比增量拆成三条腿：毛计费 +${gross_step[latest]:,.0f}M、"
-                f"返点 −${rebate_step[latest]:,.0f}M、增值服务 +${vas_step[latest]:,.0f}M"
+                f"净收入的同比增量拆成三条腿：毛计费 +${gross_step[dis_latest]:,.0f}M、"
+                f"返点 −${rebate_step[dis_latest]:,.0f}M、增值服务 +${vas_step[dis_latest]:,.0f}M"
             ),
-            "xlabels": labels[YOY_FROM:],
+            "xlabels": dis_labels[DIS_YOY_FROM:],
             "xrot": 90,
             "groups": [
-                {"name": "毛计费腿", "color": "NAVY", "values": rounded(gross_step[YOY_FROM:])},
+                {"name": "毛计费腿", "color": "NAVY", "values": rounded(gross_step[DIS_YOY_FROM:])},
                 {"name": "返点腿", "color": "RED",
-                 "values": rounded([-value for value in rebate_step[YOY_FROM:]])},
-                {"name": "增值服务腿", "color": "GOLD", "values": rounded(vas_step[YOY_FROM:])},
+                 "values": rounded([-value for value in rebate_step[DIS_YOY_FROM:]])},
+                {"name": "增值服务腿", "color": "GOLD", "values": rounded(vas_step[DIS_YOY_FROM:])},
             ],
             "bar_labels": False,
             "fmt": "f0c",
@@ -415,12 +451,12 @@ def build_payload(staging: dict) -> dict:
             "note": (
                 "这不是估计，是恒等式：净收入 = 四条计费线合计 − 返点 + 增值服务，"
                 "所以同比增量<b>恰好</b>等于三条腿之和，"
-                f"本季 ${gross_step[latest]:,.0f} − ${rebate_step[latest]:,.0f} + "
-                f"${vas_step[latest]:,.0f} = ${net_step[latest]:,.0f}M，与申报的净收入增量一分不差。"
+                f"本季 ${gross_step[dis_latest]:,.0f} − ${rebate_step[dis_latest]:,.0f} + "
+                f"${vas_step[dis_latest]:,.0f} = ${net_step[dis_latest]:,.0f}M，与申报的净收入增量一分不差。"
                 f"<b>读数：</b>返点腿吃掉了毛计费腿的 "
-                f"{rebate_step[latest] / gross_step[latest] * 100:.0f}%，"
-                f"剩给支付网络的只有 ${network_step[latest]:,.0f}M；"
-                f"净增量里 {vas_step[latest] / net_step[latest] * 100:.0f}% 来自增值服务，"
+                f"{rebate_step[dis_latest] / gross_step[dis_latest] * 100:.0f}%，"
+                f"剩给支付网络的只有 ${network_step[dis_latest]:,.0f}M；"
+                f"净增量里 {vas_step[dis_latest] / net_step[dis_latest] * 100:.0f}% 来自增值服务，"
                 "而增值服务不承担返点。"
             ),
             "src_extra": source_filings,
@@ -429,14 +465,14 @@ def build_payload(staging: dict) -> dict:
             "ref": "EX_PLATEAU",
             "kind": "lines",
             "title": (
-                f"毛计费的同比增量从 ${gross_step[YOY_FROM]:,.0f}M 涨到 ${gross_step[latest]:,.0f}M，"
+                f"毛计费的同比增量从 ${gross_step[DIS_YOY_FROM]:,.0f}M 涨到 ${gross_step[dis_latest]:,.0f}M，"
                 f"落到净支付网络收入的增量连续七季卡在 ${min(plateau):,.0f}–${max(plateau):,.0f}M"
             ),
-            "xlabels": labels[YOY_FROM:],
+            "xlabels": dis_labels[DIS_YOY_FROM:],
             "xrot": 90,
             "series": [
-                {"name": "毛计费同比增量", "values": rounded(gross_step[YOY_FROM:]), "color": "NAVY"},
-                {"name": "净支付网络收入同比增量", "values": rounded(network_step[YOY_FROM:]), "color": "GOLD"},
+                {"name": "毛计费同比增量", "values": rounded(gross_step[DIS_YOY_FROM:]), "color": "NAVY"},
+                {"name": "净支付网络收入同比增量", "values": rounded(network_step[DIS_YOY_FROM:]), "color": "GOLD"},
             ],
             "fmt": "f0c",
             "yfmt": "f0c",
@@ -446,11 +482,11 @@ def build_payload(staging: dict) -> dict:
             "ylab": "$M vs 去年同期",
             "note": (
                 "<b>这是全页最要紧的一张。</b>两条线之间的缺口就是返点腿。"
-                f"毛计费的年增量从 {labels[YOY_FROM]} 到本季增加了 "
-                f"{pct_change(gross_step[latest], gross_step[YOY_FROM]):.0f}%，"
+                f"毛计费的年增量从 {dis_labels[DIS_YOY_FROM]} 到本季增加了 "
+                f"{pct_change(gross_step[dis_latest], gross_step[DIS_YOY_FROM]):.0f}%，"
                 "而它落到净收入上的部分几乎没有动："
-                + "、".join(f"{labels[index]} ${network_step[index]:,.0f}M"
-                           for index in range(len(periods) - 7, len(periods)))
+                + "、".join(f"{dis_labels[index]} ${network_step[index]:,.0f}M"
+                           for index in range(len(dis_periods) - 7, len(dis_periods)))
                 + "。多计的费全部被返点接走了，所以「跨境计费同比 +20%」这类数字"
                 "在毛口径上成立，在净口径上不成立。"
             ),
@@ -460,10 +496,11 @@ def build_payload(staging: dict) -> dict:
             "ref": "EX_RATIO",
             "kind": "gs_line",
             "title": (
-                f"返点占毛计费从 {rebate_ratio[0]:.1f}% 升到 {rebate_ratio[latest]:.1f}%，"
-                f"峰值 {max(rebate_ratio):.1f}% 出现在 {labels[rebate_ratio.index(max(rebate_ratio))]}"
+                f"返点占毛计费从 {rebate_ratio[0]:.1f}% 升到 {rebate_ratio[dis_latest]:.1f}%，"
+                f"峰值 {max(rebate_ratio):.1f}% 出现在 "
+                f"{dis_labels[rebate_ratio.index(max(rebate_ratio))]}"
             ),
-            "xlabels": labels,
+            "xlabels": dis_labels,
             "xrot": 90,
             "values": rounded(rebate_ratio),
             "legend": "返点 / 毛计费 D",
@@ -474,13 +511,13 @@ def build_payload(staging: dict) -> dict:
             "note": (
                 "分子分母是同一季、同一币种的两个申报数相减与相除，所以这条线不受汇率影响，"
                 "也不需要固定汇率口径。"
-                f"本季环比 {rebate_ratio[latest] - rebate_ratio[latest - 1]:+.2f}pp 是记录里少见的回落，"
+                f"本季环比 {rebate_ratio[dis_latest] - rebate_ratio[dis_latest - 1]:+.2f}pp 是记录里少见的回落，"
                 "但管理层在电话会上已经预告下季这个比例会环比再升。"
                 f"可比的 {ratio_up + ratio_down} 次同比里只有一次下降（见下一张）。"
             ),
             "src_extra": source_filings + (
                 "公司自己在业绩发布里说本季返点同比 +22%，本页的减法给出 "
-                f"{pct_change(rebates[latest], rebates[latest - 4]):+.1f}%；"
+                f"{pct_change(rebates[dis_latest], rebates[dis_latest - 4]):+.1f}%；"
                 "六个月口径公司说 +22%、减法给出 +22.5%，四舍五入后一致。"
             ),
         },
@@ -491,9 +528,9 @@ def build_payload(staging: dict) -> dict:
                 f"返点占比的同比变化：{ratio_up + ratio_down} 个可比季里 {ratio_up} 次上升，"
                 f"唯一一次下降只有 {abs(worst_ratio_move):.2f}pp"
             ),
-            "xlabels": labels[YOY_FROM:],
+            "xlabels": dis_labels[DIS_YOY_FROM:],
             "xrot": 90,
-            "values": rounded(ratio_change[YOY_FROM:]),
+            "values": rounded(ratio_change[DIS_YOY_FROM:]),
             "legend": "返点占比同比变化",
             "positive_label": "返点更重",
             "negative_label": "返点更轻",
@@ -548,11 +585,13 @@ def build_payload(staging: dict) -> dict:
             "ref": "EX_MIX",
             "kind": "gs_bar",
             "title": (
-                f"增值服务已占净收入 {vas_share[latest]:.1f}%，"
-                f"十八季前是 {vas_share[0]:.1f}%"
+                f"增值服务已占净收入 {vas_share[dis_latest]:.1f}%，"
+                f"{len(dis_periods)} 季前是 {vas_share[0]:.1f}%；"
+                f"柱子回到 {labels[0]}，占比那条线回不到"
             ),
             "xlabels": labels,
             "xrot": 90,
+            "xstep": 4,
             "values": net_revenue,
             "legend": "净收入",
             "fmt": "f0c",
@@ -562,14 +601,17 @@ def build_payload(staging: dict) -> dict:
             "ylab2": "增值服务占比",
             "yoy": {
                 "name": "增值服务 / 净收入 (RHS) D",
-                "values": rounded(vas_share),
+                "values": [None] * dis_from + rounded(vas_share),
                 "color": "GOLD",
                 "yfmt": "pct1",
             },
             "note": (
-                f"增值服务本季 ${vas[latest]:,}M、同比 {pct_change(vas[latest], vas[latest - 4]):+.1f}%（"
+                f"增值服务本季 ${vas[dis_latest]:,}M、同比 {pct_change(vas[dis_latest], vas[dis_latest - 4]):+.1f}%（"
                 f"公司口径固定汇率 +{snapshot['currency_neutral_growth_pct']['value_added_services']}%），"
                 "而且 10-Q 明确其中收购与处置的贡献是<b>轻微负值</b>，即增速全部是内生的。"
+                "<b>柱子有 42 季，金色那条只有 18 季 —— 那不是缺数据。</b>"
+                "净收入是损益表第一行，公司一直在印；把它拆成支付网络与增值服务两半，"
+                "则是 2022Q1 才开始的披露。"
                 "这条线之所以关键，是因为增值服务不进返点的分母也不进它的分子："
                 "它是公司唯一一块收入不必先经过发卡行分成的业务。"
             ),
@@ -706,14 +748,19 @@ def build_payload(staging: dict) -> dict:
         {
             "kind": "lines",
             "title": (
-                f"两条腿的十八季：支付网络净收入 ${network_net[latest]:,}M、"
-                f"增值服务 ${vas[latest]:,}M，两者的同比增速差已连续 {gap_run} 季在 8pp 以上"
+                f"两条腿的 {len(dis_periods)} 季：支付网络净收入 ${network_net[dis_latest]:,}M、"
+                f"增值服务 ${vas[dis_latest]:,}M，两者的同比增速差已连续 {gap_run} 季在 8pp 以上"
             ),
             "xlabels": labels,
             "xrot": 90,
+            "xstep": 4,
             "series": [
-                {"name": "支付网络净收入", "values": network_net, "color": "NAVY"},
-                {"name": "增值服务与解决方案净收入", "values": vas, "color": "GOLD"},
+                {"name": "净收入（合计，回到 2016Q1）",
+                 "values": rounded(net_revenue), "color": "GRAY"},
+                {"name": "支付网络净收入",
+                 "values": [None] * dis_from + rounded(network_net), "color": "NAVY"},
+                {"name": "增值服务与解决方案净收入",
+                 "values": [None] * dis_from + rounded(vas), "color": "GOLD"},
             ],
             "fmt": "f0c",
             "yfmt": "f0c",
@@ -722,8 +769,11 @@ def build_payload(staging: dict) -> dict:
             "end_label": True,
             "ylab": "$M",
             "note": (
-                f"支付网络本季同比 {network_yoy[latest]:+.1f}%，增值服务 "
-                f"{pct_change(vas[latest], vas[latest - 4]):+.1f}%。"
+                f"支付网络本季同比 {network_yoy[dis_latest]:+.1f}%，增值服务 "
+                f"{pct_change(vas[dis_latest], vas[dis_latest - 4]):+.1f}%。"
+                "<b>灰线是两条腿的合计，它回到 2016Q1；两条腿本身回不到。</b>"
+                "净收入是损益表第一行，一直在印；把它劈成这两半是 2022Q1 起才有的披露，"
+                "所以这张图上灰线比两条彩色线长 24 格。"
                 "支付网络那条每年第四季都会回落一格——第四季返点最重，"
                 "这是这家公司的季节性，不是异常。"
                 "两条线从 2022 年第一季起可比：新口径在 2023 年第一季启用，"
@@ -862,15 +912,20 @@ def build_payload(staging: dict) -> dict:
             "kind": "lines",
             "title": (
                 f"四条计费线：跨境本季 ${pn['cross_border_assessments'][latest]:,}M，"
-                f"十八季前只有 ${pn['cross_border_assessments'][0]:,}M"
+                f"{len(dis_periods)} 季前只有 "
+                f"${pn['cross_border_assessments'][dis_from]:,}M"
             ),
-            "xlabels": labels,
+            "xlabels": dis_labels,
             "xrot": 90,
             "series": [
-                {"name": "交易处理计费", "values": pn["transaction_processing_assessments"], "color": "NAVY"},
-                {"name": "跨境计费", "values": pn["cross_border_assessments"], "color": "MBLUE"},
-                {"name": "境内计费", "values": pn["domestic_assessments"], "color": "GOLD"},
-                {"name": "其他网络计费", "values": pn["other_network_assessments"], "color": "GRAY"},
+                {"name": "交易处理计费",
+                 "values": pn["transaction_processing_assessments"][dis_from:], "color": "NAVY"},
+                {"name": "跨境计费",
+                 "values": pn["cross_border_assessments"][dis_from:], "color": "MBLUE"},
+                {"name": "境内计费",
+                 "values": pn["domestic_assessments"][dis_from:], "color": "GOLD"},
+                {"name": "其他网络计费",
+                 "values": pn["other_network_assessments"][dis_from:], "color": "GRAY"},
             ],
             "fmt": "f0c",
             "yfmt": "f0c",
@@ -884,6 +939,11 @@ def build_payload(staging: dict) -> dict:
                 f"${pn['domestic_assessments'][latest]:,}M。"
                 "四条线合计就是上面那些图的分母，它们全部印在 10-Q 里；"
                 "唯一不印的是把它们变成净收入的那一步。"
+                "<b>这四条线只能回到 2022Q1，本页其余多数图回到 2016Q1。</b>"
+                "这不是没取：2016–2017 年的申报里根本没有收入附注"
+                "（ASC 606 于 2018-01-01 采用、之前不重述），"
+                "2018Q1–2023Q3 每一份 10-Q 与 FY2018–FY2025 每一份 10-K 的收入附注里"
+                "也从来没有这四条线，2016–2022 年没有一份新闻稿拆过收入。"
             ),
             "src_extra": source_filings,
         },
@@ -893,19 +953,19 @@ def build_payload(staging: dict) -> dict:
     first_table = len(exhibits) + 2
 
     revenue_rows = []
-    for index, period in enumerate(periods):
+    for index, period in enumerate(dis_periods):
         revenue_rows.append([
             period,
-            f"${pn['domestic_assessments'][index]:,}M",
-            f"${pn['cross_border_assessments'][index]:,}M",
-            f"${pn['transaction_processing_assessments'][index]:,}M",
-            f"${pn['other_network_assessments'][index]:,}M",
+            f"${pn['domestic_assessments'][dis_from + index]:,}M",
+            f"${pn['cross_border_assessments'][dis_from + index]:,}M",
+            f"${pn['transaction_processing_assessments'][dis_from + index]:,}M",
+            f"${pn['other_network_assessments'][dis_from + index]:,}M",
             f"${gross[index]:,}M D",
             f"${rebates[index]:,}M D",
             f"{rebate_ratio[index]:.2f}% D",
             f"${network_net[index]:,}M",
             f"${vas[index]:,}M",
-            f"${net_revenue[index]:,}M",
+            f"${dis_net_revenue[index]:,}M",
         ])
 
     cash_rows = []
@@ -920,7 +980,8 @@ def build_payload(staging: dict) -> dict:
             f"${free_cash_flow[index]:,}M D",
             f"${q['stock_repurchases'][index]:,}M",
             f"{ps['shares_repurchased_m'][index]:.1f}M",
-            f"${repurchase_price[index]:,.0f} D",
+            ("—" if repurchase_price[index] is None
+             else f"${repurchase_price[index]:,.0f} D"),
             f"${q['dividends_paid'][index]:,}M",
             f"${total_debt[index]:,}M D",
         ])
@@ -1033,12 +1094,12 @@ def build_payload(staging: dict) -> dict:
             "金额单位为 $M，另有注明除外"
         ),
         "headline": (
-            f"账单在加速，留下的钱没有：毛计费 ${gross[latest]:,}M、同比 "
-            f"{signed(gross_yoy[latest])}，而净支付网络收入只有 {signed(network_yoy[latest])}——"
-            f"返点占毛计费 {rebate_ratio[latest]:.2f}%，"
+            f"账单在加速，留下的钱没有：毛计费 ${gross[dis_latest]:,}M、同比 "
+            f"{signed(gross_yoy[dis_latest])}，而净支付网络收入只有 {signed(network_yoy[dis_latest])}——"
+            f"返点占毛计费 {rebate_ratio[dis_latest]:.2f}%，"
             f"{ratio_up + ratio_down} 个可比季里 {ratio_up} 次同比走高。"
             f"毛计费的年增量从 {labels[YOY_FROM]} 起涨了 "
-            f"{pct_change(gross_step[latest], gross_step[YOY_FROM]):.0f}%，"
+            f"{pct_change(gross_step[dis_latest], gross_step[DIS_YOY_FROM]):.0f}%，"
             f"落到净收入上的部分连续七季卡在 ${min(plateau):,.0f}–${max(plateau):,.0f}M。"
             f"同期上半年经营现金流同比 "
             f"{pct_change(sum(q['operating_cash_flow'][-2:]), sum(q['operating_cash_flow'][-6:-4])):.1f}%"
@@ -1049,11 +1110,11 @@ def build_payload(staging: dict) -> dict:
         "brief": (
             '<h4>本季三条主线</h4><div class="takeaway-grid">'
             '<article><span>结构</span><b>返点吃掉了多收的费</b>'
-            f'<p>毛计费同比增量 ${gross_step[latest]:,.0f}M，返点腿 −${rebate_step[latest]:,.0f}M，'
-            f'净支付网络收入只多了 ${network_step[latest]:,.0f}M。</p></article>'
+            f'<p>毛计费同比增量 ${gross_step[dis_latest]:,.0f}M，返点腿 −${rebate_step[dis_latest]:,.0f}M，'
+            f'净支付网络收入只多了 ${network_step[dis_latest]:,.0f}M。</p></article>'
             '<article><span>亮点</span><b>增值服务撑起过半增量</b>'
-            f'<p>${vas[latest]:,}M、占净收入 {vas_share[latest]:.1f}%，'
-            f'贡献了净收入同比增量的 {vas_step[latest] / net_step[latest] * 100:.0f}%，'
+            f'<p>${vas[dis_latest]:,}M、占净收入 {vas_share[dis_latest]:.1f}%，'
+            f'贡献了净收入同比增量的 {vas_step[dis_latest] / net_step[dis_latest] * 100:.0f}%，'
             '且不承担返点。</p></article>'
             '<article><span>存疑</span><b>现金转化与杠杆同向恶化</b>'
             f'<p>上半年 OCF / 净利润 {ytd_conversion[latest]:.1f}%（上年 '
