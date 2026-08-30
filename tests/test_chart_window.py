@@ -131,7 +131,7 @@ REACH_2016 = {
     "cost": 7, "googl": 1, "ibkr": 0, "ma": 0, "mc": 0, "mco": 0, "meta": 10,
     "msci": 0, "msft": 3, "mu": 2, "ndaq": 8, "nke": 7, "nvda": 4, "pm": 4,
     "race": 9, "rms": 0, "samsung": 0, "schw": 0, "skhynix": 0, "snps": 3,
-    "spgi": 2, "tjx": 1, "tsm": 18, "v": 4,
+    "spgi": 2, "tjx": 1, "tsm": 18, "v": 14,
 }
 
 # Pages whose migration is finished. For these the strict rule applies: every
@@ -139,6 +139,18 @@ REACH_2016 = {
 # that stops it. An entry that no longer matches a short exhibit fails too --
 # otherwise the list would slowly fill with excuses for charts that were fixed.
 CONVERTED = {
+    "v": {
+        # Visa adopted ASC 606 with the fiscal 2019 first quarter and published
+        # its first disaggregation-of-revenue note in the 10-Q filed
+        # 2019-01-31. The twelve quarterly filings from 2016-01-28 through
+        # 2018-07-27 carry a geographic breakdown of long-lived *assets* and
+        # nothing else -- there is no US / international split of revenue to
+        # read, in any of them, on any basis. So this one exhibit floors at the
+        # disclosure, not at the window.
+        "美国以外贡献净收入": "revenue by geography begins with Visa's first ASC 606 "
+                       "disaggregation note (10-Q filed 2019-01-31); the earlier "
+                       "10-Qs disaggregate long-lived assets, not revenue.",
+    },
     "meta": {
         "收入指引兑现": "Meta published no quarterly revenue outlook range before the "
                   "2022Q1 release; the record starts where the guidance does.",

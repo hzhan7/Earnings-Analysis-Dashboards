@@ -156,22 +156,45 @@ class VDashboardTest(unittest.TestCase):
         self.assertEqual(geo["quarters"][0], "Q4 2018")
 
     # ── the only filed forward number Visa ever repeated ─────────────────────
-    def test_the_incentive_guidance_record_is_four_fiscal_years(self) -> None:
+    def test_the_incentive_guidance_record_runs_from_the_first_computable_year(self) -> None:
+        """Eight years, and the floor is the *series*, not the guidance.
+
+        The page shipped four years for a long time. The metric was guided from
+        fiscal 2013: the four earlier releases were read one by one (each
+        accession is in the record below). The reason the record stops at 2013
+        is that ``revenue_lines_usd_m`` starts at FY2013Q1, so FY2012 has no
+        delivered rate that can be computed the same way -- a series floor, not
+        a disclosure floor, and the two are worth keeping apart.
+        """
         entries = self.source["incentive_guidance"]["entries"]
         self.assertEqual([entry["fiscal_year"] for entry in entries],
-                         [2017, 2018, 2019, 2020])
+                         [2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020])
+        first_fiscal_quarter = self.lines["fiscal_labels"][0]
+        self.assertEqual(first_fiscal_quarter, "FY2013Q1")
         for entry in entries:
             self.assertLess(entry["lo"], entry["hi"], entry["fiscal_year"])
             self.assertIsNotNone(entry["actual_pct"])
-            self.assertTrue(entry["accession"].startswith("00014031610")
-                            or entry["accession"].startswith("0001403161"))
+            # Two filer prefixes, not one: Visa filed through an agent
+            # (0001193125) up to and including the fiscal 2016 outlook and
+            # self-filed (0001403161) from the fiscal 2017 one on. Pinning the
+            # 0001403161 prefix -- which is what this assertion used to do --
+            # would reject every year added below 2017 for a reason that has
+            # nothing to do with the numbers.
+            self.assertRegex(entry["accession"], r"^\d{10}-\d{2}-\d{6}$")
+            self.assertIn(entry["accession"][:10], {"0001403161", "0001193125"})
+            self.assertTrue(entry["file"].endswith(".htm"), entry["fiscal_year"])
 
-    def test_three_of_four_guided_years_landed_below_the_guided_floor(self) -> None:
-        """The finding, pinned by value.
+    def test_the_verdicts_survive_the_longer_window(self) -> None:
+        """The finding, pinned by value, on all eight years.
 
         Below the floor is the GOOD direction here: a lower rate means Visa gave
         back less of its gross revenue than it had told the market it would. If
         a future rebuild flips any of these verdicts the headline is wrong.
+
+        The claim the page makes -- never above the ceiling -- was true on four
+        years and is still true on eight. That is the reason it is worth
+        printing; the two new "inside" years are the reason it is worth
+        re-deriving rather than carrying forward.
         """
         entries = self.source["incentive_guidance"]["entries"]
         verdicts = [
@@ -179,8 +202,95 @@ class VDashboardTest(unittest.TestCase):
             else "above" if entry["actual_pct"] > entry["hi"] else "inside"
             for entry in entries
         ]
-        self.assertEqual(verdicts, ["below", "below", "below", "inside"])
+        self.assertEqual(verdicts, ["below", "inside", "below", "inside",
+                                    "below", "below", "below", "inside"])
         self.assertNotIn("above", verdicts)
+
+    def test_every_delivered_rate_is_recomputable_from_the_quarterly_series(self) -> None:
+        """The stored actual is not an independent number -- so check it isn't.
+
+        Four of these eight entries were archived long before this window was
+        extended, with their own gross-revenue and incentive totals. Summing the
+        four fiscal quarters out of ``revenue_lines_usd_m`` reproduces all four
+        to the cent, which is what licenses computing the other four the same
+        way instead of re-keying them out of four more 10-Ks.
+        """
+        lines = self.lines
+        totals: dict[str, list] = {}
+        for label, gross, incentives in zip(lines["fiscal_labels"],
+                                            lines["gross_revenue"],
+                                            lines["client_incentives"]):
+            bucket = totals.setdefault(label[:6], [0.0, 0.0, 0])
+            bucket[0] += gross
+            bucket[1] += incentives
+            bucket[2] += 1
+        for entry in self.source["incentive_guidance"]["entries"]:
+            gross, incentives, quarters = totals["FY%d" % entry["fiscal_year"]]
+            self.assertEqual(quarters, 4, entry["fiscal_year"])
+            self.assertAlmostEqual(gross, entry["gross_revenue_usd_m"], places=6)
+            self.assertAlmostEqual(incentives, entry["client_incentives_usd_m"],
+                                   places=6)
+            self.assertAlmostEqual(abs(incentives) / gross * 100,
+                                   entry["actual_pct"], places=6)
+
+    def test_the_fiscal_2016_basis_break_does_not_decide_that_year(self) -> None:
+        """The one year in the new stretch where the two legs disagree.
+
+        The FY2016 outlook says in the release itself that it excludes any Visa
+        Europe impact; the delivered rate includes Visa Europe from the fourth
+        fiscal quarter on. That is a real break and the note says so. What makes
+        it publishable rather than misleading is that the verdict does not turn
+        on it: drop the contaminated quarter and the three clean quarters land
+        inside the same band.
+        """
+        record = self.source["incentive_guidance"]
+        broken = [entry for entry in record["entries"] if "basis_break" in entry]
+        self.assertEqual([entry["fiscal_year"] for entry in broken], [2016])
+        entry, = broken
+        break_ = entry["basis_break"]
+
+        # The clean legs are recomputed here, not read: the stored ones are the
+        # claim under test.
+        lines = self.lines
+        clean = [index for index, label in enumerate(lines["fiscal_labels"])
+                 if label.startswith("FY2016")
+                 and label != break_["excluded_fiscal_quarter"]]
+        self.assertEqual(len(clean), break_["clean_quarters"])
+        gross = sum(lines["gross_revenue"][index] for index in clean)
+        incentives = sum(lines["client_incentives"][index] for index in clean)
+        self.assertAlmostEqual(gross, break_["clean_gross_revenue_usd_m"], places=6)
+        self.assertAlmostEqual(incentives, break_["clean_client_incentives_usd_m"],
+                               places=6)
+        clean_rate = abs(incentives) / gross * 100
+        self.assertAlmostEqual(clean_rate, break_["clean_actual_pct"], places=6)
+
+        # The break is real -- the two rates differ -- and it does not decide
+        # the year, which is the only thing that makes the year publishable.
+        self.assertNotAlmostEqual(clean_rate, entry["actual_pct"], places=2)
+        both_inside = all(entry["lo"] <= rate <= entry["hi"]
+                          for rate in (clean_rate, entry["actual_pct"]))
+        self.assertEqual(break_["verdict_unchanged"], both_inside)
+        self.assertTrue(both_inside)
+
+    def test_the_deviation_headline_counts_instead_of_asserting(self) -> None:
+        """The specific way this exhibit was wrong before, made unrepeatable.
+
+        The published title read "four years, all negative" while FY2020's
+        deviation was +0.37pp. Nothing measured it: the average beside it was
+        derived and correct, the count next to it was typed. Two of the eight
+        deviations are positive now, so a title that says they are all negative
+        cannot be produced by counting.
+        """
+        entries = self.source["incentive_guidance"]["entries"]
+        gaps = [entry["actual_pct"] - (entry["lo"] + entry["hi"]) / 2
+                for entry in entries]
+        negative = sum(1 for gap in gaps if gap < 0)
+        self.assertEqual(negative, 6)
+        self.assertEqual(len(gaps) - negative, 2)
+        title = next(ex["title"] for ex in self.exhibits
+                     if ex["title"].startswith("实际激励率相对指引中值的偏离"))
+        self.assertIn("%d 年里 %d 年为负" % (len(gaps), negative), title)
+        self.assertNotIn("全部为负", title)
 
     def test_the_guided_rate_was_abandoned_and_the_rate_kept_rising(self) -> None:
         record = self.source["incentive_guidance"]

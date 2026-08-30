@@ -70,6 +70,13 @@ DATA_DIR = ROOT / "data"
 # One tick per year keeps the 55-quarter and 40-quarter axes readable.
 LONG_STEP = 4
 
+# The site's window starts 2016Q1. `revenue_lines_usd_m` runs from Q4 2012, so
+# the charts that used to take a hand-picked tail of 13 take this instead --
+# one number, derived from the target rather than typed next to each chart.
+def window_from_2016(staging: dict) -> int:
+    quarters = staging["revenue_lines_usd_m"]["quarters"]
+    return len(quarters) - quarters.index("Q1 2016")
+
 
 def compact_period(period: str) -> str:
     """``'Q2 2026'`` → ``'Q2'26'``."""
@@ -143,7 +150,11 @@ def incentive_guidance_charts(staging: dict) -> tuple[list[dict], dict]:
 
     ``Client incentives as a percent of gross revenues`` appeared as a numeric
     range in the "Financial Outlook" block of the release that opened each
-    fiscal year from 2017 through 2020, and nowhere since. Both legs are filed:
+    fiscal year from 2013 through 2020, and nowhere since.  The floor is the
+    quarterly series, not the guidance: gross revenue and the incentive line
+    start at FY2013Q1, so FY2013 is the first year whose delivered rate can be
+    computed on the same basis as the four the page used to show.  Both legs
+    are filed:
     the guided range from the release, the delivered rate from that year's 10-K
     revenue note (four gross lines and the contra line, disclosed separately).
     """
@@ -154,9 +165,26 @@ def incentive_guidance_charts(staging: dict) -> tuple[list[dict], dict]:
     high = [entry["hi"] for entry in entries]
     actual = [entry["actual_pct"] for entry in entries]
 
+    # The one year whose two legs sit on different bases, written from the
+    # record rather than typed beside it -- if a second one is ever added this
+    # sentence grows by itself instead of going quietly out of date.
+    breaks = "".join(
+        f"<b>FY{entry['fiscal_year']} 有一处口径断点。</b>"
+        + entry["basis_break"]["what"]
+        + f"剔除该季后的 {entry['basis_break']['clean_quarters']} 季比率为 "
+        + f"{entry['basis_break']['clean_actual_pct']:.2f}%，全年为 "
+        + f"{entry['actual_pct']:.2f}%，"
+        + ("两者落在同一侧，所以这一年的判定不依赖那个断点。"
+           if entry["basis_break"]["verdict_unchanged"]
+           else "<b>两者的判定不同，这一年只能当作存疑</b>。")
+        for entry in entries if "basis_break" in entry
+    )
+
     below = [index for index, value in enumerate(actual) if value < low[index]]
     inside = [index for index, value in enumerate(actual)
               if low[index] <= value <= high[index]]
+    above = [index for index, value in enumerate(actual) if value > high[index]]
+    assert len(below) + len(inside) + len(above) == len(actual)
 
     band = delivery_band(
         "EX_INC_BAND", "客户激励率", labels, low, high, actual,
@@ -169,9 +197,13 @@ def incentive_guidance_charts(staging: dict) -> tuple[list[dict], dict]:
         ),
         extra_note=(
             f"<b>方向要读反过来</b>：这条线低于区间是<b>好事</b> —— 返给客户的钱比承诺的少。"
-            f"四年里 {len(below)} 年跌破下限、{len(inside)} 年落在区间内，"
-            "<b>没有一年高于上限</b>。"
+            f"{len(entries)} 年里 {len(below)} 年跌破下限、{len(inside)} 年落在区间内、"
+            f"{len(above)} 年高于上限。"
             "Visa 在自己愿意给数字的那些年里，从没有超发过激励。"
+            "<b>这个结论把窗口从四年拉到八年之后仍然成立</b> —— "
+            "新接进来的 FY2013–FY2016 里最大的一次是 FY2013 的 "
+            f"{min(actual[index] - low[index] for index in below):+.2f}pp，方向仍然是少发。"
+            + breaks
         ),
     )
 
@@ -180,7 +212,8 @@ def incentive_guidance_charts(staging: dict) -> tuple[list[dict], dict]:
         "ref": "EX_INC_DEV",
         "kind": "grouped_bars",
         "title": (
-            f"实际激励率相对指引中值的偏离：四年全部为负，平均 "
+            f"实际激励率相对指引中值的偏离："
+            f"{len(entries)} 年里 {sum(1 for value in gap if value < 0)} 年为负，平均 "
             f"{sum(gap) / len(gap):+.2f}pp"
         ),
         "xlabels": labels,
@@ -196,6 +229,10 @@ def incentive_guidance_charts(staging: dict) -> tuple[list[dict], dict]:
         "note": (
             "负值 = 激励率低于公司自己给的中值，即少返给客户、多留给自己。"
             f"最大的一次是 {labels[gap.index(min(gap))]} 的 {min(gap):+.2f}pp。"
+            f"<b>本页此前只画 FY2017–FY2020 四年，并印着「四年全部为负」——"
+            f"那句话当时就是错的</b>，FY2020 的偏离是 "
+            f"{gap[[entry['fiscal_year'] for entry in entries].index(2020)]:+.2f}pp，"
+            "为正。八年的窗口里为正的有两年。"
             "<b>然后这条指引就消失了。</b>"
             f"公司在 FY{record['stopped_after_fiscal_year']} 之后再没有给过这个数字，"
             "而同一个比率在其后六年里继续往上走 —— 见第四节的长序列。"
@@ -463,7 +500,7 @@ def escrow_exhibit(staging: dict) -> dict:
 
 def quarter_revenue_lines(staging: dict) -> dict:
     lines = staging["revenue_lines_usd_m"]
-    window = 13
+    window = window_from_2016(staging)
     labels = [compact_period(period) for period in lines["quarters"][-window:]]
     def yoy(key):
         values = lines[key]
@@ -481,6 +518,7 @@ def quarter_revenue_lines(staging: dict) -> dict:
         ),
         "xlabels": labels,
         "xrot": 90,
+        "xstep": LONG_STEP,
         "series": [
             {"name": "Service", "values": rounded(service), "color": "NAVY"},
             {"name": "Data processing", "values": rounded(dp), "color": "BLUE"},
@@ -501,6 +539,10 @@ def quarter_revenue_lines(staging: dict) -> dict:
             "口径能对齐的那一半在申报文件里，另一半（分季支付额的绝对金额）不在，"
             "详见「口径与方法说明」里的不接入清单。"
             f"International transaction 本季 {intl[-1]:+.1f}%，是四条线里唯一进入个位数的一条。"
+            f"<b>十年的窗口里这四条同时为负过一次</b>："
+            f"2020 年的疫情季，最低一格是 {min(min(service), min(dp), min(intl), min(other)):+.0f}%。"
+            "除那一段之外，四条线的排序换过多次 —— 今天 Other 在最上面，"
+            "而 2016 到 2019 年它长期在最下面。"
         ),
         "src_extra": "各季 10-Q / 10-K 收入分解附注；确认时点的表述见各季业绩 8-K 的 EX-99.1。",
     }
@@ -508,7 +550,7 @@ def quarter_revenue_lines(staging: dict) -> dict:
 
 def incentive_quarter(staging: dict) -> dict:
     lines = staging["revenue_lines_usd_m"]
-    window = 13
+    window = window_from_2016(staging)
     labels = [compact_period(period) for period in lines["quarters"][-window:]]
     rate = lines["incentive_rate_pct"][-window:]
     full = lines["incentive_rate_pct"]
@@ -522,6 +564,7 @@ def incentive_quarter(staging: dict) -> dict:
         ),
         "xlabels": labels,
         "xrot": 90,
+        "xstep": LONG_STEP,
         "values": rounded(rate),
         "legend": "Client incentives / 毛收入",
         "fmt": "pct2",
@@ -601,6 +644,21 @@ def build_payload(staging: dict) -> dict:
               for income, revenue in zip(operating_income, net_revenue)]
     full_rate = lines["incentive_rate_pct"]
 
+    # The 2016-onward window. `revenue_lines_usd_m` carries net revenue back to
+    # Q4 2012 and `income_long_usd_m` carries operating income back to Q4 2015,
+    # so both of the charts below run the whole window off series that were
+    # already reconciled against the eight quarters the page used to show.
+    long_from = lines["quarters"].index("Q1 2016")
+    long_labels = [compact_period(q) for q in lines["quarters"][long_from:]]
+    long_net_revenue = lines["net_revenue"][long_from:]
+    long_gross = lines["gross_revenue"][long_from:]
+    income_long = staging["income_long_usd_m"]
+    inc_from = income_long["quarters"].index("Q1 2016")
+    long_operating_income = income_long["operating_income_usd_m"][inc_from:]
+    assert income_long["quarters"][inc_from:] == lines["quarters"][long_from:]
+    long_margin = [income / revenue * 100 for income, revenue
+                   in zip(long_operating_income, long_net_revenue)]
+
     # ── section one ─────────────────────────────────────────────────────────
     guidance_ex, guidance_record = incentive_guidance_charts(staging)
     closure = staging["followup_closure"]
@@ -651,8 +709,9 @@ def build_payload(staging: dict) -> dict:
                 f"{signed(pct_change(net_revenue[-1], net_revenue[-5]))}；"
                 f"毛收入同比 {signed(pct_change(gross[-1], gross[-5]))}"
             ),
-            "xlabels": labels,
-            "values": rounded(net_revenue),
+            "xlabels": long_labels,
+            "xstep": LONG_STEP,
+            "values": rounded(long_net_revenue),
             "legend": "净收入",
             "fmt": "f0c",
             "yfmt": "f0c",
@@ -662,8 +721,9 @@ def build_payload(staging: dict) -> dict:
             "yoy": {
                 "name": "净收入 YoY (RHS)",
                 "values": rounded([None if index < 4 else
-                                   pct_change(net_revenue[index], net_revenue[index - 4])
-                                   for index in range(len(net_revenue))]),
+                                   pct_change(long_net_revenue[index],
+                                              long_net_revenue[index - 4])
+                                   for index in range(len(long_net_revenue))]),
                 "color": "GREEN",
                 "yfmt": "pct1",
             },
@@ -672,6 +732,9 @@ def build_payload(staging: dict) -> dict:
                 f"本季毛收入同比 {signed(pct_change(gross[-1], gross[-5]))}、"
                 f"净收入同比 {signed(pct_change(net_revenue[-1], net_revenue[-5]))} —— "
                 "两者相差的那一截就是激励率上行，下一张图专门讲它。"
+                "<b>四十二个季度里只有一段负增长</b>："
+                "2020 财年的四个季度，最深一格是 2020 年 6 月止季的 −17.3%；"
+                "在那之前和之后，净收入同比没有一个季度落到零以下。"
             ),
             "src_extra": "各季 10-Q 合并损益表。",
         },
@@ -680,11 +743,13 @@ def build_payload(staging: dict) -> dict:
         {
             "kind": "lines",
             "title": (
-                f"GAAP 营业利润率 {margin[-1]:.1f}%，同比 {margin[-1] - margin[-5]:+.1f}pp"
+                f"GAAP 营业利润率 {margin[-1]:.1f}%，同比 {margin[-1] - margin[-5]:+.1f}pp；"
+                f"四十二季里的最低一格是 {min(long_margin):.1f}%"
             ),
-            "xlabels": labels,
+            "xlabels": long_labels,
+            "xstep": LONG_STEP,
             "series": [
-                {"name": "GAAP 营业利润率", "values": rounded(margin), "color": "NAVY"},
+                {"name": "GAAP 营业利润率", "values": rounded(long_margin), "color": "NAVY"},
             ],
             "fmt": "pct1",
             "yfmt": "pct1",
@@ -695,7 +760,11 @@ def build_payload(staging: dict) -> dict:
                 "<b>本页只发布 GAAP 营业利润率。</b>"
                 "公司口径的 non-GAAP 利润率需要剔除诉讼计提、遣散费、并购摊销等特殊项，"
                 "而每一季剔除哪几项由公司当季决定，"
-                "把八个季度的 non-GAAP 利润率连成一条线会把口径变化画成经营变化。"
+                "把一条 non-GAAP 利润率连起来会把口径变化画成经营变化。"
+                "<b>而 GAAP 口径本身也不是一条平线</b>：2016 年 6 月止季只有 "
+                f"{min(long_margin):.1f}%，那一季计提了收购 Visa Europe 相关的诉讼准备，"
+                "把营业利润压到了净收入的十分之一出头；"
+                "另一处凹陷在 2020 年，那次是收入端而不是费用端。"
                 f"本季 GAAP 口径被两笔一次性压低（见 Exhibit {{EX_WEDGE}}），"
                 "读同比时要连着那张图一起看。"
             ),
@@ -722,47 +791,53 @@ def build_payload(staging: dict) -> dict:
         ),
         threshold_exhibit(
             "激励率：越低越安全",
-            [compact_period(period) for period in lines["quarters"][-13:]],
-            rounded(full_rate[-13:]),
+            long_labels,
+            rounded(full_rate[long_from:]),
             quantified[0]["threshold"],
-            fmt="pct2", ylab="占毛收入比",
+            fmt="pct2", ylab="占毛收入比", xstep=LONG_STEP,
             actual_name="实际激励率", threshold_name="阈值 29.50%",
             note=(
                 "上一张图说哪条线越了，这张说它是怎么走到那里的。"
                 f"本季 {full_rate[-1]:.2f}%，距 {quantified[0]['threshold']:.2f}% 的阈值还有 "
                 f"{quantified[0]['threshold'] - full_rate[-1]:.2f}pp。"
                 "阈值取的是本季再向上一个季度级别的台阶，不是长期趋势的外推。"
+                f"<b>四十二个季度里这条线一路向上</b>：2016 年初还在 "
+                f"{full_rate[long_from]:.2f}%，十年抬高了约 "
+                f"{full_rate[-1] - full_rate[long_from]:.0f} 个百分点，"
+                "所以阈值只对最近这一段有意义，把它画到全窗口上会让前半段全部「安全」。"
             ),
             src_extra="各季 10-Q 收入分解附注。",
         ),
         threshold_exhibit(
             "International transaction 收入同比：越高越安全",
-            [compact_period(period) for period in lines["quarters"][-13:]],
+            long_labels,
             rounded([pct_change(lines["international_transaction"][index],
                                 lines["international_transaction"][index - 4])
-                     for index in range(len(lines["quarters"]) - 13,
-                                        len(lines["quarters"]))]),
+                     for index in range(long_from, len(lines["quarters"]))]),
             quantified[1]["threshold"],
-            fmt="pct1", ylab="同比增速",
+            fmt="pct1", ylab="同比增速", xstep=LONG_STEP,
             actual_name="International transaction YoY", threshold_name="阈值 +4.0%",
             note=(
                 "这是四条毛收入线里本季唯一掉进个位数的一条。"
                 "阈值设在 +4%：跌破它意味着这条线的减速不再能用去年同期的高基数解释。"
                 "<b>本页不把它对着跨境交易额增速去读</b> —— "
                 "分季跨境交易额的绝对金额不在申报文件里，见不接入清单。"
+                "<b>拉到四十二季之后，跌破 +4% 不再是罕见事</b>："
+                "2020 财年那四个季度整条线深度为负，2016—2017 年也有数个季度在阈值之下。"
+                "阈值守的是「在没有疫情这类外因时它是否还能维持两位数」，不是「历史上从未破过」。"
             ),
             src_extra="各季 10-Q 收入分解附注。",
         ),
         threshold_exhibit(
             "托管账户相对 U.S. covered 计提的盈余：越高越安全",
-            [compact_period(period) for period in staging["litigation"]["quarters"][-13:]],
+            [compact_period(period) for period in staging["litigation"]["quarters"]],
             rounded([
                 None if e is None or c is None else e - c
-                for e, c in zip(staging["litigation"]["escrow_usd_m"][-13:],
-                                staging["litigation"]["us_covered_litigation_usd_m"][-13:])
+                for e, c in zip(staging["litigation"]["escrow_usd_m"],
+                                staging["litigation"]["us_covered_litigation_usd_m"])
             ]),
             quantified[2]["threshold"],
-            fmt="f0c", ylab="US$M",
+            fmt="f0c", ylab="US$M", xstep=LONG_STEP,
             actual_name="托管账户 − U.S. covered 计提 D", threshold_name="阈值 −US$500M",
             note=(
                 "分子分母都是申报值，差值是本页自算（D）。"
