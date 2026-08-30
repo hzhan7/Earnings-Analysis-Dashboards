@@ -129,7 +129,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 REACH_2016 = {
     "amzn": 9, "avgo": 0, "axp": 5, "bc": 0, "cboe": 9, "cdns": 9, "cme": 14,
     "cost": 7, "googl": 11, "ibkr": 21, "ma": 16, "mc": 0, "mco": 7, "meta": 10,
-    "msci": 9, "msft": 8, "mu": 2, "ndaq": 8, "nke": 7, "nvda": 4, "pm": 6,
+    "msci": 9, "msft": 8, "mu": 2, "ndaq": 8, "nke": 8, "nvda": 4, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 10, "skhynix": 0, "snps": 3,
     "spgi": 2, "tjx": 8, "tsm": 18, "v": 14,
 }
@@ -363,6 +363,27 @@ CONVERTED = {
                           "points, so it runs on the reviewed window plus two.",
         "单季非 GAAP 营业利润率": "the threshold view of the same quarterly margin series, "
                           "which this file carries for the reviewed window.",
+    },
+    "nke": {
+        # Nike's segment revenue and EBIT reach 2016; the currency-neutral growth
+        # rates beside them do not, because the company prints those as integer
+        # percentages per release rather than as a series, and this file carries
+        # the eight it reviewed.
+        "大中华区收入同比（固定汇率）": "currency-neutral growth is an integer printed per "
+                              "release, carried here for the reviewed eight.",
+        "北美收入同比（固定汇率）": "same.",
+        "投入资本回报率": "an annual measure against two filed targets, on a fiscal-year "
+                  "axis starting FY2020.",
+        "应收账款": "the balance sheet is carried for the reviewed eight quarters.",
+        "三年遣散与重组费用": "three fiscal years of a restructuring programme; there is no "
+                     "earlier programme to draw.",
+        "毛利率同比（剔除关税退款）": "the tariff-refund adjustment exists only in the quarters "
+                          "that have a refund.",
+        "三十二个季度的直营占比": "Nike began splitting wholesale from direct in the 2018Q3 "
+                        "release; the earlier quarters give one combined figure.",
+        "十年经营现金流": "an annual chart -- ten fiscal years, not quarters.",
+        "十年回购与资本强度": "annual.",
+        "回购的成交均价": "four fiscal years of a buyback programme.",
     },
     "meta": {
         "收入指引兑现": "Meta published no quarterly revenue outlook range before the "

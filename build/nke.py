@@ -457,15 +457,21 @@ def quarter_highlight_charts(staging: dict) -> list[dict]:
         {
             "kind": "lines",
             "title": (
-                f"四个地域的 EBIT 利润率八季：北美本季 {margins['north_america_ebit_margin_pct'][-1]:.1f}% "
+                f"四个地域的 EBIT 利润率 {len(long_labels)} 季："
+                f"北美本季 {margins['north_america_ebit_margin_pct'][-1]:.1f}% "
                 "里有 20 个百分点是关税退款"
             ),
-            "xlabels": periods,
+            "xlabels": long_labels,
+            "xstep": 4,
             "series": [
-                {"name": "北美", "values": rounded(margins["north_america_ebit_margin_pct"]), "color": "NAVY"},
-                {"name": "EMEA", "values": rounded(margins["emea_ebit_margin_pct"]), "color": "BLUE"},
-                {"name": "大中华区", "values": rounded(margins["greater_china_ebit_margin_pct"]), "color": "GOLD"},
-                {"name": "APLA", "values": rounded(margins["apla_ebit_margin_pct"]), "color": "GREEN"},
+                {"name": "北美", "values": rounded(long_q["north_america_ebit_margin_pct"]),
+                 "color": "NAVY"},
+                {"name": "EMEA", "values": rounded(long_q["emea_ebit_margin_pct"]),
+                 "color": "BLUE"},
+                {"name": "大中华区", "values": rounded(long_q["greater_china_ebit_margin_pct"]),
+                 "color": "GOLD"},
+                {"name": "APLA", "values": rounded(long_q["apla_ebit_margin_pct"]),
+                 "color": "GREEN"},
             ],
             "fmt": "pct1",
             "yfmt": "pct1",
@@ -480,6 +486,12 @@ def quarter_highlight_charts(staging: dict) -> list[dict]:
                 "<b>另外三条线才是这一季的实际形状：</b>EMEA 从 25.1% 掉到 14.6%，"
                 "大中华区在 13.4% 与 28.9% 之间来回，APLA 一直是四个里最稳的一条。"
                 "分部利润率的分子是公司披露的 EBIT，分母是同一张表上的分部收入，两条腿都是申报值。"
+                f"<b>八季的窗口把这四条线画成一组平行的波动，{len(long_labels)} 季不是。</b>"
+                f"大中华区在这段记录里从 {long_q['greater_china_ebit_margin_pct'][0]:.1f}% 起步、"
+                f"最高到 {max(long_q['greater_china_ebit_margin_pct']):.1f}%、"
+                f"最低 {min(long_q['greater_china_ebit_margin_pct']):.1f}%，"
+                "而 EMEA 与 APLA 的区间要窄得多 —— 四条线的排序换过多次，"
+                "近八季的那个排序不是常态。"
             ),
             "src_extra": "各季业绩 8-K 的 EARNINGS BEFORE INTEREST AND TAXES 表与 DIVISIONAL REVENUES 表。",
         },
