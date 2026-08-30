@@ -60,11 +60,11 @@ class SchwDashboardTest(unittest.TestCase):
     # ── shape ────────────────────────────────────────────────────────────────
     def test_the_window_is_calendar_quarters_without_holes(self) -> None:
         periods = self.periods
-        self.assertEqual(periods[0], "2017Q1")
+        self.assertEqual(periods[0], "2016Q1")
         self.assertEqual(periods[-1], "2026Q2")
-        self.assertEqual(len(periods), 38)
-        expected = [f"{year}Q{q}" for year in range(2017, 2027) for q in (1, 2, 3, 4)]
-        self.assertEqual(periods, [p for p in expected if "2017Q1" <= p <= "2026Q2"])
+        self.assertEqual(len(periods), 42)
+        expected = [f"{year}Q{q}" for year in range(2016, 2027) for q in (1, 2, 3, 4)]
+        self.assertEqual(periods, [p for p in expected if "2016Q1" <= p <= "2026Q2"])
         self.assertEqual(len(self.source["period_ends"]), len(periods))
 
     def test_every_financial_series_is_full_length(self) -> None:
@@ -79,17 +79,36 @@ class SchwDashboardTest(unittest.TestCase):
 
     def test_operating_series_are_aligned_with_their_own_period_list(self) -> None:
         ops = self.ops
-        self.assertEqual(ops["periods"][0], "2020Q1")
+        self.assertEqual(ops["periods"], self.periods,
+                         "the two blocks used to run on different axes")
+        self.assertEqual(ops["periods"][0], "2016Q1")
         self.assertEqual(ops["periods"][-1], "2026Q2")
         for key, values in ops.items():
-            if key in ("periods", "period_ends"):
+            if key in ("periods", "period_ends") or not isinstance(values, list):
                 continue
             with self.subTest(series=key):
                 self.assertEqual(len(values), len(ops["periods"]))
+        # Two operating series are empty before 2020 and say why in the file.
+        for key in self.source["operating_notes"]["not_backfilled"]:
+            self.assertTrue(all(v is None for v in ops[key][:ops["periods"].index("2020Q1")]),
+                            key)
 
     # ── identities ───────────────────────────────────────────────────────────
     def test_five_revenue_lines_add_to_net_revenues_each_quarter(self) -> None:
+        """...and 2016 needs a sixth term, because the statement had one.
+
+        Schwab's 2016 income statement carried "Provision for loan losses"
+        *inside* net revenues (-2 / +2 / +5 / 0) and moved it out from 2017. So
+        the five lines close on their own from 2017Q1 and close on 2016 only
+        once that item is added back. It is kept as its own four-cell record
+        rather than folded into one of the five, and the residual is asserted
+        to equal it exactly -- which is what makes the 2016 quarters usable
+        rather than merely plausible.
+        """
         fin = self.fin
+        notes = self.source["financials_notes"]
+        provision = dict(zip(notes["loan_loss_provision_quarters"],
+                             notes["loan_loss_provision_in_revenue_2016_usd_m"]))
         for index, period in enumerate(self.periods):
             parts = [
                 fin["net_interest_revenue_usd_m"][index],
@@ -99,7 +118,10 @@ class SchwDashboardTest(unittest.TestCase):
                 fin["other_usd_m"][index],
             ]
             with self.subTest(period=period):
-                self.assertAlmostEqual(sum(parts), fin["revenue_usd_m"][index], places=6)
+                self.assertAlmostEqual(
+                    sum(parts) + provision.get(period, 0.0),
+                    fin["revenue_usd_m"][index], places=6)
+        self.assertEqual(sorted(provision), ["2016Q1", "2016Q2", "2016Q3", "2016Q4"])
 
     def test_income_statement_identity_holds_each_quarter(self) -> None:
         fin = self.fin
