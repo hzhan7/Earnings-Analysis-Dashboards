@@ -1,0 +1,319 @@
+"""How far back each page's time axes actually reach, pinned as a ratchet.
+
+The owner's decision on 2026-08-30 was that every chart with a time axis runs
+from 2016Q1, and that conclusions which do not survive the longer window are
+exactly the ones worth correcting. That is a multi-page migration, so this file
+is not a completeness gate -- it is a **ratchet**. Two things have to be true of
+it at every point in the migration, and they pull in opposite directions:
+
+* a page that has been converted must not slide back, and
+* a page that has not been converted yet must not turn the suite red.
+
+So each slug carries a pinned floor: the number of its time-axis exhibits that
+reach 2016Q1 or earlier. Dropping below the floor fails. Rising above it *also*
+fails, with a message naming the new number -- which is the whole point. The
+count lands in the commit that earned it, and nobody can quietly move a page
+backwards to make a different change easier.
+
+Why not just assert "everything reaches 2016" and skip the rest? Because that
+assertion is red on 29 of 31 pages today, and a gate that is red for a week is a
+gate somebody turns off. The strict form does exist here, but it applies only to
+slugs listed in ``CONVERTED`` -- and for those the escape hatch is per-exhibit
+and has to carry a reason, so a chart cannot be left short by adding a line to a
+list.
+
+What this file deliberately does not check: whether the *labels* on a 42-point
+axis collide. That needs text metrics, which means a real browser -- jsdom
+returns zero for `getComputedTextLength`, and a rotated label's
+`getBoundingClientRect` is the rotated box, which lies. See
+`assets/charts.js`'s `xlCapAxis` for the renderer's own model and the TSM
+commit message for how it was measured.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+import sys
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from build.all import ENTRIES  # noqa: E402
+
+TARGET_YEAR = 2016
+
+# One pattern per label shape the site actually publishes.
+#
+# The load-bearing detail is the **anchor after the year group**, not the order
+# inside the alternation -- that distinction was measured, not assumed, and the
+# first draft of this file had it backwards. With `\b` or `$` behind the group,
+# `(\d{2}|\d{4})` still yields 2017 for "FY2017": the two-digit branch matches
+# "20", the anchor then fails against the "1" that follows, and the engine
+# backtracks into the four-digit branch. Drop the anchor and the same pattern
+# returns 20 -- which becomes the year 2020, a decade late, silently, and in the
+# direction that makes an unconverted page look converted.
+_PERIOD = [
+    (re.compile(r"^Q([1-4])[ '](\d{4}|\d{2})\b"), 2),      # Q1'16 / Q1 2016
+    (re.compile(r"^([1-4])Q ?(\d{4}|\d{2})\b"), 2),        # 1Q 2016
+    (re.compile(r"^(\d{4}|\d{2})Q([1-4])$"), 1),           # 2016Q1 / 16Q1
+    (re.compile(r"^FY ?(\d{4}|\d{2})\b"), 1),              # FY2016 / FY16 初
+    (re.compile(r"^(?:1H|2H|H1|H2) ?(\d{4}|\d{2})$"), 1),  # H1 2016
+    (re.compile(r"^(\d{4})H[12]$"), 1),                    # 2016H1
+    (re.compile(r"^(\d{4})-\d{2}(-\d{2})?$"), 1),          # 2016-03 / 2016-03-31
+    (re.compile(r"^[A-Z][a-z]{2}[- ](\d{4}|\d{2})$"), 1),  # Mar-16
+    (re.compile(r"^(?:19|20)\d{2}$"), 0),                  # 2016
+]
+
+
+# A period token may be followed by a qualifier that still names a period -- a
+# fiscal year's quarter ("FY19 Q2"), the opening vintage of a year's guidance
+# ("FY23 初", "FY2019 initial"), a restated basis ("Q1 2026 原披露"), a footnote
+# marker. It may NOT be followed by a metric or an event: "Q1 2026 non-GAAP EPS"
+# and "Q2 2026 call" sit on axes that list metrics and earnings calls, and
+# counting those as time axes would put pages under an obligation to extend a
+# chart whose x axis is not time at all. The list is a whitelist on purpose --
+# an unknown suffix is treated as "not a period", which can only ever leave a
+# chart out of the ratchet, never invent one.
+_QUALIFIER = re.compile(r"^(?:[Qq][1-4]|初|initial|基数|本季|原披露|重述后|→\s*FY\s*\d{2,4})[*†]?$")
+
+
+def label_year(label: object) -> int | None:
+    """The calendar year a chart label names, or None if it names no period."""
+    if not isinstance(label, str) or not label.strip():
+        return None
+    text = label.strip()
+    for pattern, group in _PERIOD:
+        match = pattern.match(text)
+        if not match:
+            continue
+        rest = text[match.end():].strip()
+        if rest and not _QUALIFIER.match(rest):
+            return None
+        year = int(match.group(0) if group == 0 else match.group(group))
+        if year < 100:
+            year += 2000 if year < 80 else 1900
+        return year if 1990 <= year <= 2030 else None
+    return None
+
+
+def first_year(exhibit: dict) -> int | None:
+    """The earliest year on this exhibit's x axis, or None if the axis is not time.
+
+    "Not time" is the common case and must not be guessed at: a KPI headroom bar
+    lists metric names, a bridge lists its own legs, and a guidance-revision
+    chart lists the calls that revised it. The test is whether the labels that
+    carry text mostly parse as periods -- sparse axes label every fourth tick
+    and leave the rest empty, so blanks are excluded from the denominator.
+    """
+    labels = exhibit.get("xlabels") or []
+    years = [label_year(label) for label in labels]
+    parsed = [year for year in years if year is not None]
+    lettered = sum(1 for label in labels if isinstance(label, str) and label.strip())
+    if len(parsed) < 2 or len(parsed) / max(1, lettered) < 0.6:
+        return None
+    return min(parsed)
+
+
+def js_payload(path: Path, assignment: str) -> dict:
+    text = path.read_text(encoding="utf-8")
+    return json.loads(text.split(f"{assignment} = ", 1)[1].rsplit(";", 1)[0])
+
+
+# ── the ratchet ──────────────────────────────────────────────────────────────
+# Time-axis exhibits per page whose earliest label is 2016 or earlier. Raise a
+# number when you convert a page; the assertion below refuses to let it drift in
+# either direction, so the count is always the one the last commit measured.
+REACH_2016 = {
+    "amzn": 3, "avgo": 0, "axp": 2, "bc": 0, "cboe": 6, "cdns": 6, "cme": 8,
+    "cost": 7, "googl": 1, "ibkr": 0, "ma": 0, "mc": 0, "mco": 0, "meta": 0,
+    "msci": 0, "msft": 3, "mu": 2, "ndaq": 8, "nke": 7, "nvda": 2, "pm": 4,
+    "race": 5, "rms": 0, "samsung": 0, "schw": 0, "skhynix": 0, "snps": 3,
+    "spgi": 2, "tjx": 1, "tsm": 18, "v": 4,
+}
+
+# Pages whose migration is finished. For these the strict rule applies: every
+# time-axis exhibit reaches 2016 unless it is named below with the disclosure
+# that stops it. An entry that no longer matches a short exhibit fails too --
+# otherwise the list would slowly fill with excuses for charts that were fixed.
+CONVERTED = {
+    "tsm": {
+        "收入（本图仅近": "dollar band; the guided number runs US$6.1B to US$45.8B, so the "
+                     "early bands collapse to a few pixels on a linear axis. The "
+                     "scale-free deviation chart beside it carries all 42.",
+        "HPC 占比（集中度）": "TSMC first reported the platform split in 2018Q1.",
+        "HPC 从": "same disclosure limit, long-run version of the same series.",
+        "2nm 占晶圆收入": "2nm sat inside the 'advanced' aggregate until 2025Q2.",
+    },
+}
+
+
+class ChartWindowTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.pages = {
+            entry["slug"]: js_payload(ROOT / "data" / f"{entry['slug']}.js", "window.DASH")
+            for entry in ENTRIES
+        }
+        cls.timed = {}
+        for slug, payload in cls.pages.items():
+            found = []
+            for section in payload["sections"]:
+                for exhibit in section["exhibits"]:
+                    year = first_year(exhibit)
+                    if year is not None:
+                        found.append((exhibit, year))
+            cls.timed[slug] = found
+
+    def test_the_ratchet_names_every_published_page(self) -> None:
+        self.assertEqual(set(REACH_2016), set(self.pages))
+        self.assertLessEqual(set(CONVERTED), set(self.pages))
+
+    def test_no_page_loses_ground(self) -> None:
+        """Below the pin is a regression; above it is progress that has to be recorded."""
+        moved = []
+        for slug, found in sorted(self.timed.items()):
+            reached = sum(1 for _, year in found if year <= TARGET_YEAR)
+            pinned = REACH_2016[slug]
+            self.assertGreaterEqual(
+                reached, pinned,
+                f"{slug}: {reached} exhibits reach {TARGET_YEAR}, down from the pinned "
+                f"{pinned}. A page does not go backwards -- if a chart was shortened on "
+                "purpose, say why in the commit and lower the pin deliberately.",
+            )
+            if reached > pinned:
+                moved.append(f'"{slug}": {reached}  (was {pinned})')
+        self.assertEqual(
+            moved, [],
+            "these pages now reach further back than the ratchet records; update "
+            "REACH_2016 in this file so the count lands in the commit that earned it:\n  "
+            + "\n  ".join(moved),
+        )
+
+    def test_converted_pages_have_no_unexplained_short_axis(self) -> None:
+        for slug, excuses in CONVERTED.items():
+            short = {}
+            for exhibit, year in self.timed[slug]:
+                if year <= TARGET_YEAR:
+                    continue
+                title = exhibit["title"]
+                reason = next((why for key, why in excuses.items() if key in title), None)
+                self.assertIsNotNone(
+                    reason,
+                    f"{slug} Exhibit {exhibit['n']} starts in {year} and nothing says why: "
+                    f"{title[:60]}",
+                )
+                self.assertTrue(reason.strip(), f"{slug}: empty reason for {title[:40]}")
+                short[next(k for k in excuses if k in title)] = True
+            unused = sorted(set(excuses) - set(short))
+            self.assertEqual(
+                unused, [],
+                f"{slug}: these exhibits are no longer short, so drop their entries "
+                f"from CONVERTED: {unused}",
+            )
+
+    def test_the_site_total_is_pinned_too(self) -> None:
+        """One number, so the migration's progress is legible in one place."""
+        reached = sum(
+            1 for found in self.timed.values() for _, year in found if year <= TARGET_YEAR
+        )
+        total = sum(len(found) for found in self.timed.values())
+        self.assertEqual(reached, sum(REACH_2016.values()))
+        # The denominator moves when a page gains or loses an exhibit, so it is
+        # a range rather than a point -- tight enough to notice a page vanishing.
+        self.assertGreaterEqual(total, 540)
+        self.assertLessEqual(total, 620)
+
+    def test_flipping_the_alternation_changes_nothing(self) -> None:
+        """The property that makes the parser safe, stated as a property.
+
+        A year group with nothing behind it lets the two-digit branch win on a
+        four-digit year: "FY2017" reads as 20, which becomes 2020. The failure
+        is silent and it moves charts in the *safe* direction, so a page under
+        the ratchet would look further along than it is.
+
+        What actually prevents it is the anchor after the group, not the order
+        inside it -- with `\\b` or `$` behind, the engine backtracks out of the
+        short branch. So the check is: rewrite every pattern with the branches
+        swapped and confirm the parse is identical on every label the site
+        publishes. If a pattern is ever added without an anchor, the swap starts
+        producing 2020s and this turns red. Asserting a list of anchors instead
+        would have to be taught what counts as one -- a literal `-` anchors just
+        as well as `\\b`.
+        """
+        swapped = [
+            (re.compile(p.pattern.replace(r"(\d{4}|\d{2})", r"(\d{2}|\d{4})")), g)
+            for p, g in _PERIOD
+        ]
+        self.assertNotEqual(
+            [p.pattern for p, _ in swapped], [p.pattern for p, _ in _PERIOD],
+            "no pattern has a two-branch year group any more; this test is now vacuous",
+        )
+
+        def parse_with(patterns: list, label: str) -> int | None:
+            for pattern, group in patterns:
+                match = pattern.match(label)
+                if not match:
+                    continue
+                rest = label[match.end():].strip()
+                if rest and not _QUALIFIER.match(rest):
+                    return None
+                year = int(match.group(0) if group == 0 else match.group(group))
+                return year + 2000 if year < 80 else (year + 1900 if year < 100 else year)
+            return None
+
+        labels = {
+            label
+            for payload in self.pages.values()
+            for section in payload["sections"]
+            for exhibit in section["exhibits"]
+            for label in (exhibit.get("xlabels") or [])
+            if isinstance(label, str) and label.strip()
+        }
+        self.assertGreater(len(labels), 300, "the label corpus collapsed")
+        differing = sorted(
+            label for label in labels
+            if parse_with(_PERIOD, label.strip()) != parse_with(swapped, label.strip())
+        )
+        self.assertEqual(
+            differing, [],
+            "these labels parse differently once the year alternation is swapped, "
+            "which means the pattern that matched them has no anchor behind its "
+            f"year group: {differing[:8]}",
+        )
+
+    def test_the_year_parser_reads_the_shapes_the_site_publishes(self) -> None:
+        """The behavioural half. Every shape below appears in a live payload."""
+        for label, expected in [
+            ("Q1 2017", 2017), ("Q1'17", 2017), ("2017Q1", 2017), ("17Q1", 2017),
+            ("FY2017", 2017), ("FY17 初", 2017), ("Mar-17", 2017), ("2017-03-31", 2017),
+            ("H1 2017", 2017), ("2017H1", 2017), ("1Q 2017", 2017), ("2017", 2017),
+        ]:
+            self.assertEqual(label_year(label), expected, label)
+        for label in ["收入", "已验证", "", "美国与加拿大", "毛利率", None]:
+            self.assertIsNone(label_year(label), repr(label))
+        # A period followed by a qualifier is still a period...
+        for label, expected in [("FY19 Q2", 2019), ("FY23 初", 2023), ("FY2019 initial", 2019),
+                                ("Q1 2026 原披露", 2026), ("FY22 初*", 2022), ("Q2'24→FY24", 2024)]:
+            self.assertEqual(label_year(label), expected, label)
+        # ...but a period followed by a metric or an event is not a period at
+        # all: those axes list metrics and earnings calls, and counting them
+        # would put a page under an obligation to extend a chart whose x axis
+        # is not time.
+        for label in ["Q1 2026 non-GAAP EPS", "Q2 2026 call", "Q4 2025 电话会",
+                      "Q1 2026 期货与期权清算费", "FY2026 CapEx 指引中点", "Q1 2026 报告同比"]:
+            self.assertIsNone(label_year(label), label)
+
+    def test_a_categorical_axis_is_not_counted_as_time(self) -> None:
+        """Otherwise the ratchet could be satisfied by a KPI list that happens to
+        name two years."""
+        self.assertIsNone(first_year({"xlabels": ["收入", "毛利率", "2026 指引"]}))
+        self.assertIsNone(first_year({"xlabels": []}))
+        self.assertIsNone(first_year({"xlabels": ["Q1 2016"]}))
+        self.assertEqual(first_year({"xlabels": ["Q1 2016", "", "", "", "Q1 2017"]}), 2016)
+
+
+if __name__ == "__main__":
+    unittest.main()
