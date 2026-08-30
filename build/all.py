@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amzn, avgo, axp, cboe, cdns, cme, cost, googl, ibkr, ma, mco, meta, msci,
+    amzn, avgo, axp, bc, cboe, cdns, cme, cost, googl, ibkr, ma, mco, meta, msci,
     msft, mu, ndaq, nke, nvda, pm, race, samsung, schw, skhynix, snps,
     spgi, tjx, tsm, v,
 )
@@ -24,6 +24,7 @@ MODULES = {
     "amzn": amzn,
     "avgo": avgo,
     "axp": axp,
+    "bc": bc,
     "cboe": cboe,
     "cdns": cdns,
     "cme": cme,
@@ -99,6 +100,18 @@ ENTRIES = [
         "headline_metrics": ["Revenue $19.6B", "净卡费 +15.4%", "VCE 占收入 44.6%"],
         "search_text": ("axp american express 美国运通 运通 支付 卡组织 发卡行 高端 platinum 白金卡 "
                         "年费 卡费 折扣率 商户 消费额 billed business 拨备 准备金 信用卡 cet1"),
+    },
+    {
+        "slug": "bc",
+        "ticker": "BC",
+        "name": "Brunello Cucinelli S.p.A.",
+        "aliases": ["Brunello Cucinelli", "库奇内利", "BCU.MI"],
+        "group": "luxury_brands",
+        "cadence_label": "自然年财年；季度只发营收，完整损益一年两次",
+        "headline_metrics": ["Revenues €749.4M", "恒定汇率 +13.3%", "EBIT 利润率 17.1%"],
+        "search_text": ("bc brunello cucinelli 布鲁内罗 库奇内利 奢侈品 意大利 羊绒 成衣 "
+                        "静奢 quiet luxury 零售 批发 单品牌 恒定汇率 cfx ifrs 欧元 "
+                        "米兰交易所 euronext milan 半年报 指引 门店 dos"),
     },
     {
         "slug": "cboe",

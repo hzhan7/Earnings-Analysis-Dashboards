@@ -8,8 +8,8 @@ checked from the source and the payloads alone.
 
 The defect, for whoever reads this next. `assets/charts.js` draws the gs_bar
 reference line from `ex.avg12` — a number the payload supplies and the engine
-never computes — whenever `ex.yoy` is absent. Across the site 27 exhibits are
-gs_bar, 26 carry `yoy`, and **none has ever carried `avg12`**, so that branch
+never computes — whenever `ex.yoy` is absent. Across the site 28 exhibits are
+gs_bar, 27 carry `yoy`, and **none has ever carried `avg12`**, so that branch
 had never been exercised with real data. AVGO Exhibit 16 supplies neither, so
 `Y(undefined)` produced `y1="NaN"`, the browser dropped the `<line>` without a
 word, and the legend went on advertising a `Prior 12mo Avg.` dashed swatch for a
@@ -300,8 +300,8 @@ class ExhibitPayloadContractTest(unittest.TestCase):
         exercised", and a comment asserting that would rot silently.
         """
         bars = [ex for _, ex in exhibits() if ex.get("kind") == "gs_bar"]
-        self.assertEqual(len(bars), 27)
-        self.assertEqual(sum(1 for ex in bars if ex.get("yoy")), 26)
+        self.assertEqual(len(bars), 28)
+        self.assertEqual(sum(1 for ex in bars if ex.get("yoy")), 27)
         self.assertEqual(sum(1 for ex in bars if "avg12" in ex), 0)
         neither = [label for label, ex in exhibits()
                    if ex.get("kind") == "gs_bar" and not ex.get("yoy")

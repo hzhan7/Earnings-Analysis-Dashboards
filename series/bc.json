@@ -1,0 +1,708 @@
+{
+  "company": {
+    "ticker": "BC",
+    "listing": "BCU.MI",
+    "name": "Brunello Cucinelli S.p.A.",
+    "standard": "IFRS",
+    "currency": "EUR",
+    "unit": "EUR thousand",
+    "fiscal_year": "calendar",
+    "latest_period": "H1 2026",
+    "release_date": "2026-07-30"
+  },
+  "disclosure_regime": {
+    "printed_periods": [
+      "Q1",
+      "H1",
+      "9M",
+      "FY"
+    ],
+    "full_income_statement_periods": [
+      "H1",
+      "FY"
+    ],
+    "note": "Every figure the issuer prints is a to-date figure. Q2, Q3, Q4 and H2 are never published as discrete periods and are obtained here by subtracting one cumulative disclosure from the next.",
+    "quarter_basis": {
+      "Q1": "printed",
+      "Q2": "H1 - Q1",
+      "Q3": "9M - H1",
+      "Q4": "FY - 9M"
+    },
+    "half_basis": {
+      "H1": "printed",
+      "H2": "FY - H1"
+    }
+  },
+  "cumulative_revenue_eur_k": {
+    "years": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ],
+    "q1": [
+      null,
+      196936,
+      265331,
+      309092,
+      341473,
+      369052
+    ],
+    "h1": [
+      313764,
+      415357,
+      543942,
+      620662,
+      684135,
+      749411
+    ],
+    "nine_m": [
+      502590,
+      642026,
+      818379,
+      920238,
+      1019171,
+      null
+    ],
+    "fy": [
+      712179,
+      919708,
+      1139420,
+      1278540,
+      1407951,
+      null
+    ],
+    "q1_2021_note": "The 2021 first-quarter release states only €164.6 million; it prints no euro-thousand table, so 2021 is excluded from the quarterly series."
+  },
+  "quarterly": {
+    "periods": [
+      "2022Q1",
+      "2022Q2",
+      "2022Q3",
+      "2022Q4",
+      "2023Q1",
+      "2023Q2",
+      "2023Q3",
+      "2023Q4",
+      "2024Q1",
+      "2024Q2",
+      "2024Q3",
+      "2024Q4",
+      "2025Q1",
+      "2025Q2",
+      "2025Q3",
+      "2025Q4",
+      "2026Q1",
+      "2026Q2"
+    ],
+    "revenue_eur_k": [
+      196936,
+      218421,
+      226669,
+      277682,
+      265331,
+      278611,
+      274437,
+      321041,
+      309092,
+      311570,
+      299576,
+      358302,
+      341473,
+      342662,
+      335036,
+      388780,
+      369052,
+      380359
+    ],
+    "basis": [
+      "printed",
+      "derived",
+      "derived",
+      "derived",
+      "printed",
+      "derived",
+      "derived",
+      "derived",
+      "printed",
+      "derived",
+      "derived",
+      "derived",
+      "printed",
+      "derived",
+      "derived",
+      "derived",
+      "printed",
+      "derived"
+    ],
+    "narrative_q3_crosscheck_eur_m": {
+      "2023Q3": 274.4,
+      "2024Q3": 300.0,
+      "2025Q3": 335.0
+    }
+  },
+  "half": {
+    "periods": [
+      "2021H1",
+      "2021H2",
+      "2022H1",
+      "2022H2",
+      "2023H1",
+      "2023H2",
+      "2024H1",
+      "2024H2",
+      "2025H1",
+      "2025H2",
+      "2026H1"
+    ],
+    "printed": [
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true
+    ],
+    "revenue_eur_k": [
+      313764,
+      398415,
+      415357,
+      504351,
+      543942,
+      595478,
+      620662,
+      657878,
+      684135,
+      723816,
+      749411
+    ],
+    "ebit_eur_k": [
+      25334,
+      51702,
+      57754,
+      76658,
+      87693,
+      99713,
+      104587,
+      107084,
+      113837,
+      113947,
+      128199
+    ],
+    "ebitda_eur_k": [
+      80595,
+      112716,
+      119952,
+      146405,
+      154808,
+      171443,
+      177754,
+      186921,
+      200615,
+      207781,
+      226542
+    ],
+    "ebitda_ex_ifrs16_eur_k": [
+      39934,
+      70079,
+      75272,
+      97139,
+      104775,
+      125504,
+      120337,
+      null,
+      null,
+      null,
+      null
+    ],
+    "net_profit_eur_k": [
+      21854,
+      34441,
+      50571,
+      36634,
+      66687,
+      57122,
+      66077,
+      62436,
+      76650,
+      65339,
+      78169
+    ],
+    "da_eur_k": [
+      55261,
+      null,
+      62198,
+      null,
+      67115,
+      null,
+      73167,
+      null,
+      86778,
+      null,
+      98343
+    ]
+  },
+  "annual": {
+    "years": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "revenue_eur_k": [
+      544013,
+      712179,
+      919708,
+      1139420,
+      1278540,
+      1407951
+    ],
+    "ebitda_eur_k": [
+      89466,
+      193311,
+      266357,
+      326251,
+      364675,
+      408396
+    ],
+    "ebitda_ex_ifrs16_eur_k": [
+      null,
+      110013,
+      172411,
+      230279,
+      null,
+      null
+    ],
+    "ebit_eur_k": [
+      -14818,
+      77036,
+      134412,
+      187406,
+      211671,
+      227784
+    ],
+    "ebit_normalised_eur_k": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      235851
+    ],
+    "pbt_eur_k": [
+      -33782,
+      64026,
+      123967,
+      173341,
+      179737,
+      198696
+    ],
+    "net_profit_eur_k": [
+      -32069,
+      56295,
+      87205,
+      123809,
+      128513,
+      141989
+    ],
+    "revenue_yoy_reported_pct": [
+      null,
+      30.9,
+      29.1,
+      23.9,
+      12.2,
+      10.1
+    ],
+    "revenue_yoy_cfx_pct": [
+      null,
+      null,
+      24.8,
+      26.0,
+      12.4,
+      11.5
+    ],
+    "cfx_source": "Each annual report states the prior-year-FX revenue: FY2022 €889,049k, FY2023 €1,158,675k, FY2024 €1,280,616k; FY2025 states +11.5% directly. FY2021 states no constant-currency total.",
+    "fy2020_ex_ifrs16_note": "The 2020 report calls 41,759 'normalised EBITDA' and the 2021 report relabels the same number 'EBITDA excluding IFRS 16', but its own footnote says it also strips a 31,727 inventory provision. It is therefore on a different basis from the 2021-2023 figures and is not published here."
+  },
+  "geography_h1_eur_k": {
+    "years": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ],
+    "europe_total": [
+      136932,
+      164955,
+      202769,
+      221052,
+      243213,
+      255582
+    ],
+    "americas": [
+      99983,
+      152613,
+      189007,
+      225616,
+      245253,
+      278671
+    ],
+    "asia": [
+      76849,
+      97789,
+      152166,
+      173994,
+      195669,
+      215158
+    ],
+    "italy_row_when_separate": [
+      41038,
+      49187,
+      60888,
+      68093,
+      null,
+      null
+    ],
+    "representation_note": "Through H1 2024 the issuer printed four rows -- Europe (excluding Italy), Italy, Americas, Asia. From H1 2025 it prints three, with Italy folded into Europe and the prior year re-presented on the new basis. The change is stated nowhere in words: 152,959 + 68,093 = 221,052 is the only evidence. Europe here is Total Europe throughout, reconstructed by adding the Italy row back for 2021-2024; all six years sum exactly to the printed total."
+  },
+  "channel_h1_eur_k": {
+    "years": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ],
+    "retail": [
+      165468,
+      243325,
+      344648,
+      395184,
+      435837,
+      499765
+    ],
+    "wholesale": [
+      148296,
+      172032,
+      199294,
+      225478,
+      248298,
+      249646
+    ]
+  },
+  "growth_h1_pct": {
+    "years": [
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ],
+    "reported": [
+      32.4,
+      31.0,
+      14.1,
+      10.2,
+      9.5
+    ],
+    "cfx": [
+      28.3,
+      30.5,
+      14.7,
+      10.7,
+      13.3
+    ]
+  },
+  "net_debt_h1_eur_k": {
+    "years": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ],
+    "pre_ifrs16": [
+      96271,
+      63834,
+      38572,
+      68676,
+      197183,
+      225100
+    ],
+    "post_ifrs16": [
+      639824,
+      662276,
+      579973,
+      707461,
+      988414,
+      1045855
+    ],
+    "post_2026_basis": "derived"
+  },
+  "guidance_basis_census": {
+    "quantified_rows": 120,
+    "fx_basis_stated": 10,
+    "fx_basis_unstated": 110,
+    "first_stated_date": "2025-12-10",
+    "calls_covered": 18,
+    "note": "Counted across every quantified forward statement in the eighteen results calls. Every row whose FX basis is stated is dated 2025-12-10 or later; no statement before that date names a basis."
+  },
+  "annual_revenue_guidance": {
+    "target_years": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ],
+    "final_low": [
+      15.0,
+      9.0,
+      15.0,
+      11.0,
+      10.0,
+      10.0
+    ],
+    "final_high": [
+      20.0,
+      10.0,
+      15.0,
+      12.0,
+      10.0,
+      11.0
+    ],
+    "final_basis": [
+      "unstated",
+      "unstated",
+      "unstated",
+      "unstated",
+      "reported",
+      "cfx"
+    ],
+    "cfx_leg_low": [
+      null,
+      null,
+      null,
+      null,
+      11.0,
+      10.0
+    ],
+    "cfx_leg_high": [
+      null,
+      null,
+      null,
+      null,
+      12.0,
+      11.0
+    ],
+    "actual_reported_pct": [
+      30.9,
+      29.1,
+      23.9,
+      12.2,
+      10.1,
+      null
+    ],
+    "actual_cfx_pct": [
+      null,
+      24.8,
+      26.0,
+      12.4,
+      11.5,
+      null
+    ],
+    "basis_note": "Through FY2024 the company never says which currency basis its revenue target is on, so each year is shown against both actuals. From the December 2025 revision it states two legs at once -- about +10% reported and +11% to +12% at constant rates -- and from February 2026 the target is stated at constant rates only.",
+    "pairing_warning": "A target must be settled against the actual on its own basis. Pairing the constant-rate leg with reported revenue turns FY2025's met guidance into a phantom miss, and does the same to the first half of 2026.",
+    "strict_judgeability": {
+      "completed_quantified_targets": 47,
+      "met": 47,
+      "missed": 0,
+      "scoreable_once_an_unstated_basis_is_treated_as_unjudgeable": 6,
+      "note": "Counted over every completed quantified target in the filings, not only revenue growth. All 47 were met. But only 6 state a currency basis, so on a strict reading the other 41 cannot be scored at all -- which is the more informative number."
+    }
+  },
+  "ifrs16_disclosure_decay": {
+    "periods": [
+      "H1 2021",
+      "H1 2022",
+      "H1 2023",
+      "H1 2024",
+      "H1 2025",
+      "H1 2026"
+    ],
+    "ebitda_token_count": [
+      11,
+      13,
+      13,
+      10,
+      6,
+      0
+    ],
+    "both_bases_printed": [
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
+    ],
+    "bridge_printed": [
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+    ],
+    "note": "The line that separates lease accounting from operating margin was published on both bases with a reconciling bridge through H1 2023, without the bridge in H1 2024, discontinued as an alternative performance measure in H1 2025, and the 2026 release prints no EBITDA at all."
+  },
+  "store_network": {
+    "periods": [
+      "2025-12-31",
+      "2026-06-30"
+    ],
+    "dos": [
+      136,
+      141
+    ],
+    "not_disclosed": [
+      "like-for-like growth",
+      "contribution of new space",
+      "retail selling area (sqm)",
+      "monobrand wholesale door count",
+      "store closures"
+    ]
+  },
+  "next_kpi": {
+    "quantified": [
+      {
+        "metric": "H2 零售渠道 cFX 增速",
+        "direction": "up",
+        "threshold": 12.0,
+        "unit": "pct",
+        "current": 19.3
+      },
+      {
+        "metric": "批发渠道占收入比重",
+        "direction": "down",
+        "threshold": 34.0,
+        "unit": "pct",
+        "current": 33.3
+      },
+      {
+        "metric": "核心净金融负债/收入（年末指引 11-12%）",
+        "direction": "down",
+        "threshold": 12.0,
+        "unit": "pct",
+        "current": 14.5,
+        "basis_note": "225,100 / (2025 年营收 × 1.105)，用公司自己的 2026 年增长指引中值年化"
+      },
+      {
+        "metric": "资本开支占收入比重（指引约 6%）",
+        "direction": "down",
+        "threshold": 6.0,
+        "unit": "pct",
+        "current": 7.6
+      },
+      {
+        "metric": "EBIT 利润率（指引约 17%）",
+        "direction": "up",
+        "threshold": 17.0,
+        "unit": "pct",
+        "current": 17.11
+      },
+      {
+        "metric": "报告口径半年营收增速",
+        "direction": "up",
+        "threshold": 10.0,
+        "unit": "pct",
+        "current": 9.5
+      }
+    ],
+    "excluded": [
+      "同店销售（like-for-like）—— 公司从未披露，两家券商在 2026 年 7 月 30 日的电话会上先后追问，均未获得数字",
+      "新增零售面积对增长的贡献 —— 同上，因此零售增长里「开店」与「同店」两部分无法拆分",
+      "零售面积（平方米）与批发单品牌门店数 —— 2025 年起不再出现在营收更新里",
+      "分产品线收入 —— 只在完整半年报与年报里披露，2026 年的半年新闻稿没有"
+    ],
+    "threshold_note": "第三节的六条阈值是本地研究设定，不是公司指引；其中四条的数值取自公司给出的年度目标，两条是本页自设的观察线。"
+  },
+  "sources": [
+    {
+      "label": "2026 年上半年业绩新闻稿（2026-07-30）",
+      "url": "https://investor.brunellocucinelli.com/en/services/archive/investor/press-releases"
+    },
+    {
+      "label": "2026 年第一季度营收更新（2026-04-09）",
+      "url": "https://investor.brunellocucinelli.com/en/services/archive/investor/press-releases"
+    },
+    {
+      "label": "历年年度财务报告与半年度财务报告",
+      "url": "https://investor.brunellocucinelli.com/en/services/archive/investor/financial-reports"
+    },
+    {
+      "label": "公司财务日历",
+      "url": "https://investor.brunellocucinelli.com/en/financials/calendar"
+    }
+  ],
+  "basis_straddle": {
+    "periods": [
+      "2025Q1",
+      "FY2025",
+      "2026H1"
+    ],
+    "target_pct": [
+      10.0,
+      10.0,
+      10.5
+    ],
+    "reported_pct": [
+      10.5,
+      10.1,
+      9.5
+    ],
+    "cfx_pct": [
+      10.0,
+      11.5,
+      13.3
+    ],
+    "note": "Three occasions on which the two bases fall on opposite sides of the target, or far enough apart to change the verdict. For 2026 the target shown is the midpoint of the +10% to +11% constant-rate range."
+  },
+  "guidance_basis_by_year": {
+    "years": [
+      2021,
+      2023,
+      2024,
+      2025,
+      2026
+    ],
+    "basis_stated": [
+      0,
+      0,
+      0,
+      4,
+      6
+    ],
+    "basis_unstated": [
+      10,
+      10,
+      33,
+      37,
+      20
+    ]
+  }
+}

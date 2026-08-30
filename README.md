@@ -2,10 +2,11 @@
 
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
-American Express, Broadcom, Cadence, Cboe Global Markets, Charles Schwab,
-CME Group, Costco, Ferrari, Interactive Brokers, Mastercard, Meta, Micron,
-Microsoft, Moody's, MSCI, Nasdaq, NIKE, NVIDIA, Philip Morris International,
-S&P Global, Samsung Electronics, SK hynix, Synopsys, TJX, TSMC and Visa.
+American Express, Broadcom, Brunello Cucinelli, Cadence, Cboe Global Markets,
+Charles Schwab, CME Group, Costco, Ferrari, Interactive Brokers, Mastercard,
+Meta, Micron, Microsoft, Moody's, MSCI, Nasdaq, NIKE, NVIDIA,
+Philip Morris International, S&P Global, Samsung Electronics, SK hynix,
+Synopsys, TJX, TSMC and Visa.
 
 ## Build
 
@@ -19,6 +20,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/amzn/`
 - `http://127.0.0.1:8765/avgo/`
 - `http://127.0.0.1:8765/axp/`
+- `http://127.0.0.1:8765/bc/`
 - `http://127.0.0.1:8765/cboe/`
 - `http://127.0.0.1:8765/cdns/`
 - `http://127.0.0.1:8765/cme/`
@@ -99,9 +101,9 @@ no dependency at all, and is what actually runs on a fresh clone.
   unverified customer-concentration estimates, local absolute paths, source
   PDFs, PPTs and transcripts.
 - `D` means Derived / 自算; it does not mean a company-defined non-GAAP metric.
-- Amounts are in the currency the filer reports in. Ferrari reports under IFRS
-  in euro, so its page is denominated in EUR and its figures are not addable to
-  the US-dollar pages; SK hynix reports under K-IFRS in won and is denominated
+- Amounts are in the currency the filer reports in. Ferrari and Brunello
+  Cucinelli both report under IFRS in euro, so their pages are denominated in
+  EUR and their figures are not addable to the US-dollar pages; SK hynix reports under K-IFRS in won and is denominated
   in KRW, quoted in trillions the way the company quotes itself, so it is not
   addable to either. The cross-page capex table stays in US dollars on every
   page, because it compares four filers that all report in that currency.
@@ -220,13 +222,20 @@ Charts are ordered the way the note is actually used:
    its peaks, the three cash-flow lines whose capital-expenditure leg has not yet
    turned, and nineteen quarters of inventory measured against cost of goods
    sold rather than against a selling price that has multiplied;
-   and Samsung Electronics gets the one number the company
+   Samsung Electronics gets the one number the company
    actually guides -- next quarter's DRAM and NAND bit shipments, and only as a
    phrase -- beside the price it never guides, the eight quarters in which
    Memory went from twenty-eight per cent of group revenue to seventy, the
    handset division's first operating loss, caused by its own semiconductor
    division's prices, and the intersegment elimination the segment table has no
-   line for.
+   line for; and Brunello Cucinelli gets the guidance sentence it has repeated
+   for five years — revenue growth of "around 10%" — set against the two
+   different answers it produces, because 110 of the 120 quantified forward
+   statements in its results calls never say which exchange-rate basis they are
+   on, the eighteen quarters of which only five were ever published as a
+   quarter, the eleven half-years that are the only frequency at which a full
+   income statement exists, and the lease-adjusted EBITDA line the company
+   published for four years and then withdrew.
 
 On the Alphabet, Meta and Microsoft pages these run on the ten-year record
 rather than eight quarters, because eight quarters cannot tell a trend from a
