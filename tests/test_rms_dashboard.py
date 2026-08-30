@@ -592,6 +592,79 @@ class RmsPayloadTest(unittest.TestCase):
         for group in capex["groups"]:
             self.assertEqual(len(group["values"]), 4)
 
+    def test_every_derived_value_prints_the_digit_the_exact_figure_prints(self) -> None:
+        """The renderer rounds a second time, and that pass can move a digit.
+
+        A payload value stored at the precision it will be printed at has
+        already lost the information the display rounding needs. This page did
+        it once: 香水与美妆's share of the quarter's constant-currency increment
+        is −4.3527%, the builder stored −4.35, and `pct1` printed −4.3% —
+        rounding away from the true figure rather than towards it. Nothing saw
+        it: the number is finite, the length is right, and it is one digit.
+
+        The first version of this test guessed at the defect from the shape of
+        the stored number — "expressible in one more place than it is printed
+        at" — and immediately flagged H1 2024's margin, which is 41.950959 and
+        lands on that grid by coincidence. A test that cannot tell a flattened
+        value from a coincidence is the same mistake as measuring rotated text
+        with an axis-aligned box. So this recomputes each figure from the
+        staging and compares the two rendered strings, which is the only
+        comparison that answers the question.
+        """
+        def pct1(v): return f"{v:.1f}%"
+        def pct2(v): return f"{v:.2f}%"
+        def pp1(v): return f"{v:+.1f}pp"
+
+        latest = len(self.staging["periods"]) - 1
+        group = self.staging["group_revenue"]
+        by_ref = {ex["ref"]: ex for ex in self.exhibits if "ref" in ex}
+        mismatch = []
+
+        def compare(where, stored, exact, fmt):
+            if fmt(stored) != fmt(exact):
+                mismatch.append(f"{where}: stored prints {fmt(stored)}, "
+                                f"the exact figure prints {fmt(exact)}")
+
+        # Ex3 -- the wedge is a difference of two printed rates
+        for i, stored in enumerate(by_ref["EX_WEDGE"]["values"]):
+            compare(f"EX_WEDGE[{i}]", stored,
+                    group["published_pct"][i] - group["cc_pct"][i], pp1)
+
+        # Ex6 / Ex7 -- shares of revenue and of the constant-currency increment
+        for ref, block, order in (("EX_SECTOR_MIX", "by_sector", rms.SECTOR_ORDER),
+                                  ("EX_REGION_MIX", "by_region", rms.REGION_ORDER)):
+            increments, total = rms.cc_increments(self.staging[block], order, latest)
+            weight, share = by_ref[ref]["groups"]
+            for i, key in enumerate(order):
+                compare(f"{ref} weight {key}", weight["values"][i],
+                        self.staging[block][key]["revenue_eur_m"][latest]
+                        / group["revenue_eur_m"][latest] * 100, pct1)
+                compare(f"{ref} share {key}", share["values"][i],
+                        increments[key] / total * 100, pct1)
+
+        # Ex9 -- the half-year margins, printed to two places
+        halves = {h["label"]: h for h in self.staging["half_years"]}
+        years = by_ref["EX_HALF_MARGIN"]["xlabels"]
+        for series, prefix in zip(by_ref["EX_HALF_MARGIN"]["series"], ("H1", "H2")):
+            for i, year in enumerate(years):
+                stored = series["values"][i]
+                if stored is None:
+                    continue
+                half = halves[f"{prefix} {year}"]
+                compare(f"EX_HALF_MARGIN {prefix} {year}", stored,
+                        half["recurring_operating_income_eur_m"]
+                        / half["revenue_eur_m"] * 100, pct2)
+
+        # Ex12 -- segment margin change in percentage points
+        operating = [x for x in self.staging["h1_segments"] if x["key"] != "unallocated"]
+        for i, row in enumerate(operating):
+            compare(f"EX_SEGMENT_MARGIN {row['key']}",
+                    by_ref["EX_SEGMENT_MARGIN"]["values"][i],
+                    row["roi_2026"] / row["revenue_2026"] * 100
+                    - row["roi_2025"] / row["revenue_2025"] * 100, pp1)
+
+        self.assertEqual(mismatch, [], "\n".join(mismatch))
+
     def test_the_published_payload_matches_a_fresh_build(self) -> None:
         published = js_payload(ROOT / "data" / "rms.js", "window.DASH")
         self.assertEqual(published, self.payload)

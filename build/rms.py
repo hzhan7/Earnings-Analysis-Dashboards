@@ -78,6 +78,15 @@ def signed(value: float, digits: int = 1, suffix: str = "%") -> str:
 
 
 def rounded(values, digits: int = 6):
+    """Round for the payload so a rebuild is idempotent, keeping ``None`` holes.
+
+    Six places, never the display precision. The renderer rounds again when it
+    formats, so a value stored at the precision it is printed at can move a
+    digit on that second pass: this page published 香水与美妆's share of the
+    quarter's constant-currency increment as −4.3% when the figure is −4.3527%,
+    because the builder had already flattened it to −4.35 and `pct1` then took
+    it down rather than up.
+    """
     return [None if v is None else round(v, digits) for v in values]
 
 
@@ -149,7 +158,7 @@ def outlook_charts(staging: dict) -> list[dict]:
         "title": (f"汇率把标题增速抬高或压低了多少：八季从 {signed(wedge[2], 1, 'pp')} 走到 "
                   f"{signed(wedge[worst], 1, 'pp')}，本季收窄到 {signed(wedge[-1], 1, 'pp')}"),
         "xlabels": list(periods),
-        "values": rounded(wedge, 2),
+        "values": rounded(wedge),
         "legend": "published 减固定汇率",
         "positive_label": "汇率抬高了标题增速",
         "negative_label": "汇率压低了标题增速",
@@ -263,9 +272,9 @@ def quarter_charts(staging: dict) -> list[dict]:
         "xrot": 45,
         "groups": [
             {"name": "占本季收入", "color": "BLUE",
-             "values": rounded([weight[key] for key in SECTOR_ORDER], 2)},
+             "values": rounded([weight[key] for key in SECTOR_ORDER])},
             {"name": "占本季固定汇率增量", "color": "NAVY",
-             "values": rounded([share[key] for key in SECTOR_ORDER], 2)},
+             "values": rounded([share[key] for key in SECTOR_ORDER])},
         ],
         "bar_labels": True,
         "fmt": "pct1", "label_fmt": "pct1",
@@ -297,9 +306,9 @@ def quarter_charts(staging: dict) -> list[dict]:
         "xrot": 45,
         "groups": [
             {"name": "占本季收入", "color": "BLUE",
-             "values": rounded([r_weight[key] for key in REGION_ORDER], 2)},
+             "values": rounded([r_weight[key] for key in REGION_ORDER])},
             {"name": "占本季固定汇率增量", "color": "NAVY",
-             "values": rounded([r_share[key] for key in REGION_ORDER], 2)},
+             "values": rounded([r_share[key] for key in REGION_ORDER])},
         ],
         "bar_labels": True,
         "fmt": "pct1", "label_fmt": "pct1",
@@ -361,8 +370,8 @@ def half_year_charts(staging: dict) -> list[dict]:
                   f"落差从 {gaps[0]:.2f}pp 收窄到 {gaps[-1]:.2f}pp"),
         "xlabels": years,
         "series": [
-            {"name": "上半年（公司披露）", "values": rounded(first, 2), "color": "NAVY"},
-            {"name": "下半年（全年减上半年 D）", "values": rounded(second, 2), "color": "GOLD"},
+            {"name": "上半年（公司披露）", "values": rounded(first), "color": "NAVY"},
+            {"name": "下半年（全年减上半年 D）", "values": rounded(second), "color": "GOLD"},
         ],
         "fmt": "pct2", "yfmt": "pct1", "label_fmt": "pct2", "end_label": True,
         "ylab": "半年经常性经营利润率 %",
@@ -411,11 +420,11 @@ def half_year_charts(staging: dict) -> list[dict]:
         "stacks": [{
             "name": "对上半年利润率的影响",
             "color": "NAVY",
-            "values": rounded(legs, 4) + [None],
+            "values": rounded(legs) + [None],
         }],
         "net": {
             "name": "上半年利润率净变动",
-            "values": [None] * len(legs) + [round(end - start, 4)],
+            "values": [None] * len(legs) + [round(end - start, 6)],
         },
         "fmt": "pp1", "yfmt": "pp1", "label_fmt": "pp1",
         "ylab": "对利润率的影响 pp",
@@ -490,7 +499,7 @@ def half_year_charts(staging: dict) -> list[dict]:
                   f"{operating[big]['roi_2026'] / total_now * 100:.1f}%"),
         "xlabels": [s["label"] for s in operating],
         "xrot": 45,
-        "values": rounded(margin_delta, 3),
+        "values": rounded(margin_delta),
         "legend": "上半年利润率同比变动",
         "positive_label": "利润率扩张",
         "negative_label": "利润率收缩",
