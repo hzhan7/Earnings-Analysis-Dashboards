@@ -48,40 +48,96 @@ class AxpDashboardTest(unittest.TestCase):
                         for ex in section["exhibits"]]
 
     # ── the window ──────────────────────────────────────────────────────────
-    def test_the_long_window_is_thirty_eight_contiguous_quarters(self) -> None:
+    def test_the_long_window_is_forty_two_contiguous_quarters(self) -> None:
         periods = self.staging["periods"]
-        self.assertEqual(len(periods), 38)
-        self.assertEqual(periods[0], "2017Q1")
+        self.assertEqual(len(periods), 42)
+        self.assertEqual(periods[0], "2016Q1")
         self.assertEqual(periods[-1], "2026Q2")
         for earlier, later in zip(periods, periods[1:]):
             y1, q1 = int(earlier[:4]), int(earlier[5])
             y2, q2 = int(later[:4]), int(later[5])
             self.assertEqual((y2, q2), (y1 + 1, 1) if q1 == 4 else (y1, q1 + 1))
 
-    def test_the_window_does_not_reach_back_past_asc_606(self) -> None:
-        """2016 was never restated in the statistical tables, so it is not here.
+    def test_the_income_statement_stops_where_the_recast_stops(self) -> None:
+        """2016 is in the file now, but not for the lines ASC 606 moved.
 
         The Q1'17 discount revenue printed in the January 2018 release is 4,519
         and the same quarter in the April 2018 release is 5,387. 2017 exists on
         both bases and the page takes the restated one; 2016 exists only on the
-        old one, so joining it would draw a ~10% revenue step that is a
-        presentation change and nothing else.
-        """
-        self.assertNotIn("2016Q4", self.staging["periods"])
-        self.assertEqual(self.staging["financials"]["discount_revenue_usd_m"][0], 5387.0)
+        old one -- American Express recast 2017 by quarter and never republished
+        2016 by quarter -- so joining it would draw a ~10% revenue step that is
+        a presentation change and nothing else.
 
-    def test_every_headline_series_is_complete_over_the_window(self) -> None:
+        What changed is that "so 2016 is not here at all" was too broad. Eight
+        series the recast did not touch do carry 2016, and this test is the line
+        between the two groups: everything on the recast side is a hole for
+        exactly the four quarters before it.
+        """
+        periods = self.staging["periods"]
+        self.assertEqual(periods[axp.RECAST], "2017Q1")
+        fin = self.staging["financials"]
+        self.assertEqual(fin["discount_revenue_usd_m"][axp.RECAST], 5387.0)
+        self.assertEqual(fin["discount_revenue_usd_m"][:axp.RECAST], [None] * 4)
+
+        untouched = {"net_card_fees_usd_m", "salaries_usd_m", "diluted_shares_m"}
+        for name, values in fin.items():
+            if not isinstance(values, list):
+                continue
+            head = values[:axp.RECAST]
+            if name in untouched:
+                self.assertTrue(all(v is not None for v in head), name)
+            else:
+                self.assertEqual(head, [None] * 4, name)
+
+        om = self.staging["operating_metrics"]
+        untouched_om = {"billed_business_usd_bn", "network_volumes_usd_bn",
+                        "average_fee_per_card_usd", "proprietary_cards_in_force_m",
+                        "cet1_ratio_pct"}
+        for name in untouched_om:
+            self.assertTrue(any(v is not None for v in om[name][:axp.RECAST]), name)
+        self.assertEqual(om["company_average_discount_rate_pct"][:axp.RECAST],
+                         [None] * 4,
+                         "the average discount rate was recomputed under ASC 606")
+
+    def test_every_headline_series_is_complete_over_the_recast_window(self) -> None:
         partial = {"business_development_usd_m", "marketing_usd_m",
                    "marketing_and_business_development_usd_m"}
         for name, values in self.fin.items():
-            self.assertEqual(len(values), 38, name)
+            if not isinstance(values, list):
+                continue
+            self.assertEqual(len(values), 42, name)
             if name not in partial:
-                self.assertTrue(all(v is not None for v in values), name)
+                self.assertTrue(all(v is not None for v in values[axp.RECAST:]), name)
+
+    def test_the_effective_tax_rate_is_the_ratio_it_claims_to_be(self) -> None:
+        """Three cells used to hold the *next* quarter's rate.
+
+        2017Q4 stored 21.5 while its own tax provision and pretax income give
+        167.1 -- that is the US tax-reform charge quarter, pretax 1,798 against
+        a 3,004 provision and a 1,206 loss. 2018Q1 held 2018Q2's rate and 2018Q2
+        held 2018Q3's; the series came back into step at 2018Q3, so it was a
+        three-cell run reading one quarter late. Nothing outside the file was
+        needed to see it, which is why the identity is now asserted rather than
+        the values transcribed.
+        """
+        fin = self.staging["financials"]
+        for index, period in enumerate(self.staging["periods"]):
+            tax = fin["tax_provision_usd_m"][index]
+            pretax = fin["pretax_income_usd_m"][index]
+            rate = fin["effective_tax_rate_pct"][index]
+            if tax is None or pretax is None:
+                self.assertIsNone(rate, period)
+                continue
+            self.assertAlmostEqual(round(tax / pretax * 100, 1), rate,
+                                   places=6, msg=period)
+        quarter = self.staging["periods"].index("2017Q4")
+        self.assertAlmostEqual(fin["effective_tax_rate_pct"][quarter], 167.1)
+        self.assertLess(fin["net_income_usd_m"][quarter], 0)
 
     # ── the identities the page's arguments rest on ─────────────────────────
     def test_income_statement_identity_holds_every_quarter(self) -> None:
         fin = self.fin
-        for i, period in enumerate(self.staging["periods"]):
+        for i, period in enumerate(self.staging["periods"][axp.RECAST:], axp.RECAST):
             self.assertAlmostEqual(
                 fin["revenue_usd_m"][i] - fin["total_expenses_usd_m"][i]
                 - fin["provisions_usd_m"][i],
@@ -89,7 +145,7 @@ class AxpDashboardTest(unittest.TestCase):
 
     def test_pre_provision_profit_is_revenue_less_total_expenses(self) -> None:
         fin = self.fin
-        for i, period in enumerate(self.staging["periods"]):
+        for i, period in enumerate(self.staging["periods"][axp.RECAST:], axp.RECAST):
             self.assertAlmostEqual(
                 fin["ppop_usd_m"][i],
                 fin["revenue_usd_m"][i] - fin["total_expenses_usd_m"][i],
@@ -98,7 +154,7 @@ class AxpDashboardTest(unittest.TestCase):
     def test_the_two_legs_sum_to_the_pretax_change_every_quarter(self) -> None:
         """The decomposition in section two is an identity, not an estimate."""
         fin = self.fin
-        for i in range(4, len(self.staging["periods"])):
+        for i in range(axp.RECAST + 4, len(self.staging["periods"])):
             operating = fin["ppop_usd_m"][i] - fin["ppop_usd_m"][i - 4]
             provision = -(fin["provisions_usd_m"][i] - fin["provisions_usd_m"][i - 4])
             self.assertAlmostEqual(
@@ -108,7 +164,7 @@ class AxpDashboardTest(unittest.TestCase):
 
     def test_the_four_revenue_legs_sum_to_revenue_every_quarter(self) -> None:
         fin = self.fin
-        for i, period in enumerate(self.staging["periods"]):
+        for i, period in enumerate(self.staging["periods"][axp.RECAST:], axp.RECAST):
             self.assertAlmostEqual(
                 fin["discount_revenue_usd_m"][i] + fin["net_card_fees_usd_m"][i]
                 + fin["other_non_interest_revenue_usd_m"][i]
@@ -117,7 +173,7 @@ class AxpDashboardTest(unittest.TestCase):
 
     def test_non_interest_revenue_reconciles_to_the_filed_total(self) -> None:
         fin = self.fin
-        for i, period in enumerate(self.staging["periods"]):
+        for i, period in enumerate(self.staging["periods"][axp.RECAST:], axp.RECAST):
             self.assertAlmostEqual(
                 fin["total_non_interest_revenues_usd_m"][i]
                 + fin["total_interest_income_usd_m"][i]
@@ -126,7 +182,7 @@ class AxpDashboardTest(unittest.TestCase):
 
     def test_pretax_less_tax_is_net_income_every_quarter(self) -> None:
         fin = self.fin
-        for i, period in enumerate(self.staging["periods"]):
+        for i, period in enumerate(self.staging["periods"][axp.RECAST:], axp.RECAST):
             self.assertAlmostEqual(
                 fin["pretax_income_usd_m"][i] - fin["tax_provision_usd_m"][i],
                 fin["net_income_usd_m"][i], places=6, msg=period)
@@ -146,7 +202,7 @@ class AxpDashboardTest(unittest.TestCase):
     def test_the_legacy_combined_line_equals_the_split_where_both_exist(self) -> None:
         """The overlap is what licenses treating them as one quantity."""
         overlap = 0
-        for i, period in enumerate(self.staging["periods"]):
+        for i, period in enumerate(self.staging["periods"][axp.RECAST:], axp.RECAST):
             combined = self.fin["marketing_and_business_development_usd_m"][i]
             marketing = self.fin["marketing_usd_m"][i]
             bizdev = self.fin["business_development_usd_m"][i]
@@ -187,7 +243,7 @@ class AxpDashboardTest(unittest.TestCase):
         """
         rate = next(ex for ex in self.exhibits if ex.get("ref") == "EX_RATE")
         derived = rate["series"][1]["values"]
-        for period, value in zip(self.staging["periods"], derived):
+        for period, value in zip(self.staging["periods"][axp.RECAST:], derived):
             if period < "2021Q1":
                 self.assertIsNone(value, period)
             else:
