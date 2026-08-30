@@ -362,6 +362,17 @@ def build_payload(staging: dict) -> dict:
     amortization_share = [a / rev * 100 for a, rev in zip(amortization, revenue)]
 
     next_quarter = guidance["q3_2026_next_quarter"]
+    # Synopsys does not guide a quarterly operating margin. The two midpoint
+    # fields that used to sit in this block were the *full year*'s, and the page
+    # printed one of them as the next quarter's -- understating the guided
+    # margin by about 1.2pp and reversing its direction against this quarter.
+    # They now live under `fy2026`, where the release puts them, and what the
+    # table shows is the ratio the two guided ranges actually imply.
+    implied_next_margin = (
+        (sum(next_quarter["revenue_usd_m"]) / 2
+         - sum(next_quarter["non_gaap_expenses_usd_m"]) / 2)
+        / (sum(next_quarter["revenue_usd_m"]) / 2) * 100
+    )
     full_year = guidance["fy2026"]
     footnote = guidance["fy2026_revenue_footnote"]
 
@@ -1155,6 +1166,10 @@ def build_payload(staging: dict) -> dict:
          f"${revenue[-1]:,.1f}M", "超出上限",
          f"${next_quarter['revenue_usd_m'][0]:,.0f}–{next_quarter['revenue_usd_m'][1]:,.0f}M",
          f"中值环比 {signed(pct_change(sum(next_quarter['revenue_usd_m']) / 2, revenue[-1]))} D"],
+        # The release gives no quarterly margin. What it does give is a revenue
+        # range and an expense range, and their midpoints imply one -- so the
+        # implied figure is computed here and labelled D, rather than reading a
+        # "midpoint" field that turned out to hold the *full-year* number.
         ["non-GAAP 费用",
          f"${record['guide_non_gaap_expenses_lo_usd_m'][current]:,.0f}–"
          f"{record['guide_non_gaap_expenses_hi_usd_m'][current]:,.0f}M",
@@ -1164,8 +1179,8 @@ def build_payload(staging: dict) -> dict:
          f"中值环比 {signed(pct_change(sum(next_quarter['non_gaap_expenses_usd_m']) / 2, actual_expense))} D"],
         ["non-GAAP 营业利润率", "指引未直接给出该季比率",
          f"{financials['non_gaap_operating_margin_pct'][-1]:.2f}% D", "—",
-         f"中点约 {next_quarter['non_gaap_operating_margin_midpoint_pct']:.1f}%",
-         f"较本季 {next_quarter['non_gaap_operating_margin_midpoint_pct'] - financials['non_gaap_operating_margin_pct'][-1]:+.1f}pp D"],
+         f"隐含中点 {implied_next_margin:.2f}% D",
+         f"较本季 {implied_next_margin - financials['non_gaap_operating_margin_pct'][-1]:+.1f}pp D"],
         ["non-GAAP EPS",
          f"${record['guide_non_gaap_eps_lo_usd'][current]:.2f}–"
          f"{record['guide_non_gaap_eps_hi_usd'][current]:.2f}",

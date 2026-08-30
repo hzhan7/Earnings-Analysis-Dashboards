@@ -54,6 +54,71 @@ class SnpsDashboardTest(unittest.TestCase):
         cls.record = cls.source["quarterly_guidance_history"]
 
     # ── shape ────────────────────────────────────────────────────────────────
+    def test_the_quarterly_margin_guidance_is_not_the_full_year_one(self) -> None:
+        """The two midpoints in the release are the fiscal year's, not Q4's.
+
+        They used to sit in `guidance.q3_2026_next_quarter`, and the page's
+        guidance table printed one of them as the next quarter's margin: "about
+        41.5%", "-0.1pp versus this quarter". Both are wrong in a way nothing
+        looked broken by, because the *values* are right -- they are simply the
+        wrong period's. Midpoint arithmetic settles it without reading the HTML:
+        the full year implies 41.48% and 10.40%, matching the stored figures to
+        the digit, while the fourth quarter implies 42.66% and 11.45%.
+        """
+        guidance = self.source["guidance"]
+        quarter = guidance["q3_2026_next_quarter"]
+        year = guidance["fy2026"]
+        self.assertNotIn("non_gaap_operating_margin_midpoint_pct", quarter)
+        self.assertNotIn("gaap_operating_margin_midpoint_pct", quarter)
+
+        def midpoint(values):
+            return sum(values) / 2
+
+        year_revenue = midpoint(year["revenue_usd_m"])
+        self.assertAlmostEqual(
+            (year_revenue - midpoint(year["non_gaap_expenses_usd_m"])) / year_revenue * 100,
+            year["non_gaap_operating_margin_midpoint_pct"], places=1)
+        self.assertAlmostEqual(
+            (year_revenue - midpoint(year["gaap_expenses_usd_m"])) / year_revenue * 100,
+            year["gaap_operating_margin_midpoint_pct"], places=1)
+
+        quarter_revenue = midpoint(quarter["revenue_usd_m"])
+        implied = ((quarter_revenue - midpoint(quarter["non_gaap_expenses_usd_m"]))
+                   / quarter_revenue * 100)
+        self.assertGreater(implied, year["non_gaap_operating_margin_midpoint_pct"] + 1.0,
+                           "the quarter and the year are more than a point apart, "
+                           "which is why filing one under the other was visible "
+                           "on the page")
+        table = next(t for t in self.payload["tables"] if "指引" in t["title"])
+        row = next(r for r in table["rows"] if r[0] == "non-GAAP 营业利润率")
+        self.assertIn(f"{implied:.2f}%", row[4])
+        self.assertNotIn("41.5%", row[4])
+
+    def test_the_ansys_split_is_recomputable_and_the_page_says_so(self) -> None:
+        """The stated reason for excluding EDA-ex-Ansys was too broad.
+
+        It read "the company has never broken out Ansys revenue in any filing,
+        so a quarterly DA-minus-Ansys cannot be recomputed". The Q3 FY2026 10-Q's
+        revenue disaggregation prints the product-group *percentages* -- EDA
+        51.8, Design IP 19.1, Ansys 28.7, Other 0.4 -- and one decimal on a
+        US$2.48B base pins each derived dollar figure to about +/- US$0.2M. What
+        survives is the narrower claim: no dollar figure is printed, and the
+        percentages exist for too few quarters to draw a line beside this page's
+        forty-two.
+        """
+        note = self.source["ansys_split_note"]
+        percentages = note["percentages_pct"]
+        self.assertAlmostEqual(sum(percentages.values()), 100.0, places=6)
+        revenue = note["revenue_usd_m"]
+        self.assertAlmostEqual(revenue * percentages["Ansys"] / 100,
+                               note["implied_ansys_usd_m"], places=1)
+        self.assertAlmostEqual(
+            revenue * (percentages["EDA"] + percentages["Other"]) / 100,
+            note["implied_da_ex_ansys_usd_m"], places=1)
+        excluded = self.source["next_kpi"]["excluded"]
+        self.assertIn("那句话太宽了", excluded)
+        self.assertNotIn("无法复算的拆分", excluded)
+
     def test_the_window_is_eight_quarters_and_complete(self) -> None:
         self.assertEqual(len(self.source["periods"]), 8)
         self.assertEqual(len(self.source["period_ends"]), 8)
