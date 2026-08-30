@@ -3,10 +3,10 @@
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
 American Express, Broadcom, Brunello Cucinelli, Cadence, Cboe Global Markets,
-Charles Schwab, CME Group, Costco, Ferrari, Interactive Brokers, Mastercard,
-Meta, Micron, Microsoft, Moody's, MSCI, Nasdaq, NIKE, NVIDIA,
-Philip Morris International, S&P Global, Samsung Electronics, SK hynix,
-Synopsys, TJX, TSMC and Visa.
+Charles Schwab, CME Group, Costco, Ferrari, Hermès International,
+Interactive Brokers, Mastercard, Meta, Micron, Microsoft, Moody's, MSCI,
+Nasdaq, NIKE, NVIDIA, Philip Morris International, S&P Global,
+Samsung Electronics, SK hynix, Synopsys, TJX, TSMC and Visa.
 
 ## Build
 
@@ -38,6 +38,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/nvda/`
 - `http://127.0.0.1:8765/pm/`
 - `http://127.0.0.1:8765/race/`
+- `http://127.0.0.1:8765/rms/`
 - `http://127.0.0.1:8765/samsung/`
 - `http://127.0.0.1:8765/schw/`
 - `http://127.0.0.1:8765/skhynix/`
@@ -222,6 +223,13 @@ Charts are ordered the way the note is actually used:
    its peaks, the three cash-flow lines whose capital-expenditure leg has not yet
    turned, and nineteen quarters of inventory measured against cost of goods
    sold rather than against a selling price that has multiplied;
+   Hermès International gets the two growth rates it prints beside every cell
+   — the published one and its own constant-currency one — and the wedge
+   between them that went from +1.3pp to −7.0pp in four quarters and left the
+   two with opposite signs in four region-quarters, the seven métiers and six
+   regions measured by what they contribute rather than by the size of their
+   own percentage, and a profit record that runs on halves because the company
+   publishes an income statement only twice a year;
    Samsung Electronics gets the one number the company
    actually guides -- next quarter's DRAM and NAND bit shipments, and only as a
    phrase -- beside the price it never guides, the eight quarters in which

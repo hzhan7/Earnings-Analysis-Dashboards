@@ -40,6 +40,7 @@ series/*.json
 !series/nvda.json
 !series/pm.json
 !series/race.json
+!series/rms.json
 !series/samsung.json
 !series/schw.json
 !series/skhynix.json

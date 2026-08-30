@@ -558,7 +558,7 @@ class TsmDashboardTest(unittest.TestCase):
             [
              "amzn", "avgo", "axp", "bc", "cboe", "cdns", "cme", "cost",
              "googl", "ibkr", "ma", "mco", "meta", "msci", "msft", "mu",
-             "ndaq", "nke", "nvda", "pm", "race", "samsung", "schw",
+             "ndaq", "nke", "nvda", "pm", "race", "rms", "samsung", "schw",
              "skhynix", "snps", "spgi", "tjx", "tsm", "v",
             ],
         )

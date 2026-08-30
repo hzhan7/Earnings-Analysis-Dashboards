@@ -1,0 +1,1248 @@
+{
+  "schema_version": "quarterly-staging/rms-v1",
+  "company": {
+    "ticker": "RMS",
+    "name": "Hermès International",
+    "slug": "rms",
+    "group": "luxury_brands",
+    "accounting_standard": "IFRS",
+    "currency": "EUR"
+  },
+  "_provenance": "爱马仕不是美国证券交易委员会的申报人：它自 2008 年起依 Rule 12g3-2(b) 豁免登记，从未提交过 20-F 或 6-K，因此本站其他公司页依赖的 10-Q/10-K 渲染报表对它不存在。下面每一格都逐字取自公司自己的季度收入公告、半年度业绩新闻稿与半年度财务报告；固定汇率增速一律取公司印出的那一列，绝不由「半年减一季」反推 —— 反推值与官方值最大相差 0.3pp。",
+  "periods": [
+    "Q3 2024",
+    "Q4 2024",
+    "Q1 2025",
+    "Q2 2025",
+    "Q3 2025",
+    "Q4 2025",
+    "Q1 2026",
+    "Q2 2026"
+  ],
+  "release_dates": {
+    "Q3 2024": "2024-10-24",
+    "Q4 2024": "2025-02-14",
+    "Q1 2025": "2025-04-17",
+    "Q2 2025": "2025-07-30",
+    "Q3 2025": "2025-10-23",
+    "Q4 2025": "2026-02-12",
+    "Q1 2026": "2026-04-15",
+    "Q2 2026": "2026-07-29"
+  },
+  "release_titles": {
+    "Q3 2024": "Quarterly information report as at the end of September 2024",
+    "Q4 2024": "2024 Full-Year Results",
+    "Q1 2025": "Quarterly information report as at the end of March 2025",
+    "Q2 2025": "2025 First Half Results",
+    "Q3 2025": "Quarterly information report as at the end of September 2025",
+    "Q4 2025": "2025 Full-Year Results",
+    "Q1 2026": "Quarterly information report as at the end of March 2026",
+    "Q2 2026": "2026 First Half Results"
+  },
+  "group_revenue": {
+    "revenue_eur_m": [
+      3704,
+      3962,
+      4129,
+      3905,
+      3881,
+      4087,
+      4070,
+      4094
+    ],
+    "published_pct": [
+      10.1,
+      17.7,
+      8.5,
+      5.6,
+      4.8,
+      3.1,
+      -1.4,
+      4.8
+    ],
+    "cc_pct": [
+      11.3,
+      17.6,
+      7.2,
+      9.0,
+      9.6,
+      9.8,
+      5.6,
+      6.7
+    ],
+    "prior_year_eur_m": [
+      3365,
+      3364,
+      3805,
+      3699,
+      3704,
+      3962,
+      4129,
+      3905
+    ]
+  },
+  "by_sector": {
+    "leather_goods_saddlery": {
+      "label_en": "Leather Goods and Saddlery",
+      "label": "皮具与马具",
+      "revenue_eur_m": [
+        1573,
+        1669,
+        1813,
+        1765,
+        1700,
+        1792,
+        1849,
+        1912
+      ],
+      "published_pct": [
+        12.7,
+        21.7,
+        11.4,
+        11.2,
+        8.1,
+        7.4,
+        2.0,
+        8.4
+      ],
+      "cc_pct": [
+        14.0,
+        21.5,
+        10.0,
+        14.8,
+        13.3,
+        14.6,
+        9.4,
+        10.2
+      ],
+      "prior_year_eur_m": [
+        1396,
+        1371,
+        1628,
+        1588,
+        1573,
+        1669,
+        1813,
+        1765
+      ]
+    },
+    "ready_to_wear_accessories": {
+      "label_en": "Ready-to-wear and Accessories",
+      "label": "成衣与配饰",
+      "revenue_eur_m": [
+        1134,
+        1108,
+        1149,
+        1106,
+        1157,
+        1113,
+        1076,
+        1123
+      ],
+      "published_pct": [
+        12.1,
+        17.3,
+        8.3,
+        0.4,
+        2.0,
+        0.4,
+        -6.4,
+        1.5
+      ],
+      "cc_pct": [
+        13.5,
+        17.4,
+        7.2,
+        3.8,
+        6.6,
+        7.1,
+        0.4,
+        3.6
+      ],
+      "prior_year_eur_m": [
+        1012,
+        945,
+        1061,
+        1101,
+        1134,
+        1108,
+        1149,
+        1106
+      ]
+    },
+    "silk_textiles": {
+      "label_en": "Silk and Textiles",
+      "label": "丝绸与纺织",
+      "revenue_eur_m": [
+        210,
+        304,
+        256,
+        192,
+        209,
+        308,
+        257,
+        212
+      ],
+      "published_pct": [
+        3.0,
+        6.7,
+        5.6,
+        -1.2,
+        -0.7,
+        1.3,
+        0.4,
+        10.6
+      ],
+      "cc_pct": [
+        4.0,
+        7.3,
+        4.5,
+        2.2,
+        4.1,
+        7.1,
+        7.8,
+        12.2
+      ],
+      "prior_year_eur_m": [
+        204,
+        285,
+        242,
+        194,
+        210,
+        304,
+        256,
+        192
+      ]
+    },
+    "other_hermes_sectors": {
+      "label_en": "Other Hermès sectors",
+      "label": "其他爱马仕板块（珠宝与家居）",
+      "revenue_eur_m": [
+        455,
+        488,
+        544,
+        512,
+        484,
+        516,
+        540,
+        525
+      ],
+      "published_pct": [
+        12.7,
+        18.0,
+        7.6,
+        11.0,
+        6.4,
+        5.7,
+        -0.6,
+        2.4
+      ],
+      "cc_pct": [
+        13.6,
+        17.4,
+        6.1,
+        14.9,
+        11.6,
+        12.9,
+        6.8,
+        4.0
+      ],
+      "prior_year_eur_m": [
+        403,
+        413,
+        505,
+        462,
+        455,
+        488,
+        544,
+        512
+      ]
+    },
+    "perfume_beauty": {
+      "label_en": "Perfume and Beauty",
+      "label": "香水与美妆",
+      "revenue_eur_m": [
+        129,
+        147,
+        129,
+        119,
+        118,
+        122,
+        127,
+        107
+      ],
+      "published_pct": [
+        10.2,
+        16.7,
+        -0.1,
+        -8.0,
+        -8.6,
+        -16.6,
+        -2.2,
+        -10.3
+      ],
+      "cc_pct": [
+        10.6,
+        16.9,
+        -0.5,
+        -7.2,
+        -7.2,
+        -14.6,
+        0.2,
+        -9.5
+      ],
+      "prior_year_eur_m": [
+        117,
+        126,
+        130,
+        129,
+        129,
+        147,
+        129,
+        119
+      ]
+    },
+    "watches": {
+      "label_en": "Watches",
+      "label": "钟表",
+      "revenue_eur_m": [
+        126,
+        143,
+        151,
+        130,
+        131,
+        138,
+        135,
+        134
+      ],
+      "published_pct": [
+        -18.9,
+        3.2,
+        -9.0,
+        -8.9,
+        4.0,
+        -3.5,
+        -10.3,
+        3.0
+      ],
+      "cc_pct": [
+        -18.2,
+        2.6,
+        -10.0,
+        -5.5,
+        8.8,
+        3.2,
+        -3.7,
+        4.4
+      ],
+      "prior_year_eur_m": [
+        155,
+        138,
+        166,
+        142,
+        126,
+        143,
+        151,
+        130
+      ]
+    },
+    "other_products": {
+      "label_en": "Other products",
+      "label": "其他产品（代工与 John Lobb 等）",
+      "revenue_eur_m": [
+        76,
+        104,
+        87,
+        82,
+        82,
+        98,
+        86,
+        82
+      ],
+      "published_pct": [
+        -0.0,
+        19.1,
+        17.5,
+        -2.0,
+        8.1,
+        -5.6,
+        -0.7,
+        0.4
+      ],
+      "cc_pct": [
+        0.6,
+        19.0,
+        16.5,
+        -0.4,
+        11.1,
+        -1.7,
+        3.6,
+        1.9
+      ],
+      "prior_year_eur_m": [
+        76,
+        87,
+        74,
+        83,
+        76,
+        104,
+        87,
+        82
+      ]
+    }
+  },
+  "by_region": {
+    "france": {
+      "label_en": "France",
+      "label": "法国",
+      "revenue_eur_m": [
+        365,
+        401,
+        357,
+        383,
+        403,
+        432,
+        347,
+        407
+      ],
+      "published_pct": [
+        13.1,
+        11.8,
+        14.2,
+        4.1,
+        10.4,
+        7.8,
+        -2.8,
+        6.2
+      ],
+      "cc_pct": [
+        13.1,
+        11.8,
+        14.2,
+        4.1,
+        10.4,
+        7.8,
+        -2.8,
+        6.2
+      ],
+      "prior_year_eur_m": [
+        323,
+        359,
+        312,
+        368,
+        365,
+        401,
+        357,
+        383
+      ]
+    },
+    "europe_ex_france": {
+      "label_en": "Europe (excl. France)",
+      "label": "欧洲（除法国）",
+      "revenue_eur_m": [
+        584,
+        593,
+        501,
+        588,
+        633,
+        641,
+        538,
+        627
+      ],
+      "published_pct": [
+        18.8,
+        20.6,
+        12.7,
+        11.7,
+        8.3,
+        8.1,
+        7.6,
+        6.6
+      ],
+      "cc_pct": [
+        20.3,
+        20.7,
+        12.7,
+        12.6,
+        10.2,
+        10.6,
+        9.7,
+        8.3
+      ],
+      "prior_year_eur_m": [
+        492,
+        491,
+        444,
+        526,
+        584,
+        593,
+        501,
+        588
+      ]
+    },
+    "japan": {
+      "label_en": "Japan",
+      "label": "日本",
+      "revenue_eur_m": [
+        360,
+        384,
+        421,
+        394,
+        389,
+        387,
+        404,
+        394
+      ],
+      "published_pct": [
+        18.5,
+        19.7,
+        17.9,
+        17.4,
+        8.0,
+        0.8,
+        -3.9,
+        -0.2
+      ],
+      "cc_pct": [
+        22.8,
+        22.4,
+        17.2,
+        14.7,
+        13.8,
+        11.2,
+        9.6,
+        12.3
+      ],
+      "prior_year_eur_m": [
+        304,
+        321,
+        357,
+        336,
+        360,
+        384,
+        421,
+        394
+      ]
+    },
+    "asia_pacific_ex_japan": {
+      "label_en": "Asia-Pacific (excl. Japan)",
+      "label": "亚太（除日本）",
+      "revenue_eur_m": [
+        1584,
+        1543,
+        1971,
+        1603,
+        1589,
+        1539,
+        1881,
+        1651
+      ],
+      "published_pct": [
+        0.6,
+        10.1,
+        2.7,
+        0.1,
+        0.3,
+        -0.3,
+        -4.6,
+        3.0
+      ],
+      "cc_pct": [
+        1.0,
+        8.9,
+        1.2,
+        5.2,
+        6.2,
+        8.0,
+        2.2,
+        2.5
+      ],
+      "prior_year_eur_m": [
+        1575,
+        1401,
+        1920,
+        1601,
+        1584,
+        1543,
+        1971,
+        1603
+      ]
+    },
+    "americas": {
+      "label_en": "Americas",
+      "label": "美洲",
+      "revenue_eur_m": [
+        666,
+        870,
+        695,
+        760,
+        714,
+        906,
+        739,
+        846
+      ],
+      "published_pct": [
+        11.0,
+        21.4,
+        13.3,
+        6.3,
+        7.2,
+        4.1,
+        6.4,
+        11.3
+      ],
+      "cc_pct": [
+        13.4,
+        22.3,
+        11.0,
+        12.3,
+        14.1,
+        12.1,
+        17.2,
+        13.7
+      ],
+      "prior_year_eur_m": [
+        600,
+        717,
+        614,
+        715,
+        666,
+        870,
+        695,
+        760
+      ]
+    },
+    "other_middle_east": {
+      "label_en": "Other (Middle East)",
+      "label": "其他（中东）",
+      "revenue_eur_m": [
+        145,
+        171,
+        185,
+        177,
+        154,
+        182,
+        160,
+        170
+      ],
+      "published_pct": [
+        102.2,
+        125.2,
+        16.8,
+        15.7,
+        6.1,
+        6.4,
+        -13.4,
+        -4.1
+      ],
+      "cc_pct": [
+        104.4,
+        123.2,
+        14.1,
+        20.4,
+        11.7,
+        13.5,
+        -5.9,
+        -2.4
+      ],
+      "prior_year_eur_m": [
+        72,
+        76,
+        158,
+        153,
+        145,
+        171,
+        185,
+        177
+      ]
+    }
+  },
+  "first_half_2026": {
+    "_source": "2026 半年度业绩新闻稿的 At the end of June 分板块与分地区表",
+    "group": {
+      "revenue_eur_m": 8163,
+      "prior_year_eur_m": 8034,
+      "published_pct": 1.6,
+      "cc_pct": 6.1
+    },
+    "by_sector": {
+      "leather_goods_saddlery": {
+        "revenue_eur_m": 3761,
+        "prior_year_eur_m": 3578,
+        "published_pct": 5.1,
+        "cc_pct": 9.8
+      },
+      "ready_to_wear_accessories": {
+        "revenue_eur_m": 2198,
+        "prior_year_eur_m": 2255,
+        "published_pct": -2.5,
+        "cc_pct": 2.0
+      },
+      "silk_textiles": {
+        "revenue_eur_m": 469,
+        "prior_year_eur_m": 447,
+        "published_pct": 4.8,
+        "cc_pct": 9.7
+      },
+      "other_hermes_sectors": {
+        "revenue_eur_m": 1065,
+        "prior_year_eur_m": 1056,
+        "published_pct": 0.8,
+        "cc_pct": 5.4
+      },
+      "perfume_beauty": {
+        "revenue_eur_m": 233,
+        "prior_year_eur_m": 248,
+        "published_pct": -6.1,
+        "cc_pct": -4.5
+      },
+      "watches": {
+        "revenue_eur_m": 269,
+        "prior_year_eur_m": 281,
+        "published_pct": -4.2,
+        "cc_pct": 0.2
+      },
+      "other_products": {
+        "revenue_eur_m": 168,
+        "prior_year_eur_m": 168,
+        "published_pct": -0.2,
+        "cc_pct": 2.8
+      }
+    },
+    "by_region": {
+      "france": {
+        "revenue_eur_m": 753,
+        "prior_year_eur_m": 740,
+        "published_pct": 1.8,
+        "cc_pct": 1.8
+      },
+      "europe_ex_france": {
+        "revenue_eur_m": 1165,
+        "prior_year_eur_m": 1088,
+        "published_pct": 7.1,
+        "cc_pct": 8.8
+      },
+      "japan": {
+        "revenue_eur_m": 798,
+        "prior_year_eur_m": 815,
+        "published_pct": -2.1,
+        "cc_pct": 11.0
+      },
+      "asia_pacific_ex_japan": {
+        "revenue_eur_m": 3533,
+        "prior_year_eur_m": 3574,
+        "published_pct": -1.2,
+        "cc_pct": 2.4
+      },
+      "americas": {
+        "revenue_eur_m": 1585,
+        "prior_year_eur_m": 1455,
+        "published_pct": 8.9,
+        "cc_pct": 15.3
+      },
+      "other_middle_east": {
+        "revenue_eur_m": 330,
+        "prior_year_eur_m": 362,
+        "published_pct": -8.9,
+        "cc_pct": -4.2
+      }
+    }
+  },
+  "half_years": [
+    {
+      "label": "H1 2023",
+      "derived": false,
+      "revenue_eur_m": 6698,
+      "recurring_operating_income_eur_m": 2947,
+      "net_profit_group_eur_m": 2226,
+      "operating_cash_flows_eur_m": 2615,
+      "operating_investments_eur_m": 249,
+      "adjusted_fcf_eur_m": 1720,
+      "roi_margin_pct": 43.9982
+    },
+    {
+      "label": "H2 2023",
+      "derived": true,
+      "revenue_eur_m": 6729,
+      "recurring_operating_income_eur_m": 2703,
+      "net_profit_group_eur_m": 2085,
+      "operating_cash_flows_eur_m": 2508,
+      "operating_investments_eur_m": 610,
+      "adjusted_fcf_eur_m": 1472,
+      "roi_margin_pct": 40.1694
+    },
+    {
+      "label": "H1 2024",
+      "derived": false,
+      "revenue_eur_m": 7504,
+      "recurring_operating_income_eur_m": 3148,
+      "net_profit_group_eur_m": 2368,
+      "operating_cash_flows_eur_m": 2829,
+      "operating_investments_eur_m": 319,
+      "adjusted_fcf_eur_m": 1776,
+      "roi_margin_pct": 41.951
+    },
+    {
+      "label": "H2 2024",
+      "derived": true,
+      "revenue_eur_m": 7666,
+      "recurring_operating_income_eur_m": 3002,
+      "net_profit_group_eur_m": 2235,
+      "operating_cash_flows_eur_m": 2549,
+      "operating_investments_eur_m": 748,
+      "adjusted_fcf_eur_m": 1991,
+      "roi_margin_pct": 39.1599
+    },
+    {
+      "label": "H1 2025",
+      "derived": false,
+      "revenue_eur_m": 8034,
+      "recurring_operating_income_eur_m": 3327,
+      "net_profit_group_eur_m": 2246,
+      "operating_cash_flows_eur_m": 2733,
+      "operating_investments_eur_m": 316,
+      "adjusted_fcf_eur_m": 1847,
+      "roi_margin_pct": 41.4115
+    },
+    {
+      "label": "H2 2025",
+      "derived": true,
+      "revenue_eur_m": 7968,
+      "recurring_operating_income_eur_m": 3242,
+      "net_profit_group_eur_m": 2278,
+      "operating_cash_flows_eur_m": 2874,
+      "operating_investments_eur_m": 845,
+      "adjusted_fcf_eur_m": 2033,
+      "roi_margin_pct": 40.6878
+    },
+    {
+      "label": "H1 2026",
+      "derived": false,
+      "revenue_eur_m": 8163,
+      "recurring_operating_income_eur_m": 3351,
+      "net_profit_group_eur_m": 2238,
+      "operating_cash_flows_eur_m": 2694,
+      "operating_investments_eur_m": 344,
+      "adjusted_fcf_eur_m": 2182,
+      "roi_margin_pct": 41.0511
+    }
+  ],
+  "full_years": {
+    "2023": {
+      "revenue_eur_m": 13427,
+      "recurring_operating_income_eur_m": 5650,
+      "net_profit_group_eur_m": 4311,
+      "operating_cash_flows_eur_m": 5123,
+      "operating_investments_eur_m": 859,
+      "adjusted_fcf_eur_m": 3192
+    },
+    "2024": {
+      "revenue_eur_m": 15170,
+      "recurring_operating_income_eur_m": 6150,
+      "net_profit_group_eur_m": 4603,
+      "operating_cash_flows_eur_m": 5378,
+      "operating_investments_eur_m": 1067,
+      "adjusted_fcf_eur_m": 3767
+    },
+    "2025": {
+      "revenue_eur_m": 16002,
+      "recurring_operating_income_eur_m": 6569,
+      "net_profit_group_eur_m": 4524,
+      "operating_cash_flows_eur_m": 5607,
+      "operating_investments_eur_m": 1161,
+      "adjusted_fcf_eur_m": 3880
+    }
+  },
+  "h1_income": {
+    "_source": "2026 半年度财务报告 §3.1 合并损益表与附注 4.4",
+    "lines": [
+      [
+        "revenue",
+        "收入",
+        8163,
+        8034
+      ],
+      [
+        "cost_of_sales",
+        "销货成本",
+        -2356,
+        -2356
+      ],
+      [
+        "gross_margin",
+        "毛利",
+        5807,
+        5678
+      ],
+      [
+        "sga",
+        "销售及管理费用",
+        -1899,
+        -1832
+      ],
+      [
+        "other_income_expenses",
+        "其他收支",
+        -558,
+        -519
+      ],
+      [
+        "recurring_operating_income",
+        "经常性经营利润",
+        3351,
+        3327
+      ],
+      [
+        "net_financial_income",
+        "净财务收益",
+        90,
+        148
+      ],
+      [
+        "income_tax",
+        "所得税",
+        -1217,
+        -1230
+      ],
+      [
+        "net_profit_group",
+        "归母净利润",
+        2238,
+        2246
+      ]
+    ],
+    "eps_diluted_eur": [
+      21.32,
+      21.39
+    ],
+    "other_detail": [
+      [
+        "da",
+        "折旧与摊销小计",
+        -385,
+        -354
+      ],
+      [
+        "impairment",
+        "减值损失",
+        -98,
+        -70
+      ],
+      [
+        "free_share_plans",
+        "免费股计划及类似费用",
+        -89,
+        -111
+      ],
+      [
+        "provisions",
+        "计提准备净变动",
+        -28,
+        -18
+      ],
+      [
+        "other_net",
+        "其他收支净额",
+        43,
+        34
+      ]
+    ]
+  },
+  "h1_segments": [
+    {
+      "key": "france",
+      "label": "法国",
+      "roi_2026": 273,
+      "roi_2025": 271,
+      "revenue_2026": 753,
+      "revenue_2025": 740,
+      "capex_2026": 138,
+      "capex_2025": 147
+    },
+    {
+      "key": "europe_ex_france",
+      "label": "欧洲（除法国）",
+      "roi_2026": 374,
+      "roi_2025": 353,
+      "revenue_2026": 1165,
+      "revenue_2025": 1088,
+      "capex_2026": 58,
+      "capex_2025": 50
+    },
+    {
+      "key": "japan",
+      "label": "日本",
+      "roi_2026": 333,
+      "roi_2025": 328,
+      "revenue_2026": 798,
+      "revenue_2025": 815,
+      "capex_2026": 33,
+      "capex_2025": 13
+    },
+    {
+      "key": "asia_pacific_ex_japan",
+      "label": "亚太（除日本）",
+      "roi_2026": 1653,
+      "roi_2025": 1724,
+      "revenue_2026": 3533,
+      "revenue_2025": 3574,
+      "capex_2026": 53,
+      "capex_2025": 44
+    },
+    {
+      "key": "americas",
+      "label": "美洲",
+      "roi_2026": 581,
+      "roi_2025": 527,
+      "revenue_2026": 1585,
+      "revenue_2025": 1455,
+      "capex_2026": 46,
+      "capex_2025": 36
+    },
+    {
+      "key": "other_middle_east",
+      "label": "其他（中东）",
+      "roi_2026": 128,
+      "roi_2025": 149,
+      "revenue_2026": 330,
+      "revenue_2025": 362,
+      "capex_2026": 2,
+      "capex_2025": 11
+    },
+    {
+      "key": "unallocated",
+      "label": "未分配",
+      "roi_2026": 9,
+      "roi_2025": -25,
+      "revenue_2026": 0,
+      "revenue_2025": 0,
+      "capex_2026": 14,
+      "capex_2025": 14
+    }
+  ],
+  "outlook": {
+    "sentence": "In the medium-term, despite the economic, geopolitical and monetary uncertainties around the world, the group confirms an ambitious goal for revenue growth at constant exchange rates.",
+    "translation": "中期而言，尽管全球存在经济、地缘政治与货币方面的不确定性，集团重申以固定汇率计的收入增长的雄心目标。",
+    "releases": [
+      {
+        "date": "2021-04-22",
+        "label": "Q1 2021 收入公告"
+      },
+      {
+        "date": "2021-10-21",
+        "label": "Q3 2021 收入公告"
+      },
+      {
+        "date": "2022-04-21",
+        "label": "Q1 2022 收入公告"
+      },
+      {
+        "date": "2022-10-20",
+        "label": "Q3 2022 收入公告"
+      },
+      {
+        "date": "2023-04-14",
+        "label": "Q1 2023 收入公告"
+      },
+      {
+        "date": "2023-10-24",
+        "label": "Q3 2023 收入公告"
+      },
+      {
+        "date": "2024-04-25",
+        "label": "Q1 2024 收入公告"
+      },
+      {
+        "date": "2024-10-24",
+        "label": "Q3 2024 收入公告"
+      },
+      {
+        "date": "2025-02-14",
+        "label": "2024 全年业绩"
+      },
+      {
+        "date": "2025-04-17",
+        "label": "Q1 2025 收入公告"
+      },
+      {
+        "date": "2025-07-30",
+        "label": "2025 半年度业绩"
+      },
+      {
+        "date": "2025-10-23",
+        "label": "Q3 2025 收入公告"
+      },
+      {
+        "date": "2026-02-12",
+        "label": "2025 全年业绩"
+      },
+      {
+        "date": "2026-04-15",
+        "label": "Q1 2026 收入公告"
+      },
+      {
+        "date": "2026-07-29",
+        "label": "2026 半年度业绩"
+      }
+    ],
+    "numbers_in_sentence": 0
+  },
+  "quasi_guidance": [
+    {
+      "item": "下半年毛利率的汇率影响",
+      "value": "−30bp",
+      "direction": "逆风",
+      "settles": "2027-02-11 全年业绩",
+      "note": "由分析师在提问中复述该数字，管理层答「你对毛利率上的汇率影响理解无误，我没有别的可补充」，等于确认；该轮发言人在纪要里标为未具名高管。"
+    },
+    {
+      "item": "换算效应（conversion effect）",
+      "value": "上半年 +0.5pp，按当时汇率全年趋近 0",
+      "direction": "逆风",
+      "settles": "2027-02-11 全年业绩",
+      "note": "若全年趋近 0 而上半年已实现 +0.5pp，下半年须回吐约 0.5pp；公司未给下半年单独口径。"
+    },
+    {
+      "item": "外汇对冲成本",
+      "value": "上半年约 €100m，全年约 €210m",
+      "direction": "中性",
+      "settles": "2027-02-11 全年业绩",
+      "note": "隐含下半年约 €110m，与上半年基本持平，增量约 €10m —— 是水平高，不是增量逆风。"
+    },
+    {
+      "item": "全年经营性投资",
+      "value": "€1,000m（上半年已花 €344m）",
+      "direction": "顺风",
+      "settles": "2027-02-11 全年业绩",
+      "note": "与新闻稿关键数据表 Operating investments 同一行的 2025 年实际 €1,161m 同口径，全年目标同比 −13.9%，下半年隐含 €656m 对 2025 年下半年 €845m 为 −22.4%。"
+    },
+    {
+      "item": "2027 年提价幅度",
+      "value": "低于 2026 年",
+      "direction": "定价口径转弱",
+      "settles": "2027 年首次提价落地",
+      "note": "系回答分析师提问时说出，不是主动披露；2026 年的提价幅度公司本身从未确认过数字，所以这句话没有可比的基数。"
+    },
+    {
+      "item": "法国大企业特别税",
+      "value": "全年约 €360m，上半年已确认 €270m",
+      "direction": "顺风",
+      "settles": "2027-02-11 全年业绩",
+      "note": "下半年仅剩约 €90m，比上半年轻约 €180m；上半年有效税率 35.37% 因中期一次性确认而虚高，半年度财务报告附注 1.2 给出的含特别税全年估计税率是 33%。"
+    }
+  ],
+  "next_kpi": {
+    "as_of": "Q2 2026",
+    "settles_on": "2026-10-22",
+    "quantified": [
+      {
+        "metric": "集团收入 cc 增速",
+        "direction": "up",
+        "threshold": 5.6,
+        "unit": "pct",
+        "current": 6.7,
+        "why": "5.6% 是 2026 年第一季的水平。第二季加速到 6.7%，若第三季回到 5.6% 或更低，「经营动能在加速」这一读法就该被撤销 —— 加速只剩一个季度，属波动而非拐点。"
+      },
+      {
+        "metric": "皮具与马具 cc 增速",
+        "direction": "up",
+        "threshold": 9.0,
+        "unit": "pct",
+        "current": 10.2,
+        "why": "它是集团唯一的增长引擎：本季贡献了 69.3% 的固定汇率增量。跌破 9% 意味着承重柱本身在减速，而其余板块没有一个大到能接手。"
+      },
+      {
+        "metric": "皮具占集团 cc 增量比重",
+        "direction": "down",
+        "threshold": 60.0,
+        "unit": "pct",
+        "current": 69.3,
+        "why": "增速与集中度要一起看。皮具增速达标但集中度不降，说明增长仍是单点支撑；回落到 60% 以下才说明其余板块开始出力。"
+      },
+      {
+        "metric": "亚太（除日本）cc 增速",
+        "direction": "up",
+        "threshold": 5.0,
+        "unit": "pct",
+        "current": 2.5,
+        "why": "该区占上半年收入 43.3%、占分部经常性经营利润 49.3%，是集团利润率的第一决定变量；它连续四个季度落在个位数低位，本季 2.5% 仍是六个地区里第二低。"
+      },
+      {
+        "metric": "美洲 cc 增速",
+        "direction": "up",
+        "threshold": 10.0,
+        "unit": "pct",
+        "current": 13.7,
+        "why": "美洲占上半年收入 19.4% 却贡献了 45.3% 的固定汇率增量，是当前的实际支点，而它已从第一季的 17.2% 减速到 13.7%，是六个地区里减速最快的一个。"
+      },
+      {
+        "metric": "其他（中东）cc 增速",
+        "direction": "up",
+        "threshold": -1.0,
+        "unit": "pct",
+        "current": -2.4,
+        "why": "连续两个季度为负但降幅在收窄（−5.9% → −2.4%）。回到 −1% 以上才算触底，再度走阔则说明这不是基数问题。"
+      },
+      {
+        "metric": "香水与美妆 cc 增速",
+        "direction": "up",
+        "threshold": -5.0,
+        "unit": "pct",
+        "current": -9.5,
+        "why": "本季 −9.5%，是七个板块里唯一负增长，也是环比最大的一次减速（−9.7pp），而公司在新闻稿与电话会上都没有解释原因。连续两季低于 −5% 就该按结构性问题处理。"
+      }
+    ],
+    "full_year_only": [
+      {
+        "metric": "全年经常性经营利润率",
+        "current": "上半年 41.05%",
+        "threshold": "≥ 40.5%",
+        "why": "上半年 0.36pp 的降幅里有 91% 由减值一项解释；全年才能看出那是一次性集中计提还是常态。"
+      },
+      {
+        "metric": "全年减值损失",
+        "current": "上半年 €98m",
+        "threshold": "低于 €196m",
+        "why": "若全年接近或超过上半年的两倍，「门店与产线盈利能力不足」就不是一次性清理。"
+      },
+      {
+        "metric": "全年经营性投资",
+        "current": "上半年 €344m",
+        "threshold": "与 2025 年的 €1,161m 比",
+        "why": "管理层口头说下半年会加速投资，给出的全年总额却比 2025 年少约 14%；两者需要一次对账。"
+      },
+      {
+        "metric": "六大地区分部经常性经营利润合计增速",
+        "current": "上半年 −0.3%",
+        "threshold": "> 0%",
+        "why": "集团口径的 +0.7% 全部来自未分配栏从 −25 翻正到 +9；分部加总仍是负增长。"
+      }
+    ]
+  },
+  "sources": [
+    {
+      "label": "Hermès Finance — 财务出版物（各期收入公告、半年度与全年业绩）",
+      "url": "https://finance.hermes.com/en/publications/"
+    },
+    {
+      "label": "Hermès Finance — 受监管信息",
+      "url": "https://finance.hermes.com/en/regulated-information/"
+    },
+    {
+      "label": "2025 全年业绩新闻稿（2026-02-12，含第四季度分板块与分地区表）",
+      "url": "https://assets-finance.hermes.com/s3fs-public/node/pdf_file/2026-02/1770842738/hermes_20260212_pr_2025fullyearresults_va.pdf"
+    },
+    {
+      "label": "2025 半年度业绩新闻稿（2025-07-30，含第二季度分板块与分地区表）",
+      "url": "https://assets-finance.hermes.com/s3fs-public/node/pdf_file/2025-07/1753810528/hermes_20250730_pr_firsthalfresults_va.pdf"
+    },
+    {
+      "label": "2024 全年业绩新闻稿（2025-02-14，含第四季度分板块与分地区表）",
+      "url": "https://assets-finance.hermes.com/s3fs-public/node/pdf_file/2025-02/1739475049/hermes_20250214_pr_2024fullyearresults_va.pdf"
+    },
+    {
+      "label": "Hermès Finance — 首页（爱马仕不在美国证券交易委员会申报，无 20-F、无 6-K）",
+      "url": "https://finance.hermes.com/en/"
+    }
+  ]
+}

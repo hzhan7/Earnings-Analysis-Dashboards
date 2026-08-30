@@ -11,8 +11,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amzn, avgo, axp, bc, cboe, cdns, cme, cost, googl, ibkr, ma, mco, meta, msci,
-    msft, mu, ndaq, nke, nvda, pm, race, samsung, schw, skhynix, snps,
+    amzn, avgo, axp, bc, cboe, cdns, cme, cost, googl, ibkr, ma, mco, meta,
+    msci, msft, mu, ndaq, nke, nvda, pm, race, rms, samsung, schw, skhynix,
+    snps,
     spgi, tjx, tsm, v,
 )
 from build.payload_guard import write_js  # noqa: E402
@@ -42,6 +43,7 @@ MODULES = {
     "nvda": nvda,
     "pm": pm,
     "race": race,
+    "rms": rms,
     "samsung": samsung,
     "schw": schw,
     "skhynix": skhynix,
@@ -297,6 +299,18 @@ ENTRIES = [
         "headline_metrics": ["Net revenues \u20ac1,938M", "EBIT margin 31.2%", "\u51fa\u8d27 3,366 \u53f0"],
         "search_text": ("race ferrari \u6cd5\u62c9\u5229 \u8dc3\u9a6c \u5962\u4f88\u54c1 \u8c6a\u534e\u6c7d\u8f66 \u8dd1\u8f66 "
                         "\u4e2a\u6027\u5316 personalization \u51fa\u8d27 shipments f1 \u4e00\u7ea7\u65b9\u7a0b\u5f0f ifrs \u6b27\u5143 20-f 6-k"),
+    },
+    {
+        "slug": "rms",
+        "ticker": "RMS",
+        "name": "Hermès International",
+        "aliases": ["Hermès", "Hermes", "爱马仕"],
+        "group": "luxury_brands",
+        "cadence_label": "自然年季度；收入按季披露，利润仅半年度",
+        "headline_metrics": ["Q2 revenue €4,094M", "固定汇率 +6.7%", "H1 经营利润率 41.0%"],
+        "search_text": ("rms hermes hermès 爱马仕 奢侈品 皮具 马具 birkin kelly 铂金包 "
+                        "成衣 丝绸 香水 钟表 珠宝 métier 板块 固定汇率 cc constant currency "
+                        "亚太 日本 美洲 中东 半年报 ifrs 欧元 巴黎 euronext"),
     },
     {
         "slug": "samsung",
