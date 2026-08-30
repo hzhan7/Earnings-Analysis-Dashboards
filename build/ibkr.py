@@ -72,7 +72,12 @@ STAGING_PATH = ROOT / "series" / "ibkr.json"
 DATA_DIR = ROOT / "data"
 
 # The recent window every 本季重点 chart uses, and the long window for 长期常规.
-RECENT = 8
+# The highlight charts used to show the last eight quarters. Every series they
+# draw now runs the whole record, and eight quarters cannot tell a level from a
+# cycle for a business whose revenue is half net interest -- so RECENT is the
+# whole window, and the two lines that genuinely start later carry their own
+# holes rather than shortening everybody else's axis.
+RECENT = 42
 LONG_STEP = 4
 
 NO_GUIDANCE_NOTE = (
@@ -179,6 +184,7 @@ def consecutive_record(staging: dict) -> dict:
             f"客户权益 {negative_equity} 季为负"
         ),
         "xlabels": [compact_period(period) for period in periods],
+        "xstep": LONG_STEP,
         "xrot": 90,
         "series": [
             {"name": "账户数 环比", "values": rounded(accounts), "color": "NAVY"},
@@ -224,6 +230,7 @@ def nim_record(staging: dict) -> dict:
             f"最近连续 {streak} 季低于一年前"
         ),
         "xlabels": [compact_period(period) for period in periods],
+        "xstep": LONG_STEP,
         "xrot": 90,
         "groups": [{"name": "NIM 同比变化", "color": "BLUE", "values": rounded(delta)}],
         "bar_labels": False,
@@ -256,6 +263,7 @@ def revenue_quarter(staging: dict) -> dict:
             f"{signed(pct_change(revenue[-1], revenue[-5]))}"
         ),
         "xlabels": [compact_period(period) for period in periods],
+        "xstep": LONG_STEP,
         "values": rounded(revenue[-RECENT:]),
         "legend": "总净收入",
         "fmt": "f0c",
@@ -293,6 +301,7 @@ def revenue_mix_quarter(staging: dict) -> dict:
             f"收入三条腿：净利息 US${net_interest[-1]:,.0f}M，占总净收入 {share[-1]:.1f}%"
         ),
         "xlabels": [compact_period(period) for period in periods],
+        "xstep": LONG_STEP,
         "stacks": [
             {"name": "净利息收入", "color": "NAVY",
              "values": rounded(net_interest[-RECENT:])},
@@ -304,8 +313,13 @@ def revenue_mix_quarter(staging: dict) -> dict:
                  for fee, other in zip(financials["other_fees_and_services"][-RECENT:],
                                        financials["other_income"][-RECENT:])])},
         ],
+        # `stacked_dual` hard-codes its right axis to 0-60 unless `ymax` is
+        # given *inside* `line` -- put it at the exhibit's top level and it is
+        # silently ignored. On eight quarters this share never reached 60; on
+        # the whole record it does, and the line was drawn off the canvas.
         "line": {"name": "净利息占比 (RHS)", "color": "RED",
-                 "values": rounded(share[-RECENT:]), "yfmt": "pct1"},
+                 "values": rounded(share[-RECENT:]), "yfmt": "pct1",
+                 "ymax": 100},
         "fmt": "f0c",
         "yfmt": "f0c",
         "label_fmt": "f0c",
@@ -335,6 +349,7 @@ def nim_and_yields(staging: dict) -> dict:
             f"{nim['nim_pct'][-1] - nim['nim_pct'][-5]:+.2f}pp；三条年化收益率同比全线下行"
         ),
         "xlabels": [compact_period(period) for period in periods],
+        "xstep": LONG_STEP,
         "series": [
             {"name": "保证金贷款收益率", "values": rounded(nim["yield_margin_loans_pct"][-RECENT:]),
              "color": "NAVY"},
@@ -381,6 +396,7 @@ def customer_scale(staging: dict) -> dict:
             f"{signed(pct_change(accounts[-1], accounts[-5]))}"
         ),
         "xlabels": [compact_period(period) for period in periods],
+        "xstep": LONG_STEP,
         "values": rounded(equity[-RECENT:]),
         "legend": "客户权益",
         "fmt": "f0c",
@@ -420,6 +436,7 @@ def upc_wedge(staging: dict) -> dict:
             f"US${common[-1]:,.0f}M（{100 - share[-1]:.1f}%）"
         ),
         "xlabels": [compact_period(period) for period in periods],
+        "xstep": LONG_STEP,
         "stacks": [
             {"name": "归属少数股东（IBG Holdings）", "color": "GOLD",
              "values": rounded(nci[-RECENT:])},
@@ -455,16 +472,18 @@ def upc_wedge(staging: dict) -> dict:
 def other_income_swing(staging: dict) -> dict:
     periods = staging["periods"]
     other = staging["financials_usd_m"]["other_income"]
-    window = other[-13:]
+    window = other
     biggest = max((value for value in window if value is not None), key=abs)
+    reported = [value for value in window if value is not None]
     return {
         "ref": "EX_OTHER",
         "kind": "grouped_bars",
         "title": (
-            f"「其他收入」的摆动：近 13 季在 US${min(v for v in window if v is not None):,.0f}M 与 "
-            f"US${max(v for v in window if v is not None):,.0f}M 之间"
+            f"「其他收入」的摆动：{len(reported)} 季在 US${min(reported):,.0f}M 与 "
+            f"US${max(reported):,.0f}M 之间"
         ),
-        "xlabels": [compact_period(period) for period in periods[-13:]],
+        "xlabels": [compact_period(period) for period in periods],
+        "xstep": LONG_STEP,
         "xrot": 90,
         "groups": [{"name": "其他收入", "color": "BLUE", "values": rounded(window)}],
         "bar_labels": True,
@@ -474,6 +493,8 @@ def other_income_swing(staging: dict) -> dict:
         "note": (
             "这一行里装着公司的<b>货币多元化策略</b>：IBKR 把自身净值锚定在一篮子十种货币"
             "（公司称之为 GLOBAL）上，该头寸的损益一部分进「其他收入」、一部分进其他综合收益。"
+            "<b>左边八格是空的：这一行按 ASC 606 的口径定义，而公司 2018-01-01 才采用该准则、"
+            "且用 modified retrospective，2016–2017 的申报里没有那张分解表。</b>"
             "所以总净收入这条线自带一块与经营无关的波动 —— "
             f"窗口内最大的一次是 US${biggest:,.0f}M。"
             "<b>本页不把它剔除后另画一条「调整后收入」线</b>："
@@ -498,6 +519,7 @@ def pretax_margin_quarter(staging: dict) -> dict:
             f"非息费用率 {expense[-1]:.1f}%"
         ),
         "xlabels": [compact_period(period) for period in periods],
+        "xstep": LONG_STEP,
         "series": [
             {"name": "税前利润率", "values": rounded(margin[-RECENT:]), "color": "NAVY"},
             {"name": "非息费用 / 总净收入", "values": rounded(expense[-RECENT:]),
@@ -544,6 +566,7 @@ def revenue_mix_long(staging: dict) -> dict:
             f"{commission_share[-1]:.1f}%"
         ),
         "xlabels": [compact_period(period) for period in periods],
+        "xstep": LONG_STEP,
         "xrot": 90,
         "series": [
             {"name": "净利息占比", "values": rounded(net_interest_share), "color": "NAVY"},
@@ -583,6 +606,7 @@ def nim_long(staging: dict) -> dict:
             f"{nim['avg_earning_assets_usd_m'][-1] / 1000:.0f} 十亿美元"
         ),
         "xlabels": [compact_period(period) for period in periods],
+        "xstep": LONG_STEP,
         "xrot": 90,
         "series": [
             {"name": "净息差 NIM", "values": rounded(nim["nim_pct"]), "color": "RED"},
@@ -623,6 +647,7 @@ def scale_long(staging: dict) -> dict:
             f"户均权益 US${per_account[0]:,.0f} → US${per_account[-1]:,.0f}"
         ),
         "xlabels": [compact_period(period) for period in periods],
+        "xstep": LONG_STEP,
         "xrot": 90,
         "series": [
             {"name": "户均客户权益（US$）D", "values": rounded(per_account),
@@ -663,6 +688,7 @@ def upc_long(staging: dict) -> dict:
             f"{len(periods)} 季共下降 {share[0] - share[-1]:.1f}pp"
         ),
         "xlabels": [compact_period(period) for period in periods],
+        "xstep": LONG_STEP,
         "xrot": 90,
         "series": [
             {"name": "归属少数股东占比 D", "values": rounded(share), "color": "GOLD"},
@@ -700,6 +726,7 @@ def operating_leverage_long(staging: dict) -> dict:
             f"薪酬率 {compensation[0]:.1f}% → {compensation[-1]:.1f}%"
         ),
         "xlabels": [compact_period(period) for period in periods],
+        "xstep": LONG_STEP,
         "xrot": 90,
         "series": [
             {"name": "非息费用 / 总净收入 D", "values": rounded(expense), "color": "NAVY"},
@@ -738,6 +765,7 @@ def commission_long(staging: dict) -> dict:
             f"US${values[-1]:.2f}，峰值 US${max(values):.2f}"
         ),
         "xlabels": [compact_period(period) for period in periods],
+        "xstep": LONG_STEP,
         "xrot": 90,
         "series": [
             {"name": "每笔已清算订单佣金", "values": rounded(commission), "color": "NAVY"},
@@ -817,7 +845,7 @@ def build_payload(staging: dict) -> dict:
         threshold_exhibit(
             "净息差 NIM：越高越安全",
             long_labels, rounded(nim["nim_pct"]), quantified[0]["threshold"],
-            fmt="pct2", ylab="年化",
+            fmt="pct2", xstep=LONG_STEP, ylab="年化",
             actual_name="实际 NIM", threshold_name="阈值 1.80%",
             note=(
                 "上一张图说哪条线越了，这张说它是怎么走到那里的。"
@@ -831,7 +859,7 @@ def build_payload(staging: dict) -> dict:
         threshold_exhibit(
             "账户数环比增速：越高越安全",
             long_labels, rounded(qoq(accounts)), quantified[1]["threshold"],
-            fmt="pct1", ylab="环比增速",
+            fmt="pct1", xstep=LONG_STEP, ylab="环比增速",
             actual_name="账户数 环比", threshold_name="阈值 +6.0%",
             note=(
                 f"本季 {qoq(accounts)[-1]:.2f}%。阈值 +6.0% 大致是过去两年的中枢，"
@@ -845,7 +873,7 @@ def build_payload(staging: dict) -> dict:
             "每笔已清算订单佣金：越高越安全",
             long_labels, rounded(operating["commission_per_order_usd"]),
             quantified[2]["threshold"],
-            fmt="usd2", ylab="US$ / 笔",
+            fmt="usd2", xstep=LONG_STEP, ylab="US$ / 笔",
             actual_name="每笔佣金", threshold_name="阈值 $2.55",
             note=(
                 f"本季 US${operating['commission_per_order_usd'][-1]:.2f}。"
@@ -860,7 +888,7 @@ def build_payload(staging: dict) -> dict:
         threshold_exhibit(
             "非息费用 / 总净收入：越低越安全",
             long_labels, rounded(expense_ratio), quantified[3]["threshold"],
-            fmt="pct1", ylab="占总净收入",
+            fmt="pct1", xstep=LONG_STEP, ylab="占总净收入",
             actual_name="非息费用率 D", threshold_name="阈值 25.0%",
             note=(
                 f"本季 {expense_ratio[-1]:.2f}%，距 25.0% 的阈值还有 "
@@ -874,7 +902,7 @@ def build_payload(staging: dict) -> dict:
         threshold_exhibit(
             "少数股东占净利润比：越低越安全",
             long_labels, rounded(nci_share), quantified[4]["threshold"],
-            fmt="pct1", ylab="占合并净利润",
+            fmt="pct1", xstep=LONG_STEP, ylab="占合并净利润",
             actual_name="少数股东占比 D", threshold_name="阈值 77.5%",
             note=(
                 f"本季 {nci_share[-1]:.2f}%。这条线单向下行已有数年，"
@@ -888,7 +916,7 @@ def build_payload(staging: dict) -> dict:
             "客户保证金贷款：越高越安全",
             long_labels, rounded(operating["customer_margin_loans_usd_bn"]),
             quantified[5]["threshold"],
-            fmt="f0c", ylab="US$B",
+            fmt="f0c", xstep=LONG_STEP, ylab="US$B",
             actual_name="客户保证金贷款", threshold_name="阈值 US$95B",
             note=(
                 f"本季 US${operating['customer_margin_loans_usd_bn'][-1]:,.1f}B，"
@@ -919,8 +947,10 @@ def build_payload(staging: dict) -> dict:
         [periods[index],
          f"${revenue[index]:,.0f}M",
          f"${financials['commissions'][index]:,.0f}M",
-         f"${financials['other_fees_and_services'][index]:,.0f}M D",
-         f"${financials['other_income'][index]:,.0f}M D",
+         (f"${financials['other_fees_and_services'][index]:,.0f}M D"
+          if financials["other_fees_and_services"][index] is not None else "—"),
+         (f"${financials['other_income'][index]:,.0f}M D"
+          if financials["other_income"][index] is not None else "—"),
          f"${net_interest[index]:,.0f}M D",
          f"${financials['total_non_interest_expenses'][index]:,.0f}M",
          f"${financials['pretax_income'][index]:,.0f}M",
@@ -953,7 +983,8 @@ def build_payload(staging: dict) -> dict:
          f"{nim['nim_pct'][index]:.2f}%",
          f"{nim['yield_segregated_pct'][index]:.2f}%",
          f"{nim['yield_margin_loans_pct'][index]:.2f}%",
-         f"{nim['yield_credits_pct'][index]:.2f}%",
+         (f"{nim['yield_credits_pct'][index]:.2f}%"
+          if nim["yield_credits_pct"][index] is not None else "—"),
          f"${net_interest[index]:,.0f}M D"]
         for index in range(len(periods))
     ]

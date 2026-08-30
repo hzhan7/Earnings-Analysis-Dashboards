@@ -48,7 +48,7 @@ from build.all import ENTRIES, GROUPS, build_all, roster_payload  # noqa: E402
 from build.board import headroom  # noqa: E402
 from build.ibkr import build_payload, compact_period  # noqa: E402
 
-QUARTERS = 30
+QUARTERS = 42
 BREAK_QUARTER = "Q1 2020"
 
 
@@ -73,19 +73,38 @@ class IbkrDashboardTest(unittest.TestCase):
 
     # ── source series ───────────────────────────────────────────────────────
 
-    def test_thirty_quarter_base_is_complete(self) -> None:
+    def test_the_base_is_forty_two_quarters_and_names_its_own_holes(self) -> None:
+        """Twelve quarters were added in front, and two lines stay empty there.
+
+        `other_fees_and_services` is defined here as the ASC 606 "revenue from
+        contracts with customers by major type of service" total minus
+        commissions. IBKR adopted ASC 606 on 2018-01-01 using the modified
+        retrospective method, so that table does not exist for 2016-2017 and
+        there is no same-basis figure to read. `other_income` is defined as
+        non-interest income minus commissions minus that line, so it goes with
+        it. Every other income-statement line is complete over all 42.
+        """
         self.assertEqual(len(self.periods), QUARTERS)
-        self.assertEqual(self.periods[0], "Q1 2019")
+        self.assertEqual(self.periods[0], "Q1 2016")
         self.assertEqual(self.periods[-1], "Q2 2026")
+        asc606 = self.periods.index("Q1 2018")
+        gated = {"other_fees_and_services", "other_income"}
         for name, values in self.financials.items():
             with self.subTest(line=name):
                 self.assertEqual(len(values), QUARTERS)
-                self.assertTrue(all(value is not None for value in values), name)
+                if name in gated:
+                    self.assertEqual(values[:asc606], [None] * asc606, name)
+                    self.assertTrue(all(v is not None for v in values[asc606:]), name)
+                else:
+                    self.assertTrue(all(v is not None for v in values), name)
+        for name in gated:
+            self.assertIn(f"financials_usd_m.{name}",
+                          self.source["not_backfilled_2016_2018"])
 
     def test_calendar_quarters_run_without_a_gap(self) -> None:
         """IBKR's fiscal year is the calendar year, so no label needs remapping."""
         expected = []
-        year, quarter = 2019, 1
+        year, quarter = 2016, 1
         for _ in range(QUARTERS):
             expected.append(f"Q{quarter} {year}")
             quarter += 1
@@ -104,15 +123,26 @@ class IbkrDashboardTest(unittest.TestCase):
     # ── income-statement identities ─────────────────────────────────────────
 
     def test_revenue_legs_add_to_total_net_revenues(self) -> None:
-        """commissions + other fees + other income + net interest = total."""
+        """commissions + other fees + other income + net interest = total.
+
+        Two of the four legs only exist from ASC 606 on, so the identity is
+        asserted exactly where all four exist -- and the quarters where it
+        cannot be asserted are pinned as exactly the pre-ASC-606 ones, so a
+        future hole cannot hide inside the same exemption.
+        """
+        checked = 0
         for index, period in enumerate(self.periods):
-            legs = (self.financials["commissions"][index]
-                    + self.financials["other_fees_and_services"][index]
-                    + self.financials["other_income"][index]
-                    + self.financials["net_interest_income"][index])
+            parts = [self.financials[name][index] for name in
+                     ("commissions", "other_fees_and_services",
+                      "other_income", "net_interest_income")]
+            if any(value is None for value in parts):
+                self.assertLess(period[-4:], "2018", period)
+                continue
+            checked += 1
             with self.subTest(period=period):
                 self.assertAlmostEqual(
-                    legs, self.financials["total_net_revenues"][index], places=6)
+                    sum(parts), self.financials["total_net_revenues"][index], places=6)
+        self.assertEqual(checked, QUARTERS - self.periods.index("Q1 2018"))
 
     def test_net_interest_is_the_two_filed_legs_subtracted(self) -> None:
         for index, period in enumerate(self.periods):
@@ -243,14 +273,31 @@ class IbkrDashboardTest(unittest.TestCase):
         filed data.
         """
         start = self.periods.index(BREAK_QUARTER)
-        for name in ("commission_per_order_usd", "customer_credits_usd_bn",
-                     "customer_margin_loans_usd_bn"):
+        for name in ("commission_per_order_usd", "customer_credits_usd_bn"):
             values = self.operating[name]
             with self.subTest(series=name):
                 self.assertTrue(all(value is None for value in values[:start]))
                 self.assertTrue(all(value is not None for value in values[start:]))
-                self.assertEqual(sum(1 for v in values if v is None), 4)
+                self.assertEqual(sum(1 for v in values if v is None), start)
+            self.assertIn(f"operating.{name}", self.source["not_backfilled_2016_2018"])
         self.assertEqual(self.operating["commission_metric_from"], BREAK_QUARTER)
+
+    def test_customer_margin_loans_is_one_line_under_two_names(self) -> None:
+        """It used to have a one-year hole, and the hole was a rename.
+
+        IBKR printed this balance as "customer debits" through 2019 and renamed
+        it "Customer margin loans" in the 1Q2020 release. The definition did not
+        change -- the 2020 releases' year-ago comparatives reproduce the 2019
+        figures -- so the four 2019 quarters are the same series and were empty
+        only because the earlier name was never read. Unlike the two series
+        above, this one runs the whole record.
+        """
+        values = self.operating["customer_margin_loans_usd_bn"]
+        self.assertEqual(len(values), QUARTERS)
+        self.assertTrue(all(value is not None for value in values))
+        for period, value in zip(self.periods, values):
+            if period.endswith("2019"):
+                self.assertGreater(value, 20.0, period)
 
     def test_both_commission_charts_explain_their_short_axis(self) -> None:
         """Two charts draw this series -- the threshold one and the long one.
