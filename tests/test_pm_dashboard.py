@@ -332,13 +332,84 @@ class PmDashboardTest(unittest.TestCase):
         self.assertLess(abs(combustible[-1] / combustible[0] - 1), 0.15)
         self.assertGreater(smoke_free[-1] / smoke_free[0], 20)
 
-    def test_the_revenue_series_starts_after_the_excise_tax_basis_change(self) -> None:
-        """PMI reported revenue including excise taxes before 2016; splicing the
-        two would draw a cliff that is a definition change, not a business."""
-        self.assertEqual(self.staging["long"]["periods"][0], "2017Q1")
+    def test_the_excise_tax_story_is_a_label_trap_not_a_basis_change(self) -> None:
+        """The reason this series used to stop at 2017Q1 was not true.
+
+        The old note said PMI reported revenue including excise taxes "before
+        2016" and switched afterwards, citing 2015's US$73.9B against 2016's
+        US$26.7B. Those are two different measures of two different years:
+        73.9B is 2015 gross, 26.7B is 2016 net. PMI's income statement carries
+        both lines in both years -- 2015 net is 73,908 - 47,114 = 26,794, right
+        next to 2016's 26,685.
+
+        What is real is a *labelling* trap: in the 2016/2017 filings the line
+        captioned "Net revenues" is tagged us-gaap:SalesRevenueNet and is gross
+        of excise. Reading the tag by its caption is what produces the phantom
+        cliff. This test pins the arithmetic that settles it, so the claim
+        cannot come back as prose.
+        """
+        long = self.staging["long"]
+        self.assertEqual(long["periods"][0], "2016Q1")
+        self.assertEqual(sum(long["net_revenues_usd_m"][:4]), 26685.0)
+        # The gross and net FY2015 figures are both filed; the difference
+        # between them is the excise tax, not a change of basis.
+        gross_2015, excise_2015 = 73908.0, 47114.0
+        self.assertAlmostEqual(gross_2015 - excise_2015, 26794.0, places=6)
+        self.assertLess(abs(26794.0 - sum(long["net_revenues_usd_m"][:4])), 1000.0,
+                        "2015 net and 2016 net are the same order of magnitude; "
+                        "the cliff only appears if you compare gross to net")
+        # A year-sum check alone cannot see a compensating swap between two
+        # quarters, so the four quarters are pinned against a second, genuinely
+        # independent reading: the earnings-release Schedule 1, whose fourth
+        # quarter is printed as a standalone column rather than derived by
+        # subtraction the way the R-file route derives it.
+        route_b = long["route_b_2016"]
+        self.assertEqual(route_b["quarters"], ["2016Q1", "2016Q2", "2016Q3", "2016Q4"])
+        self.assertEqual(long["net_revenues_usd_m"][:4], route_b["net_revenues_usd_m"])
+        self.assertEqual(long["gross_profit_usd_m"][:4], route_b["gross_profit_usd_m"])
+        self.assertEqual(len(route_b["accessions"]), 4)
+        # ...and the margin each quarter carries is that quarter's own ratio.
+        for index in range(4):
+            self.assertAlmostEqual(
+                long["gross_profit_usd_m"][index] / long["net_revenues_usd_m"][index] * 100,
+                long["gross_margin_pct"][index], places=2,
+                msg=long["periods"][index])
         chart = next(ex for section in self.payload["sections"]
                      for ex in section["exhibits"] if ex.get("ref") == "EX_REV")
-        self.assertIn("含消费税", chart["note"])
+        self.assertIn("那句话是错的", chart["note"])
+
+    def test_the_2016_operating_margin_is_a_hole_and_says_why(self) -> None:
+        """Read, then deliberately not published -- and the two are different.
+
+        All four 2016 operating-income figures exist and were read twice, by two
+        independent routes that agree to the cent and sum to the filed FY2016.
+        They are still not on the chart, because PMI adopted ASU 2017-07
+        retrospectively on 2018-01-01 and restated 2017 by quarter but never
+        restated 2016 by quarter -- so the 2016Q4/2017Q1 seam would carry a step
+        that is purely an accounting-standard change. Revenue and gross profit
+        are unaffected and do run the whole window, which is what makes the four
+        holes specific rather than a blanket "no 2016 data".
+        """
+        long = self.staging["long"]
+        margin = long["operating_margin_pct"]
+        income = long["operating_income_usd_m"]
+        self.assertEqual(margin[:4], [None] * 4)
+        self.assertEqual(income[:4], [None] * 4)
+        self.assertTrue(all(value is not None for value in margin[4:]))
+        # ...while the two series that the restatement did not touch are whole.
+        for key in ("net_revenues_usd_m", "gross_profit_usd_m", "gross_margin_pct"):
+            self.assertTrue(all(value is not None for value in long[key]), key)
+        self.assertIn("ASU 2017-07", long["operating_income_hole_2016"])
+        chart = next(ex for section in self.payload["sections"]
+                     for ex in section["exhibits"] if ex.get("ref") == "EX_MARGIN")
+        gross_line = next(series for series in chart["series"]
+                          if series["name"] == "毛利率")
+        margin_line = next(series for series in chart["series"]
+                           if "经营利润率" in series["name"])
+        self.assertEqual(len(gross_line["values"]), len(chart["xlabels"]))
+        self.assertEqual(len(margin_line["values"]), len(chart["xlabels"]))
+        reported = sum(1 for value in margin_line["values"] if value is not None)
+        self.assertEqual(len(chart["xlabels"]) - reported, 4)
 
     # ── thresholds, exhibits, publication ───────────────────────────────────
     def test_every_quantified_threshold_has_a_headroom_bar(self) -> None:

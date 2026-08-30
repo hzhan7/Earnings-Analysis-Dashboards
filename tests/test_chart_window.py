@@ -129,7 +129,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 REACH_2016 = {
     "amzn": 3, "avgo": 0, "axp": 2, "bc": 0, "cboe": 6, "cdns": 6, "cme": 13,
     "cost": 7, "googl": 11, "ibkr": 0, "ma": 0, "mc": 0, "mco": 0, "meta": 10,
-    "msci": 0, "msft": 3, "mu": 2, "ndaq": 8, "nke": 7, "nvda": 4, "pm": 4,
+    "msci": 0, "msft": 3, "mu": 2, "ndaq": 8, "nke": 7, "nvda": 4, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 0, "skhynix": 0, "snps": 3,
     "spgi": 2, "tjx": 1, "tsm": 18, "v": 14,
 }

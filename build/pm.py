@@ -521,9 +521,16 @@ def revenue_series(staging: dict) -> dict:
         "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
         "ylab": "US$M", "xstep": LONG_STEP,
         "note": (
-            "序列从 2017 年第一季度开始，不向前回补：PMI 在 2016 年之前按<b>含消费税</b>的口径"
-            "报收入（2015 年 US$73.9B），2016 年起改为净收入口径（同年 US$26.7B），"
-            "把两段接在一起会画出一条不存在的断崖。"
+            "<b>本页此前写着「序列从 2017 年开始，因为 PMI 2016 年之前按含消费税的口径报收入"
+            "（2015 年 US$73.9B），2016 年起才改成净收入口径（同年 US$26.7B）」—— 那句话是错的。</b>"
+            "PMI 的口径从来没变过：损益表上一直同时有含消费税的一行和扣除后的一行。"
+            "73.9B 是 2015 年的<b>含税</b>数，26.7B 是 2016 年的<b>扣税</b>数 —— "
+            "拿两个不同年份的两个不同口径相比，于是看见了一条并不存在的断崖。"
+            "2015 年扣税后的净收入是 US$26.8B（73,908 − 47,114），与 2016 年的 26,685 同一量级。"
+            "真正的坑在标签上：2016/2017 的申报里，损益表上标着「Net revenues」的那一行是 "
+            "us-gaap:SalesRevenueNet，它是<b>含</b>消费税的；扣除后的口径直到 2018 年的 10-Q "
+            "才有自己的 XBRL 标签。本站按「含税收入 − 消费税」计算，得到的 FY2016 = 26,685 "
+            "与 FY2018 10-K 逐字重印的 FY2016 净收入相同。"
             "第四季没有 10-Q，其收入与毛利为全年减去前九个月，两条腿都是申报值；"
             "四个季度相加等于全年，逐年核对无差。"
             "季节性明显：每年第一季是低点，第二、三季是高点。"),
@@ -536,7 +543,13 @@ def margin_series(staging: dict) -> dict:
     gm, om = long["gross_margin_pct"], long["operating_margin_pct"]
     # Which quarters those troughs are is derived, not remembered: a first draft
     # of this caption named 2024Q4 from recall and it is not in the bottom four.
-    deepest = sorted(zip(om, long["period_labels"]))[:2]
+    # The operating-margin line has four holes at the front -- 2016's quarters
+    # are on the pre-ASU-2017-07 basis and were never restated quarterly -- so
+    # the ranking has to skip them rather than sort None against float.
+    reported_om = [(value, label) for value, label
+                   in zip(om, long["period_labels"]) if value is not None]
+    deepest = sorted(reported_om)[:2]
+    om_from = long["period_labels"][len(om) - len(reported_om)]
     return {
         "ref": "EX_MARGIN",
         "kind": "lines",
@@ -558,7 +571,17 @@ def margin_series(staging: dict) -> dict:
             f"{deepest[1][1]} 的 {deepest[1][0]:.1f}%。"
             "这正是第一节里那条 GAAP 指引会踩空的地方：坑本身是真的，"
             "只是公司的全年预测从一开始就写明不含它们。"
-            "经营利润率是报告口径，不是调整后口径。"),
+            "经营利润率是报告口径，不是调整后口径。"
+            f"<b>这条线的左端比毛利率短四格，那是洞不是缺数据。</b>"
+            f"它从 {om_from} 起画。2016 四个季度的营业利润都读到了"
+            "（2,473 / 2,753 / 2,977 / 2,612，两条独立路径逐格相同，"
+            "四季加总 10,815 与年报恒等），但它们在 ASU 2017-07 之前的口径上："
+            "养老金的非服务成本当时还在营业利润里。PMI 2018 年初追溯采用该准则，"
+            "2017 四季因此各被上调 16–22 US$M，而**公司从未按季重述过 2016** —— "
+            "重述后的 2016 只有一个年度数。把未重述的四季接在重述后的 2017 前面，"
+            "接缝上会出现一个纯由准则变更产生的台阶，所以这四格留空。"
+            "毛利率不受影响：2018 年的业绩发布把 2017 四季的净收入与销货成本逐字重印，"
+            "两者一个数都没动。"),
         "src_extra": "XBRL companyfacts 的季度收入、毛利与经营利润；第四季为年度减前九个月。",
     }
 
