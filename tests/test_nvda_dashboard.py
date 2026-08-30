@@ -218,23 +218,34 @@ class NvdaDashboardTest(unittest.TestCase):
         self.assertIn(f"+{stated:.1f}%", revenue_chart["title"])
 
     def test_the_margin_high_water_claim_is_measured(self) -> None:
-        """74.98 against 75.00 is a claim one decimal cannot check.
+        """A high-water claim has to be derived from the window it is claimed over.
 
-        Gross margin this quarter is two hundredths of a point below the
-        window's best, and the page prints both to one decimal as 75.0. The
-        title must therefore be derived from the series rather than written.
+        Over eight quarters gross margin was two hundredths of a point off the
+        best, which one decimal cannot even show. Over the ten-year record the
+        answer is not close at all -- the high is 78.4% in Q1'24, three and a
+        half points above this quarter -- and the eight-quarter window could not
+        see it because the peak sat one cell to the left of it. Both readings
+        are "not the high"; only the long one says by how much, which is the
+        whole reason the window moved.
         """
-        financials = self.source["financials"]
+        long = self.source["long_history"]
         chart = next(ex for ex in self.by_section["quarter_highlights"]
                      if ex.get("kind") == "lines" and "GAAP 毛利率" in ex["title"])
-        gross_is_high = (financials["gaap_gross_margin_pct"][-1]
-                         == max(financials["gaap_gross_margin_pct"]))
-        operating_is_high = (financials["gaap_operating_margin_pct"][-1]
-                             == max(financials["gaap_operating_margin_pct"]))
-        self.assertFalse(gross_is_high, "the case this test exists for has gone away")
-        self.assertTrue(operating_is_high)
-        self.assertIn("营业利润率是这八季的高点", chart["title"])
-        self.assertNotIn("两条都是这八季的高点", chart["title"])
+        self.assertEqual(len(chart["xlabels"]), len(long["quarters"]))
+        gross, operating = long["gaap_gross_margin_pct"], long["gaap_operating_margin_pct"]
+        self.assertFalse(gross[-1] == max(gross), "the case this test exists for has gone away")
+        self.assertTrue(operating[-1] == max(operating))
+        self.assertIn("营业利润率是十年新高，毛利率不是", chart["title"])
+        self.assertNotIn("八季", chart["title"])
+        # The note may -- and should -- mention the eight-quarter window, but
+        # only to say what it hid. Asserting the word is absent would have
+        # deleted the one sentence that makes the longer window worth reading.
+        self.assertIn("八季的窗口看不到这件事", chart["note"])
+        # The high the note names is the one in the series, not a typed number.
+        peak = max(gross)
+        self.assertIn(f"{peak:.1f}%", chart["note"])
+        self.assertGreater(peak - gross[-1], 3.0,
+                           "the gap is what makes the long window worth drawing")
 
     def test_the_operating_income_decomposition_is_an_identity(self) -> None:
         """actual − implied = revenue leg + margin leg + opex leg, exactly.

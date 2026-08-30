@@ -477,6 +477,19 @@ def build_payload(staging: dict) -> dict:
     closure = staging["followup_closure"]
     next_kpi = staging["next_kpi"]
     long = staging["long_history"]
+    # The ten-year record is unpacked here rather than beside the routine charts
+    # because section two reads from it too: a revenue bar and a margin line are
+    # the two things eight quarters cannot say anything about.
+    long_labels = [compact_period(quarter) for quarter in long["quarters"]]
+    LONG_STEP = 4
+    long_revenue = long["revenue_usd_m"]
+    # 2015 is not in this record, so the first four year-on-year cells have no
+    # denominator. None, not zero -- a zero would draw a fabricated point at the
+    # left edge of the growth line.
+    long_revenue_yoy = [
+        None if index < 4 else (long_revenue[index] / long_revenue[index - 4] - 1) * 100
+        for index in range(len(long_revenue))
+    ]
 
     # The IR landing page for quarterly results cannot be linked from this
     # payload: `payload_guard` rejects any string matching /inf[a-z]{0,2}/ as a
@@ -609,8 +622,9 @@ def build_payload(staging: dict) -> dict:
             f"收入 US${revenue[-1] / 1000:.1f}B，同比 "
             f"{signed(financials['revenue_yoy_pct'][-1])} 连续四季重新加速"
         ),
-        "xlabels": labels,
-        "values": [value / 1000 for value in revenue],
+        "xlabels": long_labels,
+        "xstep": LONG_STEP,
+        "values": [value / 1000 for value in long_revenue],
         "legend": "季度收入",
         "fmt": "usd1",
         "yfmt": "usd1",
@@ -618,8 +632,8 @@ def build_payload(staging: dict) -> dict:
         "ylab": "US$B",
         "ylab2": "同比增速",
         "yoy": {
-            "name": "收入 YoY (RHS)",
-            "values": financials["revenue_yoy_pct"],
+            "name": "收入 YoY (RHS) D",
+            "values": rounded(long_revenue_yoy),
             "color": "GREEN",
             "yfmt": "pct0",
         },
@@ -629,14 +643,22 @@ def build_payload(staging: dict) -> dict:
             f"（上季 US${(revenue[-2] - revenue[-3]) / 1000:.1f}B）；"
             f"同比增速从上季的 {financials['revenue_yoy_pct'][-2]:.0f}% 升到 "
             f"{financials['revenue_yoy_pct'][-1]:.0f}%，"
-            f"是这八季里连续第四季加速（谷底 {min(financials['revenue_yoy_pct']):.0f}%）。"
+            "是连续第四季加速。"
+            "<b>十年的窗口里这条同比线两次跌破零轴</b>："
+            f"最低 {min(v for v in long_revenue_yoy if v is not None):.0f}%"
+            f"（{long_labels[long_revenue_yoy.index(min(v for v in long_revenue_yoy if v is not None))]}，"
+            "游戏渠道去库存），"
+            f"最高 {max(v for v in long_revenue_yoy if v is not None):.0f}%"
+            f"（{long_labels[long_revenue_yoy.index(max(v for v in long_revenue_yoy if v is not None))]}）。"
+            "八季的窗口只看得到最近这一段单边上行；前四格没有同比线，2015 年不在本记录内。"
             f"Q3 指引中值 US${q3_midpoint:.1f}B，隐含环比 {signed(q3_growth)}，不减速。"
             f"较市场预期 US${consensus['revenue_usd_m'] / 1000:.1f}B 高 "
             f"{pct_change(revenue[-1], consensus['revenue_usd_m']):.1f}%。"
         ),
         "src_extra": (
-            "收入与同比来自各季业绩 8-K 合并损益表；同比为自算；"
-            "市场预期为财报前公开隐含一致预期，不具名。"
+            "42 季收入逐季读自各季业绩 8-K 的合并损益表三个月列（财年第四季取每年 2 月"
+            "全年 8-K 里与全年列并排印出的 Q4 列），并与各财年 10-K 全年数逐年勾稽；"
+            "同比为自算 D；市场预期为财报前公开隐含一致预期，不具名。"
         ),
     }
 
@@ -760,29 +782,29 @@ def build_payload(staging: dict) -> dict:
     # Whether "highest of the eight" is true is measured, not remembered: gross
     # margin is 74.98 this quarter against 75.00 two quarters ago, a gap that a
     # one-decimal read-through cannot see.
-    gross_is_high = (financials["gaap_gross_margin_pct"][-1]
-                     == max(financials["gaap_gross_margin_pct"]))
-    operating_is_high = (financials["gaap_operating_margin_pct"][-1]
-                         == max(financials["gaap_operating_margin_pct"]))
+    long_gross = long["gaap_gross_margin_pct"]
+    long_operating = long["gaap_operating_margin_pct"]
+    gross_is_high = long_gross[-1] == max(long_gross)
+    operating_is_high = long_operating[-1] == max(long_operating)
     margin_level_chart = {
         "ref": "EX_MARGIN_LEVEL",
         "kind": "lines",
         "title": (
             f"GAAP 毛利率 {financials['gaap_gross_margin_pct'][-1]:.1f}%、营业利润率 "
             f"{financials['gaap_operating_margin_pct'][-1]:.1f}%，"
-            + ("两条都是这八季的高点"
+            + ("两条都是十年新高"
                if (gross_is_high and operating_is_high)
-               else "营业利润率是这八季的高点，毛利率还差一点"
+               else "营业利润率是十年新高，毛利率不是"
                if operating_is_high
-               else "毛利率是这八季的高点"
+               else "毛利率是十年新高，营业利润率不是"
                if gross_is_high
-               else "两条都还没回到这八季的高点")
+               else "两条都还没回到十年高点")
         ),
-        "xlabels": labels,
+        "xlabels": long_labels,
+        "xstep": LONG_STEP,
         "series": [
-            {"name": "GAAP 毛利率", "values": financials["gaap_gross_margin_pct"],
-             "color": "NAVY"},
-            {"name": "GAAP 营业利润率", "values": financials["gaap_operating_margin_pct"],
+            {"name": "GAAP 毛利率", "values": long["gaap_gross_margin_pct"], "color": "NAVY"},
+            {"name": "GAAP 营业利润率", "values": long["gaap_operating_margin_pct"],
              "color": "MBLUE"},
         ],
         "fmt": "pct1",
@@ -791,13 +813,16 @@ def build_payload(staging: dict) -> dict:
         "end_label": True,
         "ylab": "利润率",
         "note": (
-            f"Q1'25 的深坑是 H20 出口管制的 US$4.5B 计提，一次性、非经营性；"
-            f"此后五季毛利率逐季修复，营业利润率已抬到 "
-            f"{financials['gaap_operating_margin_pct'][-1]:.1f}%，是这八季的最高。"
-            f"<b>毛利率则没有</b>：本季 {financials['gaap_gross_margin_pct'][-1]:.2f}%，"
-            f"仍低于 {labels[financials['gaap_gross_margin_pct'].index(max(financials['gaap_gross_margin_pct']))]} 的 "
-            f"{max(financials['gaap_gross_margin_pct']):.2f}% —— "
-            "两条线本季分开走，差额就是营业杠杆。"
+            f"最深的两个坑不是一回事：{long_labels[long_operating.index(min(long_operating))]} 的 "
+            f"{min(long_operating):.0f}% 是 2022 年游戏渠道去库存的存货计提，"
+            "Q1'25 的那个是 H20 出口管制的 US$4.5B 计提，两次都是一次性、非经营性；"
+            f"此后五季毛利率逐季修复，营业利润率已抬到 {long_operating[-1]:.1f}%，"
+            f"是这 {len(long_labels)} 季的最高。"
+            f"<b>毛利率不是</b>：本季 {long_gross[-1]:.1f}%，"
+            f"而十年高点是 {long_labels[long_gross.index(max(long_gross))]} 的 "
+            f"{max(long_gross):.1f}% —— <b>八季的窗口看不到这件事</b>，"
+            "因为那个高点就落在窗口的前一格。"
+            "两条线之间的距离在收窄，差额就是营业杠杆（见下一节的费用强度）。"
             "<b>本图用 GAAP 口径画水平</b>，因为 GAAP 的定义在整段窗口内没变过。"
             "<b>但要读的是前瞻而不是水平</b>：公司本季主动把 Q3 毛利率指引下修到 "
             f"{q3_guide['non_gaap_gross_margin_pct']:.1f}%（本季实际 "
@@ -982,8 +1007,6 @@ def build_payload(staging: dict) -> dict:
     )
 
     # ── section four ─────────────────────────────────────────────────────────
-    long_labels = [compact_period(quarter) for quarter in long["quarters"]]
-    LONG_STEP = 4
     # The 2022 de-stocking episode, measured rather than remembered: the lowest
     # operating margin in the record, and the highest reading before it.
     operating_margins = long["gaap_operating_margin_pct"]
