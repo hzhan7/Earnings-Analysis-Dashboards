@@ -218,6 +218,42 @@ class RaceDashboardTest(unittest.TestCase):
             self.assertAlmostEqual(sum(development[i] for i in rows), dev_year, places=6, msg=year)
         # And the page says the early quarters are derived rather than printed.
         self.assertIn("累计相减", long["backfill_note"])
+        # The caption that used to say those quarters "do not exist" has to be
+        # gone: the interim reports carried cumulative capex all along, and a
+        # note that explains a shorter window by a disclosure that is not
+        # missing is worse than no note.
+        exhibits = [ex for section in self.payload["sections"] for ex in section["exhibits"]]
+        chart = next(ex for ex in exhibits if "资本开支与其中的资本化研发" in ex["title"])
+        # The note may quote the old sentence -- it does, in order to correct
+        # it -- but it may not assert it. Asserting the words are absent would
+        # delete the correction along with the claim, which is the same mistake
+        # in the other direction.
+        self.assertIn("那句话是错的", chart["note"])
+        self.assertIn("中报 6-K 附件", chart["note"])
+        self.assertIn("中报", chart["src_extra"])
+        self.assertEqual(len(chart["xlabels"]), len(long["quarters"]))
+
+    def test_the_fourth_quarter_share_count_is_the_printed_one(self) -> None:
+        """Q4 2016 was left null as "not obtainable". It is printed.
+
+        Ferrari's own FY2016 release prints EPS without a share count, and the
+        2017 interim reports carry Q1 2016 as their comparative -- which is how
+        the quarter came to be treated as unavailable. The figure is in the
+        FY2017 release, in the prior-year column of its three-months-ended
+        table, exactly where this page already takes Q4 2017 and Q4 2018 from.
+        """
+        long = self.long
+        shares = long["diluted_shares_k"]
+        self.assertTrue(all(v is not None for v in shares))
+        index = long["quarters"].index("Q4 2016")
+        self.assertEqual(shares[index], 188946.0)
+        # Q1-Q3 2016 are the undiluted 188,923; the Q4 figure differs, which is
+        # the caveat the note has to carry rather than smooth over.
+        self.assertEqual(shares[index - 1], 188923.0)
+        self.assertIn("保留", long["diluted_shares_note"])
+        # Q4 2017 and Q4 2018 come from the same column and differ from their
+        # own full-year figures -- which is what makes the method sound.
+        self.assertEqual(shares[long["quarters"].index("Q4 2017")], 189759.0)
 
     # ── the annual guidance record ──────────────────────────────────────────
     def test_the_record_is_thirty_one_vintages_over_eight_fiscal_years(self) -> None:
