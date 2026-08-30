@@ -126,6 +126,62 @@ class AvgoDashboardTest(unittest.TestCase):
                 checked += 1
         self.assertGreaterEqual(checked, 7)
 
+    def test_fy2017_operating_income_is_the_last_filed_value_not_the_first(self) -> None:
+        """Three filed values for one year, and the page carries the newest.
+
+        FY2017 GAAP operating income appears as 2,493 in the 2017-12-06 earnings
+        release, 2,383 in the FY2017 10-K and again in the FY2018 10-K's
+        comparative column, and 2,371 in the FY2019 10-K's comparative column.
+        All three are filed; the difference is *which filing*. This repo's rule
+        is that the newest reading wins, so the stored figure is 2,371 -- which
+        means anyone checking the page against the release, or against either of
+        the first two 10-Ks, gets a different number and concludes the page is
+        wrong. That is why the other two are written down beside it.
+
+        Pinning this stops a future "correction" to 2,383 from looking like a
+        fix, and stops the convention from drifting silently to first-reported.
+        """
+        record = self.years["fy2017_operating_income_has_three_filed_values"]
+        index = self.years["fiscal_year_ends"].index("2017-10-29")
+        stored = self.years["gaap_operating_income_usd_m"][index]
+        self.assertEqual(stored, 2371.0)
+        self.assertEqual(record["stored"], stored)
+        values = [entry["value"] for entry in record["values"]]
+        self.assertEqual(values, [2493.0, 2383.0, 2371.0],
+                         "release, then the first two 10-Ks, then the newest")
+        self.assertEqual(values[-1], stored, "the stored value is the newest one")
+        self.assertEqual(len(set(values)), 3, "three genuinely different figures")
+        # Each one has to name where it came from, or the note is decoration.
+        for entry in record["values"]:
+            self.assertIn("-", entry["source"])
+            self.assertTrue(entry["kind"])
+
+    def test_the_debt_series_says_which_debt_it_means(self) -> None:
+        """Two consecutive quarters carry the same number, and that is correct.
+
+        2022-05-01 and 2022-07-31 both read 41,227. It looks like a paste, and
+        an adversarial read of this page flagged it as one. It is not: the
+        FY2022 Q2 10-Q and the FY2022 Q3 10-Q are two independent filings and
+        both print 40,958 non-current plus 269 current. Broadcom neither issued
+        nor retired anything between those two balance-sheet dates.
+
+        The series is the balance sheet, not the earnings release -- the two
+        differ by definition, which is the other half of why this note exists.
+        """
+        notes = self.source["capital_allocation_notes"]
+        self.assertIn("40,958", notes["total_debt"])
+        self.assertIn("两份互相独立的申报", notes["total_debt"])
+        debt = self.source["capital_allocation_usd_m"]["total_debt"]
+        ends = self.ends
+        first = ends.index("2022-05-01")
+        self.assertEqual(debt[first], debt[first + 1])
+        self.assertEqual(ends[first + 1], "2022-07-31")
+        # ...and it is the only consecutive repeat in the series, so a second
+        # one appearing later is a question rather than a precedent.
+        repeats = [ends[i] for i in range(1, len(debt))
+                   if debt[i] is not None and debt[i] == debt[i - 1]]
+        self.assertEqual(repeats, ["2022-07-31"])
+
     def test_segment_revenue_sums_to_the_consolidated_statement(self) -> None:
         """Two reportable segments today, three until the FY2019 IP-licensing
         line was wound down. Dropping the third would leave a residual that
