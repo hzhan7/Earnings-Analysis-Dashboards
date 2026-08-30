@@ -70,20 +70,63 @@ class GooglePageTest(unittest.TestCase):
                 f"{long['quarters'][index]}: regions {sum(parts)} vs total {total}",
             )
 
-    def test_quarterly_depreciation_is_not_invented_before_disclosure(self) -> None:
-        """Alphabet did not tag a comparable quarterly depreciation line before
-        the quarter named in the source, so that chart keeps its short window
-        while the other three routine charts run the full ten years."""
+    def test_quarterly_depreciation_is_two_captions_and_stays_two(self) -> None:
+        """The chart reaches 2016 by drawing two lines, not by joining them.
+
+        Alphabet's cash-flow statement called this line "depreciation and
+        impairment of property and equipment" through 2023Q3 and "depreciation
+        of property and equipment" from the FY2023 10-K on.  The two captions
+        overlap for three quarters and disagree by hundreds of millions -- that
+        gap is office-space impairment.  Splicing them would draw a one-off
+        impairment as a step change in depreciation, so the page publishes both
+        and lets the overlap show.  This test pins the overlap (the reason) and
+        the two-series shape (the consequence); it is not satisfied by a single
+        line that happens to be long.
+        """
         long = self.staging["long_history"]
         start = long["quarters"].index(long["depreciation_first_reported"])
         self.assertTrue(all(v is None for v in long["depreciation_usd_m"][:start]))
         self.assertTrue(all(v is not None for v in long["depreciation_usd_m"][start:]))
 
+        captions = self.staging["depreciation_two_captions"]
+        prior = dict(zip(captions["prior_caption"]["quarters"],
+                         captions["prior_caption"]["values"]))
+        current = dict(zip(captions["current_caption"]["quarters"],
+                           captions["current_caption"]["values"]))
+        overlap = sorted(set(prior) & set(current))
+        self.assertEqual(overlap, ["2023Q1", "2023Q2", "2023Q3"])
+        # Every overlapping quarter disagrees, and always in the same direction:
+        # the old caption is the larger one because it carries the impairment.
+        for quarter in overlap:
+            self.assertGreater(prior[quarter], current[quarter], quarter)
+            self.assertGreater(prior[quarter] - current[quarter], 300.0, quarter)
+
         routine = self.by_section["routine"]
-        depreciation_chart = next(ex for ex in routine if "折旧同比" in ex["title"])
-        self.assertIn("只有这张没有", depreciation_chart["note"])
-        self.assertEqual(len(depreciation_chart["xlabels"]), 8)
-        self.assertEqual(len([ex for ex in routine if len(ex["xlabels"]) > 8]), 3)
+        chart = next(ex for ex in routine if "折旧同比" in ex["title"])
+        self.assertEqual(len(chart["xlabels"]), len(long["quarters"]))
+        names = [series["name"] for series in chart["series"]]
+        self.assertEqual(len(names), 3)
+        self.assertTrue(any("旧科目" in name for name in names), names)
+        self.assertTrue(any("现科目" in name for name in names), names)
+        # Both depreciation curves are holes outside their own caption's record.
+        by_name = {series["name"]: series["values"] for series in chart["series"]}
+        old_line = next(v for name, v in by_name.items() if "旧科目" in name)
+        new_line = next(v for name, v in by_name.items() if "现科目" in name)
+        self.assertTrue(any(value is None for value in old_line))
+        self.assertTrue(any(value is None for value in new_line))
+        # ...and they are never both absent in a quarter the record covers.
+        covered = [index for index, quarter in enumerate(long["quarters"])
+                   if quarter >= "2016Q1"]
+        both_missing = [long["quarters"][index] for index in covered
+                        if old_line[index] is None and new_line[index] is None]
+        # Five quarters, and the fifth is the interesting one. 2016Q1-Q4 have no
+        # year-ago base at all. 2023Q4 is the seam: the old caption stops at
+        # 2023Q3 so it has no 2023Q4 numerator, and the new caption starts at
+        # 2023Q1 so it has no 2022Q4 denominator. Exactly one quarter falls
+        # between the two records -- that hole is the caption change, drawn.
+        self.assertEqual(both_missing,
+                         ["2016Q1", "2016Q2", "2016Q3", "2016Q4", "2023Q4"])
+        self.assertEqual(len([ex for ex in routine if len(ex["xlabels"]) > 8]), 4)
 
     def test_currency_sign_parsing(self) -> None:
         self.assertEqual(parse_number("-$5,855M"), -5855)
@@ -178,18 +221,23 @@ class GooglePageTest(unittest.TestCase):
         has to be the first difference of the plotted levels."""
         backlog = next(ex for ex in self.exhibits if ex["kind"] == "bar_line")
         levels = backlog["bar"]["values"]
-        self.assertEqual(len(levels), 8)
-        self.assertEqual(levels[-1], 514.0)
-        # The first shown net add legitimately reaches one quarter before the
-        # window, which is why the series carries nine points and shows eight.
         full = self.staging["backlog"]["level_usd_bn"]
-        self.assertEqual(len(full), 9)
-        expected = [
+        self.assertEqual(len(levels), len(full))
+        self.assertEqual(len(full), 27, "one quarter per filed RPO disclosure")
+        self.assertEqual(self.staging["backlog"]["quarters"][0], "2019Q4")
+        # 513.9 is the Google Cloud line in the Q2 2026 10-Q (filed 2026-07-23).
+        # The page used to carry 514.0 with a note saying no 10-Q existed yet.
+        self.assertEqual(levels[-1], 513.9)
+        # The first quarter has no previous quarter, so the net-add line starts
+        # as a hole rather than as a zero -- a zero there would read as "no
+        # growth in 2019Q4", which is a claim the record cannot make.
+        expected = [None] + [
             round(current - previous, 6)
             for previous, current in zip(full, full[1:])
         ]
         self.assertEqual(
-            [round(v, 6) for v in backlog["line"]["values"]], expected
+            [None if v is None else round(v, 6) for v in backlog["line"]["values"]],
+            expected,
         )
         self.assertIn("TPU", backlog["src_extra"])
 
@@ -223,20 +271,34 @@ class GooglePageTest(unittest.TestCase):
         self.assertNotIn("/library/cloudstorage/", text)
         self.assertNotIn("经营口径 eps", text)
 
-    def test_every_plotted_curve_spans_the_full_window(self) -> None:
-        """The point of carrying four extra quarters is that no y/y line starts
-        halfway across the axis.  A short series means the backfill regressed."""
+    def test_a_curve_may_start_late_but_never_has_a_hole_in_the_middle(self) -> None:
+        """The replacement for "every curve spans the whole axis".
+
+        That assertion was right while every chart ran on the same eight
+        quarters.  It stops being right the moment the axis is the site's ten
+        years, because three of the records on it genuinely begin later: the
+        revenue lines in 2018Q4, Cloud's operating margin in 2022Q1, RPO in
+        2019Q4.  Requiring a full span would force those to be padded, which is
+        the opposite of what the page should do.
+
+        What is still true, and is the thing worth pinning: a series may be
+        missing at the *front* and it may be missing at the *back*, but a hole
+        in the middle means a quarter was dropped rather than never disclosed.
+        """
         for exhibit in self.exhibits:
             if exhibit["kind"] != "lines":
                 continue
-            if not exhibit["title"].endswith("%") and "YoY" not in exhibit["title"]:
-                continue
             for series in exhibit["series"]:
-                if series["name"].endswith("阈值") or "阈值" in series["name"]:
-                    continue
-                self.assertTrue(
-                    all(value is not None for value in series["values"]),
-                    f"{exhibit['title']} / {series['name']}",
+                values = series["values"]
+                reported = [index for index, value in enumerate(values)
+                            if value is not None]
+                self.assertTrue(reported, f"{exhibit['title']} / {series['name']}")
+                span = range(reported[0], reported[-1] + 1)
+                holes = [index for index in span if values[index] is None]
+                self.assertEqual(
+                    holes, [],
+                    f"{exhibit['title']} / {series['name']}: "
+                    f"interior holes at {holes}",
                 )
 
     def test_twelve_quarter_base_backs_every_yoy(self) -> None:

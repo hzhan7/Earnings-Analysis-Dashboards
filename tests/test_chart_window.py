@@ -128,7 +128,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
     "amzn": 3, "avgo": 0, "axp": 2, "bc": 0, "cboe": 6, "cdns": 6, "cme": 13,
-    "cost": 7, "googl": 1, "ibkr": 0, "ma": 0, "mc": 0, "mco": 0, "meta": 10,
+    "cost": 7, "googl": 11, "ibkr": 0, "ma": 0, "mc": 0, "mco": 0, "meta": 10,
     "msci": 0, "msft": 3, "mu": 2, "ndaq": 8, "nke": 7, "nvda": 4, "pm": 4,
     "race": 9, "rms": 0, "samsung": 0, "schw": 0, "skhynix": 0, "snps": 3,
     "spgi": 2, "tjx": 1, "tsm": 18, "v": 14,
@@ -150,6 +150,22 @@ CONVERTED = {
         "美国以外贡献净收入": "revenue by geography begins with Visa's first ASC 606 "
                        "disaggregation note (10-Q filed 2019-01-31); the earlier "
                        "10-Qs disaggregate long-lived assets, not revenue.",
+    },
+    "googl": {
+        # Two floors, both disclosure floors, both stated on the charts they
+        # govern. Alphabet published no breakdown of revenue into Search /
+        # YouTube / Network / subscriptions / Cloud before the 2018Q4 release,
+        # and no remaining-performance-obligation figure before the FY2019 10-K.
+        "Cloud 收入 YoY": "revenue by line begins with the 2018Q4 release.",
+        "Cloud 经营利润率": "same line floor; the margin's own numerator is later still "
+                      "(2022Q1), which the chart says on itself.",
+        "Search & other YoY": "revenue by line begins with the 2018Q4 release.",
+        "Cloud backlog 环比": "remaining performance obligations first appear in the "
+                         "FY2019 10-K.",
+        "Cloud backlog 单季净增": "same RPO floor.",
+        "backlog 创": "same RPO floor; this is the level-and-net-add view of it.",
+        "Cloud 增速本季": "revenue by line begins with the 2018Q4 release.",
+        "Search 增速本季": "revenue by line begins with the 2018Q4 release.",
     },
     "meta": {
         "收入指引兑现": "Meta published no quarterly revenue outlook range before the "

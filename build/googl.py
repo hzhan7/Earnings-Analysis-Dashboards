@@ -104,16 +104,29 @@ def cross_capex_table(n: int) -> dict:
 WINDOW = 8
 
 
-def yoy(values: list[float]) -> list[float | None]:
-    """Year-over-year in percent, None until a year-ago quarter exists."""
-    return [None] * 4 + [
-        (values[index] / values[index - 4] - 1) * 100 for index in range(4, len(values))
-    ]
+def yoy(values: list[float | None]) -> list[float | None]:
+    """Year-over-year in percent, None until a year-ago quarter exists.
+
+    A hole in the input has to become a hole in the output, not an exception and
+    not a skipped quarter: several of the long series here start mid-record
+    (quarterly depreciation only exists from 2023Q1), and the year-on-year line
+    for those has to be missing exactly where its own base is missing.
+    """
+    out: list[float | None] = [None] * 4
+    for index in range(4, len(values)):
+        current, base = values[index], values[index - 4]
+        out.append(None if current is None or base is None or base == 0
+                   else (current / base - 1) * 100)
+    return out
 
 
-def trailing(values: list[float]) -> list[float | None]:
-    """Rolling four-quarter sum, None until four quarters exist."""
-    return [None] * 3 + [sum(values[index - 3:index + 1]) for index in range(3, len(values))]
+def trailing(values: list[float | None]) -> list[float | None]:
+    """Rolling four-quarter sum, None until four complete quarters exist."""
+    out: list[float | None] = [None] * 3
+    for index in range(3, len(values)):
+        window = values[index - 3:index + 1]
+        out.append(None if any(value is None for value in window) else sum(window))
+    return out
 
 
 def shown(values: list) -> list:
@@ -191,7 +204,10 @@ def build_payload(staging: dict) -> dict:
     long_labels = [quarter_label(quarter) for quarter in long["quarters"]]
     long_revenue = long["revenue_usd_m"]
     long_capex = long["capital_expenditures_usd_m"]
-    long_revenue_yoy = yoy(long_revenue)
+    # Four 2015 quarters exist only as the denominator for 2016's year-on-year
+    # line; without them that line starts a year into a ten-year chart.
+    base_2015 = staging["prior_year_base_2015"]["revenue_usd_m"]
+    long_revenue_yoy = yoy(base_2015 + long_revenue)[len(base_2015):]
     long_intensity = [
         capex / total * 100 for capex, total in zip(long_capex, long_revenue)
     ]
@@ -202,6 +218,47 @@ def build_payload(staging: dict) -> dict:
         region: yoy(values)[yoy_from:]
         for region, values in long["geography_usd_m"].items()
     }
+
+    # ── The 2016-onward record for the metrics that have one ────────────────
+    # Three different floors, and each one is a disclosure floor rather than a
+    # choice, so they are kept apart instead of being padded to a common start:
+    #   * revenue / capex / operating cash flow / geography -- 42 quarters
+    #   * the revenue lines (Search, YouTube, Cloud ...) -- 31, because Alphabet
+    #     did not publish this breakdown before the 2018Q4 release
+    #   * Cloud operating margin -- 18, because the current cost allocation was
+    #     only recast back to 2022Q1
+    lines = staging["revenue_lines_usd_m"]
+    line_labels = [quarter_label(quarter) for quarter in lines["quarters"]]
+    long_cloud = lines["google_cloud"]
+    long_cloud_yoy = yoy(long_cloud)
+    long_search_yoy = yoy(lines["search_and_other"])
+    long_youtube_yoy = yoy(lines["youtube_ads"])
+
+    seg = staging["segment_operating_income_usd_m"]
+    seg_at = {quarter: index for index, quarter in enumerate(seg["quarters"])}
+    long_cloud_opm = [
+        None if quarter not in seg_at
+        else seg["oi_google_cloud"][seg_at[quarter]] / long_cloud[index] * 100
+        for index, quarter in enumerate(lines["quarters"])
+    ]
+
+    long_ocf = long["operating_cash_flow_usd_m"]
+    long_fcf = [operating - capex
+                for operating, capex in zip(long_ocf, long_capex)]
+    long_ttm_fcf = trailing(long_fcf)
+    negative_fcf = sum(1 for value in long_fcf if value < 0)
+    long_dep = long["depreciation_usd_m"]
+    long_dep_yoy = yoy(long_dep)
+    dep_from = leading_gap(long_dep)
+
+    captions = staging["depreciation_two_captions"]
+    def on_long_axis(block: dict) -> list[float | None]:
+        at = dict(zip(block["quarters"], block["values"]))
+        return [at.get(quarter) for quarter in long["quarters"]]
+    dep_prior_caption = on_long_axis(captions["prior_caption"])
+    dep_current_caption = on_long_axis(captions["current_caption"])
+    dep_prior_yoy = yoy(dep_prior_caption)
+    dep_current_yoy = yoy(dep_current_caption)
 
     dep_cur, dep_prev, dep_prior = snap(staging, "折旧")
     sbc_cur, sbc_prev, sbc_prior = snap(staging, "股权激励费用")
@@ -222,31 +279,44 @@ def build_payload(staging: dict) -> dict:
     ]
     eps_gap = (eps_bridge["values"][2] / consensus["operating_eps_mid"] - 1) * 100
     backlog_levels = backlog["level_usd_bn"]
-    backlog_labels = shown(backlog["periods"])
-    backlog_shown = shown(backlog_levels)
-    backlog_qoq = shown([None] + [
+    backlog_labels = [quarter_label(quarter) for quarter in backlog["quarters"]]
+    backlog_shown = backlog_levels
+    backlog_qoq = [None] + [
         (current / previous - 1) * 100
         for previous, current in zip(backlog_levels, backlog_levels[1:])
-    ])
-    backlog_net_add = shown([None] + [
+    ]
+    backlog_net_add = [None] + [
         current - previous
         for previous, current in zip(backlog_levels, backlog_levels[1:])
-    ])
+    ]
 
     # One entry per tracked metric, so §1 and §3 can each draw the metric's own
     # history under its own threshold instead of a single normalised bar.
+    # Every tracked metric is drawn against its threshold over its own longest
+    # filed record, not over a common eight-quarter tail.  A threshold read on
+    # eight quarters cannot say whether the line has been there before; the four
+    # different starts below are four different disclosure floors, and each one
+    # is stated on the chart it governs.
     tracked = {
-        "Cloud 收入 YoY": (revenue_labels, cloud_yoy, "pct1", "同比增速", "Cloud 收入 YoY"),
-        "Cloud 经营利润率": (revenue_labels, cloud_opm, "pct1", "利润率", "Cloud OPM"),
-        "Search & other YoY": (revenue_labels, search_yoy, "pct1", "同比增速", "Search & other YoY"),
+        "Cloud 收入 YoY": (line_labels, long_cloud_yoy, "pct1", "同比增速", "Cloud 收入 YoY"),
+        "Cloud 经营利润率": (line_labels, long_cloud_opm, "pct1", "利润率", "Cloud OPM"),
+        "Search & other YoY": (line_labels, long_search_yoy, "pct1", "同比增速", "Search & other YoY"),
         "Cloud backlog 环比": (backlog_labels, backlog_qoq, "pct1", "环比", "backlog 环比"),
         "Cloud backlog 单季净增": (backlog_labels, backlog_net_add, "usd0", "$B", "单季净增"),
-        "TTM 自由现金流": (revenue_labels, ttm_fcf_values, "f0c", "$M", "TTM 自由现金流"),
-        "折旧 YoY": (revenue_labels, dep_yoy, "pct1", "同比增速", "折旧 YoY"),
-        "Q2 CapEx（不超上限）": (cash_labels, capex_values, "f0c", "$M", "单季 CapEx"),
+        "TTM 自由现金流": (long_labels, long_ttm_fcf, "f0c", "$M", "TTM 自由现金流"),
+        "折旧 YoY": (long_labels, long_dep_yoy, "pct1", "同比增速", "折旧 YoY"),
+        "Q2 CapEx（不超上限）": (long_labels, long_capex, "f0c", "$M", "单季 CapEx"),
         "Q3 CapEx（不低于此值否则全年指引下修）": (
-            cash_labels, capex_values, "f0c", "$M", "单季 CapEx",
+            long_labels, long_capex, "f0c", "$M", "单季 CapEx",
         ),
+    }
+    # A metric named in the settlement list but missing from `tracked` used to be
+    # skipped with `continue`, which drew one fewer chart than the list promised
+    # and said nothing.
+    FLOOR_REASON = {
+        id(line_labels): "记录始于 2018Q4 —— Alphabet 那一季才第一次按这套分类披露收入。",
+        id(backlog_labels): "记录始于 2019Q4 —— 剩余履约义务首次出现在 FY2019 10-K。",
+        id(long_labels): "记录始于 2016Q1，与本站其余页面同一窗口。",
     }
 
     def tracking_charts(entries, value_key, threshold_label, headline) -> list[dict]:
@@ -258,6 +328,11 @@ def build_payload(staging: dict) -> dict:
                 continue
             xlabels, values, fmt, ylab, actual_name = tracked[metric]
             side = "上方" if entry["direction"] == "up" else "下方"
+            reported = [value for value in values if value is not None]
+            unsafe = ((lambda value: value < entry["threshold"])
+                      if entry["direction"] == "up"
+                      else (lambda value: value > entry["threshold"]))
+            crossed = sum(1 for value in reported if unsafe(value))
             charts.append(threshold_exhibit(
                 headline(entry),
                 xlabels,
@@ -267,10 +342,16 @@ def build_payload(staging: dict) -> dict:
                 ylab=ylab,
                 actual_name=actual_name,
                 threshold_name=f"{threshold_label}（安全侧在{side}）",
+                xstep=LONG_STEP if len(xlabels) > 16 else None,
                 note=(
                     f"阈值 {unit_text(entry['unit'], entry['threshold'])}，"
                     f"当前 {unit_text(entry['unit'], entry[value_key])}，"
                     f"余量 {headroom(entry['direction'], entry['threshold'], entry[value_key]):+.1f}%。"
+                    f"这条线自己的记录有 {len(reported)} 个季度，"
+                    f"其中 {crossed} 个落在阈值的不安全一侧 —— "
+                    "<b>阈值是本站为下一季设的，不是历史上从未被穿过的线</b>；"
+                    "八季的窗口看不出这个区别，因为八季里它一次都没被穿过。"
+                    + FLOOR_REASON.get(id(xlabels), "")
                 ),
                 src_extra=(
                     "实际值来自公司季度 release / 电话会口径；阈值为本地研究设定，不是公司指引。"
@@ -310,13 +391,16 @@ def build_payload(staging: dict) -> dict:
             # revenue level is a scale fact and belongs in the note, not the axis.
             "kind": "lines",
             "title": (
-                f"Cloud 增速八季由 {cloud_yoy[0]:.1f}% 升到 {cloud_yoy[-1]:.1f}%，"
-                f"利润率同步升到 {cloud_opm[-1]:.2f}%"
+                f"Cloud 增速本季 {cloud_yoy[-1]:.1f}%，"
+                f"利润率 {cloud_opm[-1]:.2f}%；"
+                f"两条线自己的记录起点分别是 "
+                f"{line_labels[leading_gap(long_cloud_yoy)]} 与 {seg['quarters'][0]}"
             ),
-            "xlabels": revenue_labels,
+            "xlabels": line_labels,
+            "xstep": LONG_STEP,
             "series": [
-                {"name": "Cloud 收入 YoY", "values": cloud_yoy, "color": "NAVY"},
-                {"name": "Cloud 经营利润率", "values": cloud_opm, "color": "GOLD"},
+                {"name": "Cloud 收入 YoY", "values": long_cloud_yoy, "color": "NAVY"},
+                {"name": "Cloud 经营利润率", "values": long_cloud_opm, "color": "GOLD"},
             ],
             "fmt": "pct1",
             "yfmt": "pct1",
@@ -325,18 +409,31 @@ def build_payload(staging: dict) -> dict:
             "end_label": True,
             "ylab": "同比增速 / 利润率",
             "note": (
-                f"两条线八季同向上行，是最难被叙事伪造的组合；本季收入 "
-                f"${cloud_values[-1]:,.0f}M，利润率累计 +{cloud_opm[-1] - cloud_opm[0]:.2f}pp。"
+                f"两条线近八季同向上行，是最难被叙事伪造的组合；本季收入 "
+                f"${cloud_values[-1]:,.0f}M，利润率较八季前 +{cloud_opm[-1] - cloud_opm[0]:.2f}pp。"
+                "<b>两条线在这张图上起点不同，那不是缺数据，是两个不同的披露底。</b>"
+                "收入线从 2018Q4 起（Alphabet 那一季才第一次按这套分类披露收入）；"
+                "利润率线从 2022Q1 起（2023 年改了分部成本分摊，公司只把 2022 四个季度"
+                "追溯了一遍）。更早还有一段旧分摊口径的 Cloud 利润率，本站不接 —— "
+                "把两段拼起来会在 2022 年初造出一个纯由分摊改动产生的台阶。"
+                f"利润率线自己的窗口里，最低一格是 "
+                f"{min(v for v in long_cloud_opm if v is not None):.1f}%，"
+                f"最高是 {max(v for v in long_cloud_opm if v is not None):.1f}%。"
             ),
             "src_extra": source_note("Cloud 收入与经营利润来自公司分部表；同比与 OPM 为自算"),
         },
         {
             "kind": "lines",
-            "title": "Search 增速从 19.1% 回落到 16.8%，与市场预期基本一致",
-            "xlabels": revenue_labels,
+            "title": (
+                f"Search 增速本季 {search_yoy[-1]:.1f}%；"
+                f"七年的窗口里它跌破过零一次，最低 "
+                f"{min(v for v in long_search_yoy if v is not None):.1f}%"
+            ),
+            "xlabels": line_labels,
+            "xstep": LONG_STEP,
             "series": [
-                {"name": "Search & other YoY", "values": search_yoy, "color": "NAVY"},
-                {"name": "YouTube ads YoY", "values": youtube_yoy, "color": "MBLUE"},
+                {"name": "Search & other YoY", "values": long_search_yoy, "color": "NAVY"},
+                {"name": "YouTube ads YoY", "values": long_youtube_yoy, "color": "MBLUE"},
             ],
             "fmt": "pct1",
             "yfmt": "pct1",
@@ -347,6 +444,12 @@ def build_payload(staging: dict) -> dict:
             "note": (
                 "Search 减速 2.3pp，市场预期约 +17%，属符合；YouTube +12.9% 由世界杯驱动，"
                 "下季无对应赛事。"
+                "<b>八季的窗口里这两条线只是高低起伏，拉到 2018Q4 之后它们各自穿过零一次</b>："
+                "2020 年 6 月止季 Search 同比 "
+                f"{min(v for v in long_search_yoy if v is not None):.1f}%、YouTube "
+                f"{min(v for v in long_youtube_yoy if v is not None):.1f}%，"
+                "是这条记录里唯一的负值区间。起点 2018Q4 是披露底：更早的季度公司没有按这套"
+                "分类披露过收入。"
             ),
             "src_extra": source_note("分项收入与同比来自公司季度 release；市场预期为财报前一致预期，不具名"),
         },
@@ -398,9 +501,15 @@ def build_payload(staging: dict) -> dict:
         },
         {
             "kind": "diverging_bars",
-            "title": "单季自由现金流首次转负至 -$5.9B",
-            "xlabels": cash_labels,
-            "values": fcf_values,
+            "title": (
+                f"单季自由现金流转负至 ${long_fcf[-1] / 1000:,.1f}B —— "
+                + (f"四十二季里唯一的一次"
+                   if negative_fcf == 1
+                   else f"四十二季里的第 {negative_fcf} 次")
+            ),
+            "xlabels": long_labels,
+            "xstep": LONG_STEP,
+            "values": [round(value, 1) for value in long_fcf],
             "legend": "自由现金流",
             "positive_label": "正自由现金流",
             "negative_label": "负自由现金流",
@@ -412,6 +521,13 @@ def build_payload(staging: dict) -> dict:
             "note": (
                 "经营现金流同比增 $11.3B，被同比增 $22.5B 的 CapEx 完全吞没；"
                 "本季所得税现金流实为净流入，转负不能用季节性解释。"
+                + ("<b>把窗口从八季拉到四十二季，「首次转负」这句话仍然成立</b> —— "
+                   "2016 年以来这条线只有本季一次落到零以下，"
+                   f"此前最低的一格是 ${min(long_fcf[:-1]) / 1000:,.1f}B。"
+                   if negative_fcf == 1 else
+                   "<b>八季的窗口里「首次转负」是错的说法</b> —— 更早的负值出现在 "
+                   + "、".join(long_labels[i] for i, value in enumerate(long_fcf)
+                               if value < 0 and i != len(long_fcf) - 1) + "。")
             ),
             "src_extra": source_note("FCF = 经营现金流 − 购买物业及设备"),
         },
@@ -504,36 +620,50 @@ def build_payload(staging: dict) -> dict:
                 "（10-Q 只按年初至今披露，逐季由相邻两个年初至今值相减）"),
         },
         {
-            "kind": "gs_bar",
-            "title": f"折旧同比 {dep_yoy[-1]:+.1f}%，快于收入的 {revenue_yoy[-1]:+.1f}%",
-            "xlabels": revenue_labels,
-            "values": dep_values,
-            "legend": "季度折旧",
-            "fmt": "f0c",
-            "yfmt": "f0c",
-            "label_fmt": "f0c",
-            "ylab": "$M",
-            "ylab2": "同比增速",
-            "yoy": {
-                "name": "折旧 YoY (RHS)",
-                "values": dep_yoy,
-                "color": "RED",
-                "yfmt": "pct1",
-            },
+            "kind": "lines",
+            "title": (
+                f"折旧同比 {dep_yoy[-1]:+.1f}%，快于收入的 {revenue_yoy[-1]:+.1f}%；"
+                "十年里这条线换过一次科目，所以画成两条"
+            ),
+            "xlabels": long_labels,
+            "xstep": LONG_STEP,
+            "series": [
+                {"name": captions["prior_caption"]["label"] + " YoY",
+                 "values": [None if v is None else round(v, 1) for v in dep_prior_yoy],
+                 "color": "GRAY"},
+                {"name": captions["current_caption"]["label"] + " YoY",
+                 "values": [None if v is None else round(v, 1) for v in dep_current_yoy],
+                 "color": "RED"},
+                {"name": "总收入 YoY",
+                 "values": [None if v is None else round(v, 1) for v in long_revenue_yoy],
+                 "color": "NAVY"},
+            ],
+            "fmt": "pct1",
+            "yfmt": "pct1",
+            "label_fmt": "pct1",
+            "end_label": True,
+            "ylab": "同比增速",
             "note": (
                 f"折旧同比已连续多季高于收入同比；当季 CapEx 是折旧的 "
                 f"{capex_values[-1] / dep_values[-1]:.1f} 倍，意味着这条线的上行才刚开始。"
-                f"<b>本节其余三张都拉到了 2016 年，只有这张没有</b>：{long['depreciation_note']}"
+                "<b>这张图上有两条折旧线，不是一条线断了。</b>"
+                "现金流量表上这个科目 2023 年之前叫「折旧与减值」、之后叫「折旧」，"
+                "两个口径在 2023 年前三季重叠，值是 3,060/3,279/3,671 对 2,635/2,824/3,171 —— "
+                "差的那一截是办公场地减值。把它们接成一条，会把 2023 年的一次性减值"
+                "画成折旧的跳升，所以本站画两条、让重叠段自己说话。"
             ),
             "src_extra": source_note("季度折旧来自各期 10-Q / 10-K 现金流量表，第四季按全年减前三季倒推"),
         },
         {
             "kind": "gs_line",
             "title": (
-                f"TTM 自由现金流见顶回落：${max(ttm_fcf_values):,.0f}M → ${ttm_fcf_cur:,.0f}M"
+                f"TTM 自由现金流见顶回落："
+                f"${max(v for v in long_ttm_fcf if v is not None):,.0f}M → ${ttm_fcf_cur:,.0f}M"
             ),
-            "xlabels": revenue_labels,
-            "values": ttm_fcf_values,
+            "xlabels": long_labels,
+            "xstep": LONG_STEP,
+            "values": [None if value is None else round(value, 1)
+                       for value in long_ttm_fcf],
             "legend": "TTM 自由现金流",
             "fmt": "f0c",
             "yfmt": "f0c",
@@ -542,6 +672,9 @@ def build_payload(staging: dict) -> dict:
             "note": (
                 f"同比 {change(ttm_fcf_cur, ttm_fcf_prior)}、较上季 {change(ttm_fcf_cur, ttm_fcf_prev)}；"
                 "滚动四季口径把单季的税款与季节性摊平，拐点出现在 Q1 2026。"
+                "<b>拉到十年之后能看到的是：这条线此前只回落过两次</b>，"
+                "2019 年一次、2022 年一次，两次都在四个季度内回到新高。"
+                "这一次的不同之处不在这张图上，在资本强度那一张。"
             ),
             "src_extra": source_note("按各季经营现金流减资本开支滚动四季求和（自算），逐季原值见核对表"),
         },
