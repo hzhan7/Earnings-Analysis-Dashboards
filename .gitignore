@@ -30,6 +30,7 @@ series/*.json
 !series/googl.json
 !series/ibkr.json
 !series/ma.json
+!series/mc.json
 !series/mco.json
 !series/meta.json
 !series/msci.json

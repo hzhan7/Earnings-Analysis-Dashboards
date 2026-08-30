@@ -11,9 +11,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amzn, avgo, axp, bc, cboe, cdns, cme, cost, googl, ibkr, ma, mco, meta,
-    msci, msft, mu, ndaq, nke, nvda, pm, race, rms, samsung, schw, skhynix,
-    snps,
+    amzn, avgo, axp, bc, cboe, cdns, cme, cost, googl, ibkr, ma, mc, mco,
+    meta, msci, msft, mu, ndaq, nke, nvda, pm, race, rms, samsung, schw,
+    skhynix, snps,
     spgi, tjx, tsm, v,
 )
 from build.payload_guard import write_js  # noqa: E402
@@ -33,6 +33,7 @@ MODULES = {
     "googl": googl,
     "ibkr": ibkr,
     "ma": ma,
+    "mc": mc,
     "mco": mco,
     "meta": meta,
     "msci": msci,
@@ -190,6 +191,18 @@ ENTRIES = [
         "cadence_label": "自然年季度；完整披露",
         "headline_metrics": ["Revenue $9.28B", "Rebate ratio 52.4%", "VAS share 41.2%"],
         "search_text": "ma mastercard 万事达 支付 网络 跨境 清算 返点 激励 增值服务 vas 发卡行 收单 稳定币",
+    },
+    {
+        "slug": "mc",
+        "ticker": "MC.PA",
+        "name": "LVMH Moët Hennessy Louis Vuitton",
+        "aliases": ["LVMH", "路威酩轩", "Louis Vuitton", "Dior"],
+        "group": "luxury_brands",
+        "cadence_label": "自然年季度；收入按季披露，利润仅半年度",
+        "headline_metrics": ["半年收入 €38.6B", "半年经营利润率 22.5%", "本季有机 +3%"],
+        "search_text": ("mc lvmh 路威酩轩 奢侈品 louis vuitton 路易威登 dior 迪奥 tiffany 蒂芙尼 "
+                        "bvlgari 宝格丽 sephora 丝芙兰 hennessy 轩尼诗 干邑 香槟 时装 皮具 "
+                        "手表 珠宝 精品零售 有机增速 半年度 欧元 ifrs"),
     },
     {
         "slug": "mco",

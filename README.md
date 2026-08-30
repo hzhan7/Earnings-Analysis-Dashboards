@@ -4,8 +4,8 @@ Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
 American Express, Broadcom, Brunello Cucinelli, Cadence, Cboe Global Markets,
 Charles Schwab, CME Group, Costco, Ferrari, Hermès International,
-Interactive Brokers, Mastercard, Meta, Micron, Microsoft, Moody's, MSCI,
-Nasdaq, NIKE, NVIDIA, Philip Morris International, S&P Global,
+Interactive Brokers, LVMH, Mastercard, Meta, Micron, Microsoft, Moody's,
+MSCI, Nasdaq, NIKE, NVIDIA, Philip Morris International, S&P Global,
 Samsung Electronics, SK hynix, Synopsys, TJX, TSMC and Visa.
 
 ## Build
@@ -28,6 +28,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/googl/`
 - `http://127.0.0.1:8765/ibkr/`
 - `http://127.0.0.1:8765/ma/`
+- `http://127.0.0.1:8765/mc/`
 - `http://127.0.0.1:8765/mco/`
 - `http://127.0.0.1:8765/meta/`
 - `http://127.0.0.1:8765/msci/`
@@ -229,7 +230,15 @@ Charts are ordered the way the note is actually used:
    two with opposite signs in four region-quarters, the seven métiers and six
    regions measured by what they contribute rather than by the size of their
    own percentage, and a profit record that runs on halves because the company
-   publishes an income statement only twice a year;
+   publishes an income statement only twice a year; LVMH gets the same split
+   read from the other side — revenue four times a year against profit twice,
+   so that not one of the eight quarters on its page carries a profit figure
+   of its own — the two thirds of this quarter's improvement in reported
+   growth that came from the currency line rather than from demand, the three
+   consecutive years in which the second half carried more revenue and a
+   thinner margin than the first, and a guidance record made entirely of
+   sentences, in which the one stated most firmly in the negative is the one
+   that was wrong;
    Samsung Electronics gets the one number the company
    actually guides -- next quarter's DRAM and NAND bit shipments, and only as a
    phrase -- beside the price it never guides, the eight quarters in which
