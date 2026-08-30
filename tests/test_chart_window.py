@@ -127,7 +127,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amzn": 9, "avgo": 0, "axp": 5, "bc": 0, "cboe": 6, "cdns": 6, "cme": 13,
+    "amzn": 9, "avgo": 0, "axp": 5, "bc": 0, "cboe": 6, "cdns": 6, "cme": 14,
     "cost": 7, "googl": 11, "ibkr": 0, "ma": 0, "mc": 0, "mco": 0, "meta": 10,
     "msci": 0, "msft": 8, "mu": 2, "ndaq": 8, "nke": 7, "nvda": 4, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 0, "skhynix": 0, "snps": 3,
@@ -235,11 +235,6 @@ CONVERTED = {
                   "Ferrari reported as a listed company.",
     },
     "cme": {
-        "两条营业利润率": "CME first printed a Reconciliation of Adjusted Operating Income in "
-                    "the 2025-10-22 release -- prompted by an SEC comment letter -- and "
-                    "that table carries one prior-year column, so adjusted operating "
-                    "income begins at 2024Q3. The denominator has 42 quarters but both "
-                    "legs must share a window.",
         "调整后营业费用（除许可费）": "same numerator, same 2024Q3 floor; the licensing leg alone "
                             "has 54 quarters.",
         "调整后营业利润率对": "same numerator again -- this is the threshold view of it.",

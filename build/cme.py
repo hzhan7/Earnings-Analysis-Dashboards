@@ -363,12 +363,18 @@ def quarter_section(staging: dict) -> list[dict]:
     margin = {
         "ref": "EX_MARGIN",
         "kind": "lines",
-        "title": (f"近八季两条营业利润率：调整后 {fin['adj_margin_pct'][-1]:.1f}%，"
-                  f"GAAP {fin['gaap_margin_pct'][-1]:.1f}%"),
-        "xlabels": labels,
+        "title": (f"两条营业利润率：调整后 {fin['adj_margin_pct'][-1]:.1f}%（只有 "
+                  f"{len(fin['adj_margin_pct'])} 季），"
+                  f"GAAP {fin['gaap_margin_pct'][-1]:.1f}%（{len(long_labels)} 季）"),
+        "xlabels": long_labels,
+        "xstep": LONG_STEP,
         "series": [
-            {"name": "调整后营业利润率", "values": rounded(fin["adj_margin_pct"]), "color": "NAVY"},
-            {"name": "GAAP 营业利润率", "values": rounded(fin["gaap_margin_pct"]), "color": "BLUE"},
+            {"name": "调整后营业利润率",
+             "values": ([None] * (len(long_labels) - len(fin["adj_margin_pct"]))
+                        + rounded(fin["adj_margin_pct"])),
+             "color": "NAVY"},
+            {"name": "GAAP 营业利润率", "values": rounded(span("gaap_margin_pct")),
+             "color": "BLUE"},
         ],
         "fmt": "pct1", "yfmt": "pct1", "label_fmt": "pct1", "end_label": True,
         "ylab": "%",
@@ -380,7 +386,14 @@ def quarter_section(staging: dict) -> list[dict]:
             f"收入环比 {signed(pct_change(fin['total_revenues'][-1], fin['total_revenues'][-2]))} —— "
             "利润率的落差几乎全部来自分母。两条线之间的缺口是并购无形资产摊销、"
             "重组与遣散、递延薪酬与诉讼等调整项，"
-            f"本季 {fin['adj_margin_pct'][-1] - fin['gaap_margin_pct'][-1]:.1f} 个百分点。"),
+            f"本季 {fin['adj_margin_pct'][-1] - fin['gaap_margin_pct'][-1]:.1f} 个百分点。"
+            "<b>两条线长度不同，那不是没做完，是披露本身的形状。</b>"
+            "GAAP 那条回到 2016Q1；调整后那条只有八季，因为在 2025 年 10 月之前 CME 的"
+            "业绩发布里根本没有量化过「调整后营业利润」—— 那个词只出现在标题和 CEO 引语里，"
+            "一个数都没有，直到 SEC 的问询函要求「要么量化、要么别用」。"
+            "所以更早的调整后利润率不是本站没取，是它不存在。"
+            f"GAAP 那条自己的窗口区间是 {min(span('gaap_margin_pct')):.1f}–"
+            f"{max(span('gaap_margin_pct')):.1f}%，本季 {fin['gaap_margin_pct'][-1]:.1f}%。"),
         "src_extra": ("调整后营业利润取自各季业绩新闻稿的 Reconciliation of Adjusted Operating "
                       "Income 表；两个利润率均为该口径营业利润 ÷ 总收入 D，与公司披露的分子一致。"),
     }
