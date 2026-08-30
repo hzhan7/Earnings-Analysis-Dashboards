@@ -231,7 +231,8 @@ def quarter_charts(s: dict) -> list[dict]:
     mix = {
         "ref": "EX_MIX",
         "kind": "stacked_dual",
-        "title": (f"零售占比在 63.7% 停了三年，本期一步走到 {share[-1]:.1f}%"),
+        "title": (f"零售占比连续三年停在 {min(share[2:5]):.1f}%–{max(share[2:5]):.1f}%，"
+                  f"本期一步走到 {share[-1]:.1f}%"),
         "xlabels": [f"{y}H1" for y in ch["years"]],
         "stacks": [
             {"name": "零售渠道", "color": "NAVY", "values": ch["retail"]},
@@ -249,10 +250,18 @@ def quarter_charts(s: dict) -> list[dict]:
         "src_extra": "各年上半年数取自当期半年度报告的渠道表；2026 年取自半年业绩新闻稿。",
     }
 
+    names = ("欧洲", "美洲", "亚洲")
+    rows = (geo["europe_total"], geo["americas"], geo["asia"])
+    totals = [sum(col[i] for col in rows) for i in range(len(geo["years"]))]
+    first = {n: col[0] / totals[0] * 100 for n, col in zip(names, rows)}
+    last = {n: col[-1] / totals[-1] * 100 for n, col in zip(names, rows)}
+    was_biggest = max(first, key=first.get)
+    now_biggest = max(last, key=last.get)
     region = {
         "ref": "EX_REGION",
         "kind": "grouped_bars",
-        "title": ("三个区域六年：美洲从最小的一块变成最大的一块，欧洲让出 9.5 个百分点"),
+        "title": (f"三个区域六年：最大的一块从{was_biggest}换成{now_biggest}，"
+                  f"{was_biggest}让出 {first[was_biggest] - last[was_biggest]:.1f} 个百分点"),
         "xlabels": [f"{y}H1" for y in geo["years"]],
         "groups": [
             {"name": "欧洲（含意大利）", "color": "NAVY", "values": geo["europe_total"]},
@@ -351,13 +360,27 @@ def long_charts(s: dict) -> list[dict]:
     }
 
     h = s["half"]
-    margin = [round(e / r * 100, 2) for e, r in zip(h["ebit_eur_k"], h["revenue_eur_k"])]
+    # Two lists on purpose. The payload keeps a rounded value so a rebuild is
+    # idempotent; the prose formats the exact one. Rounding to 2dp and then
+    # printing at 1dp double-rounds: 2023H2 is 16.7449%, which becomes 16.75 and
+    # then prints as 16.8, a figure no arithmetic on this page produces.
+    margin_exact = [e / r * 100 for e, r in zip(h["ebit_eur_k"], h["revenue_eur_k"])]
+    margin = [round(v, 2) for v in margin_exact]
     guide = [17.0] * len(h["periods"])
+    # Every count and list below is derived. On a half-year axis "a year ago" is
+    # two indices back, not four, and a hand-typed run of values silently drops
+    # one: the first draft of this note listed five halves for a six-half span
+    # and skipped 2025H1 altogether.
+    flat_from = h["periods"].index("2023H2")
+    flat = margin_exact[flat_from:]
+    flat_text = "、".join(f"{v:.1f}" for v in flat)
+    peak_i = margin_exact.index(max(margin_exact))
+    climb_to = max(margin_exact[:flat_from])
     ebit = {
         "ref": "EX_MARGIN",
         "kind": "lines",
-        "title": (f"EBIT 利润率按半年：从 {margin[0]:.1f}% 一路爬到 16.9%，"
-                  f"然后原地摆了四个半年"),
+        "title": (f"EBIT 利润率按半年：{margin_exact[0]:.1f}% 起步爬到 {climb_to:.1f}%，"
+                  f"随后 {len(flat)} 个半年在 {min(flat):.1f}%–{max(flat):.1f}% 之间来回"),
         "xlabels": h["periods"],
         "series": [
             {"name": "EBIT 利润率（半年）", "values": margin, "color": "NAVY"},
@@ -368,10 +391,11 @@ def long_charts(s: dict) -> list[dict]:
         "ylab": "占收入 %",
         "note": ("这是本站第一条以<b>半年</b>为时间轴的连续序列，因为这家公司的完整损益一年只有两次。"
                  "奇数格（H1）是公司印出的，偶数格（H2）由全年减上半年得到，公司从不单独公布下半年。"
-                 "2023 年下半年到 2026 年上半年五个半年分别是 16.7、16.9、16.3、15.7、17.1 —— "
-                 "在 16% 到 17% 之间来回，没有再往上走。"
+                 f"{h['periods'][flat_from]} 到 {h['periods'][-1]} 共 {len(flat)} 个半年，"
+                 f"依次是 {flat_text} —— 在 {min(flat):.1f}% 到 {max(flat):.1f}% 之间来回。"
+                 f"最高的一格是 {h['periods'][peak_i]} 的 {margin_exact[peak_i]:.1f}%。"
                  "所以公司把 2026 年的目标定在「约 17%」，"
-                 "要求的不是继续扩张，是回到并守住这条线。"
+                 "要求的不是继续扩张，是守住这条线。"
                  "<b>2025 年下半年那一格里含一笔北美批发客户破产的拨备</b>，"
                  "公司在全年口径上另给了一个剔除该笔的「正常化」EBIT，本图一律用报告口径。"),
         "src_extra": "半年值为公司印出；下半年值为全年减上半年（D）。",
@@ -399,10 +423,13 @@ def long_charts(s: dict) -> list[dict]:
     }
 
     nd = s["net_debt_h1_eur_k"]
+    trough = nd["pre_ifrs16"].index(min(nd["pre_ifrs16"]))
+    span = nd["years"][-1] - nd["years"][trough]
     debt = {
         "ref": "EX_DEBT",
         "kind": "lines",
-        "title": ("核心净金融负债两年从 €38.6 百万走到 €225.1 百万，"
+        "title": (f"核心净金融负债 {span} 年从 €{nd['pre_ifrs16'][trough] / 1000:.1f} 百万"
+                  f"走到 €{nd['pre_ifrs16'][-1] / 1000:.1f} 百万，"
                   "而公司给的年末目标是收入的 11–12%"),
         "xlabels": [f"{y}H1" for y in nd["years"]],
         "series": [

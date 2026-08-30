@@ -323,6 +323,69 @@ class BcDashboardTest(unittest.TestCase):
         # and the prose must agree with the count rather than be written by hand
         self.assertIn("三条已经越线", chart["note"])
 
+    # ── counts printed in prose, which nothing else guards ─────────────────
+    def test_every_count_quoted_in_prose_is_recomputed_from_the_data(self) -> None:
+        """Hand-typed counts in a title or a note have no gate behind them, and
+        on a half-year axis they are unusually easy to get wrong: "a year ago"
+        is two indices back, not four. Three shipped in the first draft of this
+        page -- a six-half run described as five with 2025H1 dropped out of the
+        list, a region named as the smallest block when it was the middle one,
+        and a three-year span called two. All are derived now; this asserts the
+        prose still agrees with the arithmetic.
+        """
+        by_ref = {ex["ref"]: ex for ex in exhibits(self.payload) if "ref" in ex}
+        h = self.s["half"]
+        margin = [e / r * 100 for e, r in zip(h["ebit_eur_k"], h["revenue_eur_k"])]
+
+        # EX_MARGIN: the run length and every value in it
+        start = h["periods"].index("2023H2")
+        run = margin[start:]
+        note = by_ref["EX_MARGIN"]["note"]
+        self.assertIn(f"共 {len(run)} 个半年", note)
+        self.assertIn("、".join(f"{v:.1f}" for v in run), note)
+        self.assertIn(f"{len(run)} 个半年", by_ref["EX_MARGIN"]["title"])
+
+        # EX_REGION: which block was largest, first half and last
+        geo = self.s["geography_h1_eur_k"]
+        rows = {"欧洲": geo["europe_total"], "美洲": geo["americas"], "亚洲": geo["asia"]}
+        first = {k: v[0] for k, v in rows.items()}
+        last = {k: v[-1] for k, v in rows.items()}
+        title = by_ref["EX_REGION"]["title"]
+        self.assertIn(f"从{max(first, key=first.get)}换成{max(last, key=last.get)}", title)
+        # and the block the page says shrank must actually be the one that shrank
+        totals = [sum(col[i] for col in rows.values()) for i in range(len(geo["years"]))]
+        drop = (first["欧洲"] / totals[0] - last["欧洲"] / totals[-1]) * 100
+        self.assertIn(f"{drop:.1f} 个百分点", title)
+
+        # EX_DEBT: the span is measured from the trough, not asserted
+        nd = self.s["net_debt_h1_eur_k"]
+        trough = nd["pre_ifrs16"].index(min(nd["pre_ifrs16"]))
+        self.assertIn(f"{nd['years'][-1] - nd['years'][trough]} 年", by_ref["EX_DEBT"]["title"])
+
+        # EX_MIX: the plateau band
+        ch = self.s["channel_h1_eur_k"]
+        share = [r / (r + w) * 100 for r, w in zip(ch["retail"], ch["wholesale"])]
+        mix = by_ref["EX_MIX"]["title"]
+        self.assertIn(f"{min(share[2:5]):.1f}%–{max(share[2:5]):.1f}%", mix)
+        self.assertIn(f"{share[-1]:.1f}%", mix)
+
+    def test_year_on_year_wording_compares_like_named_halves(self) -> None:
+        """On the H1-only series a neighbouring index IS a year; on the
+        half-by-half series it is six months. Anything the page calls a
+        year-on-year change must come from two same-named halves."""
+        h = self.s["half"]
+        i26, i25 = h["periods"].index("2026H1"), h["periods"].index("2025H1")
+        self.assertEqual(i26 - i25, 2, "H1 to H1 is two indices on this axis")
+        ebit = (h["ebit_eur_k"][i26] / h["ebit_eur_k"][i25] - 1) * 100
+        net = (h["net_profit_eur_k"][i26] / h["net_profit_eur_k"][i25] - 1) * 100
+        ladder = next(ex for ex in exhibits(self.payload) if ex.get("ref") == "EX_LADDER")
+        self.assertAlmostEqual(ladder["values"][2], round(ebit, 1), places=6)
+        self.assertAlmostEqual(ladder["values"][3], round(net, 1), places=6)
+        # the H1-only blocks are single-frequency, so -1/-2 there really is a year
+        for block in ("channel_h1_eur_k", "geography_h1_eur_k", "net_debt_h1_eur_k"):
+            years = self.s[block]["years"]
+            self.assertEqual(years[-1] - years[-2], 1, block)
+
     # ── copy boundary ───────────────────────────────────────────────────────
     def test_literal_text_fields_carry_no_markup(self) -> None:
         for note in self.payload["notes"]:
