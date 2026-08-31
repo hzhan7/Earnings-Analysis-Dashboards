@@ -835,7 +835,7 @@ trailing quarters, back to 2022Q1. The twenty-five statistical supplements from
 January 2017 to January 2023 carry only the loans-only `Worldwide Card Member
 loans` table. The run of blanks before 2022 is therefore where the disclosure
 begins, not where the reading stopped. That loans-only table is itself complete
-— 36 quarters, 2017Q1 to 2025Q4, read from every supplement that prints it, 32
+— 40 quarters, 2016Q1 to 2025Q4, read from every supplement that prints it, 32
 of them five times each, no disagreement anywhere and no restatement — and it is
 on the page, but as its own grey line rather than as a backfill: over the 16
 quarters where both bases are printed they agree in exactly one, and the
@@ -855,6 +855,18 @@ receivables rate together needs the receivables principal-only write-offs in
 dollars, which the supplement never prints (only principal-and-fees), and an
 average receivables balance, which it has no row for at all. So it stays blank
 through 2021Q4.
+
+The four oldest quarters on that grey line came in by a different route and are
+worth separating from the rest. 2016Q1 through 2016Q4 are read from the same
+`Worldwide Card Member loans` table, but from supplements outside the window the
+32 five-times quarters were read in: the FY2016 statistical exhibit of 19 January
+2017, which prints six quarters back to 2015Q3, and the 2017Q1 one of 19 April
+2017, which reaches back five to 2016Q1. Two readings each rather than five, from
+two documents that do not derive from one another, and they agree. The line's left
+edge is still not a disclosure boundary — the company printed this table from
+2015Q4 — it is only where this site's axis begins. The row also changed its name
+across the two generations of the supplement: through 2017 it reads *30+ days past
+due **loans** as a % of total*, and only later drops the word.
 
 Two further windows on that page are the length of the disclosure rather than a
 choice. **VCE** — the company's own defined aggregate of Card Member rewards,
