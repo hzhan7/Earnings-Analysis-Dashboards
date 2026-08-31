@@ -489,8 +489,14 @@ def smoke_free_transition(staging: dict) -> dict:
             {"name": "组合烟草产品", "color": "GRAY", "values": rounded(annual["combustible_usd_m"])},
             {"name": "无烟产品", "color": "NAVY", "values": rounded(annual["smoke_free_usd_m"])},
         ],
+        # `stacked_dual` is the one chart kind whose right axis does not read
+        # the data: it draws `ticks(0, ex.line.ymax || 60, 6)`. This share is at
+        # 41.5% and climbing about 4pp a year, so the undeclared default was
+        # roughly four years from silently mis-scaling it. Declared, not left to
+        # the default -- and note it belongs inside `line`, not at the top level,
+        # where it is accepted and ignored.
         "line": {"name": "无烟产品占净收入 (RHS)", "color": "RED",
-                 "values": rounded(share), "yfmt": "pct1"},
+                 "values": rounded(share), "yfmt": "pct1", "ymax": 60},
         "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
         "ylab": "US$M", "ylab2": "无烟占比",
         "note": (

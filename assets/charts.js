@@ -911,7 +911,19 @@
       /* 用 lineVals()：被作废的未满季 y/y 不能参与右轴量程，否则轴被一个根本不画出来的
          点撑开（实测会把 0~15% 的轴拉成 -10%~15%，整条线压扁在上半幅）。 */
       var rv = lineVals(ex).filter(function (v) { return v != null && isFinite(v); });
-      if (kind === 'stacked_dual') { rtk = ticks(0, rc.ymax || 60, 6); r0 = 0; r1 = rtk[rtk.length - 1]; }
+      if (kind === 'stacked_dual') {
+        /* 右轴上界不看数据，只看 ex.line.ymax，没给就是 60 —— 这是这个图型独有的，
+           其余 dual 图型都按数据算。**但一个写死的上界会随窗口拉长而失效**：
+           ibkr Ex8 的 ymax 是照八季窗口（峰值 77%）定的 100，窗口拉到 42 季之后
+           Q4'17 的 101.2% 就顶了出去，被画在最高一根刻度线之上、没有刻度可对。
+           所以这里取声明值与实际峰值的较大者：峰值不超过声明值时逐像素不变
+           （全站 11 张里 10 张属于这种），只有真的顶出去的那张会把轴撑开。
+           这只保证点画得进去，不代替 ymax —— 声明一个整数上界仍然是对的做法，
+           因为 0~60 与 0~100 的默认量程本身在传达「这是个占比」。 */
+        var rcap = rc.ymax || 60;
+        for (var ri = 0; ri < rv.length; ri++) if (rv[ri] > rcap) rcap = rv[ri];
+        rtk = ticks(0, rcap, 6); r0 = 0; r1 = rtk[rtk.length - 1];
+      }
       else {
         rtk = ticks(Math.min.apply(null, rv.concat([0])), Math.max.apply(null, rv), 9);
         r0 = rtk[0]; r1 = rtk[rtk.length - 1];

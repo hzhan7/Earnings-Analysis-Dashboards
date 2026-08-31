@@ -448,6 +448,17 @@ def upc_wedge(staging: dict) -> dict:
         # drawn above the top of the canvas and dropped by the browser without
         # a word, while the legend still named it. Caught by the off-canvas
         # check added to `tests/render_check.js`.
+        #
+        # Then the window moved and 100 stopped being enough either: Q4'17 is
+        # 101.2%, because the parent's own result was negative that quarter and
+        # the minority interest exceeded the whole. It was still drawn -- inside
+        # the canvas, so the off-canvas check stayed quiet -- but above the
+        # topmost gridline with no tick to read it against. A declared ceiling is
+        # a constant fitted to whatever window was drawn when it was written, and
+        # this one had been fitted to eight quarters. The renderer now takes
+        # max(declared, peak) so the axis cannot under-scale again; 100 stays
+        # declared because the round number is what tells the reader this is a
+        # share of a whole, and this chart is what exercises that lift.
         "line": {"name": "少数股东占比 (RHS)", "color": "RED",
                  "values": rounded(share[-RECENT:]), "yfmt": "pct1", "ymax": 100},
         "fmt": "f0c",

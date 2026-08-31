@@ -492,5 +492,76 @@ class BridgeNetContractTest(unittest.TestCase):
         self.assertEqual(blank, [], "\n".join(blank))
 
 
+class StackedDualRightAxisTest(unittest.TestCase):
+    """`stacked_dual` is the only kind whose right axis ignores its own data.
+
+    Every other dual kind runs `ticks(min(rv, 0), max(rv), 9)` -- computed from
+    the values. `stacked_dual` runs `ticks(0, ex.line.ymax || 60, 6)`, so the
+    ceiling is whatever a builder declared, or 60. Two ways that goes wrong, both
+    of which have actually happened here:
+
+      * the declaration is written at the exhibit's top level instead of inside
+        `line`. `rhsOf(ex)` returns `ex.line`, so a top-level `ymax` is accepted
+        and ignored -- no error, no warning, axis silently back to 60.
+      * the declaration was right for a shorter window. `ibkr Ex8` declared 100
+        when the chart drew eight quarters peaking at 77%; pulling it out to 42
+        quarters brought in Q4'17 at 101.2% -- a quarter where the parent's own
+        result was negative, so the minority share exceeds the whole -- and that
+        point was drawn above the topmost gridline with no tick to read it
+        against. Same shape as a stale hand-typed count: a constant that was
+        true of the old window and was never re-derived.
+
+    The renderer now takes `max(declared, peak)` so no point can fall outside the
+    drawn range. These assertions cover what that cannot: that the declaration is
+    somewhere it will actually be read, and that no page is quietly riding on the
+    invisible default.
+    """
+
+    def _duals(self):
+        return [(label, exhibit) for label, exhibit in exhibits()
+                if exhibit.get("kind") == "stacked_dual"]
+
+    def test_the_ceiling_is_declared_where_the_renderer_looks_for_it(self) -> None:
+        stray = [label for label, exhibit in self._duals() if "ymax" in exhibit]
+        self.assertEqual(stray, [], "`ymax` at the top level of a stacked_dual is "
+                                    "read by nothing; it belongs inside `line`.")
+
+    def test_no_stacked_dual_rides_on_the_invisible_default(self) -> None:
+        """60 is a number no builder chose and no reader can see."""
+        undeclared = [label for label, exhibit in self._duals()
+                      if (exhibit.get("line") or {}).get("ymax") is None]
+        self.assertEqual(undeclared, [],
+                         "declare ex.line.ymax explicitly rather than inheriting 60")
+
+    def test_the_renderer_lifts_a_ceiling_the_data_has_outgrown(self) -> None:
+        """The guarantee the assertions above rest on, checked against the real
+        renderer rather than assumed: a value over the declared ceiling still
+        lands inside the drawn tick range."""
+        source = (ROOT / "assets" / "charts.js").read_text(encoding="utf-8")
+        # anchor on the declaration itself -- `kind === 'stacked_dual'` appears
+        # several times in this file and the first one is the y-limit branch
+        self.assertEqual(source.count("rc.ymax"), 1)
+        block = source.split("rc.ymax", 1)[1][:600]
+        self.assertIn("rcap", block)
+        # the lift must scan every right-axis value, not just the last
+        self.assertIn("ri < rv.length", block)
+        self.assertIn("rv[ri] > rcap", block)
+        self.assertIn("ticks(0, rcap, 6)", block)
+
+    def test_every_declared_ceiling_is_a_round_number(self) -> None:
+        """A ceiling derived from the data would defeat the point: the round
+        number is what tells the reader the line is a share of something."""
+        for label, exhibit in self._duals():
+            ymax = (exhibit.get("line") or {}).get("ymax")
+            # a missing ceiling is the test above's business, not this one's --
+            # otherwise removing one turns two assertions red and neither says
+            # what actually broke
+            if ymax is None:
+                continue
+            with self.subTest(exhibit=label):
+                self.assertEqual(ymax, int(ymax))
+                self.assertEqual(int(ymax) % 10, 0, "not a round ceiling")
+
+
 if __name__ == "__main__":
     unittest.main()
