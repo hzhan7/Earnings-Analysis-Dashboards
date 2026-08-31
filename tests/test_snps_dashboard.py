@@ -196,16 +196,28 @@ class SnpsDashboardTest(unittest.TestCase):
 
     def test_geography_and_revenue_type_each_sum_to_total_revenue(self) -> None:
         disagg = self.source["disaggregation_usd_m"]
+        # The two earliest quarters were recovered from a later filing's
+        # comparative columns, which carry the geography split but not the
+        # revenue-type one. So the two identities are checkable over different
+        # spans, and both spans are asserted -- otherwise dropping a leg would
+        # look like the identity still holding everywhere it is checked.
+        geography = revenue_type = 0
         for index, period in enumerate(disagg["quarters"]):
             total = disagg["revenue_usd_m"][index]
-            self.assertAlmostEqual(
-                sum(disagg[key][index]
-                    for key in ("united_states", "europe", "korea", "china", "other")),
-                total, places=3, msg=f"geography {period}")
-            self.assertAlmostEqual(
-                sum(disagg[key][index]
-                    for key in ("time_based", "upfront", "maintenance_and_service")),
-                total, places=3, msg=f"revenue type {period}")
+            geo = [disagg[key][index]
+                   for key in ("united_states", "europe", "korea", "china", "other")]
+            if None not in geo:
+                geography += 1
+                self.assertAlmostEqual(sum(geo), total, places=3,
+                                       msg=f"geography {period}")
+            legs = [disagg[key][index]
+                    for key in ("time_based", "upfront", "maintenance_and_service")]
+            if None not in legs:
+                revenue_type += 1
+                self.assertAlmostEqual(sum(legs), total, places=3,
+                                       msg=f"revenue type {period}")
+        self.assertEqual(geography, len(disagg["quarters"]))
+        self.assertEqual(revenue_type, len(disagg["quarters"]) - 2)
 
     def test_the_overlapping_quarters_agree_across_the_two_windows(self) -> None:
         """The disaggregation series and the eight-quarter window are separate reads."""

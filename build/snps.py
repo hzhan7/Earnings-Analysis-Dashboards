@@ -1045,7 +1045,8 @@ def build_payload(staging: dict) -> dict:
         "ref": "EX_GEO",
         "kind": "lines",
         "title": (
-            f"中国占比十三季从 {geo_shares['china'][0]:.1f}% 降到 {geo_shares['china'][-1]:.1f}%，"
+            f"中国占比 {len(geo_shares['china'])} 季从 {geo_shares['china'][0]:.1f}% 降到 "
+            f"{geo_shares['china'][-1]:.1f}%，"
             f"韩国同期从 {geo_shares['korea'][0]:.1f}% 升到 {geo_shares['korea'][-1]:.1f}%"
         ),
         "xlabels": geo_labels,
@@ -1123,6 +1124,7 @@ def build_payload(staging: dict) -> dict:
             f"${financials['stock_based_compensation_usd_m'][index]:,.1f}M",
             f"${financials['restructuring_usd_m'][index]:,.1f}M",
         ])
+    cap_at = {q: i for i, q in enumerate(capital["quarters"])}
     for index, quarter in enumerate(backlog["quarters"]):
         backlog_rows.append([
             quarter,
@@ -1132,9 +1134,16 @@ def build_payload(staging: dict) -> dict:
             f"{fsa_share[index]:.1f}% D",
             f"{backlog['next_12m_pct_of_ex_fsa'][index]:.0f}%",
             f"US${twelve_month[index]:.2f}B D",
-            f"${capital['buyback_usd_m'][index]:,.1f}M" if capital["buyback_usd_m"][index] is not None else "—",
-            f"${capital['capex_usd_m'][index]:,.1f}M" if capital["capex_usd_m"][index] is not None else "—",
-            "是" if capital["derived"][index] else "否",
+            # Capital allocation is a shorter block with its own quarters list.
+            # Indexing it by the backlog's position happened to line up while the
+            # two were the same length; once the backlog reached back to 2018 it
+            # ran off the end. Looked up by quarter now, so a length change can
+            # never silently pair the wrong two rows.
+            (f"${capital['buyback_usd_m'][cap_at[quarter]]:,.1f}M"
+             if quarter in cap_at and capital["buyback_usd_m"][cap_at[quarter]] is not None else "—"),
+            (f"${capital['capex_usd_m'][cap_at[quarter]]:,.1f}M"
+             if quarter in cap_at and capital["capex_usd_m"][cap_at[quarter]] is not None else "—"),
+            ("是" if capital["derived"][cap_at[quarter]] else "否") if quarter in cap_at else "—",
         ])
     for index, quarter in enumerate(disagg["quarters"]):
         geo_rows.append([
@@ -1146,9 +1155,11 @@ def build_payload(staging: dict) -> dict:
             f"${disagg['china'][index]:,.1f}M",
             f"{geo_shares['china'][index]:.2f}% D",
             f"${disagg['other'][index]:,.1f}M",
-            f"${disagg['time_based'][index]:,.1f}M",
-            f"${disagg['upfront'][index]:,.1f}M",
-            f"${disagg['maintenance_and_service'][index]:,.1f}M",
+            # The two earliest quarters were recovered from a later filing's
+            # comparative columns, which carry the geography split but not the
+            # revenue-type split. Empty, not zero.
+            *[f"${disagg[name][index]:,.1f}M" if disagg[name][index] is not None else "—"
+              for name in ("time_based", "upfront", "maintenance_and_service")],
         ])
     for index, year in enumerate(long_labels):
         restated = long["restated_revenue_usd_m"][index]

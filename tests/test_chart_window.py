@@ -239,6 +239,41 @@ CONVERTED = {
                                    "series is published on its own chart.",
         "ARR 两条腿": 'date corrected: Nasdaq introduced the Financial Technology / Capital Access Platforms ARR split in its Q1 2024 release (filed 2024-04-25), not 2023Q1. The 2023 quarters are recoverable only from the four YoY comparatives inside the 2024 releases, so 2023Q1 stands as the practical floor -- but as a recast, not as an original disclosure.',
     },
+    # All five checked against the filing immediately before each start; every
+    # one is a real disclosure floor, and four of the five share a single cause:
+    # Costco's supplemental EX-99.2 deck did not exist before 2024-05-30, and
+    # the pre-deck filings never quantify these metrics at all.
+    'cost': {
+        '会员续费率': "precision floor, not an availability one: the renewal rate is "
+                  "printed as a whole percent through the 10-Q for FY2023 Q1 "
+                  "(period 2022-11-20, \"93%/90%\") and to one decimal from FY2023 "
+                  "Q2 (period 2023-02-12, \"92.6%/90.5%\"). Splicing the two would "
+                  "put a step of up to half a point into a series whose whole "
+                  "point is half-point moves.",
+        '每股收益增速拆成四条腿': "a clean year-over-year pair needs both quarters free of "
+                       "the noncontrolling-interest line (the Taiwan joint "
+                       "venture), which was not fully gone until FY2023 -- so "
+                       "the first true pair is FY2024 Q1 against FY2023 Q1.",
+        '客流与客单': "two floors stacked: the supplemental deck that carries traffic and "
+                 "average ticket begins 2024-05-30, and the gasoline-and-FX-adjusted "
+                 "ticket sub-table inside it begins later still, 2025-03-06.",
+        '公司自己估的财年末仓库数': "same supplemental deck, first published 2024-05-30. "
+                          "Earlier filings give the warehouse count but never the "
+                          "company's own forward estimate of the year-end figure.",
+        'Executive 会员': "same supplemental deck. Filings before it never quantify the "
+                       "Executive member count or its penetration -- the earlier "
+                       "language is qualitative only.",
+        '四条商品线对净销售额增速的贡献': "same supplemental EX-99.2 deck (first "
+                            "published 2024-05-30): the four-merchandise-line "
+                            "contribution to sales growth is not quantified in any "
+                            "earlier filing.",
+        '毛利率 11.04%': "the eight-quarter margin panel is a current-quarter view by "
+                    "design; the long gross-margin series it summarises is the "
+                    "core-merchandise chart above, which now runs 42 quarters.",
+        '三个地区分部的营业利润率': "segment operating margin by geography comes from the same "
+                        "2024-05-30 deck; the 10-K gives segment operating income "
+                        "annually, not by quarter.",
+    },
     "mco": {
         # All five are the same record: Moody's began publishing a full-year
         # adjusted-EPS range with the FY2019 outlook. The axis is fiscal years,
@@ -598,6 +633,16 @@ FLOOR_KIND = {
         '两条非广告收入线': 'disclosure',
         '折旧摊销同比': 'coverage',
     },
+    'cost': {
+        '会员续费率': 'disclosure',
+        '每股收益增速拆成四条腿': 'disclosure',
+        '客流与客单': 'disclosure',
+        '公司自己估的财年末仓库数': 'disclosure',
+        'Executive 会员': 'disclosure',
+        '四条商品线对净销售额增速的贡献': 'disclosure',
+        '毛利率 11.04%': 'design',
+        '三个地区分部的营业利润率': 'disclosure',
+    },
     'msci': {
         '三条收入腿': 'coverage',
         '四个分部': 'coverage',
@@ -769,8 +814,8 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 75)
-        self.assertEqual(settled.count("design"), 16)
+        self.assertEqual(settled.count("disclosure"), 82)
+        self.assertEqual(settled.count("design"), 17)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
         """Every short chart either names its reason or is counted here.
@@ -805,8 +850,8 @@ class ChartWindowTest(unittest.TestCase):
         combined = {slug: SHORT_BY_DESIGN.get(slug, 0) + UNEXPLAINED_LONG.get(slug, 0)
                     for slug in set(SHORT_BY_DESIGN) | set(UNEXPLAINED_LONG)}
         self.assertEqual(by_page, combined)
-        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 83)
-        self.assertEqual(sum(UNEXPLAINED_LONG.values()), 54)
+        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 80)
+        self.assertEqual(sum(UNEXPLAINED_LONG.values()), 49)
         # and the pins are the split the data actually has, not a hand-typed one
         self.assertEqual(by_design, SHORT_BY_DESIGN)
         self.assertEqual(by_length, UNEXPLAINED_LONG)
@@ -960,7 +1005,6 @@ class ChartWindowTest(unittest.TestCase):
 SHORT_BY_DESIGN = {
     'axp': 3,
     'bc': 7,
-    'cost': 3,
     'mc': 10,
     'mu': 2,
     'nvda': 11,
@@ -970,6 +1014,7 @@ SHORT_BY_DESIGN = {
     'skhynix': 5,
     'snps': 9,
     'spgi': 2,
+
 }
 
 # More than eight points: a chart that already draws a long series and still
@@ -978,13 +1023,13 @@ SHORT_BY_DESIGN = {
 UNEXPLAINED_LONG = {
     'axp': 10,
     'bc': 2,
-    'cost': 5,
     'mc': 1,
     'mu': 9,
     'pm': 2,
     'skhynix': 7,
     'snps': 5,
     'spgi': 13,
+
 }
 
 
