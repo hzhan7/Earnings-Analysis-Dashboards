@@ -32,11 +32,20 @@ targets.
 The record's answer is two-sided, and the two sides sit at different forecast
 horizons rather than on different metrics:
 
-- Against the **final (October) range**, in seven finished years adjusted
-  diluted EPS landed **above the top four times and inside three times, and
-  never once below the bottom**.
+- Against the **final (October) range**, in eight finished years adjusted
+  diluted EPS landed above the top four times, inside three times, and **below
+  the bottom once**.
 - Against the **initial (February) range**, it landed above six times and below
-  once — and **not once inside**.  The February range has never been right.
+  twice — and **not once inside**.  The February range has never been right.
+
+The single downside miss is FY2018, and until now this page did not contain it.
+FY2018 was excluded on the stated grounds that it "has only an October vintage,
+so counting it would mix a stub year in".  That was false: the February 2018
+release opens the year at adjusted EPS $7.65-$7.85, April and July reaffirm it
+line for line, and October cuts it to $7.50-$7.65 -- the same four-vintage
+cadence as every other year here.  The delivered figure was $7.39.  The excluded
+year was the only year that breaks the headline, and the reason given for
+excluding it did not survive being checked against the releases.
 
 The one miss is 2022, and it is the whole reason the distinction matters: the
 midpoint fell 34% between February and October as debt issuance collapsed.  MIS
@@ -147,7 +156,11 @@ def guidance_record(staging: dict) -> tuple[list[dict], dict]:
             "<b>这不是「下一季度」的指引，是「本年度」的指引，而且是当年最后一次修订的那一版。</b>"
             "公司 2 月定调、4/7/10 月各改一次，到 10 月这一版落笔时，全年已经过了四分之三。"
             "所以这张图问的是一个比其他页宽松得多的问题：在几乎知道答案的时候，公司报的数还会不会低于自己画的下限。"
-            "七个已完结年度里一次都没有。"
+            "<b>本页此前的答案是「一次都没有」，那是因为漏了一年。</b>"
+            "FY2018 原本不在这份记录里，理由写的是「它只有十月一个 vintage」—— 回原件查，"
+            "2018-02-09 开局给的是调整后 $7.65–$7.85，4 月与 7 月逐项重申，10 月下调到 $7.50–$7.65，"
+            "四版齐全，和其余每一年一样。而那一年的实际值是 $7.39，低于末次指引的下限。"
+            "**被排除的那一年，恰好是唯一一年推翻这句话的。**"
         ),
     )
 
@@ -158,9 +171,9 @@ def guidance_record(staging: dict) -> tuple[list[dict], dict]:
         src_extra=SOURCE_8K + "「初始指引」取该年 2 月那期，即公司为当年定调的第一版。",
         extra_note=(
             "<b>换成年初那一版，同一家公司变成另一个样子。</b>"
-            "七个已完结年度里实际值高于上限 6 次、跌破下限 1 次，"
+            "八个已完结年度里实际值高于上限 6 次、跌破下限 2 次，"
             "<b>一次都没有落在区间内</b> —— 2 月画的那条带子从来没对过。"
-            "唯一跌破的是 FY2022：当年发行量随利率崩掉，"
+            "跌破的两次是 FY2018 与 FY2022；后者当年发行量随利率崩掉，"
             "指引中值从 2 月的 US$12.65 一路砍到 10 月的 US$8.35。"
             "把这张和上一张（Exhibit {EX_FINAL}）并排看才是本页第一节的全部意思 —— "
             "同一个数字、同一家公司，差别只在画线时距离年末还有多远。"
@@ -188,8 +201,9 @@ def guidance_record(staging: dict) -> tuple[list[dict], dict]:
             "<b>平均绝对偏离就从 13.3% 收到 1.9%</b>（见 Exhibit {EX_FEB_DEV} 与本图标题），"
             "整整七分之一。"
             "十月那一版本质上已经不是预测：三个季度报完，剩下的是记账。"
-            "所以这条记录里「从没跌破过下限」这句话，"
-            "其份量远小于同样一句话出现在按季度指引的公司身上（本站的 AMZN、CDNS、SNPS 各是一例）。"
+            "**而即便在这样的条件下，八年里仍然跌破过一次（FY2018）** —— "
+            "这一点比一句「从没跌破」有信息得多，"
+            "而它此前不在页面上，只因为那一年被以一个错误的理由排除掉了。"
         ),
     )
 
@@ -609,8 +623,9 @@ def build_payload(staging: dict) -> dict:
         ),
         "brief": (
             '<h4>本季三条主线</h4><div class="takeaway-grid">'
-            '<article><span>记录</span><b>从没跌破过末次指引，也从没对过初始指引</b>'
-            f'<p>七个已完结年度：对 10 月那版下限 {stats["final_below"]} 次跌破；'
+            '<article><span>记录</span><b>末次指引跌破过一次，初始指引一次都没对过</b>'
+            f'<p>{stats["years_finished"]} 个已完结年度：对 10 月那版下限 '
+            f'{stats["final_below"]} 次跌破；'
             f'对 2 月那版 {stats["initial_inside"]} 次落在区间内。'
             f'FY2022 中值从 2 月到 10 月被砍了 {abs(stats["worst_cut_pct"]):.0f}%。</p></article>'
             '<article><span>结构</span><b>评级是收入的少数，利润的多数</b>'
@@ -682,8 +697,10 @@ def build_payload(staging: dict) -> dict:
             "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
             "穆迪为自然年财年（12 月 31 日结束），本页季度标注与公司口径一致，无需换算。",
             "本页最需要说明的一条：穆迪<b>从不给下一季度的数字指引</b>，它给的是全年指引并在当年逐季修订。"
-            "因此本页第一节结算的对象是财年而不是季度，其「从未跌破下限」这句话的份量，"
-            "远小于同一句话出现在按季度指引的公司身上 —— 末次指引落笔时全年已经过了四分之三。"
+            "因此本页第一节结算的对象是财年而不是季度；末次指引落笔时全年已经过了四分之三，"
+            "所以「跌破得少」这件事本身的份量，远小于同一句话出现在按季度指引的公司身上。"
+            "另外，本页此前把 FY2018 排除在记录之外、理由写的是「只有十月一个 vintage」，"
+            "那句话是错的（四版齐全），而那一年正是八年里唯一跌破末次指引下限的一年。"
             "本页用两张图（对初始指引、对末次指引）并排把这件事讲清楚，而不是只报一个命中率。",
             "指引表里的收入类各行（MCO/MIS/MA 收入、费用、ARR）公司<b>只给文字口径</b>，"
             "例如「increase in the high-single-digit percent range」。"

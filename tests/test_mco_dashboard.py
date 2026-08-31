@@ -101,15 +101,34 @@ class McoDashboardTest(unittest.TestCase):
                 inside += 1
         return above, inside, below
 
-    def test_the_final_guidance_was_never_broken_on_the_downside(self) -> None:
+    def test_the_final_guidance_was_broken_on_the_downside_exactly_once(self) -> None:
+        """This test used to assert zero, and the zero came from an exclusion.
+
+        FY2018 was kept out of the record on the stated ground that it "has only
+        an October vintage". Reading the releases: 2018-02-09 opens the year at
+        adjusted EPS $7.65-$7.85, 2018-04-27 and 2018-07-27 reaffirm it line for
+        line, and 2018-10-26 cuts it to $7.50-$7.65 -- four vintages, the same
+        cadence as every other year here. The delivered figure was $7.39.
+
+        So the excluded year was the one year that breaks the headline, and the
+        reason for excluding it was not true. Pinning the 1 rather than the 0 is
+        the point of this test now.
+        """
         above, inside, below = self._tally("Oct")
-        self.assertEqual((above, inside, below), (4, 3, 0))
-        self.assertEqual(above + inside + below, 7, "seven finished years")
+        self.assertEqual((above, inside, below), (4, 3, 1))
+        self.assertEqual(above + inside + below, 8, "eight finished years")
+        years = self.source["annual_guidance_history"]["fiscal_years"]
+        actual = self.source["annual_guidance_history"]["actual_adj_eps_usd"]
+        low = self.source["annual_guidance_history"]["adj_eps_lo"]["Oct"]
+        misses = [year for year, value, floor in zip(years, actual, low)
+                  if value is not None and floor is not None and value < floor]
+        self.assertEqual(misses, [2018])
 
     def test_the_initial_guidance_was_never_once_right(self) -> None:
         """Not a rounding of the same fact: the February range never contained it."""
         above, inside, below = self._tally("Feb")
-        self.assertEqual((above, inside, below), (6, 0, 1))
+        self.assertEqual((above, inside, below), (6, 0, 2))
+        self.assertEqual(inside, 0, "the February band has never contained the year")
 
     def test_the_two_horizons_disagree(self) -> None:
         """The page's first section exists only because these two differ."""
@@ -126,10 +145,37 @@ class McoDashboardTest(unittest.TestCase):
         # And the actual still cleared that final, cut-down range.
         self.assertGreater(g["actual_adj_eps_usd"][i], g["adj_eps_hi"]["Oct"][i])
 
-    def test_fy2018_is_not_in_the_record(self) -> None:
-        """It has only an October vintage, so counting it would mix a stub year in."""
-        self.assertNotIn(2018, self.source["annual_guidance_history"]["fiscal_years"])
+    def test_fy2018_is_in_the_record_and_has_all_four_vintages(self) -> None:
+        """The replacement for `test_fy2018_is_not_in_the_record`.
+
+        That test asserted an exclusion whose stated reason -- "only an October
+        vintage" -- is contradicted by the releases. Neither reading of it
+        survives: the November 2017 release contains no FY2018 guidance at all,
+        so there is no autumn-2017 vintage to be the only one; and October 2018
+        is the fourth of four, not the first.
+
+        The four dates are pinned here because the exclusion is the kind of thing
+        that comes back: FY2018 is the only year that costs this page its
+        headline, so any future rebuild that drops it needs to fail loudly.
+        """
+        history = self.source["annual_guidance_history"]
+        self.assertIn(2018, history["fiscal_years"])
+        self.assertEqual(history["fiscal_years"][0], 2018)
         self.assertIn(2018, self.source["annual_actuals"]["fiscal_years"])
+        dates = history["release_dates"]["2018"]
+        self.assertEqual(dates, {"Feb": "2018-02-09", "Apr": "2018-04-27",
+                                 "Jul": "2018-07-27", "Oct": "2018-10-26"})
+        index = history["fiscal_years"].index(2018)
+        for vintage in history["vintages"]:
+            self.assertIsNotNone(history["adj_eps_lo"][vintage][index], vintage)
+            self.assertIsNotNone(history["adj_eps_hi"][vintage][index], vintage)
+        # February opens it, October cuts it, and the year lands under the cut.
+        self.assertEqual((history["adj_eps_lo"]["Feb"][index],
+                          history["adj_eps_hi"]["Feb"][index]), (7.65, 7.85))
+        self.assertEqual((history["adj_eps_lo"]["Oct"][index],
+                          history["adj_eps_hi"]["Oct"][index]), (7.50, 7.65))
+        self.assertEqual(history["actual_adj_eps_usd"][index], 7.39)
+        self.assertIn("那句话是错的", history["fy2018_note"])
 
     def test_every_finished_year_has_all_four_vintages(self) -> None:
         g = self.source["annual_guidance_history"]
