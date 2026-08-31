@@ -73,6 +73,50 @@ class IbkrDashboardTest(unittest.TestCase):
 
     # ── source series ───────────────────────────────────────────────────────
 
+    def test_the_nim_components_are_the_conformed_basis(self) -> None:
+        """Recategorisations move dollars between components, so every sum holds.
+
+        Interactive Brokers conformed prior periods twice -- negative-rate
+        currency components out of segregated funds (2Q2018 and 4Q2018 releases),
+        U.S. Treasury and reverse-repo components into other net interest income
+        (3Q2018 release, naming 1Q2017-2Q2018 as affected) -- and the "FDIC
+        sweeps" component enters average interest-earning assets at 1Q2018,
+        restating the four 2017 quarters.
+
+        None of it changes total net interest income or the overall margin, which
+        is why the page carried the original figures for years with nothing
+        failing: the transfers are between components, so the identities this
+        file already asserts are satisfied on either basis. The only assertion
+        that can see it is a value pin against the later release that reprints
+        the quarter, which is what this is.
+
+        The four 2016 quarters are deliberately not pinned: no document reprints
+        them after either change, so there is nothing to pin them to. That is
+        recorded in `_2016_not_confirmed_note` and asserted here, so the gap
+        stays visible rather than being closed by assumption.
+        """
+        nim, periods = self.nim, self.source["periods"]
+        conformed_yield = {"Q1 2017": 0.64, "Q2 2017": 0.78, "Q3 2017": 0.99,
+                           "Q4 2017": 1.01, "Q1 2018": 1.37, "Q2 2018": 1.46,
+                           "Q3 2018": 1.73}
+        for label, value in conformed_yield.items():
+            with self.subTest(period=label):
+                self.assertEqual(nim["yield_segregated_pct"][periods.index(label)], value)
+        conformed_assets = {"Q1 2017": 50705.0, "Q2 2017": 53001.0,
+                            "Q3 2017": 55489.0, "Q4 2017": 57387.0}
+        for label, value in conformed_assets.items():
+            with self.subTest(period=label):
+                self.assertEqual(nim["avg_earning_assets_usd_m"][periods.index(label)], value)
+        self.assertEqual(nim["nim_pct"][periods.index("Q4 2017")], 1.43)
+
+        note = nim["_2016_not_confirmed_note"]
+        self.assertIn("1Q2017", note)
+        self.assertIn("2016", note)
+        for label in ("Q1 2016", "Q2 2016", "Q3 2016", "Q4 2016"):
+            with self.subTest(period=label):
+                self.assertIsNotNone(nim["yield_segregated_pct"][periods.index(label)],
+                                     "kept on the original basis, with the boundary declared")
+
     def test_the_base_is_forty_two_quarters_and_names_its_own_holes(self) -> None:
         """Twelve quarters were added in front, and two lines stay empty there.
 
