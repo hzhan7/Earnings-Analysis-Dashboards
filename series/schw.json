@@ -406,7 +406,7 @@
       3956.0,
       4004.0,
       3962.0,
-      4432.0
+      4146.0
     ],
     "interest_expense_usd_m": [
       38.0,
@@ -450,7 +450,7 @@
       906.0,
       832.0,
       818.0,
-      1075.0
+      789.0
     ],
     "total_expenses_usd_m": [
       1109.0,
@@ -849,7 +849,7 @@
       1739.0
     ]
   },
-  "_2026q2_gross_legs_note": "2026Q2's two gross interest legs were 4,146 and 789 until 2026-08-31. Both were the income statement's figures less 286: the 2Q26 EX-99.1 income statement prints interest revenue 4,432 and interest expense (1,075), while 789 is the 'Total interest-bearing liabilities' subtotal of the net-interest-revenue table and 286 is that table's 'Other interest expense' line, which the income statement includes and the subtotal does not. Subtracting the same 286 from both legs leaves net interest revenue at 3,357 either way, which is why the difference identity this page already asserts could not see it. Every other quarter on the page is on the income-statement basis -- 2025Q2 is stored as 3,787 / 965, exactly what the same exhibit reprints as its prior-year column -- so this was one quarter off the page's own convention rather than a basis choice.",
+  "_2026q2_gross_legs_note": "2026Q2's two gross interest legs are printed DIFFERENTLY in two of Schwab's own documents, and this page carries the 10-Q's pair because the 10-Q is what its provenance declares for the income statement. The 2Q26 earnings 8-K EX-99.1 (2026-07-21) prints interest revenue 4,432 and interest expense (1,075); the 2Q26 10-Q (2026-08-07) prints 4,146 and (789), and the XBRL tags carry the same pair. Net interest revenue is 3,357 in both. The cause is a presentation change Schwab made between the two filings: 10-Q footnote (3) says that beginning in Q2 2026 the net fixed yield on client long-short strategies is presented within other interest revenue and prior periods are not recast, so the release's other interest revenue 372 and other interest expense 286 become a single net 86 in the 10-Q. 372 - 286 = 86. Nothing here is an error in either document. This note exists because a check on 2026-08-31 concluded the opposite and changed the pair to the release's, on the reasoning that 2025Q2 is stored as 3,787 / 965 and the release reprints exactly that -- which discriminates nothing, since the 10-Q prints 3,787 / 965 for that quarter too. Two candidate sources that agree on the quarter you test with cannot tell you which source you are on.",
   "annual_filed_usd_m": {
     "2015": {
       "revenue_usd_m": 6380.0,

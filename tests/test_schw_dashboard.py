@@ -226,32 +226,36 @@ class SchwDashboardTest(unittest.TestCase):
                     places=6,
                 )
 
-    def test_the_gross_interest_legs_are_the_income_statement_and_not_the_nim_table(self) -> None:
-        """The identity above is blind to the error this catches, by construction.
+    def test_the_gross_interest_legs_come_from_the_10q_not_the_release(self) -> None:
+        """Two of Schwab's own filings print different pairs for the same quarter.
 
-        Schwab prints its interest expense twice: the income statement's figure,
-        and the net-interest-revenue table's "Total interest-bearing liabilities"
-        subtotal, which is smaller by that table's "Other interest expense" line.
-        Take the subtotal for the expense leg and subtract the same amount from
-        the revenue leg and net interest revenue is unchanged -- so the
-        difference identity passes on both the right pair and the wrong one. That
-        is exactly what happened to 2026Q2, which carried 4,146 / 789 instead of
-        4,432 / 1,075 while every other quarter used the income statement.
+        For 2026Q2 the earnings release prints 4,432 / (1,075) and the 10-Q prints
+        4,146 / (789); net interest revenue is 3,357 in both, because a Q2 2026
+        presentation change nets other interest revenue and expense against each
+        other in the 10-Q (372 - 286 = 86) and prior periods are not recast.
 
-        Pinned by value rather than by identity because the page stores no third
-        interest quantity for either leg to be tied to. Two quarters are named,
-        one on each side of the mistake, so the pin cannot be satisfied by
-        re-introducing the shift anywhere: 2026Q2 is the quarter that was wrong,
-        and 2025Q2 is the one the same exhibit reprints as its prior-year column.
+        The page's provenance declares the income statement comes from the 10-Q
+        and 10-K R-files, so the 10-Q pair is the right one -- and the assertion
+        has to say which, because the difference identity already on this page is
+        satisfied by both pairs.
+
+        The negative half is the load-bearing half. A check that only pinned
+        4,146 / 789 would also pass if someone later re-derived them from the
+        release and happened to land there; asserting they are NOT the release's
+        pair is what ties this to a source. It is also the assertion this test
+        was missing when it briefly pinned the release's pair instead.
         """
         fin = self.fin
-        for period, revenue, expense in (("2026Q2", 4432.0, 1075.0),
-                                         ("2025Q2", 3787.0, 965.0)):
-            index = self.periods.index(period)
-            with self.subTest(period=period):
-                self.assertEqual(fin["interest_revenue_usd_m"][index], revenue)
-                self.assertEqual(fin["interest_expense_usd_m"][index], expense)
-        self.assertIn("Other interest expense", self.source["_2026q2_gross_legs_note"])
+        index = self.periods.index("2026Q2")
+        self.assertEqual(fin["interest_revenue_usd_m"][index], 4146.0)
+        self.assertEqual(fin["interest_expense_usd_m"][index], 789.0)
+        self.assertNotEqual(fin["interest_revenue_usd_m"][index], 4432.0,
+                            "that is the earnings release's figure, not the 10-Q's")
+        self.assertNotEqual(fin["interest_expense_usd_m"][index], 1075.0,
+                            "that is the earnings release's figure, not the 10-Q's")
+        note = self.source["_2026q2_gross_legs_note"]
+        self.assertIn("4,432", note)
+        self.assertIn("4,146", note)
 
     # ── thresholds ───────────────────────────────────────────────────────────
     def test_threshold_headroom_signs_match_the_stated_verdicts(self) -> None:
