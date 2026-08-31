@@ -129,9 +129,9 @@ def js_payload(path: Path, assignment: str) -> dict:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amzn": 13, "avgo": 6, "axp": 8, "bc": 0, "cboe": 9, "cdns": 9, "cme": 14,
+    "amzn": 13, "avgo": 6, "axp": 8, "bc": 0, "cboe": 10, "cdns": 9, "cme": 14,
     "cost": 13, "googl": 11, "ibkr": 21, "ma": 16, "mc": 0, "mco": 7, "meta": 10,
-    "msci": 15, "msft": 8, "mu": 7, "ndaq": 8, "nke": 8, "nvda": 10, "pm": 6,
+    "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 10, "skhynix": 0, "snps": 8,
     "spgi": 11, "tjx": 8, "tsm": 18, "v": 14,
 }
@@ -260,7 +260,6 @@ CONVERTED = {
         "五个分部的净收入": 'was wrong and is now fixed in the builder: the five-segment series runs unbroken to 2017Q2 and is already in this repo -- the chart was drawing the last 20 of 37 because of a hardcoded tail, not because of anything in the filings. It now draws all 37. 2017Q2 is the real floor (Bats consolidated 2017-02-28, so 2017Q1 carries one month of the combined company).',
         "毛收入与净收入之间那道楔子": 'verified: a genuine Bats-driven structural break -- the pre-2017 income statement had no net-revenue/liquidity-payment structure to build the wedge from.',
         "公司自己的第二套口径": 'date corrected: Cboe introduced this three-category view in its Q1 2022 release (filed 2022-04-29), not 2021Q1. The four 2021 quarters exist only as retroactive comparatives inside the 2022 releases, which is why 2021Q1 is the practical floor -- but the reason is the recast, not an original disclosure.',
-        "回购与股息": 'not a floor: CBOE Holdings has disclosed quarterly dividends and share repurchase dollars, shares and average price since at least Q1 2016 (10-Q filed 2016-05-03), and the repurchase program dates to 2011. Fetch gap; the backfill to 2016Q1 is in flight.',
     },
     # Micron's two records give opposite answers, both read off the filings.
     "mu": {
@@ -299,7 +298,6 @@ CONVERTED = {
         "全年非 GAAP 有效税率": 'verified, with the wording tightened: Nasdaq guided a non-GAAP tax rate for FY2018 in its January 2018 release but never disclosed an FY2018 actual, so FY2019 is the first year carrying both a guided range and a reported result.',
         "FY2026 费用指引的三次发布": "three guidance vintages for one fiscal year -- the axis "
                             "is release dates, not quarters.",
-        "「经纪、清算与交易所费用」拆开看": 'not a floor: Nasdaq has footnoted Section 31 fees by dollar amount, split across its two revenue lines, in the MD&A of every 10-Q back to at least 2016Q1. Fetch gap; backfill in flight.',
         "Market Services 毛收入的去向": "the 2022 reorganisation moved Trade Management "
                                 "Services out of Market Services, so the denominator "
                                 "changed; 2022Q3 reads 305 on the old basis and 245 "
@@ -709,7 +707,6 @@ FLOOR_KIND = {
         '五个分部的净收入': 'disclosure',
         '毛收入与净收入之间那道楔子': 'disclosure',
         '公司自己的第二套口径': 'disclosure',
-        '回购与股息': 'coverage',
     },
     'cdns': {
         '收入（本图仅近 20 季）': 'design',
@@ -833,7 +830,6 @@ FLOOR_KIND = {
     'ndaq': {
         '全年非 GAAP 有效税率': 'disclosure',
         'FY2026 费用指引的三次发布': 'design',
-        '「经纪、清算与交易所费用」拆开看': 'coverage',
         'Market Services 毛收入的去向': 'disclosure',
         '三个分部的净收入': 'disclosure',
         'Financial Technology 的三条子线': 'disclosure',
@@ -1007,7 +1003,7 @@ class ChartWindowTest(unittest.TestCase):
         by_kind = {}
         for slug, title, kind in pending:
             by_kind.setdefault(kind, []).append(f"{slug}/{title}")
-        self.assertEqual(len(by_kind.get("coverage", [])), 41,
+        self.assertEqual(len(by_kind.get("coverage", [])), 39,
                          "charts whose data exists and has not been fetched")
         # Zero, and that is the point: every exemption on this page has now been
         # read against an actual pre-floor filing. The fourteen that had never
@@ -1261,6 +1257,8 @@ UNDERIVABLE_QUARTER_COUNTS = {
     "ibkr Ex9":  ([34], "已由 len(reported) 算出：该行有披露的季度数，非窗口长度"),
     "ibkr Ex18": ([16], "佣金曾连续 16 季是第一大收入来源，是一段区间的长度"),
     "meta Ex9":  ([13], "价格腿同比为负的季度数，是条件计数"),
+    "ndaq Ex7":  ([18], "Section 31 规费按金额单列的季度数（18 季），少于该图 42 季的窗口 —— "
+                        "更早的季度只在 MD&A 脚注里给合计，未按两条收入线拆开"),
     "tsm Ex26":  ([22], "自 2021Q1 起两口径逐季相等的季度数，起点晚于窗口左端"),
 }
 

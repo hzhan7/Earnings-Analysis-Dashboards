@@ -192,10 +192,17 @@ class NdaqDashboardTest(unittest.TestCase):
     def test_the_section_31_residual_is_a_narrow_band(self) -> None:
         """This band is the whole evidence that the pass-through split is real.
 
-        Brokerage, clearance and exchange fees ran US$6M to US$320M over these
-        eighteen quarters. Subtracting the SEC fee parsed out of the 10-Q leaves
-        a real brokerage-and-clearing cost that barely moves; if that residual
-        ever wandered, the fee series would be measuring something else.
+        Subtracting the SEC fee parsed out of the 10-Q leaves a real
+        brokerage-and-clearing cost that barely moves; if that residual ever
+        wandered, the fee series would be measuring something else.
+
+        The band was 3.0-9.0, fitted to the eighteen quarters this record used to
+        hold. Reaching back to 2016 brings in four quarters above it -- 2020Q1
+        (11), 2020Q2 and 2020Q4 (10), 2021Q1 (15) -- clustered in the retail
+        trading surge, which is exactly when brokerage and clearing costs should
+        move. So the band was measuring the window, not the pass-through. It is
+        now sized to the record, and the count above the old ceiling is pinned
+        so that "still narrow" stays a measured claim rather than a wide bound.
         """
         s31 = self.staging["section_31"]
         for index, quarter in enumerate(s31["quarters"]):
@@ -204,7 +211,11 @@ class NdaqDashboardTest(unittest.TestCase):
                                    s31["bcef_usd_m"][index] - s31["fees_usd_m"][index],
                                    delta=0.15, msg=quarter)
             self.assertGreaterEqual(residual, 3.0, quarter)
-            self.assertLessEqual(residual, 9.0, quarter)
+            self.assertLessEqual(residual, 16.0, quarter)
+        # and it is still narrow: only four of forty-two quarters clear the old
+        # ceiling, and all four sit in the 2020-2021 retail surge.
+        wide = [q for q, v in zip(s31["quarters"], s31["residual_usd_m"]) if v > 9.0]
+        self.assertEqual(wide, ["2020Q1", "2020Q2", "2020Q4", "2021Q1"])
 
     def test_the_fee_never_exceeds_the_line_it_sits_inside(self) -> None:
         s31 = self.staging["section_31"]
