@@ -776,6 +776,36 @@ class ChartWindowTest(unittest.TestCase):
         self.assertEqual(settled.count("disclosure"), 68)
         self.assertEqual(settled.count("design"), 16)
 
+    def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
+        """Every short chart either names its reason or is counted here.
+
+        This used to iterate `CONVERTED.items()` -- that is, it policed exactly
+        the pages that had already been written up, and a page with no entry at
+        all was invisible to it. The guarantee everyone read into it ("every
+        chart that stops after 2016 says why") held for 18 of 31 pages; the
+        other 12 carried 151 short charts with no statement of any kind. The
+        check's domain was derived from the very map it was checking, so adding
+        a page to the map was the only way to come under scrutiny.
+
+        Scanning every page instead. The 151 are not excuses -- they are an
+        admission, pinned per page so the number is visible and can only move
+        deliberately: a new short chart without a reason pushes a count up, and
+        writing a real reason pushes it down. Either way this turns red and
+        someone has to look.
+        """
+        by_page = {}
+        for label, exhibit in exhibits():
+            year = first_year(exhibit)
+            if year is None or year <= TARGET_YEAR:
+                continue
+            slug = label.split()[0]
+            title = exhibit["title"]
+            if any(key in title for key in CONVERTED.get(slug, {})):
+                continue
+            by_page[slug] = by_page.get(slug, 0) + 1
+        self.assertEqual(by_page, UNEXPLAINED)
+        self.assertEqual(sum(UNEXPLAINED.values()), 151)
+
     def test_converted_pages_have_no_unexplained_short_axis(self) -> None:
         for slug, excuses in CONVERTED.items():
             short = {}
@@ -905,6 +935,27 @@ class ChartWindowTest(unittest.TestCase):
         self.assertIsNone(first_year({"xlabels": []}))
         self.assertIsNone(first_year({"xlabels": ["Q1 2016"]}))
         self.assertEqual(first_year({"xlabels": ["Q1 2016", "", "", "", "Q1 2017"]}), 2016)
+
+
+# Short charts that carry no stated reason at all, per page. This is a backlog,
+# not a set of excuses -- see
+# `test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog`.
+# Every one of these pages sits outside CONVERTED entirely, which is why nothing
+# was asking them the question.
+UNEXPLAINED = {
+    'axp': 16,
+    'bc': 9,
+    'cost': 8,
+    'mc': 11,
+    'mu': 16,
+    'nvda': 11,
+    'pm': 11,
+    'rms': 7,
+    'samsung': 15,
+    'skhynix': 12,
+    'snps': 14,
+    'spgi': 21,
+}
 
 
 # ── the prose census ────────────────────────────────────────────────────────
