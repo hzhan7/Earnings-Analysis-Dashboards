@@ -127,7 +127,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amzn": 9, "avgo": 0, "axp": 5, "bc": 0, "cboe": 9, "cdns": 9, "cme": 14,
+    "amzn": 9, "avgo": 6, "axp": 5, "bc": 0, "cboe": 9, "cdns": 9, "cme": 14,
     "cost": 7, "googl": 11, "ibkr": 21, "ma": 16, "mc": 0, "mco": 7, "meta": 10,
     "msci": 9, "msft": 8, "mu": 2, "ndaq": 8, "nke": 8, "nvda": 4, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 10, "skhynix": 0, "snps": 3,
@@ -395,6 +395,49 @@ CONVERTED = {
         "十年回购与资本强度": "annual.",
         "回购的成交均价": "four fiscal years of a buyback programme.",
     },
+    "avgo": {
+        # Broadcom's window is 41 quarters, not 42: the fiscal quarter matching
+        # calendar Q2 2026 has not been reported. The eight added in front
+        # (Q1 2016 - Q4 2017) carry the income statement, cash flow, balance
+        # sheet and working capital; four families genuinely do not exist there.
+        "收入（仅公司给过区间的 5 季）": "Broadcom guided a revenue *range* in only five "
+                              "quarters; the rest of the record is a single point, "
+                              "which is the chart beside this one.",
+        "收入（公司只给单点的 20 季）": "the point-guidance era; the two together cover the "
+                            "whole guided record.",
+        "收入相对指引中值的偏离": "the guidance record itself starts with the 2018-06-07 "
+                       "release, which is the first Broadcom Inc. release.",
+        "Adjusted EBITDA 利润率：18": "the term 'Adjusted EBITDA' appears in no Broadcom "
+                              "Limited release; its first appearance is the "
+                              "2018-06-07 reconciliation.",
+        "Adjusted EBITDA 利润率相对指引中值": "same floor.",
+        "把「超出自身指引」拆成两条腿": "one leg is the EBITDA margin, so it inherits that floor.",
+        "收入 US$22,187M": "the semiconductor / infrastructure-software split does not "
+                       "exist before 2018 -- the earlier segments are Wired / "
+                       "Wireless / Enterprise storage / Industrial, which the "
+                       "company never mapped onto the later two.",
+        "两个引擎": "same segment floor.",
+        "两个分部的申报营业利润": "same segment floor.",
+        "AI 半导体收入：公司口头指引": "Broadcom began giving a quarterly AI revenue figure in "
+                          "the 2024-06-12 release; before that there is nothing "
+                          "to plot.",
+        "AI 半导体收入（季）": "same floor.",
+        "基础设施软件收入": "same segment floor.",
+        "营运资本随 AI 放量变重": "inventory and receivables do reach 2016; this chart pairs "
+                        "them with the AI-era commentary and runs on the "
+                        "reviewed window.",
+        "Adjusted EBITDA 利润率：阈值": "the threshold view of the same measure, which no "
+                              "Broadcom Limited release contains.",
+        "non-GAAP 营业利润率：阈值": "the pre-2018 non-GAAP definition adds revenue back and "
+                           "is presented on continuing operations, so it is not "
+                           "the same measure and is not spliced.",
+        "季度回购：阈值": "no repurchase line exists in any 2016-2017 cash-flow statement "
+                   "-- Broadcom was not buying back stock then.",
+        "股东回报与其资金来源": "the buyback leg has the same floor, and the dividend leg "
+                     "cannot be split into common-only before 2018 because the "
+                     "filings give one blended total including the Broadcom "
+                     "Cayman L.P. distribution.",
+    },
     "meta": {
         "收入指引兑现": "Meta published no quarterly revenue outlook range before the "
                   "2022Q1 release; the record starts where the guidance does.",
@@ -439,6 +482,25 @@ CONVERTED = {
 
 
 FLOOR_KIND = {
+    'avgo': {
+        '收入（仅公司给过区间的 5 季）': 'disclosure',
+        '收入（公司只给单点的 20 季）': 'disclosure',
+        '收入相对指引中值的偏离': 'disclosure',
+        'Adjusted EBITDA 利润率：18': 'disclosure',
+        'Adjusted EBITDA 利润率相对指引中值': 'disclosure',
+        '把「超出自身指引」拆成两条腿': 'disclosure',
+        '收入 US$22,187M': 'disclosure',
+        '两个引擎': 'disclosure',
+        '两个分部的申报营业利润': 'disclosure',
+        'AI 半导体收入：公司口头指引': 'disclosure',
+        'AI 半导体收入（季）': 'disclosure',
+        '基础设施软件收入': 'disclosure',
+        '营运资本随 AI 放量变重': 'coverage',
+        'Adjusted EBITDA 利润率：阈值': 'disclosure',
+        'non-GAAP 营业利润率：阈值': 'disclosure',
+        '季度回购：阈值': 'disclosure',
+        '股东回报与其资金来源': 'disclosure',
+    },
     # Why each exemption is short, in four kinds. The kind matters more than the
     # prose: three of these entries used to read like "the company never
     # published this earlier" when what was true was "this repo has not fetched
@@ -697,7 +759,7 @@ class ChartWindowTest(unittest.TestCase):
         by_kind = {}
         for slug, title, kind in pending:
             by_kind.setdefault(kind, []).append(f"{slug}/{title}")
-        self.assertEqual(len(by_kind.get("coverage", [])), 43,
+        self.assertEqual(len(by_kind.get("coverage", [])), 44,
                          "charts whose data exists and has not been fetched")
         self.assertEqual(len(by_kind.get("unverified", [])), 14,
                          "charts whose stated reason has never been checked "
@@ -705,7 +767,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 47)
+        self.assertEqual(settled.count("disclosure"), 63)
         self.assertEqual(settled.count("design"), 16)
 
     def test_converted_pages_have_no_unexplained_short_axis(self) -> None:

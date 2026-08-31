@@ -3,6 +3,14 @@
   "cik": "0001730168",
   "fiscal_year_end": "11-01",
   "period_ends": [
+    "2016-05-01",
+    "2016-07-31",
+    "2016-10-30",
+    "2017-01-29",
+    "2017-04-30",
+    "2017-07-30",
+    "2017-10-29",
+    "2018-02-04",
     "2018-05-06",
     "2018-08-05",
     "2018-11-04",
@@ -38,6 +46,14 @@
     "2026-05-03"
   ],
   "periods": [
+    "Q1 2016",
+    "Q2 2016",
+    "Q3 2016",
+    "Q4 2016",
+    "Q1 2017",
+    "Q2 2017",
+    "Q3 2017",
+    "Q4 2017",
     "Q1 2018",
     "Q2 2018",
     "Q3 2018",
@@ -73,6 +89,14 @@
     "Q1 2026"
   ],
   "fiscal_labels": [
+    "FY2016 Q2",
+    "FY2016 Q3",
+    "FY2016 Q4",
+    "FY2017 Q1",
+    "FY2017 Q2",
+    "FY2017 Q3",
+    "FY2017 Q4",
+    "FY2018 Q1",
     "FY2018 Q2",
     "FY2018 Q3",
     "FY2018 Q4",
@@ -108,6 +132,14 @@
     "FY2026 Q2"
   ],
   "release_dates": [
+    "2016-06-02",
+    "2016-09-01",
+    "2016-12-08",
+    "2017-03-01",
+    "2017-06-01",
+    "2017-08-24",
+    "2017-12-06",
+    "2018-03-15",
     "2018-06-07",
     "2018-09-06",
     "2018-12-06",
@@ -144,6 +176,14 @@
   ],
   "financials_usd_m": {
     "revenue": [
+      3541.0,
+      3792.0,
+      4136.0,
+      4139.0,
+      4190.0,
+      4463.0,
+      4844.0,
+      5327.0,
       5014.0,
       5063.0,
       5444.0,
@@ -179,6 +219,14 @@
       22187.0
     ],
     "gaap_operating_income": [
+      -1001.0,
+      -264.0,
+      381.0,
+      506.0,
+      474.0,
+      648.0,
+      755.0,
+      943.0,
       1201.0,
       1339.0,
       1652.0,
@@ -214,6 +262,14 @@
       10788.0
     ],
     "non_gaap_operating_income": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       2455.0,
       2536.0,
       2862.0,
@@ -249,6 +305,14 @@
       14928.0
     ],
     "adjusted_ebitda": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       2625.0,
       2705.0,
       3018.0,
@@ -284,6 +348,14 @@
       15244.0
     ],
     "gaap_net_income": [
+      -1186.0,
+      -298.0,
+      -632.0,
+      239.0,
+      440.0,
+      481.0,
+      532.0,
+      6230.0,
       3733.0,
       1196.0,
       1115.0,
@@ -319,6 +391,14 @@
       9310.0
     ],
     "non_gaap_net_income": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       2243.0,
       2257.0,
       2546.0,
@@ -359,6 +439,14 @@
       null,
       null,
       null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       4374.0,
       4088.0,
       4353.0,
@@ -391,6 +479,14 @@
       15009.0
     ],
     "infrastructure_software_revenue": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       null,
       null,
       null,
@@ -429,6 +525,14 @@
       null,
       null,
       null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       2037.0,
       1900.0,
       2081.0,
@@ -461,6 +565,14 @@
       9281.0
     ],
     "infrastructure_software_operating_income": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       null,
       null,
       null,
@@ -527,10 +639,26 @@
       null,
       null,
       null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       3949.0,
       4573.0
     ],
     "infrastructure_software_cost_of_revenue": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       null,
       null,
       null,
@@ -569,6 +697,14 @@
       null,
       null,
       null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       12.0,
       16.0,
       22.0,
@@ -601,6 +737,14 @@
       null
     ],
     "ip_licensing_operating_income": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       null,
       null,
       null,
@@ -638,6 +782,14 @@
   },
   "cash_flow_usd_m": {
     "operating_cash_flow": [
+      622.0,
+      963.0,
+      1352.0,
+      1353.0,
+      1583.0,
+      1656.0,
+      1959.0,
+      1685.0,
       2313.0,
       2247.0,
       2635.0,
@@ -673,6 +825,14 @@
       10493.0
     ],
     "capital_expenditures": [
+      158.0,
+      232.0,
+      193.0,
+      325.0,
+      256.0,
+      255.0,
+      233.0,
+      220.0,
       189.0,
       120.0,
       106.0,
@@ -708,6 +868,14 @@
       231.0
     ],
     "research_and_development": [
+      787.0,
+      814.0,
+      806.0,
+      808.0,
+      829.0,
+      827.0,
+      828.0,
+      925.0,
       936.0,
       959.0,
       948.0,
@@ -745,6 +913,14 @@
   },
   "capital_allocation_usd_m": {
     "share_repurchases": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       347.0,
       5378.0,
       1533.0,
@@ -780,6 +956,14 @@
       600.0
     ],
     "common_dividends": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       727.0,
       754.0,
       723.0,
@@ -815,6 +999,14 @@
       3092.0
     ],
     "cash_and_equivalents": [
+      2041.0,
+      1961.0,
+      3097.0,
+      3536.0,
+      4254.0,
+      5249.0,
+      11204.0,
+      7076.0,
       8187.0,
       4136.0,
       4292.0,
@@ -850,6 +1042,14 @@
       19628.0
     ],
     "total_debt": [
+      15008.0,
+      13715.0,
+      13642.0,
+      13562.0,
+      13567.0,
+      13572.0,
+      17548.0,
+      17592.0,
       17598.0,
       17604.0,
       17493.0,
@@ -887,6 +1087,14 @@
   },
   "working_capital_usd_m": {
     "inventory": [
+      1467.0,
+      1306.0,
+      1400.0,
+      1336.0,
+      1311.0,
+      1431.0,
+      1447.0,
+      1291.0,
       1235.0,
       1216.0,
       1124.0,
@@ -922,6 +1130,14 @@
       4328.0
     ],
     "accounts_receivable": [
+      1857.0,
+      2181.0,
+      2181.0,
+      1947.0,
+      2073.0,
+      2417.0,
+      2448.0,
+      2459.0,
       2749.0,
       3010.0,
       3325.0,
@@ -959,6 +1175,14 @@
   },
   "purchase_commitments_usd_m": {
     "total": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       931.0,
       946.0,
       852.0,
@@ -994,6 +1218,14 @@
       128110.0
     ],
     "due_within_one_year": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       843.0,
       823.0,
       776.0,
@@ -1029,6 +1261,14 @@
       55214.0
     ],
     "due_in_year_two": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       69.0,
       70.0,
       74.0,
@@ -1882,7 +2122,7 @@
     ],
     "gaap_operating_income_usd_m": [
       -409.0,
-      2371.0,
+      2383.0,
       5135.0,
       3444.0,
       4014.0,
@@ -1941,7 +2181,7 @@
       20765.0
     ],
     "fy2017_operating_income_has_three_filed_values": {
-      "stored": 2371.0,
+      "stored": 2383.0,
       "values": [
         {
           "value": 2493.0,
@@ -1959,13 +2199,41 @@
           "kind": "最后一次申报"
         }
       ],
-      "why_this_one": "本站取**最后一次申报**的值，与本仓其余序列的惯例一致，所以这里是 2,371。记这一条是因为它很容易被当成错：从业绩发布读 FY2017 会拿到 2,493，从 FY2017 或 FY2018 的 10-K 读会拿到 2,383，两者都不等于页面上的数。三个数都是申报值，差别是**哪一次申报**。",
-      "checked_via": "XBRL companyconcept us-gaap:OperatingIncomeLoss，两个 CIK（1649338 与 1730168）各自的年度事实。"
+      "why_this_one": "**这一格改过两次，第二次是为了让页面自洽。**本仓的惯例是「最后一次申报胜出」，按那条规则应该取 FY2019 10-K 的 2,371，而这一页一度就是那样存的。但四个季度的营业利润（506 + 474 + 648 + 755 = 2,383）只有 2018 那一版口径 —— **FY2019 10-K 只重述了年度比较列，没有重述任何一个季度**，所以季度那条腿追不过去。两条腿各按各的规则取，结果是页面自己的恒等式「四季之和 = 全年」差 12。所以这里改回 2,383：年度值必须与构成它的那四个季度同基。2,371 与 2,493 都留在下面，任何拿另外两个来对的人都能看见为什么不一样。",
+      "checked_via": "XBRL companyconcept us-gaap:OperatingIncomeLoss，两个 CIK（1649338 与 1730168）各自的年度事实。",
+      "identity_that_decided_it": "四个财政季度（截至 2017-01-29 / 04-30 / 07-30 / 10-29）的 GAAP 营业利润 506 / 474 / 648 / 755，合计 2,383，与 FY2017 10-K 与 FY2018 10-K 的年度值逐位相同。其中 755 已经是 Q4 那次 110 诉讼和解重述之后的值。"
     }
   },
   "capital_allocation_notes": {
     "total_debt": "取资产负债表的 LongTermDebtNoncurrent + LongTermDebtCurrent，**不是**业绩发布上的债务行 —— 两者按定义就不同，逐季相差几十到几千不等。一个具体的例子值得记下来，因为它看起来最像抄错：2022-05-01 与 2022-07-31 两个季末，本站都写 41,227。那不是重复粘贴：FY2022 Q2 的 10-Q（0001730168-22-000081，2022-06-09）与 FY2022 Q3 的 10-Q（0001730168-22-000094，2022-09-08）**两份互相独立的申报**都印着 40,958 + 269，那两个季度之间公司确实没有发债也没有到期。两个连续季度的债务余额一模一样是可能的，看到它先去核第二份申报，不要先假定是抄错。",
     "share_repurchases": "发布稿在没有回购的季度印一个破折号，本站写 0.0 —— 同一件事的两种写法，不是差异。",
     "common_dividends": "本站这一条只含普通股股息。业绩发布在 2019Q4–2022Q3 的十二个季度里多出 75（或 74），那是 8.00% 强制可转换优先股 Series A 的股息，发布稿自己写明「preferred stock, totaling $75 million」；2018Q1 多出的 39 是付给 Broadcom Cayman L.P. 份额持有人的分配。"
+  },
+  "window_note_2016_2017": "33 季 → 41 季。前面新增的八季（Q1 2016–Q4 2017，即财政 FY2016 Q2 至 FY2018 Q1）由两条互相独立的路径各取一遍：10-Q/10-K 的 XBRL R 表，与各季业绩 8-K 的 EX-99.1。**48 个两边都有值的格子里只有 1 格不同**，而那一格正是下面记的那次重述。两个申报主体：2018 年 4 月迁册之前是 Broadcom Limited / Broadcom Pte. Ltd.（CIK 1649338），之后是 Broadcom Inc.（CIK 1730168）。财年闭合：FY2016 与 FY2017 的四季之和对 10-K 全年，九条线全部零残差。窗口是 41 季不是 42 —— Q2 2026 对应的财季尚未发布。",
+  "q3_2017_restatement": {
+    "quarter": "Q3 2017",
+    "fiscal": "FY2017 Q4",
+    "period_end": "2017-10-29",
+    "as_first_reported": {
+      "gaap_operating_income": 865.0,
+      "gaap_net_income": 671.0,
+      "source": "2017-12-06 业绩发布 EX-99.1（0001193125-17-362829）"
+    },
+    "restated": {
+      "gaap_operating_income": 755.0,
+      "gaap_net_income": 561.0,
+      "source": "2018-03-15 业绩发布 EX-99.1（0001193125-18-084031）的环比对照列，及其后每一份"
+    },
+    "what_changed": "损益表里插进一条 110 的「Litigation settlement」营业费用行，其余每一行逐字不变（收入 4,844、毛利 2,383、研发 828、销管 194、摊销 441、重组 55）。营业利润与净利润同时降 110，没有税盾。",
+    "why_it_is_here": "本站取重述后的 755，与「最后一次申报胜出」的惯例一致。记这一条是因为它是两条独立路径在这八季里**唯一**不一致的一格：R 表那一路读到 755，业绩发布那一路读到 865，差额恰好 110。两条路径在其余 47 格上完全一致，正是这一点让这次回补站得住。"
+  },
+  "not_backfilled_2016_2017": {
+    "financials_usd_m.adjusted_ebitda": "「Adjusted EBITDA」这个词在 Broadcom Limited 时期的业绩发布里一次都没出现过；它第一次出现是 2018-06-07 那份的调节表 —— 那也正是本站这条序列原本的起点。",
+    "financials_usd_m.non_gaap_operating_income": "当年也有非 GAAP 营业利润，但定义不同（收入加回、且按持续经营列报），与 2018 年之后的口径不可直接相接，本站不接。",
+    "financials_usd_m.non_gaap_net_income": "同上，当年是持续经营口径。",
+    "segments_usd_m": "2018 年之前的分部是 Wired Infrastructure / Wireless communications / Enterprise storage / Industrial & Other 四个，与今天的 Semiconductor Solutions / Infrastructure Software 两个不是同一套划分，公司也没有把旧四段映射到新两段。不映射。",
+    "capital_allocation_usd_m.share_repurchases": "这八季的现金流量表里根本没有回购行 —— 公司当时不回购。",
+    "capital_allocation_usd_m.common_dividends": "本站这条只含普通股股息，用的是 PaymentsOfDividendsCommonStock 这个标签。2016–2017 的申报只给合并总额（含付给 Broadcom Cayman L.P. 份额持有人的分配），拆不出普通股那一半，所以留空而不是填合并数。",
+    "purchase_commitments_usd_m": "当年的申报里没有这张按到期年份拆分的采购承诺表。"
   }
 }

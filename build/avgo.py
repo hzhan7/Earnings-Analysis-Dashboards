@@ -605,7 +605,7 @@ def build_payload(staging: dict) -> dict:
             "Adjusted EBITDA 利润率（绿）和 non-GAAP 营业利润率（深蓝）都是公司自定义口径，"
             "而它<b>从不指引</b> GAAP 利润率（浅蓝）。"
             f"两条口径之间的缺口在 VMware 并表后一度扩大到 "
-            f"{max(n - g for n, g in zip(ng_margin, gaap_margin)):.0f}pp 以上，"
+            f"{max(n - g for n, g in zip(ng_margin, gaap_margin) if n is not None and g is not None):.0f}pp 以上，"
             f"本季 {ng_margin[-1] - gaap_margin[-1]:.1f}pp。"
             "长期序列一律用 GAAP，因为 GAAP 的定义在整个窗口内没有变过。"
         ),
@@ -627,8 +627,9 @@ def build_payload(staging: dict) -> dict:
         "legend": "无条件采购承诺（期末余额）",
         "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c", "ylab": "US$M",
         "note": (
-            f"前 32 个季度这条线一直在 US${min(v for v in commitments['total'][:-1]):,.0f}M–"
-            f"US${max(v for v in commitments['total'][:-1]):,.0f}M 之间，"
+            f"前 32 个季度这条线一直在 "
+            f"US${min(v for v in commitments['total'][:-1] if v is not None):,.0f}M–"
+            f"US${max(v for v in commitments['total'][:-1] if v is not None):,.0f}M 之间，"
             f"本季一次性跳到 US${commitments['total'][-1]:,.0f}M——"
             f"其中 US${commitments['due_within_one_year'][-1]:,.0f}M 落在一年内、"
             f"US${commitments['due_in_year_two'][-1]:,.0f}M 落在第二年。"
@@ -805,7 +806,7 @@ def build_payload(staging: dict) -> dict:
         "title": (
             f"VMware 之后的去杠杆：总债务 US${capital['total_debt'][-1]:,.0f}M、"
             f"净债务 US${net_debt[-1]:,.0f}M，净债务较峰值下降 "
-            f"US${max(net_debt) - net_debt[-1]:,.0f}M"
+            f"US${max(v for v in net_debt if v is not None) - net_debt[-1]:,.0f}M"
         ),
         "xlabels": long_labels,
         "series": [
@@ -817,8 +818,9 @@ def build_payload(staging: dict) -> dict:
         "end_label": True, "ylab": "US$M",
         "note": (
             "两级台阶都看得见：2019 年的 CA / Symantec，以及 2024 年初 VMware 把总债务一次抬到 "
-            f"US${max(capital['total_debt']):,.0f}M。"
-            f"此后净债务从峰值 US${max(net_debt):,.0f}M 降到 US${net_debt[-1]:,.0f}M。"
+            f"US${max(v for v in capital['total_debt'] if v is not None):,.0f}M。"
+            f"此后净债务从峰值 US${max(v for v in net_debt if v is not None):,.0f}M "
+            f"降到 US${net_debt[-1]:,.0f}M。"
             "本季的去杠杆有一半不是还债换来的，而是现金堆积——"
             f"回购从上季的 US${capital['share_repurchases'][-2]:,.0f}M 砍到 "
             f"US${capital['share_repurchases'][-1]:,.0f}M，公司没有解释原因。"

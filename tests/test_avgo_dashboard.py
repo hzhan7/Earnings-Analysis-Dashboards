@@ -132,25 +132,38 @@ class AvgoDashboardTest(unittest.TestCase):
         FY2017 GAAP operating income appears as 2,493 in the 2017-12-06 earnings
         release, 2,383 in the FY2017 10-K and again in the FY2018 10-K's
         comparative column, and 2,371 in the FY2019 10-K's comparative column.
-        All three are filed; the difference is *which filing*. This repo's rule
-        is that the newest reading wins, so the stored figure is 2,371 -- which
-        means anyone checking the page against the release, or against either of
-        the first two 10-Ks, gets a different number and concludes the page is
-        wrong. That is why the other two are written down beside it.
+        All three are filed; the difference is *which filing*.
 
-        Pinning this stops a future "correction" to 2,383 from looking like a
-        fix, and stops the convention from drifting silently to first-reported.
+        This page stored 2,371 for one commit, on the repo's usual rule that the
+        newest reading wins. That was wrong here, and the page's own identity is
+        what said so: the four fiscal quarters of FY2017 are 506 + 474 + 648 +
+        755 = 2,383, and the FY2019 10-K restated only the annual comparative --
+        it never republished a quarter. Taking the newest value for the year and
+        the only available value for the quarters left the two legs on different
+        bases and the sum twelve short of the total.
+
+        So the rule has an exception, and this is it: an annual figure has to sit
+        on the same basis as the quarters that make it up. 2,371 stays recorded
+        beside it, because anyone checking this page against the FY2019 10-K will
+        find that number and needs to be told why it is not the one shown.
         """
         record = self.years["fy2017_operating_income_has_three_filed_values"]
         index = self.years["fiscal_year_ends"].index("2017-10-29")
         stored = self.years["gaap_operating_income_usd_m"][index]
-        self.assertEqual(stored, 2371.0)
+        self.assertEqual(stored, 2383.0)
         self.assertEqual(record["stored"], stored)
         values = [entry["value"] for entry in record["values"]]
         self.assertEqual(values, [2493.0, 2383.0, 2371.0],
                          "release, then the first two 10-Ks, then the newest")
-        self.assertEqual(values[-1], stored, "the stored value is the newest one")
         self.assertEqual(len(set(values)), 3, "three genuinely different figures")
+        self.assertIn("四季之和", record["why_this_one"])
+        # The identity that decided it, asserted rather than described.
+        ends = self.ends
+        quarters = [i for i, end in enumerate(ends) if "2016-10-31" <= end <= "2017-10-29"]
+        self.assertEqual(len(quarters), 4)
+        self.assertAlmostEqual(
+            sum(self.fin["gaap_operating_income"][i] for i in quarters), stored,
+            delta=0.01)
         # Each one has to name where it came from, or the note is decoration.
         for entry in record["values"]:
             self.assertIn("-", entry["source"])
