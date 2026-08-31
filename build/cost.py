@@ -514,6 +514,15 @@ def build_payload(staging: dict) -> dict:
     deck = staging["supplement"]
     core = staging["core_on_core"]
 
+    # Four quarters (FY2019, calendar Q4 2018 -- Q3 2019) have no adjusted comp
+    # on this series' basis: Costco's printed "Adjusted" figure those quarters
+    # also strips the ASC 606 transition, which every other quarter's does not.
+    # The as-printed values are kept in the series file under
+    # `asc606_era_as_disclosed`; they are not spliced in here, so any aggregate
+    # over the adjusted line has to skip them rather than crash on them.
+    adjusted_filed = [v for v in staging["comp_history_pct"]["adjusted_total_pct"]
+                      if v is not None]
+
     labels = [compact_period(period) for period in staging["periods"]]
     hist_labels = [compact_period(period) for period in hist["periods"]]
     mem_labels = [compact_period(period) for period in mem["periods"]]
@@ -557,8 +566,8 @@ def build_payload(staging: dict) -> dict:
               "剔除汽油的口径，但 FY2019 那四个季度的「Adjusted」还额外剔除了 ASC 606 收入准则变更，"
               "是同一个标签下的另一个口径；本图因此从 FY2020 Q1 起画，"
               "此后每一季都是同一个「剔除汽油价格与汇率」的定义。"
-              f"窗口内区间 {min(hist['adjusted_total_pct']):.1f}% 到 "
-              f"{max(hist['adjusted_total_pct']):.1f}%，"
+              f"窗口内区间 {min(adjusted_filed):.1f}% 到 "
+              f"{max(adjusted_filed):.1f}%，"
               "所以「结构性 6.5%」这句话描述的是最近四个季度，不是这家公司的常态。"
               + RESOLUTION_NOTE),
         src_extra=SOURCE_PR))
@@ -623,7 +632,12 @@ def build_payload(staging: dict) -> dict:
 
     # ── section two: what actually moved this quarter ───────────────────────
     gap = hist["gap_pp"]
-    negative_gaps = sum(1 for v in gap if v < 0)
+    # The gap is reported minus adjusted, so it is empty wherever the adjusted
+    # figure is (the ASC 606 quarters above). Rank and count over what exists.
+    gap_filed = [v for v in gap if v is not None]
+    negative_gaps = sum(1 for v in gap_filed if v < 0)
+    positive_gaps = sum(1 for v in gap_filed if v > 0)
+    zero_gaps = sum(1 for v in gap_filed if v == 0)
     highlight_ex = [
         {
             "ref": "EX_COMPBOTH",
@@ -642,8 +656,8 @@ def build_payload(staging: dict) -> dict:
             "ylab": "%", "xstep": LONG_STEP,
             "note": ("两条线都是公司披露值，差别只在剔不剔汽油价格与汇率。"
                      "<b>本季金色那条比深蓝那条高 "
-                     f"{gap[-1]:.1f} 个百分点，是这 {len(gap)} 季里第 "
-                     f"{sorted(gap, reverse=True).index(gap[-1]) + 1} 大的一次。</b>"
+                     f"{gap[-1]:.1f} 个百分点，是有该口径的 {len(gap_filed)} 季里第 "
+                     f"{sorted(gap_filed, reverse=True).index(gap[-1]) + 1} 大的一次。</b>"
                      "读 headline 的人看到的是金色，读这家公司的人要看深蓝。"
                      "两条线在 2021–2022 年那段一起冲到两位数，是疫情后的低基数加油价，"
                      "不是需求。"
@@ -654,7 +668,7 @@ def build_payload(staging: dict) -> dict:
             "ref": "EX_GAP",
             "kind": "diverging_bars",
             "title": (f"汽油与汇率把 headline 抬高（或压低）了多少："
-                      f"{len(gap)} 季里 {negative_gaps} 季是压低"),
+                      f"{len(gap_filed)} 季里 {negative_gaps} 季是压低"),
             "xlabels": hist_labels,
             "values": rounded(gap),
             "legend": "报告 comp − 调整后 comp",
@@ -664,10 +678,20 @@ def build_payload(staging: dict) -> dict:
             "ylab": "百分点", "zero_line": True, "xstep": LONG_STEP,
             "note": ("<b>这张图是本页最想让人看见的一张。</b>本地笔记把本季 "
                      f"{gap[-1]:.1f} 个百分点的汽油顺风当成一次性的加成来提示风险，"
-                     f"而完整记录说的是更强的一句话：这个缺口在 {len(gap)} 个季度里有 "
-                     f"{negative_gaps} 季是<b>负的</b> —— "
-                     "汽油与汇率压低 headline 的次数比抬高的次数还多，"
-                     f"最深一次是 {hist_labels[gap.index(min(gap))]} 的 {min(gap):.1f} 个百分点。"
+                     f"而完整记录说的是更强的一句话：这个缺口在有该口径的 {len(gap_filed)} "
+                     f"个季度里有 {negative_gaps} 季是<b>负的</b> —— "
+                     + (f"压低的次数比抬高的次数多（{negative_gaps} 比 {positive_gaps}"
+                        + (f"，另有 {zero_gaps} 季恰好为零" if zero_gaps else "")
+                        + "）。"
+                        if negative_gaps > positive_gaps else
+                        f"压低 {negative_gaps} 季、抬高 {positive_gaps} 季"
+                        + (f"、恰好为零 {zero_gaps} 季" if zero_gaps else "") + "，")
+                     + (f"（横轴共 {len(gap)} 季，其中 {len(gap) - len(gap_filed)} 季"
+                        "公司当年的「调整后」口径连同 ASC 606 一起剔除，与其余各季不可比，"
+                        "本图留空、数字保留在核对表里。）"
+                        if len(gap_filed) != len(gap) else "")
+                     + f"最深一次是 {hist_labels[gap.index(min(gap_filed))]} 的 "
+                     f"{min(gap_filed):.1f} 个百分点。"
                      f"符号是在四个季度前才翻过来的：{hist_labels[-4]} 还是 {gap[-4]:+.1f}，"
                      f"接着 {gap[-3]:+.1f}、{gap[-2]:+.1f}、{gap[-1]:+.1f}。"
                      "<b>公司只披露汽油与汇率合在一起的影响，从不拆开</b>，"
@@ -1138,6 +1162,22 @@ def build_payload(staging: dict) -> dict:
             f"${fin['diluted_eps_usd'][index]:.2f}",
             f"{mem['warehouses_at_period_end'][mem['periods'].index(period)]:,}",
         ])
+    # The four ASC 606 quarters have no adjusted figure on this series' basis,
+    # but the company did print one on a wider basis. Showing "—" there would
+    # read as "not disclosed"; showing the number unmarked would read as though
+    # it were comparable. So the table prints it with the basis attached.
+    wider = staging["comp_history_pct"].get("asc606_era_as_disclosed", {})
+    wider_total = dict(zip(wider.get("periods", []),
+                           wider.get("as_disclosed_adjusted_total_pct", [])))
+
+    def adjusted_cell(index, period):
+        value = hist["adjusted_total_pct"][index]
+        if value is not None:
+            return f"{value:+.1f}%"
+        if period in wider_total:
+            return f"{wider_total[period]:+.1f}% *"
+        return "—"
+
     comp_rows = []
     for index, period in enumerate(hist["periods"]):
         comp_rows.append([
@@ -1145,8 +1185,9 @@ def build_payload(staging: dict) -> dict:
             hist["fiscal_labels"][index],
             f"{long_weeks[index]} 周",
             f"{hist['reported_total_pct'][index]:+.1f}%",
-            f"{hist['adjusted_total_pct'][index]:+.1f}%",
-            f"{hist['gap_pp'][index]:+.1f}pp",
+            adjusted_cell(index, period),
+            (f"{hist['gap_pp'][index]:+.1f}pp"
+             if hist["gap_pp"][index] is not None else "—"),
             (f"{hist['digital_reported_pct'][index]:+.1f}%"
              if hist["digital_reported_pct"][index] is not None else "—"),
             hist["digital_metric_name"][index] or "—",

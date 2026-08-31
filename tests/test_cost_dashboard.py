@@ -238,9 +238,22 @@ class CostDashboardTest(unittest.TestCase):
                 self.assertAlmostEqual(
                     mem["annualised_fee_per_paid_member_usd"][index],
                     round(fee / weeks * 52 / (members / 1000), 2), places=2)
-        # No sixteen-week spike survives the normalisation.
-        values = [v for v in mem["annualised_fee_per_paid_member_usd"] if v is not None]
-        self.assertLess(max(values) / min(values), 1.2)
+        # No sixteen- or seventeen-week quarter survives the normalisation as a
+        # spike. This used to be `max/min < 1.2` across the whole series, which
+        # answered the question only by accident: over 27 quarters the fee per
+        # member happened to grow less than 20%, over 42 it grows 27% (56.68 to
+        # 71.77, two fee increases), and the assertion started failing on real
+        # growth rather than on a seasonal artefact. Compare each long quarter
+        # with its own neighbours instead, which is what "spike" meant.
+        values = mem["annualised_fee_per_paid_member_usd"]
+        weeks = mem["weeks"]
+        long_quarters = [i for i, w in enumerate(weeks)
+                         if w > 12 and 0 < i < len(values) - 1]
+        self.assertGreaterEqual(len(long_quarters), 8)
+        for index in long_quarters:
+            around = (values[index - 1] + values[index + 1]) / 2
+            with self.subTest(period=mem["periods"][index]):
+                self.assertLess(abs(values[index] / around - 1), 0.05)
 
     def test_the_quarterly_fee_line_is_the_discrete_period_not_the_year(self) -> None:
         """The 10-K's MD&A prints the fiscal YEAR's membership fees, so a fourth
@@ -259,21 +272,41 @@ class CostDashboardTest(unittest.TestCase):
         The plotted record therefore starts after it. A record that reached
         further back would be two definitions under one label.
         """
-        self.assertEqual(self.hist["periods"][0], "Q4 2019")
-        self.assertEqual(len(self.hist["periods"]), 27)
-        self.assertEqual(set(self.hist["adjustment_basis"]), {"gasoline_and_fx"})
-        for index in range(len(self.hist["periods"])):
-            self.assertAlmostEqual(
-                self.hist["reported_total_pct"][index]
-                - self.hist["adjusted_total_pct"][index],
-                self.hist["gap_pp"][index], places=6)
+        self.assertEqual(self.hist["periods"][0], "Q1 2016")
+        self.assertEqual(len(self.hist["periods"]), 42)
+        # The record now reaches through fiscal 2019 rather than starting after
+        # it, and the one-basis rule is kept where it actually matters: every
+        # quarter that carries an adjusted figure carries it on the gasoline-and-
+        # FX basis. Fiscal 2019's four quarters are empty on this line, not
+        # spliced -- their printed "Adjusted" also strips the ASC 606 transition.
+        for index, basis in enumerate(self.hist["adjustment_basis"]):
+            period = self.hist["periods"][index]
+            with self.subTest(period=period):
+                if basis == "gasoline_and_fx":
+                    self.assertIsNotNone(self.hist["adjusted_total_pct"][index])
+                    self.assertAlmostEqual(
+                        self.hist["reported_total_pct"][index]
+                        - self.hist["adjusted_total_pct"][index],
+                        self.hist["gap_pp"][index], places=6)
+                else:
+                    self.assertIn("asc606", basis)
+                    self.assertIsNone(self.hist["adjusted_total_pct"][index])
+                    self.assertIsNone(self.hist["gap_pp"][index])
+        wider = self.hist["asc606_era_as_disclosed"]
+        self.assertEqual(wider["periods"],
+                         ["Q4 2018", "Q1 2019", "Q2 2019", "Q3 2019"])
+        # the wider-basis figures are kept, so nothing the company printed is lost
+        self.assertEqual(len(wider["as_disclosed_adjusted_total_pct"]), 4)
 
     def test_the_gap_finding_is_pinned_by_value(self) -> None:
         """The page's sharpest claim: gasoline and currency have suppressed the
         headline more often than they have flattered it."""
-        gap = self.hist["gap_pp"]
+        gap = [value for value in self.hist["gap_pp"] if value is not None]
         negative = sum(1 for value in gap if value < 0)
-        self.assertEqual((negative, len(gap)), (15, 27))
+        # 19 of the 38 quarters that have this basis -- the record now runs 42
+        # quarters, four of which (fiscal 2019) carry no adjusted figure at all.
+        self.assertEqual((negative, len(gap)), (19, 38))
+        self.assertEqual(len(self.hist["gap_pp"]), 42)
         self.assertAlmostEqual(gap[-1], 3.2, places=6)
         self.assertEqual([round(value, 1) for value in gap[-4:]], [-0.7, 0.0, 0.7, 3.2])
         chart = next(ex for ex in self.by_section["quarter_highlights"]
@@ -302,12 +335,22 @@ class CostDashboardTest(unittest.TestCase):
         self.assertEqual([round(v, 1) for v in release[-3:]], [6.4, 6.7, 6.6])
         self.assertEqual(filed[-3:], [6.0, 7.0, 7.0])
         table = next(t for t in self.payload["tables"] if "同店销售完整记录" in t["title"])
-        self.assertEqual(len(table["rows"]), 27)
+        self.assertEqual(len(table["rows"]), 42)
 
     def test_the_digital_metric_break_is_marked_not_spliced(self) -> None:
         names = self.hist["digital_metric_name"]
         index = self.hist["digital_break_index"]
-        self.assertEqual(set(names[:index]), {"E-commerce"})
+        # Three states now, not two: before Costco published a digital comp at
+        # all there is no metric name to give. Extending the record back to 2016
+        # brought six such quarters in, and a test that only knew two states
+        # would have been satisfied by calling them E-commerce.
+        first = next(i for i, name in enumerate(names) if name is not None)
+        self.assertEqual(self.hist["periods"][first], "Q3 2017")
+        self.assertEqual(set(names[:first]), {None})
+        for i in range(first):
+            with self.subTest(period=self.hist["periods"][i]):
+                self.assertIsNone(self.hist["digital_reported_pct"][i])
+        self.assertEqual(set(names[first:index]), {"E-commerce"})
         self.assertEqual(set(names[index:]), {"Digitally-Enabled"})
         self.assertEqual(self.hist["periods"][index], "Q4 2025")
 
@@ -494,7 +537,7 @@ class CostDashboardTest(unittest.TestCase):
         core = self.source["core_on_core"]
         q4 = [i for i, period in enumerate(core["periods"]) if period.startswith("Q3 ")]
         filled = [i for i in q4 if core["change_bps"][i] is not None]
-        self.assertEqual((len(filled), len(q4)), (2, 6))
+        self.assertEqual((len(filled), len(q4)), (2, 10))
         for index in filled:
             self.assertIn("EX-99.2", core["value_source"][index])
         for index in set(q4) - set(filled):
