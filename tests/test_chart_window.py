@@ -793,7 +793,7 @@ class ChartWindowTest(unittest.TestCase):
         writing a real reason pushes it down. Either way this turns red and
         someone has to look.
         """
-        by_page = {}
+        by_page, by_design, by_length = {}, {}, {}
         for label, exhibit in exhibits():
             year = first_year(exhibit)
             if year is None or year <= TARGET_YEAR:
@@ -803,8 +803,17 @@ class ChartWindowTest(unittest.TestCase):
             if any(key in title for key in CONVERTED.get(slug, {})):
                 continue
             by_page[slug] = by_page.get(slug, 0) + 1
-        self.assertEqual(by_page, UNEXPLAINED)
-        self.assertEqual(sum(UNEXPLAINED.values()), 151)
+            bucket = (by_design if len(exhibit.get("xlabels") or []) <= 8
+                      else by_length)
+            bucket[slug] = bucket.get(slug, 0) + 1
+        combined = {slug: SHORT_BY_DESIGN.get(slug, 0) + UNEXPLAINED_LONG.get(slug, 0)
+                    for slug in set(SHORT_BY_DESIGN) | set(UNEXPLAINED_LONG)}
+        self.assertEqual(by_page, combined)
+        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 86)
+        self.assertEqual(sum(UNEXPLAINED_LONG.values()), 65)
+        # and the pins are the split the data actually has, not a hand-typed one
+        self.assertEqual(by_design, SHORT_BY_DESIGN)
+        self.assertEqual(by_length, UNEXPLAINED_LONG)
 
     def test_converted_pages_have_no_unexplained_short_axis(self) -> None:
         for slug, excuses in CONVERTED.items():
@@ -942,19 +951,44 @@ class ChartWindowTest(unittest.TestCase):
 # `test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog`.
 # Every one of these pages sits outside CONVERTED entirely, which is why nothing
 # was asking them the question.
-UNEXPLAINED = {
-    'axp': 16,
-    'bc': 9,
-    'cost': 8,
-    'mc': 11,
-    'mu': 16,
+# Split by length, because the two halves are different problems and one number
+# hides that. The criterion is structural (how many points the chart draws), NOT
+# a judgement that any particular chart is unextendable -- none of the 151 has
+# been checked against a pre-floor filing, which is exactly what makes them a
+# backlog rather than a set of excuses.
+#
+# Eight points or fewer: on this site that is the current-quarter detail
+# convention -- bridges, KPI headroom bars, this-quarter-versus-last panels. The
+# window migration is not really about these, but `first_year()` counts them, so
+# they sit in the 550 denominator and have to be accounted for somewhere.
+SHORT_BY_DESIGN = {
+    'axp': 3,
+    'bc': 7,
+    'cost': 3,
+    'mc': 10,
+    'mu': 2,
     'nvda': 11,
-    'pm': 11,
+    'pm': 9,
     'rms': 7,
     'samsung': 15,
-    'skhynix': 12,
-    'snps': 14,
-    'spgi': 21,
+    'skhynix': 5,
+    'snps': 9,
+    'spgi': 5,
+}
+
+# More than eight points: a chart that already draws a long series and still
+# stops after 2016. This is where the remaining work actually is. Several are
+# one short hop from the floor -- six AXP charts start in 2017.
+UNEXPLAINED_LONG = {
+    'axp': 13,
+    'bc': 2,
+    'cost': 5,
+    'mc': 1,
+    'mu': 14,
+    'pm': 2,
+    'skhynix': 7,
+    'snps': 5,
+    'spgi': 16,
 }
 
 
