@@ -58,7 +58,21 @@ DATA_DIR = ROOT / "data"
 # Days in each reported quarter, used only for the two working-capital ratios.
 # Written out rather than derived so the leap-year question is answered once,
 # in the open: none of the eight quarters here sits in a leap February.
-QUARTER_DAYS = [92, 92, 90, 91, 92, 92, 90, 91]
+def _quarter_days(period_ends: list[str]) -> list[int]:
+    """Days in each calendar quarter, from the period-end dates themselves.
+
+    This used to be a literal eight-element list. It was correct for an
+    eight-quarter window and became an IndexError the moment the record grew --
+    which is the good outcome; the bad one would have been a list long enough to
+    index but wrong about which quarter is which.
+    """
+    from datetime import date
+    days = []
+    for value in period_ends:
+        end = date.fromisoformat(value)
+        start = date(end.year, end.month - 2, 1)   # 3->1, 6->4, 9->7, 12->10
+        days.append((end - start).days + 1)
+    return days
 
 
 def signed(value: float, digits: int = 1, suffix: str = "%") -> str:
@@ -134,6 +148,7 @@ def derived(staging: dict) -> dict:
     seg_op = staging["segment_operating_profit_krw_tn"]
     cash = staging["cash_flow_krw_tn"]
     bs = staging["balance_sheet_krw_bn"]
+    quarter_days = _quarter_days(staging["period_ends"])
 
     segment_sum = [
         seg_rev["dx"][i] + seg_rev["ds"][i] + seg_rev["sdc"][i] + seg_rev["harman"][i]
@@ -157,10 +172,10 @@ def derived(staging: dict) -> dict:
         "fcf": [c - k for c, k in zip(cash["operating"], cash["capex_ppe"])],
         "capex_to_cfo": [k / c * 100 for k, c in zip(cash["capex_ppe"], cash["operating"])],
         "inventory_days": [
-            bs["inventories"][i] / 1000 / cogs_tn[i] * QUARTER_DAYS[i] for i in range(len(rev_tn))
+            bs["inventories"][i] / 1000 / cogs_tn[i] * quarter_days[i] for i in range(len(rev_tn))
         ],
         "receivable_days": [
-            bs["receivables"][i] / 1000 / rev_tn[i] * QUARTER_DAYS[i] for i in range(len(rev_tn))
+            bs["receivables"][i] / 1000 / rev_tn[i] * quarter_days[i] for i in range(len(rev_tn))
         ],
         "rnd_intensity": [d / r * 100 for d, r in zip(fin["rnd_expenses"], fin["revenue"])],
         "net_cash_to_assets": [
