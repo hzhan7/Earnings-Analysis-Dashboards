@@ -505,10 +505,10 @@ def quarter_charts(staging: dict) -> list[dict]:
 def next_quarter_charts(staging: dict) -> list[dict]:
     fin = staging["financials"]
     credit = staging["credit_metrics"]
-    # `fin` is the only block this function plots through the recast window
-    # (revenue and total expenses, for jaws and VCE). Every series here that
-    # ASC 606 did not touch reads `staging` directly instead, so its chart runs
-    # as far back as the filings do.
+    # Every series here reads `staging` directly: there is no recast window any
+    # more (see the note above `quarter_charts`), so each chart runs as far back
+    # as its own filings do, and they do not all reach the same quarter.
+    loans = credit["loans_basis"]
     labels = staging["period_labels"]
     kpi = staging["next_kpi"]["quantified"]
 
@@ -559,14 +559,19 @@ def next_quarter_charts(staging: dict) -> list[dict]:
             "才第一次把它作为一条合并口径的美元行印出来，那份发布的对照窗口只回溯五个季度、"
             "到 2016Q3 为止。更早的两季只能用「合并总额减去分部表里的 GNS」减出来，"
             "而公司自己从没做过这个减法。"),
-        # Credit quality is not a revenue-recognition item. These two were once
-        # cut to 2017Q1 because they rode the same helper as the revenue lines.
-        "30+ 天逾期率": (staging["period_labels"],
-                          staging["credit_metrics"]["past_due_30_pct"], "pct1", "%",
-                          credit["basis_note"] + credit["pandemic_relief_note"]),
-        "净核销率（本金口径）": (staging["period_labels"],
-                                staging["credit_metrics"]["net_write_off_rate_principal_pct"],
-                                "pct1", "%", credit["basis_note"]),
+        # Two bases, two lines, never joined -- see `gap_note` and `overlap_note`.
+        # This branch had spliced them into one 42-quarter line on the reasoning
+        # that credit quality is not a revenue-recognition item, which is true and
+        # beside the point: what stops the join is that the company did not print
+        # the combined basis before 2022Q1, and the loans-only figures it did print
+        # are a different population.
+        "30+ 天逾期率": (labels, credit["past_due_30_pct"], "pct1", "%",
+                          credit["basis_note"] + " " + credit["gap_note"]
+                          + " " + loans["note"] + " " + loans["covid_note"]
+                          + " " + loans["overlap_note"]),
+        "净核销率（本金口径）": (labels, credit["net_write_off_rate_principal_pct"], "pct1", "%",
+                                credit["basis_note"] + " " + credit["gap_note"]
+                                + " " + loans["note"] + " " + loans["overlap_note"]),
         "VCE 占收入比": ([labels[i] for i in vce_idx],
                           [(rewards[i] + services[i] + bizdev[i]) / revenue[i] * 100
                            for i in vce_idx], "pct1", "%",
@@ -584,6 +589,16 @@ def next_quarter_charts(staging: dict) -> list[dict]:
                        "前三季来自业绩发布的统计表，第四季来自 FY2016 10-K —— "
                        "本站其余 2016 数据都是两条路径各读一遍再逐格比对，这一条没有。"),
     }
+    # The two credit charts carry a second, older basis as its own grey line.
+    # It is *not* a backfill of the tracked series: the company only began
+    # publishing the combined loans-and-receivables basis with the 2023Q1
+    # release, and over the sixteen quarters both are printed they agree in
+    # exactly one.  Drawing them as two lines is the same refusal EX_RATE makes
+    # for the printed and the derived discount rate.
+    loans_line_for = {
+        "30+ 天逾期率": loans["past_due_30_pct"],
+        "净核销率（本金口径）": loans["net_write_off_rate_principal_pct"],
+    }
     for entry in kpi:
         if entry["metric"] not in series_for:
             continue
@@ -598,8 +613,20 @@ def next_quarter_charts(staging: dict) -> list[dict]:
             fmt=fmt, ylab=unit,
             actual_name=entry["metric"], threshold_name="本地阈值",
             note=("红线是本地研究设定的阈值，既不是公司指引，也不是公司披露的目标。"
-                  "序列从这个数在申报文件里存在的那一季开始画，不向前回补。" + extra),
+                  "深蓝那条序列从这个数在申报文件里存在的那一季开始画，不向前回补。" + extra),
             src_extra="各季业绩 8-K EX-99.2；阈值为本地研究设定。")
+        if entry["metric"] in loans_line_for:
+            exhibit["series"].append({
+                "name": loans["label"] + "，对照",
+                "values": rounded(loans_line_for[entry["metric"]]),
+                "color": "GRAY",
+            })
+            exhibit["src_extra"] = (
+                "两条线都读自各季业绩 8-K 的 EX-99.2："
+                "深蓝取合并口径那一段，灰线取 Worldwide Card Member loans 那一段。"
+                + ("2021Q4 那一格深蓝取自 FY2023 的 10-K 三年对照表（同一口径的年末时点值）。"
+                   if entry["metric"] == "30+ 天逾期率" else "")
+                + "阈值为本地研究设定。")
         exhibit["xstep"] = LONG_STEP
         exhibits.append(exhibit)
     return exhibits

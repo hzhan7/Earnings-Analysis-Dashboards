@@ -827,6 +827,35 @@ contains processed revenue while its denominator had already been recast to
 proprietary-only — old numerator over new denominator reads as a price rise that
 never happened, and no filed identity catches it.
 
+The same page refuses the same splice a second time, in the two **credit
+quality** series. What it tracks — 30+ days past due and the net write-off rate
+on principal — is the company's *combined* Card Member loans **and** receivables
+basis, and the company first printed that basis in the April 2023 release: five
+trailing quarters, back to 2022Q1. The twenty-five statistical supplements from
+January 2017 to January 2023 carry only the loans-only `Worldwide Card Member
+loans` table. The run of blanks before 2022 is therefore where the disclosure
+begins, not where the reading stopped. That loans-only table is itself complete
+— 36 quarters, 2017Q1 to 2025Q4, read from every supplement that prints it, 32
+of them five times each, no disagreement anywhere and no restatement — and it is
+on the page, but as its own grey line rather than as a backfill: over the 16
+quarters where both bases are printed they agree in exactly one, and the
+difference takes both signs: every non-zero cell from 2022Q3 to 2023Q2 is
+negative, every one from 2023Q3 onward is positive, and 2022Q1 has one of each.
+At its widest it is 0.1pp on delinquency and 0.3pp on write-offs. There is no
+offset here to subtract away, only two different numbers. One
+quarter does reach back — 2021Q4 delinquency, 0.7% — because the FY2023 10-K
+prints the combined basis in its three-year table and delinquency is a
+point-in-time ratio, so the annual column is the fourth quarter's; in all four
+years where both exist the annual column equals the quarterly value *and*
+differs from the loans-only reading for the same quarter, which is what makes
+that a test rather than a coincidence. The write-off rate is a flow, its annual
+figure is a full-year rate — FY2022's 0.9% against that quarter's 1.2% — and it
+cannot be assembled from the parts either: weighting the loans rate and the
+receivables rate together needs the receivables principal-only write-offs in
+dollars, which the supplement never prints (only principal-and-fees), and an
+average receivables balance, which it has no row for at all. So it stays blank
+through 2021Q4.
+
 Two further windows on that page are the length of the disclosure rather than a
 choice. **VCE** — the company's own defined aggregate of Card Member rewards,
 business development and Card Member services — runs 22 quarters, because

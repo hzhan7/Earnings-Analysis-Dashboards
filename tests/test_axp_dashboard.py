@@ -361,20 +361,131 @@ class AxpDashboardTest(unittest.TestCase):
         credit = self.staging["credit_metrics"]
         self.assertEqual(len(credit["basis_overlap_quarters"]), 4)
         periods = self.staging["periods"]
-        # Both series are now complete for the whole record. They used to start
-        # at 2022Q1, which was never a basis limit -- credit quality is not a
-        # revenue-recognition item; they were cut to the recast window because
-        # they rode the same `recast()` helper as the revenue lines, and the
-        # twenty quarters before that had simply never been pulled.
-        for name in ("past_due_30_pct", "net_write_off_rate_principal_pct"):
+        # This side of the merge is main's, deliberately. The branch had
+        # asserted both series complete for all 42 quarters, on the reasoning
+        # that credit quality is not a revenue-recognition item -- true, and
+        # not the constraint. The constraint is that the company did not print
+        # the combined basis before 2022Q1; what it printed was the loans-only
+        # table, which is a different population (see loans_basis).
+        # The tracked basis is loans *and* receivables combined. The company
+        # first printed it with the 2023Q1 release, five trailing quarters back
+        # to 2022Q1; the write-off rate starts there. The delinquency rate is a
+        # point-in-time figure, so the FY2023 10-K's three-year table licenses
+        # one quarter more -- and nothing licenses a second one.
+        starts = {"past_due_30_pct": "2021Q4",
+                  "net_write_off_rate_principal_pct": "2022Q1"}
+        self.assertEqual(credit["combined_basis_first_quarter"], "2022Q1")
+        for name, first in starts.items():
             present = [p for p, v in zip(periods, credit[name]) if v is not None]
-            self.assertEqual(present[0], "2016Q1", name)
+            self.assertEqual(present[0], first, name)
             self.assertEqual(present[-1], "2026Q2", name)
-            self.assertEqual(len(present), len(periods), name)
-        # The delinquency freeze has to travel with the series that it distorts.
-        self.assertIn("Delinquency status is generally frozen",
-                      credit["pandemic_relief_note"])
-        self.assertIn("2020Q2", credit["pandemic_relief_note"])
+            self.assertEqual(len(present), periods.index("2026Q2") - periods.index(first) + 1,
+                             f"{name} has an interior hole")
+
+    def test_the_annual_delinquency_column_is_the_fourth_quarter(self) -> None:
+        """What licenses the one quarter the tracked series reaches back.
+
+        30+ days past due is a point-in-time ratio, so the 10-K's annual column
+        should be the fourth quarter's value -- and in every year where both
+        exist it is, while in every one of those years it differs from the
+        loans-only reading for the same quarter. That second half is what makes
+        it a test and not a coincidence: it tells the two bases apart.
+        """
+        credit = self.staging["credit_metrics"]
+        annual = credit["annual_past_due_30_pct"]["values"]
+        periods = self.staging["periods"]
+        checked = 0
+        for year, value in annual.items():
+            if f"{year}Q4" not in periods:
+                continue
+            index = periods.index(f"{year}Q4")
+            quarterly = credit["past_due_30_pct"][index]
+            if quarterly is None:
+                continue
+            self.assertEqual(quarterly, value, year)
+            if year != "2021":                    # the year being licensed
+                self.assertNotEqual(credit["loans_basis"]["past_due_30_pct"][index], value,
+                                    f"{year} cannot tell the two bases apart")
+                checked += 1
+        self.assertEqual(checked, 4)
+        self.assertEqual(credit["past_due_30_pct"][periods.index("2021Q4")], annual["2021"])
+
+    def test_ten_k_year_ends_pin_the_pre_2022_half_of_the_loans_basis(self) -> None:
+        """The half of the credit data that no other check reaches.
+
+        Reproducing the eighteen already-published quarters only gates 2022Q1
+        onward; everything before it comes out of two older supplement formats
+        where reading one column across would go unnoticed. Nine 10-Ks print
+        the same loans-basis delinquency at each year end, and it is a
+        point-in-time ratio, so each must equal that year's fourth quarter.
+        """
+        loans = self.staging["credit_metrics"]["loans_basis"]
+        annual = loans["annual_past_due_30_pct"]["values"]
+        periods = self.staging["periods"]
+        self.assertEqual(sorted(annual), [str(y) for y in range(2017, 2026)])
+        for year, value in annual.items():
+            index = periods.index(f"{year}Q4")
+            self.assertEqual(loans["past_due_30_pct"][index], value, year)
+
+    def test_the_two_credit_bases_are_two_series_not_one(self) -> None:
+        """2017-2021 is a disclosure boundary, not a collection gap.
+
+        The loans-only basis runs the whole window and would look like a
+        backfill, but over the sixteen quarters where the company prints both
+        it agrees with the tracked basis in exactly one, and the sign of the
+        difference flips partway -- so there is no offset to splice away.
+        """
+        credit = self.staging["credit_metrics"]
+        loans = credit["loans_basis"]
+        periods = self.staging["periods"]
+        pairs = (("past_due_30_pct", 0.1), ("net_write_off_rate_principal_pct", 0.3))
+        gaps: dict[str, dict[str, float]] = {}
+        signs = set()
+        for name, widest in pairs:
+            self.assertEqual(len(loans[name]), len(periods), name)
+            present = [p for p, v in zip(periods, loans[name]) if v is not None]
+            # 2016Q1, not 2017Q1: this branch read the four 2016 quarters off the
+            # same Worldwide Card Member loans table and they belong to this line
+            # rather than to the tracked one. Two filings that do not derive from
+            # each other print them -- the FY2016 statistical exhibit of
+            # 2017-01-19 (six quarters, 2015Q3 through 2016Q4) and the 2017Q1 one
+            # of 2017-04-19 (five quarters back to 2016Q1). The floor is still not
+            # a disclosure boundary: the company printed this table from 2015Q4,
+            # and 2016Q1 is only where this page's axis begins.
+            self.assertEqual((present[0], present[-1]), ("2016Q1", "2025Q4"), name)
+            self.assertEqual(len(present), 40, name)
+            for period, tracked, other in zip(periods, credit[name], loans[name]):
+                if tracked is None or other is None:
+                    continue
+                gap = round(other - tracked, 10)
+                gaps.setdefault(period, {})[name] = gap
+                if gap:
+                    signs.add(gap > 0)
+                self.assertLessEqual(abs(gap), widest + 1e-9, name)
+        # Both metrics are printed on both bases for 2022Q1-2025Q4; 2021Q4 is
+        # the delinquency rate reaching back on its own.
+        both = {p: g for p, g in gaps.items() if len(g) == 2}
+        self.assertEqual(len(both), loans["overlap_quarters"])
+        self.assertEqual(sum(1 for g in both.values() if set(g.values()) == {0.0}),
+                         loans["overlap_quarters_identical"])
+        self.assertEqual(signs, {True, False})
+
+    def test_the_credit_charts_carry_the_older_basis_as_its_own_line(self) -> None:
+        titles = ("30+ 天逾期率", "净核销率（本金口径）")
+        loans = self.staging["credit_metrics"]["loans_basis"]
+        found = 0
+        for ex in self.exhibits:
+            if not ex.get("title", "").startswith(titles):
+                continue
+            found += 1
+            self.assertEqual(len(ex["series"]), 3, ex["title"])
+            self.assertEqual([s["color"] for s in ex["series"]], ["NAVY", "RED", "GRAY"])
+            grey = ex["series"][2]
+            self.assertIn(loans["label"], grey["name"])
+            self.assertEqual(len(grey["values"]), len(ex["xlabels"]))
+            # The grey line stops where the company stopped printing it.
+            self.assertEqual([v is None for v in grey["values"]][-2:], [True, True])
+        self.assertEqual(found, 2)
 
     # ── the annual guidance record ──────────────────────────────────────────
     def test_forty_three_vintages_across_eleven_fiscal_years(self) -> None:
