@@ -66,6 +66,57 @@ class AvgoDashboardTest(unittest.TestCase):
         cls.ends = cls.source["period_ends"]
 
     # ── the series itself ────────────────────────────────────────────────────
+    def test_net_income_is_the_consolidated_row_and_the_other_two_are_kept(self) -> None:
+        """One row for 41 quarters, and the identity that tells the rows apart.
+
+        The eight earliest quarters used to hold "Net income attributable to
+        ordinary shares" while everything from 2018-05-06 held the consolidated
+        "Net income". Both are printed in one column band of the same statements
+        with the Broadcom Cayman L.P. noncontrolling interest between them, so
+        this was never an alignment question -- it was two rows in one column.
+
+        Nothing rendered it, which is why nothing failed. The assertion that can
+        see it is the three-row identity: consolidated minus noncontrolling
+        equals attributable, in every quarter where all three exist. That is a
+        real check rather than a value pin, and it fails immediately if the
+        column reverts to the attributable row, because then the identity would
+        need a noncontrolling interest of zero in quarters where it was -69, +336
+        and so on.
+        """
+        fin = self.source["financials_usd_m"]
+        periods = self.source["periods"]
+        checked = 0
+        for index, period in enumerate(periods):
+            total = fin["gaap_net_income"][index]
+            nci = fin["net_income_attributable_to_noncontrolling_interest"][index]
+            attrib = fin["gaap_net_income_attributable_to_ordinary_shares"][index]
+            if nci is None or attrib is None:
+                continue
+            with self.subTest(period=period):
+                self.assertAlmostEqual(total - nci, attrib, places=6)
+                self.assertNotEqual(nci, 0.0,
+                                    "a zero here would make the two rows the same "
+                                    "number and the identity undiscriminating")
+            checked += 1
+        self.assertEqual(checked, 9, "the nine quarters with all three rows printed")
+
+    def test_the_q3_2017_restatement_records_both_rows(self) -> None:
+        """561 and 532 were both right; the file had no way to say which was which.
+
+        The restatement block recorded 561 for period-end 2017-10-29 while the
+        series recorded 532, and the file read as though one of them was a
+        transcription error. They are the consolidated row and the attributable
+        row of the same statement, 29 apart.
+        """
+        restated = self.source["q3_2017_restatement"]
+        for side in ("as_first_reported", "restated"):
+            with self.subTest(side=side):
+                block = restated[side]
+                self.assertAlmostEqual(
+                    block["gaap_net_income"]
+                    - block["net_income_attributable_to_noncontrolling_interest"],
+                    block["gaap_net_income_attributable_to_ordinary_shares"], places=6)
+
     def test_every_quarterly_series_is_the_same_length_and_in_order(self) -> None:
         n = len(self.ends)
         for group in ("financials_usd_m", "segments_usd_m", "cash_flow_usd_m",
