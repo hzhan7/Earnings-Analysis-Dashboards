@@ -76,10 +76,16 @@ class SkHynixDashboardTest(unittest.TestCase):
     def test_quarters_sum_to_the_full_year_the_company_printed(self) -> None:
         """Each year's four quarters add to the annual figure of the same vintage.
 
-        FY2022 is checked against a wider tolerance on purpose: that year's first
-        three quarters were printed to two decimals of a trillion won, so the sum
-        cannot resolve better than about ±15bn no matter how carefully it is
-        transcribed. Holding it to ±1 would fail on the printing, not on the data.
+        FY2022 used to carry a tolerance of 15.0, on the reasoning that its first
+        three quarters were printed to two decimals of a trillion won and so
+        could not resolve better than about ±15bn. That reasoning was about the
+        ENGLISH release's prose. The Korean release prints the same table in
+        억원, one digit finer, and reading it drops the residual to ±0.6 -- so
+        the tolerance is 1.0 now. A tolerance is a claim about the printing, and
+        it should be re-earned whenever a finer printing is found; a wide one
+        left in place stops being a bound and becomes a place for errors to sit.
+        The 2022Q3 vintage error this file used to pass over is exactly what a
+        15.0 tolerance is wide enough to hide: 1,660.5 against 1,655.6.
         """
         printed = {
             "2016": (17198.0, 3277.0, 2960.0),
@@ -100,7 +106,7 @@ class SkHynixDashboardTest(unittest.TestCase):
         # not a number widened until the test passed.
         tolerance = {"2016": 2.0, "2017": 2.0, "2018": 2.0, "2019": 2.0,
                      "2020": 2.0,
-                     "2021": 1.5, "2022": 15.0, "2023": 0.5,
+                     "2021": 1.5, "2022": 1.0, "2023": 0.5,
                      "2024": 0.05, "2025": 0.5}
         periods = self.staging["periods"]
         for year, (revenue, operating, net) in printed.items():
