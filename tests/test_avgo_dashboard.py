@@ -410,6 +410,42 @@ class AvgoDashboardTest(unittest.TestCase):
         self.assertNotIn("AI", " ".join(
             ex.get("title", "") for ex in self.by_section["settled"]))
 
+    def test_the_ai_note_counts_its_pairs_and_names_its_holes(self) -> None:
+        """This series is three-quarters holes and one-quarter numbers, so what
+        the note claims about it has to be recomputed, not remembered.
+
+        It said "of the four pairs so far, the actual came in slightly above the
+        spoken guidance every time". The count was right and the claim was not:
+        Q1 2025 was guided "over $4.4 billion" and reported 4.4 -- meeting a
+        floor, not beating it. Extending the series back to Q1 2024 then added
+        two more empty quarters with a different cause from the one the note
+        already explained (those two releases gave a full-year AI figure and no
+        quarterly one), and a note that explains one kind of hole while showing
+        three reads as though the others were extraction failures.
+        """
+        ai = self.source["ai_semiconductor_disclosures"]
+        pairs = [(g, a) for g, a in zip(ai["guided_usd_bn"], ai["actual_usd_bn"])
+                 if g is not None and a is not None]
+        chart = next(ex for ex in self.by_section["highlights"]
+                     if ex["title"].startswith("AI 半导体收入："))
+        self.assertIn(f"已有的 {len(pairs)} 对", chart["note"])
+        # never claim a clean beat while a pair merely met its floor
+        beat = sum(1 for guided, actual in pairs if actual > guided + 1e-9)
+        met = sum(1 for guided, actual in pairs if abs(actual - guided) <= 1e-9)
+        self.assertEqual(beat + met, len(pairs), "a pair came in below guidance")
+        if met:
+            self.assertIn("相等", chart["note"])
+            self.assertNotIn("每次都", chart["note"])
+        # every empty quarter is accounted for in the prose
+        empty = [period for period, actual
+                 in zip(ai["periods"], ai["actual_usd_bn"]) if actual is None]
+        self.assertTrue(empty)
+        for period in empty:
+            with self.subTest(period=period):
+                self.assertIn(period, chart["note"],
+                              "an empty quarter the note never mentions reads as "
+                              "a failed extraction rather than a disclosure gap")
+
     # ── the page ─────────────────────────────────────────────────────────────
     def test_page_is_chart_led(self) -> None:
         self.assertGreaterEqual(len(self.exhibits), 20)

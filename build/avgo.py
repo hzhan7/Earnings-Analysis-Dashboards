@@ -371,6 +371,12 @@ def build_payload(staging: dict) -> dict:
     commitments = staging["purchase_commitments_usd_m"]
     guidance = staging["guidance"]["next_quarter"]
     ai = staging["ai_semiconductor_disclosures"]
+    # The note below states how many guide/actual pairs exist and how they
+    # compare. Both moved when the series was extended back to Q1 2024, and the
+    # comparison was wrong even before that: Q1 2025 guided "over $4.4 billion"
+    # and reported 4.4, which meets the floor rather than beating it.
+    ai_pairs = [(g, a) for g, a in zip(ai["guided_usd_bn"], ai["actual_usd_bn"])
+                if g is not None and a is not None]
 
     revenue = financials["revenue"]
     gaap_oi = financials["gaap_operating_income"]
@@ -549,7 +555,19 @@ def build_payload(staging: dict) -> dict:
             f"Q1 2025 一季公司的原话是「over $4.4 billion」，是下限不是点值；"
             f"Q3 2025 一季新闻稿只给了同比增速、没有给水平值，因此留空——"
             "这个洞是披露本身的洞，不是取数失败。"
-            "就已有的四对而言，实际值每次都略高于口头指引，与正式指引的形态一致。"
+            "<b>序列的起点是 Q1 2024</b>：2024-06-12 那份发布的 CEO 引语"
+            "「Revenue from our AI products was a record $3.1 billion during the quarter」"
+            "是公司第一次给出季度级的 AI 收入金额。"
+            "紧接着的两季（Q2 2024、Q3 2024）新闻稿<b>只给全年数</b>"
+            "（指引 US$12B、实际 US$12.2B），没有季度水平值，"
+            "所以那两格与 Q3 2025 一样是披露的洞，只是原因不同。"
+            f"就已有的 {len(ai_pairs)} 对而言，"
+            + ("实际值每次都<b>高于</b>口头指引"
+               if all(a > g + 1e-9 for g, a in ai_pairs)
+               else f"实际值 {sum(1 for g, a in ai_pairs if a > g + 1e-9)} 次高于口头指引、"
+                    f"{sum(1 for g, a in ai_pairs if abs(a - g) <= 1e-9)} 次与之相等"
+                    "（相等那次的指引本就是「over」的下限措辞）")
+            + "，一次都没有低于，与正式指引的形态一致。"
         ),
         "src_extra": (
             "取自各季业绩 8-K EX-99.1 新闻稿的 CEO 引语。"
