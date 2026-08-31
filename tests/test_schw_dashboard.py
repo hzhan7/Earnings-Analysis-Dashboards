@@ -58,6 +58,45 @@ class SchwDashboardTest(unittest.TestCase):
         cls.periods = cls.source["periods"]
 
     # ── shape ────────────────────────────────────────────────────────────────
+    def test_the_channel_split_carries_the_published_recast_and_declares_its_break(self) -> None:
+        """The reclassification moves balances between the two channels only.
+
+        Schwab moved Retirement Business Services from Advisor Services to
+        Investor Services in 4Q24 and recast prior periods back to 2023-12-31 --
+        no further, because that is as far as the 4Q24 and 1Q25 releases reprint.
+        This page carried the pre-recast side for 2023Q4-2024Q3 until 2026-08-31,
+        which made Advisor Services appear to fall 5.1% into 2024Q4 while total
+        client assets rose.
+
+        The sum identity the page already asserts -- the two channels adding to
+        the disclosed total -- is satisfied on BOTH bases, because the transfer
+        is between them. So it is pinned here by value against the published
+        recast, and the pre-2023Q4 quarters are asserted to remain on the old
+        basis with the break declared on the page rather than smoothed over.
+        """
+        ops, periods = self.source["operating"], self.source["operating"]["periods"]
+        recast = {
+            "client_assets_investor_services_usd_bn": {"2023Q4": 4759.2, "2024Q3": 5576.7},
+            "client_assets_advisor_services_usd_bn": {"2023Q4": 3757.4, "2024Q3": 4343.8},
+            "net_new_assets_investor_services_usd_bn": {"2023Q4": 28.1, "2024Q3": 37.2},
+            "net_new_assets_advisor_services_usd_bn": {"2023Q4": 38.2, "2024Q3": 53.6},
+        }
+        for series, moves in recast.items():
+            for period, value in moves.items():
+                with self.subTest(series=series, period=period):
+                    self.assertEqual(ops[series][periods.index(period)], value)
+        # pre-recast side kept, because the company published nothing earlier
+        self.assertEqual(ops["client_assets_advisor_services_usd_bn"][periods.index("2023Q3")],
+                         3666.8)
+        note = self.source["_rbs_reclassification_note"]
+        self.assertIn("2023-12-31", note)
+        self.assertIn("Retirement Business Services", note)
+        # and the break has to reach a reader, not only the JSON
+        drawn = " ".join(ex.get("note", "") for section in self.payload["sections"]
+                         for ex in section["exhibits"])
+        self.assertIn("Retirement Business Services", drawn,
+                      "the basis break is declared in the data and nowhere on the page")
+
     def test_the_window_is_calendar_quarters_without_holes(self) -> None:
         periods = self.periods
         self.assertEqual(periods[0], "2016Q1")

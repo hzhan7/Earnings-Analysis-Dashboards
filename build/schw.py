@@ -441,8 +441,13 @@ def routine_exhibits(staging: dict, fin: dict, periods: list, ops: dict) -> list
             f"US${total_ca[-1] - total_ca[-2]:,.0f}B，其中净市场损益一项就是 "
             f"US${ops['net_market_gains_usd_bn'][-1]:,.0f}B。"
             "把资产规模当经营成绩读是这条线最容易犯的错，下一张图才是公司自己带进来的量。"
+            "<b>两条业务线在 2023Q3/2023Q4 之间换过一次口径</b>：公司 2024 年第四季把 "
+            "Retirement Business Services 从 Advisor Services 划到 Investor Services，"
+            "只把重述发布到 2023-12-31 为止，更早的季度没有重述值。"
+            "总额那条线不受影响，划转只在两条业务线之间搬。"
         ),
-        "src_extra": "各季业绩新闻稿的客户资产表；两条业务线相加恒等于总额。",
+        "src_extra": ("各季业绩新闻稿的客户资产表；两条业务线相加恒等于总额 —— "
+                      "而这条恒等式对上面那次划转按构造无分辨力。"),
     }
 
     # The window starts after 2020Q4: that quarter's net new assets include the
@@ -477,8 +482,17 @@ def routine_exhibits(staging: dict, fin: dict, periods: list, ops: dict) -> list
             "本季 Investor Services 环比 "
             f"{pct_change(nna_is[-1], nna_is[-2]):+.0f}%，"
             "反超没有延续 —— 一个数据点撑不起一个拐点。"
+            + "<b>两条渠道线在 2023Q3/2023Q4 之间换过一次口径。</b>"
+            "公司 2024 年第四季把 Retirement Business Services 从 Advisor Services "
+            "划到 Investor Services，并追溯重述 —— 但只重述到 2023-12-31 为止，"
+            "那是 4Q24 与 1Q25 两份发布回溯到的最远处。本页 2023Q4 起用重述后的口径，"
+            "更早的季度只有重述前的口径，公司没有发布过更早的重述值。"
+            "<b>合计不受影响</b>：这次划转只在两条渠道之间搬余额，两条相加逐季恒等于"
+            "公司披露的合计 —— 这也正是本页把重述前后接在一起画了很久而没有任何"
+            "求和断言变红的原因。"
         ),
-        "src_extra": "各季业绩新闻稿；两条渠道相加恒等于公司披露的净新增资产合计。",
+        "src_extra": ("各季业绩新闻稿；两条渠道相加恒等于公司披露的净新增资产合计 —— "
+                      "而这条恒等式对上面那次口径划转按构造无分辨力，因为划转只在两条之间搬。"),
     }
 
     shares = fin["diluted_shares_m"]
