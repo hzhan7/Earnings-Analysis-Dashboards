@@ -268,6 +268,43 @@ class ContentBoundaryTest(unittest.TestCase):
         self.assertIn(f"{pages_with_long} 家已有 42 季", home)
         self.assertIn(f"{total} 张时间轴图里 {reached} 张已经到位", home)
 
+    def test_every_home_card_closes_and_carries_its_status_badge(self) -> None:
+        """A card can be malformed while every count above it stays right.
+
+        The Samsung card was committed on 2026-08-29 (`e2a90db`) without its
+        closing `</a>` and without the status badge, and it stayed that way
+        through 15 later commits to this file. Nothing caught it, and nothing
+        above could have: `grep -c 'class="hcard"'` counts *opening* tags, so
+        the card census and the masthead count were both correct the whole
+        time. The browser then nested the SK hynix anchor inside the Samsung
+        one -- two cards, one link target.
+
+        The assertions here are derived from what a card promises, not from
+        how this one broke: an anchor closes, and every roster entry that
+        declares `history_ready` says so on its card. Both hold for a card
+        this test has never seen.
+        """
+        home = (ROOT / "index.html").read_text(encoding="utf-8")
+        cards = re.findall(
+            r'<a class="hcard" href="([a-z0-9]+)/">(.*?)(?=<a class="hcard"|</div>)',
+            home, re.S)
+        self.assertEqual(len(cards), len(COMPANY_SLUGS))
+
+        unclosed = [slug for slug, body in cards if "</a>" not in body]
+        self.assertEqual(unclosed, [], "these cards never close their anchor, so the "
+                                       "next card is nested inside them")
+
+        # The badge is not decoration: `assets/page.js` prints it off the
+        # roster's `status`, so a card that omits it contradicts the payload.
+        roster = (ROOT / "data" / "roster.js").read_text(encoding="utf-8")
+        ready = set(re.findall(r'"slug":"([a-z0-9]+)","[^\n]*?"status":"history_ready"',
+                               roster))
+        self.assertTrue(ready, "no roster entry declared history_ready -- the regex "
+                               "above stopped matching, not the data")
+        missing = [slug for slug, body in cards
+                   if slug in ready and 'class="hc"' not in body]
+        self.assertEqual(missing, [], "the roster calls these history_ready and the "
+                                      "card does not say so")
 
     def test_every_card_sits_under_the_group_it_registered(self) -> None:
         """A card in the wrong group is invisible to every other check.
