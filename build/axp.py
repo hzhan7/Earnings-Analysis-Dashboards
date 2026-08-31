@@ -544,6 +544,9 @@ def next_quarter_charts(staging: dict) -> list[dict]:
             "pct1", "%",
             "由两个印出来的美元金额相除得到，因此可以被结清；"
             "上季那份分析的阈值原本写在公司只披露到整数的汇率调整口径上，见上一张图的说明。"),
+        # Credit quality is not a revenue-recognition item. These two were being
+        # cut to the recast window only because they rode the same `recast()`
+        # helper as the revenue lines -- a code path, not a basis limit.
         "30+ 天逾期率": (labels, credit["past_due_30_pct"], "pct1", "%",
                           credit["basis_note"]),
         "净核销率（本金口径）": (labels, credit["net_write_off_rate_principal_pct"], "pct1", "%",
@@ -685,24 +688,30 @@ def routine_charts(staging: dict) -> list[dict]:
     }
 
     shares = fin["diluted_shares_m"]
-    net_income = fin["net_income_usd_m"]
-    eps = fin["diluted_eps_usd"]
+    # Net income and diluted EPS sit below the ASC 606 gross-up: the recast moved
+    # revenue and expenses by 10-19% each and the two offset, leaving the bottom
+    # line within 1.4% every quarter. So this chart reads the whole record, not
+    # the recast window -- the same exception the net-card-fees chart above makes.
+    long_labels = staging["period_labels"]
+    net_income = staging["financials"]["net_income_usd_m"]
+    eps = staging["financials"]["diluted_eps_usd"]
     ni_index = [v / net_income[0] * 100 for v in net_income]
     eps_index = [v / eps[0] * 100 for v in eps]
     buyback_chart = {
         "ref": "EX_BUYBACK",
         "kind": "lines",
-        "title": (f"净利润与每股收益的分岔：38 季里净利润长到 {net_income[-1] / net_income[0]:.2f} 倍，"
+        "title": (f"净利润与每股收益的分岔：{len(long_labels)} 季里净利润长到 "
+                  f"{net_income[-1] / net_income[0]:.2f} 倍，"
                   f"摊薄 EPS 长到 {eps[-1] / eps[0]:.2f} 倍"),
-        "xlabels": labels,
+        "xlabels": long_labels,
         "xrot": 90,
         "xstep": LONG_STEP,
         "series": [
-            {"name": "净利润（2017Q1 = 100）", "values": rounded(ni_index), "color": "NAVY"},
-            {"name": "摊薄 EPS（2017Q1 = 100）", "values": rounded(eps_index), "color": "GOLD"},
+            {"name": f"净利润（{long_labels[0]} = 100）", "values": rounded(ni_index), "color": "NAVY"},
+            {"name": f"摊薄 EPS（{long_labels[0]} = 100）", "values": rounded(eps_index), "color": "GOLD"},
         ],
         "fmt": "f0", "yfmt": "f0", "label_fmt": "f0", "end_label": True,
-        "ylab": "指数（2017Q1 = 100）",
+        "ylab": f"指数（{long_labels[0]} = 100）",
         "note": (
             "<b>两条线之间的缺口几乎全是回购。</b>同期摊薄股数从 "
             f"{shares[0]:,.0f}M 降到 {shares[-1]:,.0f}M（{pct_change(shares[-1], shares[0]):+.1f}%），"

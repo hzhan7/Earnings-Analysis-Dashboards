@@ -79,7 +79,25 @@ class AxpDashboardTest(unittest.TestCase):
         self.assertEqual(fin["discount_revenue_usd_m"][axp.RECAST], 5387.0)
         self.assertEqual(fin["discount_revenue_usd_m"][:axp.RECAST], [None] * 4)
 
-        untouched = {"net_card_fees_usd_m", "salaries_usd_m", "diluted_shares_m"}
+        # The set of series that carry 2016 grew from three to fourteen once the
+        # size of the recast was actually measured rather than assumed. Comparing
+        # American Express's FY2017 quarters as originally filed (8-K accession
+        # 0000004962-18-000012) against the same quarters "As Recast"
+        # (0000004962-18-000056) shows the standard was a gross-up: discount
+        # revenue +19.2% to +19.4%, marketing +75% to +84%, total expenses +14.4%
+        # to +14.9% -- and the two sides very nearly cancel, leaving pretax
+        # income, net income and diluted EPS within 1.4% and provisions, net card
+        # fees and interest expense at exactly 0.0%. So the bottom line and the
+        # structurally untouched lines carry 2016; the gross lines cannot, and
+        # stay empty rather than drawing a 10-19% step that is presentation only.
+        untouched = {
+            "net_card_fees_usd_m", "salaries_usd_m", "diluted_shares_m",
+            "net_interest_income_usd_m", "total_interest_income_usd_m",
+            "total_interest_expense_usd_m", "provisions_usd_m",
+            "professional_services_usd_m", "ppop_usd_m", "pretax_income_usd_m",
+            "tax_provision_usd_m", "net_income_usd_m", "effective_tax_rate_pct",
+            "diluted_eps_usd",
+        }
         for name, values in fin.items():
             if not isinstance(values, list):
                 continue
@@ -95,9 +113,13 @@ class AxpDashboardTest(unittest.TestCase):
                         "cet1_ratio_pct"}
         for name in untouched_om:
             self.assertTrue(any(v is not None for v in om[name][:axp.RECAST]), name)
-        self.assertEqual(om["company_average_discount_rate_pct"][:axp.RECAST],
-                         [None] * 4,
-                         "the average discount rate was recomputed under ASC 606")
+        # The printed average discount rate was NOT recomputed under ASC 606:
+        # 2016Q4 is 2.44% and 2017Q1 is 2.43%, a smooth step across the boundary,
+        # and the recast tables leave the line untouched. It was empty here only
+        # because it rode `recast()` with the revenue lines.
+        rate = om["company_average_discount_rate_pct"]
+        self.assertEqual(rate[:axp.RECAST], [2.44, 2.43, 2.47, 2.44])
+        self.assertAlmostEqual(rate[axp.RECAST - 1] - rate[axp.RECAST], 0.01, places=6)
 
     def test_every_headline_series_is_complete_over_the_recast_window(self) -> None:
         partial = {"business_development_usd_m", "marketing_usd_m",
@@ -224,9 +246,13 @@ class AxpDashboardTest(unittest.TestCase):
         periods = self.staging["periods"]
         printed = self.staging["operating_metrics"]["company_average_discount_rate_pct"]
         present = [p for p, v in zip(periods, printed) if v is not None]
-        self.assertEqual(present[0], "2017Q1")
+        # The company's own printed rate is unaffected by ASC 606 -- it runs
+        # smoothly 2.44% -> 2.43% straight across the recast boundary -- and was
+        # only truncated to 2017Q1 because it rode the same `recast()` helper as
+        # the revenue lines. That was a code path, not a basis limit.
+        self.assertEqual(present[0], "2016Q1")
         self.assertEqual(present[-1], "2022Q4")
-        self.assertEqual(len(present), 24)
+        self.assertEqual(len(present), 28)
         for period, value in zip(periods, printed):
             if period > "2022Q4":
                 self.assertIsNone(value, period)

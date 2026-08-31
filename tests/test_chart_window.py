@@ -129,7 +129,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amzn": 9, "avgo": 6, "axp": 5, "bc": 0, "cboe": 9, "cdns": 9, "cme": 14,
+    "amzn": 9, "avgo": 6, "axp": 6, "bc": 0, "cboe": 9, "cdns": 9, "cme": 14,
     "cost": 13, "googl": 11, "ibkr": 21, "ma": 16, "mc": 0, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 2, "ndaq": 8, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 10, "skhynix": 0, "snps": 8,
@@ -810,7 +810,7 @@ class ChartWindowTest(unittest.TestCase):
                     for slug in set(SHORT_BY_DESIGN) | set(UNEXPLAINED_LONG)}
         self.assertEqual(by_page, combined)
         self.assertEqual(sum(SHORT_BY_DESIGN.values()), 83)
-        self.assertEqual(sum(UNEXPLAINED_LONG.values()), 62)
+        self.assertEqual(sum(UNEXPLAINED_LONG.values()), 61)
         # and the pins are the split the data actually has, not a hand-typed one
         self.assertEqual(by_design, SHORT_BY_DESIGN)
         self.assertEqual(by_length, UNEXPLAINED_LONG)
@@ -980,7 +980,7 @@ SHORT_BY_DESIGN = {
 # stops after 2016. This is where the remaining work actually is. Several are
 # one short hop from the floor -- six AXP charts start in 2017.
 UNEXPLAINED_LONG = {
-    'axp': 13,
+    'axp': 12,
     'bc': 2,
     'cost': 5,
     'mc': 1,
