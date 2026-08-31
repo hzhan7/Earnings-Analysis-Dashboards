@@ -143,7 +143,7 @@
    993.0,
    1988.0,
    3315.0,
-   null,
+   3320.0,
    1980.0,
    2880.0,
    1107.6,
@@ -167,7 +167,7 @@
    16,
    26,
    35,
-   null,
+   34,
    24,
    30,
    15,
@@ -188,7 +188,7 @@
    76
   ],
   "_disclosed_margin_note": "The company prints an INTEGER operating margin. It is kept here exactly as printed and is never recomputed. Charts use the ratio computed from the two won amounts, because an integer loses up to 0.5pp and a quarter-on-quarter step built from integers can be a full point wrong.",
-  "_2021Q4_hole": "The FY2021 release prints fourth-quarter revenue and operating profit but no fourth-quarter net income and no fourth-quarter margin; the 29% and the 9,616 in that release are full-year figures. The hole is left as null rather than plugged with the full year minus three quarters."
+  "_2021q4_note": "2021Q4 net income (3,320) and operating margin (34%) were published all along, in the FY2021 release's own earnings-table image, not in its prose. This page carried both as nulls until 2026-08-31 because the prose was read and the table was not. The four quarters now add to the 9,616 that same release prints as the full year, exactly. Corroborated a second way: the Korean sibling release prints these as plain text."
  },
  "restatement_2022q4": {
   "_status": "declared break, drawn on the page",

@@ -82,7 +82,7 @@ class SkHynixDashboardTest(unittest.TestCase):
         transcribed. Holding it to ±1 would fail on the printing, not on the data.
         """
         printed = {
-            "2021": (42998.0, 12410.0, None),
+            "2021": (42998.0, 12410.0, 9616.0),
             "2022": (44648.0, 7007.0, 2439.0),
             "2023": (32765.7, -7730.3, -9137.5),
             "2024": (66193.0, 23467.3, 19796.9),
@@ -101,11 +101,6 @@ class SkHynixDashboardTest(unittest.TestCase):
             self.assertAlmostEqual(
                 sum(self.fin["operating_profit"][i] for i in index), operating,
                 delta=tol, msg=f"FY{year} operating profit")
-            if net is None:
-                self.assertIn(None, [self.fin["net_income"][i] for i in index],
-                              "FY2021 is untestable on net income only because "
-                              "the company never printed 2021Q4 net income")
-                continue
             self.assertAlmostEqual(
                 sum(self.fin["net_income"][i] for i in index), net, delta=tol,
                 msg=f"FY{year} net income")
@@ -264,17 +259,27 @@ class SkHynixDashboardTest(unittest.TestCase):
 
     # ── holes and breaks that are kept rather than filled ───────────────────
 
-    def test_the_2021q4_net_income_hole_is_left_open(self) -> None:
-        """The company printed no 2021Q4 net income; the page does not plug it.
+    def test_2021q4_is_carried_because_the_release_printed_it(self) -> None:
+        """This quarter was stored as a disclosure hole for months. It was not one.
 
-        Full year minus three quarters would produce a number that looks
-        disclosed and is not.
+        The FY2021 release's PROSE gives only full-year net income, so a
+        prose-only reading concludes the company never printed the quarter --
+        and the page said exactly that, in a note, in the checklist, and in a
+        test named for the hole. The same release's embedded earnings table
+        prints 3,320 and 34% in a column headed "2021 Q4".
+
+        What makes this worth an assertion rather than a fix: the derived value
+        (full year minus three quarters) is ALSO 3,320, so a page that had
+        plugged the hole the forbidden way would show the same number as a page
+        that read the table. The two are told apart by the margin, which no
+        subtraction produces, and by the year identity below closing exactly.
         """
         index = self.staging["periods"].index("2021Q4")
-        self.assertIsNone(self.fin["net_income"][index])
-        self.assertIsNone(self.fin["operating_margin_pct_disclosed"][index])
-        self.assertIsNotNone(self.fin["revenue"][index])
-        self.assertIsNotNone(self.fin["operating_profit"][index])
+        self.assertEqual(self.fin["net_income"][index], 3320.0)
+        self.assertEqual(self.fin["operating_margin_pct_disclosed"][index], 34)
+        note = self.fin["_2021q4_note"]
+        self.assertIn("3,320", note)
+        self.assertIn("34%", note)
 
     def test_the_series_uses_the_first_reported_basis_for_2022q4(self) -> None:
         """One vintage throughout, and it is the one the year reconciles on."""
