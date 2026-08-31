@@ -619,6 +619,28 @@ CONVERTED = {
         "折旧摊销同比": "a year-on-year line has no denominator for the first four quarters "
                   "of the record, so it starts in 2017Q1.",
     },
+    "bc": {
+        "26 个季度里只有": "Brunello Cucinelli prints only cumulative figures, so three "
+                    "quarters in four are a subtraction -- and the subtraction "
+                    "needs a thousand-level table to subtract from. For 2016-2018 "
+                    "no such table exists in any document, contemporaneous or "
+                    "retroactive: those years' Q1 and nine-month releases are "
+                    "prose, rounded to EUR 0.1M. 2019Q3 is the earliest quarter "
+                    "any filing supports.",
+    },
+    "mc": {
+        "葡萄酒与烈酒的两条腿": "LVMH first split Wines & Spirits into Champagne-and-Wines "
+                      "versus Cognac-and-Spirits in 2024Q1; every full-year "
+                      "appendix from 2016 through 2023 carries it as a single "
+                      "line, checked one by one. The only chart on this page "
+                      "that genuinely cannot reach 2016.",
+    },
+    "pm": {
+        "下季每股收益": "Philip Morris began giving next-quarter EPS guidance with the "
+                  "2020 releases; before that its only forward figure was the "
+                  "full-year range.",
+        "下季指引的偏离，按口径分开": "the deviation view of the same next-quarter record.",
+    },
     "race": {
         # Ferrari guided only shipments, revenue, adjusted EBITDA and net debt
         # before 2019 -- twelve outlooks read one by one. No EPS or industrial
@@ -848,6 +870,16 @@ FLOOR_KIND = {
         '十年回购与资本强度': 'design',
         '回购的成交均价': 'design',
     },
+    'bc': {
+        '26 个季度里只有': 'disclosure',
+    },
+    'mc': {
+        '葡萄酒与烈酒的两条腿': 'disclosure',
+    },
+    'pm': {
+        '下季每股收益': 'disclosure',
+        '下季指引的偏离，按口径分开': 'disclosure',
+    },
     'race': {
         '调整后 EBITDA': 'disclosure',
         '调整后摊薄 EPS：': 'disclosure',
@@ -1016,7 +1048,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 112)
+        self.assertEqual(settled.count("disclosure"), 116)
         self.assertEqual(settled.count("design"), 32)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
@@ -1053,12 +1085,27 @@ class ChartWindowTest(unittest.TestCase):
                     for slug in set(SHORT_BY_DESIGN) | set(UNEXPLAINED_LONG)}
         self.assertEqual(by_page, combined)
         self.assertEqual(sum(SHORT_BY_DESIGN.values()), 64)
-        self.assertEqual(sum(UNEXPLAINED_LONG.values()), 11)
+        self.assertEqual(sum(UNEXPLAINED_LONG.values()), 7)
         # and the pins are the split the data actually has, not a hand-typed one
         self.assertEqual(by_design, SHORT_BY_DESIGN)
         self.assertEqual(by_length, UNEXPLAINED_LONG)
 
     def test_converted_pages_have_no_unexplained_short_axis(self) -> None:
+        """Every excuse on a page is real, distinct, and non-empty.
+
+        This used to also require that a page in CONVERTED explain *every* one of
+        its short charts. That made sense while CONVERTED was the only mechanism,
+        but the backlog census now scans all 31 pages and accounts for whatever
+        has no excuse yet. Keeping both rules created a perverse incentive:
+        writing one well-evidenced excuse for a page pulled in an obligation to
+        write one for every other chart on it, so the cheapest way to stay green
+        was to write none at all. Same shape as the domain bug above -- a check
+        whose scope was set by the very map it was checking.
+
+        So completeness now lives in one place, the census, and this test keeps
+        the part that is genuinely local: that each excuse matches exactly one
+        chart and says something.
+        """
         for slug, excuses in CONVERTED.items():
             short = {}
             for exhibit, year in self.timed[slug]:
@@ -1066,11 +1113,8 @@ class ChartWindowTest(unittest.TestCase):
                     continue
                 title = exhibit["title"]
                 matched = [key for key in excuses if key in title]
-                self.assertTrue(
-                    matched,
-                    f"{slug} Exhibit {exhibit['n']} starts in {year} and nothing says why: "
-                    f"{title[:60]}",
-                )
+                if not matched:
+                    continue        # accounted for by the census instead
                 # One key per chart. Overlapping keys ("调整后摊薄 EPS" also matches
                 # "调整后摊薄 EPS 相对…") make the match order-dependent, and the
                 # loser then looks unused below -- which is how this was found.
@@ -1219,9 +1263,6 @@ SHORT_BY_DESIGN = {
 # stops after 2016. This is where the remaining work actually is. Several are
 # one short hop from the floor -- six AXP charts start in 2017.
 UNEXPLAINED_LONG = {
-    'bc': 1,
-    'mc': 1,
-    'pm': 2,
     'skhynix': 7,
 
 }
