@@ -129,7 +129,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amzn": 9, "avgo": 6, "axp": 8, "bc": 0, "cboe": 9, "cdns": 9, "cme": 14,
+    "amzn": 13, "avgo": 6, "axp": 8, "bc": 0, "cboe": 9, "cdns": 9, "cme": 14,
     "cost": 13, "googl": 11, "ibkr": 21, "ma": 16, "mc": 0, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 8, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 10, "skhynix": 0, "snps": 8,
@@ -188,10 +188,7 @@ CONVERTED = {
         # earliest quarter the disclosure exists in, not the earliest fetched.
         "净销售额": "the quarterly outlook record in this file starts with the 2017Q3 "
                 "release.",
-        "经营利润：": "same guidance record.",
         "经营利润相对指引中值": 'not a floor at all -- checked against the filings: Amazon has guided operating income as a RANGE in every quarterly release since at least 2011. The Q1 2016 release guiding Q2 2016 reads "Operating income is expected to be between $375 million and $975 million" (0001018724-16-000225). This is a fetch gap; the backfill is in flight.',
-        "把「超出自身指引」拆成两条腿": "same guidance record.",
-        "指引隐含的经营利润率": "same guidance record.",
         "TTM 自由现金流": "Amazon's own trailing free-cash-flow figure, as the company "
                      "prints it, from the 2019Q1 release on.",
         "三个分部的经营利润率": "the North America and International segment tables begin "
@@ -580,12 +577,12 @@ CONVERTED = {
 
 FLOOR_KIND = {
     'avgo': {
+        '把「超出自身指引」拆成两条腿': 'coverage',
         '收入（仅公司给过区间的 5 季）': 'disclosure',
         '收入（公司只给单点的 20 季）': 'disclosure',
         '收入相对指引中值的偏离': 'disclosure',
         'Adjusted EBITDA 利润率：18': 'disclosure',
         'Adjusted EBITDA 利润率相对指引中值': 'disclosure',
-        '把「超出自身指引」拆成两条腿': 'disclosure',
         '收入 US$22,187M': 'disclosure',
         '两个引擎': 'disclosure',
         '两个分部的申报营业利润': 'disclosure',
@@ -616,10 +613,7 @@ FLOOR_KIND = {
     # prints them so they cannot quietly become permanent.
     'amzn': {
         '净销售额': 'coverage',
-        '经营利润：': 'coverage',
         '经营利润相对指引中值': 'coverage',
-        '把「超出自身指引」拆成两条腿': 'coverage',
-        '指引隐含的经营利润率': 'coverage',
         'TTM 自由现金流': 'coverage',
         '三个分部的经营利润率': 'coverage',
         '北美分部经营利润率': 'coverage',
@@ -902,7 +896,7 @@ class ChartWindowTest(unittest.TestCase):
         by_kind = {}
         for slug, title, kind in pending:
             by_kind.setdefault(kind, []).append(f"{slug}/{title}")
-        self.assertEqual(len(by_kind.get("coverage", [])), 43,
+        self.assertEqual(len(by_kind.get("coverage", [])), 41,
                          "charts whose data exists and has not been fetched")
         # Zero, and that is the point: every exemption on this page has now been
         # read against an actual pre-floor filing. The fourteen that had never
@@ -915,7 +909,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 99)
+        self.assertEqual(settled.count("disclosure"), 98)
         self.assertEqual(settled.count("design"), 18)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:

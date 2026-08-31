@@ -191,12 +191,12 @@ class AmznDashboardTest(unittest.TestCase):
         range with the quarter its own release covers would shift the entire
         record by one and still look plausible."""
         quarters = self.guide["quarters"]
-        self.assertEqual(len(quarters), 37)
+        self.assertEqual(len(quarters), 43)
         for name, values in self.guide.items():
-            if name in ("provenance", "format_notes"):
+            if name in ("provenance", "format_notes", "backfill_note_2016_2017"):
                 continue
             if isinstance(values, list):
-                self.assertEqual(len(values), 37, name)
+                self.assertEqual(len(values), 43, name)
         order = [(int(q.split()[1]), int(q.split()[0][1])) for q in quarters]
         self.assertEqual(order, sorted(order), "guided quarters are not consecutive")
         for previous, current in zip(order, order[1:]):
@@ -375,7 +375,7 @@ class AmznDashboardTest(unittest.TestCase):
                          list(range(first, first + len(tables))))
         self.assertIn("AI capex", tables[-1]["title"])
         guided = next(t for t in tables if "指引与实际逐季对照" in t["title"])
-        self.assertEqual(len(guided["rows"]), 37)
+        self.assertEqual(len(guided["rows"]), 43)
         self.assertEqual(guided["rows"][-1][2], "—")
         self.assertNotIn("跌破下限", {row[3] for row in guided["rows"]})
         self.assertNotIn("跌破下限", {row[6] for row in guided["rows"]})
