@@ -82,13 +82,25 @@ class SkHynixDashboardTest(unittest.TestCase):
         transcribed. Holding it to ±1 would fail on the printing, not on the data.
         """
         printed = {
+            "2016": (17198.0, 3277.0, 2960.0),
+            "2017": (30109.0, 13721.0, 10642.0),
+            "2018": (40445.0, 20844.0, 15540.0),
+            "2019": (26991.0, 2713.0, 2016.0),
+            "2020": (31900.0, 5013.0, 4759.0),
             "2021": (42998.0, 12410.0, 9616.0),
             "2022": (44648.0, 7007.0, 2439.0),
             "2023": (32765.7, -7730.3, -9137.5),
             "2024": (66193.0, 23467.3, 19796.9),
             "2025": (97146.7, 47206.3, 42947.9),
         }
-        tolerance = {"2021": 1.5, "2022": 15.0, "2023": 0.5,
+        # 2016-2020 each hold four cells rounded to the nearest billion won, so
+        # a four-quarter sum cannot resolve better than +/-2 against a full-year
+        # figure that was rounded the same way. Measured residuals across the
+        # five years run 0, +1 and +2 -- the tolerance is the arithmetic bound,
+        # not a number widened until the test passed.
+        tolerance = {"2016": 2.0, "2017": 2.0, "2018": 2.0, "2019": 2.0,
+                     "2020": 2.0,
+                     "2021": 1.5, "2022": 15.0, "2023": 0.5,
                      "2024": 0.05, "2025": 0.5}
         periods = self.staging["periods"]
         for year, (revenue, operating, net) in printed.items():
@@ -281,6 +293,38 @@ class SkHynixDashboardTest(unittest.TestCase):
         self.assertIn("3,320", note)
         self.assertIn("34%", note)
 
+    def test_the_restatement_census_is_a_census_and_not_an_example(self) -> None:
+        """2022Q4 was published for months as "the only restatement in the window".
+
+        Nobody had counted. Reading every quarter's own release against the
+        comparative column four releases later turns up five, and the other four
+        are invisible from the English pages entirely -- they only ever appear in
+        a year-ago column. What makes 2022Q4 special is not that it is the only
+        one, it is that it is the only one that moved REVENUE, and that is the
+        claim the page can actually carry.
+
+        Keyed on the lines each entry moved, not on prose: a sixth quarter can be
+        appended without touching this test, but a quarter that silently loses
+        its revenue leg, or a second revenue mover appearing while the page still
+        says "only", both fail here.
+        """
+        census = self.staging["restatement_census"]
+        moved = census["lines_moved"]
+        self.assertEqual(sorted(census["quarters"]), sorted(moved))
+        self.assertGreater(len(census["quarters"]), 1,
+                           "a census of one is the example it replaced")
+        revenue_movers = [q for q, lines in moved.items() if "revenue" in lines]
+        self.assertEqual(revenue_movers, ["2022Q4"],
+                         "the page says 2022Q4 is the only one that moved "
+                         "revenue; that sentence is what this pins")
+        for quarter, lines in moved.items():
+            for line, pair in lines.items():
+                self.assertEqual(len(pair), 2, f"{quarter}/{line}")
+                self.assertNotEqual(pair[0], pair[1],
+                                    f"{quarter}/{line} is listed as moved and did not move")
+        self.assertEqual(census["_basis_used"],
+                         "as_first_reported, for all forty-two quarters")
+
     def test_the_series_uses_the_first_reported_basis_for_2022q4(self) -> None:
         """One vintage throughout, and it is the one the year reconciles on."""
         restated = self.staging["restatement_2022q4"]
@@ -299,10 +343,23 @@ class SkHynixDashboardTest(unittest.TestCase):
                          "is the reason the exhibit reads the way it does")
 
     def test_the_restatement_is_drawn_and_not_only_described(self) -> None:
-        titles = [e["title"] for e in self.exhibits()]
-        self.assertTrue(any("重述" in t for t in titles),
-                        "a declared break has to be visible on the page, "
-                        "otherwise it is a trap for whoever wires it up next")
+        """A declared break has to be a chart, not a sentence.
+
+        This used to key on the word 重述 appearing in some title. That key
+        broke the moment the title was rewritten -- and it was rewritten for a
+        good reason: SK hynix never uses that word, so the page stopped using it
+        too. A key that lives in wording hands the assertion's validity to
+        whoever edits the copy next. This one keys on the exhibit's ref and on
+        it carrying both vintages as drawn values.
+        """
+        drawn = [e for e in self.exhibits() if e.get("ref") == "EX_RESTATE"]
+        self.assertEqual(len(drawn), 1, "the declared break is not on the page")
+        groups = drawn[0]["groups"]
+        self.assertEqual(len(groups), 2, "one vintage drawn is not a comparison")
+        first, later = (g["values"] for g in groups)
+        self.assertNotEqual(first, later,
+                            "the two vintages are drawn as the same numbers, so "
+                            "the chart shows a break that is not there")
 
     # ── structure the renderer will not defend on its own ──────────────────
 

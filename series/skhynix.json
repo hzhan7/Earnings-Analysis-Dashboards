@@ -19,6 +19,26 @@
   "audit_status": "provisional"
  },
  "periods": [
+  "2016Q1",
+  "2016Q2",
+  "2016Q3",
+  "2016Q4",
+  "2017Q1",
+  "2017Q2",
+  "2017Q3",
+  "2017Q4",
+  "2018Q1",
+  "2018Q2",
+  "2018Q3",
+  "2018Q4",
+  "2019Q1",
+  "2019Q2",
+  "2019Q3",
+  "2019Q4",
+  "2020Q1",
+  "2020Q2",
+  "2020Q3",
+  "2020Q4",
   "2021Q1",
   "2021Q2",
   "2021Q3",
@@ -43,6 +63,26 @@
   "2026Q2"
  ],
  "period_ends": [
+  "2016-03-31",
+  "2016-06-30",
+  "2016-09-30",
+  "2016-12-31",
+  "2017-03-31",
+  "2017-06-30",
+  "2017-09-30",
+  "2017-12-31",
+  "2018-03-31",
+  "2018-06-30",
+  "2018-09-30",
+  "2018-12-31",
+  "2019-03-31",
+  "2019-06-30",
+  "2019-09-30",
+  "2019-12-31",
+  "2020-03-31",
+  "2020-06-30",
+  "2020-09-30",
+  "2020-12-31",
   "2021-03-31",
   "2021-06-30",
   "2021-09-30",
@@ -67,6 +107,26 @@
   "2026-06-30"
  ],
  "release_dates": [
+  "2016-04-26",
+  "2016-07-26",
+  "2016-10-25",
+  "2017-01-26",
+  "2017-04-25",
+  "2017-07-25",
+  "2017-10-26",
+  "2018-01-25",
+  "2018-04-24",
+  "2018-07-26",
+  "2018-10-25",
+  "2019-01-24",
+  "2019-04-25",
+  "2019-07-25",
+  "2019-10-24",
+  "2020-01-31",
+  "2020-04-23",
+  "2020-07-23",
+  "2020-11-04",
+  "2021-01-29",
   "2021-04-28",
   "2021-07-27",
   "2021-10-26",
@@ -92,6 +152,26 @@
  ],
  "financials_krw_bn": {
   "revenue": [
+   3656.0,
+   3941.0,
+   4244.0,
+   5358.0,
+   6290.0,
+   6692.0,
+   8100.0,
+   9028.0,
+   8720.0,
+   10371.0,
+   11417.0,
+   9938.0,
+   6773.0,
+   6452.0,
+   6839.0,
+   6927.0,
+   7199.0,
+   8607.0,
+   8129.0,
+   7966.0,
    8494.0,
    10322.0,
    11805.0,
@@ -116,6 +196,26 @@
    79318.7
   ],
   "operating_profit": [
+   562.0,
+   453.0,
+   726.0,
+   1536.0,
+   2468.0,
+   3051.0,
+   3737.0,
+   4466.0,
+   4367.0,
+   5574.0,
+   6472.0,
+   4430.0,
+   1366.0,
+   638.0,
+   473.0,
+   236.0,
+   800.0,
+   1947.0,
+   1300.0,
+   966.0,
    1324.0,
    2695.0,
    4172.0,
@@ -140,6 +240,26 @@
    60542.6
   ],
   "net_income": [
+   448.0,
+   286.0,
+   598.0,
+   1629.0,
+   1899.0,
+   2469.0,
+   3056.0,
+   3220.0,
+   3121.0,
+   4329.0,
+   4692.0,
+   3398.0,
+   1102.0,
+   537.0,
+   495.0,
+   -118.0,
+   649.0,
+   1264.0,
+   1078.0,
+   1768.0,
    993.0,
    1988.0,
    3315.0,
@@ -164,6 +284,26 @@
    93922.6
   ],
   "operating_margin_pct_disclosed": [
+   15,
+   11,
+   17,
+   29,
+   39,
+   46,
+   46,
+   49,
+   50,
+   54,
+   57,
+   45,
+   20,
+   10,
+   7,
+   3,
+   11,
+   23,
+   16,
+   12,
    16,
    26,
    35,
@@ -188,7 +328,8 @@
    76
   ],
   "_disclosed_margin_note": "The company prints an INTEGER operating margin. It is kept here exactly as printed and is never recomputed. Charts use the ratio computed from the two won amounts, because an integer loses up to 0.5pp and a quarter-on-quarter step built from integers can be a full point wrong.",
-  "_2021q4_note": "2021Q4 net income (3,320) and operating margin (34%) were published all along, in the FY2021 release's own earnings-table image, not in its prose. This page carried both as nulls until 2026-08-31 because the prose was read and the table was not. The four quarters now add to the 9,616 that same release prints as the full year, exactly. Corroborated a second way: the Korean sibling release prints these as plain text."
+  "_2021q4_note": "2021Q4 net income (3,320) and operating margin (34%) were published all along, in the FY2021 release's own earnings-table image, not in its prose. This page carried both as nulls until 2026-08-31 because the prose was read and the table was not. The four quarters now add to the 9,616 that same release prints as the full year, exactly. Corroborated a second way: the Korean sibling release prints these as plain text.",
+  "_backfill_2016_2020_note": "The twenty quarters 2016Q1-2020Q4 were added on 2026-08-31 from each quarter's own newsroom release. Every figure is read off that release's embedded earnings table, not its prose: the prose rounds to two or three significant figures (it writes '5.4 trillion won' where the table prints 5,358) and for five quarters -- 2017Q2, 2017Q3, 2018Q1, 2018Q2, 2018Q3 -- it omits the operating margin the table prints. The table is the finer and the more complete of the two, and it is the one that satisfies the rounding identity: on prose values 2017Q4 computes to 49.50% against a printed 49%, while the table's 4,466/9,028 computes to 49.47%. All twenty are as-first-reported; comparative columns in later releases are not used. Cross-checked against a DIFFERENT corpus: SK hynix's statutory DART filings (사업보고서/분기보고서, corp code 00164779), which print the consolidated statements in KRW millions. DART discloses fifteen of these twenty quarters as discrete three-month figures, and all forty-five cells agree with the values here to the rounding (2016Q1 3,655.717 / 561.798 / 448.026 against 3,656 / 562 / 448, and so on). The five it does not cover are the Q4s: a Korean annual report prints the full year and the annual comparatives, never a discrete fourth quarter, so for those the company's own release is the only source and is what is used. Net income is the headline consolidated total INCLUDING non-controlling interests, which is what both corpora head with; owners'-share differs by single-digit billions a year (FY2019: 2,016.391 total against 2,013.288 owners')."
  },
  "restatement_2022q4": {
   "_status": "declared break, drawn on the page",
@@ -221,6 +362,75 @@
   },
   "basis_used_in_series": "as_first_reported",
   "why": "The series carries each quarter as the company first reported it, which is the only basis on which the four quarters of 2022 reconcile to the full year the company printed at the time. The restated fourth quarter is published beside it rather than swapped in: mixing the restated quarter into a series of first-reported quarters leaves an unresolvable residual in the first three, because SK hynix never republished those three."
+ },
+ "restatement_census": {
+  "_what": "Every quarter in 2016Q1-2022Q4 whose figures differ between its own release and a later release's comparative column. Built 2026-08-31 from the Korean-domain releases (news.skhynix.co.kr), which embed the comparison table as HTML text rather than as an image.",
+  "_pattern": "The revision never appears in the NEXT quarter's prior-quarter column -- that one repeats the original figure every time. It appears only in the year-ago column about four quarters later, i.e. after the external audit the releases' own disclaimer warns about ('prepared before the external auditor's review was completed'). No release ever uses the words restated / reclassified / corrected.",
+  "_revenue": "Revenue was never revised in 2016Q1-2020Q4. The only quarter whose revenue moved is 2022Q4, and that is also the largest revision of the five.",
+  "quarters": [
+   "2019Q4",
+   "2020Q2",
+   "2020Q3",
+   "2020Q4",
+   "2022Q4"
+  ],
+  "lines_moved": {
+   "2019Q4": {
+    "operating_profit": [
+     236.0,
+     242.5
+    ],
+    "net_income": [
+     -118.2,
+     -125.6
+    ]
+   },
+   "2020Q2": {
+    "operating_profit": [
+     1946.7,
+     1949.1
+    ],
+    "net_income": [
+     1264.3,
+     1270.3
+    ]
+   },
+   "2020Q3": {
+    "operating_profit": [
+     1299.7,
+     1301.9
+    ],
+    "net_income": [
+     1077.9,
+     1084.5
+    ]
+   },
+   "2020Q4": {
+    "operating_profit": [
+     965.9,
+     958.9
+    ],
+    "net_income": [
+     1767.7,
+     1770.4
+    ]
+   },
+   "2022Q4": {
+    "revenue": [
+     7699.0,
+     7672.0
+    ],
+    "operating_profit": [
+     -1701.0,
+     -1912.0
+    ],
+    "net_income": [
+     -3524.0,
+     -3735.0
+    ]
+   }
+  },
+  "_basis_used": "as_first_reported, for all forty-two quarters"
  },
  "annual_audited_krw_bn": {
   "_source": "Form 424B4, audited K-IFRS consolidated statements",
@@ -1017,6 +1227,86 @@
   {
    "label": "SK hynix 投资者关系",
    "url": "https://www.skhynix.com/ir"
+  },
+  {
+   "label": "SK hynix 2016Q1 业绩发布（2016-04-26）",
+   "url": "https://news.skhynix.com/sk-hynix-inc-reports-first-quarter-2016-results/"
+  },
+  {
+   "label": "SK hynix 2016Q2 业绩发布（2016-07-26）",
+   "url": "https://news.skhynix.com/sk-hynix-inc-reports-second-quarter-2016-results/"
+  },
+  {
+   "label": "SK hynix 2016Q3 业绩发布（2016-10-25）",
+   "url": "https://news.skhynix.com/sk-hynix-inc-reports-third-quarter-2016-results/"
+  },
+  {
+   "label": "SK hynix 2016Q4 业绩发布（2017-01-26）",
+   "url": "https://news.skhynix.com/sk-hynix-inc-reports-fiscal-year-2016-and-fourth-quarter-results/"
+  },
+  {
+   "label": "SK hynix 2017Q1 业绩发布（2017-04-25）",
+   "url": "https://news.skhynix.com/sk-hynix-inc-reports-first-quarter-2017-results/"
+  },
+  {
+   "label": "SK hynix 2017Q2 业绩发布（2017-07-25）",
+   "url": "https://news.skhynix.com/sk-hynix-inc-reports-second-quarter-2017-results/"
+  },
+  {
+   "label": "SK hynix 2017Q3 业绩发布（2017-10-26）",
+   "url": "https://news.skhynix.com/sk-hynix-inc-reports-third-quarter-2017-results/"
+  },
+  {
+   "label": "SK hynix 2017Q4 业绩发布（2018-01-25）",
+   "url": "https://news.skhynix.com/sk-hynix-inc-reports-fiscal-year-2017-and-fourth-quarter-results/"
+  },
+  {
+   "label": "SK hynix 2018Q1 业绩发布（2018-04-24）",
+   "url": "https://news.skhynix.com/sk-hynix-inc-reports-first-quarter-2018-results/"
+  },
+  {
+   "label": "SK hynix 2018Q2 业绩发布（2018-07-26）",
+   "url": "https://news.skhynix.com/sk-hynix-inc-reports-second-quarter-2018-results/"
+  },
+  {
+   "label": "SK hynix 2018Q3 业绩发布（2018-10-25）",
+   "url": "https://news.skhynix.com/sk-hynix-inc-reports-third-quarter-2018-results/"
+  },
+  {
+   "label": "SK hynix 2018Q4 业绩发布（2019-01-24）",
+   "url": "https://news.skhynix.com/sk-hynix-inc-reports-fiscal-year-2018-and-fourth-quarter-results/"
+  },
+  {
+   "label": "SK hynix 2019Q1 业绩发布（2019-04-25）",
+   "url": "https://news.skhynix.com/sk-hynix-inc-reports-first-quarter-2019-results/"
+  },
+  {
+   "label": "SK hynix 2019Q2 业绩发布（2019-07-25）",
+   "url": "https://news.skhynix.com/sk-hynix-inc-reports-second-quarter-2019-results/"
+  },
+  {
+   "label": "SK hynix 2019Q3 业绩发布（2019-10-24）",
+   "url": "https://news.skhynix.com/sk-hynix-inc-reports-third-quarter-2019-results/"
+  },
+  {
+   "label": "SK hynix 2019Q4 业绩发布（2020-01-31）",
+   "url": "https://news.skhynix.com/sk-hynix-inc-reports-fiscal-year-2019-and-fourth-quarter-results/"
+  },
+  {
+   "label": "SK hynix 2020Q1 业绩发布（2020-04-23）",
+   "url": "https://news.skhynix.com/sk-hynix-inc-reports-first-quarter-2020-results/"
+  },
+  {
+   "label": "SK hynix 2020Q2 业绩发布（2020-07-23）",
+   "url": "https://news.skhynix.com/sk-hynix-inc-reports-second-quarter-2020-results/"
+  },
+  {
+   "label": "SK hynix 2020Q3 业绩发布（2020-11-04）",
+   "url": "https://news.skhynix.com/sk-hynix-inc-reports-third-quarter-2020-results/"
+  },
+  {
+   "label": "SK hynix 2020Q4 业绩发布（2021-01-29）",
+   "url": "https://news.skhynix.com/sk-hynix-inc-reports-fiscal-year-2020-and-fourth-quarter-results/"
   }
  ]
 }

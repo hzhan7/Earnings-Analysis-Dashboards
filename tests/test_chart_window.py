@@ -132,7 +132,7 @@ REACH_2016 = {
     "amzn": 13, "avgo": 6, "axp": 9, "bc": 1, "cboe": 10, "cdns": 10, "cme": 14,
     "cost": 13, "googl": 11, "ibkr": 21, "ma": 16, "mc": 3, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
-    "race": 9, "rms": 0, "samsung": 0, "schw": 10, "skhynix": 0, "snps": 8,
+    "race": 9, "rms": 0, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
     "spgi": 11, "tjx": 8, "tsm": 18, "v": 14,
 }
 
@@ -407,6 +407,14 @@ CONVERTED = {
     },
     # Verified against the filings, including the repo's own prior claim about
     # the operating-income line, which turned out to be true.
+    "skhynix": {
+        "DRAM 平均售价的环比": "the four bucket-word series (DRAM/NAND bit shipment and ASP, quarter on quarter) come from one table that covers 1Q2023-1Q2026 and nothing earlier. Checked rather than assumed, and the first version of this reason was wrong: the table is NOT unique to the 424B4 of 2026-07-10. It appears verbatim in six SEC filings -- the DRS/A of 2026-05-29, two later DRS/A, the F-1, both F-1/A, and the 424B4 -- and every one of them carries the identical thirteen quarters. The earlier DRS (2026-03-24) and the 2026-05-08 DRS/A do not carry it at all. So the limit is not which document you read, it is that no document holds an earlier instance. The vocabulary itself does predate 2023 in SK hynix's earnings calls, but spoken guidance is a different disclosure from this four-series table, not an earlier printing of it. Splicing the pre-2021 practice on is worse: back then the ordinary releases gave EXACT numeric percentages, which is a finer and different regime, with a gap through 2021-2022 where neither appears.",
+        "NAND 平均售价的环比": "same table, same thirteen quarters, same reason as "
+                        "the DRAM band above.",
+        "DRAM 的量与价": "both legs are read out of the same thirteen-quarter table, "
+                   "so the pair cannot start earlier than either leg.",
+        "NAND 的量与价": "same table, same thirteen quarters.",
+    },
     "snps": {
         "把「超出自身指引」拆成两条腿": "the expense leg is revenue minus non-GAAP operating "
                             "income, and Synopsys's reconciliation carried no "
@@ -891,6 +899,12 @@ FLOOR_KIND = {
         '季度净新增资产按渠道': 'design',
         '经营杠杆': 'design',
     },
+    'skhynix': {
+        'DRAM 平均售价的环比': 'disclosure',
+        'NAND 平均售价的环比': 'disclosure',
+        'DRAM 的量与价': 'disclosure',
+        'NAND 的量与价': 'disclosure',
+    },
     'snps': {
         '把「超出自身指引」拆成两条腿': 'disclosure',
         '未来 12 个月可确认 backlog': 'disclosure',
@@ -1044,7 +1058,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 115)
+        self.assertEqual(settled.count("disclosure"), 119)
         self.assertEqual(settled.count("design"), 32)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
@@ -1081,7 +1095,12 @@ class ChartWindowTest(unittest.TestCase):
                     for slug in set(SHORT_BY_DESIGN) | set(UNEXPLAINED_LONG)}
         self.assertEqual(by_page, combined)
         self.assertEqual(sum(SHORT_BY_DESIGN.values()), 64)
-        self.assertEqual(sum(UNEXPLAINED_LONG.values()), 7)
+        # Zero, as of the SK hynix backfill. This number is not load-bearing on
+        # its own -- an empty dict sums to zero for free -- but `by_length ==
+        # UNEXPLAINED_LONG` two lines down is, and that one is what turns red if
+        # a long chart appears without a reason. Keep both: this one says what
+        # the site's backlog IS, that one says the pin was measured.
+        self.assertEqual(sum(UNEXPLAINED_LONG.values()), 0)
         # and the pins are the split the data actually has, not a hand-typed one
         self.assertEqual(by_design, SHORT_BY_DESIGN)
         self.assertEqual(by_length, UNEXPLAINED_LONG)
@@ -1259,7 +1278,6 @@ SHORT_BY_DESIGN = {
 # stops after 2016. This is where the remaining work actually is. Several are
 # one short hop from the floor -- six AXP charts start in 2017.
 UNEXPLAINED_LONG = {
-    'skhynix': 7,
 
 }
 
@@ -1296,6 +1314,8 @@ UNDERIVABLE_QUARTER_COUNTS = {
     "meta Ex9":  ([13], "价格腿同比为负的季度数，是条件计数"),
     "ndaq Ex7":  ([18], "Section 31 规费按金额单列的季度数（18 季），少于该图 42 季的窗口 —— "
                         "更早的季度只在 MD&A 脚注里给合计，未按两条收入线拆开"),
+    "skhynix Ex7": ([22], "这一页此前的窗口长度。图注解释的正是「从 22 季拉到 42 季」"
+                          "改变了什么，所以那个 22 指的是旧窗口，不是本图的任何一段"),
     "tsm Ex26":  ([22], "自 2021Q1 起两口径逐季相等的季度数，起点晚于窗口左端"),
 }
 

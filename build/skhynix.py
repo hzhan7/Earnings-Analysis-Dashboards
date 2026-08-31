@@ -106,6 +106,21 @@ def margin_series(op: list[float], rev: list[float]) -> list[float]:
     return [round(o / r * 100.0, 4) for o, r in zip(op, rev)]
 
 
+def crossings(values: list[float], level: float) -> list[int]:
+    """Indices where a series steps across `level`, in either direction.
+
+    Written because the threshold note used to state its own crossing count in
+    prose. On the eight-quarter window that count was never checked; on the
+    22-quarter window it was wrong (it named a 2022 downward crossing, but the
+    line never reached 55% between 2021Q1 and 2022Q4 to cross down from); and on
+    42 quarters it is wrong in the other direction as well. A count that is
+    recomputed cannot rot when the axis moves.
+    """
+    return [i for i in range(1, len(values))
+            if (values[i - 1] < level <= values[i])
+            or (values[i - 1] >= level > values[i])]
+
+
 def phrase_band_exhibit(ref: str, title: str, quarters: list[str], block: dict,
                         note: str, src_extra: str) -> dict:
     """The band a phrase permits, quarter by quarter, with no actual to compare.
@@ -150,6 +165,7 @@ def build_payload(staging: dict) -> dict:
     kpi = staging["kpi_phrases"]
     below = staging["q2_2026_below_operating_profit_krw_bn"]
     restate = staging["restatement_2022q4"]
+    census = staging["restatement_census"]
 
     periods = staging["periods"]
     revenue = fin["revenue"]
@@ -313,6 +329,34 @@ def build_payload(staging: dict) -> dict:
     # ── section two: the quarter ────────────────────────────────────────────
     highlights = []
 
+    # The cycle facts the EX_REV note states. Derived, because both of them
+    # moved when the axis did: on 22 quarters the window really did hold one
+    # cycle, and the sentence saying so was true when it was written.
+    trough = opm.index(min(opm))
+    pre = opm[:periods.index("2021Q1")] if "2021Q1" in periods else []
+    prev_peak = opm.index(max(pre)) if pre else trough
+    prev_trough = opm.index(min(pre)) if pre else trough
+
+    def drawdown(lo: int, hi: int) -> tuple[int, int, float]:
+        """Peak, and the deepest revenue trough that comes AFTER it, in a span.
+
+        Taking the min over the whole span instead would return 2016Q1 for the
+        first cycle -- the lowest quarter on the axis, but the one the cycle
+        starts from rather than falls to, so the percentage would not be a
+        drawdown at all.
+        """
+        peak = lo + revenue[lo:hi + 1].index(max(revenue[lo:hi + 1]))
+        low = peak + revenue[peak:hi + 1].index(min(revenue[peak:hi + 1]))
+        return peak, low, (revenue[low] / revenue[peak] - 1.0) * 100.0
+
+    prev_pk, prev_low, prev_dd = drawdown(0, prev_trough)
+    this_pk, this_low, this_dd = drawdown(prev_trough + 1, trough)
+    neg_run = 0
+    run = 0
+    for value in opm:
+        run = run + 1 if value < 0 else 0
+        neg_run = max(neg_run, run)
+
     highlights.append({
         "ref": "EX_REV",
         "kind": "bar_line_dual",
@@ -327,11 +371,23 @@ def build_payload(staging: dict) -> dict:
         "fmt": "f1", "label_fmt": "f1",
         "ylab": "₩万亿", "ylab2": "营业利润率 %",
         "note": (
-            "整个窗口横跨一次完整的存储周期：2023 年第一季营业利润率 −66.9%，"
-            f"2026 年第二季 {opm[-1]:.1f}%。"
-            "<b>利润率这条线的形状比营收那排柱子更值得看</b> —— "
-            "它在 2023 年触底、2024 年回正、然后在五个季度里从 23% 走到 76%，"
-            "而这段路上公司对外指引的只有出货量。"
+            f"{len(periods)} 季装得下<b>两轮</b>完整的存储周期，而不是一轮 —— "
+            "这是把窗口从 22 季拉到 42 季之后最直接的变化。"
+            f"上一轮的顶在 {periods[prev_peak]} 的 {opm[prev_peak]:.1f}%，"
+            f"底在 {periods[prev_trough]} 的 {opm[prev_trough]:.1f}%；"
+            f"这一轮的底在 {periods[trough]} 的 {opm[trough]:.1f}%，"
+            f"顶是本季的 {opm[-1]:.1f}%。"
+            "<b>两轮的形状不一样，而差别正在利润率这条线上</b>："
+            f"上一轮下行只把利润率压到 {opm[prev_trough]:.1f}%，从没转负；"
+            f"这一轮压到 {opm[trough]:.1f}%，连续 {neg_run} 个季度为负。"
+            "<b>而营收那排柱子上，两轮的差距要小得多</b>："
+            f"上一轮从 {periods[prev_pk]} 的峰值跌到 {periods[prev_low]} 是 "
+            f"{prev_dd:.1f}%，这一轮从 {periods[this_pk]} 跌到 {periods[this_low]} 是 "
+            f"{this_dd:.1f}% —— 深了约 "
+            f"{abs(this_dd) - abs(prev_dd):.0f} 个百分点，"
+            f"而同一对周期里利润率的底差了 {opm[prev_trough] - opm[trough]:.0f} 个百分点。"
+            "<b>量的回撤解释不了利润率的回撤</b>，差额来自价格 —— "
+            "而价格正是公司唯一不指引、也不给数字的那一项。"
             "右轴按数据自算，负值段没有被截掉。"),
         "src_extra": ("各季业绩发布；利润率为营业利润 ÷ 营业收入（D），"
                       "公司披露的是四舍五入到整数的百分比，见核对表。"),
@@ -372,6 +428,10 @@ def build_payload(staging: dict) -> dict:
                       "税负、营业外净额与有效税率为两行相减（D）。"),
     })
 
+    gap = [None if n is None or o is None else n - o for n, o in zip(netm, opm)]
+    wide_gaps = [i for i, g in enumerate(gap) if g is not None and abs(g) > 10.0]
+    widest_four = sorted(sorted(wide_gaps, key=lambda i: -abs(gap[i]))[:4])
+
     highlights.append({
         "ref": "EX_MARGIN",
         "kind": "lines",
@@ -386,7 +446,14 @@ def build_payload(staging: dict) -> dict:
         "end_label": True, "zero_line": True,
         "ylab": "%", "xstep": LONG_STEP,
         "note": (
-            "两条线在整个窗口里贴得很近，只有最后一格劈开：净利率跨过 100%。"
+            f"两条线在 {len(periods)} 季里分开过 {len(wide_gaps)} 次超过 10 个百分点，"
+            "最大的四次是 "
+            + "、".join(f"{periods[i]}（{gap[i]:+.0f}pp）" for i in widest_four) + "。"
+            "此前这里写的是「只有最后一格劈开」—— 那句话在 22 季的窗口上"
+            f"就已经不对：{sum(1 for i in wide_gaps if periods[i] >= '2021Q1') - 1} "
+            "次超过 10pp 的分开发生在那个窗口内、且不是最后一格。"
+            f"接上 2016–2020 之后又多了 {sum(1 for i in wide_gaps if periods[i] < '2021Q1')} 次。"
+            "本季这一格仍然是其中最大的一次，而且方向特殊：净利率跨过 100%。"
             "<b>一家制造业公司的净利率高于 100%，说明这一季的利润多数不是卖东西赚的</b>，"
             "见 Exhibit {EX_BELOW}。"
             "跨季比较净利润在这一格失效，营业利润仍然可比。"
@@ -481,15 +548,30 @@ def build_payload(staging: dict) -> dict:
          "因为它们的来源是年度审计附注。"),
         "当前值为最近一期披露值；阈值为本地研究设定。")]
 
+    cross_55 = crossings(opm, 55.0)
+    # How long the previous cycle held above the threshold once it got there.
+    this_pk_to_below = next((i - prev_peak for i in range(prev_peak + 1, len(opm))
+                             if opm[i] < 55.0), 0)
+
     next_ex.append(threshold_exhibit(
         f"营业利润率：当前 {opm[-1]:.1f}%，阈值 55.0%",
         list(periods), rounded(opm, 2), 55.0,
         fmt="pct1", ylab="%",
         actual_name="营业利润率", threshold_name="本地阈值",
         note=("红线是本地研究设定的阈值，不是公司指引，也不是公司披露的目标。"
-              "窗口里这条线两次穿过阈值：2022 年下行时向下穿，2026 年上行时向上穿。"
-              "把阈值设在 55% 的理由是它高于本轮之前的任何一个季度，"
-              "所以跌回它以下就等于本轮的超额利润已经消失。"),
+              f"{len(periods)} 季里这条线穿过阈值 {len(cross_55)} 次："
+              + "、".join(f"{periods[i]}（{opm[i - 1]:.1f}% → {opm[i]:.1f}%）"
+                          for i in cross_55) + "。"
+              "<b>把阈值设在 55% 的立论，在窗口拉长之后不成立了。</b>"
+              "此前这里写的是「55% 高于本轮之前的任何一个季度，所以跌回它以下"
+              "就等于本轮的超额利润已经消失」—— 那句话是在只有 22 季、"
+              "最早到 2021Q1 的窗口上写的。接上 2016–2020 之后，"
+              f"{periods[prev_peak]} 的 {opm[prev_peak]:.1f}% 就在阈值之上，"
+              "而它属于上一轮周期。所以 55% 不是「本轮独有」的高度，"
+              f"它是<b>两轮周期都到过</b>的高度 —— "
+              f"上一轮到过之后，只用了 {this_pk_to_below} 个季度就掉回阈值以下。"
+              "阈值本身没有改，改的是它意味着什么：跌破它不再是"
+              "「这一轮的超额利润消失了」，而是「回到了上一轮触顶后同样的位置」。"),
         src_extra="各季业绩发布；利润率为自算（D），阈值为本地研究设定。"))
     next_ex[-1]["xstep"] = LONG_STEP
     next_ex[-1]["xrot"] = 90
@@ -556,8 +638,8 @@ def build_payload(staging: dict) -> dict:
         {
             "ref": "EX_RESTATE",
             "kind": "grouped_bars",
-            "title": ("2022 年第四季被重述过一次：营业利润与净利润各下调 "
-                      "₩211bn，而收入只动了 ₩27bn"),
+            "title": (f"{len(census['quarters'])} 个季度事后被改过，只有 2022 年第四季"
+                      "动到了收入：营业利润与净利润各下调 ₩211bn，收入下调 ₩27bn"),
             "xlabels": ["营业收入", "营业利润", "净利润"],
             "groups": [
                 {"name": "当期首次发布", "color": "NAVY",
@@ -573,7 +655,17 @@ def build_payload(staging: dict) -> dict:
             "fmt": "f0c", "label_fmt": "f0c", "ylab": "₩十亿",
             "zero_line": True,
             "note": (
-                "<b>这是窗口里唯一一次重述，画出来是为了说明本页 22 季序列用的是哪一版。</b>"
+                f"<b>它不是窗口里唯一一次重述，但它是唯一一次动到收入的。</b>"
+                f"{len(periods)} 季里有 {len(census['quarters'])} 个季度的数字在"
+                "「当期发布」与「一年后的对照列」之间不一致："
+                + "、".join(census["quarters"]) + "。"
+                "前四次只动营业利润和净利润，幅度在 0.1%–3% 之间，收入一动没动；"
+                "这一次三条线全动，且幅度大一个量级。"
+                "<b>而它们的出现方式完全一样</b>：下一季发布的「上季」列每一次都"
+                "原样重复首报数，改动只出现在大约四个季度之后的「去年同期」列 —— "
+                "也就是外部审计走完之后。每期发布自己的免责声明写着"
+                "「在外部审计人会计检查完成之前编制」，而没有任何一期用过"
+                "「重述」「更正」「重分类」这些词。"
                 "公司在 2023 年 1 月发布的 2022 年第四季，与一年后 2023 年第四季发布中"
                 "作为对照列印出来的同一个季度，不是同一组数。"
                 "营业利润与净利润的下调完全相等（各 ₩211bn），收入只下调 ₩27bn —— "
@@ -719,7 +811,7 @@ def build_payload(staging: dict) -> dict:
                              "以及为什么指引全部兑现仍然可以对不上收入。"),
              "exhibits": settled_ex},
             {"id": "quarter_highlights", "title": "二、本季重点",
-             "description": ("22 季的营收与利润率、净利率越过 100% 的来源，"
+             "description": (f"{len(periods)} 季的营收与利润率、净利率越过 100% 的来源，"
                              "以及两条一年只披露一次、却比任何季度数字都更能说明结构的口径："
                              "分产品收入与单一客户集中度。"),
              "exhibits": highlight_ex},
@@ -728,7 +820,8 @@ def build_payload(staging: dict) -> dict:
                              "阈值为本地研究设定，不是公司指引，因为公司没有指引。"),
              "exhibits": next_block},
             {"id": "routine", "title": "四、长期常规跟踪",
-             "description": ("资本强度与折旧的分母效应，以及窗口里唯一一次重述"
+             "description": (f"资本强度与折旧的分母效应，以及 {len(census['quarters'])} 次事后改动里"
+                             "唯一动到收入的那一次"
                              "和本页序列选用的版本。"),
              "exhibits": routine_ex},
         ],
@@ -746,7 +839,7 @@ def build_payload(staging: dict) -> dict:
             "本季税前利润、所得税与营业外净收益：税前利润印在 2026-07-29 报送的 6-K 上，所得税为税前减净利、营业外净额为税前减营业利润，两者都是两条已印出的行相减。公司自己的季度业绩发布只印到净利润为止，对营业外收益没有任何科目拆分。本页因此不发布这笔收益的构成，也不发布任何「剔除一次性后的净利润」——那需要一个本页读过的文件里都不存在的数字。",
             "分产品收入与单一客户集中度只有年度披露（另加第一季度），来自审计报表附注。公司在同一份文件中说明其决策层不接收任何组成部分的分部财务信息，因此财务报表不含分部信息，只有单一报告分部。季度层面的 DRAM 与闪存收入拆分在公开披露中不存在。",
             "按地区的收入披露以「销售主体所在地」为口径，指的是 SK hynix 在哪里入账，不是需求在哪里，因此本页不据此画终端需求图。",
-            "2022 年第四季被重述过一次：公司当期发布的数与一年后作为对照列印出的数不同，营业利润与净利润各下调 211、收入下调 27（₩十亿）。本页 22 季序列采用「当期首次发布」那一版，因为只有它能让 2022 年四季加总回到公司当时印出的全年数。2022 年前三季的印刷精度只到万亿韩元的两位小数，所以该年加总与全年数之间约有个位数十亿的残差，属于精度而非错误。",
+            "2016Q1–2022Q4 里有五个季度（2019Q4、2020Q2、2020Q3、2020Q4、2022Q4）的数字在当期发布与一年后的对照列之间不一致，其中只有 2022 年第四季动到了收入：营业利润与净利润各下调 211、收入下调 27（₩十亿）；另外四次只动利润两行，幅度 0.1%–3%。五次都不带「重述」字样，都只出现在四个季度后的「去年同期」列上，而每期发布都声明自己在外部审计完成之前编制。本页 42 季序列采用「当期首次发布」那一版，因为只有它能让 2022 年四季加总回到公司当时印出的全年数。2022 年前三季的印刷精度只到万亿韩元的两位小数，所以该年加总与全年数之间约有个位数十亿的残差，属于精度而非错误。",
             "2021 年第四季的当季净利润（3,320）与当季营业利润率（34%）在公司那期发布里一直是披露的，印在随文那张业绩表上，只是没有出现在正文里。本页此前把这两格记成 null 并写明「公司没印」，那是读正文没读表的结果，2026-08-31 更正。四季相加等于同篇印出的全年 9,616。",
             "本页不发布市场一致预期、评级、目标价与估值。这一条对本页尤其要紧：SK hynix 不发布任何财务指引，所以任何看起来像「预期对实际」的对照都只能来自站外，而没有可核对的、带日期的公开来源时，宁可不发。",
             "本页只发布公司披露值、可复算的简单派生值；D 标记代表 Derived / 自算。",
