@@ -576,12 +576,29 @@ FLOOR_KIND = {
         '返点占比的同比变化': 'disclosure',
         '四条计费线': 'disclosure',
     },
+    # All five were 'coverage' -- "the filings have it, we have not fetched it".
+    # They have now been fetched, back to FY2011, and the answer is that this is
+    # a disclosure floor after all. Three separate reasons, none of which was
+    # visible before the fetch:
+    #   * FY2015 has no adjusted-EPS guidance of any vintage. The outlook table
+    #     that year labels its single EPS line "GAAP EPS". So a band drawn back
+    #     past FY2016 has a hole in the middle of it, not at its edge.
+    #   * Moody's broadened its non-GAAP definition with the FY2017 disclosures
+    #     to also exclude amortisation of acquired intangibles (Bureau van Dijk),
+    #     and restated FY2016's adjusted EPS 4.81 -> 4.94 for it. FY2013-2015
+    #     never reappear as a comparator after that change, so no filing bridges
+    #     them: charting them on one axis would splice two non-GAAP definitions
+    #     with no way to mark where.
+    #   * FY2011's adjusted figures exist only as a one-time look-back printed in
+    #     the Feb-2013 release, under a narrower definition again, single-sourced.
+    # The guided *ranges* do go back to FY2011 and are recorded; what cannot be
+    # extended is the guide-versus-actual comparison these five charts draw.
     'mco': {
-        '调整后摊薄 EPS（对末次指引）': 'coverage',
-        '调整后摊薄 EPS（对初始指引）': 'coverage',
-        '调整后摊薄 EPS（2 月那版）': 'coverage',
-        '调整后摊薄 EPS（10 月那版）': 'coverage',
-        '每一年的指引中值怎么被改到实际值上': 'coverage',
+        '调整后摊薄 EPS（对末次指引）': 'disclosure',
+        '调整后摊薄 EPS（对初始指引）': 'disclosure',
+        '调整后摊薄 EPS（2 月那版）': 'disclosure',
+        '调整后摊薄 EPS（10 月那版）': 'disclosure',
+        '每一年的指引中值怎么被改到实际值上': 'disclosure',
     },
     'meta': {
         '收入指引兑现': 'disclosure',
@@ -748,7 +765,7 @@ class ChartWindowTest(unittest.TestCase):
         by_kind = {}
         for slug, title, kind in pending:
             by_kind.setdefault(kind, []).append(f"{slug}/{title}")
-        self.assertEqual(len(by_kind.get("coverage", [])), 38,
+        self.assertEqual(len(by_kind.get("coverage", [])), 33,
                          "charts whose data exists and has not been fetched")
         self.assertEqual(len(by_kind.get("unverified", [])), 14,
                          "charts whose stated reason has never been checked "
@@ -756,7 +773,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 63)
+        self.assertEqual(settled.count("disclosure"), 68)
         self.assertEqual(settled.count("design"), 16)
 
     def test_converted_pages_have_no_unexplained_short_axis(self) -> None:

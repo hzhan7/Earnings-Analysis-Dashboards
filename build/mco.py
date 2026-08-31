@@ -147,6 +147,16 @@ def guidance_record(staging: dict) -> tuple[list[dict], dict]:
     oct_lo = [lo if lo is not None else g["adj_eps_lo"]["Jul"][i] for i, lo in enumerate(oct_lo)]
     oct_hi = [hi if hi is not None else g["adj_eps_hi"]["Jul"][i] for i, hi in enumerate(oct_hi)]
 
+    # Hoisted above the bands because their prose states these tallies. They were
+    # written out in words -- "eight finished years, above six times, below twice"
+    # -- and adding FY2018 to the record moved every one of them. Correct today,
+    # stale on the next 10-K.
+    finished = [i for i, v in enumerate(actual) if v is not None]
+    initial_above = sum(1 for i in finished if actual[i] > feb_hi[i])
+    initial_inside = sum(1 for i in finished if feb_lo[i] <= actual[i] <= feb_hi[i])
+    initial_below = sum(1 for i in finished if actual[i] < feb_lo[i])
+    initial_below_years = [years[i] for i in finished if actual[i] < feb_lo[i]]
+
     final_band = delivery_band(
         "EX_FINAL", "调整后摊薄 EPS（对末次指引）", labels, oct_lo, oct_hi, actual,
         fmt="usd2", ylab="US$/股", unit="US$", venue="业绩新闻稿", period_word="年",
@@ -171,16 +181,20 @@ def guidance_record(staging: dict) -> tuple[list[dict], dict]:
         src_extra=SOURCE_8K + "「初始指引」取该年 2 月那期，即公司为当年定调的第一版。",
         extra_note=(
             "<b>换成年初那一版，同一家公司变成另一个样子。</b>"
-            "八个已完结年度里实际值高于上限 6 次、跌破下限 2 次，"
-            "<b>一次都没有落在区间内</b> —— 2 月画的那条带子从来没对过。"
-            "跌破的两次是 FY2018 与 FY2022；后者当年发行量随利率崩掉，"
+            f"{len(finished)} 个已完结年度里实际值高于上限 {initial_above} 次、"
+            f"跌破下限 {initial_below} 次，"
+            + ("<b>一次都没有落在区间内</b> —— 2 月画的那条带子从来没对过。"
+               if initial_inside == 0
+               else f"落在区间内 {initial_inside} 次。")
+            + f"跌破的{'两' if initial_below == 2 else initial_below}次是 "
+            + " 与 ".join(f"FY{y}" for y in initial_below_years)
+            + "；FY2022 当年发行量随利率崩掉，"
             "指引中值从 2 月的 US$12.65 一路砍到 10 月的 US$8.35。"
             "把这张和上一张（Exhibit {EX_FINAL}）并排看才是本页第一节的全部意思 —— "
             "同一个数字、同一家公司，差别只在画线时距离年末还有多远。"
         ),
     )
 
-    finished = [i for i, v in enumerate(actual) if v is not None]
     feb_dev = midpoint_deviation(
         "EX_FEB_DEV", "调整后摊薄 EPS（2 月那版）", labels, feb_lo, feb_hi, actual,
         mode="pct", window=len(finished), bar_labels=False, period_word="年",
@@ -255,6 +269,20 @@ def guidance_record(staging: dict) -> tuple[list[dict], dict]:
 # ── section two: what actually moved this quarter ───────────────────────────
 def quarter_highlights(staging: dict) -> list[dict]:
     seg = staging["segment_quarterly"]
+
+    # Both the inter-segment billing range and the reconciliation slack are
+    # properties of the whole series, so they move when the window does. They
+    # used to read "US$42-52M" and "21 个季度 ... 0.05pp", both fitted to a
+    # 21-quarter record; at 42 quarters the billing floor is lower.
+    mis_internal = [t - e for t, e in zip(seg["mis_total_revenue_usd_m"],
+                                          seg["mis_revenue_usd_m"])]
+    ma_internal = [t - e for t, e in zip(seg["ma_total_revenue_usd_m"],
+                                         seg["ma_revenue_usd_m"])]
+    margin_slack = max(
+        abs(income / total * 100 - printed)
+        for income, total, printed in zip(seg["mis_adj_operating_income_usd_m"],
+                                          seg["mis_total_revenue_usd_m"],
+                                          seg["mis_adj_operating_margin_pct"]))
     labels = seg["periods"]
 
     two_lines = {
@@ -336,9 +364,10 @@ def quarter_highlights(staging: dict) -> list[dict]:
             f"{seg['ma_adj_operating_margin_pct'][0]:.1f}% 到 {seg['ma_adj_operating_margin_pct'][-1]:.1f}%。"
             "合并那条落在两者之间，位置由当季的收入结构决定，而不是由任何一块的经营决定。"
             "<b>这三条是公司披露值，分母是分部<i>总</i>收入（含分部间收入），"
-            "不是上面两张图画的外部收入。</b>MIS 每季向 MA 内部计费约 US$42–52M，"
+            f"不是上面两张图画的外部收入。</b>MIS 每季向 MA 内部计费 "
+            f"US${min(mis_internal):,.0f}–{max(mis_internal):,.0f}M，"
             "拿外部收入去除会把 MIS 的利润率高估 2–3pp；按总收入复算，"
-            "21 个季度与公司印出来的百分比最大只差 0.05pp。"
+            f"{len(seg['periods'])} 个季度与公司印出来的百分比最大只差 {margin_slack:.2f}pp。"
         ),
         "src_extra": (
             "同上表；分部调整后营业利润率为公司披露值，分母为分部总收入（外部收入加分部间收入）。"
@@ -536,6 +565,20 @@ def build_payload(staging: dict) -> dict:
 
     latest = staging["latest"]
     seg = staging["segment_quarterly"]
+
+    # Both the inter-segment billing range and the reconciliation slack are
+    # properties of the whole series, so they move when the window does. They
+    # used to read "US$42-52M" and "21 个季度 ... 0.05pp", both fitted to a
+    # 21-quarter record; at 42 quarters the billing floor is lower.
+    mis_internal = [t - e for t, e in zip(seg["mis_total_revenue_usd_m"],
+                                          seg["mis_revenue_usd_m"])]
+    ma_internal = [t - e for t, e in zip(seg["ma_total_revenue_usd_m"],
+                                         seg["ma_revenue_usd_m"])]
+    margin_slack = max(
+        abs(income / total * 100 - printed)
+        for income, total, printed in zip(seg["mis_adj_operating_income_usd_m"],
+                                          seg["mis_total_revenue_usd_m"],
+                                          seg["mis_adj_operating_margin_pct"]))
     ann = staging["annual_actuals"]
     g = staging["annual_guidance_history"]
     cg = staging["current_guidance"]
@@ -722,10 +765,12 @@ def build_payload(staging: dict) -> dict:
             "本页按表头里的分部名取值而不是按列位，重叠季度在两份来源之间逐项一致。",
             "分部调整后营业利润率的分母是<b>分部总收入</b>（外部收入加分部间收入），"
             "而本页图上画的分部收入是<b>外部收入</b>口径。两者差的就是分部间计费："
-            "MIS 每季向 MA 内部计费约 US$42–52M，MA 向 MIS 约 US$3–6M。"
+            f"MIS 每季向 MA 内部计费 US${min(mis_internal):,.0f}–{max(mis_internal):,.0f}M，"
+            f"MA 向 MIS US${min(ma_internal):,.0f}–{max(ma_internal):,.0f}M。"
             "用外部收入去除调整后营业利润会把 MIS 的利润率高估 2–3pp；"
-            "按总收入复算，21 个季度与公司自己印出来的百分比最大只差 0.05pp，"
-            "那 0.05pp 是公司把百分比四舍五入到一位小数留下的余数。",
+            f"按总收入复算，{len(seg['periods'])} 个季度与公司自己印出来的百分比"
+            f"最大只差 {margin_slack:.2f}pp，"
+            f"那 {margin_slack:.2f}pp 是公司把百分比四舍五入到一位小数留下的余数。",
             "MA 本季收入同比只有 +4%，口径上受两笔业务处置影响：Learning Solutions，"
             "以及本季完成的 MA Regulatory Solutions。公司在指引脚注里把处置收益单列为约 US$1.25/股 的负向加回项。",
             "核对表的取数来源：全年指引四栏的每一格是该期业绩 8-K EX-99.1 指引表里的当期值，"
