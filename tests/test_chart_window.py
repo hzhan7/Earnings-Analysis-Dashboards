@@ -129,7 +129,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amzn": 13, "avgo": 6, "axp": 9, "bc": 1, "cboe": 10, "cdns": 10, "cme": 14,
+    "amzn": 13, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cme": 14,
     "cost": 13, "googl": 11, "ibkr": 21, "ma": 16, "mc": 3, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
@@ -214,27 +214,30 @@ CONVERTED = {
     # floor here depends on which side of that its inputs sit on, and each entry
     # below says which.
     "axp": {
-        "四条收入腿": "every leg is a gross revenue line the recast moved by about a "
-                 "fifth, and the chart's load-bearing identity is that the four "
-                 "sum to revenue net of interest expense. American Express recast "
-                 "2017 by quarter and never republished 2016 by quarter, so the "
-                 "only 2016 that exists is on the superseded basis. 2017Q1 is real.",
-        "两条腿占收入的比重": "both ratios divide by revenue, which is on the moved side. "
-                     "Same floor and same reason as the four legs above.",
-        "税前利润同比增量拆成两条腿": "needs a year-over-year pair, so it starts one year after "
-                        "its inputs. Pre-provision profit and provisions both "
-                        "carry 2016 now, which puts the honest floor at 2017Q1 "
-                        "rather than 2018Q1 -- not yet applied.",
-        "消费额同比": "billed business carries real disclosed 2016Q3-Q4 values but not "
-                 "2016Q1-Q2, and a year-over-year chart needs four quarters of "
-                 "run-up. Applied: the chart runs from 2017Q3, the earliest "
-                 "quarter whose base exists. Whether 2016Q1-Q2 were never "
-                 "printed at the consolidated level or merely never pulled has "
-                 "not been checked, so this stays a coverage floor rather than "
-                 "a disclosure one.",
-        "jaws（收入增速 − 费用增速）": "the difference of two year-over-year growth rates, both "
-                            "taken on lines the recast moved by 10-15%. Neither "
-                            "side can cross the boundary, so 2018Q1 is real.",
+        "税前利润同比增量拆成两条腿": "needs a year-over-year pair, so it starts one quarter "
+                        "short of a year after its inputs. Applied: both legs "
+                        "now carry 2016 on one basis, so the chart runs from "
+                        "2017Q1 rather than 2018Q1. It cannot reach 2016 itself "
+                        "-- a year-over-year chart never can, on any data.",
+        "消费额同比": "billed business carries 2016Q3-Q4 and not 2016Q1-Q2, and a "
+                 "year-over-year chart needs four quarters of run-up, so the "
+                 "chart runs from 2017Q3. The open half of this entry has now "
+                 "been checked, and it is a disclosure floor rather than a "
+                 "coverage one: the figure here is the PROPRIETARY (ex-Global "
+                 "Network Services) total, which American Express first printed "
+                 "as its own consolidated dollar line in the Q3 2017 release, "
+                 "whose trailing window reaches back five quarters to 2016Q3 "
+                 "and stops. Before that the split existed only inside the "
+                 "segment tables, so 2016Q1-Q2 are obtainable only as a "
+                 "subtraction the company never performed. Its plain worldwide "
+                 "billed business WAS printed for those two quarters ($253.8bn "
+                 "and $269.3bn) -- filling them with that would silently mix two "
+                 "definitions in one line.",
+        "jaws（收入增速 − 费用增速）": "the difference of two year-over-year growth rates. Both "
+                            "sides used to stop at the recast boundary, which "
+                            "put the floor at 2018Q1; both now carry 2016 on the "
+                            "recast basis, so it starts 2017Q1. Like every "
+                            "year-over-year chart it cannot itself reach 2016.",
         "四个分部的税前利润率": "nothing to do with ASC 606: American Express restated its "
                       "reportable segments in 2020, and the four-segment pretax "
                       "margin has no earlier counterpart.",
@@ -807,11 +810,9 @@ FLOOR_KIND = {
         '折旧摊销同比': 'coverage',
     },
     'axp': {
-        '四条收入腿': 'disclosure',
-        '两条腿占收入的比重': 'disclosure',
-        '税前利润同比增量拆成两条腿': 'coverage',
-        '消费额同比': 'coverage',
-        'jaws（收入增速 − 费用增速）': 'disclosure',
+        '税前利润同比增量拆成两条腿': 'design',
+        '消费额同比': 'disclosure',
+        'jaws（收入增速 − 费用增速）': 'design',
         '四个分部的税前利润率': 'disclosure',
         'VCE 占收入比': 'disclosure',
         '全年摊薄 EPS相对指引中值的偏离': 'disclosure',
@@ -1045,7 +1046,7 @@ class ChartWindowTest(unittest.TestCase):
         by_kind = {}
         for slug, title, kind in pending:
             by_kind.setdefault(kind, []).append(f"{slug}/{title}")
-        self.assertEqual(len(by_kind.get("coverage", [])), 39,
+        self.assertEqual(len(by_kind.get("coverage", [])), 37,
                          "charts whose data exists and has not been fetched")
         # Zero, and that is the point: every exemption on this page has now been
         # read against an actual pre-floor filing. The fourteen that had never
@@ -1058,8 +1059,8 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 119)
-        self.assertEqual(settled.count("design"), 32)
+        self.assertEqual(settled.count("disclosure"), 117)
+        self.assertEqual(settled.count("design"), 34)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
         """Every short chart either names its reason or is counted here.

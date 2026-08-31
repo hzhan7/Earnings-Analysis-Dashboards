@@ -312,39 +312,32 @@ def guidance_charts(staging: dict) -> tuple[list[dict], list[dict]]:
     return [eps_band, eps_dev, rev_band, rev_dev, revision], [ledger, vintage_table]
 
 
-# American Express recast 2017 onward for ASC 606 and never republished 2016 by
-# quarter, so the income statement has one basis from 2017Q1 and another before
-# it. Twenty-two series the recast did not touch do carry 2016 -- fourteen in
-# `financials` (everything below the revenue/expense gross-up, plus net card
-# fees and salaries), all six operating metrics, and both credit metrics -- and
-# those are the only ones allowed to run the longer axis. Which ones they are is
-# pinned by value in the tests, not by this comment -- see
-# `test_the_income_statement_stops_where_the_recast_stops`.
-# RECAST is derived from the data rather than typed, so adding a quarter at
-# either end cannot silently move it.
-RECAST = 4
-
-
-def recast(block: dict) -> dict:
-    """The block with every full-length series cut to the recast window."""
-    length = None
-    for value in block.values():
-        if isinstance(value, list):
-            length = max(length or 0, len(value))
-    return {
-        key: value[RECAST:] if isinstance(value, list) and len(value) == length
-        else value
-        for key, value in block.items()
-    }
+# There is no recast window any more, and there did not need to be one.
+#
+# American Express adopted ASC 606 on 2018-01-01 and recast 2017 by quarter in
+# its own statistical tables. This file used to cut every income-statement
+# series to start at 2017Q1 on the reasoning that 2016 was never republished on
+# the new basis -- "each release prints only five quarters side by side, so the
+# last one carrying Q4 2016 predates the change." That is a true statement about
+# the *earnings releases* and a false statement about the company. On 2018-03-09
+# AmEx furnished a separate Item 7.01 Form 8-K whose Exhibit 99.1, "Eight
+# Quarter Trend Q1 2016 through Q4 2017", prints As Reported, Adjustments and As
+# Recast side by side for all eight quarters. `series/axp.json` now carries the
+# 2016 quarters from that document, so the whole income statement is one basis
+# for all 42 quarters and nothing needs cutting.
+#
+# The inference that failed is worth naming, because it looks like evidence: a
+# pattern in one document series ("releases print five quarters") was treated as
+# an exhaustive search over everything the company files.
 
 
 # ── section two: what moved this quarter ────────────────────────────────────
 def quarter_charts(staging: dict) -> list[dict]:
-    fin = recast(staging["financials"])
+    fin = staging["financials"]
     # 2016 exists in this file for the eight series ASC 606 did not touch; the
     # rest of the record starts at the recast basis. Everything in this function
     # is on the recast side, so it reads the recast window.
-    labels = staging["period_labels"][RECAST:]
+    labels = staging["period_labels"]
     revenue = fin["revenue_usd_m"]
     expenses = fin["total_expenses_usd_m"]
     provisions = fin["provisions_usd_m"]
@@ -377,7 +370,7 @@ def quarter_charts(staging: dict) -> list[dict]:
         "note": (
             "<b>这是一个恒等式，不是估计。</b>拨备前利润 = 收入 − 总费用，"
             "而拨备前利润 − 拨备 = 税前利润 —— 三条都是申报值，"
-            "这个等式在全部 38 个季度里逐季精确成立，所以两条腿相加正好等于税前利润的同比增量。"
+            f"这个等式在全部 {len(labels)} 个季度里逐季精确成立，所以两条腿相加正好等于税前利润的同比增量。"
             f"本季两条腿是 +US${ppop_leg[-1]:,.0f}M 与 +US${prov_leg[-1]:,.0f}M，"
             f"拨备腿占 {prov_leg[-1] / latest_total * 100:.0f}%。"
             "<b>拨备腿为正的意思是当季拨备比去年同期少</b>，它可以是信用真的变好，"
@@ -447,7 +440,7 @@ def quarter_charts(staging: dict) -> list[dict]:
         "kind": "grouped_bars",
         "title": (f"四条收入腿：净卡费占收入 "
                   f"{card_fees[-1] / revenue[-1] * 100:.1f}%，"
-                  f"38 季前是 {card_fees[0] / revenue[0] * 100:.1f}%"),
+                  f"{len(labels)} 季前是 {card_fees[0] / revenue[0] * 100:.1f}%"),
         "xlabels": labels,
         "xrot": 90,
         "xstep": LONG_STEP,
@@ -462,8 +455,8 @@ def quarter_charts(staging: dict) -> list[dict]:
         "break_at": break_at,
         "break_label": "processed revenue 移出折扣收入",
         "note": (
-            "四条腿相加正好等于「收入（扣除利息支出后）」，全部 38 个季度逐季精确成立。"
-            f"38 个季度里折扣收入长到 {discount[-1] / discount[0]:.2f} 倍、"
+            f"四条腿相加正好等于「收入（扣除利息支出后）」，全部 {len(labels)} 个季度逐季精确成立。"
+            f"{len(labels)} 个季度里折扣收入长到 {discount[-1] / discount[0]:.2f} 倍、"
             f"净卡费长到 {card_fees[-1] / card_fees[0]:.2f} 倍、"
             f"总收入长到 {revenue[-1] / revenue[0]:.2f} 倍 —— "
             "<b>卡费是唯一一条跑赢总收入的腿，商户那条跑输</b>。"
@@ -510,13 +503,13 @@ def quarter_charts(staging: dict) -> list[dict]:
 
 # ── section three: the thresholds pointed forward ────────────────────────────
 def next_quarter_charts(staging: dict) -> list[dict]:
-    fin = recast(staging["financials"])
+    fin = staging["financials"]
     credit = staging["credit_metrics"]
     # `fin` is the only block this function plots through the recast window
     # (revenue and total expenses, for jaws and VCE). Every series here that
     # ASC 606 did not touch reads `staging` directly instead, so its chart runs
     # as far back as the filings do.
-    labels = staging["period_labels"][RECAST:]
+    labels = staging["period_labels"]
     kpi = staging["next_kpi"]["quantified"]
 
     exhibits = [headroom_exhibit(
@@ -529,12 +522,14 @@ def next_quarter_charts(staging: dict) -> list[dict]:
 
     revenue = fin["revenue_usd_m"]
     expenses = fin["total_expenses_usd_m"]
-    # Billed business is on the untouched side of the ASC 606 recast and this
-    # file carries 2016Q3-Q4, so the year-on-year line has a base two quarters
-    # before the recast window can give it one. It was starting at 2018Q1 only
-    # because it rode the same `recast()` helper as the revenue lines -- a code
-    # path, not a basis limit. The first drawable quarter is derived from where
-    # both ends of the ratio exist, so it cannot drift when a quarter is added.
+    # Billed business reaches 2016Q3 and no further, and that IS a disclosure
+    # limit rather than a code path. The figure this page carries is the
+    # *proprietary* (ex-Global Network Services) total, and AmEx first printed
+    # that as its own consolidated dollar line in the Q3 2017 release, whose
+    # trailing window reaches back five quarters to 2016Q3. Before that the split
+    # lived only inside the segment tables, so 2016Q1-Q2 exist only as a
+    # subtraction the company never performed. The first drawable quarter is
+    # derived from where both ends of the ratio exist, so it cannot drift.
     long_labels = staging["period_labels"]
     long_billed = staging["operating_metrics"]["billed_business_usd_bn"]
     billed_yoy_idx = [i for i in range(4, len(long_billed))
@@ -556,15 +551,16 @@ def next_quarter_charts(staging: dict) -> list[dict]:
             "pct1", "%",
             "由两个印出来的美元金额相除得到，因此可以被结清；"
             "上季那份分析的阈值原本写在公司只披露到整数的汇率调整口径上，见上一张图的说明。"
-            f"消费额本身是 ASC 606 重述没有动过的几条之一，回到 "
+            f"消费额本身是 ASC 606 重述没有动过的几条之一，但它只回到 "
             f"{long_labels[next(i for i, v in enumerate(long_billed) if v is not None)]}，"
-            f"所以这条同比线自 {long_labels[billed_yoy_idx[0]]} 起而不是 "
-            f"{long_labels[RECAST + 4]} —— 同比要往回够四个季度，"
-            "再往前本页没有这个数，不是被截掉的。"),
-        # Credit quality is not a revenue-recognition item. These two were cut to
-        # the recast window only because they rode the same `recast()` helper as
-        # the revenue lines -- a code path, not a basis limit. Now complete for
-        # all 42 quarters.
+            f"所以这条同比线自 {long_labels[billed_yoy_idx[0]]} 起 —— 同比要往回够四个季度。"
+            "<b>再往前不是被截掉的，是公司没按这个口径印过</b>："
+            "本页这条是<b>自营</b>（剔除 GNS）消费额，而 AmEx 直到 2017 年第三季那份发布"
+            "才第一次把它作为一条合并口径的美元行印出来，那份发布的对照窗口只回溯五个季度、"
+            "到 2016Q3 为止。更早的两季只能用「合并总额减去分部表里的 GNS」减出来，"
+            "而公司自己从没做过这个减法。"),
+        # Credit quality is not a revenue-recognition item. These two were once
+        # cut to 2017Q1 because they rode the same helper as the revenue lines.
         "30+ 天逾期率": (staging["period_labels"],
                           staging["credit_metrics"]["past_due_30_pct"], "pct1", "%",
                           credit["basis_note"] + credit["pandemic_relief_note"]),
@@ -611,11 +607,11 @@ def next_quarter_charts(staging: dict) -> list[dict]:
 
 # ── section four: the long routine series ────────────────────────────────────
 def routine_charts(staging: dict) -> list[dict]:
-    fin = recast(staging["financials"])
+    fin = staging["financials"]
     # Only the three revenue-side lines below are read through the recast
     # window; every operating metric this section plots is on the untouched
     # side, so nothing here reads `operating_metrics` through `recast()`.
-    labels = staging["period_labels"][RECAST:]
+    labels = staging["period_labels"]
     revenue = fin["revenue_usd_m"]
     card_fees = fin["net_card_fees_usd_m"]
     discount = fin["discount_revenue_usd_m"]
@@ -790,12 +786,12 @@ def routine_charts(staging: dict) -> list[dict]:
 
 
 def build_payload(staging: dict) -> dict:
-    fin = recast(staging["financials"])
-    om = recast(staging["operating_metrics"])
+    fin = staging["financials"]
+    om = staging["operating_metrics"]
     # 2016 exists in this file for the eight series ASC 606 did not touch; the
     # rest of the record starts at the recast basis. Everything in this function
     # is on the recast side, so it reads the recast window.
-    labels = staging["period_labels"][RECAST:]
+    labels = staging["period_labels"]
     record = staging["annual_guidance_history"]
 
     revenue = fin["revenue_usd_m"]
@@ -932,7 +928,7 @@ def build_payload(staging: dict) -> dict:
             f'+US${d_prov:,.0f}M，是申报值构成的恒等式。VCE 占收入 {vce_ratio:.1f}%，'
             f'jaws {jaws:+.1f}pp。</p></article>'
             '<article><span>结构</span><b>持卡人的价格在涨，商户的在降</b>'
-            f'<p>38 季里净卡费长到 {card_fees[-1] / card_fees[0]:.2f} 倍、占收入从 '
+            f'<p>{len(labels)} 季里净卡费长到 {card_fees[-1] / card_fees[0]:.2f} 倍、占收入从 '
             f'{card_fees[0] / revenue[0] * 100:.1f}% 到 {fee_share:.1f}%；'
             f'商户折扣收入只长到 {fin["discount_revenue_usd_m"][-1] / fin["discount_revenue_usd_m"][0]:.2f} 倍，'
             '而公司自 2023 年起不再披露平均折扣率。</p></article>'
@@ -977,7 +973,7 @@ def build_payload(staging: dict) -> dict:
         "notes": [
             "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
             "美国运通财年即自然年，本页季度标注与公司自己的口径一致，无需换算。",
-            "收入与费用口径下的长序列自 2017 年第一季度起，不向前回补；ASC 606 没有动过的那几条序列（净卡费、每卡年费、消费额、公司自己印的平均折扣率、两条信用指标、CET1，以及重述在收入与费用两侧互相抵消的净利润、摊薄 EPS 与摊薄股数）回到 2016 年，所以本页的图有两种长度。公司自 2018-01-01 起适用 ASC 606 并在自家统计表里重述了 2017 年 —— 2018 年 1 月发布中 Q1 2017 的折扣收入是 4,519，2018 年 4 月发布中同一季是 5,387，Card Member rewards 同步等额调高，收入合计从 7,889 变成 8,709。2016 年从未在统计表里被重述过，因为每份发布只并排印五个季度，最后一份带 Q4 2016 的发布早于该变更。把两段接起来会在 2018 年初凭空造出一个约 +10% 的收入台阶。",
+            "本页整张损益表现在是**一个口径的 42 季**。公司自 2018-01-01 起适用 ASC 606 并在自家统计表里重述了 2017 年 —— 2018 年 1 月发布中 Q1 2017 的折扣收入是 4,519，2018 年 4 月发布中同一季是 5,387，Card Member rewards 同步等额调高，收入合计从 7,889 变成 8,709。此前本页把 2016 那四季留在**旧口径**上，理由写的是「公司从未按季重发 2016，因为每份发布只并排印五个季度、最后一份带 Q4 2016 的发布早于该变更」—— 这句话对**业绩发布**成立，对**公司**不成立：2018-03-09 那份 Item 7.01 的 8-K，Exhibit 99.1「Eight Quarter Trend Q1 2016 through Q4 2017」把 As Reported、Adjustments、As Recast 三栏并排印了八个季度。2016 四季现在取自该文件的 As Recast 栏。该文件通篇标着 (Preliminary) 且从未被最终版取代，而这份不确定性是**可以量的**，因为同一份文件也覆盖 2017：对着本页早已采用的四个 2017 季度，它在收入上差 1 百万美元、在拨备上差一个方向相反的 1 百万美元（四季里的三季），在总费用、税前利润、净利润上一分不差。同样的差一位也出现在它的 As Reported 栏，所以那是初步数据的噪声，不是重述本身带来的。注意重述**并非**在两侧完全抵消：2016 四季的净利润被移动了 +13、−30、0、−16。",
             "第一节结清的是年度指引而不是季度指引：公司从不发布季度指引，也从不在申报文件里给季度区间。本站其他几页第一节结清的是季度收入区间，本页不是，差别源于公司披露口径而非编辑选择。",
             "十一个财年里，全年 EPS 指引只有五年（FY2019、FY2022–FY2025）、全年收入增速指引只有六年""（FY2018、FY2019、FY2022–FY2025）可以被诚实结清，逐年理由列在核对抽屉的第一张表里。""EPS 不能结清的六年各有原因：同一年印了 GAAP 与调整后两条区间（FY2016）；""指引与实际不在同一口径上（FY2017 当年 GAAP EPS 被税改一次性费用压到 $2.97，""FY2018 年中改用调整后 EPS 且公司写明无法提供 GAAP 对照）；被撤回（FY2020）；""从头到尾没有给过（FY2021）；本年度尚未结束（FY2026）。""另有一年是结清了但带限定：FY2024 的指引在 7 月被整体上调以容纳一笔出售收益，""上调后的区间与原区间不是同一个东西，这一点写在该年的那几格上。",
             "2020 年全年指引的撤回不在业绩 8-K 里。公司在 2020-03-17 单独报了一份 Item 7.01 的 8-K 说明无法预测第一季度以后的业绩，随后三份业绩新闻稿的前瞻性声明段里「2020 年展望」这个对象整段消失。只读业绩 8-K 会把它读成「没给过指引」，而不是「给过又撤回」。",

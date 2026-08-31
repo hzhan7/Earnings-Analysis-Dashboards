@@ -134,10 +134,10 @@
   ],
   "financials": {
     "revenue_usd_m": [
-      null,
-      null,
-      null,
-      null,
+      8913.0,
+      9080.0,
+      8586.0,
+      8858.0,
       8709.0,
       9172.0,
       9290.0,
@@ -178,10 +178,10 @@
       19637.0
     ],
     "discount_revenue_usd_m": [
-      null,
-      null,
-      null,
-      null,
+      5528.0,
+      5801.0,
+      5408.0,
+      5640.0,
       5387.0,
       5743.0,
       5700.0,
@@ -266,10 +266,10 @@
       2862.0
     ],
     "other_non_interest_revenue_usd_m": [
-      null,
-      null,
-      null,
-      null,
+      1104.0,
+      1113.0,
+      1095.0,
+      1082.0,
       1072.0,
       1125.0,
       1127.0,
@@ -310,10 +310,10 @@
       1963.0
     ],
     "net_interest_income_usd_m": [
-      1580.0,
-      1449.0,
-      1334.0,
-      1408.0,
+      1582.0,
+      1451.0,
+      1336.0,
+      1411.0,
       1502.0,
       1533.0,
       1677.0,
@@ -354,10 +354,10 @@
       4649.0
     ],
     "total_non_interest_revenues_usd_m": [
-      null,
-      null,
-      null,
-      null,
+      7331.0,
+      7629.0,
+      7250.0,
+      7447.0,
       7207.0,
       7639.0,
       7613.0,
@@ -398,10 +398,10 @@
       14988.0
     ],
     "total_interest_income_usd_m": [
-      2005.0,
-      1885.0,
-      1764.0,
-      1821.0,
+      2007.0,
+      1887.0,
+      1766.0,
+      1824.0,
       1945.0,
       2054.0,
       2245.0,
@@ -530,10 +530,10 @@
       1084.0
     ],
     "rewards_usd_m": [
-      null,
-      null,
-      null,
-      null,
+      1937.0,
+      2032.0,
+      1816.0,
+      2034.0,
       2061.0,
       2196.0,
       2168.0,
@@ -574,10 +574,10 @@
       5051.0
     ],
     "card_member_services_usd_m": [
-      null,
-      null,
-      null,
-      null,
+      275.0,
+      272.0,
+      274.0,
+      279.0,
       317.0,
       341.0,
       351.0,
@@ -706,10 +706,10 @@
       1650.0
     ],
     "marketing_and_business_development_usd_m": [
-      null,
-      null,
-      null,
-      null,
+      1361.0,
+      1481.0,
+      1548.0,
+      1859.0,
       1285.0,
       1456.0,
       1446.0,
@@ -794,10 +794,10 @@
       2344.0
     ],
     "professional_services_usd_m": [
-      604.0,
-      628.0,
-      630.0,
-      721.0,
+      584.0,
+      607.0,
+      614.0,
+      703.0,
       501.0,
       511.0,
       494.0,
@@ -838,10 +838,10 @@
       622.0
     ],
     "other_net_usd_m": [
-      null,
-      null,
-      null,
-      null,
+      313.0,
+      -630.0,
+      402.0,
+      512.0,
       395.0,
       351.0,
       398.0,
@@ -882,10 +882,10 @@
       294.0
     ],
     "total_expenses_usd_m": [
-      null,
-      null,
-      null,
-      null,
+      6273.0,
+      5650.0,
+      6346.0,
+      7100.0,
       6297.0,
       6632.0,
       6689.0,
@@ -926,10 +926,10 @@
       14482.0
     ],
     "ppop_usd_m": [
-      2618.0,
-      3479.0,
-      2239.0,
-      1786.0,
+      2640.0,
+      3430.0,
+      2240.0,
+      1758.0,
       2412.0,
       2540.0,
       2601.0,
@@ -970,10 +970,10 @@
       5155.0
     ],
     "pretax_income_usd_m": [
-      2184.0,
-      3016.0,
-      1735.0,
-      1161.0,
+      2206.0,
+      2967.0,
+      1736.0,
+      1133.0,
       1839.0,
       1957.0,
       1831.0,
@@ -1014,10 +1014,10 @@
       4071.0
     ],
     "tax_provision_usd_m": [
-      758.0,
-      1001.0,
-      593.0,
-      336.0,
+      767.0,
+      982.0,
+      594.0,
+      324.0,
       588.0,
       613.0,
       472.0,
@@ -1058,10 +1058,10 @@
       961.0
     ],
     "net_income_usd_m": [
-      1426.0,
-      2015.0,
+      1439.0,
+      1985.0,
       1142.0,
-      825.0,
+      809.0,
       1251.0,
       1344.0,
       1359.0,
@@ -1102,10 +1102,10 @@
       3110.0
     ],
     "effective_tax_rate_pct": [
-      34.7,
-      33.2,
+      34.8,
+      33.1,
       34.2,
-      28.9,
+      28.6,
       32.0,
       31.3,
       25.8,
@@ -1146,10 +1146,10 @@
       23.6
     ],
     "diluted_eps_usd": [
-      1.45,
-      2.1,
-      1.2,
-      0.88,
+      1.46,
+      2.07,
+      1.21,
+      0.86,
       1.35,
       1.47,
       1.51,
@@ -1233,7 +1233,8 @@
       686.0,
       679.0
     ],
-    "effective_tax_rate_note": "这一列由 tax_provision ÷ pretax_income 现算，不再单独抄录。此前 2017Q4 / 2018Q1 / 2018Q2 三格存的是**下一个季度**的比率：2017Q4 存 21.5（那是 2018Q1 的），真值 167.1 —— 那是美国税改一次性计提的季度，税前 1,798、所得税 3,004、净利润 −1,206。2018Q3 起又对上了，所以是一段三格的错位。它不用离开这个文件就能发现：38 季里有 35 季满足 round(100×tax/pretax,1) == 存值，另外三季恰好等于各自下一季的值。"
+    "effective_tax_rate_note": "这一列由 tax_provision ÷ pretax_income 现算，不再单独抄录。此前 2017Q4 / 2018Q1 / 2018Q2 三格存的是**下一个季度**的比率：2017Q4 存 21.5（那是 2018Q1 的），真值 167.1 —— 那是美国税改一次性计提的季度，税前 1,798、所得税 3,004、净利润 −1,206。2018Q3 起又对上了，所以是一段三格的错位。它不用离开这个文件就能发现：38 季里有 35 季满足 round(100×tax/pretax,1) == 存值，另外三季恰好等于各自下一季的值。",
+    "_2016_basis_note": "2016Q1-Q4 are on the ASC 606 RECAST basis, from the Form 8-K of 2018-03-09 (accession 0000004962-18-000042), Exhibit 99.1 'Eight Quarter Trend Q1 2016 through Q4 2017', which prints As Reported, Adjustments and As Recast side by side. Until 2026-08-31 this page carried the four 2016 quarters on the AS REPORTED basis while everything from 2017Q1 was recast, and said in its own notes that no such splice existed -- on the reasoning that each earnings release prints only five quarters side by side, so the last one containing Q4 2016 predates the change. That is true of the earnings releases and false of the company: this 8-K is a separate Item 7.01 furnishing, and it is the only document AmEx ever published with a full quarterly 2016 income statement on the new basis. It was never superseded by a final version. Every page of it is stamped (Preliminary), and the size of that is measurable rather than assumed, because the same exhibit also covers 2017: against the final figures this page already carried for the four 2017 quarters, the exhibit is off by exactly $1M on total revenues and by an offsetting $1M on provisions in three of them, and by nothing at all on total expenses, pretax income or net income. The same off-by-one appears on its As Reported side too, so it is preliminary-vintage noise, not a recast artifact. Provisions and diluted share count are identical on both bases in all eight quarters; net income is not (2016 moves +13, -30, 0, -16)."
   },
   "operating_metrics": {
     "billed_business_usd_bn": [
