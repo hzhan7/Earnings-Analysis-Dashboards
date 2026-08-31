@@ -149,9 +149,14 @@ class MsciDashboardTest(unittest.TestCase):
         self.assertGreaterEqual(checked, 6)
 
     def test_the_tally_the_page_publishes_is_the_one_in_the_data(self) -> None:
-        """The headline claim: expense inside 6/6 against the last guidance,
-        3/6 against the first. If the data stops saying that, the page must not
-        keep saying it either."""
+        """The headline claim: expense inside 9/11 against the last guidance,
+        5/11 against the first. If the data stops saying that, the page must not
+        keep saying it either.
+
+        These were 6/6 and 3/6 while the record started at FY2020. Extending it
+        back to FY2015 did not overturn the claim -- revision still buys most of
+        the accuracy -- but it did change every number in the sentence, which is
+        why the page now derives them instead of printing them."""
         items = self.staging["annual_guidance_history"]["items"]
 
         def tally(key, vintage):
@@ -165,12 +170,21 @@ class MsciDashboardTest(unittest.TestCase):
                     inside += 1
             return inside
 
-        self.assertEqual(tally("operating_expense", "last"), 6)
-        self.assertEqual(tally("operating_expense", "first"), 3)
-        self.assertEqual(tally("free_cash_flow", "last"), 1)
-        self.assertEqual(tally("free_cash_flow", "first"), 1)
+        self.assertEqual(tally("operating_expense", "last"), 9)
+        self.assertEqual(tally("operating_expense", "first"), 5)
+        self.assertEqual(tally("free_cash_flow", "last"), 3)
+        self.assertEqual(tally("free_cash_flow", "first"), 3)
+        # The page prints the expense pair in prose; it must print these.
+        note = next(n for n in self.payload["notes"] if "修订的功劳" in n)
+        self.assertIn("最后一次是 9 年", note)
+        self.assertIn("共 11 个已完结年", note)
+        self.assertIn("第一次只有 5 年", note)
 
-    def test_free_cash_flow_beat_the_top_four_times_on_both_vintages(self) -> None:
+    def test_free_cash_flow_beat_the_top_seven_times_on_both_vintages(self) -> None:
+        """Seven of eleven, and the same seven whichever vintage is scored --
+        so the beat is not an artefact of guidance being revised late in the
+        year. On the FY2020-start record this was four of six; the longer window
+        keeps the shape and makes it harder to dismiss as a small sample."""
         block = self.staging["annual_guidance_history"]["items"]["free_cash_flow"]["by_year"]
         for vintage in (0, -1):
             above = 0
@@ -180,7 +194,7 @@ class MsciDashboardTest(unittest.TestCase):
                 guided = [g for g in year_block["guided"] if g]
                 if year_block["actual"] > guided[vintage][1]:
                     above += 1
-            self.assertEqual(above, 4, f"vintage {vintage}")
+            self.assertEqual(above, 7, f"vintage {vintage}")
 
     def test_the_open_year_is_excluded_from_every_settled_chart(self) -> None:
         """FY2026 is still running; a band drawn over it would settle nothing."""

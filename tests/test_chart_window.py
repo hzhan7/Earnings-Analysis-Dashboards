@@ -32,6 +32,7 @@ commit message for how it was measured.
 
 from __future__ import annotations
 
+import collections
 import json
 import re
 import sys
@@ -42,6 +43,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build.all import ENTRIES  # noqa: E402
+from tests.test_chart_contract import exhibits  # noqa: E402
 
 TARGET_YEAR = 2016
 
@@ -129,7 +131,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 REACH_2016 = {
     "amzn": 9, "avgo": 6, "axp": 5, "bc": 0, "cboe": 9, "cdns": 9, "cme": 14,
     "cost": 7, "googl": 11, "ibkr": 21, "ma": 16, "mc": 0, "mco": 7, "meta": 10,
-    "msci": 9, "msft": 8, "mu": 2, "ndaq": 8, "nke": 8, "nvda": 4, "pm": 6,
+    "msci": 15, "msft": 8, "mu": 2, "ndaq": 8, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 10, "skhynix": 0, "snps": 3,
     "spgi": 2, "tjx": 8, "tsm": 18, "v": 14,
 }
@@ -276,21 +278,14 @@ CONVERTED = {
         "四条计费线": "the four assessment lines themselves.",
     },
     "msci": {
-        # Two floors. The annual guidance record starts with the FY2020 outlook
-        # -- MSCI began giving full-year ranges for operating expenses, adjusted
-        # EBITDA expenses and free cash flow then, and the axis is fiscal years.
-        # The three quarter charts below need the revenue split by type and by
-        # segment, which this file carries for the reviewed eight quarters only;
-        # the run-rate, AUM and margin series beside them do run from 2016Q1.
-        "营业费用：": "not fetched yet, not absent: MSCI's 2019-01-31 release guides "
-                "full-year 2019 total operating expenses at $772-800M and adjusted "
-                "EBITDA expenses at $685-705M -- the same two metrics this chart "
-                "scores. FY2020 is where the extraction started.",
-        "营业费用相对指引中值": "the deviation view of the same record.",
-        "调整后 EBITDA 费用：": "same annual record.",
-        "调整后 EBITDA 费用相对指引中值": "the deviation view of the same record.",
-        "自由现金流：": "same annual record.",
-        "自由现金流相对指引中值": "the deviation view of the same record.",
+        # The annual guidance exemptions that used to sit here are gone: the
+        # record was never short, it was unfetched. It runs from FY2015 -- five
+        # years earlier than this file claimed -- and the release before it
+        # (2014-02-06) carries no quantified forward range at all, which is the
+        # actual floor. The three quarter charts below are a different, real
+        # limit: they need the revenue split by type and by segment, which this
+        # file carries for the reviewed eight quarters only; the run-rate, AUM
+        # and margin series beside them do run from 2016Q1.
         "三条收入腿": "revenue split into recurring subscription, asset-based fees and "
                  "non-recurring is carried here for the reviewed eight quarters.",
         "四个分部": "the four-segment revenue split is carried for the reviewed eight.",
@@ -596,12 +591,6 @@ FLOOR_KIND = {
         '折旧摊销同比': 'coverage',
     },
     'msci': {
-        '营业费用：': 'coverage',
-        '营业费用相对指引中值': 'coverage',
-        '调整后 EBITDA 费用：': 'coverage',
-        '调整后 EBITDA 费用相对指引中值': 'coverage',
-        '自由现金流：': 'coverage',
-        '自由现金流相对指引中值': 'coverage',
         '三条收入腿': 'coverage',
         '四个分部': 'coverage',
         '分部调整后 EBITDA 利润率': 'coverage',
@@ -759,7 +748,7 @@ class ChartWindowTest(unittest.TestCase):
         by_kind = {}
         for slug, title, kind in pending:
             by_kind.setdefault(kind, []).append(f"{slug}/{title}")
-        self.assertEqual(len(by_kind.get("coverage", [])), 44,
+        self.assertEqual(len(by_kind.get("coverage", [])), 38,
                          "charts whose data exists and has not been fetched")
         self.assertEqual(len(by_kind.get("unverified", [])), 14,
                          "charts whose stated reason has never been checked "
@@ -899,6 +888,119 @@ class ChartWindowTest(unittest.TestCase):
         self.assertIsNone(first_year({"xlabels": []}))
         self.assertIsNone(first_year({"xlabels": ["Q1 2016"]}))
         self.assertEqual(first_year({"xlabels": ["Q1 2016", "", "", "", "Q1 2017"]}), 2016)
+
+
+# ── the prose census ────────────────────────────────────────────────────────
+# Extending a window re-derives every number a chart *computes*, and silently
+# invalidates every number its prose *states*. That is not hypothetical: pulling
+# MSCI, Moody's and NVIDIA out to 42 quarters left "31 季利润率" on a 42-quarter
+# chart, "21 季两块业务" on another, and -- worst -- an NVIDIA note still saying
+# gross margin broke its floor "三次" when the longer window shows five, and that
+# Q2'22 was the "唯一一次" revenue miss when Q4'18 was deeper. Those read as facts
+# about the company; they were facts about the left edge of the window.
+#
+# So every quarter-count in published prose has to be *licensed* by something
+# measurable in the exhibit that prints it -- its window length, a lag of that
+# window, the non-null length of one of its series, or a sibling chart's window
+# on the same page (cross-references like "完整 43 季记录见下一张" are legitimate
+# and common). What is left over is pinned here, one line of reason each.
+#
+# The pin is the point. A count that cannot be derived is not necessarily wrong
+# -- all eight below are correct -- but it is a number no rebuild can correct,
+# so it has to be re-read by a person whenever it moves.
+
+# A number that is licensed by an anchor elsewhere in the same exhibit's prose
+# ("42 季里 39 季为正" licenses the 39) is not listed; the anchor is checked
+# exhibit-wide, not field by field, because a title routinely anchors its note.
+UNDERIVABLE_QUARTER_COUNTS = {
+    "avgo Ex16": ([32], "「前 32 个季度这条线一直在…」——序列内一段前缀，不是窗口长度"),
+    "cdns Ex11": ([43], "指向完整指引记录的交叉引用；本图只画近 20 季"),
+    "cme Ex14":  ([37], "锚是同句里用中文写的「五十四个季度里」，数字形式的锚不存在"),
+    "cme Ex21":  ([34], "税改前 7 季 / 之后 34 季的分段均值，两段都短于窗口"),
+    "ibkr Ex9":  ([34], "已由 len(reported) 算出：该行有披露的季度数，非窗口长度"),
+    "ibkr Ex18": ([16], "佣金曾连续 16 季是第一大收入来源，是一段区间的长度"),
+    "meta Ex9":  ([13], "价格腿同比为负的季度数，是条件计数"),
+    "tsm Ex26":  ([22], "自 2021Q1 起两口径逐季相等的季度数，起点晚于窗口左端"),
+}
+
+
+class ProseQuarterCountTest(unittest.TestCase):
+    """Every quarter-count printed in prose is derivable, or pinned with a reason."""
+
+    #    「42 季里 …」/「42 个已完结季中 …」-- an anchor that licenses the tallies
+    #    stated beside it.
+    ANCHOR = re.compile(r"(\d+)\s*(?:个)?(?:已完结)?季(?:度)?(?:里|中)")
+    #    Any quarter-count. The lookbehind drops fiscal years and quarter labels
+    #    ("FY2025 季均线", "Q3'20 起的窗口"), which are not counts of anything.
+    COUNT = re.compile(r"(?<![FYQ\d'\u2019])(\d+)\s*(?:个)?(?:已完结)?季(?:度)?")
+
+    @staticmethod
+    def _derivable(exhibit: dict) -> tuple[int, set]:
+        """Counts this exhibit can honestly name, from its own payload."""
+        labels = exhibit.get("xlabels") or exhibit.get("x") or []
+        n = len(labels)
+        # n-1 and n-4 are the quarter-on-quarter and year-on-year lags: a 42
+        # quarter series yields 41 changes and 38 year-on-year comparisons, and
+        # notes legitimately say so.
+        ok = {n, max(n - 1, 0), max(n - 4, 0)}
+        for key in ("series", "values", "lines", "bars", "stack", "yoy", "line"):
+            value = exhibit.get(key)
+            blocks = []
+            if isinstance(value, list) and value:
+                blocks = value if isinstance(value[0], dict) else [{"values": value}]
+            elif isinstance(value, dict):
+                blocks = [value]
+            for block in blocks:
+                values = block.get("values") or block.get("v") or []
+                if isinstance(values, list):
+                    ok |= {len(values), sum(1 for v in values if v is not None)}
+        return n, ok
+
+    def test_every_quarter_count_in_prose_is_derivable_or_pinned(self) -> None:
+        by_page = collections.defaultdict(set)
+        every = list(exhibits())
+        for label, exhibit in every:
+            by_page[label.split()[0]] |= self._derivable(exhibit)[1]
+
+        found = {}
+        for label, exhibit in every:
+            n, ok = self._derivable(exhibit)
+            # Charts shorter than a year make no window claim worth policing.
+            if n < 12:
+                continue
+            ok |= by_page[label.split()[0]]
+            prose = " ".join(exhibit.get(field) or "" for field in
+                             ("title", "note", "subtitle")
+                             if isinstance(exhibit.get(field), str))
+            if {int(m.group(1)) for m in self.ANCHOR.finditer(prose)} & ok:
+                continue
+            loose = sorted({int(m.group(1)) for m in self.COUNT.finditer(prose)
+                            if int(m.group(1)) >= 12} - ok)
+            if loose:
+                found[label] = loose
+
+        expected = {k: v[0] for k, v in UNDERIVABLE_QUARTER_COUNTS.items()}
+        self.assertEqual(
+            found, expected,
+            "a quarter-count in published prose is no longer derivable from the "
+            "chart that prints it. Re-read the sentence against the current "
+            "window -- do not just move the pin: this check exists because "
+            "extending a window turns a true sentence into a false one without "
+            "touching it. If the number is right, add it to "
+            "UNDERIVABLE_QUARTER_COUNTS with the reason it cannot be derived.")
+
+    def test_the_census_does_not_pin_charts_that_no_longer_exist(self) -> None:
+        """A pin outliving its exhibit would silently stop protecting anything."""
+        live = {label for label, _ in exhibits()}
+        self.assertEqual(sorted(set(UNDERIVABLE_QUARTER_COUNTS) - live), [])
+
+    def test_a_year_label_is_not_read_as_a_quarter_count(self) -> None:
+        """「FY2025 季均线」and「Q3'20 起」name periods, not counts of them."""
+        self.assertEqual([m.group(1) for m in self.COUNT.finditer("FY2025 季均线")], [])
+        self.assertEqual([m.group(1) for m in self.COUNT.finditer("Q3'20 起的 24 季窗口")],
+                         ["24"])
+        self.assertEqual([m.group(1) for m in self.COUNT.finditer("42 季里 39 季为正")],
+                         ["42", "39"])
 
 
 if __name__ == "__main__":

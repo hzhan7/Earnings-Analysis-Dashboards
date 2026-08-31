@@ -261,7 +261,7 @@ def quarter_highlights(staging: dict) -> list[dict]:
         "ref": "EX_SEG_REV",
         "kind": "lines",
         "title": (
-            f"21 季里 MIS 收入在 US${min(seg['mis_revenue_usd_m']):,.0f}M–"
+            f"{len(seg['periods'])} 季里 MIS 收入在 US${min(seg['mis_revenue_usd_m']):,.0f}M–"
             f"US${max(seg['mis_revenue_usd_m']):,.0f}M 之间来回，MA 只是一路往上"
         ),
         "xlabels": labels,
@@ -275,7 +275,7 @@ def quarter_highlights(staging: dict) -> list[dict]:
         "note": (
             "两条线是同一家公司的两种生意。"
             "MIS 的收入按发行窗口开合，最低到最高差了一倍以上；"
-            "MA 是订阅制，21 个季度里没有一个季度同比为负。"
+            f"MA 是订阅制，{len(seg['periods'])} 个季度里没有一个季度同比为负。"
             "本季 MIS US$" + f"{seg['mis_revenue_usd_m'][-1]:,.0f}M、同比 "
             + signed(pct_change(seg["mis_revenue_usd_m"][-1], seg["mis_revenue_usd_m"][-5]))
             + "；MA US$" + f"{seg['ma_revenue_usd_m'][-1]:,.0f}M、同比 "
@@ -332,7 +332,7 @@ def quarter_highlights(staging: dict) -> list[dict]:
         "ylab": "%",
         "note": (
             "MIS 的利润率跟着发行量走，因为评级业务的成本是分析师团队，短期内不随收入伸缩；"
-            "MA 的利润率是被成本纪律一格一格抬上去的，21 季里从 "
+            f"MA 的利润率是被成本纪律一格一格抬上去的，{len(seg['periods'])} 季里从 "
             f"{seg['ma_adj_operating_margin_pct'][0]:.1f}% 到 {seg['ma_adj_operating_margin_pct'][-1]:.1f}%。"
             "合并那条落在两者之间，位置由当季的收入结构决定，而不是由任何一块的经营决定。"
             "<b>这三条是公司披露值，分母是分部<i>总</i>收入（含分部间收入），"
@@ -494,7 +494,7 @@ def routine(staging: dict) -> list[dict]:
     seg_oi = {
         "ref": "EX_SEG_OI",
         "kind": "lines",
-        "title": "21 季两块业务的调整后营业利润：评级那条的波动就是全年指引的波动",
+        "title": f"{len(seg['periods'])} 季两块业务的调整后营业利润：评级那条的波动就是全年指引的波动",
         "xlabels": seg["periods"],
         "xstep": LONG_STEP,
         "series": [
@@ -504,10 +504,18 @@ def routine(staging: dict) -> list[dict]:
         "fmt": "usd0",
         "ylab": "US$M",
         "note": (
-            "MA 那条从 US$100M 一路抬到 US$312M，几乎没有回撤；"
-            "MIS 那条在 US$100M 到 US$896M 之间走了一整轮。"
+            f"MA 那条从 US${seg['ma_adj_operating_income_usd_m'][0]:,.0f}M 抬到 US$"
+            f"{seg['ma_adj_operating_income_usd_m'][-1]:,.0f}M，窗口内峰值 US$"
+            f"{max(seg['ma_adj_operating_income_usd_m']):,.0f}M；"
+            f"MIS 那条在 US${min(seg['mis_adj_operating_income_usd_m']):,.0f}M 到 US$"
+            f"{max(seg['mis_adj_operating_income_usd_m']):,.0f}M 之间走了一整轮。"
             "本季 MIS 调整后营业利润 US$"
-            f"{seg['mis_adj_operating_income_usd_m'][-1]:,.0f}M 是 21 季新高。"
+            f"{seg['mis_adj_operating_income_usd_m'][-1]:,.0f}M"
+            + ("，是 %d 季新高。" % len(seg['periods'])
+               if seg['mis_adj_operating_income_usd_m'][-1]
+                  == max(seg['mis_adj_operating_income_usd_m'])
+               else "，窗口内新高是 US$%s M。"
+                    % format(max(seg['mis_adj_operating_income_usd_m']), ',.0f'))
         ),
         "src_extra": "各期业绩 8-K EX-99.1 的分部表；分部调整后营业利润为公司披露值。",
     }
@@ -552,7 +560,7 @@ def build_payload(staging: dict) -> dict:
         },
         {
             "n": first_table + 1,
-            "title": "近 21 季分部外部收入、调整后营业利润与利润率",
+            "title": f"近 {len(seg['periods'])} 季分部外部收入、调整后营业利润与利润率",
             "headers": ["季度", "MIS 收入", "MA 收入", "合并收入", "MIS 调整后营业利润",
                         "MA 调整后营业利润", "MIS 利润率", "MA 利润率"],
             "rows": [[seg["periods"][i],
@@ -629,7 +637,7 @@ def build_payload(staging: dict) -> dict:
             f'对 2 月那版 {stats["initial_inside"]} 次落在区间内。'
             f'FY2022 中值从 2 月到 10 月被砍了 {abs(stats["worst_cut_pct"]):.0f}%。</p></article>'
             '<article><span>结构</span><b>评级是收入的少数，利润的多数</b>'
-            f'<p>21 季里 MIS 占收入 {min(seg["mis_share_of_revenue_pct"]):.0f}%–'
+            f'<p>{len(seg["periods"])} 季里 MIS 占收入 {min(seg["mis_share_of_revenue_pct"]):.0f}%–'
             f'{max(seg["mis_share_of_revenue_pct"]):.0f}%，'
             f'却占调整后营业利润 {min(seg["mis_share_of_adj_operating_income_pct"]):.0f}%–'
             f'{max(seg["mis_share_of_adj_operating_income_pct"]):.0f}%。</p></article>'

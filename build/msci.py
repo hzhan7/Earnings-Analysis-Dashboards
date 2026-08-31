@@ -128,15 +128,29 @@ def guidance_charts(staging: dict) -> tuple[list[dict], list[dict]]:
     labels = [f"FY{y}" for y in finished]
 
     def legs(key):
+        """First and last guided range per year, plus which release each came from.
+
+        `guided` keeps one slot per release of that year, and a slot is None
+        when the metric was not guided that quarter -- MSCI did not guide free
+        cash flow at all until 2015-07-30, so FY2015 has two leading Nones.
+        Dropping them and calling what is left `guided[0]` would silently
+        promote a July vintage into a column headed "年初第一次指引", which is
+        the one thing this record must not do. So the release date travels with
+        the value and the copy below asks whether they actually agree.
+        """
         by_year = hist["items"][key]["by_year"]
         first_lo, first_hi, last_lo, last_hi, actual = [], [], [], [], []
+        first_is_opening = []
         for y in finished:
             block = by_year[str(y)]
-            guided = [g for g in block["guided"] if g]
-            first_lo.append(guided[0][0]); first_hi.append(guided[0][1])
-            last_lo.append(guided[-1][0]); last_hi.append(guided[-1][1])
+            pairs = [(g, d) for g, d in zip(block["guided"], block["releases"]) if g]
+            (flo, fhi, _), fdate = pairs[0]
+            (llo, lhi, _), _ = pairs[-1]
+            first_lo.append(flo); first_hi.append(fhi)
+            last_lo.append(llo); last_hi.append(lhi)
             actual.append(block["actual"])
-        return first_lo, first_hi, last_lo, last_hi, actual
+            first_is_opening.append(fdate == block["releases"][0])
+        return first_lo, first_hi, last_lo, last_hi, actual, first_is_opening
 
     charts, tables = [], []
     spec = [
@@ -145,7 +159,18 @@ def guidance_charts(staging: dict) -> tuple[list[dict], list[dict]]:
         ("free_cash_flow", "自由现金流", "EX_FCF"),
     ]
     for key, name, ref in spec:
-        flo, fhi, llo, lhi, act = legs(key)
+        flo, fhi, llo, lhi, act, opening = legs(key)
+        # A year whose first guide is not the year's opening release gets its
+        # date printed instead of a bare range, so the column never claims a
+        # vintage it does not have.
+        late = [(lab, hist["items"][key]["by_year"][str(y)]["releases"][
+                     [g is not None for g in
+                      hist["items"][key]["by_year"][str(y)]["guided"]].index(True)])
+                for lab, y, ok in zip(labels, finished, opening) if not ok]
+        late_note = ("" if not late else
+                     "　该指标并非每年都在年初就被指引："
+                     + "、".join(f"{lab} 的第一次指引发布于 {d}" for lab, d in late)
+                     + "，那一年没有年初口径可比，本页用的是它真正的第一次。")
         charts.append(delivery_band(
             f"{ref}_BAND", name, labels, llo, lhi, act,
             fmt="f0c", ylab="US$M", unit="US$M",
@@ -163,19 +188,21 @@ def guidance_charts(staging: dict) -> tuple[list[dict], list[dict]]:
             f"{ref}_DEV", name, labels, llo, lhi, act,
             src_extra="偏离 = 实际值 ÷ 指引中值 − 1，中值取当年最后一次指引区间的中点。",
             extra_note=(
-                "<b>同一年、同一指标，换成年初那次指引就是另一幅样子</b>："
+                "<b>同一年、同一指标，换成年内第一次指引就是另一幅样子</b>："
                 + "、".join(
-                    f"{lab} 对年初指引{'高' if a > (lo + hi) / 2 else '低'}"
+                    f"{lab} 对第一次指引{'高' if a > (lo + hi) / 2 else '低'}"
                     f" {abs(pct_change(a, (lo + hi) / 2)):.1f}%"
                     for lab, lo, hi, a in zip(labels, flo, fhi, act))
-                + "。"),
+                + "。" + late_note),
         ))
         rows = [[lab,
-                 f"${lo:,.0f}–{hi:,.0f}M", f"${l2:,.0f}–{h2:,.0f}M", f"${a:,.0f}M",
+                 f"${lo:,.0f}–{hi:,.0f}M" + ("" if ok else "（首次指引发布于年中）"),
+                 f"${l2:,.0f}–{h2:,.0f}M", f"${a:,.0f}M",
                  "区间内" if l2 <= a <= h2 else ("高于上限" if a > h2 else "低于下限")]
-                for lab, lo, hi, l2, h2, a in zip(labels, flo, fhi, llo, lhi, act)]
-        tables.append({"title": f"{name}：年初指引、年末指引与全年实际",
-                       "headers": ["年度", "年初第一次指引", "当年最后一次指引", "全年实际", "对最后一次指引"],
+                for lab, lo, hi, l2, h2, a, ok
+                in zip(labels, flo, fhi, llo, lhi, act, opening)]
+        tables.append({"title": f"{name}：年内第一次指引、年末指引与全年实际",
+                       "headers": ["年度", "年内第一次指引", "当年最后一次指引", "全年实际", "对最后一次指引"],
                        "rows": rows})
     return charts, tables
 
@@ -186,6 +213,22 @@ def build_payload(staging: dict) -> dict:
     om = staging["operating_metrics"]
     hist = staging["annual_guidance_history"]
     labels = staging["period_labels"]
+
+    # The notes below state this tally in words. It moved from 6/6 to 9/11 when
+    # the record was extended back to FY2015, so it is computed, not typed.
+    def _inside(key, vintage):
+        total = inside = 0
+        for block in hist["items"][key]["by_year"].values():
+            if block["actual"] is None:
+                continue
+            total += 1
+            low, high, _ = [g for g in block["guided"] if g][vintage]
+            inside += low <= block["actual"] <= high
+        return inside, total
+
+    oe_last, oe_n = _inside("operating_expense", -1)
+    oe_first, _ = _inside("operating_expense", 0)
+
     long_labels = om["period_labels"]
 
     revenue = fin["revenue_usd_m"]
@@ -374,7 +417,7 @@ def build_payload(staging: dict) -> dict:
         {
             "ref": "EX_MARGIN",
             "kind": "lines",
-            "title": (f"31 季利润率：调整后 EBITDA {om['adj_ebitda_margin_pct'][-1]:.1f}%，"
+            "title": (f"{len(om['period_labels'])} 季利润率：调整后 EBITDA {om['adj_ebitda_margin_pct'][-1]:.1f}%，"
                       f"经营 {om['operating_margin_pct'][-1]:.1f}%"),
             "xlabels": long_labels,
             "series": [
@@ -384,7 +427,8 @@ def build_payload(staging: dict) -> dict:
             "fmt": "pct1", "yfmt": "pct1", "label_fmt": "pct1", "end_label": True,
             "ylab": "%", "xstep": LONG_STEP,
             "note": ("两条线的<b>缺口</b>就是折旧摊销加股权激励等被调整掉的成本，"
-                     "31 季里它从 5.5pp 走到 "
+                     f"{len(om['period_labels'])} 季里它从 "
+                     f"{om['adj_ebitda_margin_pct'][0] - om['operating_margin_pct'][0]:.1f}pp 走到 "
                      f"{om['adj_ebitda_margin_pct'][-1] - om['operating_margin_pct'][-1]:.1f}pp。"
                      "每年第一季两条线同时下沉，是薪酬税与年度激励集中在 Q1 确认所致，"
                      "属于季节性而非趋势。"),
@@ -393,7 +437,7 @@ def build_payload(staging: dict) -> dict:
         {
             "ref": "EX_RET",
             "kind": "lines",
-            "title": (f"31 季总留存率：本季 {om['retention_rate_pct'][-1]:.1f}%，"
+            "title": (f"{len(om['period_labels'])} 季总留存率：本季 {om['retention_rate_pct'][-1]:.1f}%，"
                       f"窗口内区间 {min(v for v in om['retention_rate_pct'] if v is not None):.1f}–"
                       f"{max(v for v in om['retention_rate_pct'] if v is not None):.1f}%"),
             "xlabels": long_labels,
@@ -491,7 +535,7 @@ def build_payload(staging: dict) -> dict:
             f'占收入 {abf[-1] / revenue[-1] * 100:.1f}%；订阅腿同比 '
             f'{signed(pct_change(rec[-1], rec[-5]))}。</p></article>'
             '<article><span>代价</span><b>规模在涨，过路费率在降</b>'
-            f'<p>AUM 31 季涨约 {aum[-1] / aum[0]:.1f} 倍，期末基点费率从 2.67bp 降到 '
+            f'<p>AUM {len(aum)} 季涨约 {aum[-1] / aum[0]:.1f} 倍，期末基点费率从 {bp[0]:.2f}bp 降到 '
             f'{bp[-1]:.2f}bp，资产型收入是两者相乘。</p></article>'
             '</div>'),
         "source": ('Source: <a href="https://www.sec.gov/Archives/edgar/data/1408198/'
@@ -516,7 +560,7 @@ def build_payload(staging: dict) -> dict:
              "description": "当前值离下季阈值还有多远，统一用「距阈值余量」口径；不接入的四条也写在这里。",
              "exhibits": next_block},
             {"id": "routine", "title": "四、长期常规跟踪",
-             "description": "MSCI 专属的常规序列：31 季利润率与它的调整缺口、留存率的季节性，以及 Run Rate 的两条腿。",
+             "description": f"MSCI 专属的常规序列：{len(om['period_labels'])} 季利润率与它的调整缺口、留存率的季节性，以及 Run Rate 的两条腿。",
              "exhibits": routine_ex},
         ],
         "tables": tables,
@@ -525,10 +569,10 @@ def build_payload(staging: dict) -> dict:
             "MSCI 财年即自然年，本页季度标注与公司自己的口径一致，无需换算。",
             "第一节结清的是年度指引而不是季度指引：MSCI 在每季业绩新闻稿里给出并更新一次全年 Guidance 表，但从不给季度指引，也从不指引收入与每股收益。本站其他公司页第一节结清的是季度收入区间，本页不是，差别源于公司披露口径而非编辑选择。",
             "全年 Guidance 表自 2020 年第三季度业绩新闻稿起以表格形式发布，此前同一组指引以正文段落给出。本页的指引记录自表格化那一期起算，共 24 次发布、覆盖 FY2020 至 FY2026 七个年度，其中六个年度已完结。",
-            "同一年的指引在四次发布中会被修订，本页把「年初第一次」与「当年最后一次」分别对全年实际结清，两个答案不同：营业费用对最后一次是 6 年 6 次落在区间内，对第一次只有 3 次。把这两者混为一谈，会把修订的功劳读成预测的准确。",
+            f"同一年的指引在四次发布中会被修订，本页把「年内第一次」与「当年最后一次」分别对全年实际结清，两个答案不同：营业费用对最后一次是 {oe_last} 年落在区间内（共 {oe_n} 个已完结年），对第一次只有 {oe_first} 年。把这两者混为一谈，会把修订的功劳读成预测的准确。",
             "全年实际值一律取次年第一季发布（各年 Q4 业绩新闻稿）中 Table 11 与 Table 12 的 Year Ended 列，不使用年初至今列差分。自由现金流 = 经营现金流 − 资本开支，七个年度逐年核对该恒等式均成立。",
             "各表的金额单位在不同年份、不同表之间在千美元、百万美元与十亿美元之间切换，本页逐表读该表自己的单位表头后统一换算为百万美元；AUM 保留十亿美元。",
-            "2021 年之前 Sustainability and Climate 与 All Other – Private Assets 合并为一个 All Other 分部，且该分部当时名为 ESG and Climate。分部图的窗口全部落在拆分之后；31 季的合并口径序列不受影响，分部相加等于合并收入在全部 31 季均成立。",
+            f"2021 年之前 Sustainability and Climate 与 All Other – Private Assets 合并为一个 All Other 分部，且该分部当时名为 ESG and Climate。分部图的窗口全部落在拆分之后；{len(om['period_labels'])} 季的合并口径序列不受影响，分部相加等于合并收入在全部 {len(om['period_labels'])} 季均成立。",
             "期末基点费率自 2020 年第二季度起有披露，摊薄股数自 2022 年第四季度起在业绩新闻稿中单列，两条序列均从数字存在的那一季开始画，不向前回补。",
             "本页不发布市场一致预期：没有可核对的、带日期的公开来源，站点规则允许发布带日期的「市场预期」对照点，但不允许凭印象填一个数。本页同样不发布评级、目标价与估值。",
             "本页只发布公司披露值、可复算的简单派生值；D 标记代表 Derived / 自算。",

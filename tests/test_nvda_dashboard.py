@@ -95,9 +95,17 @@ class NvdaDashboardTest(unittest.TestCase):
     def test_the_guided_record_is_one_row_per_quarter(self) -> None:
         guide = self.source["quarterly_guidance_history"]
         length = len(guide["quarters"])
-        self.assertEqual(length, 25)
+        self.assertEqual(length, 43)
         for name, values in guide.items():
-            self.assertEqual(len(values), length, name)
+            if isinstance(values, list):
+                self.assertEqual(len(values), length, name)
+        # Extending the record backwards must not restate the part that was
+        # already published: the 25 rows this file used to assert against are
+        # still the tail, unchanged.
+        overlap = guide["quarters"].index("Q3 2020")
+        self.assertEqual(overlap, 18)
+        self.assertEqual(guide["guide_revenue_usd_bn"][overlap], 4.4)
+        self.assertEqual(guide["actual_revenue_usd_m"][overlap], 4726.0)
         # The record ends on a quarter that has been guided but not reported;
         # everything before it must be complete.
         self.assertIsNone(guide["actual_revenue_usd_m"][-1])

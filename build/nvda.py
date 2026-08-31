@@ -132,6 +132,33 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
 
     finished = [index for index, value in enumerate(revenue_actual) if value is not None]
 
+    # Every count these charts print is derived here, because the window has now
+    # moved twice and each move silently invalidated a hand-typed number in the
+    # copy below. "唯一一次" and "三次" were both true of the 24-quarter window
+    # and both false of this one.
+    rev_dev = [(revenue_actual[i] / revenue_guide[i] - 1) * 100 for i in finished]
+    rev_beat_2pct = sum(1 for d in rev_dev if d > 2)
+    rev_misses = [(compact_period(quarters[i]), d)
+                  for i, d in zip(finished, rev_dev) if d < -band[i]]
+    rev_worst = min(zip([compact_period(quarters[i]) for i in finished], rev_dev),
+                    key=lambda pair: pair[1])
+
+    gm_above = gm_narrow = 0
+    gm_misses = []
+    for i in finished:
+        actual = margin_actual[i]
+        if actual > margin_hi[i]:
+            gm_above += 1
+        elif actual < margin_lo[i]:
+            gm_misses.append((compact_period(quarters[i]), actual - margin_guide[i]))
+        if abs(actual - margin_guide[i]) <= 0.5:
+            gm_narrow += 1
+
+    opex_mad = sum(
+        abs(guide["actual_non_gaap_opex_usd_m"][i]
+            / (guide["non_gaap_opex_guide_usd_bn"][i] * 1000) - 1) * 100
+        for i in finished) / len(finished)
+
     # ── revenue ──────────────────────────────────────────────────────────────
     # The band is drawn over the last eight quarters only. NVIDIA's revenue went
     # from US$4.4B to US$91B across this record, so on one linear dollar axis the
@@ -147,10 +174,10 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         scope=f"（本图仅近 {REVENUE_BAND_WINDOW} 季）",
         src_extra=SOURCE_8K,
         extra_note=(
-            "<b>这张只画最近八季，不是数据缺失</b>：本页的指引记录一路回到 2020 年，"
+            f"<b>这张只画最近八季，不是数据缺失</b>：本页的指引记录一路回到 {quarters[0]}，"
             "而收入在这段时间从 US$4.4B 长到 US$108B，二十多倍的量级差放在一根线性美元轴上，"
             "早年的 ±2% 区间会被压成几个像素，图就不再回答自己的问题了。"
-            "完整 24 季的同一问题改用与量级无关的口径回答，见 Exhibit {EX_REV_DEV}。"
+            f"完整 {len(quarters)} 季的同一问题改用与量级无关的口径回答，见 Exhibit {{EX_REV_DEV}}。"
         ),
     )
     revenue_dev_chart = midpoint_deviation(
@@ -158,10 +185,17 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         mode="pct", window=len(finished), label=compact_period, bar_labels=False,
         src_extra=SOURCE_8K + "偏离为实际收入除以指引中值的自算值。",
         extra_note=(
-            "<b>这是全页最该先读的一张</b>：24 个已完结季里 21 季高于指引中值 2% 以上"
-            "（也就是穿出区间上限），公司的收入指引在这个窗口里更接近底线而不是预测。"
-            "但它<b>不是</b>不可破的底线 —— Q2'22 一季 -17.2%，是本页唯一一次收入跌破下限，"
-            "那一季游戏渠道去库存把已经给出的指引直接作废。"
+            f"<b>这是全页最该先读的一张</b>：{len(finished)} 个已完结季里 {rev_beat_2pct} 季"
+            "高于指引中值 2% 以上（也就是穿出区间上限），"
+            "公司的收入指引在这个窗口里更接近底线而不是预测。"
+            "但它<b>不是</b>不可破的底线 —— <b>窗口拉到 "
+            f"{len(finished)} 季之后，跌破下限的不止一季，而是 {len(rev_misses)} 季</b>："
+            + "、".join(f"{lab} {d:+.1f}%" for lab, d in rev_misses) + "。"
+            "此前本页只画到 Q3'20 起的 24 季，那扇窗口里只剩 Q2'22 一次，"
+            "于是「唯一一次」这个说法成立；它成立靠的是窗口的左边界，不是这家公司的记录。"
+            f"而且最深的那次不是 Q2'22，是 {rev_worst[0]} 的 {rev_worst[1]:+.1f}% —— "
+            "2018 年底加密货币矿卡需求塌方、渠道里堆着卖不掉的游戏卡，"
+            "公司连着两季（Q3'18、Q4'18）没能守住自己给的下限。"
             "柱高在这里可比，因为口径是百分比，不受收入量级二十倍变化的影响。"
         ),
     )
@@ -245,10 +279,16 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         src_extra=(SOURCE_8K + "实际 non-GAAP 毛利率 = 对账表的 non-GAAP 毛利 ÷ 净收入 D。"),
         extra_note=(
             "<b>和收入那条完全相反</b>：毛利率的指引大部分时候是<b>真预测</b>而不是底线 —— "
-            "16 季落在 ±50bp 的窄区间内，只有 5 季穿出上限。"
-            "但它破起来极狠：三次跌破下限分别是 -21.3pp（Q2'22 游戏库存计提）、"
-            "-8.9pp（Q3'22 同一轮去库存）与 -10.0pp（Q1'25 H20 出口管制计提），"
-            "三次都是一次性计提，不是经营性下滑。"
+            f"{gm_narrow} 季落在中值 ±50bp 的窄区间内，{gm_above} 季穿出上限。"
+            f"但它破起来极狠，而且<b>次数比本页此前写的多</b>：{len(gm_misses)} 次跌破下限，"
+            + "、".join(f"{lab} {d:+.1f}pp" for lab, d in gm_misses) + "。"
+            "此前本页写的是「三次，且三次都是一次性计提」——"
+            "那句话在 Q3'20 起的 24 季窗口里是对的，拉到 "
+            f"{len(finished)} 季之后不再成立："
+            "多出来的 Q3'18 与 Q4'18 是加密需求退潮后的<b>经营性</b>下滑，"
+            "游戏卡渠道库存压着定价，不是任何一笔计提。"
+            "所以「毛利率只会被一次性事件砸穿」这个读法要收回一半："
+            "它也会被一轮需求周期慢慢磨下去。"
             "这条线的形状本身就是本页的风险提示：这家公司的毛利率不会慢慢变坏，只会一次砸穿。"
         ),
     )
@@ -301,7 +341,7 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         extra_note=(
             "承接 Exhibit {EX_OPEX_RANGE}：那张画水平，这张只画差额。"
             "读法与另外两个指标相反：<b>负值才是好消息</b>（实际花得比承诺少）。"
-            "柱子长期贴近零轴，24 季的平均绝对偏离只有个位数百分比。"
+            f"柱子长期贴近零轴，{len(finished)} 季的平均绝对偏离只有 {opex_mad:.1f}%。"
             "<b>这张图不受口径变更影响</b> —— 每一季的指引与实际都在同一口径下给出与报出，"
             "相除之后股权激励费用在分子分母里同时出现，"
             "所以这里没有 Exhibit {EX_OPEX_RANGE} 上那道断点。"
