@@ -146,13 +146,66 @@ class MuSeriesTest(unittest.TestCase):
         and produced numbers four times too large in the fiscal first quarters.
         """
         for index, period in enumerate(self.periods):
+            capex = self.fin["capex_net_usd_m"][index]
             with self.subTest(period=period):
+                if capex is None:
+                    self.assertIsNone(self.fin["adjusted_free_cash_flow_usd_m"][index],
+                                      "no net capex, so no adjusted free cash flow")
+                    continue
                 self.assertAlmostEqual(
-                    self.fin["operating_cash_flow_usd_m"][index]
-                    + self.fin["capex_net_usd_m"][index],
+                    self.fin["operating_cash_flow_usd_m"][index] + capex,
                     self.fin["adjusted_free_cash_flow_usd_m"][index], places=6)
-                self.assertLess(self.fin["capex_net_usd_m"][index], 0,
+                self.assertLess(capex, 0,
                                 "net capex is published as a negative number")
+
+    def test_net_capex_is_the_net_line_in_every_quarter_that_has_one(self) -> None:
+        """The identity above cannot see which capex measure sits in the row.
+
+        Its docstring used to say both legs and the result are printed in every
+        release. That is true from period-end 2018-03-01, where the earnings
+        release carries a RECONCILIATION OF GAAP TO NON-GAAP MEASURES. It was
+        never true before: no such table exists in the FY2016/FY2017 releases,
+        adjusted free cash flow is computed here from the other two, and so the
+        identity holds by construction in exactly the quarters where it is not
+        evidence. It held 42 of 42 while eight of those quarters carried GROSS
+        capex -- successive differences of the year-to-date gross line -- against
+        a net figure everywhere else.
+
+        So the discriminating assertion has to be by value. Micron states the net
+        figure in the press-release body of each quarter's own EX-99.1, to three
+        significant figures, and the six below are pinned to it. The two nulls
+        are pinned too, which is the half that stops the gross values coming
+        back: the phrase "net of amounts funded by partners" first appears in the
+        release of 2016-10-04, so for the two quarters before it no net figure
+        exists to read.
+
+        Independent of the body sentences, the four fiscal-2017 quarters sum onto
+        a year-to-date chain printed in different documents -- the FY2017 10-Qs
+        and 10-K give 1.18 / 2.35 / 3.62 / 5.13 billion -- which is asserted
+        below, and which a gross-basis row fails by about 120 million.
+        """
+        printed_net = {
+            "2016-09-01": -1690.0,   # EX-99.1 of 2016-10-04, acc 0000723125-16-000225
+            "2016-12-01": -1180.0,   # EX-99.1 of 2016-12-21, acc 0000723125-16-000306
+            "2017-03-02": -1170.0,   # EX-99.1 of 2017-03-23, acc 0000723125-17-000031
+            "2017-06-01": -1270.0,   # EX-99.1 of 2017-06-29, acc 0000723125-17-000080
+            "2017-08-31": -1510.0,   # EX-99.1 of 2017-09-26, acc 0000723125-17-000106
+            "2017-11-30": -1920.0,   # EX-99.1 of 2017-12-19, acc 0000723125-17-000162
+        }
+        ends = self.staging["period_ends"]
+        for end, value in printed_net.items():
+            with self.subTest(period_end=end):
+                self.assertEqual(self.fin["capex_net_usd_m"][ends.index(end)], value)
+        for end in ("2016-03-03", "2016-06-02"):
+            with self.subTest(period_end=end):
+                self.assertIsNone(self.fin["capex_net_usd_m"][ends.index(end)],
+                                  "no net capex is printed for this quarter; the gross "
+                                  "figure is a different measure and must not stand in")
+        fiscal_2017 = ("2016-12-01", "2017-03-02", "2017-06-01", "2017-08-31")
+        self.assertAlmostEqual(
+            sum(-self.fin["capex_net_usd_m"][ends.index(e)] for e in fiscal_2017),
+            5130.0, delta=10.0,
+            msg="the four quarters must sum to the $5.13 billion the FY2017 10-K prints")
 
     def test_revenue_by_technology_sums_to_revenue(self) -> None:
         """DRAM + NAND + other equals the income statement, to the dollar.

@@ -926,14 +926,14 @@
       25388.0
     ],
     "capex_net_usd_m": [
-      -1230,
-      -1690,
-      -1969,
-      -1288,
-      -1173,
-      -1269,
-      -1523,
-      -2089,
+      null,
+      null,
+      -1690.0,
+      -1180.0,
+      -1170.0,
+      -1270.0,
+      -1510.0,
+      -1920.0,
       -2110,
       -2100,
       -2060,
@@ -970,14 +970,14 @@
       -7084.0
     ],
     "adjusted_free_cash_flow_usd_m": [
-      -467,
-      -1301,
-      -1073,
-      -150,
-      232,
-      1138,
-      1680,
-      1547,
+      null,
+      null,
+      -794.0,
+      -42.0,
+      235.0,
+      1137.0,
+      1693.0,
+      1716.0,
       2238,
       2161,
       3095,
@@ -1365,7 +1365,8 @@
       1.8009,
       4.8321
     ],
-    "backfill_note": "Q1 2016–Q3 2021 共 23 季为回补，取自各季 8-K EX-99.1 与 SEC XBRL companyfacts。收入与净利润逐年加总与本文件 `annual_cycle`（10-K 来源）的 FY17–FY21 全年数精确相符，FQ4-21 的资产负债表数与 `annual_cycle` FY2021 亦精确相符。覆盖不均，按披露实况留空而不补：销货成本仅 6/23 季（早期发布稿不单列）、存货周转天数 5/23、研发与销管费用未单独回补 —— 独立的非 GAAP 毛利率对账表在 FQ2-17 之前不存在，FQ2-16/FQ3-16 两季的非 GAAP 营业利润在任何申报里都无法还原。与本文件原有最近八季重叠比对 150 余格，0 处不一致。"
+    "backfill_note": "Q1 2016–Q3 2021 共 23 季为回补，取自各季 8-K EX-99.1 与 SEC XBRL companyfacts。收入与净利润逐年加总与本文件 `annual_cycle`（10-K 来源）的 FY17–FY21 全年数精确相符，FQ4-21 的资产负债表数与 `annual_cycle` FY2021 亦精确相符。覆盖不均，按披露实况留空而不补：销货成本仅 6/23 季（早期发布稿不单列）、存货周转天数 5/23、研发与销管费用未单独回补 —— 独立的非 GAAP 毛利率对账表在 FQ2-17 之前不存在，FQ2-16/FQ3-16 两季的非 GAAP 营业利润在任何申报里都无法还原。与本文件原有最近八季重叠比对 150 余格，0 处不一致。",
+    "_capex_basis_note": "capex_net_usd_m is Micron's own \"Investments in capital expenditures, net of amounts funded by partners\". From period-end 2018-03-01 it is read from the earnings release's RECONCILIATION OF GAAP TO NON-GAAP MEASURES. Before that no such table exists, and until 2026-08-31 the eight earlier quarters carried something else entirely: successive differences of the year-to-date GROSS \"Investments in capital expenditures\" line in the CONSOLIDATED FINANCIAL SUMMARY. Gross and net are different measures, so the row held two of them. The six quarters from 2016-09-01 onward now carry the net figure Micron states in the press-release body (\"...were $1.69 billion for the fourth quarter of fiscal 2016\"), quoted to three significant figures, which is the finest printing that exists. 2016-03-03 and 2016-06-02 are null: the phrase \"net of amounts funded by partners\" first appears in the release of 2016-10-04, those two releases give only a gross figure, and their 10-Qs print gross year-to-date, so no net value can be read for them and none was derived. Cross-checked on a second document chain: the year-to-date nets printed in the FY2017 10-Qs and 10-K run 1.18 / 2.35 / 3.62 / 5.13, and the four quarterly nets above sum to exactly that. Note a coincidence that could mislead a later reader -- 2016-06-02 held -1690 as a GROSS figure and 2016-09-01 now holds -1690 as a NET one; they are not the same number twice."
   },
   "balance_sheet": {
     "cash_and_equivalents_usd_m": [

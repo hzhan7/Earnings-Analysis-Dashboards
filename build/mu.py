@@ -97,6 +97,17 @@ def compact_period(period: str) -> str:
     return f"{quarter}'{year[-2:]}"
 
 
+def billions(values: list[float | None]) -> list[float | None]:
+    """Millions to billions, carrying nulls through rather than crashing on them.
+
+    Written when Micron's net-capex row lost two quarters. `[v / 1000 for v in ...]`
+    had been fine only because no series in this block had ever had a hole in it,
+    which is not a property anyone had checked -- it was a property of the data
+    happening to be complete.
+    """
+    return [None if v is None else v / 1000.0 for v in values]
+
+
 def rounded(values: list[float | None], digits: int = 6) -> list[float | None]:
     return [None if value is None else round(value, digits) for value in values]
 
@@ -935,23 +946,26 @@ def routine_charts(staging: dict) -> list[dict]:
         "src_extra": "各财年现金流量表的「购建固定资产支出」；资本强度为自算 D。",
     }
 
+    fcf = fin["adjusted_free_cash_flow_usd_m"]
+    deepest = min(v for v in fcf if v is not None)
+
     cash_generation = {
         "ref": "EX_CASHGEN",
         "kind": "grouped_bars",
         "title": (
             f"{len(labels)} 季的现金三条：经营现金流 US${fin['operating_cash_flow_usd_m'][-1] / 1000:.1f}B、"
             f"净资本开支 US${abs(fin['capex_net_usd_m'][-1]) / 1000:.1f}B、"
-            f"调整后自由现金流 US${fin['adjusted_free_cash_flow_usd_m'][-1] / 1000:.1f}B"
+            f"调整后自由现金流 US${fcf[-1] / 1000:.1f}B"
         ),
         "xlabels": labels,
         "xrot": 90,
         "groups": [
             {"name": "经营现金流", "color": "NAVY",
-             "values": rounded([v / 1000 for v in fin["operating_cash_flow_usd_m"]])},
+             "values": rounded(billions(fin["operating_cash_flow_usd_m"]))},
             {"name": "净资本开支（公司口径）", "color": "RED",
-             "values": rounded([v / 1000 for v in fin["capex_net_usd_m"]])},
+             "values": rounded(billions(fin["capex_net_usd_m"]))},
             {"name": "调整后自由现金流（公司口径）", "color": "GOLD",
-             "values": rounded([v / 1000 for v in fin["adjusted_free_cash_flow_usd_m"]])},
+             "values": rounded(billions(fin["adjusted_free_cash_flow_usd_m"]))},
         ],
         "bar_labels": False,
         "fmt": "usd1",
@@ -962,16 +976,20 @@ def routine_charts(staging: dict) -> list[dict]:
             "<b>三条都是公司自己印在业绩稿里的口径，不是本页凑的。</b>"
             "公司定义的「净资本开支」= 购建固定资产支出 − 出售固定资产所得 − 收到的政府补助，"
             "「调整后自由现金流」= 经营现金流 − 净资本开支；"
-            f"逐季验算过，有该三条的 {sum(1 for v in fin['adjusted_free_cash_flow_usd_m'] if v is not None)} 季全部到分闭合。"
-            f"窗口内有 {sum(1 for v in fin['adjusted_free_cash_flow_usd_m'] if v < 0)} 个季度"
+            f"窗口内有 {sum(1 for v in fcf if v is not None and v < 0)} 个季度"
             "调整后自由现金流为负，最深的一次是 "
-            f"{periods[fin['adjusted_free_cash_flow_usd_m'].index(min(fin['adjusted_free_cash_flow_usd_m']))]} 的 "
-            f"−US${abs(min(fin['adjusted_free_cash_flow_usd_m'])) / 1000:.1f}B。"
+            f"{periods[fcf.index(deepest)]} 的 −US${abs(deepest) / 1000:.1f}B。"
+            "<b>红色那条有两格是空的</b>（2016 年第一、二季）：公司「扣除合作方出资后」"
+            "这个口径的措辞最早出现在 2016-10-04 那份发布里，更早两份只印毛额，"
+            "10-Q 也只给毛额的年初至今数，所以那两季没有可读的净值，本页不用毛额顶替 —— "
+            "在此之前它们装的正是毛额，两个不同的计量摆在同一行上。"
+            "<b>另外，「等式逐季闭合」不是一次检验</b>：调整后自由现金流本页就是由"
+            "另外两条相减得到的，所以它必然闭合，看不出资本开支那一行装的是哪个口径。"
             "<b>注意红色那条在整段窗口里几乎是平的</b>：资本开支并没有跟着现金流一起暴涨，"
             "所以本季 US$18.3B 的自由现金流几乎全部来自经营端。"
             "这也是 Exhibit {EX_CAPEX} 那句话的季度版本 —— 支出的拐点还没到表里来。"
         ),
-        "src_extra": "各季业绩 8-K EX-99.1 的调整后自由现金流对账表。",
+        "src_extra": "2018 年第一季度起取自各季业绩 8-K EX-99.1 的非 GAAP 对账表；更早的六季该表尚不存在，净资本开支取自同一份发布正文里公司自己写的那句「扣除合作方出资后……」（三位有效数字），调整后自由现金流按同两条相减得到。",
     }
 
     # Inventory days shares cost of goods sold's eighteen-quarter hole, so this
