@@ -269,11 +269,69 @@ class AxpDashboardTest(unittest.TestCase):
         """
         rate = next(ex for ex in self.exhibits if ex.get("ref") == "EX_RATE")
         derived = rate["series"][1]["values"]
-        for period, value in zip(self.staging["periods"][axp.RECAST:], derived):
+        self.assertEqual(len(derived), len(self.staging["periods"]))
+        for period, value in zip(self.staging["periods"], derived):
             if period < "2021Q1":
                 self.assertIsNone(value, period)
             else:
                 self.assertIsNotNone(value, period)
+
+    def test_the_printed_discount_rate_is_drawn_on_the_axis_the_data_has(self) -> None:
+        """The printed line and the derived line have different floors.
+
+        The derived one is a basis limit (the test above). The printed one never
+        was: it was truncated to 2017Q1 because the whole `operating_metrics`
+        block went through `recast()`, so four filed quarters were dropped from
+        a series ASC 606 does not touch. Pinning the axis here means the chart
+        cannot quietly go back to reading the cut block.
+        """
+        rate = next(ex for ex in self.exhibits if ex.get("ref") == "EX_RATE")
+        printed = self.staging["operating_metrics"]["company_average_discount_rate_pct"]
+        self.assertEqual(rate["xlabels"], self.staging["period_labels"])
+        self.assertEqual(rate["xlabels"][0], "Q1 2016")
+        self.assertEqual(rate["series"][0]["values"][:axp.RECAST], printed[:axp.RECAST])
+        # The note counts the quarters off the same list it plots.
+        self.assertIn(f"印了 {sum(1 for v in printed if v is not None)} 个季度", rate["note"])
+
+    def test_billed_business_yoy_starts_where_its_own_base_exists(self) -> None:
+        """Two quarters that were being thrown away before they could be used.
+
+        Billed business is on the untouched side of the recast and this file
+        carries 2016Q3-Q4, so the first quarter with a base is 2017Q3. Read
+        through `recast()` the base disappeared and the line started at 2018Q1
+        -- four filed dollar figures short of what the record supports.
+        """
+        periods = self.staging["periods"]
+        billed = self.staging["operating_metrics"]["billed_business_usd_bn"]
+        chart = next(ex for ex in self.exhibits
+                     if ex["kind"] == "lines" and ex["title"].startswith("消费额同比"))
+        first = next(i for i in range(4, len(billed))
+                     if billed[i] is not None and billed[i - 4] is not None)
+        self.assertEqual(periods[first], "2017Q3")
+        self.assertLess(first, axp.RECAST + 4)
+        self.assertEqual(chart["xlabels"][0], self.staging["period_labels"][first])
+        self.assertEqual(len(chart["xlabels"]), len(billed) - first)
+        self.assertAlmostEqual(chart["series"][0]["values"][0],
+                               round((billed[first] / billed[first - 4] - 1) * 100, 6))
+
+    def test_the_buyback_note_counts_shares_over_the_axis_it_plots(self) -> None:
+        """The note's whole argument is a comparison of two multiples.
+
+        Reading diluted shares through `recast()` while the chart plots 42
+        quarters put a 38-quarter buyback next to a 42-quarter pair of
+        multiples: the residual the note calls preferred dividends and
+        participating awards came out at 7.7%, not 1.0%.
+        """
+        buyback = next(ex for ex in self.exhibits if ex.get("ref") == "EX_BUYBACK")
+        fin = self.staging["financials"]
+        shares = fin["diluted_shares_m"]
+        printed = re.search(r"从 ([\d,]+)M 降到 ([\d,]+)M", buyback["note"])
+        self.assertEqual([float(printed.group(1).replace(",", "")),
+                          float(printed.group(2).replace(",", ""))],
+                         [shares[0], shares[-1]])
+        multiples = ((fin["diluted_eps_usd"][-1] / fin["diluted_eps_usd"][0])
+                     / (fin["net_income_usd_m"][-1] / fin["net_income_usd_m"][0]))
+        self.assertLess(abs(multiples / (shares[0] / shares[-1]) - 1), 0.02)
 
     def test_the_printed_and_derived_rates_are_two_series_not_one(self) -> None:
         rate = next(ex for ex in self.exhibits if ex.get("ref") == "EX_RATE")

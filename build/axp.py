@@ -314,11 +314,14 @@ def guidance_charts(staging: dict) -> tuple[list[dict], list[dict]]:
 
 # American Express recast 2017 onward for ASC 606 and never republished 2016 by
 # quarter, so the income statement has one basis from 2017Q1 and another before
-# it. Eight series the recast did not touch do carry 2016 -- net card fees,
-# salaries, diluted shares, billed business, network volumes, average fee per
-# card, proprietary cards in force, CET1 -- and those are the only ones allowed
-# to run the longer axis. RECAST is derived from the data rather than typed, so
-# adding a quarter at either end cannot silently move it.
+# it. Twenty-two series the recast did not touch do carry 2016 -- fourteen in
+# `financials` (everything below the revenue/expense gross-up, plus net card
+# fees and salaries), all six operating metrics, and both credit metrics -- and
+# those are the only ones allowed to run the longer axis. Which ones they are is
+# pinned by value in the tests, not by this comment -- see
+# `test_the_income_statement_stops_where_the_recast_stops`.
+# RECAST is derived from the data rather than typed, so adding a quarter at
+# either end cannot silently move it.
 RECAST = 4
 
 
@@ -508,11 +511,11 @@ def quarter_charts(staging: dict) -> list[dict]:
 # ── section three: the thresholds pointed forward ────────────────────────────
 def next_quarter_charts(staging: dict) -> list[dict]:
     fin = recast(staging["financials"])
-    om = recast(staging["operating_metrics"])
-    credit = recast(staging["credit_metrics"])
-    # 2016 exists in this file for the eight series ASC 606 did not touch; the
-    # rest of the record starts at the recast basis. Everything in this function
-    # is on the recast side, so it reads the recast window.
+    credit = staging["credit_metrics"]
+    # `fin` is the only block this function plots through the recast window
+    # (revenue and total expenses, for jaws and VCE). Every series here that
+    # ASC 606 did not touch reads `staging` directly instead, so its chart runs
+    # as far back as the filings do.
     labels = staging["period_labels"][RECAST:]
     kpi = staging["next_kpi"]["quantified"]
 
@@ -526,7 +529,16 @@ def next_quarter_charts(staging: dict) -> list[dict]:
 
     revenue = fin["revenue_usd_m"]
     expenses = fin["total_expenses_usd_m"]
-    billed = om["billed_business_usd_bn"]
+    # Billed business is on the untouched side of the ASC 606 recast and this
+    # file carries 2016Q3-Q4, so the year-on-year line has a base two quarters
+    # before the recast window can give it one. It was starting at 2018Q1 only
+    # because it rode the same `recast()` helper as the revenue lines -- a code
+    # path, not a basis limit. The first drawable quarter is derived from where
+    # both ends of the ratio exist, so it cannot drift when a quarter is added.
+    long_labels = staging["period_labels"]
+    long_billed = staging["operating_metrics"]["billed_business_usd_bn"]
+    billed_yoy_idx = [i for i in range(4, len(long_billed))
+                      if long_billed[i] is not None and long_billed[i - 4] is not None]
     rewards, services, bizdev = (fin["rewards_usd_m"], fin["card_member_services_usd_m"],
                                  fin["business_development_usd_m"])
     vce_idx = [i for i, v in enumerate(bizdev) if v is not None]
@@ -539,11 +551,16 @@ def next_quarter_charts(staging: dict) -> list[dict]:
                              "5,387，却把净卡费原样重印，所以这条线可以回到 2016Q1，"
                              "而同一份文件里的收入、折扣收入、奖励成本都不能。"),
         "消费额同比（报告口径）": (
-            labels[4:],
-            [pct_change(billed[i], billed[i - 4]) for i in range(4, len(billed))],
+            [long_labels[i] for i in billed_yoy_idx],
+            [pct_change(long_billed[i], long_billed[i - 4]) for i in billed_yoy_idx],
             "pct1", "%",
             "由两个印出来的美元金额相除得到，因此可以被结清；"
-            "上季那份分析的阈值原本写在公司只披露到整数的汇率调整口径上，见上一张图的说明。"),
+            "上季那份分析的阈值原本写在公司只披露到整数的汇率调整口径上，见上一张图的说明。"
+            f"消费额本身是 ASC 606 重述没有动过的几条之一，回到 "
+            f"{long_labels[next(i for i, v in enumerate(long_billed) if v is not None)]}，"
+            f"所以这条同比线自 {long_labels[billed_yoy_idx[0]]} 起而不是 "
+            f"{long_labels[RECAST + 4]} —— 同比要往回够四个季度，"
+            "再往前本页没有这个数，不是被截掉的。"),
         # Credit quality is not a revenue-recognition item. These two were being
         # cut to the recast window only because they rode the same `recast()`
         # helper as the revenue lines -- a code path, not a basis limit.
@@ -597,18 +614,13 @@ def next_quarter_charts(staging: dict) -> list[dict]:
 # ── section four: the long routine series ────────────────────────────────────
 def routine_charts(staging: dict) -> list[dict]:
     fin = recast(staging["financials"])
-    om = recast(staging["operating_metrics"])
-    # 2016 exists in this file for the eight series ASC 606 did not touch; the
-    # rest of the record starts at the recast basis. Everything in this function
-    # is on the recast side, so it reads the recast window.
+    # Only the three revenue-side lines below are read through the recast
+    # window; every operating metric this section plots is on the untouched
+    # side, so nothing here reads `operating_metrics` through `recast()`.
     labels = staging["period_labels"][RECAST:]
     revenue = fin["revenue_usd_m"]
     card_fees = fin["net_card_fees_usd_m"]
-    fee_per_card = om["average_fee_per_card_usd"]
-    cards = om["proprietary_cards_in_force_m"]
     discount = fin["discount_revenue_usd_m"]
-    billed = om["billed_business_usd_bn"]
-    printed_rate = om["company_average_discount_rate_pct"]
 
     # All three of these -- net card fees, average fee per card, proprietary
     # cards in force -- are on the untouched side of the ASC 606 recast, so this
@@ -654,22 +666,31 @@ def routine_charts(staging: dict) -> list[dict]:
         "src_extra": "各季业绩 8-K EX-99.2：净卡费取合并损益表，每卡年费与卡量取 Selected Card Related Statistical Information。",
     }
 
-    derived_idx = [i for i, p in enumerate(staging["periods"][RECAST:])
-                   if p >= "2021Q1"]
-    derived_rate = [None] * len(labels)
+    # The company's own printed average discount rate is not a revenue line: it
+    # is a ratio the company computes on its own basis, and the values it
+    # printed run 2.44% (2016Q4) into 2.43% (2017Q1) with no step. It was cut to
+    # the recast window only because it rode the same `recast()` helper as the
+    # revenue lines. The *derived* line still starts at 2021Q1, and that one is
+    # a basis limit -- see the note.
+    long_labels = staging["period_labels"]
+    long_printed_rate = staging["operating_metrics"]["company_average_discount_rate_pct"]
+    long_discount = staging["financials"]["discount_revenue_usd_m"]
+    long_billed = staging["operating_metrics"]["billed_business_usd_bn"]
+    derived_idx = [i for i, p in enumerate(staging["periods"]) if p >= "2021Q1"]
+    derived_rate = [None] * len(long_labels)
     for i in derived_idx:
-        derived_rate[i] = discount[i] / (billed[i] * 1000) * 100
-    overlap = [i for i in derived_idx if printed_rate[i] is not None]
-    gap = [(derived_rate[i] - printed_rate[i]) * 100 for i in overlap]
+        derived_rate[i] = long_discount[i] / (long_billed[i] * 1000) * 100
+    overlap = [i for i in derived_idx if long_printed_rate[i] is not None]
+    gap = [(derived_rate[i] - long_printed_rate[i]) * 100 for i in overlap]
     rate_chart = {
         "ref": "EX_RATE",
         "kind": "lines",
         "title": "商户那一侧的价格：公司自己印的平均折扣率停在 2022Q4，自算那条不是它的延续",
-        "xlabels": labels,
+        "xlabels": long_labels,
         "xrot": 90,
         "xstep": LONG_STEP,
         "series": [
-            {"name": "公司披露的平均折扣率", "values": rounded(printed_rate), "color": "NAVY"},
+            {"name": "公司披露的平均折扣率", "values": rounded(long_printed_rate), "color": "NAVY"},
             {"name": "折扣收入 ÷ 消费额（本页自算，非同一口径）",
              "values": rounded(derived_rate), "color": "GOLD"},
         ],
@@ -677,7 +698,7 @@ def routine_charts(staging: dict) -> list[dict]:
         "ylab": "%",
         "note": (
             "<b>两条线不是同一个数，本页不把它们接成一条。</b>"
-            f"公司在每份业绩表里印了 {sum(1 for v in printed_rate if v is not None)} 个季度的"
+            f"公司在每份业绩表里印了 {sum(1 for v in long_printed_rate if v is not None)} 个季度的"
             "「Average discount rate」，最后一次出现在 2023 年 1 月发布的 Q4'22 那一格，"
             "之后这一行从统计表里消失，再也没有回来。它的脚注把分母定义为"
             "<b>自营与网络伙伴合计</b>的消费额、并扣掉第三方收单机构留存的部分，"
@@ -688,16 +709,24 @@ def routine_charts(staging: dict) -> list[dict]:
             "会在 2022Q4 与 2023Q1 之间画出一个纯属口径的台阶。"
             "自算那条也只从 2021Q1 起：2021 年之前折扣收入里还含着 processed revenue，"
             "而分母在 2020 年就已经改成只算自营，"
-            "<b>拿旧口径的分子除新口径的分母，会读出一次并不存在的提价</b>。"),
+            "<b>拿旧口径的分子除新口径的分母，会读出一次并不存在的提价</b>。"
+            f"<b>公司那条从 {long_labels[0]} 起，比本页收入侧的长序列早四季。</b>"
+            "平均折扣率是公司按自己的口径算出来的一个比率，不是收入确认口径下的一行金额，"
+            "它印出来的值在 2016Q4 的 2.44% 与 2017Q1 的 2.43% 之间没有台阶。"
+            "此前它停在 2017Q1，是因为跟着收入那几条一起被截，不是因为公司没披露过。"),
         "src_extra": "平均折扣率为公司披露值；自算折扣率 = 折扣收入 ÷ 消费额（D），分母以十亿计需换算。",
     }
 
-    shares = fin["diluted_shares_m"]
     # Net income and diluted EPS sit below the ASC 606 gross-up: the recast moved
     # revenue and expenses by 10-19% each and the two offset, leaving the bottom
     # line within 1.4% every quarter. So this chart reads the whole record, not
     # the recast window -- the same exception the net-card-fees chart above makes.
+    # Diluted shares has to come off the same axis: it is on the untouched side
+    # too, and read through `recast()` the note below measured a 38-quarter
+    # buyback against a 42-quarter pair of multiples and called the 7.7pp
+    # mismatch preferred dividends.
     long_labels = staging["period_labels"]
+    shares = staging["financials"]["diluted_shares_m"]
     net_income = staging["financials"]["net_income_usd_m"]
     eps = staging["financials"]["diluted_eps_usd"]
     ni_index = [v / net_income[0] * 100 for v in net_income]
@@ -945,7 +974,7 @@ def build_payload(staging: dict) -> dict:
         "notes": [
             "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
             "美国运通财年即自然年，本页季度标注与公司自己的口径一致，无需换算。",
-            "长序列一律自 2017 年第一季度起，不向前回补。公司自 2018-01-01 起适用 ASC 606 并在自家统计表里重述了 2017 年 —— 2018 年 1 月发布中 Q1 2017 的折扣收入是 4,519，2018 年 4 月发布中同一季是 5,387，Card Member rewards 同步等额调高，收入合计从 7,889 变成 8,709。2016 年从未在统计表里被重述过，因为每份发布只并排印五个季度，最后一份带 Q4 2016 的发布早于该变更。把两段接起来会在 2018 年初凭空造出一个约 +10% 的收入台阶。",
+            "收入与费用口径下的长序列自 2017 年第一季度起，不向前回补；ASC 606 没有动过的那几条序列（净卡费、每卡年费、消费额、公司自己印的平均折扣率、两条信用指标、CET1，以及重述在收入与费用两侧互相抵消的净利润、摊薄 EPS 与摊薄股数）回到 2016 年，所以本页的图有两种长度。公司自 2018-01-01 起适用 ASC 606 并在自家统计表里重述了 2017 年 —— 2018 年 1 月发布中 Q1 2017 的折扣收入是 4,519，2018 年 4 月发布中同一季是 5,387，Card Member rewards 同步等额调高，收入合计从 7,889 变成 8,709。2016 年从未在统计表里被重述过，因为每份发布只并排印五个季度，最后一份带 Q4 2016 的发布早于该变更。把两段接起来会在 2018 年初凭空造出一个约 +10% 的收入台阶。",
             "第一节结清的是年度指引而不是季度指引：公司从不发布季度指引，也从不在申报文件里给季度区间。本站其他几页第一节结清的是季度收入区间，本页不是，差别源于公司披露口径而非编辑选择。",
             "十一个财年里，全年 EPS 指引只有五年（FY2019、FY2022–FY2025）、全年收入增速指引只有六年""（FY2018、FY2019、FY2022–FY2025）可以被诚实结清，逐年理由列在核对抽屉的第一张表里。""EPS 不能结清的六年各有原因：同一年印了 GAAP 与调整后两条区间（FY2016）；""指引与实际不在同一口径上（FY2017 当年 GAAP EPS 被税改一次性费用压到 $2.97，""FY2018 年中改用调整后 EPS 且公司写明无法提供 GAAP 对照）；被撤回（FY2020）；""从头到尾没有给过（FY2021）；本年度尚未结束（FY2026）。""另有一年是结清了但带限定：FY2024 的指引在 7 月被整体上调以容纳一笔出售收益，""上调后的区间与原区间不是同一个东西，这一点写在该年的那几格上。",
             "2020 年全年指引的撤回不在业绩 8-K 里。公司在 2020-03-17 单独报了一份 Item 7.01 的 8-K 说明无法预测第一季度以后的业绩，随后三份业绩新闻稿的前瞻性声明段里「2020 年展望」这个对象整段消失。只读业绩 8-K 会把它读成「没给过指引」，而不是「给过又撤回」。",

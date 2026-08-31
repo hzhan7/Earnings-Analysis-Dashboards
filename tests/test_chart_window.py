@@ -129,7 +129,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amzn": 9, "avgo": 6, "axp": 8, "bc": 0, "cboe": 9, "cdns": 9, "cme": 14,
+    "amzn": 9, "avgo": 6, "axp": 9, "bc": 0, "cboe": 9, "cdns": 9, "cme": 14,
     "cost": 13, "googl": 11, "ibkr": 21, "ma": 16, "mc": 0, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 8, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 10, "skhynix": 0, "snps": 8,
@@ -224,20 +224,17 @@ CONVERTED = {
                  "only 2016 that exists is on the superseded basis. 2017Q1 is real.",
         "两条腿占收入的比重": "both ratios divide by revenue, which is on the moved side. "
                      "Same floor and same reason as the four legs above.",
-        "商户那一侧的价格": "the company's own printed average discount rate does reach "
-                    "2016Q1 and now does. The self-computed line beside it "
-                    "correctly starts later (2021Q1): before then discount "
-                    "revenue still contained processed revenue while the "
-                    "denominator had already moved to proprietary-only, so "
-                    "dividing one by the other reads out a price rise that "
-                    "never happened.",
         "税前利润同比增量拆成两条腿": "needs a year-over-year pair, so it starts one year after "
                         "its inputs. Pre-provision profit and provisions both "
                         "carry 2016 now, which puts the honest floor at 2017Q1 "
                         "rather than 2018Q1 -- not yet applied.",
         "消费额同比": "billed business carries real disclosed 2016Q3-Q4 values but not "
                  "2016Q1-Q2, and a year-over-year chart needs four quarters of "
-                 "run-up, so its honest floor is 2017Q3 -- not yet applied.",
+                 "run-up. Applied: the chart runs from 2017Q3, which is the "
+                 "earliest quarter whose base exists. Whether 2016Q1-Q2 were "
+                 "never printed at the consolidated level or merely never "
+                 "pulled has not been checked, so this stays a coverage floor "
+                 "rather than a disclosure one.",
         "jaws（收入增速 − 费用增速）": "the difference of two year-over-year growth rates, both "
                             "taken on lines the recast moved by 10-15%. Neither "
                             "side can cross the boundary, so 2018Q1 is real.",
@@ -712,7 +709,6 @@ FLOOR_KIND = {
     'axp': {
         '四条收入腿': 'disclosure',
         '两条腿占收入的比重': 'disclosure',
-        '商户那一侧的价格': 'disclosure',
         '税前利润同比增量拆成两条腿': 'coverage',
         '消费额同比': 'coverage',
         'jaws（收入增速 − 费用增速）': 'disclosure',
@@ -915,7 +911,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 99)
+        self.assertEqual(settled.count("disclosure"), 98)
         self.assertEqual(settled.count("design"), 18)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
@@ -1117,8 +1113,10 @@ SHORT_BY_DESIGN = {
 }
 
 # More than eight points: a chart that already draws a long series and still
-# stops after 2016. This is where the remaining work actually is. Several are
-# one short hop from the floor -- six AXP charts start in 2017.
+# stops after 2016. This is where the remaining work actually is. AXP used to be
+# named here as "six charts start in 2017"; that number was never measured (it
+# was three), and the page has since moved into CONVERTED, so it is not in this
+# dict at all.
 UNEXPLAINED_LONG = {
     'bc': 2,
     'mc': 1,
