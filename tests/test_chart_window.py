@@ -265,6 +265,39 @@ CONVERTED = {
         "公司自己的第二套口径": 'date corrected: Cboe introduced this three-category view in its Q1 2022 release (filed 2022-04-29), not 2021Q1. The four 2021 quarters exist only as retroactive comparatives inside the 2022 releases, which is why 2021Q1 is the practical floor -- but the reason is the recast, not an original disclosure.',
         "回购与股息": 'not a floor: CBOE Holdings has disclosed quarterly dividends and share repurchase dollars, shares and average price since at least Q1 2016 (10-Q filed 2016-05-03), and the repurchase program dates to 2011. Fetch gap; the backfill to 2016Q1 is in flight.',
     },
+    # Micron's two records give opposite answers, both read off the filings.
+    "mu": {
+        "收入相对指引中值的偏离": "a genuine disclosure floor, and an unusually clean one: "
+                        "Micron's filed releases contain no forward guidance of "
+                        "any kind -- not even qualitative -- from FQ2-16 through "
+                        "FQ1-19, and the FQ2-19/FQ3-19/FQ4-19 releases say "
+                        "outright that guidance will be given on the call, which "
+                        "never enters a filing. The first printed Business "
+                        "Outlook table is in the FQ4-19 release of 2019-09-26, "
+                        "and every number in it matches this record's first row.",
+        "non-GAAP 毛利率": "same guidance record, same floor.",
+        "non-GAAP 每股收益": "same guidance record; drawn on a shorter window still "
+                        "because the per-share guide came later than the revenue "
+                        "and margin guides.",
+        "收入（本图仅近 12 季）": "same guidance record, deliberately windowed -- the full "
+                          "record is the deviation chart beside it.",
+        "把「超出自身指引」拆成三条腿": "the decomposition of the same guided record.",
+        "一年之间收入": "cost of goods sold is not continuous: Micron's releases printed "
+                  "it through FQ3-17 and again from FQ4-21, with a "
+                  "seventeen-quarter hole between. A chart of revenue against "
+                  "COGS can only live where both exist.",
+        "存货 US$8.6B": "inventory days shares that same COGS hole -- days on hand is "
+                    "inventory over cost of goods sold.",
+        "四个业务单元的收入": "Micron reorganised its reportable business units into the "
+                     "current data-centre-centric four (CMBU/CDBU/MCBU/AEBU) in "
+                     "2024; the earlier CNBU/MBU/SBU/EBU structure is a different "
+                     "cut of the same revenue, not an earlier part of this one.",
+        "业务单元毛利率": "same 2024 business-unit reorganisation.",
+        "按技术拆收入": "the DRAM/NAND split has no quarters list of its own and aligns to "
+                  "the top-level axis by position; it carries real values only "
+                  "from FQ4-21. The earlier quarters are a fetch gap, not an "
+                  "absence -- Micron does print the split in older releases.",
+    },
     "ndaq": {
         "全年非 GAAP 有效税率": 'verified, with the wording tightened: Nasdaq guided a non-GAAP tax rate for FY2018 in its January 2018 release but never disclosed an FY2018 actual, so FY2019 is the first year carrying both a guided range and a reported result.',
         "FY2026 费用指引的三次发布": "three guidance vintages for one fiscal year -- the axis "
@@ -699,6 +732,18 @@ FLOOR_KIND = {
         '毛利率 11.04%': 'design',
         '三个地区分部的营业利润率': 'disclosure',
     },
+    'mu': {
+        '收入相对指引中值的偏离': 'disclosure',
+        'non-GAAP 毛利率': 'disclosure',
+        'non-GAAP 每股收益': 'disclosure',
+        '收入（本图仅近 12 季）': 'design',
+        '把「超出自身指引」拆成三条腿': 'disclosure',
+        '一年之间收入': 'disclosure',
+        '存货 US$8.6B': 'disclosure',
+        '四个业务单元的收入': 'disclosure',
+        '业务单元毛利率': 'disclosure',
+        '按技术拆收入': 'coverage',
+    },
     'msci': {
         '三条收入腿': 'coverage',
         '四个分部': 'coverage',
@@ -857,7 +902,7 @@ class ChartWindowTest(unittest.TestCase):
         by_kind = {}
         for slug, title, kind in pending:
             by_kind.setdefault(kind, []).append(f"{slug}/{title}")
-        self.assertEqual(len(by_kind.get("coverage", [])), 42,
+        self.assertEqual(len(by_kind.get("coverage", [])), 43,
                          "charts whose data exists and has not been fetched")
         # Zero, and that is the point: every exemption on this page has now been
         # read against an actual pre-floor filing. The fourteen that had never
@@ -870,8 +915,8 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 91)
-        self.assertEqual(settled.count("design"), 17)
+        self.assertEqual(settled.count("disclosure"), 99)
+        self.assertEqual(settled.count("design"), 18)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
         """Every short chart either names its reason or is counted here.
@@ -906,8 +951,8 @@ class ChartWindowTest(unittest.TestCase):
         combined = {slug: SHORT_BY_DESIGN.get(slug, 0) + UNEXPLAINED_LONG.get(slug, 0)
                     for slug in set(SHORT_BY_DESIGN) | set(UNEXPLAINED_LONG)}
         self.assertEqual(by_page, combined)
-        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 77)
-        self.assertEqual(sum(UNEXPLAINED_LONG.values()), 39)
+        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 75)
+        self.assertEqual(sum(UNEXPLAINED_LONG.values()), 30)
         # and the pins are the split the data actually has, not a hand-typed one
         self.assertEqual(by_design, SHORT_BY_DESIGN)
         self.assertEqual(by_length, UNEXPLAINED_LONG)
@@ -1061,7 +1106,6 @@ class ChartWindowTest(unittest.TestCase):
 SHORT_BY_DESIGN = {
     'bc': 7,
     'mc': 10,
-    'mu': 2,
     'nvda': 11,
     'pm': 9,
     'rms': 7,
@@ -1078,7 +1122,6 @@ SHORT_BY_DESIGN = {
 UNEXPLAINED_LONG = {
     'bc': 2,
     'mc': 1,
-    'mu': 9,
     'pm': 2,
     'skhynix': 7,
     'snps': 5,
