@@ -42,6 +42,14 @@ def js_payload(path: Path, assignment: str) -> dict:
     return json.loads(body)
 
 
+def _median(values: list[float]) -> float:
+    ordered = sorted(values)
+    middle = len(ordered) // 2
+    if len(ordered) % 2:
+        return ordered[middle]
+    return (ordered[middle - 1] + ordered[middle]) / 2
+
+
 class SnpsDashboardTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -132,7 +140,7 @@ class SnpsDashboardTest(unittest.TestCase):
 
     def test_the_guided_record_is_one_row_per_quarter(self) -> None:
         length = len(self.record["quarters"])
-        self.assertEqual(length, 24)
+        self.assertEqual(length, 43)
         for name, values in self.record.items():
             if not isinstance(values, list):
                 continue
@@ -250,12 +258,27 @@ class SnpsDashboardTest(unittest.TestCase):
         """(revenue − expenses + other) × (1 − tax) ÷ shares reproduces guided EPS.
 
         This is what lets the page treat "guided revenue minus guided expenses"
-        as an operating income the company itself stands behind.  The tolerance
-        is the rounding of the published endpoints: EPS to the cent and the
-        share range to whole millions.
+        as an operating income the company itself stands behind.
+
+        It reproduces it *approximately*, and how approximately turns out to
+        depend on the era — which is only visible now that the record reaches
+        2016. On the 24 quarters this file used to cover, the reconstruction was
+        within 2.2% of the printed EPS midpoint every time. Across the 19
+        backfilled quarters it is within 8.4%, and the median is four times
+        looser (2.1% against 0.5%). Q3 2018 is the extreme: every input matches
+        the 2018-08-22 release verbatim -- revenue $774-804M, non-GAAP expenses
+        $655-665M, other income $(3)-(1)M, tax 13%, shares 153-156M, non-GAAP
+        EPS $0.76-0.80 -- and the midpoints still only reconstruct $0.715
+        against a printed $0.78. The company does not compute its EPS midpoint
+        from its own range midpoints, and the gap shows up most where the EPS
+        base is smallest.
+
+        So this is asserted per era rather than with one tolerance wide enough
+        to cover both, which would have stopped saying anything about the recent
+        quarters. Widening a bound until it passes is how a gate quietly retires.
         """
         record = self.record
-        gaps = []
+        gaps, relative = [], []
         for index in range(len(record["quarters"])):
             revenue = (record["guide_revenue_lo_usd_m"][index]
                        + record["guide_revenue_hi_usd_m"][index]) / 2
@@ -268,9 +291,31 @@ class SnpsDashboardTest(unittest.TestCase):
             tax = record["guide_non_gaap_tax_rate_pct"][index] / 100
             printed = (record["guide_non_gaap_eps_lo_usd"][index]
                        + record["guide_non_gaap_eps_hi_usd"][index]) / 2
-            gaps.append(abs((revenue - expenses + other) * (1 - tax) / shares - printed))
-        self.assertLessEqual(max(gaps), 0.06)
-        self.assertGreaterEqual(sum(1 for gap in gaps if gap <= 0.02), 15)
+            gap = abs((revenue - expenses + other) * (1 - tax) / shares - printed)
+            gaps.append(gap)
+            relative.append(gap / printed * 100)
+
+        # The era boundary is where this file's record used to begin.
+        split = record["quarters"].index("Q4 2020")
+        self.assertEqual(split, 19)
+        early, recent = relative[:split], relative[split:]
+
+        # Recent quarters keep the tight bound the original assertion had.
+        self.assertLessEqual(max(recent), 2.5, "the modern reconstruction slipped")
+        self.assertLessEqual(max(early), 9.0, "the early reconstruction slipped")
+        self.assertLessEqual(max(gaps), 0.07)
+        self.assertGreaterEqual(sum(1 for gap in gaps if gap <= 0.02), 26)
+
+        # The difference between the eras is itself the finding, so it is
+        # asserted -- but counted, not maximised. A max-based version of this
+        # passed even after the single worst early quarter was smoothed flat
+        # (mutation-checked: it survived by 0.11pp, which is not an assertion,
+        # it is a coincidence). Counting how many quarters clear the threshold
+        # makes any one of them being quietly fixed turn this red.
+        loose = 2.0
+        self.assertEqual(sum(1 for value in early if value > loose), 10)
+        self.assertEqual(sum(1 for value in recent if value > loose), 2)
+        self.assertGreater(_median(early), _median(recent) * 2)
 
     def test_the_two_legs_add_up_to_the_operating_income_beat(self) -> None:
         """Revenue leg + expense leg = actual non-GAAP OI − guided-implied OI, exactly."""
@@ -280,6 +325,11 @@ class SnpsDashboardTest(unittest.TestCase):
             if actual_revenue is None:
                 continue
             actual_income = record["actual_non_gaap_operating_income_usd_m"][index]
+            # Reported and decomposable are different questions: Synopsys's
+            # reconciliation carried no operating-income line before the release
+            # of 2019-02-20, so eleven reported quarters have no leg split.
+            if actual_income is None:
+                continue
             guided_revenue = (record["guide_revenue_lo_usd_m"][index]
                               + record["guide_revenue_hi_usd_m"][index]) / 2
             guided_expense = (record["guide_non_gaap_expenses_lo_usd_m"][index]
@@ -307,13 +357,13 @@ class SnpsDashboardTest(unittest.TestCase):
 
         self.assertEqual(tally(record["guide_revenue_lo_usd_m"],
                                record["guide_revenue_hi_usd_m"],
-                               record["actual_revenue_usd_m"]), (8, 13, 2))
+                               record["actual_revenue_usd_m"]), (17, 23, 2))
         self.assertEqual(tally(record["guide_non_gaap_eps_lo_usd"],
                                record["guide_non_gaap_eps_hi_usd"],
-                               record["actual_non_gaap_eps_usd"]), (20, 1, 2))
+                               record["actual_non_gaap_eps_usd"]), (32, 8, 2))
         titles = {exhibit["title"] for exhibit in self.by_section["settled"]}
-        self.assertTrue(any("13 季落在区间内" in title for title in titles), titles)
-        self.assertTrue(any("20 季超出上限、1 季落在区间内" in title for title in titles), titles)
+        self.assertTrue(any("23 季落在区间内" in title for title in titles), titles)
+        self.assertTrue(any("32 季超出上限、8 季落在区间内" in title for title in titles), titles)
 
     def test_the_one_basis_break_is_marked_and_explained(self) -> None:
         """Q1 2024 was guided with Software Integrity in and reported with it out."""

@@ -200,10 +200,17 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
     )
 
     # ── the two legs of the operating-income beat ────────────────────────────
+    # The expense leg is revenue minus non-GAAP operating income, and Synopsys's
+    # reconciliation did not carry an operating-income line until the release of
+    # 2019-02-20 -- before that it bridges GAAP net income straight to non-GAAP
+    # net income. So this decomposition starts later than the bands above it,
+    # and the title says which quarters it covers rather than implying the gap
+    # is a shorter record.
+    operating = record["actual_non_gaap_operating_income_usd_m"]
+    decomposable = [index for index in finished if operating[index] is not None]
     revenue_leg, expense_leg, leg_labels = [], [], []
-    for index in finished:
-        actual_expense = revenue_actual[index] - record[
-            "actual_non_gaap_operating_income_usd_m"][index]
+    for index in decomposable:
+        actual_expense = revenue_actual[index] - operating[index]
         revenue_leg.append(revenue_actual[index] - revenue_mid[index])
         expense_leg.append(expense_mid[index] - actual_expense)
         leg_labels.append(compact_period(quarters[index]))
@@ -306,13 +313,15 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
                     "non-GAAP EPS 指引", "实际 EPS", "股数指引", "实际股数"],
         "rows": [],
     }
-    leg_at = {index: position for position, index in enumerate(finished)}
+    leg_at = {index: position for position, index in enumerate(decomposable)}
     for index, quarter in enumerate(quarters):
         done = revenue_actual[index] is not None
+        # An early quarter can be reported and still have no operating-income
+        # line, so "reported" and "decomposable" are two different questions.
+        split = operating[index] is not None
         position = leg_at.get(index)
         implied = revenue_mid[index] - expense_mid[index]
-        actual_expense = (revenue_actual[index]
-                          - record["actual_non_gaap_operating_income_usd_m"][index]) if done else None
+        actual_expense = (revenue_actual[index] - operating[index]) if split else None
         table["rows"].append([
             quarter,
             record["fiscal_labels"][index],
@@ -321,10 +330,9 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
             f"{pct_change(revenue_actual[index], revenue_mid[index]):+.2f}% D" if done else "—",
             f"${record['guide_non_gaap_expenses_lo_usd_m'][index]:,.0f}–"
             f"{record['guide_non_gaap_expenses_hi_usd_m'][index]:,.0f}M",
-            f"${actual_expense:,.1f}M D" if done else "—",
+            f"${actual_expense:,.1f}M D" if split else "—",
             f"${implied:,.1f}M D",
-            (f"${record['actual_non_gaap_operating_income_usd_m'][index]:,.1f}M"
-             if done else "—"),
+            (f"${operating[index]:,.1f}M" if split else "—"),
             f"{revenue_leg[position]:+,.1f} D" if position is not None else "—",
             f"{expense_leg[position]:+,.1f} D" if position is not None else "—",
             f"${eps_lo[index]:.2f}–{eps_hi[index]:.2f}",
