@@ -410,6 +410,85 @@ CONVERTED = {
         "经营杠杆": "a twenty-quarter view by design; the underlying revenue and "
                 "expense lines do run the whole record.",
     },
+    # Verified against the filings, including the repo's own prior claim about
+    # the operating-income line, which turned out to be true.
+    "snps": {
+        "把「超出自身指引」拆成两条腿": "the expense leg is revenue minus non-GAAP operating "
+                            "income, and Synopsys's reconciliation carried no "
+                            "operating-income line before the release of "
+                            "2019-02-20 -- it bridged GAAP net income straight to "
+                            "non-GAAP net income. Eleven reported quarters "
+                            "therefore have no leg split at all.",
+        "未来 12 个月可确认 backlog": "backlog reaches 2018Q4 and no further: before ASC 606 "
+                            "Synopsys disclosed backlog only annually and on a "
+                            "different definition (FY2016 $3.5B, FY2017 $3.7B, "
+                            "FY2018 $4.0B, with no FSA split). That is a "
+                            "different series, not an earlier part of this one.",
+        "FSA 占 backlog": "same backlog note -- the FSA split does not exist at all in "
+                       "the pre-ASC 606 annual disclosure.",
+        "backlog 自": "same backlog note.",
+        "收入 US$2,477M": "the current-quarter panel; the long revenue record is in this "
+                      "page's own long section.",
+        "Design IP 连续三季": "the two-segment split dates from the fiscal 2019 "
+                        "reorganisation and the current Design Automation / "
+                        "Design IP naming from later still.",
+        "两个分部的调整后营业利润率": "same two-segment structure.",
+        "GAAP 与 non-GAAP 营业利润之间隔着": "current-quarter bridge, eight quarters by design.",
+        "八季里收入指数化到": "an explicitly eight-quarter index, stated in its own title.",
+        "FY2026 收入指引四次上调": "one fiscal year's four guidance vintages -- the axis is "
+                          "vintages, not time.",
+        "non-GAAP 营业利润率：下季阈值": "next-quarter threshold chart, recent by design.",
+        "Design IP 收入同比：下季阈值": "next-quarter threshold chart, recent by design.",
+        "摊薄股数：下季阈值": "next-quarter threshold chart, recent by design.",
+        "中国占比": "the geographic disaggregation reaches 2022Q4. Earlier quarters exist "
+               "only on the pre-divestiture basis that still included Software "
+               "Integrity, which is not comparable with the continuing-operations "
+               "series this chart draws.",
+    },
+    # Three different answers on one page, each read off the filings.
+    "spgi": {
+        "五个分部各自占分部收入合计的比重": "a real structural floor. 2016's first three quarters "
+                            "use FOUR segments, one of which (\"C&C\") bundles "
+                            "Platts with J.D. Power and others; Q4 2016 collapses "
+                            "that to three; Platts becomes its own segment only "
+                            "on 2018-01-01. No filing in 2016-2017 prints a "
+                            "standalone Platts figure -- the MD&A narrates "
+                            "\"growth driven by Platts\" without a number. "
+                            "Filling only Ratings and Indices would break this "
+                            "block's own identity and print \"cannot be "
+                            "decomposed\" as \"zero\".",
+        "六条申报收入类型各自占毛收入的比重": "the five-category company-wide table first appears "
+                            "in the Q1 2018 10-Q, alongside the ASC 606 adoption "
+                            "of 2018-01-01; before that the company disclosed "
+                            "only a two-way subscription/non-subscription split.",
+        "订阅型收入占毛收入比重": "same revenue-type table, same 2018Q1 floor.",
+        "计费发行量": "the dollar, rating-category metric first appears in the Q1 2024 "
+                 "10-Q (carrying a 2023 comparative) and appears in no earnings "
+                 "8-K at all. What the pre-2023 MD&A prints instead is a "
+                 "different series -- \"Market Issuance Volumes\", year-over-year "
+                 "percentages by geography, sourced from SDC Platinum -- with no "
+                 "dollar overlap to splice to.",
+        "GAAP 摊薄 EPS相对指引中值的偏离": "follows the GAAP guidance record, which starts FY2017: "
+                             "for FY2016 the company gave adjusted-EPS guidance "
+                             "and explicitly declined to reconcile it to GAAP "
+                             "\"without unreasonable effort\".",
+        "GAAP 收入增速相对指引中值的偏离": "revenue-growth guidance began later than the EPS "
+                            "guidance on the same table; this follows its own "
+                            "metric's floor.",
+        "调整后自由现金流相对指引中值的偏离": "adjusted free cash flow was not guided before "
+                             "FY2023.",
+        "Ratings 的两条腿": "a deliberately recent view; the same two legs run the full 42 "
+                       "quarters in the long-record section of this page.",
+        "交易性收入占 Ratings 比重": "same pair, drawn recent by design.",
+        "Ratings 交易性收入同比": "a next-quarter threshold chart, drawn on recent context by "
+                          "design.",
+        "营业利润率（剔除处置损益与联营收益 D）vs 阈值": "same, a threshold chart by design; the full "
+                                        "42-quarter version is in the long-record "
+                                        "section.",
+        "本季自由现金流": "threshold chart, recent by design.",
+        "单季自由现金流 D vs 阈值": "threshold chart, recent by design.",
+        "单季股东回报 / 自由现金流 D vs 阈值": "threshold chart, recent by design.",
+    },
     "tjx": {
         # Two floors. The quarterly guidance record on EDGAR starts with the
         # FY2023 releases -- before that TJX gave its next-quarter pretax-margin
@@ -788,6 +867,38 @@ FLOOR_KIND = {
         '季度净新增资产按渠道': 'design',
         '经营杠杆': 'design',
     },
+    'snps': {
+        '把「超出自身指引」拆成两条腿': 'disclosure',
+        '未来 12 个月可确认 backlog': 'disclosure',
+        'FSA 占 backlog': 'disclosure',
+        'backlog 自': 'disclosure',
+        '收入 US$2,477M': 'design',
+        'Design IP 连续三季': 'disclosure',
+        '两个分部的调整后营业利润率': 'disclosure',
+        'GAAP 与 non-GAAP 营业利润之间隔着': 'design',
+        '八季里收入指数化到': 'design',
+        'FY2026 收入指引四次上调': 'design',
+        'non-GAAP 营业利润率：下季阈值': 'design',
+        'Design IP 收入同比：下季阈值': 'design',
+        '摊薄股数：下季阈值': 'design',
+        '中国占比': 'disclosure',
+    },
+    'spgi': {
+        '五个分部各自占分部收入合计的比重': 'disclosure',
+        '六条申报收入类型各自占毛收入的比重': 'disclosure',
+        '订阅型收入占毛收入比重': 'disclosure',
+        '计费发行量': 'disclosure',
+        'GAAP 摊薄 EPS相对指引中值的偏离': 'disclosure',
+        'GAAP 收入增速相对指引中值的偏离': 'disclosure',
+        '调整后自由现金流相对指引中值的偏离': 'disclosure',
+        'Ratings 的两条腿': 'design',
+        '交易性收入占 Ratings 比重': 'design',
+        'Ratings 交易性收入同比': 'design',
+        '营业利润率（剔除处置损益与联营收益 D）vs 阈值': 'design',
+        '本季自由现金流': 'design',
+        '单季自由现金流 D vs 阈值': 'design',
+        '单季股东回报 / 自由现金流 D vs 阈值': 'design',
+    },
     'tjx': {
         '摊薄每股收益（近 16 季）': 'coverage',
         '税前利润率：': 'coverage',
@@ -909,8 +1020,8 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 98)
-        self.assertEqual(settled.count("design"), 18)
+        self.assertEqual(settled.count("disclosure"), 112)
+        self.assertEqual(settled.count("design"), 32)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
         """Every short chart either names its reason or is counted here.
@@ -945,8 +1056,8 @@ class ChartWindowTest(unittest.TestCase):
         combined = {slug: SHORT_BY_DESIGN.get(slug, 0) + UNEXPLAINED_LONG.get(slug, 0)
                     for slug in set(SHORT_BY_DESIGN) | set(UNEXPLAINED_LONG)}
         self.assertEqual(by_page, combined)
-        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 75)
-        self.assertEqual(sum(UNEXPLAINED_LONG.values()), 30)
+        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 64)
+        self.assertEqual(sum(UNEXPLAINED_LONG.values()), 12)
         # and the pins are the split the data actually has, not a hand-typed one
         self.assertEqual(by_design, SHORT_BY_DESIGN)
         self.assertEqual(by_length, UNEXPLAINED_LONG)
@@ -1105,8 +1216,6 @@ SHORT_BY_DESIGN = {
     'rms': 7,
     'samsung': 15,
     'skhynix': 5,
-    'snps': 9,
-    'spgi': 2,
 
 }
 
@@ -1118,8 +1227,6 @@ UNEXPLAINED_LONG = {
     'mc': 1,
     'pm': 2,
     'skhynix': 7,
-    'snps': 5,
-    'spgi': 13,
 
 }
 
