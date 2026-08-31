@@ -224,14 +224,15 @@ class SpgiDashboardTest(unittest.TestCase):
     # ── the annual guidance record ───────────────────────────────────────────
     def test_the_record_is_annual_and_covers_every_vintage(self) -> None:
         record = self.record
-        self.assertEqual(len(record["vintages"]), 31)
+        self.assertEqual(len(record["vintages"]), 43)
         length = len(record["vintages"])
         for key, values in record.items():
             if isinstance(values, list):
                 with self.subTest(series=key):
                     self.assertEqual(len(values), length)
         self.assertEqual(sorted(set(record["fiscal_years"])),
-                         [2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026])
+                         [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024,
+                          2025, 2026])
 
     def test_each_vintage_was_published_inside_the_year_it_guides(self) -> None:
         """A full-year outlook is revised during the year it covers, so every
@@ -275,8 +276,15 @@ class SpgiDashboardTest(unittest.TestCase):
                     self.assertIsNotNone(record[guide][index])
 
     def test_the_record_is_two_sided_and_the_counts_are_asserted(self) -> None:
-        """The page's headline finding. Adjusted EPS has never missed; the GAAP
-        number on the same table missed three times in the same seven years."""
+        """The page's headline finding, and it survives the longer record with
+        more force: adjusted EPS has still never missed in ten settled years,
+        while the GAAP number on the same table now misses five times in the
+        nine years that carry a GAAP range.
+
+        The two denominators differ on purpose. FY2016 has an adjusted range and
+        no GAAP one -- the company said it could not reconcile the two "without
+        unreasonable effort" -- so its reported GAAP EPS is deliberately absent
+        from the record rather than sitting on a cell with no band."""
         def tally(lo, hi, actual):
             above = inside = below = 0
             for low, high, value in zip(self.record[lo], self.record[hi],
@@ -293,10 +301,15 @@ class SpgiDashboardTest(unittest.TestCase):
 
         self.assertEqual(
             tally("guide_adjusted_eps_lo", "guide_adjusted_eps_hi",
-                  "actual_adjusted_eps"), (5, 2, 0))
+                  "actual_adjusted_eps"), (7, 3, 0))
         self.assertEqual(
             tally("guide_gaap_eps_lo", "guide_gaap_eps_hi", "actual_gaap_eps"),
-            (2, 2, 3))
+            (2, 2, 5))
+        # FY2016 settles adjusted EPS and deliberately does not settle GAAP
+        opening = self.record["vintages"].index("FY16 Q3")
+        self.assertIsNotNone(self.record["actual_adjusted_eps"][opening])
+        self.assertIsNone(self.record["actual_gaap_eps"][opening])
+        self.assertIsNone(self.record["guide_gaap_eps_lo"][opening])
         self.assertEqual(
             tally("guide_revenue_growth_lo_pct", "guide_revenue_growth_hi_pct",
                   "actual_revenue_growth_pct"), (1, 2, 0))
@@ -306,8 +319,14 @@ class SpgiDashboardTest(unittest.TestCase):
                   "actual_adjusted_fcf_usd_m"), (1, 0, 2))
 
     def test_the_opening_vintage_is_the_one_that_carries_information(self) -> None:
-        """Six of seven opening guidances were beaten, and the single miss is
-        FY2022 -- the year the company withdrew guidance mid-year."""
+        """Eight of ten opening guidances were beaten, the single miss is still
+        FY2022 -- the year the company withdrew guidance mid-year -- and FY2018
+        is the one year the opening range was merely *met*.
+
+        Extending the record to FY2016 did not overturn the finding; it added a
+        third category to it. On the FY2019-start record every settled opening
+        guidance was either beaten or missed, so "beaten + missed" covered the
+        field and the test only had to count two things."""
         record = self.record
         settled = {}
         for index, value in enumerate(record["actual_adjusted_eps"]):
@@ -324,7 +343,7 @@ class SpgiDashboardTest(unittest.TestCase):
                 beaten += 1
             elif settled[year] < low:
                 missed.append(year)
-        self.assertEqual(beaten, 6)
+        self.assertEqual(beaten, 8)
         self.assertEqual(missed, [2022])
         self.assertEqual(record["suspension"]["announced"], "2022-06-01")
 

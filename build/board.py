@@ -202,11 +202,21 @@ def delivery_band(ref: str, metric: str, xlabels: list[str], low: list[float],
     missing means something weaker when part of the quarter is already banked,
     so the chart has to say which one it is.
     """
-    finished = [index for index, value in enumerate(actual) if value is not None]
+    # A period is scorable only when it has BOTH a reported result and a range
+    # to score it against. Those are different questions, and treating "reported"
+    # as "scorable" crashes the moment a record reaches back far enough to find a
+    # period the company reported but never guided -- S&P Global reported 2016
+    # GAAP EPS and explicitly declined to guide it ("unable to reconcile ...
+    # without unreasonable effort"). Counting those as misses would be worse than
+    # crashing: it would read as the company breaking guidance it never gave.
+    finished = [index for index, value in enumerate(actual)
+                if value is not None and low[index] is not None and high[index] is not None]
     above = [index for index in finished if actual[index] > high[index]]
     below = [index for index in finished if actual[index] < low[index]]
     inside = len(finished) - len(above) - len(below)
     pending = [xlabels[index] for index, value in enumerate(actual) if value is None]
+    unguided = [xlabels[index] for index, value in enumerate(actual)
+                if value is not None and (low[index] is None or high[index] is None)]
     if point:
         # A point guidance has no bound to clear, so "cleared the upper bound"
         # would be a category error: `lo == hi` and every quarter is trivially
@@ -307,8 +317,12 @@ def midpoint_deviation(ref: str, metric: str, xlabels: list[str], low: list[floa
     """
     if mode not in ("pct", "pp"):
         raise ValueError(f"unknown mode {mode!r}")
+    # Same rule as `delivery_band`: a period needs a reported result AND a range
+    # before a distance from the midpoint means anything. A period that was
+    # reported but never guided has no midpoint to be distant from.
     finished = [
-        index for index, value in enumerate(actual) if value is not None
+        index for index, value in enumerate(actual)
+        if value is not None and low[index] is not None and high[index] is not None
     ][-window:]
     midpoints = [(low[index] + high[index]) / 2 for index in finished]
     deviation = [

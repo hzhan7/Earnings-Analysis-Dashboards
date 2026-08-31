@@ -133,7 +133,7 @@ REACH_2016 = {
     "cost": 13, "googl": 11, "ibkr": 21, "ma": 16, "mc": 0, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 2, "ndaq": 8, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 10, "skhynix": 0, "snps": 8,
-    "spgi": 5, "tjx": 8, "tsm": 18, "v": 14,
+    "spgi": 11, "tjx": 8, "tsm": 18, "v": 14,
 }
 
 # Pages whose migration is finished. For these the strict rule applies: every
@@ -809,8 +809,8 @@ class ChartWindowTest(unittest.TestCase):
         combined = {slug: SHORT_BY_DESIGN.get(slug, 0) + UNEXPLAINED_LONG.get(slug, 0)
                     for slug in set(SHORT_BY_DESIGN) | set(UNEXPLAINED_LONG)}
         self.assertEqual(by_page, combined)
-        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 86)
-        self.assertEqual(sum(UNEXPLAINED_LONG.values()), 65)
+        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 83)
+        self.assertEqual(sum(UNEXPLAINED_LONG.values()), 62)
         # and the pins are the split the data actually has, not a hand-typed one
         self.assertEqual(by_design, SHORT_BY_DESIGN)
         self.assertEqual(by_length, UNEXPLAINED_LONG)
@@ -973,7 +973,7 @@ SHORT_BY_DESIGN = {
     'samsung': 15,
     'skhynix': 5,
     'snps': 9,
-    'spgi': 5,
+    'spgi': 2,
 }
 
 # More than eight points: a chart that already draws a long series and still
@@ -988,7 +988,7 @@ UNEXPLAINED_LONG = {
     'pm': 2,
     'skhynix': 7,
     'snps': 5,
-    'spgi': 16,
+    'spgi': 13,
 }
 
 

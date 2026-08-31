@@ -921,6 +921,17 @@ def disposition_spike(long_history: dict) -> dict:
 
 def long_ratings(staging: dict) -> dict:
     split = staging["ratings_revenue_split_usd_m"]
+    # How many fiscal years actually settled an opening guidance -- the note
+    # below says "the only year the opening guidance was broken", and that claim
+    # needs its own denominator rather than a number typed when the record was
+    # seven years long.
+    record = staging["annual_guidance_history"]
+    settled = {record["fiscal_years"][i]: v
+               for i, v in enumerate(record["actual_adjusted_eps"]) if v is not None}
+    opening_years = sum(1 for i, slot in enumerate(record["vintage_slots"])
+                        if slot == "initial"
+                        and record["fiscal_years"][i] in settled
+                        and record["guide_adjusted_eps_lo"][i] is not None)
     labels = [compact_period(q) for q in split["quarters"]]
     transaction = split["transaction"]
     non_transaction = split["non_transaction"]
@@ -974,7 +985,7 @@ def long_ratings(staging: dict) -> dict:
             f"从 US${non_transaction[0]:,.0f}M 走到 US${non_transaction[-1]:,.0f}M，"
             "整段没有出现过深蓝那样的塌陷。"
             "<b>把这张图和第一节的指引记录并排看</b>："
-            "七年里唯一一次开局指引没被超过的财年是 2022 年，"
+            f"{opening_years} 年里唯一一次开局指引被<b>跌破</b>的财年是 2022 年，"
             "而 2022 年正是深蓝这条线塌到谷底的那一年 —— "
             "公司当年 6 月撤回全年指引时给出的理由，"
             "写的就是「Ratings 业务面临极弱的市场环境」。"
@@ -1415,6 +1426,11 @@ def build_payload(staging: dict) -> dict:
     adj_above, adj_inside, adj_below = stats["adjusted"]
     gaap_above, gaap_inside, gaap_below = stats["gaap"]
     finished_years = adj_above + adj_inside + adj_below
+    # The two metrics no longer settle the same number of years: FY2016 has an
+    # adjusted range and no GAAP one, because the company said it could not
+    # reconcile the two without unreasonable effort. Counting them with one
+    # number would put a year in the GAAP denominator that GAAP never guided.
+    gaap_finished = gaap_above + gaap_inside + gaap_below
     prior_mid = (record["guide_adjusted_eps_lo"][-2]
                  + record["guide_adjusted_eps_hi"][-2]) / 2
     new_mid = (record["guide_adjusted_eps_lo"][-1]
@@ -1458,7 +1474,7 @@ def build_payload(staging: dict) -> dict:
             '<article><span>记录</span><b>不失手的是公司自己定义的那条</b>'
             f'<p>{finished_years} 个已完结财年，调整后 EPS 相对末次指引 '
             f'{adj_above} 年超出上限、{adj_inside} 年落在区间内、{adj_below} 年跌破；'
-            f'GAAP EPS 在同样七年里跌破 {gaap_below} 次。差额全在并购摊销与处置损益上。</p></article>'
+            f'GAAP EPS 在有 GAAP 指引的 {gaap_finished} 年里跌破 {gaap_below} 次。差额全在并购摊销与处置损益上。</p></article>'
             '<article><span>本季</span><b>指引掉了 $1.90，公司也小了一块</b>'
             f'<p>Mobility 于 2026-07-01 分拆，FY2026 调整后 EPS 指引从 '
             f'${prior_mid:.3f} 中值挪到 ${new_mid:.3f}。'
@@ -1539,9 +1555,11 @@ def build_payload(staging: dict) -> dict:
             "末次那一档发布时该财年已经过去约四分之三，公司手里已有三个季度的实际数。"
             "因此「末次指引从没被跌破」这句话的分量远小于字面，"
             "真正带信息的是开局那一档 —— 本页专门画了一张按 vintage 位次看偏离收敛的图。",
-            "记录是两面的，而这正是把两个指标画在一起才看得见的事："
-            "七个已完结财年里，调整后摊薄 EPS 五年高于末次区间上限、两年落在区间内、"
-            "<b>一年都没有跌破过</b>；同一张展望表上的 GAAP 摊薄 EPS 却<b>跌破了三次</b>。"
+            f"记录是两面的，而这正是把两个指标画在一起才看得见的事："
+            f"{finished_years} 个已完结财年里，调整后摊薄 EPS {adj_above} 年高于末次区间上限、"
+            f"{adj_inside} 年落在区间内、<b>一年都没有跌破过</b>；"
+            f"同一张展望表上的 GAAP 摊薄 EPS 在有指引的 {gaap_finished} 年里"
+            f"<b>跌破了 {gaap_below} 次</b>（FY2016 公司明说无法把调整后指引对到 GAAP，故那一年没有 GAAP 区间）。"
             "两者之差全部落在调整线以下 —— 并购无形资产摊销、处置损益与减值，"
             "也就是公司自己选择剔除的那些项。不发布任何关于这个差异是否合理的判断。",
             "<b>FY2026 的指引在本季换了口径，本页保留落差并标注，不做平滑。</b>"
