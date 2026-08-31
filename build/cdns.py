@@ -874,7 +874,44 @@ def build_payload(staging: dict) -> dict:
         for level, total in zip(fy_backlog, fy_revenue)
     ]
 
+    cat_long = staging["category_long_pct"]
+    cat_labels = [compact_period(q) for q in cat_long["quarters"]]
     routine = [
+        {
+            "ref": "EX_CAT_LONG",
+            "kind": "lines",
+            "title": (f"{len(cat_labels)} 季三条产品线占收入的比重："
+                      f"Semiconductor IP 从 {cat_long['category_semiconductor_ip'][0]:.0f}% 走到 "
+                      f"{cat_long['category_semiconductor_ip'][-1]:.0f}%，"
+                      f"Core EDA 从 {cat_long['category_core_eda'][0]:.0f}% 降到 "
+                      f"{cat_long['category_core_eda'][-1]:.0f}%"),
+            "xlabels": cat_labels,
+            "xstep": 4,
+            "series": [
+                {"name": "Core EDA D", "values": cat_long["category_core_eda"], "color": "NAVY"},
+                {"name": "System Design & Analysis", "color": "MBLUE",
+                 "values": cat_long["category_system_design_analysis"]},
+                {"name": "Semiconductor IP", "color": "GOLD",
+                 "values": cat_long["category_semiconductor_ip"]},
+            ],
+            "fmt": "pct0", "yfmt": "pct0", "label_fmt": "pct0",
+            "ylab": "占收入", "end_label": True,
+            "note": (
+                "<b>这个三分法本身是 2024–2025 年合并出来的，不是一路不变的口径。</b>"
+                "Cadence 从 2016Q1 到 2024Q2 一直印**五分法**"
+                "（Functional Verification、Digital IC Design and Signoff、Custom IC Design、"
+                "System Interconnect / Design and Analysis、IP）；"
+                "第一次印出「Core EDA」这一行是 2024Q3，第一次不再给五行明细是 2024Q4。"
+                "所以 2016Q1–2023Q2 的 Core EDA 是前三行相加得到的 <b>D</b>，"
+                "与本页 2023Q3 起既有值的算法相同 —— 那几季本来也是相加出来的，"
+                "不是公司印出的单一数字。"
+                "**支持这样接的证据**：公司自己第一次印出的 Core EDA 合计（2024Q3）"
+                "与该算法数值精确相符。"
+                "三条相加每季为 100%，这是公司按整数印出来的占比，所以这张图不受"
+                "收入水平口径变化影响。"
+            ),
+            "src_extra": "各季业绩 8-K EX-99.2 CFO Commentary 的 Revenue Mix by Product Group 表。",
+        },
         {
             "kind": "gs_bar",
             "title": (
