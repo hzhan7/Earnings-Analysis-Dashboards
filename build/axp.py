@@ -700,6 +700,14 @@ def routine_charts(staging: dict) -> list[dict]:
     long_labels = staging["period_labels"]
     net_income = staging["financials"]["net_income_usd_m"]
     eps = staging["financials"]["diluted_eps_usd"]
+    # Diluted share count is on the untouched side of the ASC 606 recast too, so
+    # it reads the whole record here. It has to: the note below compares the fall
+    # in share count against the ratio of the two multiples, and taking the
+    # multiples over 42 quarters while taking the share count over the recast
+    # window's 38 quietly compares two different spans. That is how this note
+    # came to print "from 903M" -- 903M is 2017Q1, the recast window's first
+    # quarter -- while the multiples beside it already started at 2016Q1.
+    long_shares = staging["financials"]["diluted_shares_m"]
     ni_index = [v / net_income[0] * 100 for v in net_income]
     eps_index = [v / eps[0] * 100 for v in eps]
     buyback_chart = {
@@ -719,8 +727,9 @@ def routine_charts(staging: dict) -> list[dict]:
         "ylab": f"指数（{long_labels[0]} = 100）",
         "note": (
             "<b>两条线之间的缺口几乎全是回购。</b>同期摊薄股数从 "
-            f"{shares[0]:,.0f}M 降到 {shares[-1]:,.0f}M（{pct_change(shares[-1], shares[0]):+.1f}%），"
-            f"倒数是 {shares[0] / shares[-1]:.3f} 倍，"
+            f"{long_shares[0]:,.0f}M 降到 {long_shares[-1]:,.0f}M"
+            f"（{pct_change(long_shares[-1], long_shares[0]):+.1f}%），"
+            f"倒数是 {long_shares[0] / long_shares[-1]:.3f} 倍，"
             f"而两条线的倍数之比是 {(eps[-1] / eps[0]) / (net_income[-1] / net_income[0]):.3f} 倍 —— "
             "剩下的一点点差额是优先股股息与参与型股权激励分走的部分，不是别的。"
             "<b>这条缺口是每股收益增长里不来自经营的那一半的量度</b>，"

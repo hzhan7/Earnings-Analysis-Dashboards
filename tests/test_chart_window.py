@@ -221,8 +221,11 @@ CONVERTED = {
                  "only 2016 that exists is on the superseded basis. 2017Q1 is real.",
         "两条腿占收入的比重": "both ratios divide by revenue, which is on the moved side. "
                      "Same floor and same reason as the four legs above.",
-        "商户那一侧的价格": "the company's own printed average discount rate does reach "
-                    "2016Q1 and now does. The self-computed line beside it "
+        "商户那一侧的价格": "the company's own printed average discount rate reaches "
+                    "2016Q1 in the data, but this chart still draws from 2017Q1 "
+                    "-- it rides `recast()` with the revenue lines, so the "
+                    "backfilled quarters are held out of it. That is a code "
+                    "path, not a limit, and it is still open. The line beside it "
                     "correctly starts later (2021Q1): before then discount "
                     "revenue still contained processed revenue while the "
                     "denominator had already moved to proprietary-only, so "
