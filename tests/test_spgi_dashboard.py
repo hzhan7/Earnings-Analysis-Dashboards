@@ -428,6 +428,38 @@ class SpgiDashboardTest(unittest.TestCase):
         revenue = next(ex for ex in self.by_section["routine"] if ex["kind"] == "gs_bar")
         self.assertIn("并表", revenue["title"])
 
+    def test_the_three_places_that_describe_the_spike_agree_with_the_data(self) -> None:
+        """A margin spike caused by one disposal is described in three notes.
+
+        All three used to hard-code 2022Q1 / 79.2% / US$1,344M. That was right
+        for a record starting in 2017 and wrong the moment it reached 2016 --
+        the J.D. Power sale put a bigger spike in 2016Q3 -- and the failure mode
+        was the nasty one: the sentence derived its quarter and its percentage
+        but not its dollar figure or its explanation, so it re-pointed itself at
+        2016Q3 and went on attributing an IHS-Markit-era antitrust divestiture
+        to it. Half a derived sentence is worse than none.
+        """
+        from build.spgi import disposition_spike
+        spike = disposition_spike(self.long)
+        # the spike is what the data says it is, not what a note says
+        self.assertEqual(spike["quarter"], "Q3 2016")
+        self.assertAlmostEqual(spike["gain"], 722.0, delta=0.5)
+
+        prose = [ex.get("note") or "" for section in self.payload["sections"]
+                 for ex in section["exhibits"]]
+        prose += list(self.payload["notes"])
+        # only the notes that actually point at the spike quarter -- other notes
+        # mention a disposition gain for the quarter they are about, which is a
+        # different (and correct) number
+        mentions = [text for text in prose
+                    if spike["label"] in text and "处置收益" in text]
+        self.assertGreaterEqual(len(mentions), 3)
+        amount = f"US${spike['gain']:,.0f}M"
+        for text in mentions:
+            with self.subTest(note=text[:40]):
+                self.assertIn(amount, text)
+                self.assertNotIn("1,344", text)
+
     def test_the_pre_2017_basis_is_carried_but_declared(self) -> None:
         """FY2016 was never re-presented under ASU 2017-07, so those four
         quarters can only exist on the superseded basis. This page used to floor

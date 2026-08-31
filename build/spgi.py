@@ -483,6 +483,9 @@ def settlement_charts(staging: dict) -> list[dict]:
     quarters = long_history["quarters"]
     margin_window = 13
     ex_credits = operating_margin_ex_credits(long_history)
+    _spike = disposition_spike(long_history)
+    spike_label, spike_reported = _spike["label"], _spike["reported"]
+    spike_ex, spike_gain = _spike["ex_credits"], _spike["gain"]
     margin_chart = threshold_exhibit(
         "营业利润率（剔除处置损益与联营收益 D）vs 阈值 41%",
         [compact_period(q) for q in quarters[-margin_window:]],
@@ -494,8 +497,9 @@ def settlement_charts(staging: dict) -> list[dict]:
             "公司的损益表结构是「收入 − 费用 + 处置损益 + 联营收益 = 营业利润」，"
             "所以这个差额恰好是加上那两项<b>之前</b>的经营利润，不含任何估计。"
             "不剔除的话这条线会被几次剥离顶出一个与经营无关的尖峰 —— "
-            "最极端的一次是 2022Q1 的 79.2%，那一季装着 US$1,344M 的处置收益，"
-            "剔除后只有 22.8%。整段对照见 Exhibit {EX_L_MARGIN}。"
+            f"最极端的一次是 {spike_label} 的 {spike_reported:.1f}%，"
+            f"那一季装着 US${spike_gain:,.0f}M 的处置收益，"
+            f"剔除后只有 {spike_ex:.1f}%。整段对照见 Exhibit {{EX_L_MARGIN}}。"
             "<b>之所以用「收入 − 费用」而不是「营业利润 − 处置收益」</b>："
             "公司在每个会计第四季度都不单独申报处置收益这一行，"
             "用后者会在每年第四季度留下一个洞，而前者两条腿每季都有。"
@@ -880,6 +884,41 @@ def next_quarter_charts(staging: dict) -> list[dict]:
 
 
 # ── section four: the long filed record ──────────────────────────────────────
+# What the disposition gain in a given quarter actually was. The amount is read
+# from the series; only the name of the sale has to be written down. Keyed by
+# quarter because the *largest* gain moves when the window moves -- it used to be
+# 2022Q1 and extending back to 2016 made it 2016Q3, at which point a sentence
+# that derived its quarter and percentage but hard-coded "US$1,344M, the business
+# sold to clear antitrust review" attributed an IHS-Markit-era divestiture to
+# 2016. A quarter with no entry gets no clause rather than the wrong one.
+DISPOSAL_EVENTS = {
+    "Q3 2016": "出售 J.D. Power（2016-09 完成，税前 US$722M / 税后 US$521M）",
+    "Q1 2022": "为通过反垄断审查而在 IHS Markit 合并前后卖掉的业务",
+}
+
+
+def disposition_spike(long_history: dict) -> dict:
+    """The largest reported operating margin in the record, and what caused it.
+
+    Three separate notes describe this spike. All three used to hard-code
+    2022Q1 / 79.2% / US$1,344M, which was right for a record starting in 2017
+    and wrong the moment it reached 2016: J.D. Power's sale put a bigger one in
+    2016Q3. One derivation, so the three cannot drift apart from each other or
+    from the data.
+    """
+    reported = [o / r * 100 for o, r in zip(long_history["operating_income_usd_m"],
+                                            long_history["revenue_usd_m"])]
+    index = reported.index(max(reported))
+    return {
+        "index": index,
+        "quarter": long_history["quarters"][index],
+        "label": compact_period(long_history["quarters"][index]),
+        "reported": reported[index],
+        "ex_credits": operating_margin_ex_credits(long_history)[index],
+        "gain": long_history["gain_on_dispositions_usd_m"][index] or 0,
+    }
+
+
 def long_ratings(staging: dict) -> dict:
     split = staging["ratings_revenue_split_usd_m"]
     labels = [compact_period(q) for q in split["quarters"]]
@@ -952,8 +991,12 @@ def long_margin(staging: dict) -> dict:
     operating = long_history["operating_income_usd_m"]
     gaap = [o / r * 100 for o, r in zip(operating, revenue)]
     ex_gain = operating_margin_ex_credits(long_history)
+    quarters = long_history["quarters"]
     peak = max(gaap)
     peak_index = gaap.index(peak)
+    # The gain that produced the spike travels with the quarter, so it is read
+    # rather than written down -- see DISPOSAL_EVENTS above for why.
+    peak_gain = long_history["gain_on_dispositions_usd_m"][peak_index] or 0
     return {
         "ref": "EX_L_MARGIN",
         "kind": "lines",
@@ -979,8 +1022,11 @@ def long_margin(staging: dict) -> dict:
             "深蓝那条是收入减总费用，两条腿每季都申报；"
             "金色那条是申报的营业利润，也就是把那两项加回之后的数。"
             f"最夸张的一季是 {labels[peak_index]}：申报营业利润率 {peak:.1f}%，"
-            "里面装着 US$1,344M 的剥离收益 —— 那是为通过反垄断审查而卖掉的业务，"
-            f"剔掉之后是 {ex_gain[peak_index]:.1f}%。"
+            + (f"里面装着 US${peak_gain:,.0f}M 的处置收益"
+               + (f" —— {DISPOSAL_EVENTS[quarters[peak_index]]}，"
+                  if quarters[peak_index] in DISPOSAL_EVENTS else "，")
+               if peak_gain else "")
+            + f"剔掉之后是 {ex_gain[peak_index]:.1f}%。"
             "<b>断点标在 2022Q1</b>：IHS Markit 于 2022-02-28 交割，"
             "此后并购无形资产摊销进入费用，深蓝这条线从五十几个百分点被压到二十几，"
             "再用四年爬回今天的水平。断点两侧不是同一家公司，不要当成一条连续的经营曲线读。"
@@ -1222,6 +1268,9 @@ def build_payload(staging: dict) -> dict:
     eps = financials["diluted_eps_usd"]
     record = staging["annual_guidance_history"]
     split = staging["ratings_revenue_split_usd_m"]
+    spike = disposition_spike(staging["long_history"])
+    spike_label, spike_reported = spike["label"], spike["reported"]
+    spike_ex, spike_gain = spike["ex_credits"], spike["gain"]
 
     guidance_ex, stats = guidance_charts(staging)
     settled_ex = settlement_charts(staging) + guidance_ex
@@ -1518,12 +1567,14 @@ def build_payload(staging: dict) -> dict:
             "即 −4.4%。同一年两个方向相反的符号，因此这条线不画成连续的增长曲线。",
             "营业利润率的长序列起点定在 2017Q1 而不是更早："
             "公司按 ASU 2017-07 重述了 FY2016 的全年营业利润，却从未重述 2016 年的各个季度，"
-            "那四个季度在任何申报文件里都只有旧口径的版本，本页因此不往前补。"
-            "收入、净利润、每股收益与现金流各行本身从 2016Q1 起就是干净的。",
+            "那四个季度在任何申报文件里都只有旧口径的版本。本页把它们画出来并在图上标断点，"
+            "而不是截掉：重述的幅度是量得出来的，2018 年第一季度 10-Q 对 2017 年前三季逐季精确为 9.0。"
+            "收入、净利润、每股收益与现金流各行本身从 2016Q1 起就是干净的，不受该重述影响。",
             "<b>营业利润率一律同时给出剔除处置收益的口径。</b>"
             "公司的损益表结构是「收入 − 费用 + 处置损益 + 联营收益 = 营业利润」，"
             "处置损益是一张申报的行而不是估计值，"
-            "但它足以把 2022Q1 的营业利润率顶到 79.2%（当季处置收益 US$1,344M，剔除后 22.9%）。"
+            f"但它足以把 {spike_label} 的营业利润率顶到 {spike_reported:.1f}%"
+            f"（当季处置收益 US${spike_gain:,.0f}M，剔除后 {spike_ex:.1f}%）。"
             "本页把两条线并排画出来，而不是挑一条画、在脚注里说明另一条。",
             "分部口径统一用<b>含分部间收入</b>的申报列，也就是业绩 8-K Exhibit 4 各期一致的那一列。"
             "自 2025 年第一季度起（ASU 2023-07），10-Q 的分部附注同时印出「对外部客户」与「分部间」两列，"
