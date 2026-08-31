@@ -344,9 +344,13 @@ class McDashboardTest(unittest.TestCase):
         `<line y1="NaN">`. A gs_bar added here without `yoy` would take that
         evidence away."""
         bars = [ex for ex in self.exhibits if ex["kind"] == "gs_bar"]
-        self.assertEqual(len(bars), 1)
-        self.assertTrue(bars[0]["yoy"]["values"])
-        self.assertNotIn("avg12", bars[0])
+        # Two now: the eight-quarter current view and the 42-quarter long record
+        # added when the series reached 2016Q1. Both carry `yoy`; neither may
+        # ever carry `avg12`.
+        self.assertEqual(len(bars), 2)
+        for bar in bars:
+            self.assertTrue(bar["yoy"]["values"])
+            self.assertNotIn("avg12", bar)
 
     def test_the_stacked_dual_declares_a_right_axis_ceiling_for_its_share_line(self) -> None:
         """`charts.js:914` reads `rc.ymax || 60` for this kind and never looks at

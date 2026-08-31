@@ -686,9 +686,107 @@ def routine_charts(staging: dict, der: dict, labels: list[str]) -> list[dict]:
     ]
 
 
+
+# ── the long record ─────────────────────────────────────────────────────────
+def long_charts(staging: dict) -> list[dict]:
+    """The 42-quarter revenue record, added once the series reached 2016Q1.
+
+    LVMH stopped filing with the SEC in 2004, and this page was built on the
+    eight quarters its own releases carry as a current window. But the company
+    reprints all four quarters of the current AND prior year in every full-year
+    press-release appendix, so nine of those releases stitch into a continuous,
+    self-overlapping 2016-2025 series -- a research-effort floor, not a
+    disclosure one. The eight-quarter section above is untouched; its prose is
+    written about eight quarters and stays that way.
+    """
+    long_q = staging["long_quarters"]
+    labels = [compact_quarter(q) for q in long_q]
+    rev = staging["quarterly_revenue_eur_m"]
+    org = staging["organic_growth_pct"]
+    total = rev["total"]
+    yoy = [None if i < 4 or not total[i - 4] else pct_change(total[i], total[i - 4])
+           for i in range(len(total))]
+    flg_share = [rev["fashion_leather"][i] / total[i] * 100 for i in range(len(total))]
+
+    return [
+        {
+            "ref": "EX_L_REV",
+            "kind": "gs_bar",
+            "title": (f"{len(labels)} 季集团收入：从 €{total[0]:,.0f}M 到 €{total[-1]:,.0f}M，"
+                      f"其中 2021 年那一跳里有 Tiffany"),
+            "xlabels": labels,
+            "values": rounded(total, 0),
+            "legend": "季度收入",
+            "yoy": {"name": "报告口径同比 (RHS)", "values": rounded(yoy), "yfmt": "pct0"},
+            "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
+            "ylab": "€M", "xstep": 4,
+            "note": ("<b>这条线不是一家公司连续十年的经营曲线，中间有两次并表。</b>"
+                     "Christian Dior Couture 于 2017 下半年并入时装与皮具；"
+                     "Tiffany 于 2021 年 1 月并入手表与珠宝，公司自己的说法是"
+                     "「+10% structural impact… linked entirely to the consolidation of "
+                     "Tiffany &amp; Co.」。所以收入<b>水平</b>的两级台阶要按并购读，"
+                     "而不是按需求读 —— 下一张的有机增速按定义剔除了结构性变化，"
+                     "那条才是可以连续读的。"
+                     "序列取自公司每年全年新闻稿的附表：每份都重印当年与上年全部四个季度，"
+                     "相邻两份互相重叠，逐格交叉核对过。"),
+            "src_extra": "各年全年业绩新闻稿附表（公司官网），2016–2025 共九份。",
+        },
+        {
+            "ref": "EX_L_ORG",
+            "kind": "lines",
+            "title": (f"{len(labels)} 季五个分部的有机增速：并购不进这条线，"
+                      f"所以它是唯一能跨 2017 与 2021 连续读的一条"),
+            "xlabels": labels,
+            "series": [
+                {"name": "时装与皮具", "values": rounded(org["fashion_leather"]), "color": "NAVY"},
+                {"name": "手表与珠宝", "values": rounded(org["watches_jewelry"]), "color": "BLUE"},
+                {"name": "精品零售", "values": rounded(org["selective_retailing"]), "color": "MBLUE"},
+                {"name": "香水与化妆品", "values": rounded(org["perfumes_cosmetics"]), "color": "GRAY"},
+                {"name": "葡萄酒与烈酒", "values": rounded(org["wines_spirits"]), "color": "GOLD"},
+            ],
+            "fmt": "pct0", "yfmt": "pct0", "label_fmt": "pct0",
+            "ylab": "有机增速", "zero_line": True, "end_label": True, "xstep": 4,
+            "note": ("有机增速是公司自己的口径，剔除汇率与合并范围变化 —— "
+                     "**这正是它能跨越 2017 年 Dior 与 2021 年 Tiffany 两次并表的原因**，"
+                     "上一张的收入水平不能。2020 年那道深坑是门店关闭，不是份额流失："
+                     "五条腿同时向下，精品零售（旅游零售为主）最深。"),
+            "src_extra": "各年全年业绩新闻稿附表所载分部有机增速。",
+        },
+        {
+            "ref": "EX_L_MIX",
+            "kind": "stacked_dual",
+            "title": (f"{len(labels)} 季分部结构：时装与皮具占比从 {flg_share[0]:.1f}% "
+                      f"走到 {flg_share[-1]:.1f}%"),
+            "xlabels": labels,
+            "stacks": [
+                {"name": "时装与皮具", "color": "NAVY",
+                 "values": rounded(rev["fashion_leather"], 0)},
+                {"name": "精品零售", "color": "MBLUE",
+                 "values": rounded(rev["selective_retailing"], 0)},
+                {"name": "手表与珠宝", "color": "BLUE",
+                 "values": rounded(rev["watches_jewelry"], 0)},
+                {"name": "香水与化妆品", "color": "GRAY",
+                 "values": rounded(rev["perfumes_cosmetics"], 0)},
+                {"name": "葡萄酒与烈酒", "color": "GOLD",
+                 "values": rounded(rev["wines_spirits"], 0)},
+            ],
+            "line": {"name": "时装与皮具占比 (RHS)", "color": "RED",
+                     "values": rounded(flg_share), "yfmt": "pct1", "ymax": 100},
+            "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
+            "ylab": "€M", "ylab2": "占比", "xstep": 4,
+            "note": ("<b>占比的两次跳升要分开读。</b>时装与皮具的占比在 2017 下半年与 "
+                     "2021 年初各抬一级，前者是 Dior 并入本分部，后者是 Tiffany 并入"
+                     "手表与珠宝、把分母抬高。中间与之后的漂移才是经营。"
+                     "各分部相加不等于集团收入：公司另有一条 Other &amp; eliminations，"
+                     "本图不画，它在核对表里。"),
+            "src_extra": "各年全年业绩新闻稿附表。",
+        },
+    ]
+
 def build_payload(staging: dict) -> dict:
     labels = [compact_quarter(q) for q in staging["quarters"]]
     der = derived(staging)
+    long_ex = long_charts(staging)
     rev = staging["quarterly_revenue_eur_m"]
     long_q = staging["long_quarters"]
     start = long_q.index(staging["quarters"][0])
@@ -702,7 +800,7 @@ def build_payload(staging: dict) -> dict:
     quarter_ex = quarter_charts(staging, der, labels)
     half_ex = half_charts(staging, der)
     routine_ex = routine_charts(staging, der, labels)
-    exhibits = number_exhibits(said_ex + quarter_ex + half_ex + routine_ex)
+    exhibits = number_exhibits(said_ex + quarter_ex + half_ex + long_ex + routine_ex)
 
     # ── audit tables ─────────────────────────────────────────────────────────
     rev_rows = [
@@ -888,6 +986,16 @@ def build_payload(staging: dict) -> dict:
                     "本节所有图的 x 轴都是半年，不是季度。"
                 ),
                 "exhibits": half_ex,
+            },
+            {
+                "id": "long_record",
+                "title": "四、四十二季的长期记录",
+                "description": (
+                    "季度收入与有机增速回到 2016Q1。LVMH 不向 SEC 申报，但它每年的全年"
+                    "新闻稿附表里同时重印当年与上年全部四个季度 —— 九份发布就拼出完整序列，"
+                    "且相邻两份互相重叠、可逐格核对。这一节只画能连续读的三张。"
+                ),
+                "exhibits": long_ex,
             },
             {
                 "id": "routine",

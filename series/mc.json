@@ -1,897 +1,1403 @@
 {
- "_provenance": "LVMH Moët Hennessy Louis Vuitton SE 是巴黎上市的法国公司（Euronext Paris，MC.PA），按 IFRS 以欧元报告。它曾经是 SEC 报告发行人但早已不是：CIK 0000824046 名下只有两份 20-F（2002-07-01 报 FY2001、2003-06-30 报 FY2002，外加一份 20-F/A）与七份 6-K（2002-02-12 至 2004-03-17），2004-03-08 报了 Form 15-15D 中止申报义务，2009-07-31 又报了 Form 15F-15D 终止注册；此后该 CIK 下只剩 ADR 存托登记用的 F-6EF / F-6 POS（最新一份 2022-01-24）与两份 SC 13D。因此本页没有任何 EDGAR 数据来源 —— 那两份 20-F 覆盖的是二十多年前的会计年度。全部数据取自公司自己发布的季度收入公告、半年度与全年业绩新闻稿、半年度财务报告、Universal Registration Document / Financial Documents 与业绩演示材料，以及公司业绩电话会记录。\n\n披露节奏是本页的核心约束，也是它与本站其他公司页最大的不同：**LVMH 一年发四次收入、只发两次利润。**第一季度与第三季度只发收入公告（分部收入的欧元金额与有机增速，无任何利润行）；利润表、分部经营利润、现金流量表、资产负债表与门店数只在半年度和全年披露。所以本页八个季度里，**没有任何一个季度有属于它自己的分部利润数**。本页因此把收入按季发布、把利润按半年发布，两条 x 轴各自独立，不做任何按季摊平或插值。\n\nH2 各行由「全年减上半年」得出并标 D。这条口径与公司自己在年度演示材料附录里印的 H2 行偶有 ±1 百万欧元的差，因为公司按未取整数字计算而两条路径的取整点不同；本页统一用「全年减上半年」，差额在核对表里逐行列出。同理，五个分部相加与公司印的集团合计在 14 个季度里有 2 个差 1 百万欧元、H1 2026 的分部经营利润相加是 8,690 而公司印的是 8,691 —— 本页把「其他业务与抵销」一行按「集团合计减五个分部」取残值以使堆叠图闭合，并在核对表里同时给出公司印的那个数。",
- "schema_version": "quarterly-series/mc-v1",
- "company": {
-  "ticker": "MC.PA",
-  "name": "LVMH Moët Hennessy Louis Vuitton SE",
-  "group": "luxury_brands",
-  "accounting_standard": "IFRS",
-  "currency": "EUR",
-  "listing": "Euronext Paris",
-  "sec_registrant": false
- },
- "latest": {
-  "disclosed_period_label": "Q2 2026",
-  "full_financial_period_label": "H1 2026",
-  "period_end": "2026-06-30",
-  "release_date": "2026-07-27",
-  "analysis_date": "2026-08-30",
-  "audit_status": "limited_review_pending",
-  "status": "history_ready"
- },
- "division_names": {
-  "wines_spirits": "葡萄酒与烈酒",
-  "fashion_leather": "时装与皮具",
-  "perfumes_cosmetics": "香水与化妆品",
-  "watches_jewelry": "手表与珠宝",
-  "selective_retailing": "精品零售",
-  "other": "其他业务与抵销"
- },
- "quarters": [
-  "2024Q3",
-  "2024Q4",
-  "2025Q1",
-  "2025Q2",
-  "2025Q3",
-  "2025Q4",
-  "2026Q1",
-  "2026Q2"
- ],
- "quarter_period_ends": [
-  "2024-09-30",
-  "2024-12-31",
-  "2025-03-31",
-  "2025-06-30",
-  "2025-09-30",
-  "2025-12-31",
-  "2026-03-31",
-  "2026-06-30"
- ],
- "long_quarters": [
-  "2023Q1",
-  "2023Q2",
-  "2023Q3",
-  "2023Q4",
-  "2024Q1",
-  "2024Q2",
-  "2024Q3",
-  "2024Q4",
-  "2025Q1",
-  "2025Q2",
-  "2025Q3",
-  "2025Q4",
-  "2026Q1",
-  "2026Q2"
- ],
- "quarterly_revenue_eur_m": {
-  "wines_spirits": [
-   1694,
-   1486,
-   1509,
-   1912,
-   1417,
-   1391,
-   1386,
-   1669,
-   1305,
-   1283,
-   1330,
-   1441,
-   1273,
-   1324
-  ],
-  "fashion_leather": [
-   10728,
-   10434,
-   9750,
-   11257,
-   10490,
-   10281,
-   9151,
-   11139,
-   10108,
-   9006,
-   8497,
-   10159,
-   9247,
-   8899
-  ],
-  "perfumes_cosmetics": [
-   2115,
-   1913,
-   1993,
-   2250,
-   2182,
-   1953,
-   2012,
-   2270,
-   2178,
-   1904,
-   1958,
-   2134,
-   2038,
-   1876
-  ],
-  "watches_jewelry": [
-   2589,
-   2839,
-   2524,
-   2951,
-   2466,
-   2685,
-   2386,
-   3041,
-   2482,
-   2608,
-   2319,
-   3077,
-   2443,
-   2782
-  ],
-  "selective_retailing": [
-   3961,
-   4394,
-   4076,
-   5454,
-   4175,
-   4457,
-   3927,
-   5703,
-   4189,
-   4431,
-   3992,
-   5735,
-   4048,
-   4358
-  ],
-  "total": [
-   21035,
-   21206,
-   19964,
-   23948,
-   20694,
-   20983,
-   19076,
-   23930,
-   20311,
-   19499,
-   18280,
-   22717,
-   19121,
-   19524
-  ]
- },
- "quarterly_revenue_other_published_eur_m": [
-  -53,
-  140,
-  113,
-  124,
-  -36,
-  216,
-  214,
-  108,
-  49,
-  267,
-  185,
-  171,
-  72,
-  284
- ],
- "quarterly_wines_split_eur_m": {
-  "champagne_wines": [
-   null,
-   null,
-   null,
-   null,
-   680,
-   715,
-   748,
-   1037,
-   676,
-   721,
-   761,
-   928,
-   663,
-   761
-  ],
-  "cognac_spirits": [
-   null,
-   null,
-   null,
-   null,
-   736,
-   676,
-   638,
-   632,
-   629,
-   562,
-   568,
-   513,
-   610,
-   563
-  ]
- },
- "organic_quarters": [
-  "2024Q1",
-  "2024Q2",
-  "2024Q3",
-  "2024Q4",
-  "2025Q1",
-  "2025Q2",
-  "2025Q3",
-  "2025Q4",
-  "2026Q1",
-  "2026Q2"
- ],
- "organic_growth_pct": {
-  "wines_spirits": [
-   -12,
-   -5,
-   -7,
-   -8,
-   -9,
-   -4,
-   1,
-   -9,
-   5,
-   5
-  ],
-  "fashion_leather": [
-   2,
-   1,
-   -5,
-   -1,
-   -5,
-   -9,
-   -2,
-   -3,
-   -2,
-   1
-  ],
-  "perfumes_cosmetics": [
-   7,
-   4,
-   3,
-   2,
-   -1,
-   1,
-   2,
-   -1,
-   0,
-   -1
-  ],
-  "watches_jewelry": [
-   -2,
-   -4,
-   -4,
-   3,
-   0,
-   0,
-   2,
-   8,
-   7,
-   11
-  ],
-  "selective_retailing": [
-   11,
-   5,
-   2,
-   7,
-   -1,
-   4,
-   7,
-   7,
-   4,
-   6
-  ],
-  "total": [
-   3,
-   1,
-   -3,
-   1,
-   -3,
-   -4,
-   1,
-   1,
-   1,
-   3
-  ]
- },
- "halves": [
-  "H1 2023",
-  "H2 2023",
-  "H1 2024",
-  "H2 2024",
-  "H1 2025",
-  "H2 2025",
-  "H1 2026"
- ],
- "half_release_dates": {
-  "H1 2024": "2024-07-23",
-  "H1 2025": "2025-07-24",
-  "H1 2026": "2026-07-27",
-  "H2 2025": "2026-01-27"
- },
- "half_revenue_eur_m": {
-  "wines_spirits": [
-   3181,
-   3421,
-   2807,
-   3055,
-   2588,
-   2770,
-   2598
-  ],
-  "fashion_leather": [
-   21162,
-   21007,
-   20771,
-   20289,
-   19115,
-   18655,
-   18146
-  ],
-  "perfumes_cosmetics": [
-   4028,
-   4243,
-   4136,
-   4282,
-   4082,
-   4092,
-   3914
-  ],
-  "watches_jewelry": [
-   5427,
-   5475,
-   5150,
-   5427,
-   5090,
-   5396,
-   5225
-  ],
-  "selective_retailing": [
-   8355,
-   9530,
-   8632,
-   9630,
-   8620,
-   9728,
-   8406
-  ],
-  "total": [
-   42240,
-   43913,
-   41677,
-   43006,
-   39810,
-   40997,
-   38644
-  ],
-  "other": [
-   87,
-   237,
-   181,
-   323,
-   315,
-   356,
-   355
-  ]
- },
- "half_pro_eur_m": {
-  "wines_spirits": [
-   1046,
-   1063,
-   777,
-   579,
-   524,
-   492,
-   582
-  ],
-  "fashion_leather": [
-   8562,
-   8274,
-   8058,
-   7172,
-   6636,
-   6573,
-   6195
-  ],
-  "perfumes_cosmetics": [
-   446,
-   267,
-   445,
-   226,
-   425,
-   302,
-   417
-  ],
-  "watches_jewelry": [
-   1089,
-   1073,
-   877,
-   669,
-   762,
-   752,
-   831
-  ],
-  "selective_retailing": [
-   734,
-   657,
-   785,
-   600,
-   876,
-   904,
-   893
-  ],
-  "other": [
-   -303,
-   -106,
-   -289,
-   -328,
-   -211,
-   -280,
-   -228
-  ],
-  "total": [
-   11574,
-   11228,
-   10653,
-   8918,
-   9012,
-   8743,
-   8691
-  ]
- },
- "half_pro_published_total_eur_m": {
-  "H1 2026": 8691
- },
- "half_margin_company_printed_pct": {
-  "H1 2026": {
-   "wines_spirits": 22.4,
-   "fashion_leather": 34.1,
-   "perfumes_cosmetics": 10.6,
-   "watches_jewelry": 15.9,
-   "selective_retailing": 10.6,
-   "total": 22.5
+  "_provenance": "LVMH Moët Hennessy Louis Vuitton SE 是巴黎上市的法国公司（Euronext Paris，MC.PA），按 IFRS 以欧元报告。它曾经是 SEC 报告发行人但早已不是：CIK 0000824046 名下只有两份 20-F（2002-07-01 报 FY2001、2003-06-30 报 FY2002，外加一份 20-F/A）与七份 6-K（2002-02-12 至 2004-03-17），2004-03-08 报了 Form 15-15D 中止申报义务，2009-07-31 又报了 Form 15F-15D 终止注册；此后该 CIK 下只剩 ADR 存托登记用的 F-6EF / F-6 POS（最新一份 2022-01-24）与两份 SC 13D。因此本页没有任何 EDGAR 数据来源 —— 那两份 20-F 覆盖的是二十多年前的会计年度。全部数据取自公司自己发布的季度收入公告、半年度与全年业绩新闻稿、半年度财务报告、Universal Registration Document / Financial Documents 与业绩演示材料，以及公司业绩电话会记录。\n\n披露节奏是本页的核心约束，也是它与本站其他公司页最大的不同：**LVMH 一年发四次收入、只发两次利润。**第一季度与第三季度只发收入公告（分部收入的欧元金额与有机增速，无任何利润行）；利润表、分部经营利润、现金流量表、资产负债表与门店数只在半年度和全年披露。所以本页八个季度里，**没有任何一个季度有属于它自己的分部利润数**。本页因此把收入按季发布、把利润按半年发布，两条 x 轴各自独立，不做任何按季摊平或插值。\n\nH2 各行由「全年减上半年」得出并标 D。这条口径与公司自己在年度演示材料附录里印的 H2 行偶有 ±1 百万欧元的差，因为公司按未取整数字计算而两条路径的取整点不同；本页统一用「全年减上半年」，差额在核对表里逐行列出。同理，五个分部相加与公司印的集团合计在 14 个季度里有 2 个差 1 百万欧元、H1 2026 的分部经营利润相加是 8,690 而公司印的是 8,691 —— 本页把「其他业务与抵销」一行按「集团合计减五个分部」取残值以使堆叠图闭合，并在核对表里同时给出公司印的那个数。",
+  "schema_version": "quarterly-series/mc-v1",
+  "company": {
+    "ticker": "MC.PA",
+    "name": "LVMH Moët Hennessy Louis Vuitton SE",
+    "group": "luxury_brands",
+    "accounting_standard": "IFRS",
+    "currency": "EUR",
+    "listing": "Euronext Paris",
+    "sec_registrant": false
   },
-  "H1 2025": {
-   "wines_spirits": 20.3,
-   "perfumes_cosmetics": 10.4,
-   "total": 22.6
-  }
- },
- "cash_halves": [
-  "H1 2024",
-  "H2 2024",
-  "H1 2025",
-  "H2 2025",
-  "H1 2026"
- ],
- "half_cash_eur_m": {
-  "ocf": [
-   7284,
-   11640,
-   7881,
-   10993,
-   7647
-  ],
-  "capex": [
-   2728,
-   2803,
-   2360,
-   2207,
-   2061
-  ],
-  "lease_repaid": [
-   1426,
-   1489,
-   1489,
-   1485,
-   1486
-  ],
-  "ofcf": [
-   3130,
-   7348,
-   4032,
-   7301,
-   4100
-  ]
- },
- "balance_dates": [
-  "2024-06-30",
-  "2024-12-31",
-  "2025-06-30",
-  "2025-12-31",
-  "2026-06-30"
- ],
- "net_financial_debt_eur_m": [
-  12158,
-  9228,
-  10176,
-  6857,
-  8245
- ],
- "equity_eur_m": [
-  66480,
-  69287,
-  66875,
-  68949,
-  69694
- ],
- "store_dates": [
-  "2024-12-31",
-  "2025-06-30",
-  "2025-12-31",
-  "2026-06-30"
- ],
- "stores": {
-  "france": [
-   553,
-   543,
-   539,
-   533
-  ],
-  "europe_ex_fr": [
-   1254,
-   1245,
-   1255,
-   1253
-  ],
-  "united_states": [
-   1193,
-   1222,
-   1232,
-   1237
-  ],
-  "japan": [
-   510,
-   508,
-   520,
-   511
-  ],
-  "asia_ex_japan": [
-   2019,
-   1991,
-   1905,
-   1832
-  ],
-  "other_markets": [
-   778,
-   804,
-   832,
-   851
-  ],
-  "total": [
-   6307,
-   6313,
-   6283,
-   6217
-  ]
- },
- "region_quarters": [
-  "2025Q1",
-  "2025Q2",
-  "2026Q1",
-  "2026Q2"
- ],
- "region_organic_pct": {
-  "united_states": [
-   -3,
-   0,
-   3,
-   6
-  ],
-  "japan": [
-   -1,
-   -28,
-   -3,
-   14
-  ],
-  "asia_ex_japan": [
-   -11,
-   -6,
-   7,
-   4
-  ],
-  "europe": [
-   2,
-   -1,
-   -3,
-   0
-  ],
-  "total": [
-   -3,
-   -4,
-   1,
-   3
-  ]
- },
- "region_mix_dates": [
-  "2025-06-30",
-  "2025-12-31",
-  "2026-06-30"
- ],
- "region_mix_pct": {
-  "france": [
-   8,
-   8,
-   8
-  ],
-  "europe_ex_fr": [
-   17,
-   18,
-   17
-  ],
-  "united_states": [
-   25,
-   26,
-   25
-  ],
-  "japan": [
-   8,
-   8,
-   8
-  ],
-  "asia_ex_japan": [
-   28,
-   26,
-   29
-  ],
-  "other_markets": [
-   14,
-   14,
-   13
-  ]
- },
- "disclosure_cadence": {
-  "quarterly": [
-   "分部收入（欧元金额）",
-   "分部有机增速",
-   "集团有机增速"
-  ],
-  "half_yearly_only": [
-   "损益表",
-   "分部经营利润与利润率",
-   "汇率与并表对利润的影响",
-   "现金流量表与经营自由现金流",
-   "资产负债表与净金融负债",
-   "分地区收入构成",
-   "门店数",
-   "每股收益"
-  ],
-  "never_quantified": [
-   "下一季或全年的收入、利润或利润率的数字指引"
-  ],
-  "note": "Q1 与 Q3 只发收入公告，正文里没有任何利润行。八个季度里没有一个季度有属于它自己的分部利润数：利润只在 H1 与全年两个口径上存在。"
- },
- "call_record": {
-  "made_on": "2026-04-13",
-  "made_on_label": "Q1 2026 电话会",
-  "settled_by": "2026-07-27",
-  "settled_by_label": "H1 2026 业绩",
-  "items": [
-   {
-    "key": "wines_spirits_q2",
-    "topic": "葡萄酒与烈酒的 Q2",
-    "speaker": "Cécile Cabanis",
-    "said": "Q2 will not be repeating Q1 overall given this impact",
-    "said_zh": "Q1 的成绩里有中国春节从一月挪到二月带来的发货相位利好，Q2 整体不会重复 Q1。",
-    "quantified": null,
-    "outcome_value": 5.0,
-    "outcome_unit": "pct",
-    "outcome_zh": "Q2 有机增速 +5%，与 Q1 完全相同；H1 +5%、经营利润 +11%、利润率 +210bp 至 22.4%。公司在 Q2 电话会上把 H1 的 +5% 归因于「predominantly volume growth」，不是相位。",
-    "verdict": "missed"
-   },
-   {
-    "key": "fx_margin",
-    "topic": "上半年汇率对利润率的拖累",
-    "speaker": "Cécile Cabanis",
-    "said": "around 80 bps negative for the first half",
-    "said_zh": "上半年汇率对经营利润率的拖累约 80 个基点。",
-    "quantified": -80.0,
-    "quantified_unit": "bps",
-    "outcome_value": -70.0,
-    "outcome_unit": "bps",
-    "outcome_zh": "Q2 电话会：「H1 was around 70 bps」。实际比所述少 10 个基点。",
-    "verdict": "met"
-   },
-   {
-    "key": "middle_east",
-    "topic": "中东冲突对集团有机增速的拖累",
-    "speaker": "Cécile Cabanis",
-    "said": "3 points in March and 1 point on the quarter",
-    "said_zh": "三月约 3 个百分点、整个一季度约 1 个百分点。",
-    "quantified": -1.0,
-    "quantified_unit": "pp",
-    "outcome_value": -1.0,
-    "outcome_unit": "pp",
-    "outcome_zh": "Q2 同样 −1pp，但持续时间更长；公司称若剔除中东，Q2 集团有机增速是 +4% 而不是 +3%。季末「still negative but much more muted」。",
-    "verdict": "met"
-   },
-   {
-    "key": "flg_q2",
-    "topic": "时装与皮具的 Q2 起点",
-    "speaker": "Cécile Cabanis",
-    "said": "for F&LG, March would have been flattish outside of the impact of the conflict",
-    "said_zh": "剔除冲突影响，三月的时装与皮具本应大致持平 —— 这是公司给出的读 Q2 的唯一锚点。",
-    "quantified": 0.0,
-    "quantified_unit": "pct",
-    "outcome_value": 1.0,
-    "outcome_unit": "pct",
-    "outcome_zh": "Q2 有机增速 +1%；公司称剔除中东是 +2%。八个季度里第一次转正。",
-    "verdict": "beat"
-   },
-   {
-    "key": "dfs_perimeter",
-    "topic": "DFS 处置对精品零售的并表影响",
-    "speaker": "Cécile Cabanis",
-    "said": "Q2 will be 2 points linked to the closing of that transaction, 2 points on selective distribution",
-    "said_zh": "Q2 精品零售分部约有 2 个百分点的并表拖累。",
-    "quantified": -2.0,
-    "quantified_unit": "pp",
-    "outcome_value": null,
-    "outcome_unit": "pp",
-    "outcome_zh": "公司只在集团口径上给了 Q2 −1pp，分部口径只给了 H1 的 −3%；分季度的分部并表影响公司从不披露，所以这一条本页无法在它被说出的口径上核。",
-    "verdict": "unverifiable"
-   },
-   {
-    "key": "margin_threshold",
-    "topic": "稳住利润率所需的有机增速",
-    "speaker": "Cécile Cabanis",
-    "said": "we said that we needed 3% to 4% organic growth in order to stabilize margin. We could maybe do it with a bit less",
-    "said_zh": "需要 3–4% 的有机增长才能稳住利润率，也许比这少一点也行。",
-    "quantified": 3.0,
-    "quantified_unit": "pct",
-    "outcome_value": 2.0,
-    "outcome_unit": "pct",
-    "outcome_zh": "H1 有机 +2%，集团经营利润率 22.49%（上年同期 22.64%），公司称降幅完全由汇率造成；毛利率反而升 30bp 至 67.1%，营销与销售费用 −2%、管理费用持平。兑现的是那句「也许比这少一点也行」的余地，不是 3–4% 这条线本身。而同一个数字在 Q2 电话会上换了说法：从「稳住利润率」变成「开始获得经营杠杆」，并被明确声明「it doesn't make it a rule」。",
-    "verdict": "caveat_held"
-   }
-  ]
- },
- "forward_statements": {
-  "made_on": "2026-07-27",
-  "items": [
-   {
-    "topic": "葡萄酒与烈酒全年",
-    "said": "we expect the division to grow at constant currencies in 2026, albeit not as much as in H1",
-    "quantified": "全年恒定汇率下仍增长，但幅度低于 H1 的 +5%"
-   },
-   {
-    "topic": "葡萄酒与烈酒全年利润率",
-    "said": "full year EBIT margin to be closer to 2025 levels",
-    "quantified": "接近 FY2025 的 19.0%，而 H1 2026 是 22.4%"
-   },
-   {
-    "topic": "下半年汇率对利润率",
-    "said": "on the margin, we still expect approximately the same impact that we had in H1",
-    "quantified": "约 −70bp"
-   },
-   {
-    "topic": "下半年汇率对收入",
-    "said": "we could have a slight positive impact from FX going forward on revenues. However, probably offset by a perimeter impact",
-    "quantified": "汇率转正、被并表抵销，净影响未给数"
-   },
-   {
-    "topic": "下半年比较基数",
-    "said": "The comp base in H2 is optically tougher than H1. But it's also on the base of easier comps in '24. So overall, it's quite similar",
-    "quantified": "未给数"
-   },
-   {
-    "topic": "中东",
-    "said": "exiting the quarter still negative but much more muted",
-    "quantified": "未给数；「still very much unknown」"
-   },
-   {
-    "topic": "Tiffany 门店翻新节奏",
-    "said": "Overall, 10% or more per year",
-    "quantified": "每年翻新门店总数的 10% 以上；当前约 40% 已翻新、60% 的生意已完成转型"
-   },
-   {
-    "topic": "经营杠杆门槛",
-    "said": "once we reach 3% to 4% growth, we are starting to get operating leverage",
-    "quantified": "3–4% 有机增速"
-   },
-   {
-    "topic": "美国关税退款",
-    "said": "we got some refund, but it's only a few basis points to the margin at this stage",
-    "quantified": "几个基点"
-   }
-  ]
- },
- "next_kpi": {
-  "note": "阈值为本地研究设定，不是公司指引；公司不提供任何数字指引。「距阈值余量」统一为正值代表安全侧。",
-  "entries": [
-   {
-    "metric": "时装与皮具季度有机增速",
-    "direction": "up",
-    "threshold": 3.0,
-    "unit": "pct",
-    "current": 1.0,
-    "why": "管理层自述获得经营杠杆的门槛下沿是 3%；F&LG 占集团收入 47%，它决定集团能不能到线。"
-   },
-   {
-    "metric": "集团季度有机增速",
-    "direction": "up",
-    "threshold": 3.0,
-    "unit": "pct",
-    "current": 3.0,
-    "why": "同一条门槛的集团口径。Q2 恰好压线，且其中 1pp 被中东抵掉。"
-   },
-   {
-    "metric": "手表与珠宝季度有机增速",
-    "direction": "up",
-    "threshold": 5.0,
-    "unit": "pct",
-    "current": 11.0,
-    "why": "本季唯一双位数的分部；Tiffany 与 Bvlgari 双双 mid-teens，跌破 5% 就说明冲量结束。"
-   },
-   {
-    "metric": "半年集团经营利润率",
-    "direction": "up",
-    "threshold": 22.0,
-    "unit": "pct",
-    "current": 22.49,
-    "why": "FY2025 全年是 22.0%；H1 高于全年是这家公司的常态，跌破全年水平才是新信息。"
-   },
-   {
-    "metric": "半年时装与皮具经营利润率",
-    "direction": "up",
-    "threshold": 34.0,
-    "unit": "pct",
-    "current": 34.14,
-    "why": "H1 2026 是 34.14%，只比这条线高 0.14pp；上季分析里被讨论的 30–32% 情形并未发生。"
-   },
-   {
-    "metric": "季度报告增速与有机增速之差",
-    "direction": "down",
-    "threshold": 3.0,
-    "unit": "pp",
-    "current": 2.87,
-    "why": "汇率加并表的总拖累。这个差从 2026Q1 的 6.86pp 掉到 2026Q2 的 2.87pp，是本季报表改善的主因。"
-   },
-   {
-    "metric": "亚洲（除日本）门店数",
-    "direction": "up",
-    "threshold": 1800.0,
-    "unit": "million",
-    "current": 1832.0,
-    "why": "一年内从 1,991 家降到 1,832 家，其中含 DFS 大中华处置；跌破 1,800 意味着收缩超出已宣布的处置范围。"
-   }
-  ]
- },
- "sources": [
-  {
-   "label": "H1 2026 半年度业绩新闻稿（2026-07-27）",
-   "url": "https://www.lvmh.com/en/publications/accelerating-growth-in-the-second-quarter---solid-first-half-results"
+  "latest": {
+    "disclosed_period_label": "Q2 2026",
+    "full_financial_period_label": "H1 2026",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-27",
+    "analysis_date": "2026-08-30",
+    "audit_status": "limited_review_pending",
+    "status": "history_ready"
   },
-  {
-   "label": "H1 2026 半年度财务报告",
-   "url": "https://www.lvmh.com/en/investors/investors-and-analysts"
+  "division_names": {
+    "wines_spirits": "葡萄酒与烈酒",
+    "fashion_leather": "时装与皮具",
+    "perfumes_cosmetics": "香水与化妆品",
+    "watches_jewelry": "手表与珠宝",
+    "selective_retailing": "精品零售",
+    "other": "其他业务与抵销"
   },
-  {
-   "label": "Q1 2026 一季度收入公告（2026-04-13）",
-   "url": "https://www.lvmh.com/en/publications/lvmh-continues-to-achieve-organic-growth-in-the-first-quarter"
+  "quarters": [
+    "2024Q3",
+    "2024Q4",
+    "2025Q1",
+    "2025Q2",
+    "2025Q3",
+    "2025Q4",
+    "2026Q1",
+    "2026Q2"
+  ],
+  "quarter_period_ends": [
+    "2024-09-30",
+    "2024-12-31",
+    "2025-03-31",
+    "2025-06-30",
+    "2025-09-30",
+    "2025-12-31",
+    "2026-03-31",
+    "2026-06-30"
+  ],
+  "long_quarters": [
+    "2016Q1",
+    "2016Q2",
+    "2016Q3",
+    "2016Q4",
+    "2017Q1",
+    "2017Q2",
+    "2017Q3",
+    "2017Q4",
+    "2018Q1",
+    "2018Q2",
+    "2018Q3",
+    "2018Q4",
+    "2019Q1",
+    "2019Q2",
+    "2019Q3",
+    "2019Q4",
+    "2020Q1",
+    "2020Q2",
+    "2020Q3",
+    "2020Q4",
+    "2021Q1",
+    "2021Q2",
+    "2021Q3",
+    "2021Q4",
+    "2022Q1",
+    "2022Q2",
+    "2022Q3",
+    "2022Q4",
+    "2023Q1",
+    "2023Q2",
+    "2023Q3",
+    "2023Q4",
+    "2024Q1",
+    "2024Q2",
+    "2024Q3",
+    "2024Q4",
+    "2025Q1",
+    "2025Q2",
+    "2025Q3",
+    "2025Q4",
+    "2026Q1",
+    "2026Q2"
+  ],
+  "quarterly_revenue_eur_m": {
+    "wines_spirits": [
+      1033.0,
+      1023.0,
+      1225.0,
+      1554.0,
+      1196.0,
+      1098.0,
+      1220.0,
+      1570.0,
+      1195.0,
+      1076.0,
+      1294.0,
+      1578.0,
+      1349.0,
+      1137.0,
+      1433.0,
+      1657.0,
+      1175.0,
+      810.0,
+      1364.0,
+      1406.0,
+      1510.0,
+      1195.0,
+      1546.0,
+      1723.0,
+      1638.0,
+      1689.0,
+      1899.0,
+      1873.0,
+      1694,
+      1486,
+      1509,
+      1912,
+      1417,
+      1391,
+      1386,
+      1669,
+      1305,
+      1283,
+      1330,
+      1441,
+      1273,
+      1324
+    ],
+    "fashion_leather": [
+      2965.0,
+      2920.0,
+      3106.0,
+      3784.0,
+      3405.0,
+      3494.0,
+      3939.0,
+      4634.0,
+      4270.0,
+      4324.0,
+      4458.0,
+      5403.0,
+      5111.0,
+      5314.0,
+      5448.0,
+      6364.0,
+      4643.0,
+      3346.0,
+      5945.0,
+      7273.0,
+      6738.0,
+      7125.0,
+      7452.0,
+      9581.0,
+      9123.0,
+      9013.0,
+      9687.0,
+      10825.0,
+      10728,
+      10434,
+      9750,
+      11257,
+      10490,
+      10281,
+      9151,
+      11139,
+      10108,
+      9006,
+      8497,
+      10159,
+      9247,
+      8899
+    ],
+    "perfumes_cosmetics": [
+      1213.0,
+      1124.0,
+      1241.0,
+      1375.0,
+      1395.0,
+      1275.0,
+      1395.0,
+      1495.0,
+      1500.0,
+      1377.0,
+      1533.0,
+      1682.0,
+      1687.0,
+      1549.0,
+      1676.0,
+      1923.0,
+      1382.0,
+      922.0,
+      1370.0,
+      1574.0,
+      1550.0,
+      1475.0,
+      1642.0,
+      1941.0,
+      1905.0,
+      1714.0,
+      1959.0,
+      2145.0,
+      2115,
+      1913,
+      1993,
+      2250,
+      2182,
+      1953,
+      2012,
+      2270,
+      2178,
+      1904,
+      1958,
+      2134,
+      2038,
+      1876
+    ],
+    "watches_jewelry": [
+      774.0,
+      835.0,
+      877.0,
+      982.0,
+      879.0,
+      959.0,
+      951.0,
+      1016.0,
+      959.0,
+      1019.0,
+      1043.0,
+      1102.0,
+      1046.0,
+      1089.0,
+      1126.0,
+      1144.0,
+      792.0,
+      527.0,
+      947.0,
+      1090.0,
+      1883.0,
+      2140.0,
+      2137.0,
+      2804.0,
+      2338.0,
+      2570.0,
+      2666.0,
+      3006.0,
+      2589,
+      2839,
+      2524,
+      2951,
+      2466,
+      2685,
+      2386,
+      3041,
+      2482,
+      2608,
+      2319,
+      3077,
+      2443,
+      2782
+    ],
+    "selective_retailing": [
+      2747.0,
+      2733.0,
+      2803.0,
+      3690.0,
+      3154.0,
+      3126.0,
+      3055.0,
+      3976.0,
+      3104.0,
+      3221.0,
+      3219.0,
+      4102.0,
+      3510.0,
+      3588.0,
+      3457.0,
+      4236.0,
+      2626.0,
+      2218.0,
+      2332.0,
+      2979.0,
+      2337.0,
+      2748.0,
+      2710.0,
+      3959.0,
+      3040.0,
+      3591.0,
+      3465.0,
+      4757.0,
+      3961,
+      4394,
+      4076,
+      5454,
+      4175,
+      4457,
+      3927,
+      5703,
+      4189,
+      4431,
+      3992,
+      5735,
+      4048,
+      4358
+    ],
+    "total": [
+      8620.0,
+      8568.0,
+      9138.0,
+      11274.0,
+      9884.0,
+      9830.0,
+      10381.0,
+      12541.0,
+      10854.0,
+      10896.0,
+      11379.0,
+      13697.0,
+      12538.0,
+      12544.0,
+      13316.0,
+      15272.0,
+      10596.0,
+      7797.0,
+      11955.0,
+      14303.0,
+      13959.0,
+      14706.0,
+      15512.0,
+      20038.0,
+      18003.0,
+      18726.0,
+      19755.0,
+      22699.0,
+      21035,
+      21206,
+      19964,
+      23948,
+      20694,
+      20983,
+      19076,
+      23930,
+      20311,
+      19499,
+      18280,
+      22717,
+      19121,
+      19524
+    ]
   },
-  {
-   "label": "FY2025 全年业绩新闻稿（2026-01-27）",
-   "url": "https://www.lvmh.com/en/publications/solid-performance-in-a-disrupted-global-economic-and-geopolitical-environment"
+  "quarterly_revenue_other_published_eur_m": [
+    -112.0,
+    -67.0,
+    -114.0,
+    -111.0,
+    -145.0,
+    -122.0,
+    -179.0,
+    -150.0,
+    -174.0,
+    -121.0,
+    -168.0,
+    -170.0,
+    -165.0,
+    -133.0,
+    176.0,
+    -52.0,
+    -22.0,
+    -26.0,
+    -3.0,
+    -19.0,
+    -59.0,
+    23.0,
+    25.0,
+    30.0,
+    -41.0,
+    149.0,
+    79.0,
+    93.0,
+    -53,
+    140,
+    113,
+    124,
+    -36,
+    216,
+    214,
+    108,
+    49,
+    267,
+    185,
+    171,
+    72,
+    284
+  ],
+  "quarterly_wines_split_eur_m": {
+    "champagne_wines": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      680,
+      715,
+      748,
+      1037,
+      676,
+      721,
+      761,
+      928,
+      663,
+      761
+    ],
+    "cognac_spirits": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      736,
+      676,
+      638,
+      632,
+      629,
+      562,
+      568,
+      513,
+      610,
+      563
+    ],
+    "alignment_note": "本块没有自己的季度列，靠位置与 `long_quarters` 对齐。顶层扩到 42 季时补了 28 个前置空位 —— **不补就会整体错位**，而错位不报错。空位不是待回补：LVMH 直到 2024Q1 才第一次把葡萄酒与烈酒拆成香槟/葡萄酒与干邑/烈酒两条，2016–2023 每一份全年附表里它都只有一行（已逐份查过）。这是这一页唯一一张**确实到不了 2016** 的图。"
   },
-  {
-   "label": "FY2025 Financial Documents（分季度收入、分部利润、门店数）",
-   "url": "https://www.lvmh.com/en/financial-calendar/2025-full-year-results"
+  "organic_quarters": [
+    "2016Q1",
+    "2016Q2",
+    "2016Q3",
+    "2016Q4",
+    "2017Q1",
+    "2017Q2",
+    "2017Q3",
+    "2017Q4",
+    "2018Q1",
+    "2018Q2",
+    "2018Q3",
+    "2018Q4",
+    "2019Q1",
+    "2019Q2",
+    "2019Q3",
+    "2019Q4",
+    "2020Q1",
+    "2020Q2",
+    "2020Q3",
+    "2020Q4",
+    "2021Q1",
+    "2021Q2",
+    "2021Q3",
+    "2021Q4",
+    "2022Q1",
+    "2022Q2",
+    "2022Q3",
+    "2022Q4",
+    "2023Q1",
+    "2023Q2",
+    "2023Q3",
+    "2023Q4",
+    "2024Q1",
+    "2024Q2",
+    "2024Q3",
+    "2024Q4",
+    "2025Q1",
+    "2025Q2",
+    "2025Q3",
+    "2025Q4",
+    "2026Q1",
+    "2026Q2"
+  ],
+  "organic_growth_pct": {
+    "wines_spirits": [
+      6.0,
+      13.0,
+      4.0,
+      7.0,
+      13.0,
+      6.0,
+      4.0,
+      6.0,
+      10.0,
+      3.0,
+      7.0,
+      2.0,
+      9.0,
+      4.0,
+      8.0,
+      3.0,
+      -14.0,
+      -33.0,
+      -3.0,
+      -11.0,
+      17.0,
+      7.0,
+      7.0,
+      4.0,
+      2.0,
+      30.0,
+      14.0,
+      4.0,
+      3.0,
+      -8.0,
+      -14.0,
+      4.0,
+      -12,
+      -5,
+      -7,
+      -8,
+      -9,
+      -4,
+      1,
+      -9,
+      5,
+      5
+    ],
+    "fashion_leather": [
+      0.0,
+      1.0,
+      5.0,
+      9.0,
+      15.0,
+      13.0,
+      13.0,
+      10.0,
+      16.0,
+      13.0,
+      14.0,
+      17.0,
+      15.0,
+      20.0,
+      19.0,
+      15.0,
+      -10.0,
+      -37.0,
+      12.0,
+      18.0,
+      37.0,
+      40.0,
+      38.0,
+      51.0,
+      30.0,
+      19.0,
+      22.0,
+      10.0,
+      18.0,
+      21.0,
+      9.0,
+      9.0,
+      2,
+      1,
+      -5,
+      -1,
+      -5,
+      -9,
+      -2,
+      -3,
+      -2,
+      1
+    ],
+    "perfumes_cosmetics": [
+      9.0,
+      6.0,
+      10.0,
+      7.0,
+      12.0,
+      13.0,
+      17.0,
+      14.0,
+      17.0,
+      14.0,
+      11.0,
+      13.0,
+      9.0,
+      10.0,
+      7.0,
+      12.0,
+      -19.0,
+      -40.0,
+      -16.0,
+      -15.0,
+      -4.0,
+      -1.0,
+      0.0,
+      1.0,
+      17.0,
+      8.0,
+      10.0,
+      5.0,
+      10.0,
+      16.0,
+      9.0,
+      10.0,
+      7,
+      4,
+      3,
+      2,
+      -1,
+      1,
+      2,
+      -1,
+      0,
+      -1
+    ],
+    "watches_jewelry": [
+      7.0,
+      2.0,
+      2.0,
+      8.0,
+      11.0,
+      14.0,
+      14.0,
+      9.0,
+      20.0,
+      12.0,
+      10.0,
+      7.0,
+      4.0,
+      4.0,
+      5.0,
+      1.0,
+      -26.0,
+      -52.0,
+      -14.0,
+      -2.0,
+      1.0,
+      9.0,
+      1.0,
+      18.0,
+      19.0,
+      13.0,
+      16.0,
+      3.0,
+      11.0,
+      14.0,
+      3.0,
+      3.0,
+      -2,
+      -4,
+      -4,
+      3,
+      0,
+      0,
+      2,
+      8,
+      7,
+      11
+    ],
+    "selective_retailing": [
+      4.0,
+      7.0,
+      8.0,
+      11.0,
+      11.0,
+      12.0,
+      14.0,
+      14.0,
+      9.0,
+      9.0,
+      5.0,
+      3.0,
+      8.0,
+      7.0,
+      4.0,
+      1.0,
+      -26.0,
+      -38.0,
+      -29.0,
+      -26.0,
+      -30.0,
+      -19.0,
+      -19.0,
+      -5.0,
+      24.0,
+      20.0,
+      15.0,
+      12.0,
+      28.0,
+      25.0,
+      26.0,
+      21.0,
+      11,
+      5,
+      2,
+      7,
+      -1,
+      4,
+      7,
+      7,
+      4,
+      6
+    ],
+    "total": [
+      3.0,
+      4.0,
+      6.0,
+      8.0,
+      13.0,
+      12.0,
+      12.0,
+      11.0,
+      13.0,
+      11.0,
+      10.0,
+      9.0,
+      11.0,
+      12.0,
+      11.0,
+      8.0,
+      -17.0,
+      -38.0,
+      -7.0,
+      -3.0,
+      8.0,
+      14.0,
+      11.0,
+      22.0,
+      23.0,
+      19.0,
+      19.0,
+      9.0,
+      17.0,
+      17.0,
+      9.0,
+      10.0,
+      3,
+      1,
+      -3,
+      1,
+      -3,
+      -4,
+      1,
+      1,
+      1,
+      3
+    ]
   },
-  {
-   "label": "H1 2025 半年度业绩新闻稿（2025-07-24）",
-   "url": "https://www.lvmh.com/en/publications/solid-results-in-the-first-half-of-2025-despite-the-prevailing-environment"
+  "halves": [
+    "H1 2023",
+    "H2 2023",
+    "H1 2024",
+    "H2 2024",
+    "H1 2025",
+    "H2 2025",
+    "H1 2026"
+  ],
+  "half_release_dates": {
+    "H1 2024": "2024-07-23",
+    "H1 2025": "2025-07-24",
+    "H1 2026": "2026-07-27",
+    "H2 2025": "2026-01-27"
   },
-  {
-   "label": "H1 2024 半年度业绩新闻稿（2024-07-23）",
-   "url": "https://www.lvmh.com/en/publications/good-results-for-lvmh-in-the-first-half-of-the-year-despite-the-prevailing-environment"
+  "half_revenue_eur_m": {
+    "wines_spirits": [
+      3181,
+      3421,
+      2807,
+      3055,
+      2588,
+      2770,
+      2598
+    ],
+    "fashion_leather": [
+      21162,
+      21007,
+      20771,
+      20289,
+      19115,
+      18655,
+      18146
+    ],
+    "perfumes_cosmetics": [
+      4028,
+      4243,
+      4136,
+      4282,
+      4082,
+      4092,
+      3914
+    ],
+    "watches_jewelry": [
+      5427,
+      5475,
+      5150,
+      5427,
+      5090,
+      5396,
+      5225
+    ],
+    "selective_retailing": [
+      8355,
+      9530,
+      8632,
+      9630,
+      8620,
+      9728,
+      8406
+    ],
+    "total": [
+      42240,
+      43913,
+      41677,
+      43006,
+      39810,
+      40997,
+      38644
+    ],
+    "other": [
+      87,
+      237,
+      181,
+      323,
+      315,
+      356,
+      355
+    ]
   },
-  {
-   "label": "投资者与分析师页（业绩演示材料与电话会）",
-   "url": "https://www.lvmh.com/en/investors/investors-and-analysts"
-  }
- ]
+  "half_pro_eur_m": {
+    "wines_spirits": [
+      1046,
+      1063,
+      777,
+      579,
+      524,
+      492,
+      582
+    ],
+    "fashion_leather": [
+      8562,
+      8274,
+      8058,
+      7172,
+      6636,
+      6573,
+      6195
+    ],
+    "perfumes_cosmetics": [
+      446,
+      267,
+      445,
+      226,
+      425,
+      302,
+      417
+    ],
+    "watches_jewelry": [
+      1089,
+      1073,
+      877,
+      669,
+      762,
+      752,
+      831
+    ],
+    "selective_retailing": [
+      734,
+      657,
+      785,
+      600,
+      876,
+      904,
+      893
+    ],
+    "other": [
+      -303,
+      -106,
+      -289,
+      -328,
+      -211,
+      -280,
+      -228
+    ],
+    "total": [
+      11574,
+      11228,
+      10653,
+      8918,
+      9012,
+      8743,
+      8691
+    ]
+  },
+  "half_pro_published_total_eur_m": {
+    "H1 2026": 8691
+  },
+  "half_margin_company_printed_pct": {
+    "H1 2026": {
+      "wines_spirits": 22.4,
+      "fashion_leather": 34.1,
+      "perfumes_cosmetics": 10.6,
+      "watches_jewelry": 15.9,
+      "selective_retailing": 10.6,
+      "total": 22.5
+    },
+    "H1 2025": {
+      "wines_spirits": 20.3,
+      "perfumes_cosmetics": 10.4,
+      "total": 22.6
+    }
+  },
+  "cash_halves": [
+    "H1 2024",
+    "H2 2024",
+    "H1 2025",
+    "H2 2025",
+    "H1 2026"
+  ],
+  "half_cash_eur_m": {
+    "ocf": [
+      7284,
+      11640,
+      7881,
+      10993,
+      7647
+    ],
+    "capex": [
+      2728,
+      2803,
+      2360,
+      2207,
+      2061
+    ],
+    "lease_repaid": [
+      1426,
+      1489,
+      1489,
+      1485,
+      1486
+    ],
+    "ofcf": [
+      3130,
+      7348,
+      4032,
+      7301,
+      4100
+    ]
+  },
+  "balance_dates": [
+    "2024-06-30",
+    "2024-12-31",
+    "2025-06-30",
+    "2025-12-31",
+    "2026-06-30"
+  ],
+  "net_financial_debt_eur_m": [
+    12158,
+    9228,
+    10176,
+    6857,
+    8245
+  ],
+  "equity_eur_m": [
+    66480,
+    69287,
+    66875,
+    68949,
+    69694
+  ],
+  "store_dates": [
+    "2024-12-31",
+    "2025-06-30",
+    "2025-12-31",
+    "2026-06-30"
+  ],
+  "stores": {
+    "france": [
+      553,
+      543,
+      539,
+      533
+    ],
+    "europe_ex_fr": [
+      1254,
+      1245,
+      1255,
+      1253
+    ],
+    "united_states": [
+      1193,
+      1222,
+      1232,
+      1237
+    ],
+    "japan": [
+      510,
+      508,
+      520,
+      511
+    ],
+    "asia_ex_japan": [
+      2019,
+      1991,
+      1905,
+      1832
+    ],
+    "other_markets": [
+      778,
+      804,
+      832,
+      851
+    ],
+    "total": [
+      6307,
+      6313,
+      6283,
+      6217
+    ]
+  },
+  "region_quarters": [
+    "2025Q1",
+    "2025Q2",
+    "2026Q1",
+    "2026Q2"
+  ],
+  "region_organic_pct": {
+    "united_states": [
+      -3,
+      0,
+      3,
+      6
+    ],
+    "japan": [
+      -1,
+      -28,
+      -3,
+      14
+    ],
+    "asia_ex_japan": [
+      -11,
+      -6,
+      7,
+      4
+    ],
+    "europe": [
+      2,
+      -1,
+      -3,
+      0
+    ],
+    "total": [
+      -3,
+      -4,
+      1,
+      3
+    ]
+  },
+  "region_mix_dates": [
+    "2025-06-30",
+    "2025-12-31",
+    "2026-06-30"
+  ],
+  "region_mix_pct": {
+    "france": [
+      8,
+      8,
+      8
+    ],
+    "europe_ex_fr": [
+      17,
+      18,
+      17
+    ],
+    "united_states": [
+      25,
+      26,
+      25
+    ],
+    "japan": [
+      8,
+      8,
+      8
+    ],
+    "asia_ex_japan": [
+      28,
+      26,
+      29
+    ],
+    "other_markets": [
+      14,
+      14,
+      13
+    ]
+  },
+  "disclosure_cadence": {
+    "quarterly": [
+      "分部收入（欧元金额）",
+      "分部有机增速",
+      "集团有机增速"
+    ],
+    "half_yearly_only": [
+      "损益表",
+      "分部经营利润与利润率",
+      "汇率与并表对利润的影响",
+      "现金流量表与经营自由现金流",
+      "资产负债表与净金融负债",
+      "分地区收入构成",
+      "门店数",
+      "每股收益"
+    ],
+    "never_quantified": [
+      "下一季或全年的收入、利润或利润率的数字指引"
+    ],
+    "note": "Q1 与 Q3 只发收入公告，正文里没有任何利润行。八个季度里没有一个季度有属于它自己的分部利润数：利润只在 H1 与全年两个口径上存在。"
+  },
+  "call_record": {
+    "made_on": "2026-04-13",
+    "made_on_label": "Q1 2026 电话会",
+    "settled_by": "2026-07-27",
+    "settled_by_label": "H1 2026 业绩",
+    "items": [
+      {
+        "key": "wines_spirits_q2",
+        "topic": "葡萄酒与烈酒的 Q2",
+        "speaker": "Cécile Cabanis",
+        "said": "Q2 will not be repeating Q1 overall given this impact",
+        "said_zh": "Q1 的成绩里有中国春节从一月挪到二月带来的发货相位利好，Q2 整体不会重复 Q1。",
+        "quantified": null,
+        "outcome_value": 5.0,
+        "outcome_unit": "pct",
+        "outcome_zh": "Q2 有机增速 +5%，与 Q1 完全相同；H1 +5%、经营利润 +11%、利润率 +210bp 至 22.4%。公司在 Q2 电话会上把 H1 的 +5% 归因于「predominantly volume growth」，不是相位。",
+        "verdict": "missed"
+      },
+      {
+        "key": "fx_margin",
+        "topic": "上半年汇率对利润率的拖累",
+        "speaker": "Cécile Cabanis",
+        "said": "around 80 bps negative for the first half",
+        "said_zh": "上半年汇率对经营利润率的拖累约 80 个基点。",
+        "quantified": -80.0,
+        "quantified_unit": "bps",
+        "outcome_value": -70.0,
+        "outcome_unit": "bps",
+        "outcome_zh": "Q2 电话会：「H1 was around 70 bps」。实际比所述少 10 个基点。",
+        "verdict": "met"
+      },
+      {
+        "key": "middle_east",
+        "topic": "中东冲突对集团有机增速的拖累",
+        "speaker": "Cécile Cabanis",
+        "said": "3 points in March and 1 point on the quarter",
+        "said_zh": "三月约 3 个百分点、整个一季度约 1 个百分点。",
+        "quantified": -1.0,
+        "quantified_unit": "pp",
+        "outcome_value": -1.0,
+        "outcome_unit": "pp",
+        "outcome_zh": "Q2 同样 −1pp，但持续时间更长；公司称若剔除中东，Q2 集团有机增速是 +4% 而不是 +3%。季末「still negative but much more muted」。",
+        "verdict": "met"
+      },
+      {
+        "key": "flg_q2",
+        "topic": "时装与皮具的 Q2 起点",
+        "speaker": "Cécile Cabanis",
+        "said": "for F&LG, March would have been flattish outside of the impact of the conflict",
+        "said_zh": "剔除冲突影响，三月的时装与皮具本应大致持平 —— 这是公司给出的读 Q2 的唯一锚点。",
+        "quantified": 0.0,
+        "quantified_unit": "pct",
+        "outcome_value": 1.0,
+        "outcome_unit": "pct",
+        "outcome_zh": "Q2 有机增速 +1%；公司称剔除中东是 +2%。八个季度里第一次转正。",
+        "verdict": "beat"
+      },
+      {
+        "key": "dfs_perimeter",
+        "topic": "DFS 处置对精品零售的并表影响",
+        "speaker": "Cécile Cabanis",
+        "said": "Q2 will be 2 points linked to the closing of that transaction, 2 points on selective distribution",
+        "said_zh": "Q2 精品零售分部约有 2 个百分点的并表拖累。",
+        "quantified": -2.0,
+        "quantified_unit": "pp",
+        "outcome_value": null,
+        "outcome_unit": "pp",
+        "outcome_zh": "公司只在集团口径上给了 Q2 −1pp，分部口径只给了 H1 的 −3%；分季度的分部并表影响公司从不披露，所以这一条本页无法在它被说出的口径上核。",
+        "verdict": "unverifiable"
+      },
+      {
+        "key": "margin_threshold",
+        "topic": "稳住利润率所需的有机增速",
+        "speaker": "Cécile Cabanis",
+        "said": "we said that we needed 3% to 4% organic growth in order to stabilize margin. We could maybe do it with a bit less",
+        "said_zh": "需要 3–4% 的有机增长才能稳住利润率，也许比这少一点也行。",
+        "quantified": 3.0,
+        "quantified_unit": "pct",
+        "outcome_value": 2.0,
+        "outcome_unit": "pct",
+        "outcome_zh": "H1 有机 +2%，集团经营利润率 22.49%（上年同期 22.64%），公司称降幅完全由汇率造成；毛利率反而升 30bp 至 67.1%，营销与销售费用 −2%、管理费用持平。兑现的是那句「也许比这少一点也行」的余地，不是 3–4% 这条线本身。而同一个数字在 Q2 电话会上换了说法：从「稳住利润率」变成「开始获得经营杠杆」，并被明确声明「it doesn't make it a rule」。",
+        "verdict": "caveat_held"
+      }
+    ]
+  },
+  "forward_statements": {
+    "made_on": "2026-07-27",
+    "items": [
+      {
+        "topic": "葡萄酒与烈酒全年",
+        "said": "we expect the division to grow at constant currencies in 2026, albeit not as much as in H1",
+        "quantified": "全年恒定汇率下仍增长，但幅度低于 H1 的 +5%"
+      },
+      {
+        "topic": "葡萄酒与烈酒全年利润率",
+        "said": "full year EBIT margin to be closer to 2025 levels",
+        "quantified": "接近 FY2025 的 19.0%，而 H1 2026 是 22.4%"
+      },
+      {
+        "topic": "下半年汇率对利润率",
+        "said": "on the margin, we still expect approximately the same impact that we had in H1",
+        "quantified": "约 −70bp"
+      },
+      {
+        "topic": "下半年汇率对收入",
+        "said": "we could have a slight positive impact from FX going forward on revenues. However, probably offset by a perimeter impact",
+        "quantified": "汇率转正、被并表抵销，净影响未给数"
+      },
+      {
+        "topic": "下半年比较基数",
+        "said": "The comp base in H2 is optically tougher than H1. But it's also on the base of easier comps in '24. So overall, it's quite similar",
+        "quantified": "未给数"
+      },
+      {
+        "topic": "中东",
+        "said": "exiting the quarter still negative but much more muted",
+        "quantified": "未给数；「still very much unknown」"
+      },
+      {
+        "topic": "Tiffany 门店翻新节奏",
+        "said": "Overall, 10% or more per year",
+        "quantified": "每年翻新门店总数的 10% 以上；当前约 40% 已翻新、60% 的生意已完成转型"
+      },
+      {
+        "topic": "经营杠杆门槛",
+        "said": "once we reach 3% to 4% growth, we are starting to get operating leverage",
+        "quantified": "3–4% 有机增速"
+      },
+      {
+        "topic": "美国关税退款",
+        "said": "we got some refund, but it's only a few basis points to the margin at this stage",
+        "quantified": "几个基点"
+      }
+    ]
+  },
+  "next_kpi": {
+    "note": "阈值为本地研究设定，不是公司指引；公司不提供任何数字指引。「距阈值余量」统一为正值代表安全侧。",
+    "entries": [
+      {
+        "metric": "时装与皮具季度有机增速",
+        "direction": "up",
+        "threshold": 3.0,
+        "unit": "pct",
+        "current": 1.0,
+        "why": "管理层自述获得经营杠杆的门槛下沿是 3%；F&LG 占集团收入 47%，它决定集团能不能到线。"
+      },
+      {
+        "metric": "集团季度有机增速",
+        "direction": "up",
+        "threshold": 3.0,
+        "unit": "pct",
+        "current": 3.0,
+        "why": "同一条门槛的集团口径。Q2 恰好压线，且其中 1pp 被中东抵掉。"
+      },
+      {
+        "metric": "手表与珠宝季度有机增速",
+        "direction": "up",
+        "threshold": 5.0,
+        "unit": "pct",
+        "current": 11.0,
+        "why": "本季唯一双位数的分部；Tiffany 与 Bvlgari 双双 mid-teens，跌破 5% 就说明冲量结束。"
+      },
+      {
+        "metric": "半年集团经营利润率",
+        "direction": "up",
+        "threshold": 22.0,
+        "unit": "pct",
+        "current": 22.49,
+        "why": "FY2025 全年是 22.0%；H1 高于全年是这家公司的常态，跌破全年水平才是新信息。"
+      },
+      {
+        "metric": "半年时装与皮具经营利润率",
+        "direction": "up",
+        "threshold": 34.0,
+        "unit": "pct",
+        "current": 34.14,
+        "why": "H1 2026 是 34.14%，只比这条线高 0.14pp；上季分析里被讨论的 30–32% 情形并未发生。"
+      },
+      {
+        "metric": "季度报告增速与有机增速之差",
+        "direction": "down",
+        "threshold": 3.0,
+        "unit": "pp",
+        "current": 2.87,
+        "why": "汇率加并表的总拖累。这个差从 2026Q1 的 6.86pp 掉到 2026Q2 的 2.87pp，是本季报表改善的主因。"
+      },
+      {
+        "metric": "亚洲（除日本）门店数",
+        "direction": "up",
+        "threshold": 1800.0,
+        "unit": "million",
+        "current": 1832.0,
+        "why": "一年内从 1,991 家降到 1,832 家，其中含 DFS 大中华处置；跌破 1,800 意味着收缩超出已宣布的处置范围。"
+      }
+    ]
+  },
+  "sources": [
+    {
+      "label": "H1 2026 半年度业绩新闻稿（2026-07-27）",
+      "url": "https://www.lvmh.com/en/publications/accelerating-growth-in-the-second-quarter---solid-first-half-results"
+    },
+    {
+      "label": "H1 2026 半年度财务报告",
+      "url": "https://www.lvmh.com/en/investors/investors-and-analysts"
+    },
+    {
+      "label": "Q1 2026 一季度收入公告（2026-04-13）",
+      "url": "https://www.lvmh.com/en/publications/lvmh-continues-to-achieve-organic-growth-in-the-first-quarter"
+    },
+    {
+      "label": "FY2025 全年业绩新闻稿（2026-01-27）",
+      "url": "https://www.lvmh.com/en/publications/solid-performance-in-a-disrupted-global-economic-and-geopolitical-environment"
+    },
+    {
+      "label": "FY2025 Financial Documents（分季度收入、分部利润、门店数）",
+      "url": "https://www.lvmh.com/en/financial-calendar/2025-full-year-results"
+    },
+    {
+      "label": "H1 2025 半年度业绩新闻稿（2025-07-24）",
+      "url": "https://www.lvmh.com/en/publications/solid-results-in-the-first-half-of-2025-despite-the-prevailing-environment"
+    },
+    {
+      "label": "H1 2024 半年度业绩新闻稿（2024-07-23）",
+      "url": "https://www.lvmh.com/en/publications/good-results-for-lvmh-in-the-first-half-of-the-year-despite-the-prevailing-environment"
+    },
+    {
+      "label": "投资者与分析师页（业绩演示材料与电话会）",
+      "url": "https://www.lvmh.com/en/investors/investors-and-analysts"
+    }
+  ],
+  "long_window_note": "季度收入与有机增速回补到 2016Q1。**这不是披露下限被打破，是研究成本下限**：LVMH 2004 年起不再向 SEC 申报，但它自己每年的全年新闻稿附表里**同时重印当年与上年全部四个季度**，所以九份全年发布（2016–2025）就拼出完整序列，且相邻两份互相重叠、可逐格交叉核对。与本文件原有的 12 个重叠季度比对 72 格，0 处不一致。读这条线要记住两处并购台阶：Christian Dior Couture 于 2017 下半年并入，Tiffany 于 2021 年 1 月并入手表珠宝（公司自己说「+10% structural impact… linked entirely to the consolidation of Tiffany & Co.」）。**有机增速那条不受影响** —— 按定义就剔除了结构性变化；受影响的是收入水平与分部占比。"
 }

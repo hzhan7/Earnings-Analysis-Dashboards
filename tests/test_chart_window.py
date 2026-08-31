@@ -130,7 +130,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
     "amzn": 13, "avgo": 6, "axp": 8, "bc": 0, "cboe": 10, "cdns": 9, "cme": 14,
-    "cost": 13, "googl": 11, "ibkr": 21, "ma": 16, "mc": 0, "mco": 7, "meta": 10,
+    "cost": 13, "googl": 11, "ibkr": 21, "ma": 16, "mc": 3, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 10, "skhynix": 0, "snps": 8,
     "spgi": 11, "tjx": 8, "tsm": 18, "v": 14,
