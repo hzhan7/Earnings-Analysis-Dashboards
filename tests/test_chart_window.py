@@ -177,8 +177,7 @@ CONVERTED = {
                                  "-- is only in the reviewed eight quarters.",
         "Intelligent Cloud 本季首次超过": "segment revenue in this file covers the reviewed "
                                   "eight quarters only.",
-        "商业剩余履约义务": "Microsoft began giving the commercial RPO split five quarters "
-                     "ago; earlier releases give the total and not the split.",
+        "商业剩余履约义务": 'date corrected, and the excuse was measuring the wrong thing: Microsoft has disclosed the dollar split between total and commercial remaining performance obligations in every 10-Q/10-K since the quarter ended 2020-03-31 -- 21 quarters earlier than "five quarters ago". What genuinely started recently is a *percentage* metric, which is not what this chart plots (it plots the balance). Real floor 2020Q1; the metric did not exist before that.',
         "FY2026 股东回报": "an annual ratio built from the 10-K, two fiscal years wide.",
         "季度折旧": "quarterly depreciation only reaches 2024Q3 -- before that Microsoft "
                 "disclosed it annually and the page will not spread a year over four "
@@ -190,9 +189,7 @@ CONVERTED = {
         "净销售额": "the quarterly outlook record in this file starts with the 2017Q3 "
                 "release.",
         "经营利润：": "same guidance record.",
-        "经营利润相对指引中值": "the deviation view of the same record; its own floor is "
-                        "later because Amazon only began giving an operating-income "
-                        "range in the 2021Q3 release.",
+        "经营利润相对指引中值": 'not a floor at all -- checked against the filings: Amazon has guided operating income as a RANGE in every quarterly release since at least 2011. The Q1 2016 release guiding Q2 2016 reads "Operating income is expected to be between $375 million and $975 million" (0001018724-16-000225). This is a fetch gap; the backfill is in flight.',
         "把「超出自身指引」拆成两条腿": "same guidance record.",
         "指引隐含的经营利润率": "same guidance record.",
         "TTM 自由现金流": "Amazon's own trailing free-cash-flow figure, as the company "
@@ -200,8 +197,8 @@ CONVERTED = {
         "三个分部的经营利润率": "the North America and International segment tables begin "
                         "2019Q1; only AWS reaches 2016.",
         "北美分部经营利润率": "same segment floor.",
-        "广告同比": "the seven product-line disaggregation begins with the 2020Q3 release.",
-        "AWS backlog 单季净增": "Amazon has given the AWS backlog balance for four quarters.",
+        "广告同比": 'verified against the filings and correct: the seven-line revenue disaggregation\'s earliest available quarter is 2020Q3, published retroactively alongside five newer quarters in the 2021Q4 release. Advertising sat inside "Other" before that.',
+        "AWS backlog 单季净增": "checked: Amazon has disclosed AWS-related unrecognized customer-contract commitments (original term over one year) in the commitments note of every 10-Q/10-K since the quarter ended 2018-03-31 -- about 30 quarters, not four. 2016-2017 is genuinely absent, so this chart's honest floor is 2018Q1 rather than 2016Q1. Fetch gap for everything after that.",
         "单季现金 CapEx（净额": "the net measure needs proceeds from sales and incentives, "
                           "which this file carries for twelve quarters.",
         "总收入同比": "a year-on-year line has no base for 2016Q1-Q4; the record starts "
@@ -219,21 +216,17 @@ CONVERTED = {
         "其中最关键的一条": "Cboe first printed a separate multi-listed options market "
                      "share in the 2019Q2 release; ADV and RPC -- and so the money "
                      "line beside it -- do run the whole window.",
-        "同一形状在股票撮合里重演": "the off-exchange block (share, ADV, net capture) begins "
-                          "2021Q1.",
-        "五个分部的净收入": "the current five-segment split begins 2021Q3; the earlier "
-                     "structure had different segments.",
-        "毛收入与净收入之间那道楔子": "the cost-of-revenue components that make the wedge are "
-                            "disclosed from 2017Q1.",
-        "公司自己的第二套口径": "Cboe began the derivatives / cash-and-spot / data-vantage "
-                       "categorisation in 2021Q1.",
-        "回购与股息": "the capital block starts 2017Q1.",
+        "同一形状在股票撮合里重演": 'verified: Cboe acquired BIDS Trading on 2020-12-31, so the off-exchange block (share, ADV, net capture) genuinely begins 2021Q1.',
+        "五个分部的净收入": 'was wrong and is now fixed in the builder: the five-segment series runs unbroken to 2017Q2 and is already in this repo -- the chart was drawing the last 20 of 37 because of a hardcoded tail, not because of anything in the filings. It now draws all 37. 2017Q2 is the real floor (Bats consolidated 2017-02-28, so 2017Q1 carries one month of the combined company).',
+        "毛收入与净收入之间那道楔子": 'verified: a genuine Bats-driven structural break -- the pre-2017 income statement had no net-revenue/liquidity-payment structure to build the wedge from.',
+        "公司自己的第二套口径": 'date corrected: Cboe introduced this three-category view in its Q1 2022 release (filed 2022-04-29), not 2021Q1. The four 2021 quarters exist only as retroactive comparatives inside the 2022 releases, which is why 2021Q1 is the practical floor -- but the reason is the recast, not an original disclosure.',
+        "回购与股息": 'not a floor: CBOE Holdings has disclosed quarterly dividends and share repurchase dollars, shares and average price since at least Q1 2016 (10-Q filed 2016-05-03), and the repurchase program dates to 2011. Fetch gap; the backfill to 2016Q1 is in flight.',
     },
     "ndaq": {
-        "全年非 GAAP 有效税率": "Nasdaq began guiding a non-GAAP tax-rate range for FY2019.",
+        "全年非 GAAP 有效税率": 'verified, with the wording tightened: Nasdaq guided a non-GAAP tax rate for FY2018 in its January 2018 release but never disclosed an FY2018 actual, so FY2019 is the first year carrying both a guided range and a reported result.',
         "FY2026 费用指引的三次发布": "three guidance vintages for one fiscal year -- the axis "
                             "is release dates, not quarters.",
-        "「经纪、清算与交易所费用」拆开看": "the Section 31 fee split is disclosed from 2022Q1.",
+        "「经纪、清算与交易所费用」拆开看": 'not a floor: Nasdaq has footnoted Section 31 fees by dollar amount, split across its two revenue lines, in the MD&A of every 10-Q back to at least 2016Q1. Fetch gap; backfill in flight.',
         "Market Services 毛收入的去向": "the 2022 reorganisation moved Trade Management "
                                 "Services out of Market Services, so the denominator "
                                 "changed; 2022Q3 reads 305 on the old basis and 245 "
@@ -244,7 +237,7 @@ CONVERTED = {
         "Index：挂钩纳斯达克指数的 ETP AUM": "the Index revenue line was re-drawn in the 2018Q2 "
                                    "Information Services split; the 43-quarter AUM "
                                    "series is published on its own chart.",
-        "ARR 两条腿": "Nasdaq began giving ARR by segment in 2023Q1.",
+        "ARR 两条腿": 'date corrected: Nasdaq introduced the Financial Technology / Capital Access Platforms ARR split in its Q1 2024 release (filed 2024-04-25), not 2023Q1. The 2023 quarters are recoverable only from the four YoY comparatives inside the 2024 releases, so 2023Q1 stands as the practical floor -- but as a recast, not as an original disclosure.',
     },
     "mco": {
         # All five are the same record: Moody's began publishing a full-year
@@ -361,8 +354,7 @@ CONVERTED = {
         "经营现金流 $635M": "same.",
         "单季回购金额": "same.",
         "单季回购 $200M": "same.",
-        "三条产品线的分化": "the three-category split is a later presentation; the "
-                     "2016-2017 releases group products differently.",
+        "三条产品线的分化": 'not a floor: Cadence\'s "Revenue Mix by Product Group" table is unchanged in structure back to 2016Q1 -- the same categories this chart plots. The claim that the 2016-2017 releases grouped products differently does not survive reading them. Fetch gap; backfill in flight.',
         "GAAP 毛利率降到": "gross margin is carried for the reviewed window.",
         "本季非 GAAP 营业利润率": "this chart pairs the quarterly series with two guided "
                           "points, so it runs on the reviewed window plus two.",
@@ -384,8 +376,7 @@ CONVERTED = {
                      "earlier programme to draw.",
         "毛利率同比（剔除关税退款）": "the tariff-refund adjustment exists only in the quarters "
                           "that have a refund.",
-        "三十二个季度的直营占比": "Nike began splitting wholesale from direct in the 2018Q3 "
-                        "release; the earlier quarters give one combined figure.",
+        "三十二个季度的直营占比": 'date corrected, and the direction of the error matters: Nike\'s MD&A "Supplemental NIKE Brand Revenues Details" table has split wholesale from direct-to-consumer in dollars every quarter since Q1 FY2013 (quarter ended 2012-08-31). What happened in 2017-2018 was a rename -- "Sales Direct to Consumer" became "NIKE Direct" -- not a new disclosure. Fetch gap.',
         "十年经营现金流": "an annual chart -- ten fiscal years, not quarters.",
         "十年回购与资本强度": "annual.",
         "回购的成交均价": "four fiscal years of a buyback programme.",
@@ -515,14 +506,14 @@ FLOOR_KIND = {
     'amzn': {
         '净销售额': 'coverage',
         '经营利润：': 'coverage',
-        '经营利润相对指引中值': 'unverified',
+        '经营利润相对指引中值': 'coverage',
         '把「超出自身指引」拆成两条腿': 'coverage',
         '指引隐含的经营利润率': 'coverage',
         'TTM 自由现金流': 'coverage',
         '三个分部的经营利润率': 'coverage',
         '北美分部经营利润率': 'coverage',
-        '广告同比': 'unverified',
-        'AWS backlog 单季净增': 'unverified',
+        '广告同比': 'disclosure',
+        'AWS backlog 单季净增': 'coverage',
         '单季现金 CapEx（净额': 'coverage',
         '总收入同比': 'coverage',
         '资本强度': 'disclosure',
@@ -530,11 +521,11 @@ FLOOR_KIND = {
     'cboe': {
         '最想结清的那条指引': 'disclosure',
         '其中最关键的一条': 'disclosure',
-        '同一形状在股票撮合里重演': 'unverified',
-        '五个分部的净收入': 'unverified',
-        '毛收入与净收入之间那道楔子': 'unverified',
-        '公司自己的第二套口径': 'unverified',
-        '回购与股息': 'unverified',
+        '同一形状在股票撮合里重演': 'disclosure',
+        '五个分部的净收入': 'disclosure',
+        '毛收入与净收入之间那道楔子': 'disclosure',
+        '公司自己的第二套口径': 'disclosure',
+        '回购与股息': 'coverage',
     },
     'cdns': {
         '收入（本图仅近 20 季）': 'design',
@@ -549,7 +540,7 @@ FLOOR_KIND = {
         '经营现金流 $635M': 'coverage',
         '单季回购金额': 'coverage',
         '单季回购 $200M': 'coverage',
-        '三条产品线的分化': 'unverified',
+        '三条产品线的分化': 'coverage',
         'GAAP 毛利率降到': 'coverage',
         '本季非 GAAP 营业利润率': 'coverage',
         '单季非 GAAP 营业利润率': 'coverage',
@@ -616,19 +607,19 @@ FLOOR_KIND = {
         'Azure 固定汇率增速': 'disclosure',
         'Intelligent Cloud 分部毛利率': 'coverage',
         'Intelligent Cloud 本季首次超过': 'coverage',
-        '商业剩余履约义务': 'unverified',
+        '商业剩余履约义务': 'coverage',
         'FY2026 股东回报': 'design',
         '季度折旧': 'disclosure',
     },
     'ndaq': {
-        '全年非 GAAP 有效税率': 'unverified',
+        '全年非 GAAP 有效税率': 'disclosure',
         'FY2026 费用指引的三次发布': 'design',
-        '「经纪、清算与交易所费用」拆开看': 'unverified',
+        '「经纪、清算与交易所费用」拆开看': 'coverage',
         'Market Services 毛收入的去向': 'disclosure',
         '三个分部的净收入': 'disclosure',
         'Financial Technology 的三条子线': 'disclosure',
         'Index：挂钩纳斯达克指数的 ETP AUM': 'disclosure',
-        'ARR 两条腿': 'unverified',
+        'ARR 两条腿': 'disclosure',
     },
     'nke': {
         '大中华区收入同比（固定汇率）': 'coverage',
@@ -637,7 +628,7 @@ FLOOR_KIND = {
         '应收账款': 'coverage',
         '三年遣散与重组费用': 'disclosure',
         '毛利率同比（剔除关税退款）': 'disclosure',
-        '三十二个季度的直营占比': 'unverified',
+        '三十二个季度的直营占比': 'coverage',
         '十年经营现金流': 'design',
         '十年回购与资本强度': 'design',
         '回购的成交均价': 'design',
@@ -765,15 +756,20 @@ class ChartWindowTest(unittest.TestCase):
         by_kind = {}
         for slug, title, kind in pending:
             by_kind.setdefault(kind, []).append(f"{slug}/{title}")
-        self.assertEqual(len(by_kind.get("coverage", [])), 33,
+        self.assertEqual(len(by_kind.get("coverage", [])), 40,
                          "charts whose data exists and has not been fetched")
-        self.assertEqual(len(by_kind.get("unverified", [])), 14,
+        # Zero, and that is the point: every exemption on this page has now been
+        # read against an actual pre-floor filing. The fourteen that had never
+        # been checked were checked, and only four of them were right -- six were
+        # fetch gaps wearing a disclosure excuse, four had the wrong date. An
+        # unverified excuse is not a weaker reason, it is not a reason.
+        self.assertEqual(len(by_kind.get("unverified", [])), 0,
                          "charts whose stated reason has never been checked "
                          "against a pre-floor filing")
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 68)
+        self.assertEqual(settled.count("disclosure"), 75)
         self.assertEqual(settled.count("design"), 16)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:

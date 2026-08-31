@@ -490,7 +490,12 @@ def highlight_exhibits(staging: dict) -> tuple[list[dict], dict]:
     })
 
     seg = staging["segments"]
-    tail = 20
+    # This used to draw the last 20 of the 37 reconciled quarters this file
+    # already holds. The excuse on record said the five-segment structure "begins
+    # 2021Q3; the earlier structure had different segments" -- but the series
+    # itself runs to 2017Q2 with no break, so the axis was short by a hardcoded
+    # number, not by anything about the filings.
+    tail = len(seg["quarters"])
     seg_labels = [compact(q) for q in seg["quarters"][-tail:]]
     charts.append({
         "ref": "EX_SEG",
