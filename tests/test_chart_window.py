@@ -209,6 +209,49 @@ CONVERTED = {
                 "chart used to draw were the net measure under a gross heading, "
                 "so the chart now starts where its own basis does.",
     },
+    # Checked by reading American Express's FY2017 quarters as originally filed
+    # (8-K 0000004962-18-000012) against the same quarters "As Recast"
+    # (0000004962-18-000056). ASC 606 was a gross-up: discount revenue +19.2% to
+    # +19.4%, marketing +75% to +84%, total expenses +14.4% to +14.9% -- and the
+    # two sides nearly cancel, leaving the bottom line within 1.4%. So a chart's
+    # floor here depends on which side of that its inputs sit on, and each entry
+    # below says which.
+    "axp": {
+        "四条收入腿": "every leg is a gross revenue line the recast moved by about a "
+                 "fifth, and the chart's load-bearing identity is that the four "
+                 "sum to revenue net of interest expense. American Express recast "
+                 "2017 by quarter and never republished 2016 by quarter, so the "
+                 "only 2016 that exists is on the superseded basis. 2017Q1 is real.",
+        "两条腿占收入的比重": "both ratios divide by revenue, which is on the moved side. "
+                     "Same floor and same reason as the four legs above.",
+        "商户那一侧的价格": "the company's own printed average discount rate does reach "
+                    "2016Q1 and now does. The self-computed line beside it "
+                    "correctly starts later (2021Q1): before then discount "
+                    "revenue still contained processed revenue while the "
+                    "denominator had already moved to proprietary-only, so "
+                    "dividing one by the other reads out a price rise that "
+                    "never happened.",
+        "税前利润同比增量拆成两条腿": "needs a year-over-year pair, so it starts one year after "
+                        "its inputs. Pre-provision profit and provisions both "
+                        "carry 2016 now, which puts the honest floor at 2017Q1 "
+                        "rather than 2018Q1 -- not yet applied.",
+        "消费额同比": "billed business carries real disclosed 2016Q3-Q4 values but not "
+                 "2016Q1-Q2, and a year-over-year chart needs four quarters of "
+                 "run-up, so its honest floor is 2017Q3 -- not yet applied.",
+        "jaws（收入增速 − 费用增速）": "the difference of two year-over-year growth rates, both "
+                            "taken on lines the recast moved by 10-15%. Neither "
+                            "side can cross the boundary, so 2018Q1 is real.",
+        "四个分部的税前利润率": "nothing to do with ASC 606: American Express restated its "
+                      "reportable segments in 2020, and the four-segment pretax "
+                      "margin has no earlier counterpart.",
+        "VCE 占收入比": "business development did not exist as a separate disclosed line "
+                   "until 2021 -- before that it sat inside Marketing, so the "
+                   "value-creating-expense ratio cannot be assembled.",
+        "全年摊薄 EPS相对指引中值的偏离": "the annual guidance record, whose own floor this "
+                             "follows.",
+        "全年收入增速相对指引中值的偏离": "same annual guidance record.",
+        "收入增速：对年初那一档": "same annual guidance record, read at two vintages.",
+    },
     "cboe": {
         "最想结清的那条指引": "organic net revenue growth was guided as a number only for "
                        "2022-2024; from 2025 the guidance is a phrase, and the page "
@@ -633,6 +676,19 @@ FLOOR_KIND = {
         '两条非广告收入线': 'disclosure',
         '折旧摊销同比': 'coverage',
     },
+    'axp': {
+        '四条收入腿': 'disclosure',
+        '两条腿占收入的比重': 'disclosure',
+        '商户那一侧的价格': 'disclosure',
+        '税前利润同比增量拆成两条腿': 'coverage',
+        '消费额同比': 'coverage',
+        'jaws（收入增速 − 费用增速）': 'disclosure',
+        '四个分部的税前利润率': 'disclosure',
+        'VCE 占收入比': 'disclosure',
+        '全年摊薄 EPS相对指引中值的偏离': 'disclosure',
+        '全年收入增速相对指引中值的偏离': 'disclosure',
+        '收入增速：对年初那一档': 'disclosure',
+    },
     'cost': {
         '会员续费率': 'disclosure',
         '每股收益增速拆成四条腿': 'disclosure',
@@ -801,7 +857,7 @@ class ChartWindowTest(unittest.TestCase):
         by_kind = {}
         for slug, title, kind in pending:
             by_kind.setdefault(kind, []).append(f"{slug}/{title}")
-        self.assertEqual(len(by_kind.get("coverage", [])), 40,
+        self.assertEqual(len(by_kind.get("coverage", [])), 42,
                          "charts whose data exists and has not been fetched")
         # Zero, and that is the point: every exemption on this page has now been
         # read against an actual pre-floor filing. The fourteen that had never
@@ -814,7 +870,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 82)
+        self.assertEqual(settled.count("disclosure"), 91)
         self.assertEqual(settled.count("design"), 17)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
@@ -850,8 +906,8 @@ class ChartWindowTest(unittest.TestCase):
         combined = {slug: SHORT_BY_DESIGN.get(slug, 0) + UNEXPLAINED_LONG.get(slug, 0)
                     for slug in set(SHORT_BY_DESIGN) | set(UNEXPLAINED_LONG)}
         self.assertEqual(by_page, combined)
-        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 80)
-        self.assertEqual(sum(UNEXPLAINED_LONG.values()), 49)
+        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 77)
+        self.assertEqual(sum(UNEXPLAINED_LONG.values()), 39)
         # and the pins are the split the data actually has, not a hand-typed one
         self.assertEqual(by_design, SHORT_BY_DESIGN)
         self.assertEqual(by_length, UNEXPLAINED_LONG)
@@ -1003,7 +1059,6 @@ class ChartWindowTest(unittest.TestCase):
 # window migration is not really about these, but `first_year()` counts them, so
 # they sit in the 550 denominator and have to be accounted for somewhere.
 SHORT_BY_DESIGN = {
-    'axp': 3,
     'bc': 7,
     'mc': 10,
     'mu': 2,
@@ -1021,7 +1076,6 @@ SHORT_BY_DESIGN = {
 # stops after 2016. This is where the remaining work actually is. Several are
 # one short hop from the floor -- six AXP charts start in 2017.
 UNEXPLAINED_LONG = {
-    'axp': 10,
     'bc': 2,
     'mc': 1,
     'mu': 9,
