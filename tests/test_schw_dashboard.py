@@ -226,6 +226,33 @@ class SchwDashboardTest(unittest.TestCase):
                     places=6,
                 )
 
+    def test_the_gross_interest_legs_are_the_income_statement_and_not_the_nim_table(self) -> None:
+        """The identity above is blind to the error this catches, by construction.
+
+        Schwab prints its interest expense twice: the income statement's figure,
+        and the net-interest-revenue table's "Total interest-bearing liabilities"
+        subtotal, which is smaller by that table's "Other interest expense" line.
+        Take the subtotal for the expense leg and subtract the same amount from
+        the revenue leg and net interest revenue is unchanged -- so the
+        difference identity passes on both the right pair and the wrong one. That
+        is exactly what happened to 2026Q2, which carried 4,146 / 789 instead of
+        4,432 / 1,075 while every other quarter used the income statement.
+
+        Pinned by value rather than by identity because the page stores no third
+        interest quantity for either leg to be tied to. Two quarters are named,
+        one on each side of the mistake, so the pin cannot be satisfied by
+        re-introducing the shift anywhere: 2026Q2 is the quarter that was wrong,
+        and 2025Q2 is the one the same exhibit reprints as its prior-year column.
+        """
+        fin = self.fin
+        for period, revenue, expense in (("2026Q2", 4432.0, 1075.0),
+                                         ("2025Q2", 3787.0, 965.0)):
+            index = self.periods.index(period)
+            with self.subTest(period=period):
+                self.assertEqual(fin["interest_revenue_usd_m"][index], revenue)
+                self.assertEqual(fin["interest_expense_usd_m"][index], expense)
+        self.assertIn("Other interest expense", self.source["_2026q2_gross_legs_note"])
+
     # ── thresholds ───────────────────────────────────────────────────────────
     def test_threshold_headroom_signs_match_the_stated_verdicts(self) -> None:
         """Two of last quarter's four thresholds held; the page must say so."""

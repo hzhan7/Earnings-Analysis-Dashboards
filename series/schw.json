@@ -406,7 +406,7 @@
       3956.0,
       4004.0,
       3962.0,
-      4146.0
+      4432.0
     ],
     "interest_expense_usd_m": [
       38.0,
@@ -450,7 +450,7 @@
       906.0,
       832.0,
       818.0,
-      789.0
+      1075.0
     ],
     "total_expenses_usd_m": [
       1109.0,
@@ -849,6 +849,7 @@
       1739.0
     ]
   },
+  "_2026q2_gross_legs_note": "2026Q2's two gross interest legs were 4,146 and 789 until 2026-08-31. Both were the income statement's figures less 286: the 2Q26 EX-99.1 income statement prints interest revenue 4,432 and interest expense (1,075), while 789 is the 'Total interest-bearing liabilities' subtotal of the net-interest-revenue table and 286 is that table's 'Other interest expense' line, which the income statement includes and the subtotal does not. Subtracting the same 286 from both legs leaves net interest revenue at 3,357 either way, which is why the difference identity this page already asserts could not see it. Every other quarter on the page is on the income-statement basis -- 2025Q2 is stored as 3,787 / 965, exactly what the same exhibit reprints as its prior-year column -- so this was one quarter off the page's own convention rather than a basis choice.",
   "annual_filed_usd_m": {
     "2015": {
       "revenue_usd_m": 6380.0,
