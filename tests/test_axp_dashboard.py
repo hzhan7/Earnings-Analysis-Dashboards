@@ -290,10 +290,20 @@ class AxpDashboardTest(unittest.TestCase):
         credit = self.staging["credit_metrics"]
         self.assertEqual(len(credit["basis_overlap_quarters"]), 4)
         periods = self.staging["periods"]
+        # Both series are now complete for the whole record. They used to start
+        # at 2022Q1, which was never a basis limit -- credit quality is not a
+        # revenue-recognition item; they were cut to the recast window because
+        # they rode the same `recast()` helper as the revenue lines, and the
+        # twenty quarters before that had simply never been pulled.
         for name in ("past_due_30_pct", "net_write_off_rate_principal_pct"):
             present = [p for p, v in zip(periods, credit[name]) if v is not None]
-            self.assertEqual(present[0], "2022Q1", name)
+            self.assertEqual(present[0], "2016Q1", name)
             self.assertEqual(present[-1], "2026Q2", name)
+            self.assertEqual(len(present), len(periods), name)
+        # The delinquency freeze has to travel with the series that it distorts.
+        self.assertIn("Delinquency status is generally frozen",
+                      credit["pandemic_relief_note"])
+        self.assertIn("2020Q2", credit["pandemic_relief_note"])
 
     # ── the annual guidance record ──────────────────────────────────────────
     def test_forty_three_vintages_across_eleven_fiscal_years(self) -> None:

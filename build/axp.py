@@ -547,10 +547,15 @@ def next_quarter_charts(staging: dict) -> list[dict]:
         # Credit quality is not a revenue-recognition item. These two were being
         # cut to the recast window only because they rode the same `recast()`
         # helper as the revenue lines -- a code path, not a basis limit.
-        "30+ 天逾期率": (labels, credit["past_due_30_pct"], "pct1", "%",
-                          credit["basis_note"]),
-        "净核销率（本金口径）": (labels, credit["net_write_off_rate_principal_pct"], "pct1", "%",
-                                credit["basis_note"]),
+        # Credit quality is not a revenue-recognition item; these two were cut to
+        # the recast window only because they rode the same `recast()` helper as
+        # the revenue lines. Now complete for all 42 quarters.
+        "30+ 天逾期率": (staging["period_labels"],
+                          staging["credit_metrics"]["past_due_30_pct"], "pct1", "%",
+                          credit["basis_note"] + credit["pandemic_relief_note"]),
+        "净核销率（本金口径）": (staging["period_labels"],
+                                staging["credit_metrics"]["net_write_off_rate_principal_pct"],
+                                "pct1", "%", credit["basis_note"]),
         "VCE 占收入比": ([labels[i] for i in vce_idx],
                           [(rewards[i] + services[i] + bizdev[i]) / revenue[i] * 100
                            for i in vce_idx], "pct1", "%",

@@ -82,6 +82,8 @@ class MuSeriesTest(unittest.TestCase):
         self.assertEqual(len(self.staging["fiscal_labels"]), width)
         self.assertEqual(len(self.staging["period_ends"]), width)
         for name, values in {**self.fin, **self.bal}.items():
+            if not isinstance(values, list):
+                continue
             with self.subTest(series=name):
                 self.assertEqual(len(values), width, name)
 
@@ -104,19 +106,34 @@ class MuSeriesTest(unittest.TestCase):
                                  f"{fiscal} ended {end}")
 
     def test_income_statement_identity_holds_each_quarter(self) -> None:
+        # The record now reaches 2016 and Micron's releases in that era printed
+        # far less: cost of goods sold has a seventeen-quarter hole and the
+        # R&D / SG&A split was never backfilled at all. So each identity is
+        # checked wherever its own inputs exist, and the count of quarters that
+        # could be checked is asserted -- otherwise "every quarter passed" would
+        # be satisfied by a record where almost nothing was checkable.
+        gross_checked = expense_checked = 0
         for index, period in enumerate(self.periods):
             with self.subTest(period=period):
-                self.assertAlmostEqual(
-                    self.fin["revenue_usd_m"][index] - self.fin["cost_of_goods_sold_usd_m"][index],
-                    self.fin["gross_margin_usd_m"][index], places=6,
-                    msg="revenue - cost of goods sold must equal gross margin")
-                self.assertAlmostEqual(
-                    self.fin["gross_margin_usd_m"][index]
-                    - self.fin["research_and_development_usd_m"][index]
-                    - self.fin["selling_general_administrative_usd_m"][index]
-                    - self.fin["other_operating_total_usd_m"][index],
-                    self.fin["gaap_operating_income_usd_m"][index], places=4,
-                    msg="gross margin less the three expense lines must equal operating income")
+                revenue = self.fin["revenue_usd_m"][index]
+                cogs = self.fin["cost_of_goods_sold_usd_m"][index]
+                gross = self.fin["gross_margin_usd_m"][index]
+                if None not in (revenue, cogs, gross):
+                    gross_checked += 1
+                    self.assertAlmostEqual(
+                        revenue - cogs, gross, places=6,
+                        msg="revenue - cost of goods sold must equal gross margin")
+                legs = [self.fin["research_and_development_usd_m"][index],
+                        self.fin["selling_general_administrative_usd_m"][index],
+                        self.fin["other_operating_total_usd_m"][index]]
+                operating = self.fin["gaap_operating_income_usd_m"][index]
+                if gross is not None and operating is not None and None not in legs:
+                    expense_checked += 1
+                    self.assertAlmostEqual(
+                        gross - sum(legs), operating, places=4,
+                        msg="gross margin less the three expense lines must equal operating income")
+        self.assertEqual(gross_checked, 25)
+        self.assertEqual(expense_checked, 19)
 
     def test_the_company_free_cash_flow_definition_reproduces_its_own_figure(self) -> None:
         """`adjusted free cash flow = operating cash flow - investments in capex, net`.
@@ -146,7 +163,16 @@ class MuSeriesTest(unittest.TestCase):
         rounding in most quarters.
         """
         tech = self.staging["technology"]
+        # The technology split has no quarters list of its own -- it aligns to
+        # `periods` positionally, so extending the record to 2016 required
+        # padding it with leading nulls. Getting that padding wrong would shift
+        # every quarter's DRAM/NAND mix onto a different quarter without any
+        # error, so this test both skips the pad and asserts how long it is.
+        checked = 0
         for index, period in enumerate(self.periods):
+            if tech["dram_revenue_usd_m"][index] is None:
+                continue
+            checked += 1
             with self.subTest(period=period):
                 self.assertAlmostEqual(
                     tech["dram_revenue_usd_m"][index] + tech["nand_revenue_usd_m"][index]
@@ -155,6 +181,11 @@ class MuSeriesTest(unittest.TestCase):
                 self.assertAlmostEqual(
                     tech["dram_revenue_usd_m"][index] / self.fin["revenue_usd_m"][index] * 100,
                     tech["dram_share_pct"][index], places=1)
+        self.assertEqual(checked, 19)
+        pad = len(self.periods) - checked
+        self.assertEqual(pad, 23)
+        self.assertTrue(all(v is None for v in tech["dram_revenue_usd_m"][:pad]))
+        self.assertTrue(all(v is not None for v in tech["dram_revenue_usd_m"][pad:]))
 
     def test_business_units_sum_to_revenue_within_the_all_other_line(self) -> None:
         """The four units plus `All other` are the whole company.
@@ -199,20 +230,34 @@ class MuSeriesTest(unittest.TestCase):
         """
         from datetime import date
         ends = [date.fromisoformat(value) for value in self.staging["period_ends"]]
+        # DIO needs cost of goods sold, which Micron stopped printing between
+        # FQ4-17 and FQ3-21, so it is checkable on far fewer quarters than DSO.
+        # Both counts are asserted: without them, "every quarter holds" would
+        # also be true of a record where almost nothing was checkable.
+        dso_checked = dio_checked = 0
         for index, period in enumerate(self.periods):
             days = self.bal["days_in_quarter"][index]
+            if days is None:
+                continue
             with self.subTest(period=period):
                 if index:
                     self.assertEqual(days, (ends[index] - ends[index - 1]).days)
                 self.assertIn(days, (91, 98))
-                self.assertAlmostEqual(
-                    self.bal["receivables_usd_m"][index]
-                    / self.fin["revenue_usd_m"][index] * days,
-                    self.bal["dso_days"][index], places=2)
-                self.assertAlmostEqual(
-                    self.bal["inventories_usd_m"][index]
-                    / self.fin["cost_of_goods_sold_usd_m"][index] * days,
-                    self.bal["dio_days"][index], places=2)
+                if self.bal["dso_days"][index] is not None:
+                    dso_checked += 1
+                    self.assertAlmostEqual(
+                        self.bal["receivables_usd_m"][index]
+                        / self.fin["revenue_usd_m"][index] * days,
+                        self.bal["dso_days"][index], places=2)
+                if (self.bal["dio_days"][index] is not None
+                        and self.fin["cost_of_goods_sold_usd_m"][index] is not None):
+                    dio_checked += 1
+                    self.assertAlmostEqual(
+                        self.bal["inventories_usd_m"][index]
+                        / self.fin["cost_of_goods_sold_usd_m"][index] * days,
+                        self.bal["dio_days"][index], places=2)
+        self.assertEqual(dso_checked, 41)
+        self.assertEqual(dio_checked, 24)
 
     def test_the_annual_cycle_covers_a_full_swing_in_both_directions(self) -> None:
         """The long series is the page's whole argument; assert it is really long.
@@ -262,6 +307,8 @@ class MuGuidanceRecordTest(unittest.TestCase):
     def test_every_guided_quarter_carries_every_field(self) -> None:
         width = len(self.record["quarters"])
         for name, values in self.record.items():
+            if not isinstance(values, list):
+                continue
             with self.subTest(series=name):
                 self.assertEqual(len(values), width, name)
 

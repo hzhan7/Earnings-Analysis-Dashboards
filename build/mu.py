@@ -66,6 +66,23 @@ DATA_DIR = ROOT / "data"
 BAND_WINDOW = 12
 
 
+
+def continuous_tail(values: list) -> int:
+    """Index where this series' unbroken run to the present begins.
+
+    Micron's press releases stopped printing several lines for years at a time
+    -- cost of goods sold has a seventeen-quarter hole (FQ4-17 to FQ3-21) and
+    inventory days an eighteen-quarter one. A chart drawn over the whole record
+    would show a long blank stretch that reads as a collapse rather than as a
+    disclosure gap, so charts that need an unbroken line take this tail. It is
+    computed rather than hardcoded so the window grows by itself if the hole is
+    ever filled from the 10-Qs.
+    """
+    start = len(values)
+    while start > 0 and values[start - 1] is not None:
+        start -= 1
+    return start
+
 def signed(value: float, digits: int = 1, suffix: str = "%") -> str:
     return f"{value:+.{digits}f}{suffix}"
 
@@ -422,18 +439,30 @@ def quarter_charts(staging: dict) -> list[dict]:
     cogs = fin["cost_of_goods_sold_usd_m"]
     four_back = -5
 
+    # Cost of goods sold is not continuous across the record: Micron's releases
+    # printed it through FQ3-17 and then stopped until FQ4-21, leaving a
+    # seventeen-quarter hole in the middle. A chart of revenue *against* COGS has
+    # to live on the span where both exist, so it takes the continuous tail --
+    # computed, not a hardcoded 19, so it grows on its own if the hole is ever
+    # filled from the 10-Qs.
+    cogs_start = continuous_tail(cogs)
+    rc_labels = labels[cogs_start:]
+    rc_revenue = revenue[cogs_start:]
+    rc_cogs = cogs[cogs_start:]
+
     revenue_cogs = {
         "ref": "EX_REV_COGS",
         "kind": "grouped_bars",
         "title": (
             f"一年之间收入 {signed(pct_change(revenue[-1], revenue[four_back]), 0)}，"
             f"销货成本 {signed(pct_change(cogs[-1], cogs[four_back]), 0)}"
+            f"（本图 {len(rc_labels)} 季）"
         ),
-        "xlabels": labels,
+        "xlabels": rc_labels,
         "xrot": 90,
         "groups": [
-            {"name": "收入", "color": "NAVY", "values": rounded([v / 1000 for v in revenue])},
-            {"name": "销货成本", "color": "GOLD", "values": rounded([v / 1000 for v in cogs])},
+            {"name": "收入", "color": "NAVY", "values": rounded([v / 1000 for v in rc_revenue])},
+            {"name": "销货成本", "color": "GOLD", "values": rounded([v / 1000 for v in rc_cogs])},
         ],
         "bar_labels": False,
         "fmt": "usd1",
@@ -455,18 +484,23 @@ def quarter_charts(staging: dict) -> list[dict]:
         "src_extra": "收入与销货成本取自各季业绩 8-K EX-99.1 的合并损益表。",
     }
 
-    dram = tech["dram_revenue_usd_m"]
-    nand = tech["nand_revenue_usd_m"]
-    other = tech["other_revenue_usd_m"]
-    dram_share = tech["dram_share_pct"]
+    # The technology split has no quarters list of its own -- it aligns to the
+    # top-level `periods` by position -- so it carries leading nulls back to the
+    # record's start. Draw it over its own continuous tail.
+    tech_start = continuous_tail(tech["dram_revenue_usd_m"])
+    tech_labels = labels[tech_start:]
+    dram = tech["dram_revenue_usd_m"][tech_start:]
+    nand = tech["nand_revenue_usd_m"][tech_start:]
+    other = tech["other_revenue_usd_m"][tech_start:]
+    dram_share = tech["dram_share_pct"][tech_start:]
     technology_chart = {
         "ref": "EX_TECH",
         "kind": "stacked_dual",
         "title": (
             f"按技术拆收入：DRAM US${dram[-1] / 1000:.2f}B、NAND US${nand[-1] / 1000:.2f}B，"
-            f"DRAM 占 {dram_share[-1]:.1f}%"
+            f"DRAM 占 {dram_share[-1]:.1f}%（本图 {len(tech_labels)} 季）"
         ),
-        "xlabels": labels,
+        "xlabels": tech_labels,
         "xrot": 90,
         "stacks": [
             {"name": "DRAM", "color": "NAVY", "values": rounded([v / 1000 for v in dram])},
@@ -573,7 +607,7 @@ def quarter_charts(staging: dict) -> list[dict]:
         "ref": "EX_MARGINS",
         "kind": "lines_endlabels",
         "title": (
-            f"十九个季度的两条利润率：GAAP 毛利率从 {min(fin['gaap_gross_margin_pct']):.1f}% "
+            f"{len(labels)} 个季度的两条利润率：GAAP 毛利率从 {min(fin['gaap_gross_margin_pct']):.1f}% "
             f"到 {fin['gaap_gross_margin_pct'][-1]:.1f}%"
         ),
         "xlabels": labels,
@@ -705,7 +739,7 @@ def next_quarter_charts(staging: dict) -> list[dict]:
         actual_name="实际 non-GAAP 毛利率",
         threshold_name="警戒线 84.0%",
         note=(
-            "<b>这条警戒线在十九个季度里被跨越过两次，方向相反。</b>"
+            f"<b>这条警戒线在 {len(labels)} 个季度里被跨越过两次，方向相反。</b>"
             "深蓝线在 2023 年整整一年待在零以下，随后一路回到 84.9%。"
             "把警戒线设在 84.0% 而不是别的数，是因为公司下季指引约 86%："
             "低于 84% 意味着不是「涨价放缓」而是「指引本身没兑现」，"
@@ -715,10 +749,13 @@ def next_quarter_charts(staging: dict) -> list[dict]:
     )
     margin_line["ref"] = "EX_GM_THRESHOLD"
 
+    dso_start = continuous_tail(bal["dso_days"])
+    dso_labels = labels[dso_start:]
+    dso_days = bal["dso_days"][dso_start:]
     dso_line = threshold_exhibit(
-        f"应收账款周转天数对 80 天警戒线：本季 {bal['dso_days'][-1]:.1f} 天",
-        labels,
-        rounded(bal["dso_days"]),
+        f"应收账款周转天数对 80 天警戒线：本季 {dso_days[-1]:.1f} 天",
+        dso_labels,
+        rounded(dso_days),
         80.0,
         fmt="f1",
         ylab="天",
@@ -730,8 +767,8 @@ def next_quarter_charts(staging: dict) -> list[dict]:
             "看上去像回款恶化，但周转天数说的是另一回事。</b>"
             f"DSO 从 {bal['dso_days'][-2]:.1f} 天走到 {bal['dso_days'][-1]:.1f} 天，只多了 "
             f"{bal['dso_days'][-1] - bal['dso_days'][-2]:.1f} 天；"
-            f"而本窗口的最高点是 {periods[bal['dso_days'].index(max(bal['dso_days']))]} 的 "
-            f"{max(bal['dso_days']):.1f} 天 —— 也就是说，"
+            f"而本窗口的最高点是 {dso_labels[dso_days.index(max(dso_days))]} 的 "
+            f"{max(dso_days):.1f} 天 —— 也就是说，"
             "<b>应收占用相对收入的水平比两年前还低。</b>"
             "换个说法：如果 DSO 完全不动地停在上季的水平，本季收入也需要 "
             f"US${bal['dso_days'][-2] / bal['days_in_quarter'][-1] * fin['revenue_usd_m'][-1] / 1000:.1f}B "
@@ -902,7 +939,7 @@ def routine_charts(staging: dict) -> list[dict]:
         "ref": "EX_CASHGEN",
         "kind": "grouped_bars",
         "title": (
-            f"十九季的现金三条：经营现金流 US${fin['operating_cash_flow_usd_m'][-1] / 1000:.1f}B、"
+            f"{len(labels)} 季的现金三条：经营现金流 US${fin['operating_cash_flow_usd_m'][-1] / 1000:.1f}B、"
             f"净资本开支 US${abs(fin['capex_net_usd_m'][-1]) / 1000:.1f}B、"
             f"调整后自由现金流 US${fin['adjusted_free_cash_flow_usd_m'][-1] / 1000:.1f}B"
         ),
@@ -925,7 +962,7 @@ def routine_charts(staging: dict) -> list[dict]:
             "<b>三条都是公司自己印在业绩稿里的口径，不是本页凑的。</b>"
             "公司定义的「净资本开支」= 购建固定资产支出 − 出售固定资产所得 − 收到的政府补助，"
             "「调整后自由现金流」= 经营现金流 − 净资本开支；"
-            "逐季验算过，十九季全部到分闭合。"
+            f"逐季验算过，有该三条的 {sum(1 for v in fin['adjusted_free_cash_flow_usd_m'] if v is not None)} 季全部到分闭合。"
             f"窗口内有 {sum(1 for v in fin['adjusted_free_cash_flow_usd_m'] if v < 0)} 个季度"
             "调整后自由现金流为负，最深的一次是 "
             f"{periods[fin['adjusted_free_cash_flow_usd_m'].index(min(fin['adjusted_free_cash_flow_usd_m']))]} 的 "
@@ -937,21 +974,28 @@ def routine_charts(staging: dict) -> list[dict]:
         "src_extra": "各季业绩 8-K EX-99.1 的调整后自由现金流对账表。",
     }
 
+    # Inventory days shares cost of goods sold's eighteen-quarter hole, so this
+    # pair is drawn over the tail where both legs exist.
+    dio_start = continuous_tail(bal["dio_days"])
+    inv_labels = labels[dio_start:]
+    inv_days = bal["dio_days"][dio_start:]
+    inv_level = bal["inventories_usd_m"][dio_start:]
+    inv_revenue = fin["revenue_usd_m"][dio_start:]
     inventory = {
         "ref": "EX_INVENTORY",
         "kind": "bar_line_dual",
         "title": (
-            f"存货 US${bal['inventories_usd_m'][-1] / 1000:.1f}B、存货天数 "
-            f"{bal['dio_days'][-1]:.0f} 天：十九季里收入 "
-            f"{signed(pct_change(fin['revenue_usd_m'][-1], fin['revenue_usd_m'][0]), 0)}，"
-            f"存货 {signed(pct_change(bal['inventories_usd_m'][-1], bal['inventories_usd_m'][0]), 0)}"
+            f"存货 US${inv_level[-1] / 1000:.1f}B、存货天数 "
+            f"{inv_days[-1]:.0f} 天：{len(inv_labels)} 季里收入 "
+            f"{signed(pct_change(inv_revenue[-1], inv_revenue[0]), 0)}，"
+            f"存货 {signed(pct_change(inv_level[-1], inv_level[0]), 0)}"
         ),
-        "xlabels": labels,
+        "xlabels": inv_labels,
         "xrot": 90,
         "bar": {"name": "期末存货", "color": "NAVY",
-                "values": rounded([v / 1000 for v in bal["inventories_usd_m"]])},
+                "values": rounded([v / 1000 for v in inv_level])},
         "line": {"name": "存货天数 DIO (RHS)", "color": "GOLD",
-                 "values": rounded(bal["dio_days"]), "yfmt": "f0"},
+                 "values": rounded(inv_days), "yfmt": "f0"},
         "fmt": "usd1", "yfmt": "usd1", "label_fmt": "usd1",
         "ylab": "US$B", "rhs_label": "天",
         "note": (
@@ -961,10 +1005,10 @@ def routine_charts(staging: dict) -> list[dict]:
             f"{fin['revenue_usd_m'][-1] / fin['revenue_usd_m'][0]:.1f} 倍），"
             f"期末存货从 US${bal['inventories_usd_m'][0] / 1000:.1f}B 只走到 "
             f"US${bal['inventories_usd_m'][-1] / 1000:.1f}B。"
-            f"存货天数的高点在 {periods[bal['dio_days'].index(max(bal['dio_days']))]}，"
-            f"{max(bal['dio_days']):.0f} 天 —— 那是上一轮下行最深的时候，"
+            f"存货天数的高点在 {inv_labels[inv_days.index(max(inv_days))]}，"
+            f"{max(inv_days):.0f} 天 —— 那是上一轮下行最深的时候，"
             "货堆在仓库里而收入在掉；现在是 "
-            f"{bal['dio_days'][-1]:.0f} 天。"
+            f"{inv_days[-1]:.0f} 天。"
             "<b>存货天数用销货成本作分母</b>（期末存货 ÷ 当季销货成本 × 当季天数），"
             "所以它不受售价暴涨的影响，这一点在本页尤其要紧："
             "换成用收入作分母，同一组数字会显示存货天数「腰斩」，那只是价格的影子。"
