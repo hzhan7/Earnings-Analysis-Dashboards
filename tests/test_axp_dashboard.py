@@ -251,6 +251,23 @@ class AxpDashboardTest(unittest.TestCase):
         self.assertEqual(checked, 4)
         self.assertEqual(credit["past_due_30_pct"][periods.index("2021Q4")], annual["2021"])
 
+    def test_ten_k_year_ends_pin_the_pre_2022_half_of_the_loans_basis(self) -> None:
+        """The half of the credit data that no other check reaches.
+
+        Reproducing the eighteen already-published quarters only gates 2022Q1
+        onward; everything before it comes out of two older supplement formats
+        where reading one column across would go unnoticed. Nine 10-Ks print
+        the same loans-basis delinquency at each year end, and it is a
+        point-in-time ratio, so each must equal that year's fourth quarter.
+        """
+        loans = self.staging["credit_metrics"]["loans_basis"]
+        annual = loans["annual_past_due_30_pct"]["values"]
+        periods = self.staging["periods"]
+        self.assertEqual(sorted(annual), [str(y) for y in range(2017, 2026)])
+        for year, value in annual.items():
+            index = periods.index(f"{year}Q4")
+            self.assertEqual(loans["past_due_30_pct"][index], value, year)
+
     def test_the_two_credit_bases_are_two_series_not_one(self) -> None:
         """2017-2021 is a disclosure boundary, not a collection gap.
 
