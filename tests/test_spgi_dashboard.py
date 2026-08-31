@@ -142,12 +142,24 @@ class SpgiDashboardTest(unittest.TestCase):
         intersegment elimination inside the non-transaction column, so the six
         gross lines less that elimination is consolidated revenue exactly."""
         revenue = dict(zip(self.long["quarters"], self.long["revenue_usd_m"]))
+        # S&P Global files no fourth-quarter 10-Q, so every fiscal Q4 in the
+        # backfilled era is "full year minus nine months" -- a subtraction of
+        # two rounded figures, which can land a dollar out. That slack is given
+        # only to those quarters, and only to the era that needed deriving: the
+        # quarters the company printed directly still have to close exactly.
+        derived_q4 = {"Q4 2018", "Q4 2019", "Q4 2020", "Q4 2021"}
+        exact = 0
         for index, period in enumerate(self.types["quarters"]):
             gross = sum(self.types[name][index] for name in TYPES)
+            slack = 1.01 if period in derived_q4 else 0.51
             with self.subTest(period=period):
                 self.assertAlmostEqual(
                     gross - self.types["intersegment_elimination"][index],
-                    revenue[period], delta=0.51)
+                    revenue[period], delta=slack)
+            if period not in derived_q4:
+                exact += 1
+        # and the loosened set stays small: 30 of 34 quarters close exactly
+        self.assertEqual(exact, 30)
 
     def test_segments_add_back_to_filed_revenue_and_operating_profit(self) -> None:
         revenue = dict(zip(self.long["quarters"], self.long["revenue_usd_m"]))
