@@ -552,9 +552,9 @@
       13.0,
       11.0,
       7.0,
-      9.0,
-      8.0,
-      9.0,
+      5.0,
+      5.0,
+      6.0,
       10.0,
       13.0,
       14.0,
@@ -1364,11 +1364,11 @@
       1.68,
       1.41,
       1.51,
-      null,
+      1.78,
       1.83,
       2.08,
       2.44,
-      null,
+      2.41,
       2.68,
       2.34,
       2.58,
@@ -1408,11 +1408,11 @@
       1010.0,
       1008.0,
       1005.0,
-      null,
+      1001.0,
       998.0,
       994.0,
       990.0,
-      null,
+      986.0,
       981,
       974,
       968,
@@ -2144,7 +2144,30 @@
   "basis_notes_2016": [
     "**ASC 606 于 2018-01-01 采用，2016–2017 不重述。** 公司自己说的台阶：净收入增速在2018 四个季度分别被抬高约 +4pp / +4pp（含并购）/ +3pp / +5pp。净收入这条线本身两套口径下的**金额**没有被重述，所以它可以连续画；增速跨 2017/2018 要按这个台阶读。",
     "**委内瑞拉在 2018Q1 出表**，公司原话是「2018 年第一季之前，所有指标都含委内瑞拉」。在量的序列上看得见：换手笔数 17.7bn（2017Q4）→ 16.7bn（2018Q1）。",
-    "**2016Q4 / 2017Q1 / 2017Q2 三季的 GDV 增速，新闻稿只印了 EU Article 8 调整后的整数**，比未调整口径高 3–4pp（9 对 5.3、8 对 4.7、9 对 6.1）。本站在 key_drivers 里存的是公司当季印的那个数，另存一条全窗口定义一致的未调整序列备查。",
+    "**2016Q4 / 2017Q1 / 2017Q2 三季的 GDV 增速此前取的是 EU Article 8 调整后那一行**（9 / 8 / 9），而未调整的申报行是 5 / 5 / 6，2026-08-31 改回申报行。此前这条注释写着「新闻稿只印了调整后的整数」和「本站另存一条未调整序列备查」—— **两句都不成立**：那三季的申报文件里两行是并排印的（2017Q1、2017Q2 在 10-Q 的趋势表，2016Q4 在业绩发布 EX-99.1 的 Article 8 表里作 'Worldwide as reported'），而所谓另存的那条序列在本文件里根本不存在。**取调整行的边界还落在口径内部而不是口径边缘**：2016Q3 同样受 Article 8 影响（申报 7、调整 11），本站取的是 7 —— 所以 7 / 9 / 8 / 9 这四格没有任何一条取数规则能同时产生。它的效果是把 2016 年底那次减速到 5% 从线上抹平了。调整行现在真的存了，在 `gdv_eu_article8_adjusted_pct` 里。",
     "**Mastercard 每年重印上一年同期那一列，而且数会变**：256 个被印过两次的季度格里有 221 个两次不同（86%），卡量每一次都被下修（2016Q1 1,593 → 1,565），GDV 固定汇率增速最多动 0.5pp。本站存的是**首次印出来**的那一版；任何从更晚的文件里读同一个季度的路径都会合法地不同。"
-  ]
+  ],
+  "gdv_eu_article8_adjusted_pct": {
+    "_what": "Worldwide GDV growth, local currency, on the 'as adjusted for EU Regulation' (Article 8) row Mastercard printed alongside the as-reported row. Stored for comparison only; nothing on the page draws it. key_drivers_local_pct.gdv is the AS REPORTED row in all 42 quarters.",
+    "_why_it_starts_late": "Article 8 took effect 2016-06-09. No filing contemporaneous with Q1 2016 prints an adjusted figure, so the row does not exist for that quarter.",
+    "quarters": [
+      "Q2 2016",
+      "Q3 2016",
+      "Q4 2016",
+      "Q1 2017",
+      "Q2 2017",
+      "Q3 2017",
+      "Q1 2018"
+    ],
+    "values": [
+      13.0,
+      11.0,
+      9.0,
+      8.0,
+      9.0,
+      10.0,
+      14.0
+    ],
+    "_converges": "By Q3 2017 the two rows print the same number (10), and again at Q1 2018 (14) -- which is why the page does not need this row after 2017Q2."
+  }
 }

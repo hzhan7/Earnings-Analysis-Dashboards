@@ -134,6 +134,57 @@ class MaDashboardTest(unittest.TestCase):
             self.assertEqual(len(values), 42, name)
             self.assertTrue(all(v is not None for v in values), name)
 
+    def test_gdv_growth_is_the_as_reported_row_in_every_quarter(self) -> None:
+        """One row for 42 quarters, and the other one kept where it can be seen.
+
+        Mastercard prints two worldwide GDV growth rows in this era: the trend
+        table's as-reported row, and an "as adjusted for EU Regulation"
+        (Article 8) row. Three quarters -- Q4 2016, Q1 2017, Q2 2017 -- carried
+        the adjusted row at 9 / 8 / 9 against the reported 5 / 5 / 6, which
+        flattened the reported deceleration to 5% out of the line.
+
+        What makes the old state indefensible rather than merely a different
+        choice is the boundary: Q3 2016 was equally Article-8 affected -- the
+        same filings print 7 as reported and 11 as adjusted -- and the page took
+        7. No sourcing rule yields 7, 9, 8, 9.
+
+        The assertions are built so the adjusted row cannot come back quietly:
+        the four quarters where the two rows differ are pinned to the reported
+        value AND asserted unequal to the adjusted one, which is stored beside
+        them. The stored row is checked for existence too, because the note that
+        used to sit here claimed a comparison series was stored when none was.
+        """
+        drivers = self.source["key_drivers_local_pct"]
+        periods = self.periods
+        adjusted = self.source["gdv_eu_article8_adjusted_pct"]
+        self.assertEqual(len(adjusted["quarters"]), len(adjusted["values"]))
+
+        reported = {"Q3 2016": 7.0, "Q4 2016": 5.0, "Q1 2017": 5.0, "Q2 2017": 6.0}
+        by_quarter = dict(zip(adjusted["quarters"], adjusted["values"]))
+        for label, value in reported.items():
+            with self.subTest(period=label):
+                self.assertEqual(drivers["gdv"][periods.index(label)], value)
+                self.assertNotEqual(
+                    drivers["gdv"][periods.index(label)], by_quarter[label],
+                    "the drawn series has taken the Article 8 adjusted row again")
+        # and where the two rows converge the page is not carrying a third number
+        for label in ("Q3 2017", "Q1 2018"):
+            with self.subTest(period=label):
+                self.assertEqual(drivers["gdv"][periods.index(label)], by_quarter[label])
+
+    def test_no_quarter_is_missing_its_diluted_per_share_pair(self) -> None:
+        """Q4 2020 and Q4 2021 were empty while the note promised the release.
+
+        Both are printed in the fourth-quarter earnings release income statement,
+        side by side with the prior year. Nothing pointed at the hole because the
+        per-share block was never asserted complete.
+        """
+        per_share = self.source["per_share"]
+        periods = self.periods
+        for name in ("diluted_eps_usd", "diluted_shares_m"):
+            missing = [q for q, v in zip(periods, per_share[name]) if v is None]
+            self.assertEqual(missing, [], f"{name} has holes")
+
     def test_quarterly_series_reconcile_with_the_full_year(self) -> None:
         """Every fourth quarter is `full year − nine months`, so the four
         quarters of each closed year have to add back to the filed annual."""
