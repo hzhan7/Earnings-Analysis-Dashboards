@@ -59,6 +59,29 @@ class TjxDashboardTest(unittest.TestCase):
         cls.seg = cls.source["segments_usd_m"]
 
     # ── shape ────────────────────────────────────────────────────────────────
+    def test_the_comp_series_declares_its_e_commerce_boundary(self) -> None:
+        """One seam the filings footnote and the page did not.
+
+        TJX began including e-commerce in comparable sales with the quarter ended
+        2025-05-03 and has never restated the earlier quarters, so the line joins
+        two populations. Nothing here is provably wrong -- e-commerce is about 2%
+        of sales, the company calls the consolidated impact immaterial, and comps
+        print as whole integers, so no cell can be shown to differ. That is
+        exactly why it needs saying rather than fixing: an unprovable seam is one
+        no arithmetic check will ever raise.
+
+        A refutation pass killed the other half of the original report: the 2019
+        Sierra footnote change is NOT a second seam, because TJX printed all four
+        FY2019 quarters under both footnote regimes and all twenty division cells
+        are identical. Only this one survived.
+        """
+        drawn = " ".join(
+            ex.get("src_extra", "") for section in self.payload["sections"]
+            for ex in section["exhibits"])
+        self.assertIn("2025-05-03", drawn,
+                      "the e-commerce boundary is not stated anywhere a reader sees")
+        self.assertIn("电商", drawn)
+
     def test_the_window_is_forty_two_quarters_and_says_where_it_is_thin(self) -> None:
         """Every block is on one axis; six series are thin and are named.
 

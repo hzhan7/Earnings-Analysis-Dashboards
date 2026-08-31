@@ -408,7 +408,11 @@ def build_payload(staging: dict) -> dict:
                 "数值上过线，但构成变了：过线全靠 Marmaxx 以外的三个分部（+6~7%），见下一张。"
                 "合并 comp 按整数披露，「+4%」的真值区间是 3.5–4.5%。"
             ),
-            src_extra="comp 为公司披露的整数百分比，见各季 8-K 的 Comparable Sales by Division。",
+            src_extra=("comp 为公司披露的整数百分比，见各季 8-K 的 Comparable Sales by Division。"
+                      "<b>2025 年第二季（截至 2025-05-03）起这条口径含电商</b>，在此之前不含；"
+                      "公司在自己的表里加了脚注标出这道边界，且**从未重述**更早的季度，所以线上这一处是"
+                      "两个总体接在一起。电商约占销售额 2%，公司称对合并 comp 的影响不重大，而 comp 本身"
+                      "只印到整数，所以没有哪一格可以被证明是错的 —— 但边界在这里，不在图上看不出来。"),
         ),
         threshold_exhibit(
             "Marmaxx 同店销售八季：本季 +1%，八季最低，且是唯一交易笔数为负的分部",
@@ -423,7 +427,8 @@ def build_payload(staging: dict) -> dict:
                 "partially offset by a small decrease in customer transactions —— "
                 "即客单价扛住了、来客数掉了。"
             ),
-            src_extra="comp 与其驱动的定性描述均为公司披露；阈值为本地研究设定。",
+            src_extra=("comp 与其驱动的定性描述均为公司披露；阈值为本地研究设定。"
+                       "口径边界同上：2025-05-03 那一季起含电商，更早不含，公司未重述。"),
         ),
         threshold_exhibit(
             f"毛利率八季：本季调整后 {adjusted_gross[-1]:.1f}%，高于上季设的 31.2%",
