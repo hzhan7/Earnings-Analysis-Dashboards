@@ -402,13 +402,23 @@ def long_charts(s: dict) -> list[dict]:
     }
 
     a = s["annual"]
-    yrs = a["years"][1:]
-    rep = a["revenue_yoy_reported_pct"][1:]
+    # Only the years whose reported growth the company itself printed. FY2020 is
+    # absent: it is the COVID year, revenue fell about a tenth, and this pass did
+    # not recover the company's own printed figure for it. Deriving one from the
+    # two revenue lines would be easy and would also quietly turn an "as printed"
+    # column into a mixed one, so the year is dropped from the chart instead and
+    # named in the note.
+    pairs = [(y, v) for y, v in zip(a["years"][1:], a["revenue_yoy_reported_pct"][1:])
+             if v is not None]
+    yrs = [y for y, _ in pairs]
+    rep = [v for _, v in pairs]
+    missing = [y for y, v in zip(a["years"][1:], a["revenue_yoy_reported_pct"][1:])
+               if v is None]
     norm = a["ebit_normalised_eur_k"]
     conv = {
         "ref": "EX_CONV",
         "kind": "bars_labeled",
-        "title": ("年度营收增速五年从 30.9% 收敛到 10.1%，"
+        "title": (f"年度营收增速 {len(yrs)} 年从 {max(rep):.1f}% 收敛到 {rep[-1]:.1f}%，"
                   "而指引一直是同一句「约 10%」"),
         "xlabels": [f"FY{y}" for y in yrs],
         "values": rounded(rep),
@@ -419,7 +429,9 @@ def long_charts(s: dict) -> list[dict]:
                  "和「约 10%」之间的距离从二十多个百分点收到一个百分点以内 —— "
                  "<b>同一句话的性质因此变了</b>：它从一条容易越过的地板，"
                  "变成一条贴着实际走的线。这也是口径问题在今年才开始要紧的原因。"),
-        "src_extra": "报告口径同比；恒定汇率口径公司自 2022 年起才逐年给出，2021 年没有。",
+        "src_extra": "报告口径同比；恒定汇率口径公司自 2022 年起才逐年给出，2021 年没有。"
+            + (f"**FY{missing[0]} 不在这张图上**：那是疫情年，收入下滑约一成，本轮没有取回公司自己印出的增速数字；"
+            "两条收入相减很容易得到一个数，但那会把「公司印出值」这一栏悄悄变成混合栏。" if missing else ""),
     }
 
     nd = s["net_debt_h1_eur_k"]

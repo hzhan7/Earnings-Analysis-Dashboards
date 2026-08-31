@@ -117,8 +117,11 @@ class BcDashboardTest(unittest.TestCase):
         self.assertEqual(len(h["periods"]), len(h["printed"]))
         for period, printed in zip(h["periods"], h["printed"]):
             self.assertEqual(printed, period.endswith("H1"), period)
-        self.assertEqual(sum(h["printed"]), 6)
-        self.assertEqual(len(h["periods"]) - sum(h["printed"]), 5)
+        # 21 halves now, 2016H1-2026H1: every H1 is company-printed, every H2 is
+        # the year minus the first half. Both counts are pinned so an H2 that
+        # ever arrives printed cannot slip in as though it were derived.
+        self.assertEqual(sum(h["printed"]), 11)
+        self.assertEqual(len(h["periods"]) - sum(h["printed"]), 10)
 
     def test_second_halves_are_the_year_minus_the_first_half(self) -> None:
         h, a = self.s["half"], self.s["annual"]
