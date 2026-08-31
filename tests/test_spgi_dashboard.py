@@ -87,7 +87,10 @@ class SpgiDashboardTest(unittest.TestCase):
                                  ("收入类型", self.types, "quarters"),
                                  ("Ratings 拆分", self.split, "quarters")):
             length = len(self.source["periods"] if key == "periods" else block[key])
-            metadata = {key, "derived_quarters", "quarters", "periods"}
+            # `structural_break_*` describe the axis, not a value per quarter:
+            # each is a list of break positions and their labels.
+            metadata = {key, "derived_quarters", "quarters", "periods",
+                        "structural_break_at", "structural_break_label"}
             for field, values in block.items():
                 if not isinstance(values, list) or field in metadata:
                     continue
@@ -410,20 +413,39 @@ class SpgiDashboardTest(unittest.TestCase):
         self.assertTrue(any("2026-07-01" in note for note in self.payload["notes"]))
         self.assertTrue(any("终止经营" in note for note in self.payload["notes"]))
 
-    def test_the_long_series_carries_the_merger_break(self) -> None:
-        self.assertEqual(self.long["quarters"][self.long["structural_break_at"]],
-                         "Q1 2022")
+    def test_the_long_series_carries_both_breaks(self) -> None:
+        """Two now, not one: the pension re-presentation at 2017Q1 as well as
+        the merger at 2022Q1. Both are discontinuities in the drawn line that
+        no reader could infer from the shape alone."""
+        self.assertEqual([self.long["quarters"][i]
+                          for i in self.long["structural_break_at"]],
+                         ["Q1 2017", "Q1 2022"])
         margin = next(ex for ex in self.by_section["routine"]
                       if "营业利润率" in ex["title"])
         self.assertEqual(margin["break_at"], self.long["structural_break_at"])
+        self.assertEqual(len(margin["break_label"]),
+                         len(self.long["structural_break_at"]))
         revenue = next(ex for ex in self.by_section["routine"] if ex["kind"] == "gs_bar")
         self.assertIn("并表", revenue["title"])
 
-    def test_the_long_series_starts_where_the_basis_does(self) -> None:
-        """FY2016's quarters were never re-presented under ASU 2017-07, so the
-        operating-profit line has a hard floor at 2017Q1 rather than being
-        padded backwards onto a superseded basis."""
-        self.assertEqual(self.long["quarters"][0], "Q1 2017")
+    def test_the_pre_2017_basis_is_carried_but_declared(self) -> None:
+        """FY2016 was never re-presented under ASU 2017-07, so those four
+        quarters can only exist on the superseded basis. This page used to floor
+        the series at 2017Q1 for that reason. The floor is gone, but only
+        because the step is now measured rather than feared: the 2018Q1 10-Q
+        restated each of 2017's first three quarters by exactly $9.0M, so the
+        discontinuity has a known size, is drawn as a break, and is stated in
+        prose. Extending onto an undeclared basis change would still be wrong --
+        what changed is that it is declared."""
+        self.assertEqual(self.long["quarters"][0], "Q1 2016")
+        self.assertEqual(self.long["quarters"][self.long["structural_break_at"][0]],
+                         "Q1 2017")
+        note = self.long["basis_break_2016_2017"]
+        self.assertIn("9.0", note)
+        self.assertIn("ASU 2017-07", note)
+        # and the reader of the page, not just of the series file, is told
+        self.assertTrue(any("养老金" in n for n in self.payload["notes"]),
+                        "the pension basis break is not stated on the page")
 
     # ── thresholds ───────────────────────────────────────────────────────────
     def test_headroom_bars_reproduce_the_thresholds(self) -> None:

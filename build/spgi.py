@@ -885,12 +885,23 @@ def long_ratings(staging: dict) -> dict:
     labels = [compact_period(q) for q in split["quarters"]]
     transaction = split["transaction"]
     non_transaction = split["non_transaction"]
-    # The drawdown has to be measured from the peak that *preceded* the trough:
+    # The drawdown has to be measured from a peak that *precedes* its trough:
     # the all-time high is the current quarter, and "fell from Q2'26 to Q3'22"
-    # would read backwards in time.
-    trough_index = transaction.index(min(transaction))
+    # would read backwards in time. Taking the all-time low and looking left for
+    # a peak worked only while the record began in 2017 -- extended back to 2016
+    # the lowest quarter is the *first* one, and there is nothing to its left.
+    # So take the deepest peak-to-trough fall anywhere in the series, which is
+    # the quantity the sentence was always describing and is defined for any
+    # window.
+    peak_index = trough_index = 0
+    running_peak, deepest = 0, -1.0
+    for index, value in enumerate(transaction):
+        if value > transaction[running_peak]:
+            running_peak = index
+        fall = 1 - value / transaction[running_peak]
+        if fall > deepest:
+            deepest, peak_index, trough_index = fall, running_peak, index
     trough = transaction[trough_index]
-    peak_index = transaction.index(max(transaction[:trough_index]))
     peak = transaction[peak_index]
     return {
         "ref": "EX_L_RATINGS",
@@ -973,8 +984,14 @@ def long_margin(staging: dict) -> dict:
             "<b>断点标在 2022Q1</b>：IHS Markit 于 2022-02-28 交割，"
             "此后并购无形资产摊销进入费用，深蓝这条线从五十几个百分点被压到二十几，"
             "再用四年爬回今天的水平。断点两侧不是同一家公司，不要当成一条连续的经营曲线读。"
-            "起点定在 2017Q1 而不是更早：公司按 ASU 2017-07 重述了 2016 年的全年营业利润，"
-            "却从未重述 2016 年的各个季度，那四个季度在任何申报文件里都只有旧口径的版本。"
+            "<b>左端第一道断点是列报口径，不是经营变化。</b>"
+            "公司按 ASU 2017-07 把非服务性养老金成本挪到营业利润之下，"
+            "并在 2018 年第一季度起的三份季报里重述了 2017 年前三季 —— "
+            "本页 2017 年之后用的正是那批重述值。2016 的四个季度从未被任何申报按新口径重述过"
+            "（该重述只以上年同期对比列出现，采用时对比窗口已够不到 2016），"
+            "所以它们只能是原始申报口径。落差经逐季核对为每季 9.0，"
+            "对营业利润率的影响 0.6–1.8pp —— 本页此前因此把序列截在 2017Q1，"
+            "现在改为画出来并标注：断点的大小是量出来的，不再只是一个理由。"
         ),
         "src_extra": "各季 10-Q / 10-K 合并损益表的营业利润行与处置收益行。",
     }
@@ -1460,6 +1477,7 @@ def build_payload(staging: dict) -> dict:
         ],
         "tables": tables,
         "notes": [plain_text(_p) for _p in [
+            "长序列左端有一道<b>养老金列报口径</b>断点：2016 四季为原始申报口径，2017 起为公司按 ASU 2017-07 重述后的口径，逐季差 9.0（营业利润低 9.0、总费用高 9.0）。收入不受该重述影响，两段可直接相接；营业利润与利润率两段之间的落差属于列报差异，不是经营变化，图上已标出断点。",
             "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
             "S&P Global 采用自然年财年，本页所有季度标注即该季度本身，无需财年映射。",
             "<b>公司从不在申报文件里发布季度指引，因此本页没有逐季的指引兑现记录。</b>"

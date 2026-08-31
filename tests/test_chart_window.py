@@ -133,7 +133,7 @@ REACH_2016 = {
     "cost": 7, "googl": 11, "ibkr": 21, "ma": 16, "mc": 0, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 2, "ndaq": 8, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 10, "skhynix": 0, "snps": 3,
-    "spgi": 2, "tjx": 8, "tsm": 18, "v": 14,
+    "spgi": 5, "tjx": 8, "tsm": 18, "v": 14,
 }
 
 # Pages whose migration is finished. For these the strict rule applies: every
