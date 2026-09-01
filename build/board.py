@@ -132,6 +132,7 @@ def threshold_exhibit(
     threshold_name: str,
     note: str,
     src_extra: str,
+    xstep: int | None = None,
 ) -> dict:
     """Plot one tracked metric against its own threshold line.
 
@@ -140,7 +141,7 @@ def threshold_exhibit(
     threshold as a flat series keeps the judgement on the chart instead of in
     the caption.
     """
-    return {
+    chart = {
         "kind": "lines",
         "title": title,
         "xlabels": xlabels,
@@ -156,6 +157,14 @@ def threshold_exhibit(
         "note": note,
         "src_extra": src_extra,
     }
+    # A threshold chart used to be an eight-quarter chart, so every label fitted.
+    # Once the same chart carries the ten-year record the axis has to thin the
+    # labels or it becomes a hairbrush -- and the renderer sizes its label band
+    # from the *drawn* labels, so this is the only lever that keeps the card
+    # from growing a tall empty strip under it.
+    if xstep:
+        chart["xstep"] = xstep
+    return chart
 
 
 def _rounded(values: list[float | None], digits: int = 6) -> list[float | None]:
@@ -168,7 +177,8 @@ def delivery_band(ref: str, metric: str, xlabels: list[str], low: list[float],
                   unit: str, src_extra: str, extra_note: str = "",
                   venue: str = "法说会", scope: str = "", point: bool = False,
                   break_at: int | None = None, break_label: str = "",
-                  timing: str = "该季<b>开始前</b>", period_word: str = "季") -> dict:
+                  timing: str = "该季<b>开始前</b>", period_word: str = "季",
+                  xstep: int | None = None) -> dict:
     """One guided metric's own range against what was reported, quarter by quarter.
 
     Both companies that use this guide several numbers every quarter with the
@@ -245,6 +255,14 @@ def delivery_band(ref: str, metric: str, xlabels: list[str], low: list[float],
         ),
         "src_extra": src_extra,
     }
+    # A guided record that reaches back ten years puts 43 labels on one axis.
+    # The renderer will shrink the font until they stop colliding, but it floors
+    # at 8.2/FS -- measured in a browser with oriented boxes (a rotated label's
+    # getBoundingClientRect is the rotated box, which lies), 43 quarterly labels
+    # at 90 degrees end up 0.8px past touching. Thinning to one label per year
+    # is the fix; the bars are all still drawn.
+    if xstep:
+        band["xstep"] = xstep
     if pending:
         band["annot"] = f"{pending[-1]}：仅指引，实际值待披露"
     # Structural break (规矩 6): the series is not comparable across this index,
@@ -261,7 +279,7 @@ def midpoint_deviation(ref: str, metric: str, xlabels: list[str], low: list[floa
                        src_extra: str, extra_note: str = "", window: int = 14,
                        label: Callable[[str], str] | None = None,
                        bar_labels: bool = True, axis_note: str = "",
-                       period_word: str = "季") -> dict:
+                       period_word: str = "季", xstep: int | None = None) -> dict:
     """How far past the guided midpoint the quarter landed, for one guided metric.
 
     The band charts answer "did it clear the range at all", which saturates once
@@ -295,7 +313,7 @@ def midpoint_deviation(ref: str, metric: str, xlabels: list[str], low: list[floa
     mean_absolute = statistics.fmean(abs(value) for value in deviation)
     biggest = max(deviation, key=abs)
     render = label or (lambda text: text)
-    return {
+    chart = {
         "ref": ref,
         "kind": "grouped_bars",
         "title": (
@@ -327,6 +345,12 @@ def midpoint_deviation(ref: str, metric: str, xlabels: list[str], low: list[floa
         ),
         "src_extra": src_extra,
     }
+    # See the note on `delivery_band`: past about thirty labels the axis needs
+    # thinning, and the renderer's own font-shrinking floors out before it gets
+    # there. Every bar is still drawn; only the labels are thinned.
+    if xstep:
+        chart["xstep"] = xstep
+    return chart
 
 
 def number_exhibits(exhibits: list[dict], start: int = 2) -> list[dict]:

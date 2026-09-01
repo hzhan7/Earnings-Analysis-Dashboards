@@ -148,7 +148,7 @@ class TsmDashboardTest(unittest.TestCase):
             for computed, reported in zip(guide[name][window], self.source["financials"][published]):
                 self.assertAlmostEqual(computed, reported, delta=0.05, msg=name)
         # NT$ revenue from the same filings has to reproduce the snapshot too.
-        by_quarter = dict(zip(guide["quarters"], guide["reported_revenue_ntd_bn"]))
+        by_quarter = dict(zip(guide["quarters"], guide["actual_revenue_ntd_bn"]))
         for quarter, snapshot in zip(
             ("2026Q2", "2026Q1", "2025Q2"), self.source["current_snapshot"]["revenue_ntd_bn"]
         ):
@@ -156,7 +156,7 @@ class TsmDashboardTest(unittest.TestCase):
         for name in ("gross_margin_guide_low_pct", "gross_margin_guide_high_pct",
                      "gross_margin_actual_pct", "operating_margin_guide_low_pct",
                      "operating_margin_guide_high_pct", "operating_margin_actual_pct",
-                     "reported_revenue_ntd_bn"):
+                     "actual_revenue_ntd_bn"):
             self.assertEqual(len(guide[name]), len(guide["quarters"]), name)
             self.assertIsNone(guide[name][-1] if name.endswith(("actual_pct", "ntd_bn")) else None)
 
@@ -169,6 +169,9 @@ class TsmDashboardTest(unittest.TestCase):
             ex["title"].split("：")[0]: ex
             for ex in self.by_section["settled"] if ex["kind"] == "range_band"
         }
+        # The revenue band names its shorter window in its own title, so the
+        # metric key is taken from the part before that parenthesis.
+        bands = {name.split("（")[0]: ex for name, ex in bands.items()}
         self.assertEqual(set(bands), {"收入", "毛利率", "营业利润率"})
         for metric, keys in (
             ("收入", ("guide_low_usd_bn", "guide_high_usd_bn", "actual_revenue_usd_bn")),
@@ -178,21 +181,48 @@ class TsmDashboardTest(unittest.TestCase):
                        "operating_margin_actual_pct")),
         ):
             band = bands[metric]
-            self.assertEqual(band["lo"], guide[keys[0]], metric)
-            self.assertEqual(band["hi"], guide[keys[1]], metric)
-            self.assertEqual(band["actual"], guide[keys[2]], metric)
-            self.assertEqual(band["xlabels"], guide["quarters"], metric)
+            # The dollar band is drawn over a shorter window on purpose (the
+            # guided number runs 6.1 to 45.8, so early bands collapse on a
+            # linear axis); the two percentage bands carry the whole record.
+            width = len(band["xlabels"])
+            self.assertEqual(band["lo"], guide[keys[0]][-width:], metric)
+            self.assertEqual(band["hi"], guide[keys[1]][-width:], metric)
+            self.assertEqual(band["actual"], guide[keys[2]][-width:], metric)
+            self.assertEqual(band["xlabels"], guide["quarters"][-width:], metric)
             for low, high in zip(band["lo"], band["hi"]):
                 self.assertLess(low, high, metric)
         self.assertEqual(bands["收入"]["fmt"], "usd1")
         self.assertEqual(bands["毛利率"]["fmt"], "pct1")
-        # Operating margin has never once landed back inside its range.
+        # Operating margin cleared the upper bound in every one of the last
+        # fourteen quarters -- and that is exactly why the record has to run
+        # longer than fourteen. Over the whole 42 it lands inside the range 14
+        # times and below it 3, so "the guidance is a floor" is a property of
+        # the 2023-onward window, not of the company.
         operating = guide["operating_margin_actual_pct"]
+        lows = guide["operating_margin_guide_low_pct"]
         highs = guide["operating_margin_guide_high_pct"]
-        finished = [(a, h) for a, h in zip(operating, highs) if a is not None]
-        self.assertEqual(len(finished), 14)
-        self.assertTrue(all(a > h for a, h in finished))
-        self.assertIn("全部超出指引上限", bands["营业利润率"]["title"])
+        finished = [(a, lo, hi) for a, lo, hi in zip(operating, lows, highs) if a is not None]
+        self.assertEqual(len(finished), 42)
+        # The short-window reading this page used to publish was "all fourteen
+        # cleared the upper bound". Two of those fourteen landed *exactly on*
+        # the bound at the precision the company publishes (2024Q1 42.0 against
+        # 40.0-42.0, 2025Q1 48.5 against 46.5-48.5); the old page called them
+        # exceedances because it compared a two-decimal derived margin against a
+        # one-decimal band. So the old claim was part window, part rounding.
+        recent_above = sum(1 for a, _, hi in finished[-14:] if a > hi)
+        self.assertEqual(recent_above, 12)
+        at_the_bound = [q for q, (a, _, hi) in zip(guide["quarters"][-15:-1], finished[-14:])
+                        if a == hi]
+        self.assertEqual(at_the_bound, ["2024Q1", "2025Q1"])
+        self.assertIn("两位小数", self.source["quarterly_guidance_history"]["precision_note"])
+        above = sum(1 for a, _, hi in finished if a > hi)
+        below = sum(1 for a, lo, _ in finished if a < lo)
+        inside = len(finished) - above - below
+        self.assertEqual((above, inside, below), (25, 14, 3))
+        self.assertNotIn("全部超出指引上限", bands["营业利润率"]["title"])
+        self.assertIn("跌破下限", bands["营业利润率"]["title"])
+        # And the reader has to be told the short reading was the artefact.
+        self.assertIn("14 季", bands["营业利润率"]["note"])
 
     def test_expectation_chart_separates_headline_from_core(self) -> None:
         """The chart's whole claim is that the answer to "did it beat" flips
@@ -271,9 +301,9 @@ class TsmDashboardTest(unittest.TestCase):
         # the other exhibits by number. And no eight-quarter revenue band
         # survives beside the long one.
         bands = [ex for ex in settled if ex["kind"] == "range_band"]
-        self.assertEqual([len(ex["xlabels"]) for ex in bands], [15, 15, 15])
+        self.assertEqual([len(ex["xlabels"]) for ex in bands], [16, 43, 43])
         metrics = ["收入", "毛利率", "营业利润率"]
-        self.assertEqual([ex["title"].split("：")[0] for ex in bands], metrics)
+        self.assertEqual([ex["title"].split("：")[0].split("（")[0] for ex in bands], metrics)
         self.assertEqual([ex["title"].split("相对")[0] for ex in deviations], metrics)
         expected = [
             bands[0]["n"], deviations[0]["n"], legs["n"],
@@ -352,13 +382,18 @@ class TsmDashboardTest(unittest.TestCase):
     def test_implied_asp_reproduces_reported_revenue(self) -> None:
         """Implied ASP is the only plotted series that is not a reported level,
         so it has to invert back to reported revenue exactly."""
+        long = self.source["long_history"]["financials"]
         exhibit = next(ex for ex in self.exhibits if "隐含 ASP" in ex["title"])
         asp = exhibit["yoy"]["values"]
+        self.assertEqual(len(asp), 42, "the ratio now runs on the ten-year record")
         for index, value in enumerate(asp):
-            shipments = self.source["financials"]["wafer_shipments_kpcs_12in_equiv"][index]
-            revenue = self.source["financials"]["revenue_usd_bn"][index]
-            self.assertAlmostEqual(value * shipments / 1_000_000, revenue, places=6)
-        self.assertEqual(exhibit["values"], self.source["financials"]["wafer_shipments_kpcs_12in_equiv"])
+            shipments = long["wafer_shipments_kpcs_12in_equiv"][index]
+            revenue = long["revenue_usd_bn"][index]
+            self.assertAlmostEqual(value * shipments / 1_000_000, revenue, places=5)
+        self.assertEqual(exhibit["values"], long["wafer_shipments_kpcs_12in_equiv"])
+        # The eight reviewed quarters are the tail of it, unchanged.
+        self.assertEqual(long["wafer_shipments_kpcs_12in_equiv"][-8:],
+                         self.source["financials"]["wafer_shipments_kpcs_12in_equiv"])
 
     def test_headroom_bars_reproduce_the_thresholds(self) -> None:
         entries = self.source["next_kpi"]["quantified"]
@@ -420,11 +455,106 @@ class TsmDashboardTest(unittest.TestCase):
         for index, revenue in enumerate(self.source["financials"]["revenue_usd_bn"]):
             self.assertEqual(revenue, long["capital_intensity"]["revenue_usd_bn"][-8:][index])
         crossover = next(ex for ex in self.exhibits if "反超收入增速" in ex["title"])
-        self.assertEqual(
-            crossover["series"][0]["values"], self.source["financials"]["revenue_yoy_pct"]
-        )
-        self.assertEqual(len(crossover["series"][1]["values"]), 8)
-        self.assertTrue(all(v is not None for v in crossover["series"][1]["values"]))
+        revenue_yoy, capex_yoy = (series["values"] for series in crossover["series"])
+        self.assertEqual((len(revenue_yoy), len(capex_yoy)), (42, 42))
+        # 2015 is not in this record, so the first four cells have no
+        # denominator. They are None rather than zero -- a zero would draw a
+        # fabricated point at the left edge of both lines.
+        self.assertEqual(revenue_yoy[:4], [None] * 4)
+        self.assertEqual(capex_yoy[:4], [None] * 4)
+        self.assertTrue(all(v is not None for v in revenue_yoy[4:]))
+        self.assertTrue(all(v is not None for v in capex_yoy[4:]))
+        for index in range(4, 42):
+            for plotted, source in ((revenue_yoy, long["capital_intensity"]["revenue_usd_bn"]),
+                                    (capex_yoy, long["capital_intensity"]["capex_usd_bn"])):
+                self.assertAlmostEqual(
+                    plotted[index], (source[index] / source[index - 4] - 1) * 100, places=5)
+        # The tail still reproduces the eight-quarter y/y the page used to plot,
+        # to within the precision the company publishes it at. The two are not
+        # the same object: `financials.revenue_yoy_pct` is the one-decimal
+        # figure TSMC prints, the plotted line is computed from the dollar
+        # revenues so it exists for all 38 quarters that have a denominator.
+        # Agreement to 0.15pp is what makes the swap safe; equality would be
+        # asserting that a derived series is a disclosed one. The tolerance is
+        # not arbitrary: the dollar revenues are published to two decimals, so
+        # a ratio of two of them carries about a tenth of a point of rounding
+        # at these magnitudes (2025Q3 is the widest, 40.851 against a printed
+        # 40.8). It is still tight enough to catch a series shifted by a
+        # quarter, which is the error this assertion exists for.
+        for plotted, disclosed in zip(revenue_yoy[-8:],
+                                      self.source["financials"]["revenue_yoy_pct"]):
+            self.assertAlmostEqual(plotted, disclosed, delta=0.15)
+        self.assertIn(" D", crossover["series"][0]["name"] + crossover["src_extra"])
+
+    # Every exhibit whose x axis is time, and the reason it is allowed to be
+    # shorter than the ten-year record. A chart that gets shortened without an
+    # entry here turns this red -- which is the point: the previous version of
+    # this page carried eleven eight-quarter charts and nothing anywhere said
+    # eight was a choice rather than the length of the data.
+    SHORT_BY_DESIGN = {
+        "收入（本图仅近": "dollar band -- the guided number runs 6.1 to 45.8, so the "
+                     "early bands collapse on a linear axis; the deviation "
+                     "chart beside it carries all 42",
+        "HPC 占比（集中度）": "TSMC first reported the platform split in 2018Q1",
+        "HPC 从": "same disclosure limit as the threshold chart",
+        "2nm 占晶圆收入": "2nm was inside 'advanced' until 2025Q2",
+    }
+
+    def test_every_time_axis_chart_reaches_2016(self) -> None:
+        """The window is a decision, so it has to be visible in the payload.
+
+        This is the assertion the whole ten-year rebuild exists for. Anything
+        with a quarterly x axis runs from 2016Q1 unless it is named above with
+        the disclosure that stops it -- and the names are checked too, so an
+        entry cannot be added to silence a chart that was merely left short.
+        """
+        quarterly = re.compile(r"^(Q[1-4]'\d{2}|\d{4}Q[1-4]|[A-Z][a-z]{2}-\d{2})$")
+        checked = 0
+        for exhibit in self.exhibits:
+            labels = exhibit.get("xlabels") or []
+            timed = [x for x in labels if quarterly.match(str(x))]
+            if len(timed) < 5:
+                continue          # categorical axis: KPI names, call dates, bridges
+            checked += 1
+            title = exhibit["title"]
+            excuse = next((why for key, why in self.SHORT_BY_DESIGN.items() if key in title), None)
+            if excuse is None:
+                self.assertGreaterEqual(
+                    len(timed), 42,
+                    f"{title[:40]} has a quarterly axis but only {len(timed)} points "
+                    "and no entry in SHORT_BY_DESIGN",
+                )
+                continue
+            self.assertLess(len(timed), 42, f"{title[:40]} is full length; drop its excuse")
+            self.assertTrue(excuse.strip(), title)
+        self.assertGreaterEqual(checked, 18, "the scan stopped finding charts")
+        # And the two disclosure limits named above are the ones the source
+        # records, not numbers typed into this file.
+        long = self.source["long_history"]
+        self.assertEqual(long["platform_first_reported"], "2018Q1")
+        self.assertEqual(long["node_first_reported"]["2nm"], "2025Q2")
+
+    def test_the_guided_record_spans_the_whole_decade(self) -> None:
+        guide = self.source["quarterly_guidance_history"]
+        self.assertEqual((guide["quarters"][0], guide["quarters"][-1]), ("2016Q1", "2026Q3"))
+        self.assertEqual(len(guide["quarters"]), 43)
+        # Revenue was guided in NT$ until 2017Q2 and in US$ from 2017Q3. Both
+        #原值 have to survive: the dollar figures for those six quarters are
+        # this page's conversion at the company's own stated assumption, not a
+        # number TSMC published, and the note has to say so.
+        currencies = dict(zip(guide["quarters"], guide["guide_currency"]))
+        ntd = [q for q, c in currencies.items() if c == "NTD"]
+        self.assertEqual(ntd, ["2016Q1", "2016Q2", "2016Q3", "2016Q4", "2017Q1", "2017Q2"])
+        for index, quarter in enumerate(guide["quarters"]):
+            has_ntd = guide["guide_low_ntd_bn"][index] is not None
+            self.assertEqual(has_ntd, currencies[quarter] == "NTD", quarter)
+            if has_ntd:
+                self.assertAlmostEqual(
+                    guide["guide_low_usd_bn"][index],
+                    guide["guide_low_ntd_bn"][index] / guide["guide_fx_ntd_per_usd"][index],
+                    places=3, msg=quarter,
+                )
+        self.assertIn("机械换算", guide["currency_break"]["note"])
 
     def test_long_history_agrees_with_the_eight_reviewed_quarters(self) -> None:
         """The routine charts run on 42 quarters read from the filings, while the
@@ -508,12 +638,26 @@ class TsmDashboardTest(unittest.TestCase):
     def test_audit_tables_back_every_derived_exhibit(self) -> None:
         tables = self.payload["tables"]
         first = len(self.exhibits) + 2
-        self.assertEqual([table["n"] for table in tables], list(range(first, first + 8)))
+        self.assertEqual([table["n"] for table in tables], list(range(first, first + 7)))
         self.assertIn("AI capex", tables[-1]["title"])
         self.assertEqual(len(tables[1]["rows"]), len(self.source["next_kpi"]["quantified"]))
         financials = next(table for table in tables if "隐含 ASP" in table["title"])
         for row in financials["rows"]:  # implied ASP travels with the raw inputs
             self.assertTrue(row[-1].endswith("D"))
+        # A check table has to be as long as the chart it backs. Three of them
+        # carry the ten-year record now, and the eight-quarter guidance table
+        # that used to sit beside the 43-quarter one is gone -- two tables of
+        # the same thing at different lengths is how they drift apart.
+        long_rows = len(self.source["long_history"]["quarters"])
+        for marker in ("隐含 ASP", "制程与平台", "现金流与营运资金"):
+            table = next(item for item in tables if marker in item["title"])
+            self.assertEqual(len(table["rows"]), long_rows, marker)
+            self.assertTrue(table["title"].startswith(f"{long_rows} 季度"), marker)
+        titles = " ".join(item["title"] for item in tables)
+        self.assertNotIn("八季度", titles)
+        delivery = next(item for item in tables if "指引兑现全表" in item["title"])
+        self.assertEqual(len(delivery["rows"]),
+                         len(self.source["quarterly_guidance_history"]["quarters"]))
 
     def test_cross_page_table_is_identical_on_every_page(self) -> None:
         """The AI-capex cross reference is the one object published byte-for-byte

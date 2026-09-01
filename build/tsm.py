@@ -36,6 +36,10 @@ from build.payload_guard import write_dash  # noqa: E402
 
 
 STAGING_PATH = ROOT / "series" / "tsm.json"
+
+# One x label per year. Forty-two quarterly labels at 90 degrees turn every axis
+# on this page into a hairbrush, and the reader navigates all of them by year.
+LONG_STEP = 4
 DATA_DIR = ROOT / "data"
 
 
@@ -172,10 +176,23 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
     """The full guided record for all three guided metrics, and what the beats are made of.
 
     TSMC guides three numbers every quarter -- revenue, gross margin, operating
-    margin -- plus the exchange rate it assumed when setting them. The eight
-    quarters the rest of the page carries cannot say whether beating the range
-    is normal for this company; fifteen can, and the answer differs sharply by
-    metric.
+    margin -- plus the exchange rate it assumed when setting them. The record
+    runs 42 finished quarters back to 2016Q1, and its length is the point: read
+    over the last fourteen, operating margin had cleared the upper bound every
+    single quarter and neither revenue nor gross margin had ever broken the
+    floor. Over the full record none of those three statements survives --
+    operating margin sits inside its band 14 times and below it 3, revenue
+    broke the floor in 2019Q1 and gross margin three times. A hit rate counted
+    inside one favourable window is not a hit rate.
+
+    One basis break travels with the revenue series and is disclosed rather
+    than smoothed: through 2017Q2 TSMC guided revenue in **NT dollars**, and
+    from 2017Q3 in US dollars. The six NT$ quarters are shown in dollars by
+    dividing the company's own guided range by the exchange-rate assumption
+    printed in the same sentence -- a mechanical conversion, not two currencies
+    spliced onto one axis. The decomposition below is unaffected: for those six
+    quarters its operating leg is simply the beat against the NT$ range the
+    company actually published.
 
     The beat decomposition is an identity rather than an estimate. Revenue is
     guided in US dollars at an FX assumption stated on the call and reported at
@@ -199,15 +216,30 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
 
     finished = [quarter for quarter in quarters if actual[quarter] is not None]
     beats = {quarter: (actual[quarter] / midpoint[quarter] - 1) * 100 for quarter in finished}
+    currency = dict(zip(quarters, guide["guide_currency"]))
+    ntd_guided = [quarter for quarter in quarters if currency[quarter] == "NTD"]
+    break_index = quarters.index(guide["currency_break"]["first_usd_quarter"])
+    # The dollar band is the one chart here that cannot carry the whole record:
+    # the guided number runs from US$6.1B to US$45.8B, and a 2pp-wide band at
+    # the left edge of a linear dollar axis is a few pixels tall. The scale-free
+    # deviation chart beside it carries all 42.
+    BAND_WINDOW = 16
 
     SOURCE_6K = (
         "指引区间与假设汇率来自各季法说会当场发布的 6-K；"
         "实际值来自随后一季 6-K 所载合并损益表。"
     )
+    band_slice = slice(len(quarters) - BAND_WINDOW, len(quarters))
     revenue_band = delivery_band(
-        "EX_RANGE", "收入", quarters, low, high, [actual[q] for q in quarters],
+        "EX_RANGE", "收入", quarters[band_slice], low[band_slice], high[band_slice],
+        [actual[q] for q in quarters][band_slice],
         fmt="usd1", ylab="US$B", unit="US$B", src_extra=SOURCE_6K,
+        scope=f"（本图仅近 {BAND_WINDOW} 季）",
         extra_note=(
+            f"<b>这张只画最近 {BAND_WINDOW} 季，不是数据缺失</b>：本页的指引记录一路回到 "
+            f"{quarters[0]}，而指引的收入从 US${low[0]:.1f}B 长到 US${high[-1]:.1f}B，"
+            "七倍的量级差放在一根线性美元轴上，早年那条 ±2% 宽的带子会被压成几个像素。"
+            "完整 42 季的同一问题改用与量级无关的口径回答，见 Exhibit {EX_MIDPOINT}。"
             "指引与实际都是公司自己给的美元数，而美元数是新台币结果除以当季实际汇率的产物，"
             "所以每一格里都含一条汇率腿 —— 拆开见 Exhibit {EX_LEGS}。"
         ),
@@ -216,11 +248,16 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         "EX_GM", "毛利率", quarters,
         guide["gross_margin_guide_low_pct"], guide["gross_margin_guide_high_pct"],
         guide["gross_margin_actual_pct"],
-        fmt="pct1", ylab="毛利率", unit="%",
+        fmt="pct1", ylab="毛利率", unit="%", xstep=LONG_STEP,
         src_extra=SOURCE_6K + "实际毛利率 = 该季 6-K 合并损益表的毛利 ÷ 净销售额 D。",
         extra_note=(
-            "毛利率的兑现纪律比收入还稳：区间宽度一律 2pp，公司从不给单点。"
-            "本季 67.7% 超出上限 0.2pp，而下季指引中值已回到 66%，"
+            "区间宽度一律 2pp，43 季无一例外，公司从不给单点。"
+            "<b>但「从不跌破」是短窗口的错觉</b>：把记录拉到 2016Q1，跌破下限的季度出现过三次，"
+            "全部在 2016 年到 2019 年那段产能与汇率同时逆风的时期。"
+            f"本季 {guide['gross_margin_actual_pct'][-2]:.1f}% 超出上限 "
+            f"{guide['gross_margin_actual_pct'][-2] - guide['gross_margin_guide_high_pct'][-2]:.1f}pp，"
+            f"而下季指引中值 "
+            f"{(guide['gross_margin_guide_low_pct'][-1] + guide['gross_margin_guide_high_pct'][-1]) / 2:.1f}%，"
             "管理层同时把 2H26 的 N2 稀释量化为 3–4pp —— 这条线的方向已经确定向下。"
         ),
     )
@@ -228,20 +265,22 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         "EX_OM", "营业利润率", quarters,
         guide["operating_margin_guide_low_pct"], guide["operating_margin_guide_high_pct"],
         guide["operating_margin_actual_pct"],
-        fmt="pct1", ylab="营业利润率", unit="%",
+        fmt="pct1", ylab="营业利润率", unit="%", xstep=LONG_STEP,
         src_extra=SOURCE_6K + "实际营业利润率 = 该季 6-K 合并损益表的营业利益 ÷ 净销售额 D。",
         extra_note=(
-            "<b>这是三条指引里最极端的一条</b>：窗口内没有任何一季落回区间之内，"
-            "全部从上限穿出去。它说明营业利润率的指引不是预测而是底线 —— "
-            "读这张图要问的不是「有没有超」，而是「超得比上季多还是少」。"
+            "<b>这张图是本次把窗口从 14 季拉到 42 季后改动最大的一张。</b>"
+            "按 2023 年起的那 14 季读，营业利润率<b>每一季都从上限穿出去</b>，"
+            "于是它看起来像一条底线而不是预测，「有没有超」这个问题根本不用问。"
+            "整段记录不是这样：落在区间内的季度有 14 个，跌破下限的有 3 个。"
+            "<b>「指引是底线」是 2023 年以后才成立的性质，不是这家公司的固有属性</b> —— "
+            "而那正好是它的定价权发生变化的同一段时间。"
         ),
     )
 
     # ── Distance from the guided midpoint, one chart per guided metric ────────
-    window = finished[-14:]
     midpoint_chart = midpoint_deviation(
         "EX_MIDPOINT", "收入", quarters, low, high, guide["actual_revenue_usd_bn"],
-        mode="pct",
+        mode="pct", window=len(finished), xstep=LONG_STEP,
         label=lambda quarter: month_label(quarter_end_month(quarter)),
         axis_note="x 轴标的是该季最后一个月。",
         src_extra=SOURCE_6K + "偏离为实际收入除以指引中值的自算值。",
@@ -263,7 +302,8 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
     gm_midpoint_chart = midpoint_deviation(
         "EX_GM_MIDPOINT", "毛利率", quarters,
         guide["gross_margin_guide_low_pct"], guide["gross_margin_guide_high_pct"],
-        guide["gross_margin_actual_pct"], mode="pp",
+        guide["gross_margin_actual_pct"], mode="pp", window=len(finished),
+        xstep=LONG_STEP,
         label=lambda quarter: month_label(quarter_end_month(quarter)),
         axis_note="x 轴标的是该季最后一个月。",
         
@@ -274,7 +314,8 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
     om_midpoint_chart = midpoint_deviation(
         "EX_OM_MIDPOINT", "营业利润率", quarters,
         guide["operating_margin_guide_low_pct"], guide["operating_margin_guide_high_pct"],
-        guide["operating_margin_actual_pct"], mode="pp",
+        guide["operating_margin_actual_pct"], mode="pp", window=len(finished),
+        xstep=LONG_STEP,
         label=lambda quarter: month_label(quarter_end_month(quarter)),
         axis_note="x 轴标的是该季最后一个月。",
         
@@ -288,6 +329,7 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
     )
 
     # ── What the beat is made of ──────────────────────────────────────────────
+    window = finished
     operating_leg = [
         (actual[quarter] * actual_fx[quarter] / (midpoint[quarter] * guide_fx[quarter]) - 1) * 100
         for quarter in window
@@ -316,11 +358,14 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         ),
         "xlabels": [month_label(quarter_end_month(quarter)) for quarter in window],
         "xrot": 90,
+        # 42 quarterly labels at 90 degrees turn the axis into a hairbrush; the
+        # reader navigates this axis by year, so one label per year.
+        "xstep": 4,
         "groups": [
             {"name": "新台币经营超额", "color": "NAVY", "values": rounded(operating_leg)},
             {"name": "汇率腿（假设 vs 实际）", "color": "GOLD", "values": rounded(fx_leg)},
         ],
-        # 28 bars in one card cannot carry 28 labels without overlapping; the
+        # 84 bars in one card cannot carry 84 labels without overlapping; the
         # numbers live one click away in this card's own table view.
         "bar_labels": False,
         "fmt": "pp1",
@@ -464,9 +509,6 @@ def build_payload(staging: dict) -> dict:
     long_platform = long["platform_mix_pct"]
     long_working = long["working_capital_days"]
     long_capex = long["capital_intensity"]
-    # One x label per year: 42 quarterly labels at 90 degrees turn the axis into
-    # a hairbrush, and the reader only ever navigates this axis by year.
-    LONG_STEP = 4
     long_intensity = [
         capex / revenue * 100
         for capex, revenue in zip(long_capex["capex_usd_bn"], long_capex["revenue_usd_bn"])
@@ -477,17 +519,51 @@ def build_payload(staging: dict) -> dict:
     platform_labels = long_labels[platform_from:]
     node_birth = long["node_first_reported"]
     node_first_real = long["node_first_nonzero"]
+    # Everything the eight-quarter window used to carry, on the ten-year one.
+    # The first four year-on-year cells are None rather than zero: 2015 is not
+    # in this record, so the growth rate for 2016Q1..Q4 has no denominator and
+    # inventing one would put a fabricated point at the left edge of every
+    # growth chart on the page.
+    long_fin = long["financials"]
+    long_cash = long["cash_flow_ntd_bn"]
+    long_revenue = long_fin["revenue_usd_bn"]
+    long_shipments = long_fin["wafer_shipments_kpcs_12in_equiv"]
+    long_asp = [
+        revenue * 1_000_000 / units
+        for revenue, units in zip(long_revenue, long_shipments)
+    ]
+
+    def year_on_year(values: list[float]) -> list[float | None]:
+        return [None if index < 4 else (values[index] / values[index - 4] - 1) * 100
+                for index in range(len(values))]
+
+    long_revenue_yoy = year_on_year(long_revenue)
+    long_capex_usd_yoy = year_on_year(long_capex["capex_usd_bn"])
 
     # CapEx is reported in NT$ but tracked against a US$ line, so the threshold
     # is converted at the quarter's own realised rate and marked as derived.
     capex_threshold_ntd = round(19.0 * guidance["q2_actual"]["usd_ntd"], 1)
+    # Each threshold now runs on the longest window its own series has, not on
+    # a shared eight. Two of the five are shorter than the rest and it is the
+    # disclosure that limits them, not this page: TSMC first reported the
+    # platform split in 2018Q1 and first broke 2nm out of "advanced" in 2025Q2.
+    # Trimming to the first reported quarter is why they start where they do --
+    # a run of leading blanks would read as a series that fell to zero.
+    two_nm_from = leading_gap(long_tech["2nm"])
     tracked = {
-        "毛利率": (labels, financials["gross_margin_pct"], "pct1", "毛利率", "毛利率", None),
-        "库存天数": (labels, working["inventory_days"], "f0", "天", "库存天数", None),
-        "HPC 占比（集中度）": (labels, platform["hpc"], "pct0", "净收入占比", "HPC 占比", None),
-        "2nm 占晶圆收入": (labels, technology["2nm"], "pct0", "晶圆收入占比", "2nm 占比", None),
+        "毛利率": (long_labels, long_fin["gross_margin_pct"], "pct1", "毛利率", "毛利率", None),
+        "库存天数": (long_labels, long_working["inventory_days"], "f0", "天", "库存天数", None),
+        "HPC 占比（集中度）": (
+            platform_labels, long_platform["hpc"][platform_from:],
+            "pct0", "净收入占比", "HPC 占比", None,
+        ),
+        "2nm 占晶圆收入": (
+            long_labels[two_nm_from:], long_tech["2nm"][two_nm_from:],
+            "pct0", "晶圆收入占比", "2nm 占比", None,
+        ),
         "单季 CapEx": (
-            labels, cash["capital_expenditures"], "f0c", "NT$B", "单季 CapEx", capex_threshold_ntd,
+            long_labels, long_cash["capital_expenditures"], "f0c", "NT$B",
+            "单季 CapEx", capex_threshold_ntd,
         ),
     }
 
@@ -510,6 +586,9 @@ def build_payload(staging: dict) -> dict:
                 xlabels,
                 values,
                 threshold,
+                # One label per year once a series is long enough to need it;
+                # the short ones keep every label.
+                xstep=LONG_STEP if len(xlabels) > 16 else None,
                 fmt=fmt,
                 ylab=ylab,
                 actual_name=actual_name,
@@ -566,9 +645,13 @@ def build_payload(staging: dict) -> dict:
         },
         {
             "kind": "gs_bar",
-            "title": "收入 US$40.20B 落指引上端，全年增速指引从 30%+ 上调到略高于 40%",
-            "xlabels": labels,
-            "values": financials["revenue_usd_bn"],
+            "title": (
+                f"收入 US${long_revenue[-1]:.2f}B 落指引上端，"
+                f"十年里长到 {long_revenue[-1] / long_revenue[0]:.1f} 倍"
+            ),
+            "xlabels": long_labels,
+            "xstep": LONG_STEP,
+            "values": long_revenue,
             "legend": "季度收入",
             "fmt": "usd1",
             "yfmt": "usd1",
@@ -576,23 +659,38 @@ def build_payload(staging: dict) -> dict:
             "ylab": "US$B",
             "ylab2": "同比增速",
             "yoy": {
-                "name": "收入 YoY (RHS)",
-                "values": financials["revenue_yoy_pct"],
+                "name": "收入 YoY (RHS) D",
+                "values": rounded(long_revenue_yoy),
                 "color": "GREEN",
-                "yfmt": "pct1",
+                "yfmt": "pct0",
             },
             "note": (
-                f"环比 +12.0%、同比 +33.7%，较市场预期 US${consensus['revenue_usd_bn']:.2f}B 高 "
-                f"{pct_change(financials['revenue_usd_bn'][-1], consensus['revenue_usd_bn']):.1f}%；"
+                f"本季环比 {signed(pct_change(long_revenue[-1], long_revenue[-2]))}、"
+                f"同比 {signed(long_revenue_yoy[-1])}，较市场预期 "
+                f"US${consensus['revenue_usd_bn']:.2f}B 高 "
+                f"{pct_change(long_revenue[-1], consensus['revenue_usd_bn']):.1f}%；"
                 f"Q3 指引中值 US${q3_midpoint:.1f}B，环比 {signed(q3_midpoint_growth)}，不减速。"
+                "<b>十年的窗口里这条同比线穿越过零轴三次</b>："
+                f"最低 {min(v for v in long_revenue_yoy if v is not None):.0f}%"
+                f"（{long_labels[long_revenue_yoy.index(min(v for v in long_revenue_yoy if v is not None))]}），"
+                f"最高 {max(v for v in long_revenue_yoy if v is not None):.0f}%"
+                f"（{long_labels[long_revenue_yoy.index(max(v for v in long_revenue_yoy if v is not None))]}）。"
+                "八季的窗口只能看到最近这一段单边上行。"
+                "前四格没有同比线：2015 年不在本记录内，没有分母。"
             ),
-            "src_extra": "美元收入与同比来自各季 earnings release；市场预期为财报前一致预期，不具名。",
+            "src_extra": (
+                "美元收入逐季读自各季 earnings release 与法说会简报；同比为自算 D；"
+                "市场预期为财报前一致预期，不具名。"
+            ),
         },
         {
             "kind": "gs_bar",
-            "title": f"环比 +12.0% 里约三分之二来自价与结构：出货仅 {signed(shipment_qoq)}，隐含 ASP {signed(asp_qoq)}",
-            "xlabels": labels,
-            "values": shipments,
+            "title": (
+                f"本季环比里大部分来自价与结构：出货 {signed(shipment_qoq)}，隐含 ASP {signed(asp_qoq)}"
+            ),
+            "xlabels": long_labels,
+            "xstep": LONG_STEP,
+            "values": long_shipments,
             "legend": "晶圆出货（12 吋等值）",
             "fmt": "f0c",
             "yfmt": "f0c",
@@ -601,13 +699,18 @@ def build_payload(staging: dict) -> dict:
             "ylab2": "隐含 ASP（美元 / 片）",
             "yoy": {
                 "name": "隐含 ASP（美元/片，RHS） D",
-                "values": asp,
+                "values": rounded(long_asp),
                 "color": "GOLD",
                 "yfmt": "f0c",
             },
             "note": (
-                f"隐含 ASP = 季度美元收入 / 晶圆出货，Q2 为 ${asp[-1]:,.0f}/片；"
+                f"隐含 ASP = 季度美元收入 / 晶圆出货，本季 ${long_asp[-1]:,.0f}/片；"
                 "抬价的是 2nm 首季贡献 3%、3nm 占比 +5pp 与 HPC mix，不是单纯提价。"
+                f"<b>十年的窗口说明这不是一次提价而是一条结构线</b>：ASP 从 "
+                f"${long_asp[0]:,.0f} 升到 ${long_asp[-1]:,.0f}（{long_asp[-1] / long_asp[0]:.1f} 倍），"
+                f"而同期出货只从 {long_shipments[0]:,} 增到 {long_shipments[-1]:,} 千片"
+                f"（{long_shipments[-1] / long_shipments[0]:.1f} 倍）—— "
+                "收入的十倍增长里，量只解释了其中一小部分。"
             ),
             "src_extra": (
                 "出货量与美元收入来自各季 earnings release / management report；隐含 ASP 为两者相除的自算值，"
@@ -616,12 +719,16 @@ def build_payload(staging: dict) -> dict:
         },
         {
             "kind": "lines",
-            "title": "毛利率 67.7% 超指引上限，但 Q3 指引中值已降到 66%",
+            "title": (
+                f"毛利率 {long_fin['gross_margin_pct'][-1]:.1f}% 超指引上限，"
+                f"但 Q3 指引中值已降到 {q3_gm_midpoint:.0f}%"
+            ),
             "ref": "EX_MARGIN_LEVEL",
-            "xlabels": labels,
+            "xstep": LONG_STEP,
+            "xlabels": long_labels,
             "series": [
-                {"name": "毛利率", "values": financials["gross_margin_pct"], "color": "NAVY"},
-                {"name": "营业利润率", "values": financials["operating_margin_pct"], "color": "MBLUE"},
+                {"name": "毛利率", "values": long_fin["gross_margin_pct"], "color": "NAVY"},
+                {"name": "营业利润率", "values": long_fin["operating_margin_pct"], "color": "MBLUE"},
             ],
             "fmt": "pct1",
             "yfmt": "pct1",
@@ -630,7 +737,15 @@ def build_payload(staging: dict) -> dict:
             "ylab": "利润率",
             "note": (
                 f"管理层首次量化 2H26 的 N2 稀释 3–4pp，叠加海外厂后期 3–4pp；"
-                f"Q3 指引中值 {q3_gm_midpoint:.1f}%，较本季 -1.7pp。67.7% 大概率是本周期顶点。"
+                f"Q3 指引中值 {q3_gm_midpoint:.1f}%，较本季 "
+                f"{q3_gm_midpoint - long_fin['gross_margin_pct'][-1]:+.1f}pp。"
+                f"<b>但「本周期顶点」要放在十年里看才有意义</b>："
+                f"这条线的十年区间是 {min(long_fin['gross_margin_pct']):.1f}%"
+                f"（{long_labels[long_fin['gross_margin_pct'].index(min(long_fin['gross_margin_pct']))]}）到 "
+                f"{max(long_fin['gross_margin_pct']):.1f}%"
+                f"（{long_labels[long_fin['gross_margin_pct'].index(max(long_fin['gross_margin_pct']))]}），"
+                f"而 2018–2019 那一段曾在 {min(long_fin['gross_margin_pct']):.0f}% 附近连着走了两年 —— "
+                "这家公司的毛利率不是单调抬升的，它有过一段完整的下行。"
                 "本图画的是水平，逐季指引区间与兑现记录见 Exhibit {EX_GM}。"
             ),
             "src_extra": "利润率与指引来自 TSMC earnings release；稀释幅度为管理层在电话会上的量化口径。",
@@ -647,7 +762,7 @@ def build_payload(staging: dict) -> dict:
             "ylab": "US$B",
             "note": (
                 f"新台币口径下本季 CapEx 同比 {signed(capex_ntd_yoy)}、收入同比 {signed(revenue_ntd_yoy)}；"
-                "两条增速的八季美元口径对照见下一节。"
+                "两条增速的美元口径长序列对照见 Exhibit {EX_CROSSOVER}。"
             ),
             "src_extra": (
                 "三次口径依次为 1 月 US$52–56B、4 月 closer to US$56B、7 月 US$60–64B；"
@@ -676,12 +791,18 @@ def build_payload(staging: dict) -> dict:
         },
         {
             "kind": "grouped_bars",
-            "title": "CapEx 环比 +41%，自由现金流反而下降 17.5%",
-            "xlabels": labels,
+            "title": (
+                f"CapEx 环比 "
+                f"{signed(pct_change(long_cash['capital_expenditures'][-1], long_cash['capital_expenditures'][-2]))}，"
+                f"自由现金流 "
+                f"{signed(pct_change(long_cash['free_cash_flow'][-1], long_cash['free_cash_flow'][-2]))}"
+            ),
+            "xlabels": long_labels,
+            "xstep": LONG_STEP,
             "groups": [
-                {"name": "经营现金流", "values": cash["operating_cash_flow"], "color": "BLUE"},
-                {"name": "资本开支", "values": cash["capital_expenditures"], "color": "NAVY"},
-                {"name": "自由现金流 D", "values": cash["free_cash_flow"], "color": "MBLUE"},
+                {"name": "经营现金流", "values": long_cash["operating_cash_flow"], "color": "BLUE"},
+                {"name": "资本开支", "values": long_cash["capital_expenditures"], "color": "NAVY"},
+                {"name": "自由现金流 D", "values": long_cash["free_cash_flow"], "color": "MBLUE"},
             ],
             "fmt": "f0c",
             "yfmt": "f0c",
@@ -689,8 +810,14 @@ def build_payload(staging: dict) -> dict:
             "ylab": "NT$B",
             "bar_labels": False,
             "note": (
-                "资本强度从 30.9% 跳到 39.0%；股息年化 NT$622B，本年自由现金流仍可覆盖约两倍，"
+                "资本强度见 Exhibit {EX_INTENSITY}；股息年化 NT$622B，本年自由现金流仍可覆盖约两倍，"
                 "现金流压缩暂未威胁股东回报。"
+                f"<b>十年里自由现金流为负的季度有 "
+                f"{sum(1 for value in long_cash['free_cash_flow'] if value < 0)} 个</b>"
+                f"（最低 {min(long_cash['free_cash_flow']):,.0f} NT$B，"
+                f"{long_labels[long_cash['free_cash_flow'].index(min(long_cash['free_cash_flow']))]}）—— "
+                "在一家把资本开支按付款节奏落账的公司里，单季自由现金流转负是扩产的常态而不是警讯，"
+                "八季的窗口里一次都看不到。"
             ),
             "src_extra": "季度新台币现金流口径；FCF = 经营现金流 − 现金支付资本开支，按 TSMC 定义复算。",
         },
@@ -823,53 +950,48 @@ def build_payload(staging: dict) -> dict:
             ),
         },
     ]
+    # The check tables run on the same window as the charts they back. An
+    # eight-row table under a forty-two-point chart is not a check.
     financial_table = []
     mix_table = []
     cash_table = []
-    guidance_table = []
-    for index, period in enumerate(periods):
+    for index, quarter in enumerate(long["quarters"]):
+        label = quarter_label(quarter)
+        yoy = long_revenue_yoy[index]
         financial_table.append([
-            period,
-            f"US${financials['revenue_usd_bn'][index]:.2f}B",
-            f"{financials['revenue_yoy_pct'][index]:.1f}%",
-            f"{financials['gross_margin_pct'][index]:.1f}%",
-            f"{financials['operating_margin_pct'][index]:.1f}%",
-            f"NT${financials['eps_ntd'][index]:.2f}",
-            f"{shipments[index] / 1000:.3f}M",
-            f"${asp[index]:,.0f} D",
+            label,
+            f"US${long_revenue[index]:.2f}B",
+            f"{yoy:.1f}% D" if yoy is not None else "—",
+            f"{long_fin['gross_margin_pct'][index]:.1f}%",
+            f"{long_fin['operating_margin_pct'][index]:.1f}%",
+            f"NT${long_fin['eps_ntd'][index]:.2f}",
+            f"{long_shipments[index] / 1000:.3f}M",
+            f"${long_asp[index]:,.0f} D",
         ])
         # "—" is not a formatting nicety: a node with no row in the company's
         # table is a different fact from a reported 0%, and printing "0%" for it
         # is the thing the mix_notes used to have to apologise for.
-        def mix_cell(values: list[float | None]) -> str:
-            value = values[index]
+        def mix_cell(values: list[float | None], at: int = index) -> str:
+            value = values[at]
             return "—" if value is None else f"{value:.0f}%"
 
         mix_table.append([
-            period,
-            mix_cell(technology["2nm"]),
-            mix_cell(technology["3nm"]),
-            mix_cell(technology["5nm"]),
-            mix_cell(technology["7nm"]),
-            mix_cell(technology["advanced_7nm_and_below"]),
-            mix_cell(platform["hpc"]),
-            mix_cell(platform["smartphone"]),
+            label,
+            mix_cell(long_tech["2nm"]),
+            mix_cell(long_tech["3nm"]),
+            mix_cell(long_tech["5nm"]),
+            mix_cell(long_tech["7nm"]),
+            mix_cell(long_tech["advanced_7nm_and_below"]),
+            mix_cell(long_platform["hpc"]),
+            mix_cell(long_platform["smartphone"]),
         ])
         cash_table.append([
-            period,
-            f"NT${cash['operating_cash_flow'][index]:,.2f}B",
-            f"NT${cash['capital_expenditures'][index]:,.2f}B",
-            f"NT${cash['free_cash_flow'][index]:,.2f}B D",
-            f"{working['receivable_days'][index]}天",
-            f"{working['inventory_days'][index]}天",
-        ])
-        midpoint = (guide_history["low"][index] + guide_history["high"][index]) / 2
-        guidance_table.append([
-            period,
-            f"US${guide_history['low'][index]:.1f}–{guide_history['high'][index]:.1f}B",
-            f"US${midpoint:.2f}B D",
-            f"US${guide_history['actual'][index]:.2f}B",
-            f"{signed(pct_change(guide_history['actual'][index], midpoint))} D",
+            label,
+            f"NT${long_cash['operating_cash_flow'][index]:,.2f}B",
+            f"NT${long_cash['capital_expenditures'][index]:,.2f}B",
+            f"NT${long_cash['free_cash_flow'][index]:,.2f}B D",
+            f"{long_working['receivable_days'][index]}天",
+            f"{long_working['inventory_days'][index]}天",
         ])
 
     guide_rows = [
@@ -899,10 +1021,11 @@ def build_payload(staging: dict) -> dict:
     ]
 
     inventory_expectation = threshold_exhibit(
-        "上季判断库存回落到 75–78 天，实际升到 87 天（被证伪）",
-        labels,
-        working["inventory_days"],
+        f"上季判断库存回落到 75–78 天，实际升到 {long_working['inventory_days'][-1]} 天（被证伪）",
+        long_labels,
+        long_working["inventory_days"],
         78.0,
+        xstep=LONG_STEP,
         fmt="f0",
         ylab="天",
         actual_name="库存天数",
@@ -910,8 +1033,13 @@ def build_payload(staging: dict) -> dict:
         note=(
             "管理层归因于 N2 爬坡备货；这是上季 12 条判断里唯一被明确证伪的一条，"
             "也是本页把 90 天设为下季警戒线的由来。"
+            f"<b>但 78 天这条线放在十年里并不高</b>：十年区间 "
+            f"{min(long_working['inventory_days'])}–{max(long_working['inventory_days'])} 天，"
+            f"高于 78 天的季度有 "
+            f"{sum(1 for value in long_working['inventory_days'] if value > 78)} 个，"
+            "上季那个「回落到 75–78 天」的预期本身就是拿最近几年的水平当常态。"
         ),
-        src_extra="库存天数来自各季 management report；75–78 天为上季本地分析稿的预期区间。",
+        src_extra="库存天数逐季读自各季 management report；75–78 天为上季本地分析稿的预期区间。",
     )
 
     intensity_low = min(long_intensity)
@@ -919,6 +1047,7 @@ def build_payload(staging: dict) -> dict:
     intensity_high = max(long_intensity)
     intensity_high_at = long_labels[long_intensity.index(intensity_high)]
     capex_intensity_chart = {
+        "ref": "EX_INTENSITY",
         "kind": "gs_line",
         "title": (
             f"资本强度十年从 {long_intensity[0]:.1f}% 升到 {long_intensity[-1]:.1f}%，"
@@ -948,15 +1077,17 @@ def build_payload(staging: dict) -> dict:
     }
 
     growth_crossover_chart = {
+        "ref": "EX_CROSSOVER",
         "kind": "lines",
         "title": (
-            f"CapEx 增速 {capex_usd_yoy[-1]:+.0f}% 反超收入增速 "
-            f"{financials['revenue_yoy_pct'][-1]:+.0f}%"
+            f"CapEx 增速 {long_capex_usd_yoy[-1]:+.0f}% 反超收入增速 "
+            f"{long_revenue_yoy[-1]:+.0f}%"
         ),
-        "xlabels": labels,
+        "xlabels": long_labels,
+        "xstep": LONG_STEP,
         "series": [
-            {"name": "收入 YoY", "values": financials["revenue_yoy_pct"], "color": "NAVY"},
-            {"name": "CapEx YoY", "values": capex_usd_yoy, "color": "RED"},
+            {"name": "收入 YoY", "values": rounded(long_revenue_yoy), "color": "NAVY"},
+            {"name": "CapEx YoY", "values": rounded(long_capex_usd_yoy), "color": "RED"},
         ],
         "fmt": "pct1",
         "yfmt": "pct1",
@@ -965,11 +1096,16 @@ def build_payload(staging: dict) -> dict:
         "ylab": "同比增速",
         "note": (
             "上季管理层称「收入增速快于 CapEx 增速」；本季两条线交叉，这是股价的直接压制项。"
-            "两条都是美元口径，不含汇率错配。"
+            "<b>十年的窗口说明交叉本身不稀奇 —— 稀奇的是它出现在这个位置</b>："
+            f"38 个有同比的季度里 CapEx 增速高于收入增速的有 "
+            f"{sum(1 for a, b in zip(long_capex_usd_yoy, long_revenue_yoy) if a is not None and b is not None and a > b)} 个，"
+            "但前几次都发生在收入增速本身很低甚至为负的下行段（扩产逆周期），"
+            "这一次两条线是在收入同比 30% 以上的位置交叉的。"
+            "两条都是美元口径，不含汇率错配。前四格没有同比：2015 年不在本记录内。"
         ),
         "src_extra": (
-            "收入同比为公司披露，CapEx 同比按各季 earnings conference 的美元 CapEx 自算；"
-            "同比需要上年同期，故序列多带四个季度，只展示最近八季。"
+            "收入与美元 CapEx 逐季读自各季 earnings release 与 quarterly management report；"
+            "两条同比均为自算 D。"
         ),
     }
 
@@ -1027,30 +1163,28 @@ def build_payload(staging: dict) -> dict:
         ),
         {
             "n": next_table_number + 2,
-            "title": "八季度财务、出货与隐含 ASP",
+            "title": f"{len(long['quarters'])} 季度财务、出货与隐含 ASP（2016Q1 起）",
             "headers": ["期间", "收入", "收入 YoY", "毛利率", "营业利润率", "稀释 EPS", "晶圆出货", "隐含 ASP"],
             "rows": financial_table,
         },
         {
             "n": next_table_number + 3,
-            "title": "八季度制程与平台收入组合",
+            "title": f"{len(long['quarters'])} 季度制程与平台收入组合（2016Q1 起）",
             "headers": ["期间", "2nm", "3nm", "5nm", "7nm", "≤7nm", "HPC", "Smartphone"],
             "rows": mix_table,
         },
         {
             "n": next_table_number + 4,
-            "title": "八季度现金流与营运资金",
+            "title": f"{len(long['quarters'])} 季度现金流与营运资金（新台币，2016Q1 起）",
             "headers": ["期间", "经营现金流", "资本开支", "自由现金流", "应收天数", "库存天数"],
             "rows": cash_table,
         },
-        {
-            "n": next_table_number + 5,
-            "title": "八季度美元收入指引兑现",
-            "headers": ["期间", "公司指引", "中值", "实际", "较中值"],
-            "rows": guidance_table,
-        },
-        {**delivery_table, "n": next_table_number + 6},
-        ai_capex_cycle_table(next_table_number + 7),
+        # The eight-quarter guidance table used to sit here. It is gone: the
+        # full 43-quarter record below carries the same five columns and four
+        # more, so keeping both would mean two tables that must agree and one
+        # of them silently shorter.
+        {**delivery_table, "n": next_table_number + 5},
+        ai_capex_cycle_table(next_table_number + 6),
     ]
 
     return {
@@ -1102,6 +1236,8 @@ def build_payload(staging: dict) -> dict:
                     "先看上季留的问题闭环了几条、这一季对公司自己的指引和对市场预期各兑现到什么程度，"
                     "再谈本季。公司每季指引三个数——收入、毛利率、营业利润率——三张图各给一条完整记录，"
                     "最后拆开超额里经营与汇率各占多少。"
+                    "这条记录是 2016Q1 起的 42 个已完结季，不是最近八季：只看最近那一段，"
+                    "三条指引都像「从不被打破的底线」；整段记录里三条各自都被打破过。"
                 ),
                 "exhibits": settled_ex,
             },
@@ -1128,7 +1264,7 @@ def build_payload(staging: dict) -> dict:
         "notes": [
             "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
             f"Exhibit {next_ex[0]['n']} 与其后各图的阈值是本地研究设定，不是公司指引，也不构成评级或投资建议；「距阈值余量」统一为正值代表安全侧。",
-            f"第一节的指引兑现三张图（Exhibit {settled_ex[3]['n']}／{settled_ex[4]['n']}／{settled_ex[5]['n']}）用的是同一批 6-K：每份法说会 6-K 同时给出下一季的收入区间、毛利率区间、营业利润率区间与假设汇率，实际值取自随后一季 6-K 的合并损益表；毛利率与营业利润率由毛利、营业利益分别除以净销售额得出，与本页 financials 的八季逐季对到小数点后一位。",
+            f"第一节的指引兑现三张图（Exhibit {settled_ex[3]['n']}／{settled_ex[4]['n']}／{settled_ex[5]['n']}）用的是同一批 6-K：每份法说会 6-K 同时给出下一季的收入区间、毛利率区间、营业利润率区间与假设汇率，实际值取自随后一季 6-K 的合并损益表；毛利率与营业利润率由毛利、营业利益分别除以净销售额得出，与本页 financials 的八季逐季对到小数点后一位。指引区间与实际值一律按公司发布的一位小数比较：区间本身只印到 0.1pp，用比它更细的精度裁定越界，等于让第二次取整决定结论 —— 本页上一版正是这样把 2024Q1 与 2025Q1 两季判成了「超出上限」，而按公司自己的口径它们恰好落在上限上。",
             f"Exhibit {settled_ex[2]['n']} 的「核心」口径是报告净利减 VIS 税前一次性收益的算术差，未做税务调整；核心 EPS 按核心 / 报告净利之比折算报告 EPS。两者都不是公司定义的调整后指标，只用于回答「这个季度是不是真的超预期」。",
             "本页不接入月度营收公告，全页维持季度更新节奏。",
             "本页只发布公司披露值、可复算的简单派生值，以及明确标注的市场预期；D 标记代表 Derived / 自算。",
