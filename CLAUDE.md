@@ -408,6 +408,61 @@ origin/main 的总数 + 你自己那个 test_<slug>_dashboard.py 的数 == 你�
 - **skip 对上面那套数量算术结构上不可见。** 一个被跳过的测试**仍然计入 `Ran N`**，
   所以「基线 730 + 我的 1 条 = 731」在 render gate 根本没跑的情况下照样成立。数量
   能抓住 import 失败导致的静默掉测试，抓不住这个。**读 skip 数，不要读最后一行。**
+
+  **而「读 skip 数」的那个显然写法是坏的。**2026-09-01 实测，`-v` 输出里
+  `grep -ci "skipped"` 数到 **1**，真值（`TestResult.skipped`）是 **0** —— 匹配到的是
+  一条测试 docstring 里的这个词。`tests/` 下有 **6 个**文件的正文含 "skipped"，而 grep
+  只数到 1，因为 verbose 只打印 docstring 的**首行**：**这个读数取决于换行落在哪儿**。
+  同一天另一个会话用同一条命令报「0 skip」，答案碰巧是对的 —— **而真阴那次没有任何东西
+  会提醒你换仪器，所以它比假阳更危险**。两棵树上各量一次，把「无分辨力」变成了读数：
+
+  ```
+                        含 "skipped" 的 .py   verbose 里含该词的行   grep 读数   真实 skip
+  本分支（1130 tests）          6 个                  1 行              1           0
+  平行会话（1074 tests）        4 个                  0 行              0           0
+  ```
+
+  **同一条命令，在两棵都没有任何 skip 的树上给出不同的答案** —— 差别只在那个词落在各自
+  docstring 的第几行。正确的量法不经过文本：
+
+  ```bash
+  python3 - <<'EOF'
+  import unittest, io, sys
+  sys.path.insert(0, '.'); sys.path.insert(0, 'tests')
+  r = unittest.TextTestRunner(verbosity=0, stream=io.StringIO()).run(
+      unittest.defaultTestLoader.discover('tests', pattern='test_*.py', top_level_dir='tests'))
+  print(f"tests={r.testsRun} skipped={len(r.skipped)} failures={len(r.failures)} errors={len(r.errors)}")
+  EOF
+  ```
+
+  同一节上面那条 `grep -c _FailedTest` 是同一个仪器。四棵树实测（同一份抽取，四份拷贝，
+  各注入一处，注入前 `tests/` 下该字面量 0 处，四棵的 tests/skip/err 全部相同 1130/1/4）：
+
+  ```
+                                       grep -c _FailedTest   真实 load 失败
+  ctl   未注入                                  0                  0
+  注入到某 docstring 的第 3 行                   0                  0
+  注入到某 docstring 的第 1 行                   1                  0    ← 假阳
+  注入到测试方法名里                             1                  0    ← 假阳
+  ```
+
+  **所以不是「写进 `tests/` 就会」——是「落在 docstring 首行或方法名里才会」**，因为
+  verbose 只打印这两样。写在 docstring 正文里是安全的，这条值得说准：说成前者，读的人
+  会以为只要不提这个词就安全，于是连有用的记录也不写了。
+
+  **两条 grep 都只会假阳，不会假阴**（也实测了：往一个测试文件追加一行非法语法，真实
+  load 失败 1，`grep` 数到 2；真实 skip 1，`grep -ci skipped` 数到 3）。**grep ≥ 真值，
+  永远不会低于。**所以危害不是放过事故，是**发明事故** —— 然后在你查清它是假的之后，把
+  「这条闸门爱乱叫」变成不看它的理由，也就是 §6 结尾那条「一个会误红的闸门会被
+  `--no-verify` 绕过，然后什么都不保护」。而真阴之所以更险，是同一条链的另一端：一个
+  正确答案让你**没有机会**发现它爱乱叫。
+
+  最后一层是自指：这条闸门的靶字符串还没进语料，**而最可能写下它的正是记录本次事故的
+  那条 docstring** —— 它会在有人正确使用这个仓库的习惯（把事故写进 docstring）时失效。
+  这和 §3 数会话名那条、以及
+  「指引正则读到同段末尾的 capital budget 句」是同一族：**一个把「讲这件事的文字」算进去
+  的计数，对它要回答的问题按构造无分辨力**；而匹配失败会报 `None`、匹配错句会报一个
+  很像样的数，后者不会让任何人停下来。
 - **一次红不构成证据，除非你知道是什么把它变红的。** 上面每一条防的都是**假绿**；这一条
   是反方向,而它同样会让整套变异验证失去意义。台架普遍把 `returncode != 0` 读成「闸门
   响了」,但非零可以来自任何原因。实测过:往 `build/board.py` 末尾追加一行非法语法,再跑
