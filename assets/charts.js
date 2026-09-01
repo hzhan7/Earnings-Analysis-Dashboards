@@ -225,6 +225,10 @@
       'stroke-width': o.halo === false ? null : fscale(o.halo_w || 2.4),
       'stroke-linejoin': o.halo === false ? null : 'round',
       'paint-order': o.halo === false ? null : 'stroke fill',
+      /* 只给 x 轴刻度标签打这个记号：渲染闸门要问的是「这张图给它的最后一格标了
+         刻度吗」，而不是「这个字符串在画布上出现过吗」—— 末格的值常常同时被
+         end_label 或柱头标签印出来，按全体 <text> 找就会被那些印记满足。 */
+      'data-xtick': o.xtick ? '1' : null,
     }, parent);
     t.textContent = s;
     return t;
@@ -736,8 +740,21 @@
        所以按最长标签反算一次需要的带高，**只增不减**：月份标签的图算出来比常数小，
        走 max 之后一个像素都不变；只有长标签的图会把带子撑开到真正够用。 */
     var xstep = ex.xstep || 1, xlEm = 1;
-    for (i = 0; i < n; i += xstep)
-      if (labels[i] != null) xlEm = Math.max(xlEm, emWidth(labels[i]));
+    /* 刻度下标从**末尾**倒着排，不从 0 正着排。正着排时最后一格只有在
+       (n-1) % xstep === 0 时才落在刻度上 —— 全站 198 张设了 xstep 的图里 **196 张**
+       不满足，于是每张图标题正在讲的那个季度，x 轴上恰恰没有它的标签。把窗口从
+       八季拉到 42 季正是把页面推进这个状态的动作（xstep 只有长轴才需要），所以
+       转换得越多这个数越大，不会自己收敛。
+       倒排保证末格必标；再把最小的那个下标换成 0，让窗口起点也有标签 —— 它一定
+       落在 (0, xstep) 之间，换过去只把首个间隔从 xstep 拉到 xstep + (n-1)%xstep，
+       不会和相邻刻度挤在一起。
+       两处用同一个集合：算标签带高的扫描和真正画标签的循环。分开写就会出现
+       「按一组标签算带高、画的却是另一组」，而那种错没有任何东西会报。 */
+    var xTicks = [];
+    for (i = n - 1; i >= 0; i -= xstep) xTicks.push(i);
+    if (xTicks.length && xTicks[xTicks.length - 1] !== 0) xTicks[xTicks.length - 1] = 0;
+    for (var xw = 0; xw < xTicks.length; xw++)
+      if (labels[xTicks[xw]] != null) xlEm = Math.max(xlEm, emWidth(labels[xTicks[xw]]));
     if (rot !== 0)
       XB = Math.max(XB, xlEm * fscale(8.2) * (rot === 90 ? 1 : 0.707) + fscale(10));
     /* 新图型里 qtr_bar / grouped_bars 的右轴（y/y、误差）是可选的：payload 没给 ex.line
@@ -971,7 +988,6 @@
     if (y0 < -1e-9 && y1 > 1e-9)
       el('line', { x1: M.l, x2: M.l + pw, y1: Y(0), y2: Y(0), stroke: C.AXIS, 'stroke-width': 0.9 }, svg);
 
-    var step = xstep;
     /* x 标签的字号上界 —— 两条约束取严的那条（xlEm 在上面算 XB 时已求过，不重复扫）：
 
        轴向：相邻两个标签不许互压。竖排只占一个行高（与文字长度无关），横排要整条塞进
@@ -986,11 +1002,12 @@
     var xlCapAxis = rot === 90 ? band / 1.15 : (rot === 0 ? band : band * 1.414) / xlEm;
     var xlCapDepth = rot === 0 ? Infinity : (rot === 90 ? XB : XB * 1.414) / xlEm;
     var xlfs = fitSize(8.2, Math.min(xlCapAxis, xlCapDepth));
-    for (i = 0; i < n; i++) {
-      if (i % step) continue;
+    for (var xd = 0; xd < xTicks.length; xd++) {
+      i = xTicks[xd];
       var xx = Xc(i), yy = M.t + ph + fscale(rot === 0 ? 13 : 9);
       txt(svg, xx, yy, labels[i], { size: +xlfs.toFixed(2), anchor: rot === 0 ? 'middle' : 'end',
-        transform: rot === 0 ? null : 'rotate(' + (-rot) + ' ' + xx + ' ' + yy + ')' });
+        transform: rot === 0 ? null : 'rotate(' + (-rot) + ' ' + xx + ' ' + yy + ')',
+        xtick: true });
     }
 
     /* 右轴刻度（范围与零点对齐在上面已经定好） */

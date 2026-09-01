@@ -158,6 +158,47 @@ function render(slug) {
     }
   }
 
+  /* Every chart labels its own last point.
+   *
+   * Derived from what an x axis promises, not from how this one broke: if a
+   * chart plots N points and thins its ticks, the newest point is the one the
+   * card's title, its end label and the page's headline are all talking about,
+   * so it is the one tick that cannot be dropped. Stepping from index 0 drops
+   * it whenever (N-1) % xstep !== 0, which was true for 196 of the 198 charts
+   * that set an xstep -- and pulling a window from eight quarters to forty-two
+   * is precisely the edit that gives a chart an xstep, so the count grew with
+   * the migration instead of being fixed by it.
+   *
+   * Read from `data-xtick`, which the renderer puts only on x-axis ticks. The
+   * last label's text usually also appears as an end label or a bar label, so
+   * scanning every <text> would be satisfied by those and could never fail.
+   * That makes an empty tick set the failure this check must also catch: if
+   * the attribute is ever dropped, `drawn.length === 0` is reported rather
+   * than passing silently on a chart that labels nothing. */
+  const payload = dom.window.DASH;
+  if (payload && Array.isArray(payload.sections)) {
+    const charts = [...doc.querySelectorAll(".grid > *")];
+    const exhibits = payload.sections.flatMap((section) => section.exhibits || []);
+    exhibits.forEach((exhibit, index) => {
+      const labels = exhibit.xlabels || [];
+      const host = charts[index];
+      if (!labels.length || !host || !host.querySelector("svg")) return;
+      const drawn = [...host.querySelectorAll("svg text[data-xtick]")].map((n) =>
+        n.textContent
+      );
+      const last = String(labels[labels.length - 1]);
+      if (!drawn.length) {
+        errors.push(`no x-axis tick labels at all in ${locate(host)}`);
+      } else if (!drawn.includes(last)) {
+        errors.push(
+          `last x label ${JSON.stringify(last)} is never drawn ` +
+            `(${labels.length} points, ticks end at ${JSON.stringify(drawn[drawn.length - 1])}) ` +
+            `in ${locate(host)}`
+        );
+      }
+    });
+  }
+
   const nodata = [...doc.querySelectorAll("p.note")].filter((n) =>
     /无数据/.test(n.textContent)
   ).length;
