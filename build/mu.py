@@ -526,7 +526,7 @@ def quarter_charts(staging: dict) -> list[dict]:
         "line": {"name": "DRAM 占收入 (RHS)", "color": "GOLD",
                  "values": rounded(dram_share), "yfmt": "pct1", "ymax": 100},
         "fmt": "usd1", "yfmt": "usd1", "label_fmt": "usd1",
-        "ylab": "US$B", "rhs_label": "%",
+        "ylab": "US$B", "ylab2": "%",
         "note": (
             "<b>三段之和逐季等于合并损益表的收入，差额为零</b> —— "
             "这三行是 10-Q 收入注释里印出来的美元数（Revenue by Technology），"
@@ -845,7 +845,7 @@ def next_quarter_charts(staging: dict) -> list[dict]:
                  "values": rounded([v / 1000 for v in bal["total_debt_usd_m"]]),
                  "yfmt": "usd1"},
         "fmt": "usd1", "yfmt": "usd1", "label_fmt": "usd1",
-        "ylab": "US$B", "rhs_label": "US$B",
+        "ylab": "US$B", "ylab2": "US$B",
         "zero_line": True,
         "note": (
             "<b>这张图是上一轮周期留下的账单被还掉的过程。</b>"
@@ -898,7 +898,7 @@ def routine_charts(staging: dict) -> list[dict]:
         "line": {"name": "毛利率 (RHS)", "color": "GOLD",
                  "values": rounded(margin), "yfmt": "pct0"},
         "fmt": "usd1", "yfmt": "usd1", "label_fmt": "usd1",
-        "ylab": "US$B", "rhs_label": "毛利率",
+        "ylab": "US$B", "ylab2": "毛利率",
         "zero_line": True,
         "note": (
             "<b>本页所有判断都应该放在这张图上读。</b>十五个财年里毛利率的完整区间是 "
@@ -930,7 +930,7 @@ def routine_charts(staging: dict) -> list[dict]:
         "line": {"name": "资本开支 ÷ 营收 (RHS)", "color": "RED",
                  "values": rounded(intensity), "yfmt": "pct0"},
         "fmt": "usd1", "yfmt": "usd1", "label_fmt": "usd1",
-        "ylab": "US$B", "rhs_label": "资本强度",
+        "ylab": "US$B", "ylab2": "资本强度",
         "note": (
             "<b>红线才是这张图的主角。</b>十五个财年里资本强度的区间是 "
             f"{min(intensity):.1f}%（{years[intensity.index(min(intensity))]}）到 "
@@ -1015,7 +1015,7 @@ def routine_charts(staging: dict) -> list[dict]:
         "line": {"name": "存货天数 DIO (RHS)", "color": "GOLD",
                  "values": rounded(inv_days), "yfmt": "f0"},
         "fmt": "usd1", "yfmt": "usd1", "label_fmt": "usd1",
-        "ylab": "US$B", "rhs_label": "天",
+        "ylab": "US$B", "ylab2": "天",
         "note": (
             "<b>存货这条柱子近两年是平的，而它本来最该动。</b>"
             f"从 {periods[0]} 到 {periods[-1]}，收入涨了 "

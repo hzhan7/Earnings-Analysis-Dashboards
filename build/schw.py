@@ -352,7 +352,7 @@ def highlight_exhibits(staging: dict, fin: dict, periods: list, ops: dict) -> li
         "yfmt": "f0c",
         "label_fmt": "f0c",
         "ylab": "千笔/日",
-        "rhs_label": "US$/笔",
+        "ylab2": "US$/笔",
         "note": (
             "这是 SCHW 收入函数里最容易读错的一处。把 RPT 当独立变量看，会得出"
             "「定价在恶化」的结论；但把两条放在一起看，量的斜率明显盖过价 —— "

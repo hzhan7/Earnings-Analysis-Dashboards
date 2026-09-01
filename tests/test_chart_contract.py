@@ -80,6 +80,52 @@ def exhibits() -> list[tuple[str, dict]]:
     return out
 
 
+class PayloadKeysAreReadTest(unittest.TestCase):
+    """Every key a builder publishes is a key some consumer reads."""
+
+    def test_no_exhibit_carries_a_key_no_consumer_reads(self) -> None:
+        """A misspelled key is dead config that reads as live config.
+
+        `build/bc.py` published `"rlab": "零售占比 %"` on two `stacked_dual`
+        charts. The renderer's right-axis title is `ylab2` (documented at
+        `charts.js:43`, drawn at 1029), so the label was silently dropped --
+        and because the right margin is *also* sized from `ylab2`
+        (`r: dual ? (ex.ylab2 ? 56 : 42)`), the axis was not merely unlabelled,
+        it never reserved room for a label. Nothing failed: the payload guard
+        accepts any finite value under any name, the chart drew, and the
+        builder source said the axis was labelled.
+
+        A second spelling, `rhs_label`, was doing the same thing on 18 charts
+        across five pages -- nine times the first one, and found only because
+        this check was written as a census rather than as a fix for `rlab`.
+        Twenty right-axis titles in total were being discarded while twenty-three
+        other pages spelled it `ylab2` and got theirs.
+
+        Asserted as an exact set rather than a bare "is empty" so that adding a
+        key the renderer genuinely reads through a computed path has to be
+        recorded here with its reason, instead of the whole check being deleted
+        the first time it is inconvenient.
+        """
+        consumers = "".join(
+            (ROOT / "assets" / name).read_text(encoding="utf-8")
+            for name in ("charts.js", "page.js")
+        )
+        unread = {}
+        for label, exhibit in exhibits():
+            for key in exhibit:
+                if key not in consumers:
+                    unread.setdefault(key, []).append(label)
+        self.assertEqual(
+            {key: sorted({name.split()[0] for name in where})
+             for key, where in sorted(unread.items())},
+            {},
+            "these exhibit keys appear in no consumer -- either the renderer "
+            "never reads them (a misspelling: check `ylab2`, `yfmt`, `ymax`) "
+            "or they are read through a computed path and belong in this "
+            "test's allowlist with the line that reads them",
+        )
+
+
 class RendererGuardTest(unittest.TestCase):
     """Source-level pins on `assets/charts.js`."""
 

@@ -272,7 +272,7 @@ def quarter_section(staging: dict) -> list[dict]:
         "line": {"name": "清算与交易费占比 (RHS)", "color": "GOLD",
                  "values": rounded(share), "yfmt": "pct1", "ymax": 100},
         "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
-        "ylab": "US$M", "rhs_label": "%",
+        "ylab": "US$M", "ylab2": "%",
         "note": (
             f"<b>本季总收入同比只增长 "
             f"{signed(pct_change(fin['total_revenues'][-1], fin['total_revenues'][-5]))}，"
@@ -409,7 +409,7 @@ def quarter_section(staging: dict) -> list[dict]:
         "line": {"name": "许可与其他费用协议 (RHS)", "color": "GOLD",
                  "values": rounded(fin["licensing_expense"]), "yfmt": "f0c"},
         "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
-        "ylab": "US$M", "rhs_label": "US$M",
+        "ylab": "US$M", "ylab2": "US$M",
         "note": (
             "<b>这条线是市场唯一拿来给 CME 建成本模型的口径，而公司从不把它写进任何申报文件。</b>"
             "本页能画出它，是因为它等于业绩新闻稿里的调整后费用合计减去合并损益表里的"
@@ -441,7 +441,7 @@ def quarter_section(staging: dict) -> list[dict]:
                 "values": rounded(md_long)},
         "line": {"name": "同比 (RHS)", "color": "RED", "values": rounded(md_yoy), "yfmt": "pct1"},
         "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
-        "ylab": "US$M", "rhs_label": "同比 %",
+        "ylab": "US$M", "ylab2": "同比 %",
         "note": (
             "<b>这条线现在扛着 CME 全部的同比增长，而它的加速与成交量无关。</b>"
             f"<b>但「一路创纪录」是八季窗口才成立的说法</b>：42 季里同比为负的有 "
@@ -598,7 +598,7 @@ def routine_section(staging: dict) -> list[dict]:
         "line": {"name": "平均每手费率 RPC", "color": "NAVY", "values": rounded(lng["rpc"]),
                  "yfmt": "usd3"},
         "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
-        "ylab": "千手/日", "rhs_label": "US$/手", "xstep": LONG_STEP,
+        "ylab": "千手/日", "ylab2": "US$/手", "xstep": LONG_STEP,
         "note": (
             f"<b>五十四个季度里，成交量与每手费率有 {opposite_moves(lng)} 个季度朝相反方向走。</b>"
             f"把两者的环比变动回归，斜率是 {rpc_slope(lng):.2f}（费率环比 % 对成交量环比 %），"
@@ -711,7 +711,7 @@ def routine_section(staging: dict) -> list[dict]:
         "line": {"name": "折合留存利差 (RHS)", "color": "GOLD",
                  "values": rounded(coll["retained_bp"]), "yfmt": "f0"},
         "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
-        "ylab": "US$M", "rhs_label": "基点",
+        "ylab": "US$M", "ylab2": "基点",
         "note": (
             "<b>这条收入被普遍当成利率敞口，但它是一个基点数，不是一个利率。</b>"
             f"{len(coll['quarters']) - 2} 个 2022 年以来的季度里，留存利差落在 "
@@ -744,7 +744,7 @@ def routine_section(staging: dict) -> list[dict]:
         "line": {"name": "占总收入 (RHS)", "color": "NAVY", "values": rounded(md_share),
                  "yfmt": "pct1"},
         "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
-        "ylab": "US$M", "rhs_label": "%", "xstep": LONG_STEP,
+        "ylab": "US$M", "ylab2": "%", "xstep": LONG_STEP,
         "note": (
             "<b>这条线在十三年半里翻了一倍多，而它在总收入里的占比几乎没动 —— "
             "因为清算费也涨了同样多。</b>"

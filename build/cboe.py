@@ -377,7 +377,7 @@ def highlight_exhibits(staging: dict) -> tuple[list[dict], dict]:
         "line": {"name": "Multi-listed 市占（RHS）", "color": "ORANGE",
                  "values": rounded(div["share_pct"]), "yfmt": "pct1"},
         "fmt": "f2", "yfmt": "f2", "label_fmt": "f2",
-        "ylab": "US$M/日", "rhs_label": "%",
+        "ylab": "US$M/日", "ylab2": "%",
         "note": (
             "<b>这是本页的核心。</b>两条线来自公司同一张表的同一列季度："
             "橙线是被引用最多的市占率，柱子是 ADV 乘 RPC —— 这门生意每天真正收到的钱。"
@@ -448,7 +448,7 @@ def highlight_exhibits(staging: dict) -> tuple[list[dict], dict]:
         "line": {"name": "场外大宗市占（RHS）", "color": "ORANGE",
                  "values": rounded(off["share_pct"]), "yfmt": "pct1"},
         "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
-        "ylab": "US$千/日", "rhs_label": "%",
+        "ylab": "US$千/日", "ylab2": "%",
         "note": (
             "把同样的算术搬到另一门生意上，形状没变："
             f"份额从 {off['share_pct'][0]:.1f}% 走到 {off['share_pct'][-1]:.1f}%，"
@@ -475,7 +475,7 @@ def highlight_exhibits(staging: dict) -> tuple[list[dict], dict]:
         "line": {"name": "每百股 net capture（US$，RHS）", "color": "ORANGE",
                  "values": rounded(cashm["us_net_capture_per_100"]), "yfmt": "usd3"},
         "fmt": "pct1", "yfmt": "pct1", "label_fmt": "pct1",
-        "ylab": "%", "rhs_label": "US$/百股",
+        "ylab": "%", "ylab2": "US$/百股",
         "note": (
             f"{len(cashm['quarters'])} 个季度，份额掉了 "
             f"{cashm['us_share_pct'][-1] - cashm['us_share_pct'][0]:.1f} 个百分点，"
@@ -672,7 +672,7 @@ def routine_exhibits(staging: dict) -> list[dict]:
         "line": {"name": "指数期权 RPC（US$，RHS）", "color": "ORANGE",
                  "values": rounded(kpil["index_options_rpc_usd"]), "yfmt": "usd3"},
         "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
-        "ylab": "千手/日", "rhs_label": "US$/合约",
+        "ylab": "千手/日", "ylab2": "US$/合约",
         "note": (
             f"{len(kpil['quarters'])} 个季度 —— 本页最长的一条线，"
             "因为 Bats 没有指数期权也没有期货，这两行在收购前后指的是同一件事，"
@@ -725,7 +725,7 @@ def routine_exhibits(staging: dict) -> list[dict]:
         "line": {"name": "回购均价（US$/股，RHS）", "color": "ORANGE",
                  "values": rounded(price), "yfmt": "f0c"},
         "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
-        "ylab": "US$M", "rhs_label": "US$/股",
+        "ylab": "US$M", "ylab2": "US$/股",
         "note": (
             "柱子有几季是空的，那几季公司没有回购，不是数据缺失。"
             "<b>橙线只画公司自己印出均价的那些季度</b> —— 其余季度留空而不是用金额除以股数补上，"

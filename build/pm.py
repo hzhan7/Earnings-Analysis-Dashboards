@@ -608,7 +608,7 @@ def cash_series(staging: dict) -> dict:
         "line": {"name": "资本开支 ÷ 经营现金流 (RHS)", "values": rounded(intensity),
                  "color": "RED", "yfmt": "pct1"},
         "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
-        "ylab": "US$M", "rhs_label": "资本开支占经营现金流 %",
+        "ylab": "US$M", "ylab2": "资本开支占经营现金流 %",
         "note": (
             "<b>把这一页放在本站其他公司旁边，这张图是最大的反差。</b>"
             "核对抽屉里那张跨页对照表追的是四家云厂的现金资本开支，"
