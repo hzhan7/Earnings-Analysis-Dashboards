@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amzn, avgo, axp, bc, cboe, cdns, cme, cost, googl, ibkr, ma, mc, mco,
+    amzn, avgo, axp, bc, cboe, cdns, cme, cost, googl, hkex, ibkr, ma, mc, mco,
     meta, msci, msft, mu, ndaq, nke, nvda, pm, race, rms, samsung, schw,
     skhynix, snps,
     spgi, tjx, tsm, v,
@@ -31,6 +31,7 @@ MODULES = {
     "cme": cme,
     "cost": cost,
     "googl": googl,
+    "hkex": hkex,
     "ibkr": ibkr,
     "ma": ma,
     "mc": mc,
@@ -170,6 +171,19 @@ ENTRIES = [
         "cadence_label": "自然年季度；完整披露",
         "headline_metrics": ["Revenue $119.8B", "Cloud +81.8%", "FCF -$5.9B"],
         "search_text": "googl google alphabet 谷歌 互联网 cloud search youtube",
+    },
+    {
+        "slug": "hkex",
+        "ticker": "00388.HK",
+        "name": "Hong Kong Exchanges and Clearing Limited",
+        "aliases": ["HKEX", "香港交易所", "港交所", "00388"],
+        "group": "exchanges",
+        "cadence_label": "自然年季度；只有单数季印损益表，双数季由减法得到",
+        "headline_metrics": ["收入及其他收益 HK$8,499M", "EBITDA 利润率 80.2%", "42 季里 21 季为自算"],
+        "search_text": ("hkex 00388 388 港交所 香港交易所 香港交易及结算所 交易所 现货市场 "
+                        "日均成交额 adt 衍生品 期交所 股票期权 lme 伦敦金属交易所 金属 "
+                        "沪港通 深港通 互联互通 stock connect 北向 南向 债券通 "
+                        "上市费 存管费 市场数据 结算 保证金 投资收益 利息回赠 港元 hkfrs"),
     },
     {
         "slug": "ibkr",

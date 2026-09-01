@@ -130,7 +130,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
     "amzn": 13, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cme": 14,
-    "cost": 13, "googl": 11, "ibkr": 21, "ma": 16, "mc": 3, "mco": 7, "meta": 10,
+    "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ma": 16, "mc": 3, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
     "spgi": 11, "tjx": 8, "tsm": 18, "v": 14,
@@ -671,6 +671,22 @@ CONVERTED = {
                   "which carries 2022Q3 and the prior-year 2021Q3. Every earlier "
                   "filing discusses the same items only qualitatively.",
     },
+    "hkex": {
+        # All four are the same limit, not four separate ones: HKEX only began
+        # printing a three-month market-statistics table in the announcement
+        # body in 2022, in a "this quarter vs the same quarter last year"
+        # section that carries exactly one prior-year comparative column. That
+        # one column is what reaches back to 2021Q1 and no further. The page's
+        # first draft said "the company only started printing quarterly figures
+        # in 2021", which was the same mistake the page itself was rewritten to
+        # fix -- a rule read off one file series and stated as a fact about the
+        # company. The annual report has carried quarterly figures since FY2016;
+        # what it does not carry is these market statistics.
+        "现货市场日均成交额与交易结算费": "2022 年起公告正文才带三个月市场统计表，且只有一个上年比较列。",
+        "越往损益表下面走": "same disclosure limit, the pass-through version of the same series.",
+        "三条量：期货": "same disclosure limit, volumes rather than value.",
+        "互联互通：北向日均": "same disclosure limit, Connect volumes.",
+    },
     "tsm": {
         "收入（本图仅近": "dollar band; the guided number runs US$6.1B to US$45.8B, so the "
                      "early bands collapse to a few pixels on a linear axis. The "
@@ -687,6 +703,12 @@ CONVERTED = {
 
 
 FLOOR_KIND = {
+    'hkex': {
+        '现货市场日均成交额与交易结算费': 'disclosure',
+        '越往损益表下面走': 'disclosure',
+        '三条量：期货': 'disclosure',
+        '互联互通：北向日均': 'disclosure',
+    },
     'avgo': {
         '把「超出自身指引」拆成两条腿': 'coverage',
         '收入（仅公司给过区间的 5 季）': 'disclosure',
@@ -1063,7 +1085,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 117)
+        self.assertEqual(settled.count("disclosure"), 121)
         self.assertEqual(settled.count("design"), 34)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
@@ -1310,6 +1332,11 @@ UNEXPLAINED_LONG = {
 # ("42 季里 39 季为正" licenses the 39) is not listed; the anchor is checked
 # exhibit-wide, not field by field, because a title routinely anchors its note.
 UNDERIVABLE_QUARTER_COUNTS = {
+    "hkex Ex3": ([13], "Ex3 的 x 轴是 29 个「收入分项被公司印过」的季度；13 是它在 42 季"
+                       "窗口里的补集，而 42 是别的图的轴长、不是这张图的任何属性 —— 这张图"
+                       "自己没有任何地方声明窗口有多长。那 13 个季度本身在本页 8 张 42 季图"
+                       "上都画着（画的是它们的合计数，减出来的是收入分项），只是没有任何一张"
+                       "图把它们单独成组，所以也不是「补集没被画」。"),
     "avgo Ex16": ([32], "「前 32 个季度这条线一直在…」——序列内一段前缀，不是窗口长度"),
     "cdns Ex11": ([43], "指向完整指引记录的交叉引用；本图只画近 20 季"),
     "cme Ex14":  ([37], "锚是同句里用中文写的「五十四个季度里」，数字形式的锚不存在"),

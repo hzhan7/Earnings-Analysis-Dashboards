@@ -28,6 +28,7 @@ series/*.json
 !series/cme.json
 !series/cost.json
 !series/googl.json
+!series/hkex.json
 !series/ibkr.json
 !series/ma.json
 !series/mc.json
