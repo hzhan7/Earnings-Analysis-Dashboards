@@ -675,7 +675,11 @@ CONVERTED = {
         "收入（本图仅近": "dollar band; the guided number runs US$6.1B to US$45.8B, so the "
                      "early bands collapse to a few pixels on a linear axis. The "
                      "scale-free deviation chart beside it carries all 42.",
-        "HPC 占比（集中度）": "TSMC first reported the platform split in 2018Q1.",
+        "HPC 占比（集中度）": "TSMC changed the revenue split from by-application to "
+                        "by-platform in 2019Q1 -- that report prints both bases plus a "
+                        "mapping table. The series reaches 2018Q1 only because the 2019 "
+                        "reports restate it in their prior-year columns; 2016-2017 "
+                        "quarterly platform values were never published.",
         "HPC 从": "same disclosure limit, long-run version of the same series.",
         "2nm 占晶圆收入": "2nm sat inside the 'advanced' aggregate until 2025Q2.",
     },

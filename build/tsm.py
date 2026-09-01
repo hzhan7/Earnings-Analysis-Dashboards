@@ -546,7 +546,8 @@ def build_payload(staging: dict) -> dict:
     # Each threshold now runs on the longest window its own series has, not on
     # a shared eight. Two of the five are shorter than the rest and it is the
     # disclosure that limits them, not this page: TSMC first reported the
-    # platform split in 2018Q1 and first broke 2nm out of "advanced" in 2025Q2.
+    # platform split in 2019Q1 -- 2018 exists only as that year's restated
+    # prior-year columns -- and first broke 2nm out of "advanced" in 2025Q2.
     # Trimming to the first reported quarter is why they start where they do --
     # a run of leading blanks would read as a series that fell to zero.
     two_nm_from = leading_gap(long_tech["2nm"])
