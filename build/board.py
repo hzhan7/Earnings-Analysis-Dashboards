@@ -77,6 +77,11 @@ UNIT_FORMATS = {
     # that look identical while the headroom bar beside it shows a gap.
     "contracts_k": lambda value: f"{value:,.0f} 千手",
     "usd_rpc": lambda value: f"${value:.3f}",
+    # HKEX quotes turnover in billions of Hong Kong dollars and nothing else on
+    # this page is in that unit. Borrowing `usd_bn` would print HK$283bn with a
+    # dollar sign that means a different currency -- a unit error a reader
+    # cannot see through, which is the same reason Ferrari got `eur_m`.
+    "hkd_bn": lambda value: f"{'−' if value < 0 else ''}HK${abs(value):,.1f}B",
 }
 
 

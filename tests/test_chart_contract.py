@@ -300,8 +300,8 @@ class ExhibitPayloadContractTest(unittest.TestCase):
         exercised", and a comment asserting that would rot silently.
         """
         bars = [ex for _, ex in exhibits() if ex.get("kind") == "gs_bar"]
-        self.assertEqual(len(bars), 29)
-        self.assertEqual(sum(1 for ex in bars if ex.get("yoy")), 28)
+        self.assertEqual(len(bars), 30)
+        self.assertEqual(sum(1 for ex in bars if ex.get("yoy")), 29)
         self.assertEqual(sum(1 for ex in bars if "avg12" in ex), 0)
         neither = [label for label, ex in exhibits()
                    if ex.get("kind") == "gs_bar" and not ex.get("yoy")

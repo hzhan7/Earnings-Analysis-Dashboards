@@ -4,7 +4,7 @@ Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
 American Express, Broadcom, Brunello Cucinelli, Cadence, Cboe Global Markets,
 Charles Schwab, CME Group, Costco, Ferrari, Hermès International,
-Interactive Brokers, LVMH, Mastercard, Meta, Micron, Microsoft, Moody's,
+Hong Kong Exchanges and Clearing, Interactive Brokers, LVMH, Mastercard, Meta, Micron, Microsoft, Moody's,
 MSCI, Nasdaq, NIKE, NVIDIA, Philip Morris International, S&P Global,
 Samsung Electronics, SK hynix, Synopsys, TJX, TSMC and Visa.
 
@@ -26,6 +26,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/cme/`
 - `http://127.0.0.1:8765/cost/`
 - `http://127.0.0.1:8765/googl/`
+- `http://127.0.0.1:8765/hkex/`
 - `http://127.0.0.1:8765/ibkr/`
 - `http://127.0.0.1:8765/ma/`
 - `http://127.0.0.1:8765/mc/`
@@ -238,7 +239,17 @@ Charts are ordered the way the note is actually used:
    consecutive years in which the second half carried more revenue and a
    thinner margin than the first, and a guidance record made entirely of
    sentences, in which the one stated most firmly in the negative is the one
-   that was wrong;
+   that was wrong; Hong Kong Exchanges and Clearing gets the disclosure
+   boundary that decides half of its own page — the first and third
+   quarters printed as an income statement and the second and fourth
+   never printed as one, so twenty-one of its forty-two quarters are a
+   subtraction, checked against the eleven the company did later print as
+   totals and matching on all one hundred and sixty-two comparisons — the
+   rebate that hands more than half the interest earned on clearing margin
+   back to the participants who posted it and is visible only twice a
+   year, and the twenty-two quarters of turnover that are the only ones
+   that exist, because an average per trading day cannot be subtracted the
+   way a revenue line can;
    Samsung Electronics gets the one number the company
    actually guides -- next quarter's DRAM and NAND bit shipments, and only as a
    phrase -- beside the price it never guides, the eight quarters in which

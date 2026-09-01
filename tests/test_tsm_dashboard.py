@@ -701,7 +701,8 @@ class TsmDashboardTest(unittest.TestCase):
             [item["slug"] for item in roster["items"]],
             [
              "amzn", "avgo", "axp", "bc", "cboe", "cdns", "cme", "cost",
-             "googl", "ibkr", "ma", "mc", "mco", "meta", "msci", "msft",
+             "googl", "hkex", "ibkr", "ma", "mc", "mco", "meta", "msci",
+             "msft",
              "mu", "ndaq", "nke", "nvda", "pm", "race", "rms", "samsung",
              "schw",
              "skhynix", "snps", "spgi", "tjx", "tsm", "v",
