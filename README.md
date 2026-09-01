@@ -4,8 +4,9 @@ Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
 American Express, Broadcom, Brunello Cucinelli, Cadence, Cboe Global Markets,
 Charles Schwab, CME Group, Costco, Ferrari, Hermès International,
-Hong Kong Exchanges and Clearing, Interactive Brokers, LVMH, Mastercard, Meta, Micron, Microsoft, Moody's,
-MSCI, Nasdaq, NIKE, NVIDIA, Philip Morris International, S&P Global,
+Hong Kong Exchanges and Clearing, Interactive Brokers, LVMH, Mastercard,
+Meta, Micron, Microsoft, Moody's, MSCI, Nasdaq, NIKE, NVIDIA,
+Philip Morris International, S&P Global,
 Samsung Electronics, SK hynix, Synopsys, TJX, TSMC and Visa.
 
 ## Build
@@ -239,12 +240,14 @@ Charts are ordered the way the note is actually used:
    consecutive years in which the second half carried more revenue and a
    thinner margin than the first, and a guidance record made entirely of
    sentences, in which the one stated most firmly in the negative is the one
-   that was wrong; Hong Kong Exchanges and Clearing gets the disclosure
-   boundary that decides half of its own page — the first and third
-   quarters printed as an income statement and the second and fourth
-   never printed as one, so twenty-one of its forty-two quarters are a
-   subtraction, checked against the eleven the company did later print as
-   totals and matching on all one hundred and sixty-two comparisons — the
+   that was wrong; Hong Kong Exchanges and Clearing gets the two
+   clocks its own disclosure runs on — every one of its forty-two quarters
+   printed as a discrete column somewhere, but a first or third quarter
+   inside six weeks and a second quarter, until 2022, only in the annual
+   report eight and a half months later, so twenty-one of them are a
+   subtraction here and all of them reconcile, two hundred and ninety-six
+   comparisons without an exception, leaving only thirteen quarters whose
+   revenue has never been split by anyone — the
    rebate that hands more than half the interest earned on clearing margin
    back to the participants who posted it and is visible only twice a
    year, and the twenty-two quarters of turnover that are the only ones

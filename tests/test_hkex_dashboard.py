@@ -108,7 +108,7 @@ class HkexSeriesTest(unittest.TestCase):
                 self.assertIn(doc, roster, quarter)
 
     def test_the_announcement_roster_covers_the_window_exactly(self) -> None:
-        """43 documents in, 42 quarters out -- no gap, no document counted twice.
+        """42 documents in, 42 quarters out -- no gap, no document counted twice.
 
         Written as a set identity rather than a count, because the failure this
         is for is a document quietly standing in for its neighbour, which a
@@ -206,15 +206,105 @@ class HkexSeriesTest(unittest.TestCase):
         self.assertEqual(check["derived_total"], 21)
         self.assertEqual(check["unchecked"], 10)
 
-    def test_the_unchecked_derived_quarters_are_the_early_ones(self) -> None:
-        """Which quarters rest on arithmetic alone, named rather than counted."""
-        check = hkex.box_check(self.staging)
-        derived = [q for q, b in zip(self.staging["quarters"], self.staging["quarter_basis"])
-                   if b == "derived"]
-        unchecked = [q for q in derived if q not in check["covered"]]
-        self.assertEqual(unchecked, ["2016Q2", "2016Q4", "2017Q2", "2017Q4",
-                                     "2018Q2", "2018Q4", "2019Q2", "2019Q4",
-                                     "2020Q2", "2020Q4"])
+    def test_the_only_cells_resting_on_arithmetic_alone_are_the_fee_lines(self) -> None:
+        """The page's first draft asserted ten quarters had no counterpart.
+
+        They do -- the annual report's quarterly table covers every year from
+        FY2016. What genuinely has no counterpart is narrower: the revenue
+        decomposition of an even quarter before FY2022 added the fee lines to
+        that table, plus the quarter just reported, which waits for the next
+        annual announcement. This test replaces one that asserted the wrong
+        set, and would have gone on passing, because `box_check` still reports
+        the same thing about a question that is no longer the page's claim.
+        """
+        missing = hkex.never_printed(self.staging, hkex.FEE_LINES)
+        self.assertEqual(missing, ["2016Q2", "2016Q4", "2017Q2", "2017Q4",
+                                   "2018Q2", "2018Q4", "2019Q2", "2019Q4",
+                                   "2020Q2", "2020Q4", "2021Q2", "2021Q4",
+                                   "2026Q2"])
+        # every headline line, by contrast, has been printed for every quarter
+        self.assertEqual(hkex.never_printed(self.staging, hkex.HEADLINE_LINES), [])
+
+    def test_every_derived_cell_reproduces_the_company_printed_one(self) -> None:
+        """The page's central evidence, and it is arithmetic against a document.
+
+        Each even quarter here is `H1 - Q1` or `FY - 9M`. Each one is also
+        printed, as a discrete column, in the annual report's `Analysis of
+        Results by Quarter`. The two are obtained from different documents by
+        different routes, so agreement is evidence rather than a tautology --
+        unlike `Q1 + Q2 == H1`, which this page's arithmetic makes true by
+        construction and which therefore proves nothing.
+        """
+        recon = hkex.reconcile_against_printed(self.staging)
+        self.assertEqual(recon["mismatches"], 0, recon["bad"][:5])
+        self.assertEqual(recon["compared"], 296)
+        self.assertEqual(recon["derived_compared"], 148)
+        self.assertEqual(recon["years"], [str(y) for y in range(2016, 2026)])
+        # every even quarter but the one just reported has a counterpart
+        self.assertEqual(recon["uncovered_even"], ["2026Q2"])
+
+    def test_the_disclosure_lag_has_the_two_clocks_the_page_describes(self) -> None:
+        """Odd and even quarters are public on visibly different schedules."""
+        quarters = self.staging["quarters"]
+        odd, even = [], []
+        for quarter in quarters:
+            lag = hkex.disclosure_lag(self.staging, quarter, hkex.HEADLINE_LINES)
+            self.assertIsNotNone(lag, quarter)   # every quarter has been printed
+            (odd if quarter[-1] in "13" else even).append(lag)
+        self.assertEqual(len(odd), 21)
+        self.assertEqual(len(even), 21)
+        self.assertEqual((min(odd), max(odd)), (19, 42))
+        self.assertEqual((min(even), max(even)), (47, 263))
+        # the two clocks never overlap: the slowest odd quarter still beats the
+        # fastest even one, which is the whole reason the page draws this
+        self.assertLess(max(odd), min(even))
+
+    def test_the_second_quarter_is_the_one_that_waited(self) -> None:
+        """It is Q2, not "even quarters", and the box ended it in one step.
+
+        The looser claim -- that both even quarters were slow -- is false and
+        this test exists because the page made it: a fourth quarter has always
+        arrived with the annual results announcement, 54 to 79 days out. Only
+        the second quarter waited for the annual report, and it waited about
+        eight and a half months, six years running, until the summary box
+        appeared in the 2022 interim announcement.
+        """
+        lags = {n: [] for n in (1, 2, 3, 4)}
+        for quarter in self.staging["quarters"]:
+            lags[int(quarter[5])].append(
+                (quarter, hkex.disclosure_lag(self.staging, quarter,
+                                              hkex.HEADLINE_LINES)))
+        q4 = [v for _, v in lags[4]]
+        self.assertEqual((min(q4), max(q4)), (54, 79))     # never the outlier
+
+        before = [v for q, v in lags[2] if q < "2022"]
+        after = [v for q, v in lags[2] if q >= "2022"]
+        self.assertEqual(len(before), 6)
+        self.assertEqual((min(before), max(before)), (257, 263))
+        self.assertEqual((min(after), max(after)), (47, 52))
+        # the step is a cliff, not a trend: no Q2 ever landed between them
+        self.assertTrue(all(v < 60 or v > 250 for _, v in lags[2]))
+
+    def test_the_annual_series_carries_only_the_one_basis_it_verified(self) -> None:
+        """The derivatives volumes are absent by decision, and it is recorded.
+
+        They changed basis three times inside this window -- chargeable at
+        FY2018 with 2017 restated, units at FY2019, calculation at FY2021 with
+        every comparative restated. The page shipped them spliced into one line
+        once, in raw contracts against an axis labelled thousands; the fix is
+        not to convert the cell but to not publish a series whose own issuer
+        has restated it under three definitions.
+        """
+        annual = self.staging["kpi_annual"]
+        self.assertEqual(sorted(annual), ["adt_headline"])
+        for name, values in annual.items():
+            self.assertEqual(len(values), len(self.staging["kpi_years"]), name)
+            self.assertTrue(all(v is not None for v in values), name)
+            self.assertTrue(all(0 < v < 1000 for v in values), name)
+        basis = self.staging["kpi_annual_basis"]
+        self.assertIn("derivatives_not_published", basis)
+        for marker in ("FY2018", "FY2019", "FY2021", "624,480", "601,067"):
+            self.assertIn(marker, basis["derivatives_not_published"], marker)
 
     def test_the_restatement_census_is_the_one_the_page_describes(self) -> None:
         """Every period read twice, a year apart; the two that differ are named.
@@ -313,9 +403,18 @@ class HkexSeriesTest(unittest.TestCase):
                                  kpi["adt_headline"][index] + 0.05, quarter)
 
     def test_the_annual_volume_series_states_its_own_floor(self) -> None:
+        """2016 is readable; the first draft dropped it and blamed the parser.
+
+        The claim in the note was that the FY2016 and FY2017 announcements put
+        the market statistics in a layout whose columns could not be placed.
+        FY2016 prints `ADT traded on the Stock Exchange ($bn)  66.9  105.6`,
+        which is the same shape as every later year, so the series starts there.
+        """
         years = self.staging["kpi_years"]
-        self.assertEqual(years[0], "2017")
+        self.assertEqual(years[0], "2016")
         self.assertEqual(years[-1], "2025")
+        self.assertEqual(len(years), 10)
+        self.assertEqual(self.staging["kpi_annual"]["adt_headline"][0], 66.9)
         for name, values in self.staging["kpi_annual"].items():
             self.assertEqual(len(values), len(years), name)
 
@@ -349,6 +448,81 @@ class HkexPayloadTest(unittest.TestCase):
         cls.payload = hkex.build_payload(cls.staging)
         cls.exhibits = [ex for section in cls.payload["sections"]
                         for ex in section["exhibits"]]
+
+    def test_the_headline_calls_a_record_only_what_is_one(self) -> None:
+        """Three figures led the headline as records; one was third of 42.
+
+        Derived from what the sentence promises rather than from how it broke:
+        any quarterly series the headline calls a 新高 must actually be at its
+        maximum in the published series.
+        """
+        q = self.staging["quarterly"]
+        headline = self.payload["headline"]
+        margins = [e / r * 100 for e, r
+                   in zip(q["ebitda"], q["revenue_and_other_income"])]
+
+        # Key on structure, not on a word. An earlier version of this test
+        # asserted `"不是" in headline`, which a mutant satisfied from an
+        # unrelated clause ("本页的对象不是这个季度") while the headline went on
+        # calling a third-place margin a record. What must be true is narrower:
+        # the clause that carries the margin figure may not claim a record
+        # unless the margin actually is one.
+        RECORD = ("新高", "纪录", "最高", "史上")
+        figure = f"{margins[-1]:.1f}%"
+        self.assertIn(figure, headline)
+        if margins[-1] != max(margins):
+            # what the figure itself is said to be: the window immediately
+            # after it. A whole-clause scan false-reds on the correct sentence
+            # "最高的是 2021Q1 的 80.7%", which names the real holder rather
+            # than claiming the record for this quarter.
+            after = headline[headline.index(figure) + len(figure):][:12]
+            for word in RECORD:
+                self.assertNotIn(word, after,
+                                 f"margin is #{sorted(margins, reverse=True).index(margins[-1]) + 1}"
+                                 f" of {len(margins)} but is called {word}: ...{figure}{after}")
+            # and the true holder must be named, so the reader is not left to
+            # infer it -- a positive requirement a vague hedge cannot satisfy
+            best = max(range(len(margins)), key=lambda i: margins[i])
+            self.assertIn(self.staging["quarters"][best], headline)
+            self.assertIn(f"{max(margins):.1f}%", headline)
+        # and the two that genuinely are records must still be claimed as such
+        for field in ("revenue_and_other_income", "profit_attributable"):
+            series = [v for v in q[field] if v is not None]
+            self.assertEqual(series[-1], max(series), field)
+        self.assertTrue(any(w in headline for w in RECORD))
+
+    def test_every_section_description_counts_its_own_exhibits(self) -> None:
+        """A description that names a number of charts must name the right one."""
+        digits = {"一": 1, "二": 2, "三": 3, "四": 4, "五": 5,
+                  "六": 6, "七": 7, "八": 8, "九": 9}
+        checked = 0
+        for section in self.payload["sections"]:
+            text = section.get("description", "")
+            # "张图" only ever counts charts; a bare "张" appears in ordinary
+            # prose ("各印一张三个月的损益表") and keying on it makes this gate
+            # go red on a correct page, which is how a gate gets bypassed.
+            for word, value in digits.items():
+                if f"{word}张图" in text:
+                    checked += 1
+                    self.assertEqual(value, len(section["exhibits"]),
+                                     f"{section['title']}: {word}张图")
+        self.assertGreaterEqual(checked, 1)
+
+    def test_a_note_counting_lines_counts_the_lines_that_are_drawn(self) -> None:
+        """「两条线」 on a chart that draws three is a caption contradicting itself."""
+        words = {"两条线": 2, "三条线": 3, "四条线": 4}
+        checked = 0
+        for exhibit in self.exhibits:
+            drawn = len(exhibit.get("series") or exhibit.get("stacks") or [])
+            if not drawn:
+                continue
+            text = (exhibit.get("note") or "") + (exhibit.get("title") or "")
+            for word, value in words.items():
+                if word in text:
+                    checked += 1
+                    self.assertEqual(value, drawn,
+                                     f"Ex{exhibit['n']} says {word}, draws {drawn}")
+        self.assertGreaterEqual(checked, 3)
 
     def test_every_series_is_as_long_as_the_axis_it_is_drawn_against(self) -> None:
         """One mark per label, checked on this page's own exhibits.
@@ -417,10 +591,12 @@ class HkexPayloadTest(unittest.TestCase):
                 self.assertTrue(exhibit.get("yoy", {}).get("values"), exhibit["title"])
 
     def test_the_headline_counts_are_recomputed_not_typed(self) -> None:
-        check = hkex.box_check(self.staging)
+        recon = hkex.reconcile_against_printed(self.staging)
         headline = self.payload["headline"]
-        self.assertIn(str(check["derived_comparisons"]), headline)
-        self.assertIn(str(check["unchecked"]), headline)
+        self.assertIn(str(recon["compared"]), headline)
+        self.assertIn(str(recon["mismatches"]), headline)
+        self.assertIn(str(len(hkex.never_printed(self.staging, hkex.FEE_LINES))),
+                      headline)
         derived = sum(1 for b in self.staging["quarter_basis"] if b == "derived")
         self.assertIn(str(derived), headline)
 
@@ -444,11 +620,26 @@ class HkexPayloadTest(unittest.TestCase):
         derived = sum(1 for row in ledger["rows"] if row[1].endswith("D"))
         self.assertEqual(derived, 21)
 
-    def test_the_reconciliation_table_shows_a_zero_in_every_row(self) -> None:
-        table = next(t for t in self.payload["tables"] if "双数季对照" in t["title"])
-        self.assertEqual(len(table["rows"]), 33)
-        for row in table["rows"]:
-            self.assertIn(row[-1], ("+0", "-0"), row)
+    def test_the_reconciliation_table_accounts_for_every_compared_cell(self) -> None:
+        """The drawer must add up to the number the page's headline claims.
+
+        The table it replaces showed 33 rows from the summary box and called
+        that the reconciliation. It was true and far too narrow: the annual
+        report's quarterly table covers every year from FY2016, and the two
+        disclosure generations -- six line items until FY2021, twelve after --
+        are visible in the table's own 科目数 column.
+        """
+        recon = hkex.reconcile_against_printed(self.staging)
+        table = next(t for t in self.payload["tables"] if "逐格对照" in t["title"])
+        self.assertEqual(len(table["rows"]), 10)
+        self.assertEqual(sum(int(r[3]) for r in table["rows"]), recon["compared"])
+        self.assertEqual(sum(int(r[4]) for r in table["rows"]),
+                         recon["derived_compared"])
+        self.assertEqual(sum(int(r[5]) for r in table["rows"]), 0)
+        # the generation boundary the page argues for, read off the table
+        fields = {r[0]: int(r[2]) for r in table["rows"]}
+        self.assertTrue(all(fields[str(y)] == 6 for y in range(2016, 2022)))
+        self.assertTrue(all(fields[str(y)] == 12 for y in range(2022, 2026)))
 
     def test_the_entry_matches_the_payload_and_the_group_exists(self) -> None:
         entry = next(e for e in ENTRIES if e["slug"] == "hkex")

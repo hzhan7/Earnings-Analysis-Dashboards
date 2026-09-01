@@ -643,50 +643,6 @@
    1281.0,
    1279.0
   ],
-  "donation_income": [
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   46.0,
-   28.0,
-   39.0,
-   26.0,
-   30.0,
-   7.0,
-   40.0,
-   53.0,
-   5.0,
-   24.0,
-   28.0,
-   31.0,
-   9.0,
-   21.0,
-   13.0,
-   24.0,
-   26.0,
-   52.0,
-   37.0,
-   73.0,
-   77.0,
-   68.0
-  ],
   "sundry_income": [
    null,
    null,
@@ -863,94 +819,6 @@
    -1052.0,
    -1096.0
   ],
-  "it_costs": [
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   -120.0,
-   -121.0,
-   -137.0,
-   null,
-   -143.0,
-   -135.0,
-   -144.0,
-   null,
-   -152.0,
-   -163.0,
-   -150.0,
-   null,
-   -167.0,
-   -171.0,
-   -166.0,
-   null,
-   -172.0,
-   -191.0,
-   -176.0,
-   null,
-   -189.0,
-   -192.0,
-   -202.0,
-   null,
-   null,
-   null,
-   null,
-   null,
-   -226.0,
-   -234.0,
-   -234.0,
-   -261.0,
-   -242.0,
-   -255.0
-  ],
-  "foundation_donations": [
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   -25.0,
-   -44.0,
-   -20.0,
-   -16.0,
-   -23.0,
-   -33.0,
-   -63.0,
-   -17.0,
-   -27.0,
-   -50.0,
-   -7.0,
-   -10.0,
-   -6.0,
-   -68.0,
-   -7.0,
-   -5.0,
-   -50.0,
-   -2.0,
-   -1.0,
-   -47.0,
-   -71.0,
-   -12.0
-  ],
   "ebitda": [
    1897.0,
    2045.0,
@@ -995,50 +863,6 @@
    6592.0,
    6819.0
   ],
-  "dep_amort": [
-   -188.0,
-   -194.0,
-   -191.0,
-   -198.0,
-   -175.0,
-   -187.0,
-   -185.0,
-   -311.0,
-   -180.0,
-   -198.0,
-   -198.0,
-   -186.0,
-   -248.0,
-   -247.0,
-   -271.0,
-   -278.0,
-   -274.0,
-   -271.0,
-   -282.0,
-   -370.0,
-   -327.0,
-   -335.0,
-   -344.0,
-   -348.0,
-   -354.0,
-   -363.0,
-   -355.0,
-   -387.0,
-   -365.0,
-   -354.0,
-   -362.0,
-   -362.0,
-   -345.0,
-   -353.0,
-   -346.0,
-   -358.0,
-   -358.0,
-   -385.0,
-   -382.0,
-   -443.0,
-   -381.0,
-   -396.0
-  ],
   "operating_profit": [
    1709.0,
    1851.0,
@@ -1082,50 +906,6 @@
    5189.0,
    6211.0,
    6423.0
-  ],
-  "finance_costs": [
-   -23.0,
-   -20.0,
-   -19.0,
-   -20.0,
-   -29.0,
-   -36.0,
-   -28.0,
-   -41.0,
-   -27.0,
-   -28.0,
-   -31.0,
-   -28.0,
-   -44.0,
-   -42.0,
-   -43.0,
-   -48.0,
-   -49.0,
-   -47.0,
-   -43.0,
-   -42.0,
-   -39.0,
-   -38.0,
-   -39.0,
-   -38.0,
-   -36.0,
-   -37.0,
-   -32.0,
-   -33.0,
-   -35.0,
-   -35.0,
-   -32.0,
-   -33.0,
-   -30.0,
-   -29.0,
-   -27.0,
-   -28.0,
-   -25.0,
-   -24.0,
-   -23.0,
-   -24.0,
-   -22.0,
-   -20.0
   ],
   "profit_before_tax": [
    1684.0,
@@ -3087,6 +2867,7 @@
   ]
  },
  "kpi_years": [
+  "2016",
   "2017",
   "2018",
   "2019",
@@ -3099,6 +2880,7 @@
  ],
  "kpi_annual": {
   "adt_headline": [
+   66.9,
    88.2,
    107.4,
    87.2,
@@ -3108,95 +2890,11 @@
    105.0,
    131.8,
    249.8
-  ],
-  "adt_equity": [
-   71.2,
-   84.2,
-   69.2,
-   110.9,
-   146.6,
-   109.0,
-   93.2,
-   120.0,
-   231.5
-  ],
-  "adt_dw_cbbc": [
-   17.0,
-   23.2,
-   18.0,
-   18.6,
-   20.1,
-   15.9,
-   11.8,
-   11.8,
-   18.3
-  ],
-  "adt_northbound": [
-   null,
-   null,
-   41.7,
-   91.3,
-   120.1,
-   100.4,
-   108.3,
-   150.1,
-   212.4
-  ],
-  "adt_southbound": [
-   null,
-   null,
-   10.8,
-   24.4,
-   41.7,
-   31.7,
-   31.1,
-   48.2,
-   121.1
-  ],
-  "adv_futures": [
-   441320.0,
-   null,
-   626.0,
-   null,
-   538.0,
-   715.0,
-   742.0,
-   830.0,
-   783.0
-  ],
-  "adv_stock_opts": [
-   428499.0,
-   null,
-   442.0,
-   526.0,
-   637.0,
-   588.0,
-   612.0,
-   720.0,
-   880.0
-  ],
-  "adv_lme": [
-   601067.0,
-   null,
-   617.0,
-   571.0,
-   547.0,
-   506.0,
-   562.0,
-   664.0,
-   717.0
-  ],
-  "adt_bond_conn": [
-   null,
-   3.6,
-   10.7,
-   19.8,
-   26.6,
-   32.2,
-   40.0,
-   41.6,
-   39.0
   ]
+ },
+ "kpi_annual_basis": {
+  "adt_headline": "每一年的值在两份公告里各出现一次（当年全年公告的本期列、次年全年公告的比较列），逐年两两核对无差异。",
+  "derivatives_not_published": "公司的衍生品与 LME 成交量年度序列在本窗口内发生过三次不同的口径变化：FY2018 把 LME 那一行从「ADV」改成「Chargeable ADV」（剔除管理性交易）并重述 2017 年比较值 624,480 → 601,067；FY2019 把单位从绝对手数改成千手；FY2021 又把算法从「总成交量 ÷ 总交易日」改成「各产品 ADV 之和」并重述全部比较值（FY2021 公告附注 4）。三代不是同一个数换了单位，因此本页不把它们接成一条年度线，也不发布该序列。"
  },
  "announcements": [
   {
@@ -3539,5 +3237,2275 @@
   "analysis_date": "2026-09-01",
   "audit_status": "unaudited",
   "status": "history_ready"
+ },
+ "ar_quarter_tables": {
+  "captions": {
+   "revenue_and_other_income": "Revenue and other income",
+   "operating_expenses": "Operating expenses",
+   "ebitda": "EBITDA",
+   "operating_profit": "Operating profit",
+   "profit_before_tax": "Profit before taxation",
+   "profit_attributable": "Profit attributable to shareholders",
+   "trading_fees": "Trading fees and trading tariffs",
+   "clearing_fees": "Clearing and settlement fees",
+   "listing_fees": "Stock Exchange listing fees",
+   "depository_fees": "Depository, custody and nominee services fees",
+   "market_data_fees": "Market data fees",
+   "net_investment_income": "Net investment income"
+  },
+  "by_year": {
+   "2016": {
+    "source": "AR2016.txt",
+    "values": {
+     "revenue_and_other_income": [
+      2751.0,
+      2879.0,
+      2848.0,
+      2638.0
+     ],
+     "operating_expenses": [
+      854.0,
+      834.0,
+      834.0,
+      933.0
+     ],
+     "ebitda": [
+      1897.0,
+      2045.0,
+      2014.0,
+      1705.0
+     ],
+     "operating_profit": [
+      1709.0,
+      1851.0,
+      1823.0,
+      1507.0
+     ],
+     "profit_before_tax": [
+      1684.0,
+      1828.0,
+      1802.0,
+      1485.0
+     ],
+     "profit_attributable": [
+      1432.0,
+      1553.0,
+      1543.0,
+      1241.0
+     ]
+    }
+   },
+   "2017": {
+    "source": "AR2017.txt",
+    "values": {
+     "revenue_and_other_income": [
+      3048.0,
+      3155.0,
+      3454.0,
+      3523.0
+     ],
+     "operating_expenses": [
+      833.0,
+      878.0,
+      887.0,
+      968.0
+     ],
+     "ebitda": [
+      2215.0,
+      2277.0,
+      2567.0,
+      2555.0
+     ],
+     "operating_profit": [
+      2040.0,
+      2090.0,
+      2382.0,
+      2244.0
+     ],
+     "profit_before_tax": [
+      2009.0,
+      2051.0,
+      2351.0,
+      2199.0
+     ],
+     "profit_attributable": [
+      1716.0,
+      1777.0,
+      2033.0,
+      1878.0
+     ]
+    }
+   },
+   "2018": {
+    "source": "AR2018.txt",
+    "values": {
+     "revenue_and_other_income": [
+      4150.0,
+      4044.0,
+      4102.0,
+      3571.0
+     ],
+     "operating_expenses": [
+      935.0,
+      983.0,
+      1025.0,
+      1167.0
+     ],
+     "ebitda": [
+      3215.0,
+      3061.0,
+      3077.0,
+      2404.0
+     ],
+     "operating_profit": [
+      3035.0,
+      2863.0,
+      2879.0,
+      2218.0
+     ],
+     "profit_before_tax": [
+      3010.0,
+      2837.0,
+      2847.0,
+      2189.0
+     ],
+     "profit_attributable": [
+      2562.0,
+      2479.0,
+      2443.0,
+      1828.0
+     ]
+    }
+   },
+   "2019": {
+    "source": "AR2019.txt",
+    "values": {
+     "revenue_and_other_income": [
+      4288.0,
+      4290.0,
+      3987.0,
+      3746.0
+     ],
+     "operating_expenses": [
+      970.0,
+      983.0,
+      949.0,
+      1146.0
+     ],
+     "ebitda": [
+      3318.0,
+      3307.0,
+      3038.0,
+      2600.0
+     ],
+     "operating_profit": [
+      3070.0,
+      3060.0,
+      2767.0,
+      2322.0
+     ],
+     "profit_before_tax": [
+      3029.0,
+      3021.0,
+      2605.0,
+      2296.0
+     ],
+     "profit_attributable": [
+      2608.0,
+      2597.0,
+      2207.0,
+      1979.0
+     ]
+    }
+   },
+   "2020": {
+    "source": "AR2020.txt",
+    "values": {
+     "revenue_and_other_income": [
+      4009.0,
+      4773.0,
+      5309.0,
+      5099.0
+     ],
+     "operating_expenses": [
+      1008.0,
+      1037.0,
+      1093.0,
+      1301.0
+     ],
+     "ebitda": [
+      2984.0,
+      3722.0,
+      4177.0,
+      3758.0
+     ],
+     "operating_profit": [
+      2710.0,
+      3451.0,
+      3895.0,
+      3388.0
+     ],
+     "profit_before_tax": [
+      2680.0,
+      3424.0,
+      3867.0,
+      3361.0
+     ],
+     "profit_attributable": [
+      2262.0,
+      2971.0,
+      3347.0,
+      2925.0
+     ]
+    }
+   },
+   "2021": {
+    "source": "AR2021.txt",
+    "values": {
+     "revenue_and_other_income": [
+      5956.0,
+      4953.0,
+      5309.0,
+      4732.0
+     ],
+     "operating_expenses": [
+      1102.0,
+      1119.0,
+      1108.0,
+      1200.0
+     ],
+     "ebitda": [
+      4809.0,
+      3798.0,
+      4164.0,
+      3498.0
+     ],
+     "operating_profit": [
+      4482.0,
+      3463.0,
+      3820.0,
+      3150.0
+     ],
+     "profit_before_tax": [
+      4459.0,
+      3447.0,
+      3801.0,
+      3134.0
+     ],
+     "profit_attributable": [
+      3840.0,
+      2770.0,
+      3251.0,
+      2674.0
+     ]
+    }
+   },
+   "2022": {
+    "source": "2022_FY.txt",
+    "values": {
+     "trading_fees": [
+      1915.0,
+      1638.0,
+      1513.0,
+      1771.0
+     ],
+     "clearing_fees": [
+      1234.0,
+      1057.0,
+      973.0,
+      1071.0
+     ],
+     "listing_fees": [
+      561.0,
+      433.0,
+      459.0,
+      462.0
+     ],
+     "depository_fees": [
+      226.0,
+      421.0,
+      380.0,
+      233.0
+     ],
+     "market_data_fees": [
+      268.0,
+      278.0,
+      263.0,
+      272.0
+     ],
+     "net_investment_income": [
+      59.0,
+      30.0,
+      334.0,
+      933.0
+     ],
+     "revenue_and_other_income": [
+      4690.0,
+      4247.0,
+      4318.0,
+      5201.0
+     ],
+     "operating_expenses": [
+      803.0,
+      864.0,
+      831.0,
+      826.0
+     ],
+     "ebitda": [
+      3473.0,
+      2921.0,
+      2984.0,
+      3807.0
+     ],
+     "operating_profit": [
+      3119.0,
+      2558.0,
+      2629.0,
+      3420.0
+     ],
+     "profit_before_tax": [
+      3108.0,
+      2538.0,
+      2611.0,
+      3402.0
+     ],
+     "profit_attributable": [
+      2668.0,
+      2168.0,
+      2263.0,
+      2979.0
+     ]
+    }
+   },
+   "2023": {
+    "source": "2023_FY.txt",
+    "values": {
+     "trading_fees": [
+      1692.0,
+      1490.0,
+      1494.0,
+      1405.0
+     ],
+     "clearing_fees": [
+      1069.0,
+      959.0,
+      949.0,
+      908.0
+     ],
+     "listing_fees": [
+      418.0,
+      367.0,
+      368.0,
+      370.0
+     ],
+     "depository_fees": [
+      191.0,
+      365.0,
+      342.0,
+      378.0
+     ],
+     "market_data_fees": [
+      267.0,
+      270.0,
+      281.0,
+      280.0
+     ],
+     "net_investment_income": [
+      1535.0,
+      1141.0,
+      1211.0,
+      1072.0
+     ],
+     "revenue_and_other_income": [
+      5558.0,
+      5017.0,
+      5084.0,
+      4857.0
+     ],
+     "operating_expenses": [
+      870.0,
+      841.0,
+      874.0,
+      979.0
+     ],
+     "ebitda": [
+      4209.0,
+      3650.0,
+      3706.0,
+      3263.0
+     ],
+     "operating_profit": [
+      3844.0,
+      3296.0,
+      3344.0,
+      2901.0
+     ],
+     "profit_before_tax": [
+      3829.0,
+      3280.0,
+      3336.0,
+      2887.0
+     ],
+     "profit_attributable": [
+      3408.0,
+      2904.0,
+      2953.0,
+      2597.0
+     ]
+    }
+   },
+   "2024": {
+    "source": "2024_FY.txt",
+    "values": {
+     "trading_fees": [
+      1579.0,
+      1711.0,
+      1689.0,
+      2210.0
+     ],
+     "clearing_fees": [
+      1021.0,
+      1104.0,
+      1058.0,
+      1534.0
+     ],
+     "listing_fees": [
+      365.0,
+      360.0,
+      358.0,
+      401.0
+     ],
+     "depository_fees": [
+      184.0,
+      358.0,
+      346.0,
+      258.0
+     ],
+     "market_data_fees": [
+      265.0,
+      267.0,
+      274.0,
+      280.0
+     ],
+     "net_investment_income": [
+      1342.0,
+      1179.0,
+      1207.0,
+      1199.0
+     ],
+     "revenue_and_other_income": [
+      5201.0,
+      5420.0,
+      5372.0,
+      6381.0
+     ],
+     "operating_expenses": [
+      1008.0,
+      929.0,
+      923.0,
+      1026.0
+     ],
+     "ebitda": [
+      3705.0,
+      3956.0,
+      3926.0,
+      4694.0
+     ],
+     "operating_profit": [
+      3360.0,
+      3603.0,
+      3580.0,
+      4336.0
+     ],
+     "profit_before_tax": [
+      3356.0,
+      3596.0,
+      3577.0,
+      4324.0
+     ],
+     "profit_attributable": [
+      2970.0,
+      3155.0,
+      3145.0,
+      3780.0
+     ]
+    }
+   },
+   "2025": {
+    "source": "2025_FY.txt",
+    "values": {
+     "trading_fees": [
+      2531.0,
+      2375.0,
+      2925.0,
+      2502.0
+     ],
+     "clearing_fees": [
+      1596.0,
+      1559.0,
+      2118.0,
+      1769.0
+     ],
+     "listing_fees": [
+      408.0,
+      408.0,
+      452.0,
+      521.0
+     ],
+     "depository_fees": [
+      231.0,
+      437.0,
+      441.0,
+      394.0
+     ],
+     "market_data_fees": [
+      275.0,
+      290.0,
+      306.0,
+      300.0
+     ],
+     "net_investment_income": [
+      1333.0,
+      1542.0,
+      1018.0,
+      1218.0
+     ],
+     "revenue_and_other_income": [
+      6857.0,
+      7219.0,
+      7775.0,
+      7310.0
+     ],
+     "operating_expenses": [
+      964.0,
+      988.0,
+      1009.0,
+      1039.0
+     ],
+     "ebitda": [
+      5254.0,
+      5685.0,
+      6225.0,
+      5632.0
+     ],
+     "operating_profit": [
+      4896.0,
+      5300.0,
+      5843.0,
+      5189.0
+     ],
+     "profit_before_tax": [
+      4879.0,
+      5285.0,
+      5825.0,
+      5169.0
+     ],
+     "profit_attributable": [
+      4077.0,
+      4442.0,
+      4900.0,
+      4335.0
+     ]
+    }
+   }
+  }
+ },
+ "first_printed": {
+  "2016Q1|clearing_fees": {
+   "doc": "2016_Q1",
+   "published": "2016-05-11"
+  },
+  "2016Q1|depository_fees": {
+   "doc": "2016_Q1",
+   "published": "2016-05-11"
+  },
+  "2016Q1|ebitda": {
+   "doc": "2016_Q1",
+   "published": "2016-05-11"
+  },
+  "2016Q1|listing_fees": {
+   "doc": "2016_Q1",
+   "published": "2016-05-11"
+  },
+  "2016Q1|market_data_fees": {
+   "doc": "2016_Q1",
+   "published": "2016-05-11"
+  },
+  "2016Q1|net_investment_income": {
+   "doc": "2016_Q1",
+   "published": "2016-05-11"
+  },
+  "2016Q1|operating_expenses": {
+   "doc": "2016_Q1",
+   "published": "2016-05-11"
+  },
+  "2016Q1|operating_profit": {
+   "doc": "2016_Q1",
+   "published": "2016-05-11"
+  },
+  "2016Q1|profit_attributable": {
+   "doc": "2016_Q1",
+   "published": "2016-05-11"
+  },
+  "2016Q1|profit_before_tax": {
+   "doc": "2016_Q1",
+   "published": "2016-05-11"
+  },
+  "2016Q1|revenue_and_other_income": {
+   "doc": "2016_Q1",
+   "published": "2016-05-11"
+  },
+  "2016Q1|trading_fees": {
+   "doc": "2016_Q1",
+   "published": "2016-05-11"
+  },
+  "2016Q2|ebitda": {
+   "doc": "AR FY2016",
+   "published": "2017-03-20"
+  },
+  "2016Q2|operating_expenses": {
+   "doc": "AR FY2016",
+   "published": "2017-03-20"
+  },
+  "2016Q2|operating_profit": {
+   "doc": "AR FY2016",
+   "published": "2017-03-20"
+  },
+  "2016Q2|profit_attributable": {
+   "doc": "AR FY2016",
+   "published": "2017-03-20"
+  },
+  "2016Q2|profit_before_tax": {
+   "doc": "AR FY2016",
+   "published": "2017-03-20"
+  },
+  "2016Q2|revenue_and_other_income": {
+   "doc": "AR FY2016",
+   "published": "2017-03-20"
+  },
+  "2016Q3|clearing_fees": {
+   "doc": "2016_Q3",
+   "published": "2016-11-02"
+  },
+  "2016Q3|depository_fees": {
+   "doc": "2016_Q3",
+   "published": "2016-11-02"
+  },
+  "2016Q3|ebitda": {
+   "doc": "2016_Q3",
+   "published": "2016-11-02"
+  },
+  "2016Q3|listing_fees": {
+   "doc": "2016_Q3",
+   "published": "2016-11-02"
+  },
+  "2016Q3|market_data_fees": {
+   "doc": "2016_Q3",
+   "published": "2016-11-02"
+  },
+  "2016Q3|net_investment_income": {
+   "doc": "2016_Q3",
+   "published": "2016-11-02"
+  },
+  "2016Q3|operating_expenses": {
+   "doc": "2016_Q3",
+   "published": "2016-11-02"
+  },
+  "2016Q3|operating_profit": {
+   "doc": "2016_Q3",
+   "published": "2016-11-02"
+  },
+  "2016Q3|profit_attributable": {
+   "doc": "2016_Q3",
+   "published": "2016-11-02"
+  },
+  "2016Q3|profit_before_tax": {
+   "doc": "2016_Q3",
+   "published": "2016-11-02"
+  },
+  "2016Q3|revenue_and_other_income": {
+   "doc": "2016_Q3",
+   "published": "2016-11-02"
+  },
+  "2016Q3|trading_fees": {
+   "doc": "2016_Q3",
+   "published": "2016-11-02"
+  },
+  "2016Q4|ebitda": {
+   "doc": "AR FY2016",
+   "published": "2017-03-20"
+  },
+  "2016Q4|operating_expenses": {
+   "doc": "AR FY2016",
+   "published": "2017-03-20"
+  },
+  "2016Q4|operating_profit": {
+   "doc": "AR FY2016",
+   "published": "2017-03-20"
+  },
+  "2016Q4|profit_attributable": {
+   "doc": "AR FY2016",
+   "published": "2017-03-20"
+  },
+  "2016Q4|profit_before_tax": {
+   "doc": "AR FY2016",
+   "published": "2017-03-20"
+  },
+  "2016Q4|revenue_and_other_income": {
+   "doc": "AR FY2016",
+   "published": "2017-03-20"
+  },
+  "2017Q1|clearing_fees": {
+   "doc": "2017_Q1",
+   "published": "2017-05-10"
+  },
+  "2017Q1|depository_fees": {
+   "doc": "2017_Q1",
+   "published": "2017-05-10"
+  },
+  "2017Q1|ebitda": {
+   "doc": "2017_Q1",
+   "published": "2017-05-10"
+  },
+  "2017Q1|listing_fees": {
+   "doc": "2017_Q1",
+   "published": "2017-05-10"
+  },
+  "2017Q1|market_data_fees": {
+   "doc": "2017_Q1",
+   "published": "2017-05-10"
+  },
+  "2017Q1|net_investment_income": {
+   "doc": "2017_Q1",
+   "published": "2017-05-10"
+  },
+  "2017Q1|operating_expenses": {
+   "doc": "2017_Q1",
+   "published": "2017-05-10"
+  },
+  "2017Q1|operating_profit": {
+   "doc": "2017_Q1",
+   "published": "2017-05-10"
+  },
+  "2017Q1|profit_attributable": {
+   "doc": "2017_Q1",
+   "published": "2017-05-10"
+  },
+  "2017Q1|profit_before_tax": {
+   "doc": "2017_Q1",
+   "published": "2017-05-10"
+  },
+  "2017Q1|revenue_and_other_income": {
+   "doc": "2017_Q1",
+   "published": "2017-05-10"
+  },
+  "2017Q1|trading_fees": {
+   "doc": "2017_Q1",
+   "published": "2017-05-10"
+  },
+  "2017Q2|ebitda": {
+   "doc": "AR FY2017",
+   "published": "2018-03-19"
+  },
+  "2017Q2|operating_expenses": {
+   "doc": "AR FY2017",
+   "published": "2018-03-19"
+  },
+  "2017Q2|operating_profit": {
+   "doc": "AR FY2017",
+   "published": "2018-03-19"
+  },
+  "2017Q2|profit_attributable": {
+   "doc": "AR FY2017",
+   "published": "2018-03-19"
+  },
+  "2017Q2|profit_before_tax": {
+   "doc": "AR FY2017",
+   "published": "2018-03-19"
+  },
+  "2017Q2|revenue_and_other_income": {
+   "doc": "AR FY2017",
+   "published": "2018-03-19"
+  },
+  "2017Q3|clearing_fees": {
+   "doc": "2017_Q3",
+   "published": "2017-11-08"
+  },
+  "2017Q3|depository_fees": {
+   "doc": "2017_Q3",
+   "published": "2017-11-08"
+  },
+  "2017Q3|ebitda": {
+   "doc": "2017_Q3",
+   "published": "2017-11-08"
+  },
+  "2017Q3|listing_fees": {
+   "doc": "2017_Q3",
+   "published": "2017-11-08"
+  },
+  "2017Q3|market_data_fees": {
+   "doc": "2017_Q3",
+   "published": "2017-11-08"
+  },
+  "2017Q3|net_investment_income": {
+   "doc": "2017_Q3",
+   "published": "2017-11-08"
+  },
+  "2017Q3|operating_expenses": {
+   "doc": "2017_Q3",
+   "published": "2017-11-08"
+  },
+  "2017Q3|operating_profit": {
+   "doc": "2017_Q3",
+   "published": "2017-11-08"
+  },
+  "2017Q3|profit_attributable": {
+   "doc": "2017_Q3",
+   "published": "2017-11-08"
+  },
+  "2017Q3|profit_before_tax": {
+   "doc": "2017_Q3",
+   "published": "2017-11-08"
+  },
+  "2017Q3|revenue_and_other_income": {
+   "doc": "2017_Q3",
+   "published": "2017-11-08"
+  },
+  "2017Q3|trading_fees": {
+   "doc": "2017_Q3",
+   "published": "2017-11-08"
+  },
+  "2017Q4|ebitda": {
+   "doc": "AR FY2017",
+   "published": "2018-03-19"
+  },
+  "2017Q4|operating_expenses": {
+   "doc": "AR FY2017",
+   "published": "2018-03-19"
+  },
+  "2017Q4|operating_profit": {
+   "doc": "AR FY2017",
+   "published": "2018-03-19"
+  },
+  "2017Q4|profit_attributable": {
+   "doc": "AR FY2017",
+   "published": "2018-03-19"
+  },
+  "2017Q4|profit_before_tax": {
+   "doc": "AR FY2017",
+   "published": "2018-03-19"
+  },
+  "2017Q4|revenue_and_other_income": {
+   "doc": "AR FY2017",
+   "published": "2018-03-19"
+  },
+  "2018Q1|clearing_fees": {
+   "doc": "2018_Q1",
+   "published": "2018-05-09"
+  },
+  "2018Q1|depository_fees": {
+   "doc": "2018_Q1",
+   "published": "2018-05-09"
+  },
+  "2018Q1|ebitda": {
+   "doc": "2018_Q1",
+   "published": "2018-05-09"
+  },
+  "2018Q1|listing_fees": {
+   "doc": "2018_Q1",
+   "published": "2018-05-09"
+  },
+  "2018Q1|market_data_fees": {
+   "doc": "2018_Q1",
+   "published": "2018-05-09"
+  },
+  "2018Q1|net_investment_income": {
+   "doc": "2018_Q1",
+   "published": "2018-05-09"
+  },
+  "2018Q1|operating_expenses": {
+   "doc": "2018_Q1",
+   "published": "2018-05-09"
+  },
+  "2018Q1|operating_profit": {
+   "doc": "2018_Q1",
+   "published": "2018-05-09"
+  },
+  "2018Q1|profit_attributable": {
+   "doc": "2018_Q1",
+   "published": "2018-05-09"
+  },
+  "2018Q1|profit_before_tax": {
+   "doc": "2018_Q1",
+   "published": "2018-05-09"
+  },
+  "2018Q1|revenue_and_other_income": {
+   "doc": "2018_Q1",
+   "published": "2018-05-09"
+  },
+  "2018Q1|trading_fees": {
+   "doc": "2018_Q1",
+   "published": "2018-05-09"
+  },
+  "2018Q2|ebitda": {
+   "doc": "AR FY2018",
+   "published": "2019-03-19"
+  },
+  "2018Q2|operating_expenses": {
+   "doc": "AR FY2018",
+   "published": "2019-03-19"
+  },
+  "2018Q2|operating_profit": {
+   "doc": "AR FY2018",
+   "published": "2019-03-19"
+  },
+  "2018Q2|profit_attributable": {
+   "doc": "AR FY2018",
+   "published": "2019-03-19"
+  },
+  "2018Q2|profit_before_tax": {
+   "doc": "AR FY2018",
+   "published": "2019-03-19"
+  },
+  "2018Q2|revenue_and_other_income": {
+   "doc": "AR FY2018",
+   "published": "2019-03-19"
+  },
+  "2018Q3|clearing_fees": {
+   "doc": "2018_Q3",
+   "published": "2018-11-07"
+  },
+  "2018Q3|depository_fees": {
+   "doc": "2018_Q3",
+   "published": "2018-11-07"
+  },
+  "2018Q3|ebitda": {
+   "doc": "2018_Q3",
+   "published": "2018-11-07"
+  },
+  "2018Q3|listing_fees": {
+   "doc": "2018_Q3",
+   "published": "2018-11-07"
+  },
+  "2018Q3|market_data_fees": {
+   "doc": "2018_Q3",
+   "published": "2018-11-07"
+  },
+  "2018Q3|net_investment_income": {
+   "doc": "2018_Q3",
+   "published": "2018-11-07"
+  },
+  "2018Q3|operating_expenses": {
+   "doc": "2018_Q3",
+   "published": "2018-11-07"
+  },
+  "2018Q3|operating_profit": {
+   "doc": "2018_Q3",
+   "published": "2018-11-07"
+  },
+  "2018Q3|profit_attributable": {
+   "doc": "2018_Q3",
+   "published": "2018-11-07"
+  },
+  "2018Q3|profit_before_tax": {
+   "doc": "2018_Q3",
+   "published": "2018-11-07"
+  },
+  "2018Q3|revenue_and_other_income": {
+   "doc": "2018_Q3",
+   "published": "2018-11-07"
+  },
+  "2018Q3|trading_fees": {
+   "doc": "2018_Q3",
+   "published": "2018-11-07"
+  },
+  "2018Q4|ebitda": {
+   "doc": "AR FY2018",
+   "published": "2019-03-19"
+  },
+  "2018Q4|operating_expenses": {
+   "doc": "AR FY2018",
+   "published": "2019-03-19"
+  },
+  "2018Q4|operating_profit": {
+   "doc": "AR FY2018",
+   "published": "2019-03-19"
+  },
+  "2018Q4|profit_attributable": {
+   "doc": "AR FY2018",
+   "published": "2019-03-19"
+  },
+  "2018Q4|profit_before_tax": {
+   "doc": "AR FY2018",
+   "published": "2019-03-19"
+  },
+  "2018Q4|revenue_and_other_income": {
+   "doc": "AR FY2018",
+   "published": "2019-03-19"
+  },
+  "2019Q1|clearing_fees": {
+   "doc": "2019_Q1",
+   "published": "2019-05-08"
+  },
+  "2019Q1|depository_fees": {
+   "doc": "2019_Q1",
+   "published": "2019-05-08"
+  },
+  "2019Q1|ebitda": {
+   "doc": "2019_Q1",
+   "published": "2019-05-08"
+  },
+  "2019Q1|listing_fees": {
+   "doc": "2019_Q1",
+   "published": "2019-05-08"
+  },
+  "2019Q1|market_data_fees": {
+   "doc": "2019_Q1",
+   "published": "2019-05-08"
+  },
+  "2019Q1|net_investment_income": {
+   "doc": "2019_Q1",
+   "published": "2019-05-08"
+  },
+  "2019Q1|operating_expenses": {
+   "doc": "2019_Q1",
+   "published": "2019-05-08"
+  },
+  "2019Q1|operating_profit": {
+   "doc": "2019_Q1",
+   "published": "2019-05-08"
+  },
+  "2019Q1|profit_attributable": {
+   "doc": "2019_Q1",
+   "published": "2019-05-08"
+  },
+  "2019Q1|profit_before_tax": {
+   "doc": "2019_Q1",
+   "published": "2019-05-08"
+  },
+  "2019Q1|revenue_and_other_income": {
+   "doc": "2019_Q1",
+   "published": "2019-05-08"
+  },
+  "2019Q1|trading_fees": {
+   "doc": "2019_Q1",
+   "published": "2019-05-08"
+  },
+  "2019Q2|ebitda": {
+   "doc": "AR FY2019",
+   "published": "2020-03-16"
+  },
+  "2019Q2|operating_expenses": {
+   "doc": "AR FY2019",
+   "published": "2020-03-16"
+  },
+  "2019Q2|operating_profit": {
+   "doc": "AR FY2019",
+   "published": "2020-03-16"
+  },
+  "2019Q2|profit_attributable": {
+   "doc": "AR FY2019",
+   "published": "2020-03-16"
+  },
+  "2019Q2|profit_before_tax": {
+   "doc": "AR FY2019",
+   "published": "2020-03-16"
+  },
+  "2019Q2|revenue_and_other_income": {
+   "doc": "AR FY2019",
+   "published": "2020-03-16"
+  },
+  "2019Q3|clearing_fees": {
+   "doc": "2019_Q3",
+   "published": "2019-11-06"
+  },
+  "2019Q3|depository_fees": {
+   "doc": "2019_Q3",
+   "published": "2019-11-06"
+  },
+  "2019Q3|ebitda": {
+   "doc": "2019_Q3",
+   "published": "2019-11-06"
+  },
+  "2019Q3|listing_fees": {
+   "doc": "2019_Q3",
+   "published": "2019-11-06"
+  },
+  "2019Q3|market_data_fees": {
+   "doc": "2019_Q3",
+   "published": "2019-11-06"
+  },
+  "2019Q3|net_investment_income": {
+   "doc": "2019_Q3",
+   "published": "2019-11-06"
+  },
+  "2019Q3|operating_expenses": {
+   "doc": "2019_Q3",
+   "published": "2019-11-06"
+  },
+  "2019Q3|operating_profit": {
+   "doc": "2019_Q3",
+   "published": "2019-11-06"
+  },
+  "2019Q3|profit_attributable": {
+   "doc": "2019_Q3",
+   "published": "2019-11-06"
+  },
+  "2019Q3|profit_before_tax": {
+   "doc": "2019_Q3",
+   "published": "2019-11-06"
+  },
+  "2019Q3|revenue_and_other_income": {
+   "doc": "2019_Q3",
+   "published": "2019-11-06"
+  },
+  "2019Q3|trading_fees": {
+   "doc": "2019_Q3",
+   "published": "2019-11-06"
+  },
+  "2019Q4|ebitda": {
+   "doc": "AR FY2019",
+   "published": "2020-03-16"
+  },
+  "2019Q4|operating_expenses": {
+   "doc": "AR FY2019",
+   "published": "2020-03-16"
+  },
+  "2019Q4|operating_profit": {
+   "doc": "AR FY2019",
+   "published": "2020-03-16"
+  },
+  "2019Q4|profit_attributable": {
+   "doc": "AR FY2019",
+   "published": "2020-03-16"
+  },
+  "2019Q4|profit_before_tax": {
+   "doc": "AR FY2019",
+   "published": "2020-03-16"
+  },
+  "2019Q4|revenue_and_other_income": {
+   "doc": "AR FY2019",
+   "published": "2020-03-16"
+  },
+  "2020Q1|clearing_fees": {
+   "doc": "2020_Q1",
+   "published": "2020-05-07"
+  },
+  "2020Q1|depository_fees": {
+   "doc": "2020_Q1",
+   "published": "2020-05-07"
+  },
+  "2020Q1|ebitda": {
+   "doc": "2020_Q1",
+   "published": "2020-05-07"
+  },
+  "2020Q1|listing_fees": {
+   "doc": "2020_Q1",
+   "published": "2020-05-07"
+  },
+  "2020Q1|market_data_fees": {
+   "doc": "2020_Q1",
+   "published": "2020-05-07"
+  },
+  "2020Q1|net_investment_income": {
+   "doc": "2020_Q1",
+   "published": "2020-05-07"
+  },
+  "2020Q1|operating_expenses": {
+   "doc": "2020_Q1",
+   "published": "2020-05-07"
+  },
+  "2020Q1|operating_profit": {
+   "doc": "2020_Q1",
+   "published": "2020-05-07"
+  },
+  "2020Q1|profit_attributable": {
+   "doc": "2020_Q1",
+   "published": "2020-05-07"
+  },
+  "2020Q1|profit_before_tax": {
+   "doc": "2020_Q1",
+   "published": "2020-05-07"
+  },
+  "2020Q1|revenue_and_other_income": {
+   "doc": "2020_Q1",
+   "published": "2020-05-07"
+  },
+  "2020Q1|trading_fees": {
+   "doc": "2020_Q1",
+   "published": "2020-05-07"
+  },
+  "2020Q2|ebitda": {
+   "doc": "AR FY2020",
+   "published": "2021-03-15"
+  },
+  "2020Q2|operating_expenses": {
+   "doc": "AR FY2020",
+   "published": "2021-03-15"
+  },
+  "2020Q2|operating_profit": {
+   "doc": "AR FY2020",
+   "published": "2021-03-15"
+  },
+  "2020Q2|profit_attributable": {
+   "doc": "AR FY2020",
+   "published": "2021-03-15"
+  },
+  "2020Q2|profit_before_tax": {
+   "doc": "AR FY2020",
+   "published": "2021-03-15"
+  },
+  "2020Q2|revenue_and_other_income": {
+   "doc": "AR FY2020",
+   "published": "2021-03-15"
+  },
+  "2020Q3|clearing_fees": {
+   "doc": "2020_Q3",
+   "published": "2020-11-11"
+  },
+  "2020Q3|depository_fees": {
+   "doc": "2020_Q3",
+   "published": "2020-11-11"
+  },
+  "2020Q3|ebitda": {
+   "doc": "2020_Q3",
+   "published": "2020-11-11"
+  },
+  "2020Q3|listing_fees": {
+   "doc": "2020_Q3",
+   "published": "2020-11-11"
+  },
+  "2020Q3|market_data_fees": {
+   "doc": "2020_Q3",
+   "published": "2020-11-11"
+  },
+  "2020Q3|net_investment_income": {
+   "doc": "2020_Q3",
+   "published": "2020-11-11"
+  },
+  "2020Q3|operating_expenses": {
+   "doc": "2020_Q3",
+   "published": "2020-11-11"
+  },
+  "2020Q3|operating_profit": {
+   "doc": "2020_Q3",
+   "published": "2020-11-11"
+  },
+  "2020Q3|profit_attributable": {
+   "doc": "2020_Q3",
+   "published": "2020-11-11"
+  },
+  "2020Q3|profit_before_tax": {
+   "doc": "2020_Q3",
+   "published": "2020-11-11"
+  },
+  "2020Q3|revenue_and_other_income": {
+   "doc": "2020_Q3",
+   "published": "2020-11-11"
+  },
+  "2020Q3|trading_fees": {
+   "doc": "2020_Q3",
+   "published": "2020-11-11"
+  },
+  "2020Q4|ebitda": {
+   "doc": "AR FY2020",
+   "published": "2021-03-15"
+  },
+  "2020Q4|operating_expenses": {
+   "doc": "AR FY2020",
+   "published": "2021-03-15"
+  },
+  "2020Q4|operating_profit": {
+   "doc": "AR FY2020",
+   "published": "2021-03-15"
+  },
+  "2020Q4|profit_attributable": {
+   "doc": "AR FY2020",
+   "published": "2021-03-15"
+  },
+  "2020Q4|profit_before_tax": {
+   "doc": "AR FY2020",
+   "published": "2021-03-15"
+  },
+  "2020Q4|revenue_and_other_income": {
+   "doc": "AR FY2020",
+   "published": "2021-03-15"
+  },
+  "2021Q1|clearing_fees": {
+   "doc": "2021_Q1",
+   "published": "2021-04-28"
+  },
+  "2021Q1|depository_fees": {
+   "doc": "2021_Q1",
+   "published": "2021-04-28"
+  },
+  "2021Q1|ebitda": {
+   "doc": "2021_Q1",
+   "published": "2021-04-28"
+  },
+  "2021Q1|listing_fees": {
+   "doc": "2021_Q1",
+   "published": "2021-04-28"
+  },
+  "2021Q1|market_data_fees": {
+   "doc": "2021_Q1",
+   "published": "2021-04-28"
+  },
+  "2021Q1|net_investment_income": {
+   "doc": "2021_Q1",
+   "published": "2021-04-28"
+  },
+  "2021Q1|operating_expenses": {
+   "doc": "2021_Q1",
+   "published": "2021-04-28"
+  },
+  "2021Q1|operating_profit": {
+   "doc": "2021_Q1",
+   "published": "2021-04-28"
+  },
+  "2021Q1|profit_attributable": {
+   "doc": "2021_Q1",
+   "published": "2021-04-28"
+  },
+  "2021Q1|profit_before_tax": {
+   "doc": "2021_Q1",
+   "published": "2021-04-28"
+  },
+  "2021Q1|revenue_and_other_income": {
+   "doc": "2021_Q1",
+   "published": "2021-04-28"
+  },
+  "2021Q1|trading_fees": {
+   "doc": "2021_Q1",
+   "published": "2021-04-28"
+  },
+  "2021Q2|ebitda": {
+   "doc": "AR FY2021",
+   "published": "2022-03-14"
+  },
+  "2021Q2|operating_expenses": {
+   "doc": "AR FY2021",
+   "published": "2022-03-14"
+  },
+  "2021Q2|operating_profit": {
+   "doc": "AR FY2021",
+   "published": "2022-03-14"
+  },
+  "2021Q2|profit_attributable": {
+   "doc": "AR FY2021",
+   "published": "2022-03-14"
+  },
+  "2021Q2|profit_before_tax": {
+   "doc": "AR FY2021",
+   "published": "2022-03-14"
+  },
+  "2021Q2|revenue_and_other_income": {
+   "doc": "AR FY2021",
+   "published": "2022-03-14"
+  },
+  "2021Q3|clearing_fees": {
+   "doc": "2021_Q3",
+   "published": "2021-10-27"
+  },
+  "2021Q3|depository_fees": {
+   "doc": "2021_Q3",
+   "published": "2021-10-27"
+  },
+  "2021Q3|ebitda": {
+   "doc": "2021_Q3",
+   "published": "2021-10-27"
+  },
+  "2021Q3|listing_fees": {
+   "doc": "2021_Q3",
+   "published": "2021-10-27"
+  },
+  "2021Q3|market_data_fees": {
+   "doc": "2021_Q3",
+   "published": "2021-10-27"
+  },
+  "2021Q3|net_investment_income": {
+   "doc": "2021_Q3",
+   "published": "2021-10-27"
+  },
+  "2021Q3|operating_expenses": {
+   "doc": "2021_Q3",
+   "published": "2021-10-27"
+  },
+  "2021Q3|operating_profit": {
+   "doc": "2021_Q3",
+   "published": "2021-10-27"
+  },
+  "2021Q3|profit_attributable": {
+   "doc": "2021_Q3",
+   "published": "2021-10-27"
+  },
+  "2021Q3|profit_before_tax": {
+   "doc": "2021_Q3",
+   "published": "2021-10-27"
+  },
+  "2021Q3|revenue_and_other_income": {
+   "doc": "2021_Q3",
+   "published": "2021-10-27"
+  },
+  "2021Q3|trading_fees": {
+   "doc": "2021_Q3",
+   "published": "2021-10-27"
+  },
+  "2021Q4|ebitda": {
+   "doc": "AR FY2021",
+   "published": "2022-03-14"
+  },
+  "2021Q4|operating_expenses": {
+   "doc": "AR FY2021",
+   "published": "2022-03-14"
+  },
+  "2021Q4|operating_profit": {
+   "doc": "AR FY2021",
+   "published": "2022-03-14"
+  },
+  "2021Q4|profit_attributable": {
+   "doc": "AR FY2021",
+   "published": "2022-03-14"
+  },
+  "2021Q4|profit_before_tax": {
+   "doc": "AR FY2021",
+   "published": "2022-03-14"
+  },
+  "2021Q4|revenue_and_other_income": {
+   "doc": "AR FY2021",
+   "published": "2022-03-14"
+  },
+  "2022Q1|clearing_fees": {
+   "doc": "2022_Q1",
+   "published": "2022-04-27"
+  },
+  "2022Q1|depository_fees": {
+   "doc": "2022_Q1",
+   "published": "2022-04-27"
+  },
+  "2022Q1|ebitda": {
+   "doc": "2022_Q1",
+   "published": "2022-04-27"
+  },
+  "2022Q1|listing_fees": {
+   "doc": "2022_Q1",
+   "published": "2022-04-27"
+  },
+  "2022Q1|market_data_fees": {
+   "doc": "2022_Q1",
+   "published": "2022-04-27"
+  },
+  "2022Q1|net_investment_income": {
+   "doc": "2022_Q1",
+   "published": "2022-04-27"
+  },
+  "2022Q1|operating_expenses": {
+   "doc": "2022_Q1",
+   "published": "2022-04-27"
+  },
+  "2022Q1|operating_profit": {
+   "doc": "2022_Q1",
+   "published": "2022-04-27"
+  },
+  "2022Q1|profit_attributable": {
+   "doc": "2022_Q1",
+   "published": "2022-04-27"
+  },
+  "2022Q1|profit_before_tax": {
+   "doc": "2022_Q1",
+   "published": "2022-04-27"
+  },
+  "2022Q1|revenue_and_other_income": {
+   "doc": "2022_Q1",
+   "published": "2022-04-27"
+  },
+  "2022Q1|trading_fees": {
+   "doc": "2022_Q1",
+   "published": "2022-04-27"
+  },
+  "2022Q2|clearing_fees": {
+   "doc": "2022_FY",
+   "published": "2023-02-23"
+  },
+  "2022Q2|depository_fees": {
+   "doc": "2022_FY",
+   "published": "2023-02-23"
+  },
+  "2022Q2|ebitda": {
+   "doc": "2022_H1 (Key Financials)",
+   "published": "2022-08-17"
+  },
+  "2022Q2|listing_fees": {
+   "doc": "2022_FY",
+   "published": "2023-02-23"
+  },
+  "2022Q2|market_data_fees": {
+   "doc": "2022_FY",
+   "published": "2023-02-23"
+  },
+  "2022Q2|net_investment_income": {
+   "doc": "2022_FY",
+   "published": "2023-02-23"
+  },
+  "2022Q2|operating_expenses": {
+   "doc": "2022_H1 (Key Financials)",
+   "published": "2022-08-17"
+  },
+  "2022Q2|operating_profit": {
+   "doc": "2022_FY",
+   "published": "2023-02-23"
+  },
+  "2022Q2|profit_attributable": {
+   "doc": "2022_H1 (Key Financials)",
+   "published": "2022-08-17"
+  },
+  "2022Q2|profit_before_tax": {
+   "doc": "2022_FY",
+   "published": "2023-02-23"
+  },
+  "2022Q2|revenue_and_other_income": {
+   "doc": "2022_H1 (Key Financials)",
+   "published": "2022-08-17"
+  },
+  "2022Q2|trading_fees": {
+   "doc": "2022_FY",
+   "published": "2023-02-23"
+  },
+  "2022Q3|clearing_fees": {
+   "doc": "2022_Q3",
+   "published": "2022-10-19"
+  },
+  "2022Q3|depository_fees": {
+   "doc": "2022_Q3",
+   "published": "2022-10-19"
+  },
+  "2022Q3|ebitda": {
+   "doc": "2022_Q3",
+   "published": "2022-10-19"
+  },
+  "2022Q3|listing_fees": {
+   "doc": "2022_Q3",
+   "published": "2022-10-19"
+  },
+  "2022Q3|market_data_fees": {
+   "doc": "2022_Q3",
+   "published": "2022-10-19"
+  },
+  "2022Q3|net_investment_income": {
+   "doc": "2022_Q3",
+   "published": "2022-10-19"
+  },
+  "2022Q3|operating_expenses": {
+   "doc": "2022_Q3",
+   "published": "2022-10-19"
+  },
+  "2022Q3|operating_profit": {
+   "doc": "2022_Q3",
+   "published": "2022-10-19"
+  },
+  "2022Q3|profit_attributable": {
+   "doc": "2022_Q3",
+   "published": "2022-10-19"
+  },
+  "2022Q3|profit_before_tax": {
+   "doc": "2022_Q3",
+   "published": "2022-10-19"
+  },
+  "2022Q3|revenue_and_other_income": {
+   "doc": "2022_Q3",
+   "published": "2022-10-19"
+  },
+  "2022Q3|trading_fees": {
+   "doc": "2022_Q3",
+   "published": "2022-10-19"
+  },
+  "2022Q4|clearing_fees": {
+   "doc": "2022_FY",
+   "published": "2023-02-23"
+  },
+  "2022Q4|depository_fees": {
+   "doc": "2022_FY",
+   "published": "2023-02-23"
+  },
+  "2022Q4|ebitda": {
+   "doc": "2022_FY",
+   "published": "2023-02-23"
+  },
+  "2022Q4|listing_fees": {
+   "doc": "2022_FY",
+   "published": "2023-02-23"
+  },
+  "2022Q4|market_data_fees": {
+   "doc": "2022_FY",
+   "published": "2023-02-23"
+  },
+  "2022Q4|net_investment_income": {
+   "doc": "2022_FY",
+   "published": "2023-02-23"
+  },
+  "2022Q4|operating_expenses": {
+   "doc": "2022_FY",
+   "published": "2023-02-23"
+  },
+  "2022Q4|operating_profit": {
+   "doc": "2022_FY",
+   "published": "2023-02-23"
+  },
+  "2022Q4|profit_attributable": {
+   "doc": "2022_FY",
+   "published": "2023-02-23"
+  },
+  "2022Q4|profit_before_tax": {
+   "doc": "2022_FY",
+   "published": "2023-02-23"
+  },
+  "2022Q4|revenue_and_other_income": {
+   "doc": "2022_FY",
+   "published": "2023-02-23"
+  },
+  "2022Q4|trading_fees": {
+   "doc": "2022_FY",
+   "published": "2023-02-23"
+  },
+  "2023Q1|clearing_fees": {
+   "doc": "2023_Q1",
+   "published": "2023-04-26"
+  },
+  "2023Q1|depository_fees": {
+   "doc": "2023_Q1",
+   "published": "2023-04-26"
+  },
+  "2023Q1|ebitda": {
+   "doc": "2023_Q1",
+   "published": "2023-04-26"
+  },
+  "2023Q1|listing_fees": {
+   "doc": "2023_Q1",
+   "published": "2023-04-26"
+  },
+  "2023Q1|market_data_fees": {
+   "doc": "2023_Q1",
+   "published": "2023-04-26"
+  },
+  "2023Q1|net_investment_income": {
+   "doc": "2023_Q1",
+   "published": "2023-04-26"
+  },
+  "2023Q1|operating_expenses": {
+   "doc": "2023_Q1",
+   "published": "2023-04-26"
+  },
+  "2023Q1|operating_profit": {
+   "doc": "2023_Q1",
+   "published": "2023-04-26"
+  },
+  "2023Q1|profit_attributable": {
+   "doc": "2023_Q1",
+   "published": "2023-04-26"
+  },
+  "2023Q1|profit_before_tax": {
+   "doc": "2023_Q1",
+   "published": "2023-04-26"
+  },
+  "2023Q1|revenue_and_other_income": {
+   "doc": "2023_Q1",
+   "published": "2023-04-26"
+  },
+  "2023Q1|trading_fees": {
+   "doc": "2023_Q1",
+   "published": "2023-04-26"
+  },
+  "2023Q2|clearing_fees": {
+   "doc": "2023_FY",
+   "published": "2024-02-29"
+  },
+  "2023Q2|depository_fees": {
+   "doc": "2023_FY",
+   "published": "2024-02-29"
+  },
+  "2023Q2|ebitda": {
+   "doc": "2023_H1 (Key Financials)",
+   "published": "2023-08-16"
+  },
+  "2023Q2|listing_fees": {
+   "doc": "2023_FY",
+   "published": "2024-02-29"
+  },
+  "2023Q2|market_data_fees": {
+   "doc": "2023_FY",
+   "published": "2024-02-29"
+  },
+  "2023Q2|net_investment_income": {
+   "doc": "2023_FY",
+   "published": "2024-02-29"
+  },
+  "2023Q2|operating_expenses": {
+   "doc": "2023_H1 (Key Financials)",
+   "published": "2023-08-16"
+  },
+  "2023Q2|operating_profit": {
+   "doc": "2023_FY",
+   "published": "2024-02-29"
+  },
+  "2023Q2|profit_attributable": {
+   "doc": "2023_H1 (Key Financials)",
+   "published": "2023-08-16"
+  },
+  "2023Q2|profit_before_tax": {
+   "doc": "2023_FY",
+   "published": "2024-02-29"
+  },
+  "2023Q2|revenue_and_other_income": {
+   "doc": "2023_H1 (Key Financials)",
+   "published": "2023-08-16"
+  },
+  "2023Q2|trading_fees": {
+   "doc": "2023_FY",
+   "published": "2024-02-29"
+  },
+  "2023Q3|clearing_fees": {
+   "doc": "2023_Q3",
+   "published": "2023-10-20"
+  },
+  "2023Q3|depository_fees": {
+   "doc": "2023_Q3",
+   "published": "2023-10-20"
+  },
+  "2023Q3|ebitda": {
+   "doc": "2023_Q3",
+   "published": "2023-10-20"
+  },
+  "2023Q3|listing_fees": {
+   "doc": "2023_Q3",
+   "published": "2023-10-20"
+  },
+  "2023Q3|market_data_fees": {
+   "doc": "2023_Q3",
+   "published": "2023-10-20"
+  },
+  "2023Q3|net_investment_income": {
+   "doc": "2023_Q3",
+   "published": "2023-10-20"
+  },
+  "2023Q3|operating_expenses": {
+   "doc": "2023_Q3",
+   "published": "2023-10-20"
+  },
+  "2023Q3|operating_profit": {
+   "doc": "2023_Q3",
+   "published": "2023-10-20"
+  },
+  "2023Q3|profit_attributable": {
+   "doc": "2023_Q3",
+   "published": "2023-10-20"
+  },
+  "2023Q3|profit_before_tax": {
+   "doc": "2023_Q3",
+   "published": "2023-10-20"
+  },
+  "2023Q3|revenue_and_other_income": {
+   "doc": "2023_Q3",
+   "published": "2023-10-20"
+  },
+  "2023Q3|trading_fees": {
+   "doc": "2023_Q3",
+   "published": "2023-10-20"
+  },
+  "2023Q4|clearing_fees": {
+   "doc": "2023_FY",
+   "published": "2024-02-29"
+  },
+  "2023Q4|depository_fees": {
+   "doc": "2023_FY",
+   "published": "2024-02-29"
+  },
+  "2023Q4|ebitda": {
+   "doc": "2023_FY",
+   "published": "2024-02-29"
+  },
+  "2023Q4|listing_fees": {
+   "doc": "2023_FY",
+   "published": "2024-02-29"
+  },
+  "2023Q4|market_data_fees": {
+   "doc": "2023_FY",
+   "published": "2024-02-29"
+  },
+  "2023Q4|net_investment_income": {
+   "doc": "2023_FY",
+   "published": "2024-02-29"
+  },
+  "2023Q4|operating_expenses": {
+   "doc": "2023_FY",
+   "published": "2024-02-29"
+  },
+  "2023Q4|operating_profit": {
+   "doc": "2023_FY",
+   "published": "2024-02-29"
+  },
+  "2023Q4|profit_attributable": {
+   "doc": "2023_FY",
+   "published": "2024-02-29"
+  },
+  "2023Q4|profit_before_tax": {
+   "doc": "2023_FY",
+   "published": "2024-02-29"
+  },
+  "2023Q4|revenue_and_other_income": {
+   "doc": "2023_FY",
+   "published": "2024-02-29"
+  },
+  "2023Q4|trading_fees": {
+   "doc": "2023_FY",
+   "published": "2024-02-29"
+  },
+  "2024Q1|clearing_fees": {
+   "doc": "2024_Q1",
+   "published": "2024-04-24"
+  },
+  "2024Q1|depository_fees": {
+   "doc": "2024_Q1",
+   "published": "2024-04-24"
+  },
+  "2024Q1|ebitda": {
+   "doc": "2024_Q1",
+   "published": "2024-04-24"
+  },
+  "2024Q1|listing_fees": {
+   "doc": "2024_Q1",
+   "published": "2024-04-24"
+  },
+  "2024Q1|market_data_fees": {
+   "doc": "2024_Q1",
+   "published": "2024-04-24"
+  },
+  "2024Q1|net_investment_income": {
+   "doc": "2024_Q1",
+   "published": "2024-04-24"
+  },
+  "2024Q1|operating_expenses": {
+   "doc": "2024_Q1",
+   "published": "2024-04-24"
+  },
+  "2024Q1|operating_profit": {
+   "doc": "2024_Q1",
+   "published": "2024-04-24"
+  },
+  "2024Q1|profit_attributable": {
+   "doc": "2024_Q1",
+   "published": "2024-04-24"
+  },
+  "2024Q1|profit_before_tax": {
+   "doc": "2024_Q1",
+   "published": "2024-04-24"
+  },
+  "2024Q1|revenue_and_other_income": {
+   "doc": "2024_Q1",
+   "published": "2024-04-24"
+  },
+  "2024Q1|trading_fees": {
+   "doc": "2024_Q1",
+   "published": "2024-04-24"
+  },
+  "2024Q2|clearing_fees": {
+   "doc": "2024_FY",
+   "published": "2025-02-27"
+  },
+  "2024Q2|depository_fees": {
+   "doc": "2024_FY",
+   "published": "2025-02-27"
+  },
+  "2024Q2|ebitda": {
+   "doc": "2024_H1 (Key Financials)",
+   "published": "2024-08-21"
+  },
+  "2024Q2|listing_fees": {
+   "doc": "2024_FY",
+   "published": "2025-02-27"
+  },
+  "2024Q2|market_data_fees": {
+   "doc": "2024_FY",
+   "published": "2025-02-27"
+  },
+  "2024Q2|net_investment_income": {
+   "doc": "2024_FY",
+   "published": "2025-02-27"
+  },
+  "2024Q2|operating_expenses": {
+   "doc": "2024_H1 (Key Financials)",
+   "published": "2024-08-21"
+  },
+  "2024Q2|operating_profit": {
+   "doc": "2024_FY",
+   "published": "2025-02-27"
+  },
+  "2024Q2|profit_attributable": {
+   "doc": "2024_H1 (Key Financials)",
+   "published": "2024-08-21"
+  },
+  "2024Q2|profit_before_tax": {
+   "doc": "2024_FY",
+   "published": "2025-02-27"
+  },
+  "2024Q2|revenue_and_other_income": {
+   "doc": "2024_H1 (Key Financials)",
+   "published": "2024-08-21"
+  },
+  "2024Q2|trading_fees": {
+   "doc": "2024_FY",
+   "published": "2025-02-27"
+  },
+  "2024Q3|clearing_fees": {
+   "doc": "2024_Q3",
+   "published": "2024-10-23"
+  },
+  "2024Q3|depository_fees": {
+   "doc": "2024_Q3",
+   "published": "2024-10-23"
+  },
+  "2024Q3|ebitda": {
+   "doc": "2024_Q3",
+   "published": "2024-10-23"
+  },
+  "2024Q3|listing_fees": {
+   "doc": "2024_Q3",
+   "published": "2024-10-23"
+  },
+  "2024Q3|market_data_fees": {
+   "doc": "2024_Q3",
+   "published": "2024-10-23"
+  },
+  "2024Q3|net_investment_income": {
+   "doc": "2024_Q3",
+   "published": "2024-10-23"
+  },
+  "2024Q3|operating_expenses": {
+   "doc": "2024_Q3",
+   "published": "2024-10-23"
+  },
+  "2024Q3|operating_profit": {
+   "doc": "2024_Q3",
+   "published": "2024-10-23"
+  },
+  "2024Q3|profit_attributable": {
+   "doc": "2024_Q3",
+   "published": "2024-10-23"
+  },
+  "2024Q3|profit_before_tax": {
+   "doc": "2024_Q3",
+   "published": "2024-10-23"
+  },
+  "2024Q3|revenue_and_other_income": {
+   "doc": "2024_Q3",
+   "published": "2024-10-23"
+  },
+  "2024Q3|trading_fees": {
+   "doc": "2024_Q3",
+   "published": "2024-10-23"
+  },
+  "2024Q4|clearing_fees": {
+   "doc": "2024_FY",
+   "published": "2025-02-27"
+  },
+  "2024Q4|depository_fees": {
+   "doc": "2024_FY",
+   "published": "2025-02-27"
+  },
+  "2024Q4|ebitda": {
+   "doc": "2024_FY",
+   "published": "2025-02-27"
+  },
+  "2024Q4|listing_fees": {
+   "doc": "2024_FY",
+   "published": "2025-02-27"
+  },
+  "2024Q4|market_data_fees": {
+   "doc": "2024_FY",
+   "published": "2025-02-27"
+  },
+  "2024Q4|net_investment_income": {
+   "doc": "2024_FY",
+   "published": "2025-02-27"
+  },
+  "2024Q4|operating_expenses": {
+   "doc": "2024_FY",
+   "published": "2025-02-27"
+  },
+  "2024Q4|operating_profit": {
+   "doc": "2024_FY",
+   "published": "2025-02-27"
+  },
+  "2024Q4|profit_attributable": {
+   "doc": "2024_FY",
+   "published": "2025-02-27"
+  },
+  "2024Q4|profit_before_tax": {
+   "doc": "2024_FY",
+   "published": "2025-02-27"
+  },
+  "2024Q4|revenue_and_other_income": {
+   "doc": "2024_FY",
+   "published": "2025-02-27"
+  },
+  "2024Q4|trading_fees": {
+   "doc": "2024_FY",
+   "published": "2025-02-27"
+  },
+  "2025Q1|clearing_fees": {
+   "doc": "2025_Q1",
+   "published": "2025-04-30"
+  },
+  "2025Q1|depository_fees": {
+   "doc": "2025_Q1",
+   "published": "2025-04-30"
+  },
+  "2025Q1|ebitda": {
+   "doc": "2025_Q1",
+   "published": "2025-04-30"
+  },
+  "2025Q1|listing_fees": {
+   "doc": "2025_Q1",
+   "published": "2025-04-30"
+  },
+  "2025Q1|market_data_fees": {
+   "doc": "2025_Q1",
+   "published": "2025-04-30"
+  },
+  "2025Q1|net_investment_income": {
+   "doc": "2025_Q1",
+   "published": "2025-04-30"
+  },
+  "2025Q1|operating_expenses": {
+   "doc": "2025_Q1",
+   "published": "2025-04-30"
+  },
+  "2025Q1|operating_profit": {
+   "doc": "2025_Q1",
+   "published": "2025-04-30"
+  },
+  "2025Q1|profit_attributable": {
+   "doc": "2025_Q1",
+   "published": "2025-04-30"
+  },
+  "2025Q1|profit_before_tax": {
+   "doc": "2025_Q1",
+   "published": "2025-04-30"
+  },
+  "2025Q1|revenue_and_other_income": {
+   "doc": "2025_Q1",
+   "published": "2025-04-30"
+  },
+  "2025Q1|trading_fees": {
+   "doc": "2025_Q1",
+   "published": "2025-04-30"
+  },
+  "2025Q2|clearing_fees": {
+   "doc": "2025_FY",
+   "published": "2026-02-26"
+  },
+  "2025Q2|depository_fees": {
+   "doc": "2025_FY",
+   "published": "2026-02-26"
+  },
+  "2025Q2|ebitda": {
+   "doc": "2025_H1 (Key Financials)",
+   "published": "2025-08-20"
+  },
+  "2025Q2|listing_fees": {
+   "doc": "2025_FY",
+   "published": "2026-02-26"
+  },
+  "2025Q2|market_data_fees": {
+   "doc": "2025_FY",
+   "published": "2026-02-26"
+  },
+  "2025Q2|net_investment_income": {
+   "doc": "2025_FY",
+   "published": "2026-02-26"
+  },
+  "2025Q2|operating_expenses": {
+   "doc": "2025_H1 (Key Financials)",
+   "published": "2025-08-20"
+  },
+  "2025Q2|operating_profit": {
+   "doc": "2025_FY",
+   "published": "2026-02-26"
+  },
+  "2025Q2|profit_attributable": {
+   "doc": "2025_H1 (Key Financials)",
+   "published": "2025-08-20"
+  },
+  "2025Q2|profit_before_tax": {
+   "doc": "2025_FY",
+   "published": "2026-02-26"
+  },
+  "2025Q2|revenue_and_other_income": {
+   "doc": "2025_H1 (Key Financials)",
+   "published": "2025-08-20"
+  },
+  "2025Q2|trading_fees": {
+   "doc": "2025_FY",
+   "published": "2026-02-26"
+  },
+  "2025Q3|clearing_fees": {
+   "doc": "2025_Q3",
+   "published": "2025-11-05"
+  },
+  "2025Q3|depository_fees": {
+   "doc": "2025_Q3",
+   "published": "2025-11-05"
+  },
+  "2025Q3|ebitda": {
+   "doc": "2025_Q3",
+   "published": "2025-11-05"
+  },
+  "2025Q3|listing_fees": {
+   "doc": "2025_Q3",
+   "published": "2025-11-05"
+  },
+  "2025Q3|market_data_fees": {
+   "doc": "2025_Q3",
+   "published": "2025-11-05"
+  },
+  "2025Q3|net_investment_income": {
+   "doc": "2025_Q3",
+   "published": "2025-11-05"
+  },
+  "2025Q3|operating_expenses": {
+   "doc": "2025_Q3",
+   "published": "2025-11-05"
+  },
+  "2025Q3|operating_profit": {
+   "doc": "2025_Q3",
+   "published": "2025-11-05"
+  },
+  "2025Q3|profit_attributable": {
+   "doc": "2025_Q3",
+   "published": "2025-11-05"
+  },
+  "2025Q3|profit_before_tax": {
+   "doc": "2025_Q3",
+   "published": "2025-11-05"
+  },
+  "2025Q3|revenue_and_other_income": {
+   "doc": "2025_Q3",
+   "published": "2025-11-05"
+  },
+  "2025Q3|trading_fees": {
+   "doc": "2025_Q3",
+   "published": "2025-11-05"
+  },
+  "2025Q4|clearing_fees": {
+   "doc": "2025_FY",
+   "published": "2026-02-26"
+  },
+  "2025Q4|depository_fees": {
+   "doc": "2025_FY",
+   "published": "2026-02-26"
+  },
+  "2025Q4|ebitda": {
+   "doc": "2025_FY",
+   "published": "2026-02-26"
+  },
+  "2025Q4|listing_fees": {
+   "doc": "2025_FY",
+   "published": "2026-02-26"
+  },
+  "2025Q4|market_data_fees": {
+   "doc": "2025_FY",
+   "published": "2026-02-26"
+  },
+  "2025Q4|net_investment_income": {
+   "doc": "2025_FY",
+   "published": "2026-02-26"
+  },
+  "2025Q4|operating_expenses": {
+   "doc": "2025_FY",
+   "published": "2026-02-26"
+  },
+  "2025Q4|operating_profit": {
+   "doc": "2025_FY",
+   "published": "2026-02-26"
+  },
+  "2025Q4|profit_attributable": {
+   "doc": "2025_FY",
+   "published": "2026-02-26"
+  },
+  "2025Q4|profit_before_tax": {
+   "doc": "2025_FY",
+   "published": "2026-02-26"
+  },
+  "2025Q4|revenue_and_other_income": {
+   "doc": "2025_FY",
+   "published": "2026-02-26"
+  },
+  "2025Q4|trading_fees": {
+   "doc": "2025_FY",
+   "published": "2026-02-26"
+  },
+  "2026Q1|clearing_fees": {
+   "doc": "2026_Q1",
+   "published": "2026-04-29"
+  },
+  "2026Q1|depository_fees": {
+   "doc": "2026_Q1",
+   "published": "2026-04-29"
+  },
+  "2026Q1|ebitda": {
+   "doc": "2026_Q1",
+   "published": "2026-04-29"
+  },
+  "2026Q1|listing_fees": {
+   "doc": "2026_Q1",
+   "published": "2026-04-29"
+  },
+  "2026Q1|market_data_fees": {
+   "doc": "2026_Q1",
+   "published": "2026-04-29"
+  },
+  "2026Q1|net_investment_income": {
+   "doc": "2026_Q1",
+   "published": "2026-04-29"
+  },
+  "2026Q1|operating_expenses": {
+   "doc": "2026_Q1",
+   "published": "2026-04-29"
+  },
+  "2026Q1|operating_profit": {
+   "doc": "2026_Q1",
+   "published": "2026-04-29"
+  },
+  "2026Q1|profit_attributable": {
+   "doc": "2026_Q1",
+   "published": "2026-04-29"
+  },
+  "2026Q1|profit_before_tax": {
+   "doc": "2026_Q1",
+   "published": "2026-04-29"
+  },
+  "2026Q1|revenue_and_other_income": {
+   "doc": "2026_Q1",
+   "published": "2026-04-29"
+  },
+  "2026Q1|trading_fees": {
+   "doc": "2026_Q1",
+   "published": "2026-04-29"
+  },
+  "2026Q2|ebitda": {
+   "doc": "2026_H1 (Key Financials)",
+   "published": "2026-08-19"
+  },
+  "2026Q2|operating_expenses": {
+   "doc": "2026_H1 (Key Financials)",
+   "published": "2026-08-19"
+  },
+  "2026Q2|profit_attributable": {
+   "doc": "2026_H1 (Key Financials)",
+   "published": "2026-08-19"
+  },
+  "2026Q2|revenue_and_other_income": {
+   "doc": "2026_H1 (Key Financials)",
+   "published": "2026-08-19"
+  }
  }
 }
