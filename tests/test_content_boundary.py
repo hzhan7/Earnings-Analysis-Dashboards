@@ -591,6 +591,26 @@ class ContentBoundaryTest(unittest.TestCase):
                                  f"{name} section {section['id']} description")
             for table in payload.get("tables", []):
                 self.assertNotIn("<", table["title"], f"{name} table {table['n']}")
+            # The guidance block was the one escaped region this gate did not
+            # reach. `page.js` builds it with `tableHTML(title, headers, rows)`
+            # -- which runs all three through `esc()` -- plus
+            # `esc(D.guidance.note)`, exactly the treatment `notes` gets. Six
+            # pages carry a guidance block; `data/avgo.js` reached the reader
+            # with three literal `<b>` pairs in its note (21 visible characters)
+            # while every other escaped slot on that page was clean, so the
+            # existing per-slot checks all stayed green. Checked here rather
+            # than by scanning the payload for `<`, because `brief`, `footer`
+            # and every exhibit `note` legitimately carry markup.
+            guidance = payload.get("guidance") or {}
+            if guidance:
+                self.assertNotIn("<", guidance.get("note") or "", f"{name} guidance note")
+                self.assertNotIn("<", guidance.get("title") or "", f"{name} guidance title")
+                for header in guidance.get("headers", []):
+                    self.assertNotIn("<", header, f"{name} guidance header")
+                for row_index, row in enumerate(guidance.get("rows", [])):
+                    for cell in row:
+                        self.assertNotIn("<", cell if isinstance(cell, str) else "",
+                                         f"{name} guidance row {row_index}")
 
     def test_no_published_file_contains_forbidden_text(self) -> None:
         for path in published_files():

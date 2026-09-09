@@ -190,7 +190,8 @@ def delivery_band(ref: str, metric: str, xlabels: list[str], low: list[float],
                   venue: str = "法说会", scope: str = "", point: bool = False,
                   break_at: int | None = None, break_label: str = "",
                   timing: str = "该季<b>开始前</b>", period_word: str = "季",
-                  xstep: int | None = None) -> dict:
+                  xstep: int | None = None,
+                  pending_label: str = "实际值待披露") -> dict:
     """One guided metric's own range against what was reported, quarter by quarter.
 
     Both companies that use this guide several numbers every quarter with the
@@ -271,7 +272,7 @@ def delivery_band(ref: str, metric: str, xlabels: list[str], low: list[float],
              if point else
              f"色块是{timing}公司在上一场{venue}给出的{metric}区间，菱形是随后报出来的实际值。")
             + extra_note
-            + (f"最后一格 {pending[-1]} 只有指引{'' if point else '色块'}，实际值待披露。"
+            + (f"最后一格 {pending[-1]} 只有指引{'' if point else '色块'}，{pending_label}。"
                if pending else "")
             + "纵轴不自 0 起，但没有任何点被截掉。"
         ),
@@ -286,7 +287,12 @@ def delivery_band(ref: str, metric: str, xlabels: list[str], low: list[float],
     if xstep:
         band["xstep"] = xstep
     if pending:
-        band["annot"] = f"{pending[-1]}：仅指引，实际值待披露"
+        # A trailing guide with no actual has two very different causes, and this
+        # helper cannot tell them apart from the data: the quarter may simply not
+        # have been reported yet, or the company may have retired the measure so
+        # the cell will never be filled. The default says the first; a caller that
+        # knows it is the second passes `pending_label` and says so instead.
+        band["annot"] = f"{pending[-1]}：仅指引，{pending_label}"
     # Structural break (规矩 6): the series is not comparable across this index,
     # so the chart says so rather than drawing one continuous line over a
     # definition change.

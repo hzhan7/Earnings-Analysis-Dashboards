@@ -2202,7 +2202,7 @@
       "non_gaap_operating_margin_pct": 66.0,
       "adjusted_ebitda_margin_pct": null,
       "ai_semiconductor_revenue_usd_bn": 21.7,
-      "note": "正式指引这次只有<b>两条</b>，都在「Fourth Quarter Fiscal Year 2026 Business Outlook」区块里，都是单点（approximately）：收入约 US$34.8B、non-GAAP 营业利润率约为收入的 66%。<b>Adjusted EBITDA 指引消失了</b>——上一份还同时给营业利润率和 EBITDA 两条，这一份只剩前者。第三条 AI 半导体收入 US$21.7B 出自 CEO 引语、不在 Business Outlook 区块内，而且<b>不带 approximately</b>（原文 “to $21.7 billion”），口径级别与前两条不同，本页分开画。"
+      "note": "正式指引这次只有两条，都在「Fourth Quarter Fiscal Year 2026 Business Outlook」区块里，都是单点（approximately）：收入约 US$34.8B、non-GAAP 营业利润率约为收入的 66%。Adjusted EBITDA 指引消失了——上一份还同时给营业利润率和 EBITDA 两条，这一份只剩前者。第三条 AI 半导体收入 US$21.7B 出自 CEO 引语、不在 Business Outlook 区块内，而且不带 approximately（原文 “to $21.7 billion”），口径级别与前两条不同，本页分开画。"
     }
   },
   "next_kpi": {

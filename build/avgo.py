@@ -252,6 +252,11 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], list[dict]]:
                "<code>approximately</code>——那一季严格说是下限而不是点，"
                "但仍按点画，因为它没有上界。" if at_least else "")
         ),
+        # The trailing cell here is not waiting on a filing. Broadcom retired the
+        # measure with the release that would have settled it, so the default
+        # 「实际值待披露」 would point the reader at a disclosure that is never coming
+        # -- and would contradict what the rest of this page says about it.
+        pending_label="实际值不会再有（该指标已停止披露）",
     )
     margin_dev = midpoint_deviation(
         "EX_EBITDA_DEV", "Adjusted EBITDA 利润率", periods, margin_guide, margin_guide,
