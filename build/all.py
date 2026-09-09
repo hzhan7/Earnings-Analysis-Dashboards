@@ -91,7 +91,8 @@ ENTRIES = [
         "aliases": ["Broadcom", "博通", "VMware"],
         "group": "semiconductor_ai",
         "cadence_label": "11 月制财年；本站按自然年季度标注",
-        "headline_metrics": ["Revenue $22.19B", "AI 半导体 $10.8B", "EBITDA 利润率 68.7%"],
+        "headline_metrics": ["Revenue $29.59B", "AI 半导体 $16.7B",
+                             "non-GAAP 营业利润率 67.9%"],
         "search_text": "avgo broadcom 博通 半导体 ai xpu 定制加速器 asic networking 以太网 tomahawk jericho vmware 基础设施软件 vcf",
     },
     {

@@ -582,7 +582,7 @@ CONVERTED = {
         "收入（仅公司给过区间的 5 季）": "Broadcom guided a revenue *range* in only five "
                               "quarters; the rest of the record is a single point, "
                               "which is the chart beside this one.",
-        "收入（公司只给单点的 20 季）": "the point-guidance era; the two together cover the "
+        "收入（公司只给单点的 21 季）": "the point-guidance era; the two together cover the "
                             "whole guided record.",
         "收入相对指引中值的偏离": "the guidance record itself starts with the 2018-06-07 "
                        "release, which is the first Broadcom Inc. release.",
@@ -591,7 +591,7 @@ CONVERTED = {
                               "2018-06-07 reconciliation.",
         "Adjusted EBITDA 利润率相对指引中值": "same floor.",
         "把「超出自身指引」拆成两条腿": "one leg is the EBITDA margin, so it inherits that floor.",
-        "收入 US$22,187M": "the semiconductor / infrastructure-software split does not "
+        "收入 US$29,591M": "the semiconductor / infrastructure-software split does not "
                        "exist before 2018 -- the earlier segments are Wired / "
                        "Wireless / Enterprise storage / Industrial, which the "
                        "company never mapped onto the later two.",
@@ -605,8 +605,10 @@ CONVERTED = {
         "营运资本随 AI 放量变重": "inventory and receivables do reach 2016; this chart pairs "
                         "them with the AI-era commentary and runs on the "
                         "reviewed window.",
-        "Adjusted EBITDA 利润率：阈值": "the threshold view of the same measure, which no "
-                              "Broadcom Limited release contains.",
+        "季度收入：阈值": "the threshold view now tracks revenue against the point guidance "
+                              "the company gives for it; Broadcom stopped publishing "
+                              "Adjusted EBITDA with the 2026-09-02 release, so the "
+                              "measure that used to sit here can no longer be settled.",
         "non-GAAP 营业利润率：阈值": "the pre-2018 non-GAAP definition adds revenue back and "
                            "is presented on continuing operations, so it is not "
                            "the same measure and is not spliced.",
@@ -712,18 +714,18 @@ FLOOR_KIND = {
     'avgo': {
         '把「超出自身指引」拆成两条腿': 'coverage',
         '收入（仅公司给过区间的 5 季）': 'disclosure',
-        '收入（公司只给单点的 20 季）': 'disclosure',
+        '收入（公司只给单点的 21 季）': 'disclosure',
         '收入相对指引中值的偏离': 'disclosure',
         'Adjusted EBITDA 利润率：18': 'disclosure',
         'Adjusted EBITDA 利润率相对指引中值': 'disclosure',
-        '收入 US$22,187M': 'disclosure',
+        '收入 US$29,591M': 'disclosure',
         '两个引擎': 'disclosure',
         '两个分部的申报营业利润': 'disclosure',
         'AI 半导体收入：公司口头指引': 'disclosure',
         'AI 半导体收入（季）': 'disclosure',
         '基础设施软件收入': 'disclosure',
         '营运资本随 AI 放量变重': 'coverage',
-        'Adjusted EBITDA 利润率：阈值': 'disclosure',
+        '季度收入：阈值': 'disclosure',
         'non-GAAP 营业利润率：阈值': 'disclosure',
         '季度回购：阈值': 'disclosure',
         '股东回报与其资金来源': 'disclosure',
@@ -1337,7 +1339,6 @@ UNDERIVABLE_QUARTER_COUNTS = {
                        "自己没有任何地方声明窗口有多长。那 13 个季度本身在本页 8 张 42 季图"
                        "上都画着（画的是它们的合计数，减出来的是收入分项），只是没有任何一张"
                        "图把它们单独成组，所以也不是「补集没被画」。"),
-    "avgo Ex16": ([32], "「前 32 个季度这条线一直在…」——序列内一段前缀，不是窗口长度"),
     "cdns Ex11": ([43], "指向完整指引记录的交叉引用；本图只画近 20 季"),
     "cme Ex14":  ([37], "锚是同句里用中文写的「五十四个季度里」，数字形式的锚不存在"),
     "cme Ex21":  ([34], "税改前 7 季 / 之后 34 季的分段均值，两段都短于窗口"),

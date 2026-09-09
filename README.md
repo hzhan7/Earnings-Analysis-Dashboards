@@ -117,7 +117,7 @@ no dependency at all, and is what actually runs on a fresh clone.
   `Q1 2026` is the quarter ended 2026-04-26, which the company calls FY2027 Q1;
   Synopsys' ends in October, so its `Q2 2026` is the quarter ended 2026-07-31,
   which the company calls FY2026 Q3; Broadcom's ends in early November, so its
-  `Q1 2026` is the quarter ended 2026-05-03, which the company calls FY2026 Q2;
+  `Q2 2026` is the quarter ended 2026-08-02, which the company calls FY2026 Q3;
   Visa's ends in September, so its `Q2 2026`
   is the quarter ended 2026-06-30, which the company also calls FY2026 Q3;
   Costco's ends on the Sunday nearest 31 August and Micron's on the Thursday
@@ -735,7 +735,7 @@ a zero there would have drawn it as clean operating profit.
 
 Broadcom files a quarterly outlook too, and its record answers a question none
 of the others do: **what happens to a delivery record when the company changes
-the shape of the promise.** Across 33 earnings 8-Ks the `Business Outlook` block
+the shape of the promise.** Across 34 earnings 8-Ks the `Business Outlook` block
 takes four forms. It opens as a GAAP/non-GAAP table with a revenue range
 (`$5,047M +/- $75M`); becomes a fiscal-year number for the whole of FY2019;
 returns as a quarterly range through the first COVID year; and from the FY2021
@@ -750,13 +750,20 @@ The two halves say opposite-looking things. In the **five** quarters Broadcom
 published a revenue *range*, the reported number landed **inside it every
 time** — never above, never below. In the **nineteen** finished quarters it
 published a *point*, the number came in **above every time**. Read uniformly
-against the guided point or midpoint, all **24** finished quarters are positive,
-and Adjusted EBITDA margin has cleared its guided percentage in all **18**.
+against the guided point or midpoint, all **25** finished quarters are positive,
+and Adjusted EBITDA margin cleared its guided percentage in all **18** quarters
+where both sides exist. That second record is now closed rather than continuing:
+the 2026-09-02 release dropped Adjusted EBITDA entirely — the actual, the
+reconciliation block and the guidance all went at once — so the guide already
+given for that quarter can never be settled. The page leaves the cell empty and
+records the stop; it does not recompute the measure from the components that are
+still disclosed, because a computed value spliced onto a record about *disclosed*
+performance stops being distinguishable from it.
 
 A record with no misses would normally be the finding. Here it is the setup for
 a better one, and two facts do the work. First, the beats are tiny and
 astonishingly regular: revenue deviation spans +0.17% to +3.53% with a median of
-+0.80%, across eight years that contain a COVID quarter, a US$69B acquisition
++0.78%, across eight years that contain a COVID quarter, a US$69B acquisition
 and a four-fold increase in revenue. Second — the Cadence caveat again, and
 sharper — the outlook goes out with the *previous* quarter's results, a median
 of 31 days into the 91-day quarter it guides. A third of the quarter is already
@@ -776,8 +783,10 @@ operating incomes sum to the company's non-GAAP operating income **exactly, in
 all 30 quarters the segment note covers** (with the retired IP-licensing segment
 included for FY2019 and earlier), so the margin the company guides can be
 attributed to the semiconductor engine and the software engine without an
-estimate. It is worth attributing: infrastructure software is 32% of revenue and
-38% of segment operating profit.
+estimate. It is worth attributing: as of the last quarter with a segment note (`Q1 2026`),
+infrastructure software was 32% of revenue and 38% of segment operating profit.
+The two figures stop being co-dated whenever an earnings 8-K arrives before its
+10-Q, as it has for `Q2 2026`: the release prints segment *revenue* only.
 
 Two things its page refuses. **Segment gross margin** is not plotted: Broadcom
 first disclosed segment cost of revenue under ASU 2023-07 in the FY2025 10-K, so
@@ -787,7 +796,7 @@ it ("semiconductor segment GM below 68%") is therefore reported as
 the number the whole equity story runs on, is not a reportable segment: it
 appears only in the CEO's quote in the earnings release, rounded to US$0.1B, in
 one quarter as an inequality (`over $4.4 billion`) and in another not as a level
-at all. The page plots the six readings it has, in a chart kept deliberately
+at all. The page plots the seven readings it has, in a chart kept deliberately
 apart from the formal record, and says on the chart why they are not the same
 kind of number.
 

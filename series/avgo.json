@@ -1,5 +1,5 @@
 {
-  "_provenance": "所有公司披露值逐季读自 SEC EDGAR 上 Broadcom Inc.（CIK 1730168）的申报文件：33 份季度业绩 8-K 的 EX-99.1 新闻稿（指引、Adjusted EBITDA 与 non-GAAP 营业利润、分部收入、当季现金流），25 份 10-Q 与 8 份 10-K 的分部附注 R 文件（分部收入与分部营业利润），以及 XBRL companyfacts（损益表、现金流量表、资产负债表与采购承诺）。两条独立来源在重叠的 28 个季度上收入与 GAAP 营业利润逐季完全一致，7 个完整财年的四季合计亦与申报年度数完全一致。",
+  "_provenance": "所有公司披露值逐季读自 SEC EDGAR 上 Broadcom Inc.（CIK 1730168）的申报文件：34 份季度业绩 8-K 的 EX-99.1 新闻稿（指引、Adjusted EBITDA 与 non-GAAP 营业利润、分部收入、当季现金流），25 份 10-Q 与 8 份 10-K 的分部附注 R 文件（分部收入与分部营业利润），以及 XBRL companyfacts（损益表、现金流量表、资产负债表与采购承诺）。两条独立来源在重叠的 28 个季度上收入与 GAAP 营业利润逐季完全一致，7 个完整财年的四季合计亦与申报年度数完全一致。",
   "cik": "0001730168",
   "fiscal_year_end": "11-01",
   "period_ends": [
@@ -43,7 +43,8 @@
     "2025-08-03",
     "2025-11-02",
     "2026-02-01",
-    "2026-05-03"
+    "2026-05-03",
+    "2026-08-02"
   ],
   "periods": [
     "Q1 2016",
@@ -86,7 +87,8 @@
     "Q2 2025",
     "Q3 2025",
     "Q4 2025",
-    "Q1 2026"
+    "Q1 2026",
+    "Q2 2026"
   ],
   "fiscal_labels": [
     "FY2016 Q2",
@@ -129,7 +131,8 @@
     "FY2025 Q3",
     "FY2025 Q4",
     "FY2026 Q1",
-    "FY2026 Q2"
+    "FY2026 Q2",
+    "FY2026 Q3"
   ],
   "release_dates": [
     "2016-06-02",
@@ -172,7 +175,8 @@
     "2025-09-04",
     "2025-12-11",
     "2026-03-04",
-    "2026-06-03"
+    "2026-06-03",
+    "2026-09-02"
   ],
   "financials_usd_m": {
     "revenue": [
@@ -216,7 +220,8 @@
       15952.0,
       18015.0,
       19311.0,
-      22187.0
+      22187.0,
+      29591.0
     ],
     "gaap_operating_income": [
       -1001.0,
@@ -259,7 +264,8 @@
       5887.0,
       7508.0,
       8563.0,
-      10788.0
+      10788.0,
+      15955.0
     ],
     "non_gaap_operating_income": [
       null,
@@ -302,7 +308,8 @@
       10455.0,
       11921.0,
       12826.0,
-      14928.0
+      14928.0,
+      20095.0
     ],
     "adjusted_ebitda": [
       null,
@@ -345,7 +352,8 @@
       10702.0,
       12218.0,
       13128.0,
-      15244.0
+      15244.0,
+      null
     ],
     "gaap_net_income": [
       -1255.0,
@@ -388,7 +396,8 @@
       4140.0,
       8518.0,
       7349.0,
-      9310.0
+      9310.0,
+      13088.0
     ],
     "non_gaap_net_income": [
       null,
@@ -431,7 +440,8 @@
       8404.0,
       9714.0,
       10185.0,
-      12074.0
+      12074.0,
+      16372.0
     ],
     "net_income_attributable_to_noncontrolling_interest": [
       -69.0,
@@ -443,6 +453,7 @@
       29.0,
       336.0,
       15.0,
+      null,
       null,
       null,
       null,
@@ -486,6 +497,7 @@
       532.0,
       6230.0,
       3718.0,
+      null,
       null,
       null,
       null,
@@ -563,7 +575,8 @@
       9166.0,
       11072.0,
       12515.0,
-      15009.0
+      15009.0,
+      20839.0
     ],
     "infrastructure_software_revenue": [
       null,
@@ -606,7 +619,8 @@
       6786.0,
       6943.0,
       6796.0,
-      7178.0
+      7178.0,
+      8752.0
     ],
     "semiconductor_operating_income": [
       null,
@@ -649,7 +663,8 @@
       5217.0,
       6503.0,
       7503.0,
-      9281.0
+      9281.0,
+      null
     ],
     "infrastructure_software_operating_income": [
       null,
@@ -692,7 +707,8 @@
       5238.0,
       5418.0,
       5323.0,
-      5647.0
+      5647.0,
+      null
     ],
     "semiconductor_cost_of_revenue": [
       null,
@@ -735,7 +751,8 @@
       null,
       null,
       3949.0,
-      4573.0
+      4573.0,
+      null
     ],
     "infrastructure_software_cost_of_revenue": [
       null,
@@ -778,7 +795,8 @@
       null,
       null,
       494.0,
-      505.0
+      505.0,
+      null
     ],
     "ip_licensing_revenue": [
       null,
@@ -796,6 +814,7 @@
       16.0,
       22.0,
       23.0,
+      null,
       null,
       null,
       null,
@@ -839,6 +858,7 @@
       -1.0,
       0.0,
       4.0,
+      null,
       null,
       null,
       null,
@@ -909,7 +929,8 @@
       7166.0,
       7703.0,
       8260.0,
-      10493.0
+      10493.0,
+      14197.0
     ],
     "capital_expenditures": [
       158.0,
@@ -952,7 +973,8 @@
       142.0,
       237.0,
       250.0,
-      231.0
+      231.0,
+      532.0
     ],
     "research_and_development": [
       787.0,
@@ -995,7 +1017,8 @@
       3050.0,
       2981.0,
       2965.0,
-      2995.0
+      2995.0,
+      2895.0
     ]
   },
   "capital_allocation_usd_m": {
@@ -1040,7 +1063,8 @@
       0.0,
       0.0,
       7850.0,
-      600.0
+      600.0,
+      0.0
     ],
     "common_dividends": [
       null,
@@ -1083,7 +1107,8 @@
       2786.0,
       2797.0,
       3086.0,
-      3092.0
+      3092.0,
+      3103.0
     ],
     "cash_and_equivalents": [
       2041.0,
@@ -1126,7 +1151,8 @@
       10718.0,
       16178.0,
       14174.0,
-      19628.0
+      19628.0,
+      23975.0
     ],
     "total_debt": [
       15008.0,
@@ -1169,7 +1195,8 @@
       63730.0,
       65136.0,
       66057.0,
-      64907.0
+      64907.0,
+      59419.0
     ]
   },
   "working_capital_usd_m": {
@@ -1214,7 +1241,8 @@
       2180.0,
       2270.0,
       2962.0,
-      4328.0
+      4328.0,
+      4523.0
     ],
     "accounts_receivable": [
       1857.0,
@@ -1257,7 +1285,8 @@
       6494.0,
       7145.0,
       8460.0,
-      10830.0
+      10830.0,
+      13707.0
     ]
   },
   "purchase_commitments_usd_m": {
@@ -1302,7 +1331,8 @@
       235.0,
       132.0,
       54.0,
-      128110.0
+      128110.0,
+      null
     ],
     "due_within_one_year": [
       null,
@@ -1345,7 +1375,8 @@
       103.0,
       106.0,
       12.0,
-      55214.0
+      55214.0,
+      null
     ],
     "due_in_year_two": [
       null,
@@ -1388,7 +1419,8 @@
       12.0,
       12.0,
       10.0,
-      72870.0
+      72870.0,
+      null
     ]
   },
   "annual_only_guidance": [
@@ -1483,7 +1515,8 @@
       "2025-11-02",
       "2026-02-01",
       "2026-05-03",
-      "2026-08-02"
+      "2026-08-02",
+      "2026-11-01"
     ],
     "periods": [
       "Q2 2018",
@@ -1510,7 +1543,8 @@
       "Q3 2025",
       "Q4 2025",
       "Q1 2026",
-      "Q2 2026"
+      "Q2 2026",
+      "Q3 2026"
     ],
     "fiscal_labels": [
       "FY2018 Q3",
@@ -1537,7 +1571,8 @@
       "FY2025 Q4",
       "FY2026 Q1",
       "FY2026 Q2",
-      "FY2026 Q3"
+      "FY2026 Q3",
+      "FY2026 Q4"
     ],
     "guided_in_release": [
       "2018-06-07",
@@ -1564,9 +1599,11 @@
       "2025-09-04",
       "2025-12-11",
       "2026-03-04",
-      "2026-06-03"
+      "2026-06-03",
+      "2026-09-02"
     ],
     "scope": [
+      "quarter",
       "quarter",
       "quarter",
       "quarter",
@@ -1618,7 +1655,8 @@
       17400,
       19100,
       22000,
-      29400
+      29400,
+      34800
     ],
     "guide_revenue_lo_usd_m": [
       4972,
@@ -1645,7 +1683,8 @@
       17400,
       19100,
       22000,
-      29400
+      29400,
+      34800
     ],
     "guide_revenue_hi_usd_m": [
       5122,
@@ -1672,7 +1711,8 @@
       17400,
       19100,
       22000,
-      29400
+      29400,
+      34800
     ],
     "revenue_form": [
       "range",
@@ -1680,6 +1720,7 @@
       "range",
       "range",
       "range",
+      "point",
       "point",
       "point",
       "point",
@@ -1726,7 +1767,8 @@
       67.0,
       67.0,
       68.0,
-      68.0
+      68.0,
+      null
     ],
     "ebitda_qualifier": [
       "approximately",
@@ -1753,7 +1795,8 @@
       "exact",
       "exact",
       "approximately",
-      "approximately"
+      "approximately",
+      null
     ],
     "guide_ebitda_usd_m": [
       null,
@@ -1762,6 +1805,7 @@
       3220,
       3744,
       3900,
+      null,
       null,
       null,
       null,
@@ -1807,7 +1851,8 @@
       "point",
       "point",
       "point",
-      "point"
+      "point",
+      null
     ],
     "ebitda_unit": [
       null,
@@ -1834,7 +1879,8 @@
       "pct",
       "pct",
       "pct",
-      "pct"
+      "pct",
+      null
     ],
     "actual_revenue_usd_m": [
       5063.0,
@@ -1861,6 +1907,7 @@
       18015.0,
       19311.0,
       22187.0,
+      29591.0,
       null
     ],
     "actual_adjusted_ebitda_usd_m": [
@@ -1888,6 +1935,7 @@
       12218.0,
       13128.0,
       15244.0,
+      null,
       null
     ],
     "actual_ebitda_margin_pct": [
@@ -1915,6 +1963,7 @@
       67.8213,
       67.982,
       68.7069,
+      null,
       null
     ],
     "actual_non_gaap_operating_margin_pct": [
@@ -1942,6 +1991,7 @@
       66.1726,
       66.4181,
       67.2826,
+      67.9092,
       null
     ],
     "days_into_quarter_at_release": [
@@ -1968,6 +2018,7 @@
       31,
       31,
       38,
+      30,
       30,
       30
     ],
@@ -1996,11 +2047,12 @@
       91,
       91,
       91,
+      91,
       91
     ]
   },
   "ai_semiconductor_disclosures": {
-    "note": "公司未把 AI 半导体收入列为申报分部，这些数字出自各季业绩 8-K 新闻稿中 CEO 引语，精度为 US$0.1B；Q1 2025 一季公司的措辞是「over $4.4 billion」，是下限而不是点值；Q3 2025 一季新闻稿只给了同比增速、没有给水平值，故留空。**序列起点是 Q1 2024（财政 FY2024 Q2，截至 2024-05-05）**：2024-06-12 那份发布稿的 CEO 引语写着 「Revenue from our AI products was a record $3.1 billion during the quarter」，这是公司第一次给出季度级的 AI 收入金额。紧接着的两季（2024-09-05 与 2024-12-12 两份发布）**只给了全年数**（指引 $12B、实际 $12.2B），没有给季度水平值，所以那两格是洞而不是零。",
+    "note": "公司未把 AI 半导体收入列为申报分部，这些数字出自各季业绩 8-K 新闻稿中 CEO 引语，精度为 US$0.1B（十季逐句核过，从未出现过百万级写法）；这些引语随 Item 2.02 <b>furnished</b> 而非 filed，证据等级低于报表本身；Q1 2025 一季公司的措辞是「over $4.4 billion」，是下限而不是点值；Q3 2025 一季新闻稿只给了同比增速、没有给水平值，故留空。**序列起点是 Q1 2024（财政 FY2024 Q2，截至 2024-05-05）**：2024-06-12 那份发布稿的 CEO 引语写着 「Revenue from our AI products was a record $3.1 billion during the quarter」，这是公司第一次给出季度级的 AI 收入金额。紧接着的两季（2024-09-05 与 2024-12-12 两份发布）**只给了全年数**（指引 $12B、实际 $12.2B），没有给季度水平值，所以那两格是洞而不是零。",
     "period_ends": [
       "2024-05-05",
       "2024-08-04",
@@ -2010,7 +2062,8 @@
       "2025-08-03",
       "2025-11-02",
       "2026-02-01",
-      "2026-05-03"
+      "2026-05-03",
+      "2026-08-02"
     ],
     "periods": [
       "Q1 2024",
@@ -2021,7 +2074,8 @@
       "Q2 2025",
       "Q3 2025",
       "Q4 2025",
-      "Q1 2026"
+      "Q1 2026",
+      "Q2 2026"
     ],
     "actual_usd_bn": [
       3.1,
@@ -2032,7 +2086,8 @@
       5.2,
       null,
       8.4,
-      10.8
+      10.8,
+      16.7
     ],
     "actual_is_floor": [
       false,
@@ -2040,6 +2095,7 @@
       false,
       false,
       true,
+      false,
       false,
       false,
       false,
@@ -2054,7 +2110,8 @@
       5.1,
       6.2,
       8.2,
-      10.7
+      10.7,
+      16.0
     ],
     "guided_in_release": [
       null,
@@ -2065,19 +2122,43 @@
       "2025-06-05",
       "2025-09-04",
       "2025-12-11",
-      "2026-03-04"
+      "2026-03-04",
+      "2026-06-03"
     ],
-    "next_quarter_guide_usd_bn": 16.0,
-    "next_quarter_guided_in_release": "2026-06-03",
-    "next_quarter_period": "Q2 2026"
+    "next_quarter_guide_usd_bn": 21.7,
+    "next_quarter_guided_in_release": "2026-09-02",
+    "next_quarter_period": "Q3 2026"
   },
   "non_gaap_operating_margin_guidance": {
-    "note": "non-GAAP 营业利润率这一条指引在 33 份业绩 8-K 里只出现过一次——2026-06-03 那份，为下一季给出「约为收入的 67%」。只有一条、且该季尚未申报，因此本页不为它建兑现记录，只把这个单点连同已有的实际值序列一起画出来。",
-    "guided_in_release": "2026-06-03",
-    "period_end": "2026-08-02",
-    "period": "Q2 2026",
-    "guide_pct": 67.0,
-    "qualifier": "approximately"
+    "note": "这条指引在 2026-06-03 那份 8-K 里第一次出现（为 FY2026 Q3 给「约为收入的 67%」），2026-09-02 那份给了第二次（为 FY2026 Q4 给「约 66%」）。第一条已经结算：该季 non-GAAP 营业利润 US$20,095M ÷ 收入 US$29,591M = 67.91%，高于指引。**这个块此前写着「在 33 份业绩 8-K 里只出现过一次、因此本页不为它建兑现记录」，2026-09-02 那份把这句话变成了假的** —— 它是一条全称命题，靠重算发现不了，只能靠回查新一期申报。现在改成记录。",
+    "period_ends": [
+      "2026-08-02",
+      "2026-11-01"
+    ],
+    "periods": [
+      "Q2 2026",
+      "Q3 2026"
+    ],
+    "fiscal_labels": [
+      "FY2026 Q3",
+      "FY2026 Q4"
+    ],
+    "guided_in_release": [
+      "2026-06-03",
+      "2026-09-02"
+    ],
+    "guide_pct": [
+      67.0,
+      66.0
+    ],
+    "qualifier": [
+      "approximately",
+      "approximately"
+    ],
+    "actual_pct": [
+      67.9092,
+      null
+    ]
   },
   "followup_closure": {
     "labels": [
@@ -2088,11 +2169,11 @@
     ],
     "counts": [
       2,
+      0,
       3,
-      1,
-      0
+      1
     ],
-    "note": "上季（本页 Q4 2025）留下的 6 条待验证问题，本季闭环情况：AI networking 占 AI 收入近四成、非 AI 半导体周期复苏两条<b>已验证</b>；rack 毛利率之争、OpenAI XPU 出货节奏、FY27 「>$100B」是否上修三条<b>部分验证</b>；新加坡先进封装产能时间表连续第二季<b>仍未披露</b>。没有一条被证伪。"
+    "note": "上季（本页 Q1 2026）留下的 6 条待验证问题，本季闭环情况：AI 半导体收入能否兑现口头指引、non-GAAP 营业利润率这条新指引能否结算，两条<b>已验证</b>。采购承诺是否继续攀升、分部营业利润与分部成本是否延续、Adjusted EBITDA 能否守住 68%，三条<b>仍未披露</b>——前两条是因为截至本页构建时 FY2026 Q3 的 10-Q 尚未申报（去年同季为发布后第 8 天），第三条是因为公司停止披露该指标。「回购恢复到 US$2B 以上」<b>被证伪</b>：本季为零。"
   },
   "tracked_metric_verdicts": {
     "labels": [
@@ -2103,25 +2184,25 @@
     ],
     "counts": [
       2,
-      1,
       0,
-      2
+      2,
+      1
     ],
-    "note": "上季设定的 5 条跟踪线里，只有 2 条能用申报数结算：收入与 Adjusted EBITDA 利润率双双优于公司自身指引。软件收入符合。<b>另外 2 条无法判定</b>——AI networking 占比与半导体分部毛利率都只在电话会上被口头给到「almost 40%」「~70%」的精度，申报文件里没有对应的季度序列（分部成本要到 FY2025 10-K 才首次按 ASU 2023-07 披露）。判不了就记为无法判定，不折算成通过或失败。"
+    "note": "上季设定的 5 条跟踪线，本季用申报数逐条结算：AI 半导体收入 US$16,700M <b>优于</b>公司自己给的 US$16,000M；non-GAAP 营业利润率 67.91% <b>优于</b>指引的 67%——这也是这条指引<b>第一次</b>有兑现记录。基础设施软件收入 US$8,752M <b>逊于</b> US$8,900M 的阈值（差 1.7%）；季度回购为 <b>0</b>，离 US$2,000M 的恢复线最远的一次。<b>Adjusted EBITDA 利润率无法判定</b>——不是没达标，是公司从本季起不再印这个数，用来结算它的那一格已经不存在了（见 adjusted_ebitda_disclosure_stop）。判不了就记为无法判定，不折算成通过或失败。"
   },
   "guidance": {
     "next_quarter": {
-      "period": "Q2 2026",
-      "fiscal_label": "FY2026 Q3",
-      "period_end": "2026-08-02",
-      "released": "2026-06-03",
-      "expected_release": "2026 年 9 月上旬",
-      "revenue_usd_bn": 29.4,
+      "period": "Q3 2026",
+      "fiscal_label": "FY2026 Q4",
+      "period_end": "2026-11-01",
+      "released": "2026-09-02",
+      "expected_release": "2026 年 12 月上旬",
+      "revenue_usd_bn": 34.8,
       "revenue_form": "point",
-      "non_gaap_operating_margin_pct": 67.0,
-      "adjusted_ebitda_margin_pct": 68.0,
-      "ai_semiconductor_revenue_usd_bn": 16.0,
-      "note": "三条正式指引全部出自 2026-06-03 业绩 8-K EX-99.1 的「Third Quarter Fiscal Year 2026 Business Outlook」区块，三条都是<b>单点</b>（approximately），没有任何上下界。第四条 AI 半导体收入 US$16.0B 出自同一份新闻稿的 CEO 引语，不在 Business Outlook 区块内，口径级别不同，本页分开画。"
+      "non_gaap_operating_margin_pct": 66.0,
+      "adjusted_ebitda_margin_pct": null,
+      "ai_semiconductor_revenue_usd_bn": 21.7,
+      "note": "正式指引这次只有<b>两条</b>，都在「Fourth Quarter Fiscal Year 2026 Business Outlook」区块里，都是单点（approximately）：收入约 US$34.8B、non-GAAP 营业利润率约为收入的 66%。<b>Adjusted EBITDA 指引消失了</b>——上一份还同时给营业利润率和 EBITDA 两条，这一份只剩前者。第三条 AI 半导体收入 US$21.7B 出自 CEO 引语、不在 Business Outlook 区块内，而且<b>不带 approximately</b>（原文 “to $21.7 billion”），口径级别与前两条不同，本页分开画。"
     }
   },
   "next_kpi": {
@@ -2129,53 +2210,57 @@
       {
         "metric": "AI 半导体收入（季）",
         "direction": "up",
-        "threshold": 16000.0,
-        "current": 10800.0,
+        "threshold": 21700.0,
+        "current": 16700.0,
         "unit": "usd_m",
-        "note": "公司对下季给出 US$16.0B。本地设定：实际 ≥US$16.5B 且 FY26 合计上修超过 US$56B 视为加速兑现。"
+        "note": "公司对下季给出 US$21.7B。注意这条出自 CEO 引语、不在 Business Outlook 区块里，且原文<b>不带</b> approximately，与下面两条正式指引不是同一个证据等级。"
+      },
+      {
+        "metric": "季度收入",
+        "direction": "up",
+        "threshold": 34800.0,
+        "current": 29591.0,
+        "unit": "usd_m",
+        "note": "公司对下季给出「约 US$34.8B」的单点指引。这一条接替了退役的 Adjusted EBITDA 利润率：那条线本季起无数可结算，而收入是本份新闻稿里仅有的两条正式指引之一。"
       },
       {
         "metric": "基础设施软件收入",
         "direction": "up",
-        "threshold": 8900.0,
-        "current": 7178.0,
+        "threshold": 8752.0,
+        "current": 8752.0,
         "unit": "usd_m",
-        "note": "公司对下季给出约 US$8.9B（VCF 9.1 续约脉冲）。低于 US$8.5B 视为脉冲衰减。"
-      },
-      {
-        "metric": "Adjusted EBITDA 利润率",
-        "direction": "up",
-        "threshold": 68.0,
-        "current": 68.7,
-        "unit": "pct",
-        "note": "下季指引 68%。这条在 18 个已完结季里一次都没有低于指引，是全页最强的底线。"
+        "note": "<b>本季新闻稿没有给软件分部的下季指引</b>，上一季那个 US$8.9B 的口径这次没有对应项。所以这里不写公司数，改用本季实际值做持平线：跌破 US$8,752M 即为脉冲回落。阈值是本地设定，不是公司指引。"
       },
       {
         "metric": "non-GAAP 营业利润率",
         "direction": "up",
-        "threshold": 67.0,
-        "current": 67.3,
+        "threshold": 66.0,
+        "current": 67.9,
         "unit": "pct",
-        "note": "公司史上第一次为这条给出指引（下季约 67%）。没有历史兑现记录可比。"
+        "note": "下季指引约 66%，比上季给的 67% 低一格。这条指引到本季为止只结算过一次（67.91% vs 67%），历史兑现记录仍然只有一个点。"
       },
       {
         "metric": "季度回购",
         "direction": "up",
         "threshold": 2000.0,
-        "current": 600.0,
+        "current": 0.0,
         "unit": "usd_m",
-        "note": "本季回购从上季的 US$7,850M 砍到 US$600M，公司未解释。恢复到 US$2B 以上视为资产负债表弹性不再被占用。"
+        "note": "本季回购为零，是设定这条线以来离恢复线最远的一次；公司未解释。历史上零回购出现过 15 次，所以零本身不是异常，连续零才是。"
       }
     ],
     "excluded": "另有三条本页<b>不接入</b>，原因写在这里而不是省略掉：（1）<b>客户租赁 backstop 的实际敞口</b>——10-Q 只披露了最大敞口 US$29B 与增减机制，没有给当前实际敞口、公允价值或计提，只有一个时点、构不成序列；（2）<b>AI networking 占 AI 收入的比例</b>——只在电话会上以「almost 40%」「closer to around 30%」这种精度出现，申报文件里没有；（3）<b>最大客户的份额</b>——公司从不点名客户、也不披露单客户占比，第三方对份额的估计不属于本页可发布的范围（见内容边界）。"
   },
   "sources": [
     {
+      "label": "FY2026 Q3 业绩新闻稿（8-K EX-99.1，2026-09-02）",
+      "url": "https://www.sec.gov/Archives/edgar/data/1730168/000173016826000076/avgo-08022026x8kxex99.htm"
+    },
+    {
       "label": "FY2026 Q2 业绩新闻稿（8-K EX-99.1，2026-06-03）",
       "url": "https://www.sec.gov/Archives/edgar/data/1730168/000173016826000051/avgo-05032026x8kxex99.htm"
     },
     {
-      "label": "截至 2026-05-03 的 10-Q（2026-06-09 申报）",
+      "label": "截至 2026-05-03 的 10-Q（2026-06-09 申报；分部营业利润与采购承诺的最后一期来源）",
       "url": "https://www.sec.gov/Archives/edgar/data/1730168/000173016826000054/avgo-20260503.htm"
     },
     {
@@ -2183,21 +2268,17 @@
       "url": "https://www.sec.gov/Archives/edgar/data/1730168/000173016825000121/avgo-20251102.htm"
     },
     {
-      "label": "Broadcom Investor Relations",
-      "url": "https://investors.broadcom.com/"
-    },
-    {
       "label": "EDGAR 全部 8-K 申报（CIK 0001730168）",
       "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001730168&type=8-K"
     }
   ],
   "market_expectation": {
-    "as_of": "2026-06-03 财报发布前",
-    "revenue_usd_m": 22120.0,
-    "non_gaap_eps_usd": 2.4,
-    "next_quarter_revenue_usd_bn": 28.53,
-    "next_quarter_ai_revenue_usd_bn": 17.2,
-    "basis": "取自本地分析稿所采用的公开隐含一致预期（当季营收 US$22.12B、non-GAAP EPS $2.40；下季营收 US$28.53B、下季 AI 半导体收入约 US$17.2B）。不具名到任何机构，只作为标注日期的对照点，不构成评级或目标价。"
+    "as_of": "2026-09-02 财报发布前",
+    "revenue_usd_m": 29360.0,
+    "non_gaap_eps_usd": 3.24,
+    "next_quarter_revenue_usd_bn": 35.03,
+    "next_quarter_ai_revenue_usd_bn": null,
+    "basis": "取自本地分析稿所采用的公开隐含预期（当季营收 US$29.36B、non-GAAP EPS $3.24；下季营收 US$35.03B）。不具名到任何机构，只作为标注日期的对照点，不构成评级或目标价。<b>下季 AI 半导体收入这一格刻意留空</b>：本页上一版填的 US$17.2B 有出处，而本季流传的那个数字唯一可追溯的源头是我们自己上一份报告里的反推值——把它写成外部预期就是拿自己的输出当自己的输入。查不到就留空。"
   },
   "filed_fiscal_years": {
     "note": "每个财年的申报值，用来核对四个季度值之和。财年第四季在 XBRL 里没有单独的季度事实，本页取自该季业绩新闻稿，因此这张对照表是那条取数路径唯一的独立验证。",
@@ -2314,7 +2395,7 @@
     "share_repurchases": "发布稿在没有回购的季度印一个破折号，本站写 0.0 —— 同一件事的两种写法，不是差异。",
     "common_dividends": "本站这一条只含普通股股息。业绩发布在 2019Q4–2022Q3 的十二个季度里多出 75（或 74），那是 8.00% 强制可转换优先股 Series A 的股息，发布稿自己写明「preferred stock, totaling $75 million」；2018Q1 多出的 39 是付给 Broadcom Cayman L.P. 份额持有人的分配。"
   },
-  "window_note_2016_2017": "33 季 → 41 季。前面新增的八季（Q1 2016–Q4 2017，即财政 FY2016 Q2 至 FY2018 Q1）由两条互相独立的路径各取一遍：10-Q/10-K 的 XBRL R 表，与各季业绩 8-K 的 EX-99.1。**48 个两边都有值的格子里只有 1 格不同**，而那一格正是下面记的那次重述。两个申报主体：2018 年 4 月迁册之前是 Broadcom Limited / Broadcom Pte. Ltd.（CIK 1649338），之后是 Broadcom Inc.（CIK 1730168）。财年闭合：FY2016 与 FY2017 的四季之和对 10-K 全年，九条线全部零残差。窗口是 41 季不是 42 —— Q2 2026 对应的财季尚未发布。",
+  "window_note_2016_2017": "33 季 → 41 季（2026-08 回填）→ 42 季。前面新增的八季（Q1 2016–Q4 2017，即财政 FY2016 Q2 至 FY2018 Q1）由两条互相独立的路径各取一遍：10-Q/10-K 的 XBRL R 表，与各季业绩 8-K 的 EX-99.1。**48 个两边都有值的格子里只有 1 格不同**，而那一格正是下面记的那次重述。两个申报主体：2018 年 4 月迁册之前是 Broadcom Limited / Broadcom Pte. Ltd.（CIK 1649338），之后是 Broadcom Inc.（CIK 1730168）。财年闭合：FY2016 与 FY2017 的四季之和对 10-K 全年，九条线全部零残差。窗口现为 42 季：2026-09-02 发布的 FY2026 Q3（本站 Q2 2026，截至 2026-08-02）已接入。",
   "q3_2017_restatement": {
     "quarter": "Q3 2017",
     "fiscal": "FY2017 Q4",
@@ -2344,5 +2425,19 @@
     "capital_allocation_usd_m.share_repurchases": "这八季的现金流量表里根本没有回购行 —— 公司当时不回购。",
     "capital_allocation_usd_m.common_dividends": "本站这条只含普通股股息，用的是 PaymentsOfDividendsCommonStock 这个标签。2016–2017 的申报只给合并总额（含付给 Broadcom Cayman L.P. 份额持有人的分配），拆不出普通股那一半，所以留空而不是填合并数。",
     "purchase_commitments_usd_m": "当年的申报里没有这张按到期年份拆分的采购承诺表。"
+  },
+  "adjusted_ebitda_disclosure_stop": {
+    "first_missing_period": "Q2 2026",
+    "first_missing_fiscal_label": "FY2026 Q3",
+    "release": "2026-09-02",
+    "evidence": "「EBITDA」这个词在 2026-09-02 那份 EX-99.1 全文出现 0 次；2026-06-03 那份出现 6 次、2026-03-04 那份 8 次。停掉的不只是数值：要点行、highlights 表、对账表里整个 Other Adjustments 区块（含 Depreciation 与 Amortization of purchased intangibles and right-of-use assets 两行）以及下季指引一并消失，公司改用 non-GAAP 营业利润口径。",
+    "is_a_boundary_not_a_gap": "本页把这一格留空。它不是取数失败，是公司不再印这个数。",
+    "derivable_but_not_stored": {
+      "value_usd_m": 20400.0,
+      "formula": "非 GAAP 净利润 + 非 GAAP 利息费用 + 非 GAAP 所得税 + 折旧 +（现金流量表摊销总额 − 收购相关无形资产摊销）",
+      "verified_on": "该式在两个已公布季度上逐分复现：FY2026 Q1 = 10,185+746+2,013+150+34 = 13,128（公布 13,128）；FY2026 Q2 = 12,074+745+2,227+163+35 = 15,244（公布 15,244）。",
+      "why_not_stored": "本页 Ex8/Ex9 的立论是「公司自己披露的 Adjusted EBITDA 利润率在每一个已完结季都高于自身指引」。往这条序列里接一个自算值，等于用计算值延长一个关于披露值的论断，而且接上之后就再也看不出哪一格是算的。所以数记在这里、不进序列。"
+    },
+    "consequence_for_the_guidance_record": "2026-06-03 为 FY2026 Q3 给过「Adjusted EBITDA 约 68%」，该指引因此**无法结算** —— 不是没达标，是公司不再印用来结算它的那个数。"
   }
 }

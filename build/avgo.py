@@ -192,7 +192,7 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], list[dict]]:
         "EX_REV_POINT", "收入", take(labels, point_idx),
         take(guide, point_idx), take(guide, point_idx), take(actual, point_idx),
         fmt="f0c", ylab="US$M", unit="US$M", venue="业绩发布", timing="该季<b>开始约一个月后</b>",
-        scope="（公司只给单点的 20 季）", point=True,
+        scope="（公司只给单点的 21 季）", point=True,
         src_extra=SOURCE_8K + TIMING_CAVEAT,
         extra_note=(
             f"自 FY2021 Q1 的指引起，公司把区间换成了一个数——新闻稿原文是 "
@@ -390,6 +390,10 @@ def build_payload(staging: dict) -> dict:
     capex = cash["capital_expenditures"]
     rnd = cash["research_and_development"]
 
+    # Segment operating profit comes from the 10-Q segment note, which lands days
+    # after the earnings 8-K. Sentences about the split anchor here, not on [-1].
+    seg_last = max(i for i, v in enumerate(semi_oi) if v is not None)
+
     gaap_margin = ratio(gaap_oi, revenue)
     ng_margin = ratio(ng_oi, revenue)
     ebitda_margin = ratio(ebitda, revenue)
@@ -410,8 +414,8 @@ def build_payload(staging: dict) -> dict:
 
     source = (
         'Source: <a href="https://www.sec.gov/Archives/edgar/data/1730168/'
-        '000173016826000051/avgo-05032026x8kxex99.htm" rel="noopener">Broadcom FY2026 Q2 '
-        '业绩新闻稿（8-K EX-99.1）</a>与截至 2026-05-03 的 10-Q。'
+        '000173016826000076/avgo-08022026x8kxex99.htm" rel="noopener">Broadcom FY2026 Q3 '
+        '业绩新闻稿（8-K EX-99.1）</a>与截至 2026-05-03 的 10-Q（本季 10-Q 尚未申报）。'
     )
 
     # ── section one ──────────────────────────────────────────────────────────
@@ -430,7 +434,8 @@ def build_payload(staging: dict) -> dict:
         "note": closure["note"],
         "src_extra": (
             "问题清单来自上季本地分析稿的 follow-up；"
-            "验证结果依据本季业绩 8-K、截至 2026-05-03 的 10-Q 与业绩电话会。"
+            "验证结果只依据本季业绩 8-K —— 本季 10-Q 截至本页构建时尚未申报，"
+            "凡需要 10-Q 才能回答的问题一律记为「仍未披露」，不拿电话会说法补位。"
         ),
     }
 
@@ -452,10 +457,30 @@ def build_payload(staging: dict) -> dict:
 
     record = staging["quarterly_guidance_history"]
     last = record["periods"].index(periods[-1])
+    # The second leg used to be Adjusted EBITDA margin. Broadcom stopped printing
+    # that measure with this quarter's release, so the guide it gave for it can no
+    # longer be settled at all -- see `adjusted_ebitda_disclosure_stop`. The
+    # non-GAAP operating margin guide is the one that *did* settle, so the leg
+    # follows the measure the company itself moved to rather than quietly
+    # substituting a recomputed EBITDA figure for a disclosed one.
+    # The band this quarter's beat is measured against used to be two hardcoded
+    # percentages. Recomputing it means the sentence cannot quietly become false
+    # the next time a quarter lands outside the old range.
+    dev_band = [
+        (actual_rev / (mid if mid is not None else (lo + hi) / 2) - 1) * 100
+        for form, lo, hi, mid, actual_rev in zip(
+            record["revenue_form"], record["guide_revenue_lo_usd_m"],
+            record["guide_revenue_hi_usd_m"], record["guide_revenue_usd_m"],
+            record["actual_revenue_usd_m"])
+        if actual_rev is not None
+    ]
+
+    ngm_guide = staging["non_gaap_operating_margin_guidance"]
+    ngm_i = ngm_guide["period_ends"].index(ends[-1])
+    ngm_gap = ngm_guide["actual_pct"][ngm_i] - ngm_guide["guide_pct"][ngm_i]
     delivery = [
         ("收入", pct_change(revenue[-1], record["guide_revenue_usd_m"][last])),
-        ("Adjusted EBITDA 利润率",
-         record["actual_ebitda_margin_pct"][last] - record["guide_ebitda_margin_pct"][last]),
+        ("non-GAAP 营业利润率", ngm_gap),
         ("半导体分部收入", pct_change(semi_rev[-1], semi_rev[-2])),
         ("基础设施软件收入", pct_change(isg_rev[-1], isg_rev[-2])),
         ("自由现金流利润率", fcf_margin[-1] - fcf_margin[-2]),
@@ -464,7 +489,8 @@ def build_payload(staging: dict) -> dict:
         "kind": "diverging_bars",
         "title": (
             f"本季两条指引都过了，但都只多出一点点："
-            f"收入 {signed(delivery[0][1], 2)}、EBITDA 利润率 {signed(delivery[1][1], 2, 'pp')}"
+            f"收入 {signed(delivery[0][1], 2)}、non-GAAP 营业利润率 "
+            f"{signed(delivery[1][1], 2, 'pp')}"
         ),
         "xlabels": [metric for metric, _ in delivery],
         "values": [round(value, 2) for _, value in delivery],
@@ -475,10 +501,14 @@ def build_payload(staging: dict) -> dict:
         "ylab": "% 或 pp", "zero_line": True,
         "note": (
             f"前两条是与公司自身指引的比较（指引 US${record['guide_revenue_usd_m'][last]:,.0f}M、"
-            f"EBITDA 利润率 {record['guide_ebitda_margin_pct'][last]:.0f}%），"
+            f"non-GAAP 营业利润率 {ngm_guide['guide_pct'][ngm_i]:.0f}%），"
             "后三条是环比变化，放在同一根轴上只是为了一次看完，口径已在标签里区分。"
-            f"收入超出指引 {delivery[0][1]:+.2f}%——这个幅度落在过去 24 季 "
-            f"+0.17% 到 +3.53% 的常态带里，属于「照例过线」而不是意外。"
+            f"收入超出指引 {delivery[0][1]:+.2f}%——这个幅度落在 {len(dev_band)} 季 "
+            f"{min(dev_band):+.2f}% 到 {max(dev_band):+.2f}% 的常态带里，"
+            "属于「照例过线」而不是意外。"
+            "<b>第二条腿这一季换了指标</b>：上一份新闻稿同时给了 Adjusted EBITDA 与 "
+            "non-GAAP 营业利润率两条指引，本季的新闻稿里 Adjusted EBITDA 连同实际值一起消失了，"
+            "那条指引因此无法结算——不是没达标，是用来结算它的数不再印了。"
         ),
         "src_extra": SOURCE_8K,
     }
@@ -550,8 +580,9 @@ def build_payload(staging: dict) -> dict:
         "note": (
             "<b>这张图的口径与第一节那几张不同，不要放在一起读。</b>"
             "AI 半导体收入<b>不是</b>公司的申报分部，这些数字出自业绩新闻稿里的 CEO 引语，"
-            "精度只有 US$0.1B；下季的 US$16.0B 同样出自引语，"
-            "不在正式的 Business Outlook 区块内。"
+            f"精度只有 US$0.1B；下季的 US${ai['next_quarter_guide_usd_bn']:.1f}B 同样出自引语，"
+            "不在正式的 Business Outlook 区块内，而且原文<b>不带</b> approximately"
+            "——同一份新闻稿里，两条正式指引都带。"
             f"Q1 2025 一季公司的原话是「over $4.4 billion」，是下限不是点值；"
             f"Q3 2025 一季新闻稿只给了同比增速、没有给水平值，因此留空——"
             "这个洞是披露本身的洞，不是取数失败。"
@@ -579,8 +610,9 @@ def build_payload(staging: dict) -> dict:
         "ref": "EX_SEG_PROFIT",
         "kind": "grouped_bars",
         "title": (
-            f"两个分部的申报营业利润：半导体 US${semi_oi[-1]:,.0f}M、"
-            f"软件 US${isg_oi[-1]:,.0f}M，两者相加恰好等于公司的 non-GAAP 营业利润"
+            f"两个分部的申报营业利润（最新一期 {periods[seg_last]}）：半导体 "
+            f"US${semi_oi[seg_last]:,.0f}M、软件 US${isg_oi[seg_last]:,.0f}M，"
+            f"两者相加恰好等于公司的 non-GAAP 营业利润"
         ),
         "xlabels": labels,
         "groups": [
@@ -594,8 +626,13 @@ def build_payload(staging: dict) -> dict:
             "两个（FY2019 之前是三个）分部的申报营业利润之和<b>逐季精确等于</b>"
             "公司当季的 non-GAAP 营业利润，一分不差。"
             "所以公司指引的那条 non-GAAP 营业利润率，可以毫无估计地拆到两个引擎上——"
-            f"本季软件分部只贡献了 {isg_rev[-1] / revenue[-1] * 100:.0f}% 的收入，"
-            f"却贡献了 {isg_oi[-1] / (semi_oi[-1] + isg_oi[-1]) * 100:.0f}% 的分部营业利润。"
+            f"{periods[seg_last]} 软件分部只贡献了 "
+            f"{isg_rev[seg_last] / revenue[seg_last] * 100:.0f}% 的收入，"
+            f"却贡献了 {isg_oi[seg_last] / (semi_oi[seg_last] + isg_oi[seg_last]) * 100:.0f}% "
+            "的分部营业利润。"
+            f"<b>{periods[-1]} 这一格是空的</b>：分部营业利润只在 10-Q / 10-K 的分部附注里，"
+            "业绩 8-K 只印分部收入，而本季 10-Q 尚未申报。"
+            "所以最右侧那一格没有柱子，是等一份申报，不是等一个数字。"
         ),
         "src_extra": (
             "分部营业利润逐季读自 10-Q / 10-K 的分部附注 R 文件；"
@@ -633,29 +670,39 @@ def build_payload(staging: dict) -> dict:
         ),
     }
 
+    # The commitments table lives only in the 10-Q/10-K, so the newest quarter is
+    # blank until that filing lands. Anchor every sentence below on the last
+    # quarter that actually has a reading rather than on `[-1]`, which would
+    # otherwise start formatting `None` the moment an earnings 8-K arrives first.
+    commit_filled = [i for i, v in enumerate(commitments["total"]) if v is not None]
+    commit_last = commit_filled[-1]
+    commit_count = len(commit_filled)
+    commit_prefix = [commitments["total"][i] for i in commit_filled[:-1]]
+
     commit_chart = {
         "ref": "EX_COMMIT",
         "kind": "gs_bar",
         "title": (
-            f"无条件采购承诺一季之内从 US${commitments['total'][-2]:,.0f}M 跳到 "
-            f"US${commitments['total'][-1]:,.0f}M"
+            f"无条件采购承诺停在上季的 US${commitments['total'][commit_last]:,.0f}M："
+            f"本季 10-Q 尚未申报，这条线没有新读数"
         ),
         "xlabels": long_labels,
         "values": rounded(commitments["total"]),
         "legend": "无条件采购承诺（期末余额）",
         "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c", "ylab": "US$M",
         "note": (
-            f"前 32 个季度这条线一直在 "
-            f"US${min(v for v in commitments['total'][:-1] if v is not None):,.0f}M–"
-            f"US${max(v for v in commitments['total'][:-1] if v is not None):,.0f}M 之间，"
-            f"本季一次性跳到 US${commitments['total'][-1]:,.0f}M——"
-            f"其中 US${commitments['due_within_one_year'][-1]:,.0f}M 落在一年内、"
-            f"US${commitments['due_in_year_two'][-1]:,.0f}M 落在第二年。"
-            "这是本季信息量最大的一条申报数：把「产能锁到 2028」从电话会上的说法"
-            "变成了资产负债表附注里的合同金额。"
+            f"这条线有读数的 {commit_count} 个季度里，前 {commit_count - 1} 个一直在 "
+            f"US${min(commit_prefix):,.0f}M–US${max(commit_prefix):,.0f}M 之间，"
+            f"上季（{periods[commit_last]}）一次性跳到 US${commitments['total'][commit_last]:,.0f}M——"
+            f"其中 US${commitments['due_within_one_year'][commit_last]:,.0f}M 落在一年内、"
+            f"US${commitments['due_in_year_two'][commit_last]:,.0f}M 落在第二年。"
+            "那一跳把「产能锁到 2028」从电话会上的说法变成了附注里的合同金额，"
             "它同时是两件事——基线情形下是收入的前瞻指标，"
             "需求不及预期时则是 take-or-pay 的刚性成本。"
-            "注意纵轴是线性的，所以前 32 季在图上几乎贴着零，那不是没有数据。"
+            f"<b>本季（{periods[-1]}）这条线是空的</b>：这张表只在 10-Q / 10-K 里，"
+            "而本季 10-Q 截至本页构建时尚未申报（去年同季是发布后第 8 天）。"
+            "空格是披露时点的问题，不是承诺消失了。"
+            f"注意纵轴是线性的，所以前 {commit_count - 1} 季在图上几乎贴着零，那不是没有数据。"
         ),
         "src_extra": "取自各季 10-Q / 10-K 承诺与或有事项附注的 XBRL 标签，逐季申报值。",
     }
@@ -711,13 +758,14 @@ def build_payload(staging: dict) -> dict:
                 ai_labels,
                 [None if v is None else v * 1000 for v in ai["actual_usd_bn"]],
                 "AI 半导体收入（US$M）",
-                "本页仅有的六季来自新闻稿 CEO 引语，其中一季公司只给了增速、故留空。"),
+                f"本页仅有的 {sum(1 for v in ai['actual_usd_bn'] if v is not None)} 季"
+                "来自新闻稿 CEO 引语，其中三季公司只给了增速或只给了全年数、故留空。"),
             "基础设施软件收入": (
                 labels, isg_rev[tail], "软件分部收入（US$M）",
                 "公司申报分部，逐季可比。"),
-            "Adjusted EBITDA 利润率": (
-                labels, rounded(ebitda_margin[tail]), "Adjusted EBITDA 利润率",
-                "公司自定义口径，实际值为 Adjusted EBITDA 除以收入的自算值。"),
+            "季度收入": (
+                labels, revenue[tail], "季度收入（US$M）",
+                "公司在业绩发布的 Business Outlook 区块里给的单点指引，是本页证据等级最高的一条阈值。"),
             "non-GAAP 营业利润率": (
                 labels, rounded(ng_margin[tail]), "non-GAAP 营业利润率",
                 "公司首次为这条给出指引，因此没有历史兑现记录可比。"),
@@ -746,8 +794,9 @@ def build_payload(staging: dict) -> dict:
         "ref": "EX_SEG_MARGIN",
         "kind": "lines",
         "title": (
-            f"两个引擎的分部营业利润率：软件 {isg_margin[-1]:.0f}%、"
-            f"半导体 {semi_margin[-1]:.0f}%，软件在 VMware 并入后追平并反超"
+            f"两个引擎的分部营业利润率（最新一期 {periods[seg_last]}）：软件 "
+            f"{isg_margin[seg_last]:.0f}%、半导体 {semi_margin[seg_last]:.0f}%，"
+            f"软件在 VMware 并入后追平并反超"
         ),
         "xlabels": long_labels,
         "series": [
@@ -800,8 +849,8 @@ def build_payload(staging: dict) -> dict:
         "ref": "EX_FCF",
         "kind": "gs_bar",
         "title": (
-            f"自由现金流 US${fcf[-1]:,.0f}M、占收入 {fcf_margin[-1]:.0f}%，"
-            f"为本页 {len(periods)} 季记录中最高"
+            f"自由现金流 US${fcf[-1]:,.0f}M，为本页 {len(periods)} 季记录中最高；"
+            f"占收入 {fcf_margin[-1]:.0f}% 则不是"
         ),
         "xlabels": long_labels,
         "values": rounded(fcf),
@@ -984,7 +1033,7 @@ def build_payload(staging: dict) -> dict:
             "full_financial_period_label": periods[-1],
             "period_end": ends[-1],
             "release_date": staging["release_dates"][-1],
-            "analysis_date": "2026-08-29",
+            "analysis_date": "2026-09-09",
             "audit_status": "unaudited",
             "status": "history_ready",
         },
@@ -996,40 +1045,45 @@ def build_payload(staging: dict) -> dict:
         ),
         "headline": (
             f"收入 US${revenue[-1]:,.0f}M、同比 {signed(yoy[-1])}，"
-            f"Adjusted EBITDA 利润率 {ebitda_margin[-1]:.1f}%，"
+            f"non-GAAP 营业利润率 {ng_margin[-1]:.1f}%，"
             f"两条指引照例都过了——而这正是问题所在："
             # `headline` is written with `node.textContent`, so a tag here reaches
             # the reader as the literal characters `<b>`. Emphasis belongs in
             # `brief` or an exhibit's `note`, which are raw innerHTML.
             f"{finished_count} 个已完结季里实际收入一次都没有低于指引的点或中值，"
-            f"偏离却始终挤在 +0.17% 到 +3.53% 这条窄带里，"
-            f"且指引是在被指引季度已经过了中位 {median_days:.0f} 天时才发布的；"
-            f"同一季，无条件采购承诺从 US${commitments['total'][-2]:,.0f}M 跳到 "
-            f"US${commitments['total'][-1]:,.0f}M，回购从 "
-            f"US${capital['share_repurchases'][-2]:,.0f}M 砍到 "
-            f"US${capital['share_repurchases'][-1]:,.0f}M。"
+            f"偏离却始终挤在 {min(dev_band):+.2f}% 到 {max(dev_band):+.2f}% 这条窄带里，"
+            f"且指引是在被指引季度已经过了中位 {median_days:.0f} 天时才发布的。"
+            f"本季两处减法值得单独记：公司停止披露 Adjusted EBITDA，"
+            f"上季为它给出的指引因此永远无法结算；"
+            f"回购从 US${capital['share_repurchases'][-2]:,.0f}M 降到 "
+            f"US${capital['share_repurchases'][-1]:,.0f}M，公司没有解释。"
         ),
         "brief": (
             '<h4>本季三条主线</h4><div class="takeaway-grid">'
             '<article><span>记录</span><b>指引的形式变了，答案也跟着变</b>'
             f'<p>给区间的 {range_count} 季，实际值季季落在<b>区间之内</b>；'
             f'改给单点后的 {point_count} 季，季季落在<b>点之上</b>。'
-            f'Adjusted EBITDA 利润率 {margin_count} 季全部高于指引。</p></article>'
-            '<article><span>转折</span><b>承诺一夜之间上了两个数量级</b>'
-            f'<p>无条件采购承诺 US${commitments["total"][-1]:,.0f}M，'
-            f'其中 US${commitments["due_within_one_year"][-1]:,.0f}M 在一年内、'
-            f'US${commitments["due_in_year_two"][-1]:,.0f}M 在第二年。'
-            f'前 32 季这条线从没超过 US$1.5B。</p></article>'
+            f'Adjusted EBITDA 利润率 {margin_count} 季全部高于指引——'
+            f'而这条记录到 {periods[-1]} 为止<b>封存</b>了：公司本季起不再披露该指标。</p></article>'
+            '<article><span>转折</span><b>承诺上了两个数量级，然后读数断了</b>'
+            f'<p>无条件采购承诺在 {periods[commit_last]} 跳到 '
+            f'US${commitments["total"][commit_last]:,.0f}M，'
+            f'其中 US${commitments["due_within_one_year"][commit_last]:,.0f}M 在一年内、'
+            f'US${commitments["due_in_year_two"][commit_last]:,.0f}M 在第二年；'
+            f'此前 {commit_count - 1} 季从没超过 US$1.5B。'
+            f'{periods[-1]} 没有新读数——这张表只在 10-Q 里，而本季 10-Q 还没申报。</p></article>'
             '<article><span>结构</span><b>两个引擎，利润在软件那边</b>'
-            f'<p>软件贡献 {isg_rev[-1] / revenue[-1] * 100:.0f}% 的收入、'
-            f'{isg_oi[-1] / (semi_oi[-1] + isg_oi[-1]) * 100:.0f}% 的分部营业利润；'
-            f'两个分部利润相加逐季<b>精确等于</b>公司的 non-GAAP 营业利润。</p></article>'
+            f'<p>软件贡献 {isg_rev[-1] / revenue[-1] * 100:.0f}% 的收入；'
+            f'截至 {periods[seg_last]} 它占 '
+            f'{isg_oi[seg_last] / (semi_oi[seg_last] + isg_oi[seg_last]) * 100:.0f}% 的分部营业利润，'
+            f'两个分部利润相加逐季<b>精确等于</b>公司的 non-GAAP 营业利润。'
+            f'分部利润同样要等 10-Q，所以 {periods[-1]} 只有分部收入。</p></article>'
             '</div>'
         ),
         "source": source,
         "source_url": (
             "https://www.sec.gov/Archives/edgar/data/1730168/"
-            "000173016826000051/avgo-05032026x8kxex99.htm"
+            "000173016826000076/avgo-08022026x8kxex99.htm"
         ),
         "source_links": staging["sources"],
         "summary": {"blocks": []},
@@ -1041,13 +1095,12 @@ def build_payload(staging: dict) -> dict:
                  "Business Outlook 区块"],
                 ["non-GAAP 营业利润率",
                  f"约为收入的 {guidance['non_gaap_operating_margin_pct']:.0f}%", "单点",
-                 "Business Outlook 区块（史上第一次）"],
-                ["Adjusted EBITDA 利润率",
-                 f"约为收入的 {guidance['adjusted_ebitda_margin_pct']:.0f}%", "单点",
-                 "Business Outlook 区块"],
+                 "Business Outlook 区块（第二次给这一条）"],
+                ["Adjusted EBITDA 利润率", "未给", "—",
+                 "上一份给过约 68%；本份新闻稿里这个指标连同实际值一起消失"],
                 ["AI 半导体收入",
                  f"US${guidance['ai_semiconductor_revenue_usd_bn']:.1f}B", "单点",
-                 "CEO 引语，不在 Business Outlook 区块内"],
+                 "CEO 引语，不在 Business Outlook 区块内，且不带 approximately"],
             ],
             "note": guidance["note"] + f" 该季于 {guidance['period_end']} 结束，预计 {guidance['expected_release']}发布。",
         },
@@ -1098,7 +1151,7 @@ def build_payload(staging: dict) -> dict:
              "不统一成一种约定，跨公司的资本开支对照表就会把不同的三个月放在一起比较。"),
             (f"第一节的指引兑现组图（Exhibit {settled_ex[3]['n']}–{settled_ex[-1]['n']}）"
              "用的是同一批业绩 8-K 的 EX-99.1「Business Outlook」区块。"
-             f"公司在这 33 份新闻稿里换过四次指引形式：FY2018 是含 GAAP/non-GAAP 对照表的收入区间；"
+             f"公司在这 34 份新闻稿里换过四次指引形式：FY2018 是含 GAAP/non-GAAP 对照表的收入区间；"
              f"整个 FY2019 只给财年数；FY2020 前三季回到季度区间；"
              f"自 FY2021 Q1 的指引起改为单点，且 Adjusted EBITDA 从美元金额改为「占预计收入的百分比」；"
              f"VMware 并表那一年又有三份新闻稿只给财年数。"

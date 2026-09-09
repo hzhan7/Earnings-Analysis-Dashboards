@@ -373,9 +373,22 @@ class AvgoDashboardTest(unittest.TestCase):
                 self.assertGreaterEqual(
                     self.guide["actual_revenue_usd_m"][index],
                     self.guide["guide_revenue_usd_m"][index])
-        margin = [i for i in finished
+        # An EBITDA guide can now outlive the measure it was written in: Broadcom
+        # stopped publishing Adjusted EBITDA with the 2026-09-02 release, so the
+        # guide it had already given for that quarter can never be settled. Those
+        # quarters are excluded from the claim rather than counted as passes --
+        # and the exclusion is itself pinned, so a *second* unsettled quarter
+        # cannot slip in without this test noticing.
+        guided = [i for i in finished
                   if self.guide["guide_ebitda_margin_pct"][i] is not None]
+        margin = [i for i in guided
+                  if self.guide["actual_ebitda_margin_pct"][i] is not None]
         self.assertGreaterEqual(len(margin), 18)
+        unsettled = [self.guide["periods"][i] for i in guided if i not in margin]
+        stop = self.source["adjusted_ebitda_disclosure_stop"]
+        self.assertEqual(
+            unsettled, [stop["first_missing_period"]],
+            "an EBITDA guide with no actual must be the documented disclosure stop")
         for index in margin:
             with self.subTest(quarter=self.guide["periods"][index], metric="ebitda margin"):
                 self.assertGreater(
@@ -402,8 +415,13 @@ class AvgoDashboardTest(unittest.TestCase):
                 continue
             ebitda, revenue, ng_oi = by_end[end]
             with self.subTest(period_end=end):
-                self.assertAlmostEqual(self.guide["actual_ebitda_margin_pct"][index],
-                                       ebitda / revenue * 100, places=3)
+                if ebitda is None:
+                    # The measure stopped being published; the ratio must go
+                    # empty with it rather than carry a recomputed stand-in.
+                    self.assertIsNone(self.guide["actual_ebitda_margin_pct"][index])
+                else:
+                    self.assertAlmostEqual(self.guide["actual_ebitda_margin_pct"][index],
+                                           ebitda / revenue * 100, places=3)
                 self.assertAlmostEqual(
                     self.guide["actual_non_gaap_operating_margin_pct"][index],
                     ng_oi / revenue * 100, places=3)
@@ -440,12 +458,36 @@ class AvgoDashboardTest(unittest.TestCase):
                 self.assertLess(entry["released"], entry["fiscal_year_end"])
                 self.assertGreater(entry["revenue_usd_m"], 0)
 
-    def test_non_gaap_operating_margin_guidance_has_no_record_yet(self) -> None:
-        """It appears in exactly one of the 33 releases, so the page carries it
-        as a single guided point and builds no delivery record for it."""
-        single = self.source["non_gaap_operating_margin_guidance"]
-        self.assertEqual(single["guided_in_release"], "2026-06-03")
-        self.assertNotIn(single["period_end"], set(self.ends))
+    def test_non_gaap_operating_margin_guidance_is_a_record_now(self) -> None:
+        """This block used to assert the guide appeared in exactly one release and
+        had no delivery record. The 2026-09-02 release gave it a second time and
+        settled the first, so the old shape was not merely out of date -- it was a
+        universal claim that the next filing falsified. What replaces it is a
+        record whose settled entries must reconcile against the quarterly series,
+        and whose unsettled entries must be quarters the page has not reached."""
+        record = self.source["non_gaap_operating_margin_guidance"]
+        columns = ["period_ends", "periods", "fiscal_labels", "guided_in_release",
+                   "guide_pct", "qualifier", "actual_pct"]
+        lengths = {len(record[name]) for name in columns}
+        self.assertEqual(len(lengths), 1, "the record's columns must stay aligned")
+        self.assertGreaterEqual(record["period_ends"].count("2026-08-02"), 1)
+
+        by_end = dict(zip(self.ends, zip(self.fin["non_gaap_operating_income"],
+                                         self.fin["revenue"])))
+        settled = 0
+        for index, end in enumerate(record["period_ends"]):
+            with self.subTest(period_end=end):
+                if record["actual_pct"][index] is None:
+                    self.assertNotIn(end, by_end,
+                                     "an unsettled entry must be a quarter the page has not reached")
+                    continue
+                self.assertIn(end, by_end)
+                ng_oi, revenue = by_end[end]
+                self.assertAlmostEqual(record["actual_pct"][index],
+                                       ng_oi / revenue * 100, places=3)
+                self.assertGreater(record["actual_pct"][index], record["guide_pct"][index])
+                settled += 1
+        self.assertGreaterEqual(settled, 1, "the first guide has been settled")
 
     # ── AI revenue is a different tier of disclosure ─────────────────────────
     def test_ai_revenue_is_labelled_as_a_quote_not_a_segment(self) -> None:
