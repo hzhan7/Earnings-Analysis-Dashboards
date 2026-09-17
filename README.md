@@ -6,7 +6,7 @@ American Express, Broadcom, Brunello Cucinelli, Cadence, Cboe Global Markets,
 Charles Schwab, CME Group, Costco, Ferrari, Hermès International,
 Hong Kong Exchanges and Clearing, Interactive Brokers, LVMH, Mastercard,
 Meta, Micron, Microsoft, Moody's, MSCI, Nasdaq, NIKE, NVIDIA,
-Philip Morris International, S&P Global,
+Philip Morris International, Richemont, S&P Global,
 Samsung Electronics, SK hynix, Synopsys, TJX, TSMC and Visa.
 
 ## Build
@@ -24,6 +24,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/bc/`
 - `http://127.0.0.1:8765/cboe/`
 - `http://127.0.0.1:8765/cdns/`
+- `http://127.0.0.1:8765/cfr/`
 - `http://127.0.0.1:8765/cme/`
 - `http://127.0.0.1:8765/cost/`
 - `http://127.0.0.1:8765/googl/`
@@ -105,9 +106,9 @@ no dependency at all, and is what actually runs on a fresh clone.
   unverified customer-concentration estimates, local absolute paths, source
   PDFs, PPTs and transcripts.
 - `D` means Derived / 自算; it does not mean a company-defined non-GAAP metric.
-- Amounts are in the currency the filer reports in. Ferrari and Brunello
-  Cucinelli both report under IFRS in euro, so their pages are denominated in
-  EUR and their figures are not addable to the US-dollar pages; SK hynix reports under K-IFRS in won and is denominated
+- Amounts are in the currency the filer reports in. Ferrari, Brunello
+  Cucinelli, LVMH, Hermès International and Richemont all report under IFRS in
+  euro, so their pages are denominated in EUR and their figures are not addable to the US-dollar pages; SK hynix reports under K-IFRS in won and is denominated
   in KRW, quoted in trillions the way the company quotes itself, so it is not
   addable to either. The cross-page capex table stays in US dollars on every
   page, because it compares four filers that all report in that currency.
@@ -132,7 +133,10 @@ no dependency at all, and is what actually runs on a fresh clone.
   the company calls FY2026 Q4 — and because that year-end sits mid-quarter, the
   offset is not constant across its own year: NIKE's fiscal Q1 and Q2 land in
   the *previous* calendar year (`Q3` and `Q4`) while its Q3 and Q4 land in the
-  same one. Each page says so in its subtitle and notes. Without one convention the
+  same one; Richemont's ends on 31 March, so its `Q2 2026` is the quarter ended
+  2026-06-30, which the company calls FY2027 Q1, and its profit exists only for
+  the half-years ending 30 September and 31 March, which that page labels by the
+  month each half ends. Each page says so in its subtitle and notes. Without one convention the
   cross-company capex table would compare different three-month periods and look
   fine doing it.
 
@@ -254,7 +258,12 @@ Charts are ordered the way the note is actually used:
    back to the participants who posted it and is visible only twice a
    year, and the twenty-two quarters of turnover that are the only ones
    that exist, because an average per trading day cannot be subtracted the
-   way a revenue line can;
+   way a revenue line can; Richemont gets the two margin ranges its CFO gave
+   on results calls, each drawn against every half-year that followed, the
+   jewellery share of sales across the window beside the quarters that do not
+   exist because the company once reported five months instead of a quarter,
+   the half-years in which jewellery alone earned more than the whole group,
+   and how long each quarter waited before it was printed as a quarter at all;
    Samsung Electronics gets the one number the company
    actually guides -- next quarter's DRAM and NAND bit shipments, and only as a
    phrase -- beside the price it never guides, the eight quarters in which

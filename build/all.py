@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amzn, avgo, axp, bc, cboe, cdns, cme, cost, googl, hkex, ibkr, ma, mc, mco,
+    amzn, avgo, axp, bc, cboe, cdns, cfr, cme, cost, googl, hkex, ibkr, ma, mc, mco,
     meta, msci, msft, mu, ndaq, nke, nvda, pm, race, rms, samsung, schw,
     skhynix, snps,
     spgi, tjx, tsm, v,
@@ -28,6 +28,7 @@ MODULES = {
     "bc": bc,
     "cboe": cboe,
     "cdns": cdns,
+    "cfr": cfr,
     "cme": cme,
     "cost": cost,
     "googl": googl,
@@ -139,6 +140,18 @@ ENTRIES = [
         "cadence_label": "自然年季度；完整披露",
         "headline_metrics": ["Revenue $1.58B", "Backlog $8.1B", "Non-GAAP OpM 45.5%"],
         "search_text": "cdns cadence 楷登 eda 半导体 设计 ip palladium 硬件仿真 agentic 芯片设计",
+    },
+    {
+        "slug": "cfr",
+        "ticker": "CFR",
+        "name": "Compagnie Financière Richemont SA",
+        "aliases": ["Richemont", "历峰", "CFR.SW", "Cartier"],
+        "group": "luxury_brands",
+        "cadence_label": "3 月底制财年；本站按自然年季度标注；销售按季，利润仅半年度",
+        "headline_metrics": ["Sales €6,329M", "恒定汇率 +20%", "珠宝 H2 利润率 28.4%"],
+        "search_text": ("cfr richemont 历峰 奢侈品 珠宝 cartier 卡地亚 van cleef arpels 梵克雅宝 buccellati "
+                        "腕表 vacheron constantin 江诗丹顿 jaeger-lecoultre iwc piaget 伯爵 panerai "
+                        "baume mercier montblanc 蒙布朗 chloé ynap 恒定汇率 半年度 瑞士 six 欧元 ifrs"),
     },
     {
         "slug": "cme",

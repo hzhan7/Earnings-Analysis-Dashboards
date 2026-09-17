@@ -25,6 +25,7 @@ series/*.json
 !series/bc.json
 !series/cboe.json
 !series/cdns.json
+!series/cfr.json
 !series/cme.json
 !series/cost.json
 !series/googl.json
