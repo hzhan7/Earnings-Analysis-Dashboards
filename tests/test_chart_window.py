@@ -130,7 +130,7 @@ def js_payload(path: Path, assignment: str) -> dict:
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
     "amzn": 13, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
-    "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ma": 16, "mc": 3, "mco": 7, "meta": 10,
+    "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 16, "mc": 3, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
     "spgi": 11, "tjx": 8, "tsm": 18, "v": 14,
@@ -689,6 +689,16 @@ CONVERTED = {
         "三条量：期货": "same disclosure limit, volumes rather than value.",
         "互联互通：北向日均": "same disclosure limit, Connect volumes.",
     },
+    "ker": {
+        # Read against every 2016-2024 revenue table on this page's corpus (both
+        # blind ledgers): none carries a Fashion & Leather Goods or Jewelry line.
+        "新分部口径下的可比增速": "Kering introduced the Fashion & Leather Goods / Jewelry / "
+                        "Eyewear / Corporate & Other grid on 2026-03-16 and restated "
+                        "only the four quarters of 2025. Every 2016-2024 revenue "
+                        "release reports Gucci, Saint Laurent, Bottega Veneta, Other "
+                        "Houses and a corporate line instead, with jewelry inside "
+                        "Other Houses.",
+    },
     "tsm": {
         "收入（本图仅近": "dollar band; the guided number runs US$6.1B to US$45.8B, so the "
                      "early bands collapse to a few pixels on a linear axis. The "
@@ -705,6 +715,9 @@ CONVERTED = {
 
 
 FLOOR_KIND = {
+    'ker': {
+        '新分部口径下的可比增速': 'disclosure',
+    },
     'hkex': {
         '现货市场日均成交额与交易结算费': 'disclosure',
         '越往损益表下面走': 'disclosure',
@@ -1087,7 +1100,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 121)
+        self.assertEqual(settled.count("disclosure"), 122)
         self.assertEqual(settled.count("design"), 34)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
@@ -1344,6 +1357,8 @@ UNDERIVABLE_QUARTER_COUNTS = {
     "cme Ex21":  ([34], "税改前 7 季 / 之后 34 季的分段均值，两段都短于窗口"),
     "ibkr Ex9":  ([34], "已由 len(reported) 算出：该行有披露的季度数，非窗口长度"),
     "ibkr Ex18": ([16], "佣金曾连续 16 季是第一大收入来源，是一段区间的长度"),
+    "ker Ex9":   ([12], "Gucci 可比增速自 2023Q3 起连续为负的季度数，是一段区间的长度；"
+                        "builder 用 trailing_streak 从 series 现算，test_ker_dashboard 另算一遍断言"),
     "meta Ex9":  ([13], "价格腿同比为负的季度数，是条件计数"),
     "ndaq Ex7":  ([18], "Section 31 规费按金额单列的季度数（18 季），少于该图 42 季的窗口 —— "
                         "更早的季度只在 MD&A 脚注里给合计，未按两条收入线拆开"),

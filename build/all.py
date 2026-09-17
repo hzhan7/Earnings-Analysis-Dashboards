@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amzn, avgo, axp, bc, cboe, cdns, cfr, cme, cost, googl, hkex, ibkr, ma, mc, mco,
+    amzn, avgo, axp, bc, cboe, cdns, cfr, cme, cost, googl, hkex, ibkr, ker, ma, mc, mco,
     meta, msci, msft, mu, ndaq, nke, nvda, pm, race, rms, samsung, schw,
     skhynix, snps,
     spgi, tjx, tsm, v,
@@ -34,6 +34,7 @@ MODULES = {
     "googl": googl,
     "hkex": hkex,
     "ibkr": ibkr,
+    "ker": ker,
     "ma": ma,
     "mc": mc,
     "mco": mco,
@@ -209,6 +210,18 @@ ENTRIES = [
         "headline_metrics": ["Revenue $1.90B", "NIM 1.93%", "账户 5.19M"],
         "search_text": ("ibkr interactive brokers 盈透证券 券商 经纪 交易 保证金 "
                         "净息差 nim 客户权益 darts 期权 期货 清算 托管 up-c"),
+    },
+    {
+        "slug": "ker",
+        "ticker": "KER.PA",
+        "name": "Kering",
+        "aliases": ["Kering", "开云", "开云集团", "Gucci", "古驰"],
+        "group": "luxury_brands",
+        "cadence_label": "自然年季度；收入按季披露，利润仅半年度",
+        "headline_metrics": ["本季可比 +2%", "Gucci 可比 −2%", "半年利润率 12.8%"],
+        "search_text": ("ker kering 开云 开云集团 gucci 古驰 saint laurent 圣罗兰 ysl bottega veneta 葆蝶家 "
+                        "balenciaga 巴黎世家 mcqueen boucheron 宝诗龙 珠宝 眼镜 kering eyewear kering beauté "
+                        "奢侈品 时装与皮具 可比增速 半年度 欧元 ifrs"),
     },
     {
         "slug": "ma",

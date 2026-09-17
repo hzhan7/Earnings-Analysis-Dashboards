@@ -4,7 +4,7 @@ Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
 American Express, Broadcom, Brunello Cucinelli, Cadence, Cboe Global Markets,
 Charles Schwab, CME Group, Costco, Ferrari, Hermès International,
-Hong Kong Exchanges and Clearing, Interactive Brokers, LVMH, Mastercard,
+Hong Kong Exchanges and Clearing, Interactive Brokers, Kering, LVMH, Mastercard,
 Meta, Micron, Microsoft, Moody's, MSCI, Nasdaq, NIKE, NVIDIA,
 Philip Morris International, Richemont, S&P Global,
 Samsung Electronics, SK hynix, Synopsys, TJX, TSMC and Visa.
@@ -30,6 +30,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/googl/`
 - `http://127.0.0.1:8765/hkex/`
 - `http://127.0.0.1:8765/ibkr/`
+- `http://127.0.0.1:8765/ker/`
 - `http://127.0.0.1:8765/ma/`
 - `http://127.0.0.1:8765/mc/`
 - `http://127.0.0.1:8765/mco/`
@@ -107,7 +108,7 @@ no dependency at all, and is what actually runs on a fresh clone.
   PDFs, PPTs and transcripts.
 - `D` means Derived / 自算; it does not mean a company-defined non-GAAP metric.
 - Amounts are in the currency the filer reports in. Ferrari, Brunello
-  Cucinelli, LVMH, Hermès International and Richemont all report under IFRS in
+  Cucinelli, Kering, LVMH, Hermès International and Richemont all report under IFRS in
   euro, so their pages are denominated in EUR and their figures are not addable to the US-dollar pages; SK hynix reports under K-IFRS in won and is denominated
   in KRW, quoted in trillions the way the company quotes itself, so it is not
   addable to either. The cross-page capex table stays in US dollars on every
@@ -264,6 +265,14 @@ Charts are ordered the way the note is actually used:
    exist because the company once reported five months instead of a quarter,
    the half-years in which jewellery alone earned more than the whole group,
    and how long each quarter waited before it was printed as a quarter at all;
+   Kering gets the three operating-income guides it printed in 2024 settled on
+   reported figures, the Gucci and Saint Laurent medium-term targets from its
+   FY2018 presentation and its FY2022 registration document set against every
+   year that followed, the half-year margins of Gucci, Saint Laurent and
+   Bottega Veneta back to 2016, and the four
+   re-presentations — PUMA's exit, IFRS 16, the 2022 regrouping and Kering
+   Beauté's sale — each marked where it would otherwise move a long line
+   without breaking any sum;
    Samsung Electronics gets the one number the company
    actually guides -- next quarter's DRAM and NAND bit shipments, and only as a
    phrase -- beside the price it never guides, the eight quarters in which

@@ -31,6 +31,7 @@ series/*.json
 !series/googl.json
 !series/hkex.json
 !series/ibkr.json
+!series/ker.json
 !series/ma.json
 !series/mc.json
 !series/mco.json
