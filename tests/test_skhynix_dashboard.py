@@ -23,11 +23,12 @@ been burned. `test_no_exhibit_pins_a_zero_baseline_under_negative_values` is
 derived from what the charts promise rather than from how something broke
 before: three kinds in `assets/charts.js` fix the y-axis floor at zero, and this
 page carries a quarter at −66.9% operating margin and a year of losses, so a
-negative value handed to one of those kinds is drawn below the canvas and
-clipped — no NaN, no empty element, no exception, and the repo's own rendered-SVG
-gate cannot see it because its out-of-canvas check only inspects `fill="none"`
-paths. The assertion is a containment rule over the payload, so it holds for
-values nobody has plotted yet.
+negative value handed to one of those kinds is drawn below the plot — no NaN,
+no empty element, no exception. The repo's rendered-SVG gate has bounded painted
+bars by the plot band since 2026-09-17 (before that it read only `fill="none"`
+paths and could not see this), but it skips wherever jsdom is not installed. The
+assertion is a containment rule over the payload, so it holds for values nobody
+has plotted yet, on any machine.
 """
 
 from __future__ import annotations
@@ -373,12 +374,12 @@ class SkHynixDashboardTest(unittest.TestCase):
         """Negative values must not reach a kind whose y-floor is fixed at zero.
 
         `gs_bar`, `bars_labeled` and `stacked_dual` set `y0 = 0` in
-        `assets/charts.js`. A negative bar is then drawn below the viewBox and
-        clipped by the browser: the axis looks right, the value is right, no NaN
-        is produced, and the repo's rendered-SVG gate misses it because its
-        out-of-canvas check only inspects `fill="none"` paths. This page plots a
-        −66.9% margin and four loss-making quarters, so the containment rule is
-        asserted over the payload instead of hoped for.
+        `assets/charts.js`. A negative bar is then drawn below the plot: the
+        axis looks right, the value is right, no NaN is produced. The rendered-SVG
+        gate now reports it (painted shapes are bounded by the plot band since
+        2026-09-17) but skips without jsdom. This page plots a −66.9% margin and
+        four loss-making quarters, so the containment rule is asserted over the
+        payload instead of hoped for.
         """
         offenders = []
         for exhibit in self.exhibits():

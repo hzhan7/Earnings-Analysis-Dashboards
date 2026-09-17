@@ -666,7 +666,8 @@
     var chh = fscale(chh0);
     var ph = rows.length * chh, H = M.t + ph + M.b;
     var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img',
-      'aria-label': 'Exhibit ' + ex.n + ': ' + ex.title }, host);
+      'aria-label': 'Exhibit ' + ex.n + ': ' + ex.title,
+      'data-plot': M.t + ' ' + +(M.t + ph).toFixed(2) }, host);   // 同 draw() 里的说明
     var g = el('g', {}, svg), sc = heatScale(ex);
     var maxLen = 1;
     for (i = 0; i < rows.length; i++)
@@ -787,8 +788,14 @@
               l: fscale((ex.ylab ? 56 : 46) + (kind === 'lines_endlabels' ? 30 : 0)) };
     var pw = Math.max(60, W - M.l - M.r), ph = Math.max(80, H - M.t - M.b);
 
+    /* data-plot = 绘图区的上下沿（M.t 与 M.t+ph），给 tests/render_check.js 用，
+       同 data-tick / data-xtick 是显式契约。那道闸门要问的是「柱子有没有出绘图区」，
+       而只拿 viewBox 当边界是不够的：整组为负时柱越过绘图区顶的距离随「最小柱 / 最大柱」
+       缩小，实测把 snps Ex25 改成 −50..−1,211 的全负柱，每根柱在绘图区顶上多画约 12px，
+       落在上边距里、仍在 viewBox 之内 —— 看得见的错，按 viewBox 查不出来。 */
     var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img',
-      'aria-label': 'Exhibit ' + ex.n + ': ' + ex.title }, host);
+      'aria-label': 'Exhibit ' + ex.n + ': ' + ex.title,
+      'data-plot': +M.t.toFixed(2) + ' ' + +(M.t + ph).toFixed(2) }, host);
     var defs = el('defs', {}, svg);
     var mk = el('marker', { id: 'exArrow', viewBox: '0 0 10 10', refX: 8, refY: 5,
       markerWidth: 5, markerHeight: 5, orient: 'auto-start-reverse' }, defs);
@@ -867,10 +874,14 @@
     if (kind === 'gs_bar') { y0 = 0; y1 = mx * 1.22; }
     else if (kind === 'stacked_dual') { y0 = 0; y1 = mx * 1.28; }
     else if (kind === 'bars_labeled') { y0 = 0; y1 = mx * 1.13; }
-    /* 以下四个与 gsx.py 同名函数的 set_ylim 一一对应（qtr_bar 的 1.32 是给竖排标签留的） */
-    else if (kind === 'qtr_bar') { y0 = Math.min(0, mn * 1.15); y1 = mx * 1.32; }
-    else if (kind === 'seasonality') { y0 = Math.min(0, mn * 1.15); y1 = mx * 1.26; }
-    else if (kind === 'grouped_bars') { y0 = Math.min(0, mn * 1.15); y1 = mx * 1.22; }
+    /* 以下四个与 gsx.py 同名函数的 set_ylim 一一对应（qtr_bar 的 1.32 是给竖排标签留的）。
+       上界同样要罩住 0，不只下界：柱是从 0 画起的，而原先的 y1 = mx*倍数 在整组为负时
+       仍是负数 —— 0 落在轴顶之上，每根柱从画布外起笔，往上一直画出卡片。
+       只在 mx < 0 时生效，含正值的图 y1 一个字节不变。
+       起因是 Kering 页 Exhibit 2（全负的并排柱，当时改画绝对值绕过去）。 */
+    else if (kind === 'qtr_bar') { y0 = Math.min(0, mn * 1.15); y1 = Math.max(0, mx * 1.32); }
+    else if (kind === 'seasonality') { y0 = Math.min(0, mn * 1.15); y1 = Math.max(0, mx * 1.26); }
+    else if (kind === 'grouped_bars') { y0 = Math.min(0, mn * 1.15); y1 = Math.max(0, mx * 1.22); }
     else if (kind === 'bridge_bar') {
       var bpad = (mx - mn) * 0.16 || 1; y0 = mn - bpad; y1 = mx + bpad;
     } else if (kind === 'range_band') {
@@ -942,7 +953,12 @@
         rtk = ticks(0, rcap, 6); r0 = 0; r1 = rtk[rtk.length - 1];
       }
       else {
-        rtk = ticks(Math.min.apply(null, rv.concat([0])), Math.max.apply(null, rv), 9);
+        /* 右轴与左轴同一条规矩：下界罩 0、上界也罩 0。整条线为负时原先的上界是负数，
+           0 不在右轴上，下面的零点对齐拿到的是一个画布外的零点。
+           isFinite 那一句是为了不动「右轴一个有限值都没有」的既有量程（0..1）。 */
+        var rmx = Math.max.apply(null, rv);
+        if (isFinite(rmx) && rmx < 0) rmx = 0;
+        rtk = ticks(Math.min.apply(null, rv.concat([0])), rmx, 9);
         r0 = rtk[0]; r1 = rtk[rtk.length - 1];
       }
       /* 两轴的 0 必须落在同一画布高度：取两者中较高的那个零点比例 f，
@@ -952,8 +968,15 @@
          兜底见 ALIGN_WASTE_MAX：对齐的代价过大时宁可不对齐，但必须在图上说出来
          —— 读者的默认假设就是两轴零点同高，不说的话「柱在零线之上、点在零线之下」
          会被读成同号。 */
-      var f = Math.max(zeroFrac(y0, y1), zeroFrac(r0, r1));
-      if (f > 1e-9) {
+      var fl = zeroFrac(y0, y1), fr = zeroFrac(r0, r1), f = Math.max(fl, fr);
+      /* f = 1：有一条轴的 0 就在轴顶（整组柱为负）。alignZero 把 0 推到顶端需要无穷大
+         的量程，所以对 f = 1 原样返回、浪费率算出来是 0 —— 两轴零点**静默错位**：
+         柱从顶上往下挂，另一条轴的线从底下往上长，图上没有任何说明。
+         两条轴的 0 都在顶上时本来就同高，照常走下面；只有一条在顶上时，
+         对齐做不到，按 ALIGN_WASTE_MAX 那条兜底同样处理：不对齐，但写出来。 */
+      if (f >= 1 - 1e-9 && Math.min(fl, fr) < 1 - 1e-9) {
+        misalign = true;
+      } else if (f > 1e-9) {
         var la = alignZero(y0, y1, f), ra = alignZero(r0, r1, f);
         var waste = Math.max(1 - (y1 - y0) / (la[1] - la[0]),
                              1 - (r1 - r0) / (ra[1] - ra[0]));
