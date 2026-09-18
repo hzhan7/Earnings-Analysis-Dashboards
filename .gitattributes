@@ -1,0 +1,5 @@
+# 生成物：build/all.py 的产物。两边都重建过就必然冲突，手挑哪边都是错的 ——
+# merge=binary（git 内建）：冲突时不插标记、工作区保留本分支那份、停在 unmerged，
+# 逼你跑 python3 build/all.py 再 git add（见 CLAUDE.md §0 / §4）。根目录 index.html 是手写的，不在此列。
+data/*.js merge=binary -diff
+*/index.html merge=binary
