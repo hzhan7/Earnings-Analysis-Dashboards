@@ -464,6 +464,26 @@ def round_half_up(value: float, digits: int) -> str:
     return str(Decimal(repr(value)).quantize(Decimal(1).scaleb(-digits), rounding=ROUND_HALF_UP))
 
 
+def stamped_block(staging: dict, key: str, period: str) -> dict | None:
+    """A block of the series file that describes one quarter, or None.
+
+    Some of what a page says is not a series at all: the supply-agreement
+    figures in one 10-Q, what management said on one call, a one-off in one
+    quarter's statement. Those blocks carry the quarter they describe as
+    ``period``. A block for another quarter is last quarter's story, and
+    publishing it under this quarter's label is exactly the stale-prose failure
+    this repo keeps finding, so it stops the build; a missing block means this
+    quarter has no such story, and the page simply leaves that part out.
+    """
+    block = staging.get(key)
+    if block is None:
+        return None
+    if _period_key(block.get("period", "")) != _period_key(period):
+        raise ValueError(f"series block `{key}` is stamped {block.get('period')!r}, "
+                         f"but the series ends at {period!r}: update it or remove it")
+    return block
+
+
 _CN_DIGITS = "零一二三四五六七八九"
 
 
@@ -471,10 +491,19 @@ def cn_count(value: int) -> str:
     """Chinese numeral for a count, the way this site's prose writes one.
 
     ``8`` → ``八``, ``15`` → ``十五``, ``19`` → ``十九``, ``26`` → ``二十六``,
-    ``42`` → ``四十二``. Prose on these pages spells counts in words
-    (「十九个季度」「十五个财年」), and those are exactly the numbers a roll
-    changes, so they are computed here rather than typed.
+    ``42`` → ``四十二``, and ``2`` → ``两`` because a count stands before a
+    measure word (「两次」「两个数量级」). Prose on these pages spells counts in
+    words (「十九个季度」「十五个财年」), and those are exactly the numbers a
+    roll changes, so they are computed here rather than typed. For 「第N」 use
+    `cn_ordinal`.
     """
+    if value == 2:
+        return "两"
+    return cn_ordinal(value)
+
+
+def cn_ordinal(value: int) -> str:
+    """Like `cn_count` but for 「第N」 and other non-count uses: ``2`` → ``二``."""
     if value < 0:
         raise ValueError(value)
     if value < 10:
@@ -489,9 +518,9 @@ def cn_count(value: int) -> str:
             return _CN_DIGITS[hundreds] + "百"
         if rest < 10:
             return _CN_DIGITS[hundreds] + "百零" + _CN_DIGITS[rest]
-        tail = cn_count(rest)
+        tail = cn_ordinal(rest)
         return _CN_DIGITS[hundreds] + "百" + ("一" + tail if tail.startswith("十") else tail)
-    raise ValueError(f"cn_count only spells counts below 1000, got {value}")
+    raise ValueError(f"cn_ordinal only spells numbers below 1000, got {value}")
 
 
 def number_exhibits(exhibits: list[dict], start: int = 2) -> list[dict]:

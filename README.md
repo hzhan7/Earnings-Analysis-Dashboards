@@ -226,13 +226,14 @@ Charts are ordered the way the note is actually used:
    that moves against it, the slope that turns a 1% move in contracts into a
    0.66% move in revenue, the slice of the clearing fee its published volumes
    do not cover, and the basis points it keeps out of the interest earned on
-   client collateral; Micron gets the fifteen fiscal years its record
-   quarter has to be read against — an annual gross margin running from −9.1%
-   to 58.9% across them, against 84.6% in the quarter this page reports — the
-   capital intensity whose peaks land on the revenue troughs rather than on
-   its peaks, the three cash-flow lines whose capital-expenditure leg has not yet
-   turned, and nineteen quarters of inventory measured against cost of goods
-   sold rather than against a selling price that has multiplied;
+   client collateral; Micron gets every fiscal year since FY2011 as the record
+   its latest quarter has to be read against — annual gross margin from the
+   loss-making year to the peak, with the quarter's own margin set beside it on
+   the page — the capital intensity whose peaks land on the revenue troughs
+   rather than on its peaks, the three cash-flow lines whose capital-expenditure
+   leg has not yet turned, and the inventory line since late 2021 measured
+   against cost of goods sold rather than against a selling price that has
+   multiplied;
    Hermès International gets the two growth rates it prints beside every cell
    — the published one and its own constant-currency one — and the wedge
    between them that went from +1.3pp to −7.0pp in four quarters and left the

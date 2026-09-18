@@ -99,5 +99,45 @@ class SharedLayerTest(unittest.TestCase):
                 self.assertIn(latest["disclosed_period_label"], card)
 
 
+def checked_slugs() -> list[str]:
+    """Pages migrated to the data-only roll: their series carries `_checks`."""
+    return [slug for slug in MODULES if "_checks" in staging_of(slug)]
+
+
+class ChecksBlockTest(unittest.TestCase):
+    """What every migrated page's `_checks` block has to be.
+
+    The block is a separate reading of the quarter's primary filing -- period,
+    dates, a handful of headline figures and where in the document each was
+    read -- keyed once per roll. Company tests assert the builder's output
+    against it. Two things make it evidence rather than a snapshot, and both
+    are asserted here for every page that has one: it names its source, and
+    the builder never reads it (a check the builder could see would be the
+    builder checking itself).
+    """
+
+    def test_there_is_at_least_one_migrated_page(self) -> None:
+        self.assertTrue(checked_slugs(), "no series file carries `_checks` yet")
+
+    def test_the_checks_name_the_quarter_the_page_publishes(self) -> None:
+        for slug in checked_slugs():
+            staging = staging_of(slug)
+            checks = staging["_checks"]
+            latest = MODULES[slug].build_payload(staging)["latest"]
+            with self.subTest(slug=slug):
+                self.assertEqual(latest["disclosed_period_label"], checks["period"])
+                self.assertEqual(latest["period_end"], checks["period_end"])
+                self.assertEqual(latest["release_date"], checks["release_date"])
+                self.assertTrue(checks.get("source"), "a check without a source is a snapshot")
+
+    def test_no_builder_reads_its_checks(self) -> None:
+        for slug in checked_slugs():
+            staging = staging_of(slug)
+            stripped = {key: value for key, value in staging.items() if key != "_checks"}
+            with self.subTest(slug=slug):
+                self.assertEqual(MODULES[slug].build_payload(stripped),
+                                 MODULES[slug].build_payload(staging))
+
+
 if __name__ == "__main__":
     unittest.main()
