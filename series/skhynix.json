@@ -16,7 +16,8 @@
   "prior_year_period": "2025Q2",
   "period_end": "2026-06-30",
   "release_date": "2026-07-29",
-  "audit_status": "provisional"
+  "audit_status": "provisional",
+  "analysis_date": "2026-08-29"
  },
  "periods": [
   "2016Q1",

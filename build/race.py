@@ -44,6 +44,7 @@ sys.path.insert(0, str(ROOT))
 from build.board import (  # noqa: E402
     ai_capex_cycle_table,
     headroom_exhibit,
+    latest_block,
     number_exhibits,
     threshold_exhibit,
     threshold_table,
@@ -726,6 +727,14 @@ def long_charts(staging: dict) -> tuple[list[dict], list[dict]]:
     return [unit, margin, mix, region], [cash, capex_chart]
 
 
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    fin = staging["financials"]
+    return [f"Net revenues €{fin['net_revenues_eur_m'][-1]:,.0f}M",
+            f"EBIT margin {fin['ebit_margin_pct'][-1]:.1f}%",
+            f"出货 {fin['shipments_units'][-1]:,.0f} 台"]
+
+
 def build_payload(staging: dict) -> dict:
     fin = staging["financials"]
     long = staging["long_history"]
@@ -797,15 +806,11 @@ def build_payload(staging: dict) -> dict:
             "group": "luxury_brands",
             "accounting_standard": "IFRS",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": "2026-06-30",
-            "release_date": "2026-07-30",
-            "analysis_date": "2026-08-29",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=staging["periods"][-1],
+            period_end=staging["period_ends"][-1],
+            release_date=staging["release_dates"][-1]),
         "tracker": "Watchlist Quarterly Tracker · RACE",
         "title": "Ferrari N.V. (RACE)：Q2 2026 季报仪表盘",
         "subtitle": ("截至 2026-06-30 · 发布 2026-07-30 · IFRS · 欧元列示 · 未审计 · "

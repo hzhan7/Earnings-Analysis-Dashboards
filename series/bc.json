@@ -6,9 +6,14 @@
     "standard": "IFRS",
     "currency": "EUR",
     "unit": "EUR thousand",
-    "fiscal_year": "calendar",
-    "latest_period": "H1 2026",
-    "release_date": "2026-07-30"
+    "fiscal_year": "calendar"
+  },
+  "latest": {
+    "period": "H1 2026",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-30",
+    "analysis_date": "2026-08-30",
+    "audit_status": "unaudited"
   },
   "disclosure_regime": {
     "printed_periods": [

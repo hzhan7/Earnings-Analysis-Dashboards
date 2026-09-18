@@ -9,6 +9,12 @@
     "currency": "EUR"
   },
   "_provenance": "爱马仕不是美国证券交易委员会的申报人：它自 2008 年起依 Rule 12g3-2(b) 豁免登记，从未提交过 20-F 或 6-K，因此本站其他公司页依赖的 10-Q/10-K 渲染报表对它不存在。下面每一格都逐字取自公司自己的季度收入公告、半年度业绩新闻稿与半年度财务报告；固定汇率增速一律取公司印出的那一列，绝不由「半年减一季」反推 —— 反推值与官方值最大相差 0.3pp。",
+  "latest": {
+    "period": "Q2 2026",
+    "period_end": "2026-06-30",
+    "analysis_date": "2026-08-30",
+    "audit_status": "limited_review"
+  },
   "periods": [
     "Q3 2024",
     "Q4 2024",
@@ -824,7 +830,9 @@
       "operating_cash_flows_eur_m": 2694,
       "operating_investments_eur_m": 344,
       "adjusted_fcf_eur_m": 2182,
-      "roi_margin_pct": 41.0511
+      "roi_margin_pct": 41.0511,
+      "roi_margin_printed_pct": 41.0,
+      "_roi_margin_printed_source": "2026-07-29 半年度业绩新闻稿正文：「Recurring operating income amounted to €3.4 billion (41.0% of sales)」。公司按未取整的金额算到一位小数；用取整到百万的 3,351 ÷ 8,163 得 41.05%，一位小数是 41.1% —— 两者不一致时本站用公司印出的 41.0%。"
     }
   ],
   "full_years": {

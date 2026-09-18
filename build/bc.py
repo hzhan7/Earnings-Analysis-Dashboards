@@ -53,7 +53,9 @@ sys.path.insert(0, str(ROOT))
 
 from build.board import (  # noqa: E402
     ai_capex_cycle_table,
+    display_period,
     headroom_exhibit,
+    latest_block,
     number_exhibits,
     threshold_table,
 )
@@ -461,6 +463,14 @@ def long_charts(s: dict) -> list[dict]:
     return [quarters, ebit, conv, debt]
 
 
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    half = staging["half"]
+    return [f"Revenues €{half['revenue_eur_k'][-1] / 1000:.1f}M",
+            f"恒定汇率 {staging['growth_h1_pct']['cfx'][-1]:+.1f}%",
+            f"EBIT 利润率 {half['ebit_eur_k'][-1] / half['revenue_eur_k'][-1] * 100:.1f}%"]
+
+
 def build_payload(staging: dict) -> dict:
     s = staging
     settled = guidance_charts(s)
@@ -534,15 +544,7 @@ def build_payload(staging: dict) -> dict:
         "page": {"slug": "bc", "language": "zh-CN"},
         "company": {"ticker": "BC", "name": "Brunello Cucinelli S.p.A.",
                     "group": "luxury_brands", "accounting_standard": "IFRS"},
-        "latest": {
-            "disclosed_period_label": "H1 2026",
-            "full_financial_period_label": "H1 2026",
-            "period_end": "2026-06-30",
-            "release_date": "2026-07-30",
-            "analysis_date": "2026-08-30",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(staging, period=display_period(staging["half"]["periods"][-1])),
         "tracker": "Watchlist Quarterly Tracker · BC",
         "title": "Brunello Cucinelli S.p.A. (BC)：2026 年上半年业绩仪表盘",
         "subtitle": ("截至 2026-06-30 · 发布 2026-07-30 · IFRS · 欧元列示 · 自然年财年 · "

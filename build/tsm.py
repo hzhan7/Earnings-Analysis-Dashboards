@@ -25,6 +25,7 @@ from build.board import (  # noqa: E402
     delivery_band,
     headroom,
     headroom_exhibit,
+    latest_block,
     midpoint_deviation,
     number_exhibits,
     threshold_exhibit,
@@ -432,6 +433,14 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
     return charts, table
 
 
+
+
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    fin = staging["financials"]
+    return [f"Revenue ${fin['revenue_usd_bn'][-1]:.1f}B",
+            f"HPC {staging['platform_mix_pct']['hpc'][-1]:.0f}%",
+            f"Gross margin {fin['gross_margin_pct'][-1]:.1f}%"]
 
 
 def build_payload(staging: dict) -> dict:
@@ -1197,15 +1206,7 @@ def build_payload(staging: dict) -> dict:
             "group": "semiconductor_ai",
             "accounting_standard": "TIFRS",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": "2026-06-30",
-            "release_date": "2026-07-16",
-            "analysis_date": "2026-07-18",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(staging, period=staging["periods"][-1]),
         "tracker": "Watchlist Quarterly Tracker · TSM",
         "title": "TSMC (TSM)：Q2 2026 季报仪表盘",
         "subtitle": "截至 2026-06-30 · 发布 2026-07-16 · TIFRS · 未审计 · 收入为美元，现金流为新台币，另有注明除外",

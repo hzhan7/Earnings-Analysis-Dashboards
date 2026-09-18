@@ -1,5 +1,11 @@
 {
   "_provenance": "公司披露值逐项读自 SEC EDGAR 上 Philip Morris International Inc.（CIK 1413329）的申报文件：74 份季度业绩 8-K 的 EX-99.1 新闻稿（2008 年第一季度至 2026 年第二季度，全年与下季 EPS 指引、分部收入桥、经营指标）、10-K 与 10-Q 的 Segment Reporting 附注（按产品类别的净收入，2016–2025 年度值与 2025–2026 季度值），以及 XBRL companyfacts （合并损益、经营现金流、资本开支、每股股息）。财季第四季无 10-Q，故其收入、毛利与经营利润为全年减去前九个月；每股收益不可加总，第四季读自当期新闻稿的 EPS 调节表。",
+  "latest": {
+    "period": "Q2 2026",
+    "release_date": "2026-07-22",
+    "analysis_date": "2026-08-29",
+    "audit_status": "unaudited"
+  },
   "periods": [
     "2024Q3",
     "2024Q4",

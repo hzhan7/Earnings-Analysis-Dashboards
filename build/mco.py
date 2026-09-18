@@ -70,6 +70,7 @@ sys.path.insert(0, str(ROOT))
 from build.board import (  # noqa: E402
     ai_capex_cycle_table,
     delivery_band,
+    latest_block,
     midpoint_deviation,
     number_exhibits,
 )
@@ -551,6 +552,14 @@ def routine(staging: dict) -> list[dict]:
     return [rev_margin, eps_cmp, cash, seg_oi]
 
 
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    q = staging["segment_quarterly"]
+    return [f"Revenue ${q['revenue_usd_m'][-1] / 1000:.2f}B",
+            f"MIS adj OpM {q['mis_adj_operating_margin_pct'][-1]:.1f}%",
+            f"调整后 EPS ${staging['latest']['adj_diluted_eps_usd']:.2f}"]
+
+
 def build_payload(staging: dict) -> dict:
     settled_ex, stats = guidance_record(staging)
     highlight_ex = quarter_highlights(staging)
@@ -644,15 +653,10 @@ def build_payload(staging: dict) -> dict:
             "group": "financial_data_indices",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": latest["period_end"],
-            "release_date": latest["release_date"],
-            "analysis_date": "2026-08-29",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=staging["segment_quarterly"]["periods"][-1],
+            period_end=staging["segment_quarterly"]["period_ends"][-1]),
         "tracker": "Watchlist Quarterly Tracker · MCO",
         "title": "Moody's Corporation (MCO)：Q2 2026 季报仪表盘",
         "subtitle": (

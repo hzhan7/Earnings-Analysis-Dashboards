@@ -49,6 +49,7 @@ from build.board import (  # noqa: E402
     ai_capex_cycle_table,
     headroom as headroom_value,
     headroom_exhibit,
+    latest_block,
     number_exhibits,
     threshold_exhibit,
     threshold_table,
@@ -619,6 +620,19 @@ def next_quarter_charts(staging: dict) -> list[dict]:
     return [headroom, apac_line, leather_line]
 
 
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    group = staging["group_revenue"]
+    half = staging["half_years"][-1]
+    # The company's own one-decimal margin when it prints one: 3,351 / 8,163 is
+    # 41.05%, which rounds to 41.1%, while Hermès prints 41.0% off unrounded
+    # figures. Where the two disagree the page carries the company's.
+    margin = half.get("roi_margin_printed_pct", half["roi_margin_pct"])
+    return [f"{staging['periods'][-1].split()[0]} revenue €{group['revenue_eur_m'][-1]:,.0f}M",
+            f"固定汇率 {group['cc_pct'][-1]:+.1f}%",
+            f"{half['label'].split()[0]} 经营利润率 {margin:.1f}%"]
+
+
 def build_payload(staging: dict) -> dict:
     periods = staging["periods"]
     latest = len(periods) - 1
@@ -760,15 +774,11 @@ def build_payload(staging: dict) -> dict:
             "group": "luxury_brands",
             "accounting_standard": "IFRS",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "H1 2026",
-            "period_end": "2026-06-30",
-            "release_date": "2026-07-29",
-            "analysis_date": "2026-08-30",
-            "audit_status": "limited_review",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=staging["periods"][-1],
+            release_date=staging["release_dates"][staging["periods"][-1]],
+            full_label=staging["half_years"][-1]["label"]),
         "tracker": "Watchlist Quarterly Tracker · RMS",
         "title": "Hermès International (RMS)：Q2 2026 收入与 H1 2026 利润仪表盘",
         "subtitle": ("收入截至 2026-06-30 单季 · 利润仅上半年累计 · 发布 2026-07-29 · "

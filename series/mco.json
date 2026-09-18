@@ -1721,7 +1721,9 @@
     "diluted_eps_usd": 5.03,
     "adj_diluted_eps_usd": 4.68,
     "mis_transactional_revenue_usd_m": 891.0,
-    "ma_arr_usd_m": 3661.0
+    "ma_arr_usd_m": 3661.0,
+    "analysis_date": "2026-08-29",
+    "audit_status": "unaudited"
   },
   "current_guidance": {
     "as_of": "2026-07-22",

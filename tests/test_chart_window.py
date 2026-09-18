@@ -136,6 +136,30 @@ REACH_2016 = {
     "spgi": 11, "tjx": 8, "tsm": 18, "v": 14,
 }
 
+# Exemption keys are matched on the *shape* of a title, not on its digits: in the
+# key and in the title alike, every run of digits and every spelled-out Chinese
+# count reads as `#`. The keys used to embed the quarter's own figures --
+# avgo's `收入 US$29,591M`, snps's `收入 US$2,477M`, mu's `存货 US$8.6B`, bc's
+# `26 个季度里只有` -- so every quarter roll broke three assertions at once
+# (an unused exemption, a newly unexplained short chart, CONVERTED and
+# FLOOR_KIND out of step) with nothing wrong on the page. A key now names the
+# chart by the words around its numbers; write `#` where a number moves. Keys
+# without a `#` still match literally -- mco's `（2 月那版）` and `（10 月那版）`
+# are two vintages, not one number that moved, and must stay distinct.
+_NUMBERISH = re.compile(r"\d[\d,.]*|[零一二两三四五六七八九十百]+")
+
+
+def title_shape(text: str) -> str:
+    """``'收入 US$29,591M、同比 +85.5%'`` → ``'收入 US$#M、同比 +#%'``."""
+    return _NUMBERISH.sub("#", text)
+
+
+def key_matches(key: str, title: str) -> bool:
+    if "#" not in key:
+        return key in title
+    return title_shape(key) in title_shape(title)
+
+
 # Pages whose migration is finished. For these the strict rule applies: every
 # time-axis exhibit reaches 2016 unless it is named below with the disclosure
 # that stops it. An entry that no longer matches a short exhibit fails too --
@@ -178,7 +202,7 @@ CONVERTED = {
         "Intelligent Cloud 本季首次超过": "segment revenue in this file covers the reviewed "
                                   "eight quarters only.",
         "商业剩余履约义务": 'date corrected, and the excuse was measuring the wrong thing: Microsoft has disclosed the dollar split between total and commercial remaining performance obligations in every 10-Q/10-K since the quarter ended 2020-03-31 -- 21 quarters earlier than "five quarters ago". What genuinely started recently is a *percentage* metric, which is not what this chart plots (it plots the balance). Real floor 2020Q1; the metric did not exist before that.',
-        "FY2026 股东回报": "an annual ratio built from the 10-K, two fiscal years wide.",
+        "FY# 股东回报": "an annual ratio built from the 10-K, two fiscal years wide.",
         "季度折旧": "quarterly depreciation only reaches 2024Q3 -- before that Microsoft "
                 "disclosed it annually and the page will not spread a year over four "
                 "quarters.",
@@ -282,7 +306,7 @@ CONVERTED = {
                   "it through FQ3-17 and again from FQ4-21, with a "
                   "seventeen-quarter hole between. A chart of revenue against "
                   "COGS can only live where both exist.",
-        "存货 US$8.6B": "inventory days shares that same COGS hole -- days on hand is "
+        "存货 US$#B、存货天数": "inventory days shares that same COGS hole -- days on hand is "
                     "inventory over cost of goods sold.",
         "四个业务单元的收入": "Micron reorganised its reportable business units into the "
                      "current data-centre-centric four (CMBU/CDBU/MCBU/AEBU) in "
@@ -296,7 +320,7 @@ CONVERTED = {
     },
     "ndaq": {
         "全年非 GAAP 有效税率": 'verified, with the wording tightened: Nasdaq guided a non-GAAP tax rate for FY2018 in its January 2018 release but never disclosed an FY2018 actual, so FY2019 is the first year carrying both a guided range and a reported result.',
-        "FY2026 费用指引的三次发布": "three guidance vintages for one fiscal year -- the axis "
+        "FY# 费用指引的#次发布": "three guidance vintages for one fiscal year -- the axis "
                             "is release dates, not quarters.",
         "Market Services 毛收入的去向": "the 2022 reorganisation moved Trade Management "
                                 "Services out of Market Services, so the denominator "
@@ -338,7 +362,7 @@ CONVERTED = {
                             "published 2024-05-30): the four-merchandise-line "
                             "contribution to sales growth is not quantified in any "
                             "earlier filing.",
-        '毛利率 11.04%': "the eight-quarter margin panel is a current-quarter view by "
+        '毛利率 #%、SG&A 率': "the eight-quarter margin panel is a current-quarter view by "
                     "design; the long gross-margin series it summarises is the "
                     "core-merchandise chart above, which now runs 42 quarters.",
         '三个地区分部的营业利润率': "segment operating margin by geography comes from the same "
@@ -433,15 +457,15 @@ CONVERTED = {
         "FSA 占 backlog": "same backlog note -- the FSA split does not exist at all in "
                        "the pre-ASC 606 annual disclosure.",
         "backlog 自": "same backlog note.",
-        "收入 US$2,477M": "the current-quarter panel; the long revenue record is in this "
+        "收入 US$#M、同比": "the current-quarter panel; the long revenue record is in this "
                       "page's own long section.",
-        "Design IP 连续三季": "the two-segment split dates from the fiscal 2019 "
+        "Design IP 连续#季": "the two-segment split dates from the fiscal 2019 "
                         "reorganisation and the current Design Automation / "
                         "Design IP naming from later still.",
         "两个分部的调整后营业利润率": "same two-segment structure.",
         "GAAP 与 non-GAAP 营业利润之间隔着": "current-quarter bridge, eight quarters by design.",
         "八季里收入指数化到": "an explicitly eight-quarter index, stated in its own title.",
-        "FY2026 收入指引四次上调": "one fiscal year's four guidance vintages -- the axis is "
+        "FY# 收入指引#次上调": "one fiscal year's four guidance vintages -- the axis is "
                           "vintages, not time.",
         "non-GAAP 营业利润率：下季阈值": "next-quarter threshold chart, recent by design.",
         "Design IP 收入同比：下季阈值": "next-quarter threshold chart, recent by design.",
@@ -544,9 +568,9 @@ CONVERTED = {
         "中国收入占比": "same geographic floor.",
         # And the metrics this file carries for the reviewed window only.
         "单季经营现金流": "quarterly cash flow is carried for the reviewed window.",
-        "经营现金流 $635M": "same.",
+        "经营现金流 $#M、同比": "same.",
         "单季回购金额": "same.",
-        "单季回购 $200M": "same.",
+        "单季回购 $#M，摊薄股数": "same.",
         "三条产品线的分化": 'not a floor: Cadence\'s "Revenue Mix by Product Group" table is unchanged in structure back to 2016Q1 -- the same categories this chart plots. The claim that the 2016-2017 releases grouped products differently does not survive reading them. Fetch gap; backfill in flight.',
         "GAAP 毛利率降到": "gross margin is carried for the reviewed window.",
         "本季非 GAAP 营业利润率": "this chart pairs the quarterly series with two guided "
@@ -569,7 +593,7 @@ CONVERTED = {
                      "earlier programme to draw.",
         "毛利率同比（剔除关税退款）": "the tariff-refund adjustment exists only in the quarters "
                           "that have a refund.",
-        "三十二个季度的直营占比": 'date corrected, and the direction of the error matters: Nike\'s MD&A "Supplemental NIKE Brand Revenues Details" table has split wholesale from direct-to-consumer in dollars every quarter since Q1 FY2013 (quarter ended 2012-08-31). What happened in 2017-2018 was a rename -- "Sales Direct to Consumer" became "NIKE Direct" -- not a new disclosure. Fetch gap.',
+        "#个季度的直营占比": 'date corrected, and the direction of the error matters: Nike\'s MD&A "Supplemental NIKE Brand Revenues Details" table has split wholesale from direct-to-consumer in dollars every quarter since Q1 FY2013 (quarter ended 2012-08-31). What happened in 2017-2018 was a rename -- "Sales Direct to Consumer" became "NIKE Direct" -- not a new disclosure. Fetch gap.',
         "十年经营现金流": "an annual chart -- ten fiscal years, not quarters.",
         "十年回购与资本强度": "annual.",
         "回购的成交均价": "four fiscal years of a buyback programme.",
@@ -579,19 +603,19 @@ CONVERTED = {
         # calendar Q2 2026 has not been reported. The eight added in front
         # (Q1 2016 - Q4 2017) carry the income statement, cash flow, balance
         # sheet and working capital; four families genuinely do not exist there.
-        "收入（仅公司给过区间的 5 季）": "Broadcom guided a revenue *range* in only five "
+        "收入（仅公司给过区间的 # 季）": "Broadcom guided a revenue *range* in only five "
                               "quarters; the rest of the record is a single point, "
                               "which is the chart beside this one.",
-        "收入（公司只给单点的 21 季）": "the point-guidance era; the two together cover the "
+        "收入（公司只给单点的 # 季）": "the point-guidance era; the two together cover the "
                             "whole guided record.",
         "收入相对指引中值的偏离": "the guidance record itself starts with the 2018-06-07 "
                        "release, which is the first Broadcom Inc. release.",
-        "Adjusted EBITDA 利润率：18": "the term 'Adjusted EBITDA' appears in no Broadcom "
+        "Adjusted EBITDA 利润率：# 个已完结季": "the term 'Adjusted EBITDA' appears in no Broadcom "
                               "Limited release; its first appearance is the "
                               "2018-06-07 reconciliation.",
         "Adjusted EBITDA 利润率相对指引中值": "same floor.",
         "把「超出自身指引」拆成两条腿": "one leg is the EBITDA margin, so it inherits that floor.",
-        "收入 US$29,591M": "the semiconductor / infrastructure-software split does not "
+        "收入 US$#M、同比": "the semiconductor / infrastructure-software split does not "
                        "exist before 2018 -- the earlier segments are Wired / "
                        "Wireless / Enterprise storage / Industrial, which the "
                        "company never mapped onto the later two.",
@@ -630,7 +654,7 @@ CONVERTED = {
                   "of the record, so it starts in 2017Q1.",
     },
     "bc": {
-        "26 个季度里只有": "Brunello Cucinelli prints only cumulative figures, so three "
+        "# 个季度里只有": "Brunello Cucinelli prints only cumulative figures, so three "
                     "quarters in four are a subtraction -- and the subtraction "
                     "needs a thousand-level table to subtract from. For 2016-2018 "
                     "no such table exists in any document, contemporaneous or "
@@ -726,12 +750,12 @@ FLOOR_KIND = {
     },
     'avgo': {
         '把「超出自身指引」拆成两条腿': 'coverage',
-        '收入（仅公司给过区间的 5 季）': 'disclosure',
-        '收入（公司只给单点的 21 季）': 'disclosure',
+        '收入（仅公司给过区间的 # 季）': 'disclosure',
+        '收入（公司只给单点的 # 季）': 'disclosure',
         '收入相对指引中值的偏离': 'disclosure',
-        'Adjusted EBITDA 利润率：18': 'disclosure',
+        'Adjusted EBITDA 利润率：# 个已完结季': 'disclosure',
         'Adjusted EBITDA 利润率相对指引中值': 'disclosure',
-        '收入 US$29,591M': 'disclosure',
+        '收入 US$#M、同比': 'disclosure',
         '两个引擎': 'disclosure',
         '两个分部的申报营业利润': 'disclosure',
         'AI 半导体收入：公司口头指引': 'disclosure',
@@ -789,9 +813,9 @@ FLOOR_KIND = {
         '中国收入 $': 'disclosure',
         '中国收入占比': 'disclosure',
         '单季经营现金流': 'coverage',
-        '经营现金流 $635M': 'coverage',
+        '经营现金流 $#M、同比': 'coverage',
         '单季回购金额': 'coverage',
-        '单季回购 $200M': 'coverage',
+        '单季回购 $#M，摊薄股数': 'coverage',
         '三条产品线的分化': 'coverage',
         'GAAP 毛利率降到': 'coverage',
         '本季非 GAAP 营业利润率': 'coverage',
@@ -867,7 +891,7 @@ FLOOR_KIND = {
         '公司自己估的财年末仓库数': 'disclosure',
         'Executive 会员': 'disclosure',
         '四条商品线对净销售额增速的贡献': 'disclosure',
-        '毛利率 11.04%': 'design',
+        '毛利率 #%、SG&A 率': 'design',
         '三个地区分部的营业利润率': 'disclosure',
     },
     'mu': {
@@ -877,7 +901,7 @@ FLOOR_KIND = {
         '收入（本图仅近 12 季）': 'design',
         '把「超出自身指引」拆成三条腿': 'disclosure',
         '一年之间收入': 'disclosure',
-        '存货 US$8.6B': 'disclosure',
+        '存货 US$#B、存货天数': 'disclosure',
         '四个业务单元的收入': 'disclosure',
         '业务单元毛利率': 'disclosure',
         '按技术拆收入': 'coverage',
@@ -892,12 +916,12 @@ FLOOR_KIND = {
         'Intelligent Cloud 分部毛利率': 'coverage',
         'Intelligent Cloud 本季首次超过': 'coverage',
         '商业剩余履约义务': 'coverage',
-        'FY2026 股东回报': 'design',
+        'FY# 股东回报': 'design',
         '季度折旧': 'disclosure',
     },
     'ndaq': {
         '全年非 GAAP 有效税率': 'disclosure',
-        'FY2026 费用指引的三次发布': 'design',
+        'FY# 费用指引的#次发布': 'design',
         'Market Services 毛收入的去向': 'disclosure',
         '三个分部的净收入': 'disclosure',
         'Financial Technology 的三条子线': 'disclosure',
@@ -911,13 +935,13 @@ FLOOR_KIND = {
         '应收账款': 'coverage',
         '三年遣散与重组费用': 'disclosure',
         '毛利率同比（剔除关税退款）': 'disclosure',
-        '三十二个季度的直营占比': 'coverage',
+        '#个季度的直营占比': 'coverage',
         '十年经营现金流': 'design',
         '十年回购与资本强度': 'design',
         '回购的成交均价': 'design',
     },
     'bc': {
-        '26 个季度里只有': 'disclosure',
+        '# 个季度里只有': 'disclosure',
     },
     'mc': {
         '葡萄酒与烈酒的两条腿': 'disclosure',
@@ -952,12 +976,12 @@ FLOOR_KIND = {
         '未来 12 个月可确认 backlog': 'disclosure',
         'FSA 占 backlog': 'disclosure',
         'backlog 自': 'disclosure',
-        '收入 US$2,477M': 'design',
-        'Design IP 连续三季': 'disclosure',
+        '收入 US$#M、同比': 'design',
+        'Design IP 连续#季': 'disclosure',
         '两个分部的调整后营业利润率': 'disclosure',
         'GAAP 与 non-GAAP 营业利润之间隔着': 'design',
         '八季里收入指数化到': 'design',
-        'FY2026 收入指引四次上调': 'design',
+        'FY# 收入指引#次上调': 'design',
         'non-GAAP 营业利润率：下季阈值': 'design',
         'Design IP 收入同比：下季阈值': 'design',
         '摊薄股数：下季阈值': 'design',
@@ -1127,7 +1151,7 @@ class ChartWindowTest(unittest.TestCase):
                 continue
             slug = label.split()[0]
             title = exhibit["title"]
-            if any(key in title for key in CONVERTED.get(slug, {})):
+            if any(key_matches(key, title) for key in CONVERTED.get(slug, {})):
                 continue
             by_page[slug] = by_page.get(slug, 0) + 1
             bucket = (by_design if len(exhibit.get("xlabels") or []) <= 8
@@ -1169,7 +1193,7 @@ class ChartWindowTest(unittest.TestCase):
                 if year <= TARGET_YEAR:
                     continue
                 title = exhibit["title"]
-                matched = [key for key in excuses if key in title]
+                matched = [key for key in excuses if key_matches(key, title)]
                 if not matched:
                     continue        # accounted for by the census instead
                 # One key per chart. Overlapping keys ("调整后摊薄 EPS" also matches

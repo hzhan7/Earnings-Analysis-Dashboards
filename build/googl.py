@@ -31,6 +31,7 @@ from build.board import (  # noqa: E402
     ai_capex_cycle_table,
     headroom,
     headroom_exhibit,
+    latest_block,
     number_exhibits,
     threshold_exhibit,
     threshold_table,
@@ -147,6 +148,16 @@ def leading_gap(values: list[float | None]) -> int:
 # One x label per year: forty-two quarterly labels at 90 degrees turn the axis
 # into a hairbrush, and this axis is only ever navigated by year.
 LONG_STEP = 4
+
+
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    q = staging["quarterly"]
+    cloud = q["cloud"]
+    fcf = q["operating_cash_flow"][-1] - q["capital_expenditures"][-1]
+    return [f"Revenue ${q['revenue_total'][-1] / 1000:.1f}B",
+            f"Cloud {(cloud[-1] / cloud[-5] - 1) * 100:+.1f}%",
+            f"FCF {'-' if fcf < 0 else ''}${abs(fcf) / 1000:.1f}B"]
 
 
 def build_payload(staging: dict) -> dict:
@@ -796,15 +807,7 @@ def build_payload(staging: dict) -> dict:
             "group": "internet",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": "2026-06-30",
-            "release_date": "2026-07-22",
-            "analysis_date": "2026-07-23",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(staging, period=staging["quarterly"]["periods"][-1]),
         "tracker": "Watchlist Quarterly Tracker · GOOGL",
         "title": "Alphabet (GOOGL)：Q2 2026 季报仪表盘",
         "subtitle": "截至 2026-06-30 · 发布 2026-07-22 · US GAAP · 未审计 · 金额单位为 $M，另有注明除外",
@@ -893,7 +896,9 @@ def build_payload(staging: dict) -> dict:
         "tables": tables,
         "notes": [
             "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
-            "Exhibit 2 与 Exhibit 9 的阈值是本地研究设定，不是公司指引，也不构成评级或投资建议；「距阈值余量」统一为正值代表安全侧。",
+            # The thresholds charts' own numbers, read after numbering; the second
+            # used to be typed as 9, which is a highlights chart.
+            f"Exhibit {settled_charts[0]['n']} 与 Exhibit {next_charts[0]['n']} 的阈值是本地研究设定，不是公司指引，也不构成评级或投资建议；「距阈值余量」统一为正值代表安全侧。",
             "本页只发布公司披露值、可复算的简单派生值，以及明确标注的市场预期；D 标记代表 Derived / 自算。",
             "市场预期一律标注为「市场预期」并给出取数时点，不写卖方机构名，也不发布评级、目标价或估值。",
             "$2.85 仅做 $9.11 − $6.26 的算术拆分，不命名为经营 EPS，也不等同公司定义的 non-GAAP 指标。",

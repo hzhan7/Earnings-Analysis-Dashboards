@@ -30,6 +30,8 @@ as a forecasting record.
 
 from __future__ import annotations
 
+import copy
+import datetime
 import hashlib
 import json
 import re
@@ -43,7 +45,7 @@ sys.path.insert(0, str(ROOT))
 
 from build.all import ENTRIES, build_all, roster_payload  # noqa: E402
 from build.board import headroom  # noqa: E402
-from build.avgo import build_payload  # noqa: E402
+from build.avgo import build_payload, headline_metrics  # noqa: E402
 
 
 def js_payload(path: Path, assignment: str) -> dict:
@@ -342,7 +344,9 @@ class AvgoDashboardTest(unittest.TestCase):
             len(self.guide["days_into_quarter_at_release"]) // 2]
         self.assertGreaterEqual(median, 24)
         self.assertLessEqual(median, 40)
-        for exhibit in self.by_section["settled"][3:]:
+        # The record's six charts close section one; what precedes them (the
+        # follow-up and verdict charts) exists only in quarters that have them.
+        for exhibit in self.by_section["settled"][-6:]:
             with self.subTest(exhibit=exhibit["n"]):
                 self.assertIn("时点提醒", exhibit["note"] + exhibit.get("src_extra", ""))
 
@@ -488,6 +492,89 @@ class AvgoDashboardTest(unittest.TestCase):
                 self.assertGreater(record["actual_pct"][index], record["guide_pct"][index])
                 settled += 1
         self.assertGreaterEqual(settled, 1, "the first guide has been settled")
+
+    # ── a roll edits the series and nothing else ─────────────────────────────
+    def test_quarter_blocks_refuse_to_publish_under_another_quarter(self) -> None:
+        """What only one quarter has must say which quarter, and a stale one stops the build.
+
+        The follow-up closure, the verdicts, the next-quarter thresholds and the
+        buyback story carry the quarter they describe; the outlook and the AI
+        guide carry the release they came from; the release itself must be in
+        the source list. Each is tampered alone here and each must stop the
+        build with a message that names the stamp.
+        """
+        stamped = ("followup_closure", "tracked_metric_verdicts", "next_kpi", "capital_return_story")
+        for key in stamped:
+            stale = copy.deepcopy(self.source)
+            stale[key]["period"] = "Q1 1999"
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "stamped"):
+                    build_payload(stale)
+        stale = copy.deepcopy(self.source)
+        stale["guidance"]["next_quarter"]["released"] = "1999-01-01"
+        with self.assertRaisesRegex(ValueError, "stamped"):
+            build_payload(stale)
+        stale = copy.deepcopy(self.source)
+        stale["ai_semiconductor_disclosures"]["next_quarter_guided_in_release"] = "1999-01-01"
+        with self.assertRaisesRegex(ValueError, "stamped"):
+            build_payload(stale)
+        stale = copy.deepcopy(self.source)
+        fiscal = self.source["fiscal_labels"][-1]
+        stale["sources"] = [s for s in stale["sources"] if not s["label"].startswith(f"{fiscal} 业绩新闻稿")]
+        self.assertNotEqual(len(stale["sources"]), len(self.source["sources"]))
+        with self.assertRaisesRegex(ValueError, "sources"):
+            build_payload(stale)
+
+    def test_a_quarter_without_a_story_leaves_it_out(self) -> None:
+        """Absent, a one-quarter block drops its charts rather than borrowing last quarter's."""
+        bare = copy.deepcopy(self.source)
+        for key in ("followup_closure", "tracked_metric_verdicts", "capital_return_story"):
+            del bare[key]
+        payload = build_payload(bare)
+        titles = [ex["title"] for s in payload["sections"] for ex in s["exhibits"]]
+        self.assertFalse([t for t in titles if t.startswith("上季 ")])
+        self.assertNotIn("公司没有解释", payload["headline"])
+        self.assertEqual(len(titles), len(self.exhibits) - 2)
+
+    def test_the_record_sentences_are_computed_not_remembered(self) -> None:
+        """Make one finished point quarter miss its guide: every sentence that says
+        「一次都没有低于」 must stop saying it. A sentence that survived this would be
+        a remembered claim, not a computed one."""
+        missed = copy.deepcopy(self.source)
+        record = missed["quarterly_guidance_history"]
+        row = max(i for i, v in enumerate(record["actual_revenue_usd_m"]) if v is not None)
+        record["actual_revenue_usd_m"][row] = record["guide_revenue_usd_m"][row] - 100
+        before = json.dumps(self.payload, ensure_ascii=False)
+        after = json.dumps(build_payload(missed), ensure_ascii=False)
+        claims = ("一次都没有低于指引的点或中值", "全部高于</b>那个点", "从未低于指引",
+                  "与正式指引的形态一致")
+        for claim in claims:
+            with self.subTest(claim=claim):
+                self.assertIn(claim, before)
+                self.assertNotIn(claim, after)
+
+    def test_filing_dates_come_after_their_release_and_before_the_review(self) -> None:
+        """The 10-Q lag the page quotes is read from EDGAR's own dates, so the
+        dates themselves are held to what an EDGAR index can be: every report
+        follows its quarter's results release, none postdates the review, and
+        the lag the commitments chart prints is the one they give."""
+        reports = self.source["periodic_reports_filed"]["reports"]
+        release_of = dict(zip(self.ends, self.source["release_dates"]))
+        review = self.source["latest"]["analysis_date"]
+        self.assertTrue(reports)
+        for row in reports:
+            with self.subTest(period_end=row["period_end"]):
+                self.assertIn(row["period_end"], release_of)
+                self.assertGreater(row["filed"], release_of[row["period_end"]])
+                self.assertLessEqual(row["filed"], review)
+                self.assertIn(row["form"], ("10-Q", "10-K"))
+        by_end = {row["period_end"]: row for row in reports}
+        year_ago = self.ends[-5]
+        commit = next(ex for ex in self.by_section["highlights"] if "采购承诺" in ex["title"])
+        if self.source["purchase_commitments_usd_m"]["total"][-1] is None and year_ago in by_end:
+            lag = (datetime.date.fromisoformat(by_end[year_ago]["filed"])
+                   - datetime.date.fromisoformat(release_of[year_ago])).days
+            self.assertIn(f"去年同季是发布后第 {lag} 天", commit["note"])
 
     # ── AI revenue is a different tier of disclosure ─────────────────────────
     def test_ai_revenue_is_labelled_as_a_quote_not_a_segment(self) -> None:
@@ -738,6 +825,121 @@ class AvgoDashboardTest(unittest.TestCase):
         for banned in ("/Users/", "OneDrive", "Obsidian", ".pptx", ".pdf", "transcript.pdf"):
             with self.subTest(term=banned):
                 self.assertNotIn(banned, blob)
+
+
+class AvgoChecksTest(unittest.TestCase):
+    """The page's quarter against `_checks`, keyed separately from the release.
+
+    Same contract as the other migrated pages: the builder never reads
+    `_checks` (asserted in `test_data_only_roll`), a roll re-keys it from the
+    new release, and nothing in this class changes with the quarter. Where the
+    release prints a figure the page also computes -- free cash flow and its
+    share of revenue, the semiconductor share, year-on-year growth -- the page's
+    rounding must land on the printed number.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads((ROOT / "series" / "avgo.json").read_text(encoding="utf-8"))
+        cls.checks = cls.source["_checks"]
+        cls.payload = build_payload(cls.source)
+        cls.exhibits = [ex for section in cls.payload["sections"] for ex in section["exhibits"]]
+
+    def exhibit(self, prefix: str) -> dict:
+        return next(ex for ex in self.exhibits if ex["title"].startswith(prefix))
+
+    def test_the_page_names_the_checked_quarter_both_ways(self) -> None:
+        checks = self.checks
+        self.assertIn(checks["period"], self.payload["title"])
+        self.assertIn(f"本页 {checks['period']} 即公司所称 {checks['fiscal_label']}",
+                      self.payload["subtitle"])
+        self.assertIn(f"截至 {checks['period_end']} · 发布 {checks['release_date']}",
+                      self.payload["subtitle"])
+        self.assertEqual(self.source["fiscal_labels"][-1], checks["fiscal_label"])
+
+    def test_the_series_ends_on_the_checked_figures(self) -> None:
+        checks, source = self.checks, self.source
+        fin, seg = source["financials_usd_m"], source["segments_usd_m"]
+        cash, capital = source["cash_flow_usd_m"], source["capital_allocation_usd_m"]
+        working = source["working_capital_usd_m"]
+        self.assertEqual(fin["revenue"][-1], checks["revenue_usd_m"])
+        self.assertEqual(round((fin["revenue"][-1] / fin["revenue"][-5] - 1) * 100),
+                         checks["revenue_yoy_pct"])
+        self.assertEqual(fin["gaap_operating_income"][-1], checks["gaap_operating_income_usd_m"])
+        self.assertEqual(fin["non_gaap_operating_income"][-1],
+                         checks["non_gaap_operating_income_usd_m"])
+        self.assertEqual(seg["semiconductor_revenue"][-1], checks["semiconductor_revenue_usd_m"])
+        self.assertEqual(round(seg["semiconductor_revenue"][-1] / fin["revenue"][-1] * 100),
+                         checks["semiconductor_share_pct"])
+        self.assertEqual(seg["infrastructure_software_revenue"][-1],
+                         checks["infrastructure_software_revenue_usd_m"])
+        self.assertEqual(cash["operating_cash_flow"][-1], checks["operating_cash_flow_usd_m"])
+        self.assertEqual(cash["capital_expenditures"][-1], checks["capital_expenditures_usd_m"])
+        fcf = cash["operating_cash_flow"][-1] - cash["capital_expenditures"][-1]
+        self.assertEqual(fcf, checks["free_cash_flow_usd_m"])
+        self.assertEqual(round(fcf / fin["revenue"][-1] * 100), checks["free_cash_flow_pct_of_revenue"])
+        self.assertEqual(capital["share_repurchases"][-1], checks["share_repurchases_usd_m"])
+        self.assertEqual(capital["common_dividends"][-1], checks["dividends_paid_usd_m"])
+        self.assertEqual(capital["cash_and_equivalents"][-1], checks["cash_and_equivalents_usd_m"])
+        self.assertEqual(capital["total_debt"][-1],
+                         checks["short_term_debt_usd_m"] + checks["long_term_debt_usd_m"])
+        self.assertEqual(working["inventory"][-1], checks["inventory_usd_m"])
+        self.assertEqual(working["accounts_receivable"][-1], checks["accounts_receivable_usd_m"])
+        ai = source["ai_semiconductor_disclosures"]
+        self.assertEqual(ai["actual_usd_bn"][ai["periods"].index(checks["period"])],
+                         checks["ai_semiconductor_revenue_usd_bn"])
+
+    def test_the_outlook_is_the_checked_outlook(self) -> None:
+        outlook = self.checks["next_quarter"]
+        guidance = self.source["guidance"]["next_quarter"]
+        self.assertEqual(guidance["released"], self.checks["release_date"])
+        self.assertEqual(guidance["fiscal_label"], outlook["fiscal_label"])
+        self.assertEqual(guidance["period_end"], outlook["period_end"])
+        self.assertEqual(guidance["revenue_usd_bn"], outlook["revenue_usd_bn"])
+        self.assertEqual(guidance["non_gaap_operating_margin_pct"],
+                         outlook["non_gaap_operating_margin_pct"])
+        self.assertEqual(guidance["ai_semiconductor_revenue_usd_bn"],
+                         outlook["ai_semiconductor_revenue_usd_bn"])
+        record = self.source["quarterly_guidance_history"]
+        self.assertEqual(record["period_ends"][-1], outlook["period_end"])
+        self.assertEqual(record["guide_revenue_usd_m"][-1], outlook["revenue_usd_bn"] * 1000)
+        margin = self.source["non_gaap_operating_margin_guidance"]
+        self.assertEqual(margin["guide_pct"][margin["period_ends"].index(outlook["period_end"])],
+                         outlook["non_gaap_operating_margin_pct"])
+        self.assertEqual(self.source["ai_semiconductor_disclosures"]["next_quarter_guide_usd_bn"],
+                         outlook["ai_semiconductor_revenue_usd_bn"])
+
+    def test_the_page_prints_the_checked_figures(self) -> None:
+        checks, outlook = self.checks, self.checks["next_quarter"]
+        self.assertIn(f"收入 US${checks['revenue_usd_m']:,}M", self.payload["headline"])
+        self.assertEqual(headline_metrics(self.source), [
+            f"Revenue ${checks['revenue_usd_m'] / 1000:.2f}B",
+            f"AI 半导体 ${checks['ai_semiconductor_revenue_usd_bn']:.1f}B",
+            f"non-GAAP 营业利润率 "
+            f"{checks['non_gaap_operating_income_usd_m'] / checks['revenue_usd_m'] * 100:.1f}%",
+        ])
+        rows = {row[0]: row for row in self.payload["guidance"]["rows"]}
+        self.assertEqual(rows["收入"][1], f"约 US${outlook['revenue_usd_bn']:.1f}B")
+        self.assertEqual(rows["non-GAAP 营业利润率"][1],
+                         f"约为收入的 {outlook['non_gaap_operating_margin_pct']}%")
+        self.assertEqual(rows["AI 半导体收入"][1], f"US${outlook['ai_semiconductor_revenue_usd_bn']:.1f}B")
+        self.assertIn(f"US${outlook['ai_semiconductor_revenue_usd_bn']:.1f}B",
+                      self.exhibit("AI 半导体收入：")["title"])
+        revenue = self.exhibit("收入 US$")["title"]
+        self.assertIn(f"半导体占比", revenue)
+        self.assertIn(f" {checks['semiconductor_share_pct']}%", revenue)
+        conversion = self.exhibit("自由现金流 US$")["title"]
+        self.assertIn(f"自由现金流 US${checks['free_cash_flow_usd_m']:,}M", conversion)
+        self.assertIn(f"占收入 {checks['free_cash_flow_pct_of_revenue']}%", conversion)
+        self.assertIn(f"本季回购 US${checks['share_repurchases_usd_m']:,}M、"
+                      f"分红 US${checks['dividends_paid_usd_m']:,}M",
+                      self.exhibit("股东回报")["title"])
+        debt = checks["short_term_debt_usd_m"] + checks["long_term_debt_usd_m"]
+        self.assertIn(f"总债务 US${debt:,}M", next(ex["title"] for ex in self.exhibits
+                                                  if "总债务 US$" in ex["title"]))
+        working = self.exhibit("营运资本")["title"]
+        self.assertIn(f"存货 US${checks['inventory_usd_m']:,}M", working)
+        self.assertIn(f"应收 US${checks['accounts_receivable_usd_m']:,}M", working)
 
 
 if __name__ == "__main__":

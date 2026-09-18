@@ -17,7 +17,7 @@ opening vintage and up to three revisions.  Since 2024-05-30 the EX-99.2
 supplemental deck adds a fiscal-year-end warehouse count, revised quarterly.
 
 That record has a shape none of the others on this site do.  Against the plan as
-first published the outcomes land above the range and below it in equal numbers.
+first published the recent outcomes land above the range and below it about equally.
 Every other guidance record here behaves like a floor; a capital plan is not a
 promise to anyone, so nothing pushes it toward a number that will be cleared.
 Balanced is not the same as uninformative: the misses are not spread evenly in
@@ -33,14 +33,18 @@ comp is a flat line at about 6.5% -- is only visible at press-release
 resolution.  In the filings the same three quarters read 6%, 7%, 7%, which looks
 like acceleration.  This page plots the release series and says so.
 
-The second is that **the headline is inflated at both ends, and both inflations
-come back out of filed numbers**.  Reported comp is +9.8% against an adjusted
-+6.6%, and EPS is +15.2% against operating income +11.3%; the comp gap is
-gasoline and currency, and the EPS wedge factors exactly into a below-the-line
-leg and a tax leg.  Neither correction needs an estimate.  What the full record
-adds to the local note is the sign: over 27 quarters that comp gap has been
-*negative* in 15, so gasoline and currency have suppressed the headline more
-often than they have flattered it.
+The second is that **the headline can be inflated at both ends, and both
+inflations come back out of filed numbers**: the comp gap between reported and
+adjusted is gasoline and currency, and the EPS wedge over operating income
+factors exactly into a below-the-line leg and a tax leg.  Neither correction
+needs an estimate.  What the full record adds is the sign: over the whole comp
+record that gap has been *negative* more often than positive, so gasoline and
+currency have suppressed the headline more often than they have flattered it.
+
+Every count, quarter, date and threshold in the prose is computed from
+`series/cost.json`; what belongs to one quarter (the local note's claims and
+thresholds, the follow-up questions) lives in blocks stamped with that quarter
+(`board.stamped_block`), and the notes carry placeholders the builder fills.
 
 Costco is also the only company here that publishes a sales figure between
 earnings dates -- a comparable-sales reading for every four- or five-week retail
@@ -67,8 +71,15 @@ sys.path.insert(0, str(ROOT))
 
 from build.board import (  # noqa: E402
     ai_capex_cycle_table,
+    cn_count,
+    cn_fraction,
+    headroom,
     headroom_exhibit,
+    hyperscaler_capex_share,
+    latest_block,
+    minus_sign,
     number_exhibits,
+    stamped_block,
     threshold_exhibit,
     threshold_table,
 )
@@ -101,6 +112,48 @@ def rounded(values, digits: int = 6):
     return [None if v is None else round(v, digits) for v in values]
 
 
+AUDIT_WORDS = {"unaudited": "未审计", "audited": "已审计"}
+
+# The 60-day 10-K deadline for large accelerated filers first applied to
+# Costco's FY2007 report; plans guided for FY2007 and earlier came out later.
+PRE_DEADLINE_LAST_GUIDED_YEAR = 2007
+
+_EN_ONES = ("zero one two three four five six seven eight nine ten eleven twelve thirteen "
+            "fourteen fifteen sixteen seventeen eighteen nineteen").split()
+_EN_TENS = "_ _ twenty thirty forty fifty sixty seventy eighty ninety".split()
+
+
+def english_number(value: int) -> str:
+    """``9`` → ``'nine'``, ``36`` → ``'thirty-six'``: how the 10-Q spells basis points."""
+    if value < 20:
+        return _EN_ONES[value]
+    tens, ones = divmod(value, 10)
+    return _EN_TENS[tens] + (f"-{_EN_ONES[ones]}" if ones else "")
+
+
+def fiscal_year_of(period: str) -> int:
+    """Costco's fiscal year for a site quarter: the year ends near 31 August, so a
+    calendar fourth quarter already belongs to the next fiscal year."""
+    quarter, year = period.split()
+    return int(year) + (1 if quarter == "Q4" else 0)
+
+
+def fiscal_label_of(period: str) -> str:
+    quarter, year = period.split()
+    return f"FY{fiscal_year_of(period)} Q{int(quarter[1]) % 4 + 1}"
+
+
+def moved(new: float, old: float, up: str = "升到", down: str = "降到") -> str:
+    return up if new > old else (down if new < old else "持平在")
+
+
+def by_metric(block: dict | None, prefix: str) -> dict | None:
+    """The threshold entry whose metric starts with ``prefix``, if the block has one."""
+    if not block:
+        return None
+    return next((e for e in block["quantified"] if e["metric"].startswith(prefix)), None)
+
+
 def resolve_exhibit_refs(exhibits: list[dict]) -> list[dict]:
     """Substitute ``{ref}`` placeholders with the numbers `number_exhibits` assigned."""
     numbers = {exhibit["ref"]: exhibit["n"] for exhibit in exhibits if exhibit.get("ref")}
@@ -121,40 +174,111 @@ SOURCE_PR = (
     "同一组数字在 10-Q 的 MD&A 里被四舍五入到整数百分点。"
 )
 
-RESOLUTION_NOTE = (
-    "<b>这条序列只有在新闻稿的精度上才存在。</b>同样这三个季度，10-Q 印出来的调整后合并 comp "
-    "是 6%、7%、7%，读起来像在加速；新闻稿的一位小数是 6.4%、6.7%、6.6%，是一条平线。"
-    "本页一律取新闻稿那一版，并在核对表里同时列出 10-Q 的整数版，"
-    "好让读者看见这个差别是精度而不是数据。"
-)
+def recent_precisions(staging: dict) -> tuple[list[float], list[float]]:
+    """The last three quarters' adjusted comp at release and at 10-Q precision.
+
+    A fiscal fourth quarter has no 10-Q and so no whole-number reading; the three
+    are the last three that have both, not simply the last three.
+    """
+    comp = staging["comparable_sales_pct"]
+    both = [i for i, value in enumerate(comp["filed_integer_adjusted_total_pct"]) if value is not None][-3:]
+    return ([comp["adjusted_total_pct"][i] for i in both],
+            [comp["filed_integer_adjusted_total_pct"][i] for i in both])
+
+
+def precision_contrast(release: list[float], filed: list[float]) -> tuple[str, str]:
+    """How each precision reads: the whole-number one can look like a trend that
+    the decimal one does not have. Computed, so a quarter that really moves stops
+    being called flat."""
+    flat = max(release) - min(release) <= 0.5
+    rising = filed[-1] > filed[0] and all(b >= a for a, b in zip(filed, filed[1:]))
+    falling = filed[-1] < filed[0] and all(b <= a for a, b in zip(filed, filed[1:]))
+    filed_reads = "读起来像在加速" if rising else ("读起来像在减速" if falling else "读起来没有方向")
+    release_reads = "是一条平线" if flat else f"从 {release[0]:.1f}% 走到 {release[-1]:.1f}%"
+    return filed_reads, release_reads
+
+
+def resolution_note(staging: dict) -> str:
+    release, filed = recent_precisions(staging)
+    filed_reads, release_reads = precision_contrast(release, filed)
+    return (
+        f"<b>这条序列只有在新闻稿的精度上才存在。</b>同样这{cn_count(len(release))}个季度，"
+        "10-Q 印出来的调整后合并 comp "
+        f"是 {'、'.join(f'{v:.0f}%' for v in filed)}，{filed_reads}；"
+        f"新闻稿的一位小数是 {'、'.join(f'{v:.1f}%' for v in release)}，{release_reads}。"
+        "本页一律取新闻稿那一版，并在核对表里同时列出 10-Q 的整数版，"
+        "好让读者看见这个差别是精度而不是数据。"
+    )
+
+
+def resolution_recent(staging: dict) -> str:
+    release, filed = recent_precisions(staging)
+    filed_reads, release_reads = precision_contrast(release, filed)
+    return (f"最近{cn_count(len(release))}个季度的调整后合并 comp 在新闻稿是 "
+            f"{'、'.join(f'{v:.1f}%' for v in release)}，在 10-Q 是 "
+            f"{'、'.join(f'{v:.0f}%' for v in filed)} —— 前者{release_reads}，后者{filed_reads}。")
 
 # ── section one: the two records Costco actually files ──────────────────────
-CAPEX_TIMING = "该财年<b>开始后约五周</b>"
+def latest_numeric_plan(record: dict) -> int:
+    """Index of the newest guided year the 10-K gave a dollar range for."""
+    return max(i for i, low in enumerate(record["guided_low_usd_m"]) if low is not None)
 
-CAPEX_SOURCE = (
-    "指引取自各年 10-K 的 Liquidity and Capital Resources 里那段 Capital Expenditure Plans，"
-    "句式历年一致：「In 2025, we spent $5,498 on capital expenditures, and it is our current "
-    "intention to spend $6,000 to $6,500 during fiscal 2026.」"
-    "实际值取自被指引那一年自己那份 10-K 现金流量表的 Additions to property and equipment。"
-)
 
-WINDOW_NOTE = (
-    "<b>这张图的窗口比记录短，理由是刻度而不是取数。</b>完整记录从 FY1995 起 —— "
-    "EDGAR 上最早那份 10-K 就带着这段话 —— 但那一年的计划是 US$550–700M，"
-    "而 FY2026 的是 US$6,000–6,500M；一条线性纵轴放不下三十年而不把早年的色块压成一根发丝。"
-    "<b>整段记录由下一张无量纲的偏离图承载</b>，那是本站 NVIDIA 页处理同一个问题的办法。"
-    "另外，FY2007 之前公司把计划拆成美加与国际两笔分别给出，本页取两笔之和（D）。"
-)
+def capex_timing(staging: dict) -> str:
+    lag = staging["capex_guidance"]["lag_days_into_guided_year"][-1]
+    return f"该财年<b>开始后约{cn_count(round(lag / 7))}周</b>"
 
-CAPEX_LAG_NOTE = (
-    "<b>先读这两句，再读命中率。</b>其一，10-K 申报时，它所指引的那个财年<b>已经开始了</b> —— "
-    "Costco 的财年在 9 月初开始，而年报在 10 月甚至更晚才申报。近十四年是第 37 到 53 天，"
-    "更早的年份更晚：FY2007 之前的年报要到被指引财年的第 67 到 87 天才出来，"
-    "因为那时还没有大型加速申报人的 60 天期限。整段记录的区间是第 37 到 87 天。"
-    "其二，它<b>不是只发一次</b>：每一季的 10-Q 都会把同一段重写一遍，"
-    "所以每个财年都有一版年初计划和最多三次修订（本页只回溯到 FY2013）。"
-    "本节把「年初那一版」与「当年最后一版」分开结清，因为两者的答案不一样。"
-)
+
+def capex_source(staging: dict) -> str:
+    record = staging["capex_guidance"]
+    at = latest_numeric_plan(record)
+    year = record["guided_fiscal_years"][at]
+    spent = record["actual_capex_usd_m"][record["guided_fiscal_years"].index(year - 1)]
+    return (
+        "指引取自各年 10-K 的 Liquidity and Capital Resources 里那段 Capital Expenditure Plans，"
+        f"句式历年一致：「In {year - 1}, we spent ${spent:,.0f} on capital expenditures, and it is our current "
+        f"intention to spend {record['figure_as_printed'][at]} during fiscal {year}.」"
+        "实际值取自被指引那一年自己那份 10-K 现金流量表的 Additions to property and equipment。"
+    )
+
+
+def window_note(staging: dict) -> str:
+    full = staging["capex_record_full"]
+    record = staging["capex_guidance"]
+    at = latest_numeric_plan(record)
+    span = len(full["guided_fiscal_years"])
+    return (
+        "<b>这张图的窗口比记录短，理由是刻度而不是取数。</b>"
+        f"完整记录从 FY{full['guided_fiscal_years'][0]} 起 —— "
+        "EDGAR 上最早那份 10-K 就带着这段话 —— 但那一年的计划是 "
+        f"US${full['guided_low_usd_m'][0]:,.0f}–{full['guided_high_usd_m'][0]:,.0f}M，"
+        f"而 FY{record['guided_fiscal_years'][at]} 的是 "
+        f"US${record['guided_low_usd_m'][at]:,.0f}–{record['guided_high_usd_m'][at]:,.0f}M；"
+        f"一条线性纵轴放不下{cn_count(round(span, -1))}年而不把早年的色块压成一根发丝。"
+        "<b>整段记录由下一张无量纲的偏离图承载</b>，那是本站 NVIDIA 页处理同一个问题的办法。"
+        "另外，FY2007 之前公司把计划拆成美加与国际两笔分别给出，本页取两笔之和（D）。"
+    )
+
+
+def capex_lag_note(staging: dict) -> str:
+    recent = staging["capex_guidance"]["lag_days_into_guided_year"]
+    full = staging["capex_record_full"]
+    early = [lag for year, lag in zip(full["guided_fiscal_years"], full["lag_days_into_guided_year"])
+             if year <= PRE_DEADLINE_LAST_GUIDED_YEAR]
+    every = full["lag_days_into_guided_year"]
+    return (
+        "<b>先读这两句，再读命中率。</b>其一，10-K 申报时，它所指引的那个财年<b>已经开始了</b> —— "
+        "Costco 的财年在 9 月初开始，而年报在 10 月甚至更晚才申报。"
+        f"近{cn_count(len(recent))}年是第 {min(recent)} 到 {max(recent)} 天，"
+        f"更早的年份更晚：FY{PRE_DEADLINE_LAST_GUIDED_YEAR} 之前的年报要到被指引财年的第 "
+        f"{min(early)} 到 {max(early)} 天才出来，"
+        "因为那时还没有大型加速申报人的 60 天期限。"
+        f"整段记录的区间是第 {min(every)} 到 {max(every)} 天。"
+        "其二，它<b>不是只发一次</b>：每一季的 10-Q 都会把同一段重写一遍，"
+        "所以每个财年都有一版年初计划和最多三次修订"
+        f"（本页只回溯到 FY{full['final_vintage_from_fiscal_year']}）。"
+        "本节把「年初那一版」与「当年最后一版」分开结清，因为两者的答案不一样。"
+    )
 
 
 def capex_charts(staging: dict) -> tuple[list[dict], dict]:
@@ -237,7 +361,14 @@ def capex_charts(staging: dict) -> tuple[list[dict], dict]:
                           if years[i] < FLIP_YEAR
                           and record["verdict_vs_opening"][i] == "ABOVE"]
     qualitative = [labels[i] for i, flag in enumerate(record["is_qualitative"]) if flag]
+    # What the qualitative year actually spent, against the year before it.
+    qualitative_growth = [
+        (labels[i], (actual[i] / actual[i - 1] - 1) * 100)
+        for i, flag in enumerate(record["is_qualitative"])
+        if flag and i > 0 and actual[i] is not None and actual[i - 1]]
     pending = [labels[i] for i, a in enumerate(actual) if a is None]
+    timing = capex_timing(staging)
+    lag_note = capex_lag_note(staging)
 
     band = {
         "ref": "EX_CAPEX_BAND",
@@ -255,12 +386,17 @@ def capex_charts(staging: dict) -> tuple[list[dict], dict]:
         "fmt": "f0c",
         "label_fmt": "f0c",
         "ylab": "US$M",
-        "note": (f"色块是{CAPEX_TIMING}公司在 10-K 里给出的下一财年资本开支区间，"
+        "note": (f"色块是{timing}公司在 10-K 里给出的下一财年资本开支区间，"
                  "菱形是那一年实际花掉的钱。"
                  "<b>本站其他每一份指引记录都是单边的</b> —— 要么几乎从不跌破下限，"
                  f"要么几乎每期穿出上限；这一段 {len(finished)} 年里 {len(below)} 年低于下限、"
-                 f"{len(above)} 年高于上限，两边一样多。"
-                 "<b>但这只是最近这一段。</b>把窗口拉到 FY1995 起的完整记录，"
+                 f"{len(above)} 年高于上限，"
+                 + ("两边一样多。" if len(below) == len(above) else
+                    ("两边差不多。" if abs(len(below) - len(above)) <= 1 else
+                     f"{'低于' if len(below) > len(above) else '高于'}的一侧更多。"))
+                 +
+                 "<b>但这只是最近这一段。</b>"
+                 f"把窗口拉到 FY{full_record['guided_fiscal_years'][0]} 起的完整记录，"
                  f"{full_tally_text}，对称就没有了 —— 见 Exhibit {{EX_CAPEX_DEV}}。"
                  "原因是结构性的，而且这<b>不是一次同类比较</b>：别的页记录的是收入、利润或每股收益，"
                  "那是对市场的预测；这一份记录的是支出，是公司给自己排的预算。"
@@ -276,13 +412,15 @@ def capex_charts(staging: dict) -> tuple[list[dict], dict]:
                  f"而 {len(above)} 次高于上限里有 {soft_above} 次只超出上限不到 5%（"
                  + "、".join(soft_above_labels) + "），落在这个词本身能覆盖的范围内。"
                  + (f"{'、'.join(qualitative)} 那一格没有色块 —— 那一年公司只说了要花"
-                    "「a similar amount」，是一句话不是一个区间，本页不把词换算成数；"
-                    "那年实际花的钱比上一年多 16.7%。" if qualitative else "")
+                    "「a similar amount」，是一句话不是一个区间，本页不把词换算成数"
+                    + "".join(f"；那年实际花的钱比上一年{'多' if growth >= 0 else '少'} "
+                              f"{abs(growth):.1f}%" for _, growth in qualitative_growth)
+                    + "。" if qualitative else "")
                  + (f"最后一格 {pending[-1]} 只有区间，实际值待披露。" if pending else "")
-                 + WINDOW_NOTE
-                 + CAPEX_LAG_NOTE
+                 + window_note(staging)
+                 + lag_note
                  + "纵轴不自 0 起，但没有任何点被截掉。"),
-        "src_extra": CAPEX_SOURCE,
+        "src_extra": capex_source(staging),
     }
     if pending:
         band["annot"] = f"{pending[-1]}：仅计划，实际值待披露"
@@ -341,6 +479,12 @@ def capex_charts(staging: dict) -> tuple[list[dict], dict]:
     run_none = longest_run(lambda v: v != "ABOVE")
     biggest = max((dev_open[i] for i in settled), key=abs)
     points = [full_labels[i] for i in settled if full["guidance_shape"][i] == "point"]
+    open_mean = sum(open_abs_both) / len(open_abs_both)
+    final_mean = sum(final_abs_both) / len(final_abs_both)
+    # "Both halves hit between a fifth and a sixth" is a claim about two rates;
+    # it is printed only while the rates say it.
+    rate_band = (100 / 6 - 1e-9 <= min(early_rate, late_rate)
+                 and max(early_rate, late_rate) <= 20 + 1e-9)
 
     dev = {
         "ref": "EX_CAPEX_DEV",
@@ -359,7 +503,8 @@ def capex_charts(staging: dict) -> tuple[list[dict], dict]:
         "label_fmt": "pct1",
         "ylab": "% vs 计划中值",
         "note": ("正值 = 花得比计划中值多。"
-                 "<b>把上一张图的十二年放回三十年里，那份对称就不见了：</b>"
+                 f"<b>把上一张图的{cn_count(len(finished))}年放回{cn_count(len(settled))}年里，"
+                 "那份对称就不见了：</b>"
                  f"整段记录是 {full_tally['BELOW']} 年低于区间对 {full_tally['ABOVE']} 年高于区间；"
                  f"FY{SPLIT_YEAR} 之前的 {early['total']} 年是 {early['BELOW']} 比 {early['ABOVE']}，"
                  f"之后的 {late['total']} 年才是 {late['BELOW']} 比 {late['ABOVE']} 的对半。"
@@ -368,26 +513,29 @@ def capex_charts(staging: dict) -> tuple[list[dict], dict]:
                  "<b>相对稳的是另一个数：区间被打中的频率。</b>"
                  f"在以区间形式给出的年度里，前一段 {early_ranged} 年中了 {early_hits} 次"
                  f"（{early_rate:.0f}%），后一段 {late_ranged} 年中了 {late_hits} 次"
-                 f"（{late_rate:.0f}%）—— 两段都在五分之一到六分之一之间。"
-                 "变的主要是错的方向，不是错的频率。"
+                 f"（{late_rate:.0f}%）"
+                 + ("—— 两段都在五分之一到六分之一之间。变的主要是错的方向，不是错的频率。"
+                    if rate_band else "。")
+                 +
                  f"（{'、'.join(points)} 公司给的是单点而不是区间，没有宽度可落，"
                  "只可能高于或低于，不计入这个频率；把它们算成「没中」正是让两段看起来一模一样的做法。）"
                  "<b>而方向是成段走的，不是逐年抖动：</b>"
                  f"FY{run_above[0]} 到 FY{run_above[-1]} 连续 {len(run_above)} 年高于区间，"
                  f"FY{run_none[0]} 到 FY{run_none[-1]} 的 {len(run_none)} 年里一次都没有高过。"
-                 "<b>第二根柱只有近十二年有：</b>10-Q 里的季度修订本页只回溯到 "
+                 f"<b>第二根柱只有近{cn_count(len(both))}年有：</b>10-Q 里的季度修订本页只回溯到 "
                  f"FY{full['final_vintage_from_fiscal_year']}，更早的年度没有采集，"
                  "所以左边那一段只有年初计划这一条腿。"
                  f"在两条腿都有的那 {len(both)} 年里，修订把平均绝对偏离从 "
-                 f"{sum(open_abs_both) / len(open_abs_both):.1f}% 收到 "
-                 f"{sum(final_abs_both) / len(final_abs_both):.1f}%，只压掉不到一半 —— "
-                 "本站另外两页按年指引的公司（穆迪、标普全球）同一口径下能压到五分之一甚至七分之一。"
+                 f"{open_mean:.1f}% 收到 "
+                 f"{final_mean:.1f}%，"
+                 + ("只压掉不到一半 —— " if final_mean > open_mean / 2 else "压掉了一半以上 —— ")
+                 + "本站另外两页按年指引的公司（穆迪、标普全球）同一口径下能压到五分之一甚至七分之一。"
                  f"（整段三十年对年初计划的平均绝对偏离是 "
                  f"{sum(open_abs_all) / len(open_abs_all):.1f}%，与上面那个数不是同一批年份，不要并排比。）"
                  f"整段记录里偏离最大的一次是 "
                  f"{full_labels[dev_open.index(biggest)]} 的 {biggest:+.1f}%。"
-                 + CAPEX_LAG_NOTE),
-        "src_extra": (CAPEX_SOURCE
+                 + lag_note),
+        "src_extra": (capex_source(staging)
                       + "FY1995 至 FY2012 取自同一段落更早的版本，"
                       "标题在那些年份是 Expansion Plans 或没有小标题；"
                       "FY2007 之前的计划为美加与国际两笔之和（D）。"
@@ -451,6 +599,23 @@ def warehouse_plan_chart(staging: dict) -> dict:
     under = [i for i in finished if opened[i] < planned[i]]
     over = [i for i in finished if opened[i] > planned[i]]
     shortfall = [planned[i] - opened[i] for i in under]
+    # The wording of the plan, run by run; the range era before the first year
+    # on this chart is one more form, so the count of changes is the number of runs.
+    runs: list[list] = []
+    for qualifier in plan["planned_qualifier"]:
+        if runs and runs[-1][0] == qualifier:
+            runs[-1][1] += 1
+        else:
+            runs.append([qualifier, 1])
+    if [q for q, _ in runs] == ["up to", "approximately", "approximately up to", "up to"]:
+        wording = ("同一句话的限定词换过" + cn_count(len(runs)) + "次 —— 早年是区间（「27 到 30 家」），"
+                   "后来是「up to N」，中间" + cn_count(runs[1][1]) + "年是「approximately N」，再后来是"
+                   "「approximately up to N」，近年又回到「up to N」。")
+    else:
+        wording = ("同一句话的限定词换过" + cn_count(len(runs)) + "次 —— 早年是区间（「27 到 30 家」），此后依次是"
+                   + "、".join(f"「{q} N」（{cn_count(n)}年）" for q, n in runs) + "。")
+    additional = [year for year, flag in zip(plan["guided_fiscal_years"], plan["relocations_are_additional"])
+                  if flag]
     return {
         "ref": "EX_WH_PLAN",
         "kind": "grouped_bars",
@@ -470,12 +635,11 @@ def warehouse_plan_chart(staging: dict) -> dict:
                  f"{len(finished)} 个已完结年度里 {len(under)} 年低于计划，"
                  f"最大一次少开 {max(shortfall)} 家。"
                  "<b>但这条记录比它看上去的松，原因写在这里而不是藏起来：</b>"
-                 "同一句话的限定词换过四次 —— 早年是区间（「27 到 30 家」），"
-                 "后来是「up to N」，中间三年是「approximately N」，再后来是"
-                 "「approximately up to N」，近年又回到「up to N」。"
+                 + wording +
                  "所以这张图比的是「计划的家数」与「实际的家数」这一个量，"
                  "不是「有没有守住一个承诺」—— 一个点估计开不满和一个上限没顶到，不是同一件事。"
-                 "<b>搬迁那一项的口径也翻过面：</b>FY2016 到 FY2019 的计划把搬迁写成计划之外的"
+                 "<b>搬迁那一项的口径也翻过面：</b>"
+                 f"FY{additional[0]} 到 FY{additional[-1]} 的计划把搬迁写成计划之外的"
                  "另一句（「and relocate up to M warehouses」），其余年份写成"
                  "「including M relocations」即计划之内。"
                  "本图在前一种年份把计划记为 N + M，好让两根柱子量的是同一件事。"
@@ -487,21 +651,39 @@ def warehouse_plan_chart(staging: dict) -> dict:
                  "连方向都定不了。本页因此把那十五年整段留在外面，而不是画一条看起来连续的线。"
                  "FY2013 与 FY2014 另有原因：那两年的计划是区间而不是一个数，"
                  "而且 FY2012 的开店数在两份 10-K 里一次记作净新增、一次记作新开，两条腿都不在一个口径上。"
-                 + CAPEX_LAG_NOTE),
+                 + capex_lag_note(staging)),
         "src_extra": ("与资本开支计划取自各年 10-K 的同一段；"
                       "实际开店数取自被指引那一年自己那份 10-K 的同一句话，"
                       "计划口径统一为「含搬迁的开店总数」，为本页自算（D）。"),
     }
 
 
-DECK_SOURCE = (
-    "取自各季业绩 8-K 的 EX-99.2「Supplemental Information」补充材料。"
-    "这份材料自 2024-05-30（FY2024 Q3 业绩）起随每份业绩 8-K 一并 furnish，共 9 期，"
-    "在此之前这些数字只在电话会上口头给出，因此本页的这条序列从那一季开始，不向前回补。"
-)
+def deck_source(staging: dict) -> str:
+    return (
+        "取自各季业绩 8-K 的 EX-99.2「Supplemental Information」补充材料。"
+        "这份材料自 2024-05-30（FY2024 Q3 业绩）起随每份业绩 8-K 一并 furnish，"
+        f"共 {len(staging['supplement']['periods'])} 期，"
+        "在此之前这些数字只在电话会上口头给出，因此本页的这条序列从那一季开始，不向前回补。"
+    )
+
+
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    return [f"Revenue ${staging['financials']['total_revenue_usd_m'][-1] / 1000:.1f}B",
+            f"调整后 comp {staging['comparable_sales_pct']['adjusted_total_pct'][-1]:+.1f}%",
+            "会员费/营业利润 "
+            f"{staging['annual']['membership_fee_share_of_operating_income_pct'][-1]:.0f}%"]
 
 
 def build_payload(staging: dict) -> dict:
+    periods = staging["periods"]
+    latest = latest_block(staging, period=periods[-1], period_end=staging["period_ends"][-1],
+                          release_date=staging["release_dates"][-1])
+    prior_block = stamped_block(staging, "prior_kpi", periods[-1])
+    next_block = stamped_block(staging, "next_kpi", periods[-1])
+    local_note = stamped_block(staging, "local_note", periods[-1])
+    followup = stamped_block(staging, "followup_closure", periods[-1])
+    capex_full = staging["capex_record_full"]
     fin = staging["financials"]
     comp = staging["comparable_sales_pct"]
     hist = staging["comp_history_pct"]
@@ -546,59 +728,87 @@ def build_payload(staging: dict) -> dict:
     settled_ex = list(capex_ex) + [warehouse_plan_chart(staging)]
 
     # ── the local thresholds carried into this quarter ──────────────────────
-    prior = staging["prior_kpi"]["quantified"]
-    settled_ex.append(headroom_exhibit(
-        f"上季 {len(prior)} 条可结清阈值：本季实际离阈值的余量",
-        prior, "actual",
-        ("正值表示仍在安全侧。阈值为本地研究设定，<b>不是公司指引</b> —— "
-         "Costco 唯一的数字指引是上面两张图里的资本开支与开店计划，从不指引收入或利润。"
-         + staging["prior_kpi"]["excluded"]),
-        "本季实际值全部取自申报文件；阈值为本地研究设定。"))
+    prior = prior_block["quantified"] if prior_block else []
+    if prior:
+        settled_ex.append(headroom_exhibit(
+            f"上季 {len(prior)} 条可结清阈值：本季实际离阈值的余量",
+            prior, "actual",
+            ("正值表示仍在安全侧。阈值为本地研究设定，<b>不是公司指引</b> —— "
+             "Costco 唯一的数字指引是上面两张图里的资本开支与开店计划，从不指引收入或利润。"
+             + prior_block["excluded"]),
+            "本季实际值全部取自申报文件；阈值为本地研究设定。"))
 
-    settled_ex.append(threshold_exhibit(
-        f"剔除汽油与汇率后的合并同店销售：{len(hist['periods'])} 季记录，"
-        f"本季 {hist['adjusted_total_pct'][-1]:+.1f}%",
-        hist_labels, rounded(hist["adjusted_total_pct"]), 6.0,
-        fmt="pct1", ylab="%", actual_name="调整后合并 comp（剔除汽油与汇率）",
-        threshold_name="上季阈值 +6.0%",
-        note=("红线是本地研究设定的阈值，不是公司指引。"
-              "<b>这条线的窗口是选出来的，理由要说清楚：</b>公司从 FY2013 起就在披露"
-              "剔除汽油的口径，但 FY2019 那四个季度的「Adjusted」还额外剔除了 ASC 606 收入准则变更，"
-              "是同一个标签下的另一个口径；本图因此从 FY2020 Q1 起画，"
-              "此后每一季都是同一个「剔除汽油价格与汇率」的定义。"
-              f"窗口内区间 {min(adjusted_filed):.1f}% 到 "
-              f"{max(adjusted_filed):.1f}%，"
-              "所以「结构性 6.5%」这句话描述的是最近四个季度，不是这家公司的常态。"
-              + RESOLUTION_NOTE),
-        src_extra=SOURCE_PR))
+    comp_threshold = by_metric(prior_block, "调整后合并 comp")
+    asc606 = [period for period, value in zip(hist["periods"], hist["adjusted_total_pct"])
+              if value is None]
+    recent_mean = sum(hist["adjusted_total_pct"][-4:]) / 4
+    claim = local_note.get("structural_comp_claim_pct") if local_note else None
+    comp_note = (
+        ("红线是本地研究设定的阈值，不是公司指引。" if comp_threshold else "")
+        + "<b>这条线的窗口是选出来的，理由要说清楚：</b>公司从 FY2013 起就在披露"
+        "剔除汽油的口径，但 FY2019 那四个季度的「Adjusted」还额外剔除了 ASC 606 收入准则变更，"
+        f"是同一个标签下的另一个口径；本图因此把那{cn_count(len(asc606))}季留空，"
+        "其余每一季都是同一个「剔除汽油价格与汇率」的定义。"
+        f"窗口内区间 {min(adjusted_filed):.1f}% 到 "
+        f"{max(adjusted_filed):.1f}%，"
+        + (f"所以「结构性 {claim:.1f}%」这句话描述的是最近四个季度，不是这家公司的常态。"
+           if claim is not None and abs(recent_mean - claim) <= 0.3 and claim < max(adjusted_filed)
+           else "")
+        + resolution_note(staging)
+    )
+    comp_title = (f"剔除汽油与汇率后的合并同店销售：{len(hist['periods'])} 季记录，"
+                  f"本季 {hist['adjusted_total_pct'][-1]:+.1f}%")
+    if comp_threshold:
+        settled_ex.append(threshold_exhibit(
+            comp_title, hist_labels, rounded(hist["adjusted_total_pct"]), comp_threshold["threshold"],
+            fmt="pct1", ylab="%", actual_name="调整后合并 comp（剔除汽油与汇率）",
+            threshold_name=f"上季阈值 {comp_threshold['threshold']:+.1f}%",
+            note=comp_note, src_extra=SOURCE_PR))
+    else:
+        settled_ex.append({
+            "kind": "lines", "title": comp_title, "xlabels": hist_labels,
+            "series": [{"name": "调整后合并 comp（剔除汽油与汇率）",
+                        "values": rounded(hist["adjusted_total_pct"]), "color": "NAVY"}],
+            "fmt": "pct1", "yfmt": "pct1", "label_fmt": "pct1", "end_label": True, "ylab": "%",
+            "note": comp_note, "src_extra": SOURCE_PR,
+        })
     settled_ex[-1]["xstep"] = LONG_STEP
     settled_ex[-1]["ref"] = "EX_ADJCOMP"
 
     renewal_start = mem["renewal_decimal_from_index"]
+    renewal = by_metric(prior_block, "美加会员续费率")
+    us_rate, world_rate = mem["renewal_rate_us_canada_pct"], mem["renewal_rate_worldwide_pct"]
+    last_fiscal = fiscal_year_of(mem["periods"][-1]) - 1
+    in_last_fiscal = [i for i, period in enumerate(mem["periods"]) if fiscal_year_of(period) == last_fiscal]
+    below_highs = (us_rate[-1] < max(us_rate[i] for i in in_last_fiscal)
+                   and world_rate[-1] < max(world_rate[i] for i in in_last_fiscal))
+    renewal_series = [
+        {"name": "美加续费率", "color": "NAVY", "values": rounded(us_rate[renewal_start:])},
+        {"name": "全球续费率", "color": "BLUE", "values": rounded(world_rate[renewal_start:])},
+    ]
+    if renewal:
+        renewal_series.append({"name": f"上季阈值 {renewal['threshold']:.1f}%（美加）", "color": "RED",
+                               "values": [renewal["threshold"]] * len(mem_labels[renewal_start:])})
     settled_ex.append({
         "ref": "EX_RENEWAL",
         "kind": "lines",
-        "title": (f"会员续费率：美加 {mem['renewal_rate_us_canada_pct'][-1]:.1f}%、"
-                  f"全球 {mem['renewal_rate_worldwide_pct'][-1]:.1f}%"),
+        "title": (f"会员续费率：美加 {us_rate[-1]:.1f}%、"
+                  f"全球 {world_rate[-1]:.1f}%"),
         "xlabels": mem_labels[renewal_start:],
-        "series": [
-            {"name": "美加续费率", "color": "NAVY",
-             "values": rounded(mem["renewal_rate_us_canada_pct"][renewal_start:])},
-            {"name": "全球续费率", "color": "BLUE",
-             "values": rounded(mem["renewal_rate_worldwide_pct"][renewal_start:])},
-            {"name": "上季阈值 92.1%（美加）", "color": "RED",
-             "values": [92.1] * len(mem_labels[renewal_start:])},
-        ],
+        "series": renewal_series,
         "fmt": "pct1", "yfmt": "pct1", "label_fmt": "pct1", "end_label": True,
         "ylab": "%",
-        "note": ("<b>这张图为什么不从更早画起：</b>Costco 在 FY2023 Q2 之前把续费率四舍五入到"
+        "note": ("<b>这张图为什么不从更早画起：</b>"
+                 f"Costco 在 {fiscal_label_of(mem['periods'][renewal_start])} 之前把续费率四舍五入到"
                  "整数百分点（91%、92%、93%），之后才给到一位小数。"
                  "把两段接在一起会把四舍五入画成一段台阶式的「趋势」，"
                  "所以本图从有小数的那一季起画。"
-                 "上季设下的阈值是「企稳或回升」，本页把它写成一条水平线 —— "
-                 f"美加从上一季的 {mem['renewal_rate_us_canada_pct'][-2]:.1f}% 回到 "
-                 f"{mem['renewal_rate_us_canada_pct'][-1]:.1f}%，阈值兑现；"
-                 "但把窗口拉开看，两条线都还在自己 FY2025 高点之下。"),
+                 + (f"上季设下的阈值是「{renewal['action'].split(' = ')[0]}」，本页把它写成一条水平线 —— "
+                    f"美加从上一季的 {us_rate[-2]:.1f}% {moved(us_rate[-1], us_rate[-2], up='回到')} "
+                    f"{us_rate[-1]:.1f}%，"
+                    + ("阈值兑现；" if us_rate[-1] >= renewal["threshold"] else "阈值未兑现；")
+                    if renewal else "")
+                 + (f"但把窗口拉开看，两条线都还在自己 FY{last_fiscal} 高点之下。" if below_highs else "")),
         "src_extra": "各季 10-Q 与各年 10-K 的 MD&A 正文句子；公司披露值。",
     })
 
@@ -606,6 +816,8 @@ def build_payload(staging: dict) -> dict:
     # company prints the two counts side by side and never the ratio itself.
     exec_share = [round(e / p * 100, 6) if None not in (e, p) else None
                   for e, p in zip(deck["executive_members_mm"], deck["paid_members_mm"])]
+    exec_threshold = by_metric(prior_block, "Executive 会员占付费会员")
+    deck_note = deck_source(staging)
     settled_ex.append({
         "ref": "EX_EXEC",
         "kind": "bar_line_dual",
@@ -619,15 +831,19 @@ def build_payload(staging: dict) -> dict:
                  "values": rounded(deck["executive_sales_penetration_pct"])},
         "fmt": "f1", "yfmt": "f1", "label_fmt": "f1",
         "ylab": "百万人", "ylab2": "销售渗透率 %",
-        "note": ("上季阈值写的是「Executive 占付费会员 ≥47%」。"
-                 "<b>公司从不印这个比率</b>，但它印这个比率的两个组成部分 —— "
+        "note": ((f"上季阈值写的是「Executive 占付费会员 ≥{exec_threshold['threshold']:.0f}%」。"
+                  if exec_threshold else "")
+                 + "<b>公司从不印这个比率</b>，但它印这个比率的两个组成部分 —— "
                  "Executive 会员数与付费会员数并排放在同一张表里，所以这里的占比是两个申报值相除（D）。"
-                 f"本季 {exec_share[-1]:.1f}%，阈值兑现。"
+                 f"本季 {exec_share[-1]:.1f}%"
+                 + (("，阈值兑现。" if exec_share[-1] >= exec_threshold["threshold"] else "，阈值未兑现。")
+                    if exec_threshold else "。")
+                 +
                  "红线是另一个数，别看混：<b>销售渗透率是 Executive 会员贡献的销售额占比，"
                  "不是人数占比</b>，公司直接披露它，本季 "
                  f"{deck['executive_sales_penetration_pct'][-1]:.1f}%。"
-                 + DECK_SOURCE),
-        "src_extra": DECK_SOURCE,
+                 + deck_note),
+        "src_extra": deck_note,
     })
 
     # ── section two: what actually moved this quarter ───────────────────────
@@ -635,6 +851,61 @@ def build_payload(staging: dict) -> dict:
     # The gap is reported minus adjusted, so it is empty wherever the adjusted
     # figure is (the ASC 606 quarters above). Rank and count over what exists.
     gap_filed = [v for v in gap if v is not None]
+    # When the sign last turned, read off the record rather than remembered.
+    last_negative = max((i for i, v in enumerate(gap) if v is not None and v < 0), default=None)
+    if last_negative == len(gap) - 4 and all(v >= 0 for v in gap[-3:]) and gap[-1] > 0:
+        sign_story = (f"符号是在{cn_count(4)}个季度前才翻过来的：{hist_labels[-4]} 还是 {gap[-4]:+.1f}，"
+                      f"接着 {gap[-3]:+.1f}、{gap[-2]:+.1f}、{gap[-1]:+.1f}。")
+    elif last_negative == len(gap) - 1:
+        sign_story = f"本季仍是负的：{gap[-1]:+.1f}。"
+    elif last_negative is not None:
+        sign_story = (f"最后一次为负是 {hist_labels[last_negative]} 的 {gap[last_negative]:+.1f}，"
+                      f"此后 {len(gap) - 1 - last_negative} 季都不为负。")
+    else:
+        sign_story = ""
+    ancillary = cats["growth_contribution_pp"]["warehouse_ancillary_and_other_usd_m"][-1]
+    ancillary_share = ancillary / cats["net_sales_yoy_pct"][-1] if cats["net_sales_yoy_pct"][-1] > 0 else None
+    if ancillary_share is not None and 0.4 <= ancillary_share < 0.5:
+        ancillary_words = "接近全部增量的一半"
+    elif ancillary_share is not None and 0.5 <= ancillary_share < 0.6:
+        ancillary_words = "略超全部增量的一半"
+    elif ancillary_share is not None:
+        ancillary_words = f"占全部增量的 {ancillary_share * 100:.0f}%"
+    else:
+        ancillary_words = "而本季净销售额没有增长"
+    comparative = None
+    if mismatch:
+        quarter, year = staging["periods"][mismatch[0]].split()
+        comparative = f"{quarter} {int(year) - 1}"
+    traffic, ticket, adjusted_ticket = (deck["comp_traffic_pct"], deck["comp_ticket_pct"],
+                                        deck["adjusted_comp_ticket_pct"])
+    ticket_gap = ticket[-1] - adjusted_ticket[-1]
+    acceleration = ticket[-1] - ticket[-2]
+    if acceleration > 0:
+        in_gap = (acceleration - (adjusted_ticket[-1] - adjusted_ticket[-2])) / acceleration
+        acceleration_words = ("，几乎全部的客单加速都在这个缺口里。" if in_gap >= 0.9 else
+                              f"，客单加速的 {in_gap * 100:.0f}% 在这个缺口里。")
+    else:
+        acceleration_words = "。"
+    # The margin bridge is the company's own: the MD&A prints the basis-point
+    # changes, and where it rounds differently from the dollars the page uses
+    # what the company printed.
+    mdna = staging["mdna_margins_pct"]
+    if staging["periods"][-1] in mdna["periods"]:
+        m = mdna["periods"].index(staging["periods"][-1])
+        gm_bps, sga_bps = mdna["gross_margin_change_bps"][m], mdna["sga_change_bps"][m]
+    else:
+        gm_bps = round((fin["gross_margin_pct"][-1] - fin["gross_margin_pct"][-5]) * 100)
+        sga_bps = round((fin["sga_pct_of_net_sales"][-1] - fin["sga_pct_of_net_sales"][-5]) * 100)
+    offsetting = gm_bps * sga_bps > 0 and abs(gm_bps - sga_bps) <= 5
+    segments_close = all(
+        seg["united_states"]["revenue_usd_m"][i] + seg["canada"]["revenue_usd_m"][i]
+        + seg["other_international"]["revenue_usd_m"][i] == revenue[i]
+        and seg["united_states"]["operating_income_usd_m"][i] + seg["canada"]["operating_income_usd_m"][i]
+        + seg["other_international"]["operating_income_usd_m"][i] == operating[i]
+        for i in range(len(staging["periods"])))
+    canada_higher = all(c > u for c, u in zip(seg["canada"]["operating_margin_pct"],
+                                               seg["united_states"]["operating_margin_pct"]))
     negative_gaps = sum(1 for v in gap_filed if v < 0)
     positive_gaps = sum(1 for v in gap_filed if v > 0)
     zero_gaps = sum(1 for v in gap_filed if v == 0)
@@ -661,7 +932,7 @@ def build_payload(staging: dict) -> dict:
                      "读 headline 的人看到的是金色，读这家公司的人要看深蓝。"
                      "两条线在 2021–2022 年那段一起冲到两位数，是疫情后的低基数加油价，"
                      "不是需求。"
-                     + RESOLUTION_NOTE),
+                     + resolution_note(staging)),
             "src_extra": SOURCE_PR,
         },
         {
@@ -676,9 +947,12 @@ def build_payload(staging: dict) -> dict:
             "negative_label": "压低 headline",
             "fmt": "pp1", "yfmt": "pp1", "label_fmt": "pp1",
             "ylab": "百分点", "zero_line": True, "xstep": LONG_STEP,
-            "note": ("<b>这张图是本页最想让人看见的一张。</b>本地笔记把本季 "
-                     f"{gap[-1]:.1f} 个百分点的汽油顺风当成一次性的加成来提示风险，"
-                     f"而完整记录说的是更强的一句话：这个缺口在有该口径的 {len(gap_filed)} "
+            "note": ("<b>这张图是本页最想让人看见的一张。</b>"
+                     + (f"本地笔记把本季 {gap[-1]:.1f} 个百分点的汽油顺风当成一次性的加成来提示风险，"
+                        "而完整记录说的是更强的一句话："
+                        if local_note and local_note.get("gas_tailwind_flagged") and gap[-1] > 0 else
+                        f"本季这个缺口是 {gap[-1]:+.1f} 个百分点，而完整记录说的是一句更一般的话：")
+                     + f"这个缺口在有该口径的 {len(gap_filed)} "
                      f"个季度里有 {negative_gaps} 季是<b>负的</b> —— "
                      + (f"压低的次数比抬高的次数多（{negative_gaps} 比 {positive_gaps}"
                         + (f"，另有 {zero_gaps} 季恰好为零" if zero_gaps else "")
@@ -692,8 +966,7 @@ def build_payload(staging: dict) -> dict:
                         if len(gap_filed) != len(gap) else "")
                      + f"最深一次是 {hist_labels[gap.index(min(gap_filed))]} 的 "
                      f"{min(gap_filed):.1f} 个百分点。"
-                     f"符号是在四个季度前才翻过来的：{hist_labels[-4]} 还是 {gap[-4]:+.1f}，"
-                     f"接着 {gap[-3]:+.1f}、{gap[-2]:+.1f}、{gap[-1]:+.1f}。"
+                     + sign_story +
                      "<b>公司只披露汽油与汇率合在一起的影响，从不拆开</b>，"
                      "所以本页画的是合并缺口，不发布「汽油贡献 X 个百分点、汇率 Y 个百分点」"
                      "这样的拆分 —— 那个拆分只在电话会上出现过，没有可核对的申报来源。"),
@@ -719,17 +992,19 @@ def build_payload(staging: dict) -> dict:
             ],
             "bar_labels": True,
             "fmt": "pp1", "label_fmt": "pp1", "ylab": "百分点",
-            "annot": f"{labels[mismatch[0]]}：16 周对上年 17 周" if mismatch else "",
+            "annot": (f"{labels[mismatch[0]]}：{weeks[mismatch[0]]} 周对上年 "
+                      f"{staging['weeks_by_period'][comparative]} 周" if mismatch else ""),
             "note": ("四根柱相加等于当季净销售额的同比增速，是恒等式不是估计。"
                      "<b>红色那条是加油站、药房、食品部、眼镜与轮胎安装所在的「仓内附属与其他」</b>，"
                      f"本季它一条就贡献了 "
                      f"{cats['growth_contribution_pp']['warehouse_ancillary_and_other_usd_m'][-1]:.1f} "
-                     f"个百分点，接近全部增量的一半，而它只占上年净销售额的 "
+                     f"个百分点，{ancillary_words}，而它只占上年净销售额的 "
                      f"{cats['ancillary_share_of_base_pct'][-1]:.1f}%。"
                      "这是「汽油推高了 headline」这句话在申报文件里的样子 —— "
                      "公司不拆汽油单独的销售额，但它拆到了这条线。"
-                     + (f"<b>{labels[mismatch[0]]} 那一格要打折：</b>它是 16 周的会计 Q4 "
-                        "对上年 17 周的会计 Q4（FY2023 是 53 周财年），"
+                     + (f"<b>{labels[mismatch[0]]} 那一格要打折：</b>它是 {weeks[mismatch[0]]} 周的会计 Q4 "
+                        f"对上年 {staging['weeks_by_period'][comparative]} 周的会计 Q4"
+                        f"（FY{fiscal_year_of(comparative)} 是 53 周财年），"
                         "同比因此被少算了大约一周，四根柱一起被压低。" if mismatch else "")),
             "src_extra": ("各季 10-Q 与 10-K 收入分解附注的四个商品类别；"
                           "贡献 = 该类别同比增量 ÷ 上年同期净销售额，本页自算（D）。"),
@@ -787,13 +1062,16 @@ def build_payload(staging: dict) -> dict:
             "fmt": "pct1", "yfmt": "pct1", "label_fmt": "pct1", "end_label": True,
             "ylab": "%",
             "note": ("客流与客单是 comp 的两个乘数，公司把它们拆开给出。"
-                     f"<b>本季的张力在这里：客流从 {deck['comp_traffic_pct'][-2]:+.1f}% 降到 "
-                     f"{deck['comp_traffic_pct'][-1]:+.1f}%，缺口由客单补上。</b>"
-                     "金色与蓝色两条客单线之间的距离就是汽油与汇率 —— 本季 "
-                     f"{deck['comp_ticket_pct'][-1] - deck['adjusted_comp_ticket_pct'][-1]:.1f} "
-                     "个百分点，几乎全部的客单加速都在这个缺口里。"
-                     + DECK_SOURCE),
-            "src_extra": DECK_SOURCE,
+                     + (f"<b>本季的张力在这里：客流从 {traffic[-2]:+.1f}% 降到 "
+                        f"{traffic[-1]:+.1f}%，缺口由客单补上。</b>"
+                        if traffic[-1] < traffic[-2] and ticket[-1] > ticket[-2] else
+                        f"本季客流从 {traffic[-2]:+.1f}% 到 {traffic[-1]:+.1f}%、"
+                        f"客单从 {ticket[-2]:+.1f}% 到 {ticket[-1]:+.1f}%。")
+                     + "金色与蓝色两条客单线之间的距离就是汽油与汇率 —— 本季 "
+                     f"{ticket_gap:.1f} 个百分点"
+                     + acceleration_words
+                     + deck_note),
+            "src_extra": deck_note,
         },
         {
             "ref": "EX_MARGINS",
@@ -816,9 +1094,13 @@ def build_payload(staging: dict) -> dict:
                      "<b>比率不受周数影响</b>，所以这张图上 16 周的会计 Q4 与 12 周的其他季度可以直接比 —— "
                      "同一页上的金额柱状图不行，那里 16 周的柱子会打斜纹。"
                      "毛利率与 SG&A 率同向移动是这家公司的常态：汽油销售额同时进两个比率的分母，"
-                     "油价一涨两个比率一起被稀释，所以本季毛利率 −21bp 与 SG&A 率 −20bp "
-                     "几乎抵消，营业利润率只动了 "
-                     f"{fin['operating_margin_pct'][-1] - fin['operating_margin_pct'][-5]:+.2f} 个百分点。"),
+                     "油价一涨两个比率一起被稀释，"
+                     + (f"所以本季毛利率 {minus_sign(f'{gm_bps:+d}')}bp 与 SG&A 率 "
+                        f"{minus_sign(f'{sga_bps:+d}')}bp 几乎抵消，营业利润率只动了 "
+                        if offsetting else
+                        f"本季毛利率 {minus_sign(f'{gm_bps:+d}')}bp、SG&A 率 "
+                        f"{minus_sign(f'{sga_bps:+d}')}bp，营业利润率动了 ")
+                     + f"{fin['operating_margin_pct'][-1] - fin['operating_margin_pct'][-5]:+.2f} 个百分点。"),
             "src_extra": "各季业绩 8-K EX-99.1 合并损益表；三个比率为本页自算（D）。",
         },
         {
@@ -839,11 +1121,14 @@ def build_payload(staging: dict) -> dict:
             ],
             "fmt": "pct2", "yfmt": "pct2", "label_fmt": "pct2", "end_label": True,
             "ylab": "%",
-            "note": ("<b>加拿大的分部利润率长期高于美国</b>，而它只占本季总收入的 "
-                     f"{seg['canada']['revenue_usd_m'][-1] / revenue[-1] * 100:.1f}%。"
-                     "三个分部的收入相加等于合并总收入、营业利润相加等于合并营业利润，"
-                     "八个季度逐季核对差额为零。"
-                     f"<b>{'、'.join(labels[i] for i in long_quarters)} 两格是自算值（D）：</b>"
+            "note": (("<b>加拿大的分部利润率长期高于美国</b>，而它只占本季总收入的 "
+                      if canada_higher else "加拿大只占本季总收入的 ")
+                     + f"{seg['canada']['revenue_usd_m'][-1] / revenue[-1] * 100:.1f}%。"
+                     + ("三个分部的收入相加等于合并总收入、营业利润相加等于合并营业利润，"
+                        f"{cn_count(len(staging['periods']))}个季度逐季核对差额为零。"
+                        if segments_close else "")
+                     + f"<b>{'、'.join(labels[i] for i in long_quarters)} "
+                     f"{cn_count(len(long_quarters))}格是自算值（D）：</b>"
                      "会计 Q4 没有 10-Q，分部数只能用全年减去 36 周累计。"
                      "同一个减法在合并层面得到的净销售额与营业利润，与 Q4 业绩稿印出的 16 周数逐项相同，"
                      "这是本页愿意用它做分部的理由。"),
@@ -853,7 +1138,7 @@ def build_payload(staging: dict) -> dict:
     ]
 
     # ── section three: what to watch next ───────────────────────────────────
-    next_kpi = staging["next_kpi"]["quantified"]
+    next_kpi = next_block["quantified"] if next_block else []
     core_labels = [compact_period(period) for period in core["periods"]]
     core_bps = core["change_bps"]
     # A fiscal fourth quarter has no 10-Q sentence, but the supplemental deck
@@ -875,18 +1160,41 @@ def build_payload(staging: dict) -> dict:
             final_estimate[year] = (estimate, actual)
     settled_estimates = [f"FY{year} 最后估 {estimate} 家、实际 {actual} 家"
                          for year, (estimate, actual) in sorted(final_estimate.items())]
+    exact = sum(1 for estimate, actual in final_estimate.values() if estimate == actual)
+    plan_misses = [capex_full["deviation_vs_final_pct"][capex_full["guided_fiscal_years"].index(year)]
+                   for year in sorted(final_estimate)
+                   if year in capex_full["guided_fiscal_years"]]
+    plan_misses = [abs(value) for value in plan_misses if value is not None]
     special = staging["special_dividends"]
     special_index = [bal["periods"].index(period) for period in special["paid_in_periods"]
                      if period in bal["periods"]]
     cash = bal["cash_and_short_term_investments_usd_m"]
+    special_years = [d["fiscal_year"] for d in special["all"]]
+    special_gap = sum(b - a for a, b in zip(special_years, special_years[1:])) / (len(special_years) - 1)
+    last_special = special["all"][-1]
+    above_last = cash[-1] > special["cash_before_last_special_usd_m"]
+    # The 10-Q sentence the core-on-core reading comes from, rebuilt from the last
+    # quarter that has one: the company writes the same sentence every quarter.
+    tenq = [i for i, source in enumerate(core["value_source"]) if source == "10-Q/10-K MD&A prose"]
+    quoted = core_bps[tenq[-1]]
+    quote = ("「The gross margin in core merchandise categories, when expressed as a "
+             "percentage of core merchandise sales (rather than total net sales), "
+             f"{'decreased' if quoted < 0 else 'increased'} {english_number(abs(quoted))} "
+             f"basis point{'' if abs(quoted) == 1 else 's'}.」")
+    deck_core = dict(zip(deck["periods"], deck["core_on_core_bps"]))
+    overlap = [period for period, source in zip(core["periods"], core["value_source"])
+               if source == "10-Q/10-K MD&A prose" and period in deck_core]
+    overlap_equal = all(deck_core[period] == core_bps[core["periods"].index(period)] for period in overlap)
+    core_prior = local_note.get("core_on_core_prior_threshold") if local_note else None
 
     next_ex = [
-        headroom_exhibit(
+        None if not next_kpi else headroom_exhibit(
             f"下季 {len(next_kpi)} 条阈值：当前值离阈值的余量",
             next_kpi, "current",
             ("正值表示仍在安全侧。阈值为本地研究设定，<b>不是公司指引</b>。"
-             + staging["next_kpi"]["excluded"]),
-            "当前值为 2026Q2 申报值或其自算比率；阈值为本地研究设定。"),
+             + next_block["excluded"]),
+            f"当前值为 {staging['periods'][-1].split()[1]}{staging['periods'][-1].split()[0]} "
+            "申报值或其自算比率；阈值为本地研究设定。"),
         {
             "ref": "EX_CORECORE",
             "kind": "diverging_bars",
@@ -901,9 +1209,7 @@ def build_payload(staging: dict) -> dict:
             "ylab": "基点", "zero_line": True, "xstep": LONG_STEP,
             "note": ("<b>这就是管理层在电话会上说的「core on core」，只不过是申报版本。</b>"
                      "10-Q 的 MD&A 每季用同一句话给它："
-                     "「The gross margin in core merchandise categories, when expressed as a "
-                     "percentage of core merchandise sales (rather than total net sales), "
-                     "decreased nine basis points.」"
+                     + quote +
                      "它把仓内附属与其他业务的销售占比变化和它们自己的毛利率都排除掉，"
                      "所以它是这家公司剔除汽油之后最干净的一条商品毛利率读数。"
                      "<b>轴上的空格是会计 Q4</b>：它没有 10-Q，而 10-K 讲的是整个财年，"
@@ -913,19 +1219,26 @@ def build_payload(staging: dict) -> dict:
                      "EX-99.2 补充材料按季给这个数，第四季度也给，所以窗口里 "
                      f"{q4_slots} 个会计 Q4 有 {deck_filled} 个由它填上、其余 "
                      f"{q4_slots - deck_filled} 个仍是空的。"
-                     "这两格的来源比其余的弱，值得说明：补充材料只印「Core on Core Sales」这一行，"
+                     f"这{cn_count(deck_filled)}格的来源比其余的弱，值得说明：补充材料只印「Core on Core Sales」这一行，"
                      "既不定义它，也不说它属于毛利率还是 SG&A 那张桥；而 10-Q 的那句话自带定义。"
-                     "两者在九个重叠季度里逐季相同，这是本页愿意用它补那两格的理由。"
-                     "上季阈值是「回正或 ≥0」，本季 "
-                     f"{core_bps[-1]:+.0f}bp，未兑现；"
-                     "下季阈值是「不要连续两季 ≤−10bp」。"),
+                     + (f"两者在{cn_count(len(overlap))}个重叠季度里逐季相同，"
+                        f"这是本页愿意用它补那{cn_count(deck_filled)}格的理由。"
+                        if overlap_equal else
+                        f"两者在{cn_count(len(overlap))}个重叠季度里并不逐季相同，本页仍只在 10-Q 缺席时用它。")
+                     + (f"上季阈值是「{core_prior}」，本季 {core_bps[-1]:+.0f}bp，"
+                        + ("已兑现；" if core_bps[-1] >= local_note["core_on_core_prior_threshold_bps"] else "未兑现；")
+                        + f"下季阈值是「{local_note['core_on_core_next_threshold']}」。"
+                        if core_prior else "")),
             "src_extra": ("各季 10-Q 的 MD&A 正文句子；数值为公司披露的基点变动，"
                           "自 FY2024 Q3 起同一个数字也出现在业绩 8-K 的 EX-99.2 里，两者逐季一致。"),
         },
         {
             "ref": "EX_WH_EST",
             "kind": "grouped_bars",
-            "title": (f"公司自己估的财年末仓库数：两个已完结财年都精确落在最后一次估计上，"
+            "title": (f"公司自己估的财年末仓库数：{cn_count(len(final_estimate))}个已完结财年"
+                      + ("都精确落在最后一次估计上，" if exact == len(final_estimate)
+                         else f"里 {exact} 个精确落在最后一次估计上，")
+                      +
                       f"本季估 FY{est['target_fiscal_year'][-1]} 年末 "
                       f"{est['fy_end_estimate'][-1]} 家"),
             "xlabels": [f"{compact_period(period)}→FY{str(year)[-2:]}"
@@ -948,34 +1261,42 @@ def build_payload(staging: dict) -> dict:
                      "当年年末那一格在那里已经是实际数 —— 横轴的标注按每份材料自己写的目标财年，"
                      "不按它发布的季度。"
                      "<b>把这张图和第一节那两张放在一起，就是这家公司预测能力的两面：</b>"
-                     "已完结的两个财年里，仓库数的<b>最后一次</b>估计与实际一个不差（"
+                     f"已完结的{cn_count(len(final_estimate))}个财年里，仓库数的<b>最后一次</b>估计"
+                     + ("与实际一个不差（" if exact == len(final_estimate) else "与实际的对照是（")
                      + "；".join(settled_estimates)
-                     + "），而同期的资本开支计划每年都差 5% 到 15%。"
-                     "店的数量是它自己排的工期，花掉的钱不是。"
-                     + DECK_SOURCE),
-            "src_extra": DECK_SOURCE + "实际财年末家数取自各年 10-K。",
+                     + "）"
+                     + ("，而同期的资本开支计划每年都差 5% 到 15%。"
+                        if plan_misses and all(5 <= value <= 15 for value in plan_misses) else
+                        "。")
+                     + "店的数量是它自己排的工期，花掉的钱不是。"
+                     + deck_note),
+            "src_extra": deck_note + "实际财年末家数取自各年 10-K。",
         },
         {
             "ref": "EX_CASH",
             "kind": "bars_labeled",
             "title": (f"现金及短期投资：本季末 US${cash[-1] / 1000:.1f}B，"
-                      f"已高于上一次宣布特别股息时的 US${special['cash_before_last_special_usd_m'] / 1000:.1f}B"),
+                      f"{'已高于' if above_last else '仍低于'}上一次宣布特别股息时的 "
+                      f"US${special['cash_before_last_special_usd_m'] / 1000:.1f}B"),
             "xlabels": [compact_period(period) for period in bal["periods"]],
             "values": rounded(cash),
             "fmt": "f0c", "label_fmt": "f0c", "ylab": "US$M", "xstep": LONG_STEP,
             "bar_marks": special_index,
             "mark_note": "该季支付了特别股息",
             "note": ("斜纹柱是支付了特别股息的季度。"
-                     "Costco 一共派过五次特别股息 —— "
+                     f"Costco 一共派过{cn_count(len(special['all']))}次特别股息 —— "
                      + "、".join(f"{d['fiscal_year']} 年每股 US${d['per_share']:.0f}"
                                  for d in special["all"])
-                     + " —— 平均间隔约三年，最近一次是 2024 年 1 月的每股 US$15、"
+                     + f" —— 平均间隔约{cn_count(round(special_gap))}年，最近一次是 "
+                     f"{last_special['paid'][:4]} 年 {int(last_special['paid'][5:7])} 月的每股 "
+                     f"US${last_special['per_share']:.0f}、"
                      f"合计 US${special['last_total_usd_m']:,.0f}M。"
                      "<b>阈值不是「现金越多越好」而是相反：</b>"
                      "上一次宣布特别股息的前一个季度末，现金及短期投资是 US$"
                      f"{special['cash_before_last_special_usd_m'] / 1000:.1f}B；"
-                     f"本季已经是 US${cash[-1] / 1000:.1f}B，也就是说按上一次的标准，"
-                     "现金已经攒过了那条线。这不是预测公司会宣布什么，"
+                     f"本季{'已经' if above_last else ''}是 US${cash[-1] / 1000:.1f}B，也就是说按上一次的标准，"
+                     + ("现金已经攒过了那条线。" if above_last else "现金还没有攒过那条线。")
+                     + "这不是预测公司会宣布什么，"
                      "只是把「闲置现金」这个判断放到它自己的历史刻度上。"
                      "本页不发布特别股息的时点预期。"),
             "src_extra": ("各季业绩 8-K EX-99.1 的合并资产负债表（现金及等价物加短期投资）；"
@@ -983,12 +1304,36 @@ def build_payload(staging: dict) -> dict:
         },
     ]
 
+    next_ex = [exhibit for exhibit in next_ex if exhibit is not None]
+
     # ── section four: the long routine ─────────────────────────────────────
     fy_labels = ann["fiscal_years"]
     merch_leg = ann["merchandising_leg_pct_of_net_sales"]
     memb_leg = ann["membership_leg_pct_of_net_sales"]
     share = ann["membership_fee_share_of_operating_income_pct"]
     fee_per_member = mem["annualised_fee_per_paid_member_usd"]
+    years_word = cn_count(len(fy_labels))
+    legs_gap = [a - b for a, b in zip(memb_leg, merch_leg)]
+    legs_closest = 0 < legs_gap[-1] == min(legs_gap)
+    legs_close = all(abs(a + b - c) < 1e-3 for a, b, c in
+                     zip(merch_leg, memb_leg, ann["operating_margin_on_net_sales_pct"]))
+    low_year = fy_labels.index("FY2022") if "FY2022" in fy_labels else None
+    oil_year = (low_year is not None
+                and ann["gross_margin_pct"][low_year] == min(ann["gross_margin_pct"])
+                and ann["sga_pct_of_net_sales"][low_year] == min(ann["sga_pct_of_net_sales"])
+                and ann["operating_margin_on_net_sales_pct"][low_year]
+                >= max(ann["operating_margin_on_net_sales_pct"][:low_year + 1]))
+    long_years = [label for label, weeks_in_year in zip(fy_labels, ann["weeks"]) if weeks_in_year == 53]
+    rises = 0
+    for index in range(len(fee_per_member) - 1, mem["fee_increase_index"] - 1, -1):
+        if fee_per_member[index] > fee_per_member[index - 1]:
+            rises += 1
+        else:
+            break
+    intensity = ann["capex_intensity_pct"]
+    around = round(sum(intensity) / len(intensity))
+    clouds = hyperscaler_capex_share(staging["periods"][-1])
+    order_below = bool(clouds) and min(clouds[1]) >= 10 * intensity[-1]
     routine_ex = [
         {
             "ref": "EX_TWOLEGS",
@@ -1006,16 +1351,18 @@ def build_payload(staging: dict) -> dict:
             "fmt": "pct2", "label_fmt": "pct2", "ylab": "占净销售额 %",
             "note": ("<b>这张图是这家公司最常被引用的那句话的申报版本。</b>"
                      "「Costco 靠会员费赚钱、商品基本按成本卖」——"
-                     "这句话在 FY2013 是对的：营业利润率 "
+                     f"这句话在 {fy_labels[0]} 是对的：营业利润率 "
                      f"{ann['operating_margin_on_net_sales_pct'][0]:.2f}% 里，"
                      f"会员费贡献 {memb_leg[0]:.2f} 个百分点，商品只贡献 {merch_leg[0]:.2f}。"
-                     f"到 FY2025 变成 {memb_leg[-1]:.2f} 对 {merch_leg[-1]:.2f}，"
-                     f"两条腿只差 {memb_leg[-1] - merch_leg[-1]:.2f} 个百分点，"
-                     "十三年来第一次快要交叉。"
+                     f"到 {fy_labels[-1]} 变成 {memb_leg[-1]:.2f} 对 {merch_leg[-1]:.2f}，"
+                     f"两条腿只差 {memb_leg[-1] - merch_leg[-1]:.2f} 个百分点"
+                     + (f"，{years_word}年来第一次快要交叉。" if legs_closest else "。")
+                     +
                      "换成占营业利润的比重说同一件事："
                      f"会员费从 {share[0]:.1f}% 降到 {share[-1]:.1f}%。"
-                     "<b>这是恒等式：</b>商品腿 + 会员费腿 = 营业利润 ÷ 净销售额，"
-                     "十三个年度逐年核对差额为零。"
+                     "<b>这是恒等式：</b>商品腿 + 会员费腿 = 营业利润 ÷ 净销售额"
+                     + (f"，{years_word}个年度逐年核对差额为零。" if legs_close else "。")
+                     +
                      "会员费在这段时间涨过两次价（2017 年 6 月、2024 年 9 月），"
                      "占比仍然在降 —— 不是会员费不行了，是商品那条腿长得更快。"),
             "src_extra": ("各年 10-K 合并损益表；两条腿均为申报值相除，本页自算（D）。"),
@@ -1023,7 +1370,7 @@ def build_payload(staging: dict) -> dict:
         {
             "ref": "EX_LONGMARGIN",
             "kind": "lines",
-            "title": (f"十三年毛利率与 SG&A 率：毛利率 {ann['gross_margin_pct'][0]:.2f}% → "
+            "title": (f"{years_word}年毛利率与 SG&A 率：毛利率 {ann['gross_margin_pct'][0]:.2f}% → "
                       f"{ann['gross_margin_pct'][-1]:.2f}%，SG&A 率 "
                       f"{ann['sga_pct_of_net_sales'][0]:.2f}% → {ann['sga_pct_of_net_sales'][-1]:.2f}%"),
             "xlabels": fy_labels,
@@ -1039,13 +1386,16 @@ def build_payload(staging: dict) -> dict:
             "ylab": "%",
             "note": ("上一张图问「利润从哪来」，这一张问「商品那条腿是怎么长出来的」。"
                      "答案是两头都出了力，但不是同时："
-                     f"毛利率十三年只动了 {ann['gross_margin_pct'][-1] - ann['gross_margin_pct'][0]:+.2f} "
+                     f"毛利率{years_word}年只动了 {ann['gross_margin_pct'][-1] - ann['gross_margin_pct'][0]:+.2f} "
                      f"个百分点，SG&A 率动了 "
                      f"{ann['sga_pct_of_net_sales'][-1] - ann['sga_pct_of_net_sales'][0]:+.2f}。"
-                     "<b>FY2022 那一格是油价，不是经营</b>：那一年毛利率与 SG&A 率一起掉到窗口最低，"
-                     "因为汽油销售额把两个比率的分母同时撑大了，营业利润率反而是当时的高点。"
-                     "这也是为什么本页在第三节要单独画一条剔除仓内附属业务的核心商品毛利率。"
-                     "FY2017 与 FY2023 是 53 周财年，多一周的销售额被摊进全年比率里，影响在小数点后两位。"),
+                     + ("<b>FY2022 那一格是油价，不是经营</b>：那一年毛利率与 SG&A 率一起掉到窗口最低，"
+                        "因为汽油销售额把两个比率的分母同时撑大了，营业利润率反而是当时的高点。"
+                        "这也是为什么本页在第三节要单独画一条剔除仓内附属业务的核心商品毛利率。"
+                        if oil_year else "")
+                     + (f"{' 与 '.join(long_years)} "
+                        "是 53 周财年，多一周的销售额被摊进全年比率里，影响在小数点后两位。"
+                        if long_years else "")),
             "src_extra": "各年 10-K 合并损益表；三个比率均为本页自算（D），与 MD&A 印出的百分比一致。",
         },
         {
@@ -1067,7 +1417,10 @@ def build_payload(staging: dict) -> dict:
                      "断点右边是 2024 年 9 月那次涨价（美加 Gold Star US$60 → US$65、"
                      "Executive US$120 → US$130）："
                      f"这条线从 US${fee_per_member[mem['fee_increase_index'] - 1]:.2f} 一路走到 "
-                     f"US${fee_per_member[-1]:.2f}，连涨七个季度还没走完。"
+                     f"US${fee_per_member[-1]:.2f}，"
+                     + (f"连涨{cn_count(rises)}个季度还没走完。" if rises and fee_per_member[-1] > fee_per_member[-2]
+                        else "涨势已经停下。")
+                     +
                      "这正是会员费递延确认的样子 —— 涨价按会员各自的续费日分批进入收入，"
                      "要两年左右才吃满，所以它是一条<b>还没结束的</b>顺风。"
                      "按周折算是必须的：会计 Q4 长 16 周，不折算的话每年第三季会凭空高出三分之一。"),
@@ -1087,7 +1440,7 @@ def build_payload(staging: dict) -> dict:
                      "values": ann["sales_per_warehouse_usd_m"]},
             "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
             "ylab": "家", "ylab2": "单仓年销售额 US$M",
-            "note": ("十三年门店数增加 "
+            "note": (f"{years_word}年门店数增加 "
                      f"{ann['warehouses_at_year_end'][-1] - ann['warehouses_at_year_end'][0]:,} 家、"
                      f"年化 "
                      f"{((ann['warehouses_at_year_end'][-1] / ann['warehouses_at_year_end'][0]) ** (1 / (len(fy_labels) - 1)) - 1) * 100:.1f}%，"
@@ -1103,7 +1456,7 @@ def build_payload(staging: dict) -> dict:
         {
             "ref": "EX_CAPITAL",
             "kind": "grouped_bars",
-            "title": (f"十三年经营现金流、资本开支与股东回报：FY2025 分别为 US$"
+            "title": (f"{years_word}年经营现金流、资本开支与股东回报：{fy_labels[-1]} 分别为 US$"
                       f"{ann['operating_cash_flow_usd_m'][-1] / 1000:.1f}B、US$"
                       f"{ann['capex_usd_m'][-1] / 1000:.1f}B 与 US$"
                       f"{(ann['buybacks_usd_m'][-1] + ann['dividends_paid_usd_m'][-1]) / 1000:.1f}B"),
@@ -1123,14 +1476,17 @@ def build_payload(staging: dict) -> dict:
                                  if f"FY{d['fiscal_year']}" in fy_labels)
                      + " 那几年凸出来的部分就是它，其余年份基本是常规分红加防稀释回购。"
                      "<b>Costco 的回购小得不像一家这个规模的公司</b>："
-                     f"十三年累计回购 US${sum(ann['buybacks_usd_m']) / 1000:.1f}B，"
+                     f"{years_word}年累计回购 US${sum(ann['buybacks_usd_m']) / 1000:.1f}B，"
                      f"只有同期经营现金流 US${sum(ann['operating_cash_flow_usd_m']) / 1000:.0f}B 的 "
                      f"{sum(ann['buybacks_usd_m']) / sum(ann['operating_cash_flow_usd_m']) * 100:.1f}%。"
                      "这家公司把超额现金攒起来、隔几年一次性派掉，而不是逐年买回股票 —— "
                      "所以现金余额本身就是资本配置的跟踪指标，见第三节那张图。"
-                     "资本开支占总收入的比重十三年从 "
+                     f"资本开支占总收入的比重{years_word}年从 "
                      f"{ann['capex_intensity_pct'][0]:.2f}% 到 {ann['capex_intensity_pct'][-1]:.2f}%，"
-                     "始终在 2% 附近 —— 一家把钱主要花在盖仓库上的零售商，资本强度比本站任何一家云厂都低一个数量级。"),
+                     + (f"始终在 {around}% 附近 —— 一家把钱主要花在盖仓库上的零售商"
+                        if all(abs(v - around) <= 0.5 for v in intensity) else
+                        "—— 一家把钱主要花在盖仓库上的零售商")
+                     + ("，资本强度比本站任何一家云厂都低一个数量级。" if order_below else "。")),
             "src_extra": "各年 10-K 现金流量表，申报值；分红含特别股息。",
         },
     ]
@@ -1210,7 +1566,40 @@ def build_payload(staging: dict) -> dict:
             (f"${ann['special_dividend_per_share_usd'][index]:.2f}"
              if ann["special_dividend_per_share_usd"][index] else "—"),
         ])
-    boundary_rows = [[item["metric"], item["verdict"], item["where"], item["window"]]
+    # The notes and the disclosure table are prose kept in the series file; their
+    # counts are placeholders filled here, so a roll does not retype them.
+    guide = staging["capex_guidance"]
+    qualitative_at = next((i for i, flag in enumerate(guide["is_qualitative"]) if flag), None)
+    capex_full_both = [i for i, (a, b) in enumerate(zip(capex_full["deviation_vs_opening_pct"],
+                                                        capex_full["deviation_vs_final_pct"]))
+                       if a is not None and b is not None]
+    facts = {
+        "fiscal_label": staging["fiscal_labels"][-1],
+        "weeks": weeks[-1],
+        "period_end": staging["period_ends"][-1],
+        "period": staging["periods"][-1],
+        "resolution_recent": resolution_recent(staging),
+        "adjusted_quarters": len(adjusted_filed),
+        "deck_quarters": len(deck["periods"]),
+        "deck_first_fiscal": fiscal_label_of(deck["periods"][0]),
+        "lag_min": min(guide["lag_days_into_guided_year"]),
+        "lag_max": max(guide["lag_days_into_guided_year"]),
+        "open_mean": sum(abs(capex_full["deviation_vs_opening_pct"][i]) for i in capex_full_both)
+        / len(capex_full_both),
+        "final_mean": sum(abs(capex_full["deviation_vs_final_pct"][i]) for i in capex_full_both)
+        / len(capex_full_both),
+        "band_first": guide["guided_fiscal_years"][0],
+        "band_years": len(guide["guided_fiscal_years"]),
+        "qualitative_year": guide["guided_fiscal_years"][qualitative_at] if qualitative_at is not None else "",
+        "qualitative_prior": guide["guided_fiscal_years"][qualitative_at] - 1 if qualitative_at is not None else "",
+        "qualitative_growth": ((guide["actual_capex_usd_m"][qualitative_at]
+                                / guide["actual_capex_usd_m"][qualitative_at - 1] - 1) * 100
+                               if qualitative_at else 0.0),
+        "comp_first_fiscal": hist["fiscal_labels"][0],
+        "comp_quarters": len(hist["periods"]),
+        "asc606_quarters": len(asc606),
+    }
+    boundary_rows = [[item["metric"], item["verdict"], item["where"], item["window"].format_map(facts)]
                      for item in staging["disclosure_boundary"]]
     plan = staging["warehouse_plan"]
     plan_rows = []
@@ -1231,61 +1620,89 @@ def build_payload(staging: dict) -> dict:
              "超过" if opened > planned else "正好"),
         ])
     closure_rows = [[item["question"], item["evidence"], item["verdict"]]
-                    for item in staging["followup_closure"]]
+                    for item in (followup["items"] if followup else [])]
 
-    tables = [
-        {**capex_table, "n": first_table},
-        threshold_table(first_table + 1, "上季阈值核对（原始单位）", prior, "actual", "本季实际"),
-        threshold_table(first_table + 2, "下季阈值（原始单位）", next_kpi, "current", "当前值"),
-        {
-            "n": first_table + 3,
-            "title": "上季七条待验证问题的结清情况",
+    numbers = iter(range(first_table, first_table + 100))
+    tables = [{**capex_table, "n": next(numbers)}]
+    if prior:
+        tables.append(threshold_table(next(numbers), "上季阈值核对（原始单位）", prior, "actual", "本季实际"))
+    if next_kpi:
+        tables.append(threshold_table(next(numbers), "下季阈值（原始单位）", next_kpi, "current", "当前值"))
+    if closure_rows:
+        tables.append({
+            "n": next(numbers),
+            "title": f"上季{cn_count(len(closure_rows))}条待验证问题的结清情况",
             "headers": ["上季问题", "本季申报证据", "判定"],
             "rows": closure_rows,
-        },
+        })
+    tables += [
         {
-            "n": first_table + 4,
-            "title": "八季核心（自然年季度标注；公司财季与周数见第二、四列）",
+            "n": next(numbers),
+            "title": f"{cn_count(len(staging['periods']))}季核心（自然年季度标注；公司财季与周数见第二、四列）",
             "headers": ["自然年季度", "公司财季", "季末", "周数", "净销售额", "会员费",
                         "总收入", "总收入同比", "报告 comp", "调整后 comp",
                         "毛利率", "SG&A 率", "营业利润", "摊薄 EPS", "季末仓库数"],
             "rows": core_rows,
         },
         {
-            "n": first_table + 5,
+            "n": next(numbers),
             "title": "同店销售完整记录（新闻稿一位小数版；10-Q 的整数版见说明）",
             "headers": ["自然年季度", "公司财季", "周数", "报告 comp", "调整后 comp",
                         "缺口 D", "数字化 comp", "数字化口径"],
             "rows": comp_rows,
         },
         {
-            "n": first_table + 6,
-            "title": "十三年年度记录（各年取该年 10-K 印出的数）",
+            "n": next(numbers),
+            "title": f"{years_word}年年度记录（各年取该年 10-K 印出的数）",
             "headers": ["财年", "财年末", "周数", "总收入", "会员费", "营业利润",
                         "会员费占营业利润 D", "商品腿 D", "会员费腿 D",
                         "资本开支", "经营现金流", "财年末仓库数", "特别股息／股"],
             "rows": annual_rows,
         },
         {
-            "n": first_table + 7,
+            "n": next(numbers),
             "title": "开店计划的限定词变迁与逐年结清",
             "headers": ["被指引的财年", "计划原文的限定词", "计划家数", "搬迁口径",
                         "计划合计 D", "实际开店数", "判定"],
             "rows": plan_rows,
         },
         {
-            "n": first_table + 8,
+            "n": next(numbers),
             "title": "口径边界：哪些指标进了申报文件，哪些只在电话会上",
             "headers": ["指标", "是否进入申报文件", "在哪份文件里", "可用窗口"],
             "rows": boundary_rows,
         },
-        ai_capex_cycle_table(first_table + 9),
     ]
+    tables.append(ai_capex_cycle_table(next(numbers)))
 
     latest_gap = hist["gap_pp"][-1]
     reported = hist["reported_total_pct"]
     higher = [i for i, value in enumerate(reported[:-1]) if value > reported[-1]]
     quarters_since_higher = len(reported) - 1 - max(higher) if higher else len(reported)
+    eps_wedge = bridge["below_the_line_leg_pct"][-1] + bridge["tax_leg_pct"][-1]
+    both_ends = latest_gap > 0 and bridge["reported_eps_yoy_pct"][-1] > fin["operating_income_yoy_pct"][-1]
+    capex_rec = staging["capex_guidance"]
+    capex_settled = [i for i, a in enumerate(capex_rec["actual_capex_usd_m"])
+                     if a is not None and capex_rec["guided_low_usd_m"][i] is not None]
+    capex_above = sum(1 for i in capex_settled if capex_rec["actual_capex_usd_m"][i] > capex_rec["guided_high_usd_m"][i])
+    capex_below = sum(1 for i in capex_settled if capex_rec["actual_capex_usd_m"][i] < capex_rec["guided_low_usd_m"][i])
+    fiscal = staging["fiscal_labels"]
+    release = next(item for item in staging["sources"]
+                   if item["label"].startswith(f"Costco {fiscal[-1]} 业绩新闻稿"))
+    has_deck = any(item["label"].startswith(f"Costco {fiscal[-1]} 补充材料") for item in staging["sources"])
+    has_10q = any(item["label"] == f"Costco 截至 {staging['period_ends'][-1]} 的 10-Q"
+                  for item in staging["sources"])
+    has_10k = fiscal[-1].endswith("Q4") and any(
+        item["label"].startswith(f"Costco {fiscal[-1].split()[0]} 10-K") for item in staging["sources"])
+    source_tail = (f"与截至 {staging['period_ends'][-1]} 的 10-Q。" if has_10q else
+                   f"与 {fiscal[-1].split()[0]} 10-K。" if has_10k else
+                   f"（本季 {'10-K' if fiscal[-1].endswith('Q4') else '10-Q'} 尚未申报）。")
+    traffic_words = ("客流在走软" if traffic[-1] < traffic[-2] else
+                     "客流在走强" if traffic[-1] > traffic[-2] else "客流持平")
+    ticket_words = "客单在补位" if ticket[-1] > ticket[-2] else "客单在走弱"
+    share_words = ("接近一半" if ancillary_share is not None and 0.4 <= ancillary_share < 0.5 else
+                   "一半多" if ancillary_share is not None and 0.5 <= ancillary_share < 0.6 else
+                   f"{ancillary_share * 100:.0f}%" if ancillary_share is not None else "没有")
     return {
         "schema_version": "quarterly-dashboard/cost-v1",
         "page": {"slug": "cost", "language": "zh-CN"},
@@ -1295,56 +1712,52 @@ def build_payload(staging: dict) -> dict:
             "group": "consumer_retail",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": staging["latest"]["period"],
-            "full_financial_period_label": staging["latest"]["period"],
-            "period_end": staging["latest"]["period_end"],
-            "release_date": staging["latest"]["release_date"],
-            "analysis_date": "2026-08-29",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest,
         "tracker": "Watchlist Quarterly Tracker · COST",
-        "title": "Costco Wholesale Corporation (COST)：Q2 2026 季报仪表盘",
+        "title": f"Costco Wholesale Corporation (COST)：{staging['periods'][-1]} 季报仪表盘",
         "subtitle": (
-            f"十二周截至 {staging['latest']['period_end']} · 发布 "
-            f"{staging['latest']['release_date']} · US GAAP · 未审计 · "
-            "财年末为最接近 8 月 31 日的星期日，本站按自然年季度标注：本页 Q2 2026 即公司所称 FY2026 Q3"
+            f"{cn_count(weeks[-1])}周截至 {staging['period_ends'][-1]} · 发布 "
+            f"{staging['release_dates'][-1]} · US GAAP · {AUDIT_WORDS[latest['audit_status']]} · "
+            "财年末为最接近 8 月 31 日的星期日，本站按自然年季度标注："
+            f"本页 {staging['periods'][-1]} 即公司所称 {fiscal[-1]}"
         ),
         "headline": (
             f"总收入 US${revenue[-1]:,.0f}M、同比 {signed(fin['total_revenue_yoy_pct'][-1])}，"
             f"报告 comp {signed(hist['reported_total_pct'][-1])} 是 {quarters_since_higher} "
             f"个季度以来最高；但公司自己披露的剔除汽油与汇率后的 comp 是 "
             f"{signed(hist['adjusted_total_pct'][-1])}，两者 {latest_gap:.1f} 个百分点的缺口"
-            f"在这 {len(gap)} 季里有 {negative_gaps} 季是负的，四个季度前还是 {gap[-4]:+.1f}；"
+            f"在这 {len(gap)} 季里有 {negative_gaps} 季是负的，{cn_count(4)}个季度前还是 {gap[-4]:+.1f}；"
             f"同一季每股收益 {signed(bridge['reported_eps_yoy_pct'][-1])} 对营业利润 "
-            f"{signed(fin['operating_income_yoy_pct'][-1])}。两端的加成都能用申报值原样剥掉。"
+            f"{signed(fin['operating_income_yoy_pct'][-1])}。"
+            + ("两端的加成都能用申报值原样剥掉。" if both_ends else "")
         ),
         "brief": (
             '<h4>本季三条主线</h4><div class="takeaway-grid">'
             '<article><span>记录</span><b>公司只指引要花多少钱，不指引要赚多少</b>'
             f'<p>10-K 每年给一次下一财年的资本开支区间。'
-            f'已完结的 {len([i for i, a in enumerate(staging["capex_guidance"]["actual_capex_usd_m"]) if a is not None and staging["capex_guidance"]["guided_low_usd_m"][i] is not None])} 年里'
-            '低于下限与高于上限的次数几乎相同 —— 全站唯一一份两边都会错的指引记录。</p></article>'
-            '<article><span>裂口</span><b>headline 两端都被垫高了</b>'
-            f'<p>报告 comp 比调整后高 {latest_gap:.1f} 个百分点；'
-            f'每股收益增速里有 {bridge["below_the_line_leg_pct"][-1] + bridge["tax_leg_pct"][-1]:+.1f}% '
+            f'已完结的 {len(capex_settled)} 年里'
+            + ('低于下限与高于上限的次数几乎相同 —— 全站唯一一份两边都会错的指引记录。</p></article>'
+               if abs(capex_above - capex_below) <= 1 else
+               f'低于下限 {capex_below} 次、高于上限 {capex_above} 次。</p></article>')
+            + ('<article><span>裂口</span><b>headline 两端都被垫高了</b>'
+               if latest_gap > 0 and eps_wedge > 0 else
+               '<article><span>裂口</span><b>headline 与底层之间的两处差距</b>')
+            + f'<p>报告 comp 比调整后{"高" if latest_gap >= 0 else "低"} {abs(latest_gap):.1f} 个百分点；'
+            f'每股收益增速里有 {eps_wedge:+.1f}% '
             '来自利息收入与税率。两者都是申报值可复算的。</p></article>'
             '<article><span>长期</span><b>「靠会员费赚钱」这句话在变弱</b>'
             f'<p>会员费占营业利润从 {share[0]:.1f}% 降到 {share[-1]:.1f}%；'
-            f'商品腿与会员费腿只差 {memb_leg[-1] - merch_leg[-1]:.2f} 个百分点，十三年来最近。</p></article>'
-            '</div>'
+            f'商品腿与会员费腿只差 {memb_leg[-1] - merch_leg[-1]:.2f} 个百分点'
+            + (f'，{years_word}年来最近。</p></article>' if legs_closest else '。</p></article>')
+            + '</div>'
         ),
         "source": (
-            'Source: <a href="https://www.sec.gov/Archives/edgar/data/909832/'
-            '000090983226000046/costex9918-k52826.htm" rel="noopener">Costco FY2026 Q3 '
-            '业绩新闻稿（8-K EX-99.1）</a>、同一份 8-K 的 EX-99.2 补充材料，'
-            '与截至 2026-05-10 的 10-Q。'
+            f'Source: <a href="{release["url"]}" rel="noopener">Costco {fiscal[-1]} '
+            '业绩新闻稿（8-K EX-99.1）</a>'
+            + ('、同一份 8-K 的 EX-99.2 补充材料，' if has_deck else '')
+            + source_tail
         ),
-        "source_url": (
-            "https://www.sec.gov/Archives/edgar/data/909832/"
-            "000090983226000046/costex9918-k52826.htm"
-        ),
+        "source_url": release["url"],
         "source_links": staging["sources"],
         "summary": {"blocks": []},
         "guidance": None,
@@ -1365,10 +1778,12 @@ def build_payload(staging: dict) -> dict:
                 "id": "quarter_highlights",
                 "title": "二、本季重点",
                 "description": (
-                    "headline 的两端各被垫高了一次，而两次垫高都能用申报值原样剥掉："
-                    "comp 那端是汽油与汇率，每股收益那端是利息收入与税率。"
-                    "剥完之后剩下的是客流在走软、客单在补位，以及四条商品线里"
-                    "加油站所在的那一条贡献了接近一半的销售增量。"
+                    ("headline 的两端各被垫高了一次，而两次垫高都能用申报值原样剥掉："
+                     if latest_gap > 0 and eps_wedge > 0 else
+                     "headline 与底层之间的两处差距都能用申报值原样拆开：")
+                    + "comp 那端是汽油与汇率，每股收益那端是利息收入与税率。"
+                    f"剥完之后剩下的是{traffic_words}、{ticket_words}，以及四条商品线里"
+                    f"加油站所在的那一条贡献了{share_words}的销售增量。"
                 ),
                 "exhibits": highlight_ex,
             },
@@ -1385,15 +1800,15 @@ def build_payload(staging: dict) -> dict:
                 "id": "routine",
                 "title": "四、长期常规跟踪",
                 "description": (
-                    "Costco 专属的常规序列：营业利润率的两条腿如何在十三年里换位、"
+                    f"Costco 专属的常规序列：营业利润率的两条腿如何在{years_word}年里换位、"
                     "毛利率与 SG&A 率各走了多远、一次涨价要花多久才吃满，"
-                    "以及一家资本强度只有 2% 的零售商怎么处理它攒下来的现金。"
+                    f"以及一家资本强度只有 {round(intensity[-1])}% 的零售商怎么处理它攒下来的现金。"
                 ),
                 "exhibits": routine_ex,
             },
         ],
         "tables": tables,
-        "notes": staging["notes"],
+        "notes": [note.format_map(facts) for note in staging["notes"]],
         "footer": "Costco quarterly results · 数据来自 Costco 公开披露与透明自算 · 仅供研究，不构成投资建议",
     }
 

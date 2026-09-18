@@ -49,6 +49,7 @@ from build.board import (  # noqa: E402
     delivery_band,
     headroom,
     headroom_exhibit,
+    latest_block,
     midpoint_deviation,
     number_exhibits,
     threshold_exhibit,
@@ -321,6 +322,16 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         [sales_band, sales_deviation, income_band, income_deviation, legs_chart, implied_chart],
         verdicts,
     )
+
+
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    q = staging["quarterly_usd_m"]
+    aws = staging["segments_usd_m"]["aws_revenue"]
+    ttm = staging["cash_flow_disclosed"]["free_cash_flow_ttm"][-1]
+    return [f"Revenue ${q['revenue_total'][-1] / 1000:.1f}B",
+            f"AWS {(aws[-1] / aws[-5] - 1) * 100:+.0f}%",
+            f"TTM FCF {'-' if ttm < 0 else ''}${abs(ttm) / 1000:.1f}B"]
 
 
 def build_payload(staging: dict) -> dict:
@@ -1142,15 +1153,7 @@ def build_payload(staging: dict) -> dict:
             "group": "internet",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": "2026-06-30",
-            "release_date": "2026-07-30",
-            "analysis_date": "2026-08-01",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(staging, period=staging["periods"][-1]),
         "tracker": "Watchlist Quarterly Tracker · AMZN",
         "title": "Amazon.com (AMZN)：Q2 2026 季报仪表盘",
         "subtitle": (

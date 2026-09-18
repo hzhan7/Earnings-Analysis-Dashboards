@@ -1,5 +1,11 @@
 {
   "_provenance": "公司披露值逐季读自 SEC EDGAR 上 American Express Company（CIK 4962）的 42 份季度业绩 8-K 统计表（EX-99.2，2017-04-19 那一份公司命名为 ertables.htm）与 43 份业绩新闻稿（EX-99.1）。每份统计表并排印五个季度，相邻两份重叠四季，因此每个数字至少被读到两次；两份不一致时取较新一份并逐条记录，全窗口共 842 处这样的修订。全年实际值另取自各年 1 月发布中公司自己印的 FY 列，并与 SEC XBRL companyfacts 独立核对，FY2018–FY2025 八个年度逐年完全一致。",
+  "latest": {
+    "period": "Q2 2026",
+    "release_date": "2026-07-24",
+    "analysis_date": "2026-08-29",
+    "audit_status": "unaudited"
+  },
   "periods": [
     "2016Q1",
     "2016Q2",

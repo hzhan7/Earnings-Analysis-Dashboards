@@ -1,5 +1,44 @@
 {
   "_provenance": "所有公司披露值逐季读自 SEC EDGAR 上 Broadcom Inc.（CIK 1730168）的申报文件：34 份季度业绩 8-K 的 EX-99.1 新闻稿（指引、Adjusted EBITDA 与 non-GAAP 营业利润、分部收入、当季现金流），25 份 10-Q 与 8 份 10-K 的分部附注 R 文件（分部收入与分部营业利润），以及 XBRL companyfacts（损益表、现金流量表、资产负债表与采购承诺）。两条独立来源在重叠的 28 个季度上收入与 GAAP 营业利润逐季完全一致，7 个完整财年的四季合计亦与申报年度数完全一致。",
+  "latest": {
+    "period": "Q2 2026",
+    "analysis_date": "2026-09-09",
+    "audit_status": "unaudited"
+  },
+  "_checks": {
+    "period": "Q2 2026",
+    "fiscal_label": "FY2026 Q3",
+    "period_end": "2026-08-02",
+    "release_date": "2026-09-02",
+    "revenue_usd_m": 29591,
+    "revenue_yoy_pct": 86,
+    "gaap_operating_income_usd_m": 15955,
+    "non_gaap_operating_income_usd_m": 20095,
+    "semiconductor_revenue_usd_m": 20839,
+    "semiconductor_share_pct": 70,
+    "infrastructure_software_revenue_usd_m": 8752,
+    "operating_cash_flow_usd_m": 14197,
+    "capital_expenditures_usd_m": 532,
+    "free_cash_flow_usd_m": 13665,
+    "free_cash_flow_pct_of_revenue": 46,
+    "share_repurchases_usd_m": 0,
+    "dividends_paid_usd_m": 3103,
+    "cash_and_equivalents_usd_m": 23975,
+    "short_term_debt_usd_m": 2252,
+    "long_term_debt_usd_m": 57167,
+    "inventory_usd_m": 4523,
+    "accounts_receivable_usd_m": 13707,
+    "ai_semiconductor_revenue_usd_bn": 16.7,
+    "next_quarter": {
+      "fiscal_label": "FY2026 Q4",
+      "period_end": "2026-11-01",
+      "revenue_usd_bn": 34.8,
+      "non_gaap_operating_margin_pct": 66,
+      "ai_semiconductor_revenue_usd_bn": 21.7
+    },
+    "source": "Broadcom FY2026 Q3 业绩新闻稿（8-K EX-99.1，2026-09-02，acc 0001730168-26-000076）逐项读取：首段「third quarter of fiscal year 2026, ended August 2, 2026」与发布日 September 2, 2026；Financial Highlights 表（Net revenue 29,591、+86%；Operating income GAAP 15,955 / non-GAAP 20,095）；Net revenue by segment（Semiconductor solutions 20,839、70%；Infrastructure software 8,752）；CEO 引语（Q3 AI semiconductor revenue of $16.7 billion；expect AI semiconductor revenue to accelerate to $21.7 billion）；Fourth Quarter Fiscal Year 2026 Business Outlook（ending November 1, 2026；approximately $34.8 billion；approximately 66 percent of projected revenue）；现金流量表（operating activities 14,197；property, plant and equipment (532)；repurchase program —；dividends (3,103)；free cash flow 13,665，要点行「46 percent of revenue」）；资产负债表（cash 23,975；short-term debt 2,252；long-term debt 57,167；inventory 4,523；trade accounts receivable 13,707）。",
+    "checked_on": "2026-09-19"
+  },
   "cik": "0001730168",
   "fiscal_year_end": "11-01",
   "period_ends": [
@@ -178,6 +217,209 @@
     "2026-06-03",
     "2026-09-02"
   ],
+  "periodic_reports_filed": {
+    "note": "Broadcom Inc.（CIK 1730168）每一季的 10-Q / 10-K 申报日，取自 EDGAR 的申报索引（data.sec.gov submissions，form、reportDate、filingDate、accessionNumber 四栏）。只收截至 latest.analysis_date 已经申报的；2018 年 4 月迁册之前的八季由 Broadcom Limited 申报，不在这个 CIK 下，本表不列。页面用它说「本季 10-Q 尚未申报」时去年同季隔了几天——那句话此前手写成「第 8 天」，而 FY2025 Q3 的业绩 8-K 是 2025-09-04、10-Q 是 2025-09-10，隔 6 天。",
+    "reports": [
+      {
+        "period_end": "2018-05-06",
+        "form": "10-Q",
+        "filed": "2018-06-14",
+        "accession": "0001730168-18-000019"
+      },
+      {
+        "period_end": "2018-08-05",
+        "form": "10-Q",
+        "filed": "2018-09-13",
+        "accession": "0001730168-18-000039"
+      },
+      {
+        "period_end": "2018-11-04",
+        "form": "10-K",
+        "filed": "2018-12-21",
+        "accession": "0001730168-18-000084"
+      },
+      {
+        "period_end": "2019-02-03",
+        "form": "10-Q",
+        "filed": "2019-03-15",
+        "accession": "0001730168-19-000036"
+      },
+      {
+        "period_end": "2019-05-05",
+        "form": "10-Q",
+        "filed": "2019-06-14",
+        "accession": "0001730168-19-000101"
+      },
+      {
+        "period_end": "2019-08-04",
+        "form": "10-Q",
+        "filed": "2019-09-13",
+        "accession": "0001730168-19-000118"
+      },
+      {
+        "period_end": "2019-11-03",
+        "form": "10-K",
+        "filed": "2019-12-20",
+        "accession": "0001730168-19-000144"
+      },
+      {
+        "period_end": "2020-02-02",
+        "form": "10-Q",
+        "filed": "2020-03-13",
+        "accession": "0001730168-20-000045"
+      },
+      {
+        "period_end": "2020-05-03",
+        "form": "10-Q",
+        "filed": "2020-06-12",
+        "accession": "0001730168-20-000109"
+      },
+      {
+        "period_end": "2020-08-02",
+        "form": "10-Q",
+        "filed": "2020-09-11",
+        "accession": "0001730168-20-000164"
+      },
+      {
+        "period_end": "2020-11-01",
+        "form": "10-K",
+        "filed": "2020-12-18",
+        "accession": "0001730168-20-000226"
+      },
+      {
+        "period_end": "2021-01-31",
+        "form": "10-Q",
+        "filed": "2021-03-12",
+        "accession": "0001730168-21-000045"
+      },
+      {
+        "period_end": "2021-05-02",
+        "form": "10-Q",
+        "filed": "2021-06-11",
+        "accession": "0001730168-21-000116"
+      },
+      {
+        "period_end": "2021-08-01",
+        "form": "10-Q",
+        "filed": "2021-09-09",
+        "accession": "0001730168-21-000123"
+      },
+      {
+        "period_end": "2021-10-31",
+        "form": "10-K",
+        "filed": "2021-12-17",
+        "accession": "0001730168-21-000153"
+      },
+      {
+        "period_end": "2022-01-30",
+        "form": "10-Q",
+        "filed": "2022-03-10",
+        "accession": "0001730168-22-000029"
+      },
+      {
+        "period_end": "2022-05-01",
+        "form": "10-Q",
+        "filed": "2022-06-09",
+        "accession": "0001730168-22-000081"
+      },
+      {
+        "period_end": "2022-07-31",
+        "form": "10-Q",
+        "filed": "2022-09-08",
+        "accession": "0001730168-22-000094"
+      },
+      {
+        "period_end": "2022-10-30",
+        "form": "10-K",
+        "filed": "2022-12-16",
+        "accession": "0001730168-22-000118"
+      },
+      {
+        "period_end": "2023-01-29",
+        "form": "10-Q",
+        "filed": "2023-03-08",
+        "accession": "0001730168-23-000008"
+      },
+      {
+        "period_end": "2023-04-30",
+        "form": "10-Q",
+        "filed": "2023-06-07",
+        "accession": "0001730168-23-000064"
+      },
+      {
+        "period_end": "2023-07-30",
+        "form": "10-Q",
+        "filed": "2023-09-06",
+        "accession": "0001730168-23-000077"
+      },
+      {
+        "period_end": "2023-10-29",
+        "form": "10-K",
+        "filed": "2023-12-14",
+        "accession": "0001730168-23-000096"
+      },
+      {
+        "period_end": "2024-02-04",
+        "form": "10-Q",
+        "filed": "2024-03-14",
+        "accession": "0001730168-24-000023"
+      },
+      {
+        "period_end": "2024-05-05",
+        "form": "10-Q",
+        "filed": "2024-06-13",
+        "accession": "0001730168-24-000080"
+      },
+      {
+        "period_end": "2024-08-04",
+        "form": "10-Q",
+        "filed": "2024-09-11",
+        "accession": "0001730168-24-000099"
+      },
+      {
+        "period_end": "2024-11-03",
+        "form": "10-K",
+        "filed": "2024-12-20",
+        "accession": "0001730168-24-000139"
+      },
+      {
+        "period_end": "2025-02-02",
+        "form": "10-Q",
+        "filed": "2025-03-12",
+        "accession": "0001730168-25-000021"
+      },
+      {
+        "period_end": "2025-05-04",
+        "form": "10-Q",
+        "filed": "2025-06-11",
+        "accession": "0001730168-25-000064"
+      },
+      {
+        "period_end": "2025-08-03",
+        "form": "10-Q",
+        "filed": "2025-09-10",
+        "accession": "0001730168-25-000098"
+      },
+      {
+        "period_end": "2025-11-02",
+        "form": "10-K",
+        "filed": "2025-12-18",
+        "accession": "0001730168-25-000121"
+      },
+      {
+        "period_end": "2026-02-01",
+        "form": "10-Q",
+        "filed": "2026-03-11",
+        "accession": "0001730168-26-000016"
+      },
+      {
+        "period_end": "2026-05-03",
+        "form": "10-Q",
+        "filed": "2026-06-09",
+        "accession": "0001730168-26-000054"
+      }
+    ]
+  },
   "financials_usd_m": {
     "revenue": [
       3541.0,
@@ -2161,6 +2403,7 @@
     ]
   },
   "followup_closure": {
+    "period": "Q2 2026",
     "labels": [
       "已验证",
       "部分验证",
@@ -2173,9 +2416,10 @@
       3,
       1
     ],
-    "note": "上季（本页 Q1 2026）留下的 6 条待验证问题，本季闭环情况：AI 半导体收入能否兑现口头指引、non-GAAP 营业利润率这条新指引能否结算，两条<b>已验证</b>。采购承诺是否继续攀升、分部营业利润与分部成本是否延续、Adjusted EBITDA 能否守住 68%，三条<b>仍未披露</b>——前两条是因为截至本页构建时 FY2026 Q3 的 10-Q 尚未申报（去年同季为发布后第 8 天），第三条是因为公司停止披露该指标。「回购恢复到 US$2B 以上」<b>被证伪</b>：本季为零。"
+    "note": "上季（本页 Q1 2026）留下的 6 条待验证问题，本季闭环情况：AI 半导体收入能否兑现口头指引、non-GAAP 营业利润率这条新指引能否结算，两条<b>已验证</b>。采购承诺是否继续攀升、分部营业利润与分部成本是否延续、Adjusted EBITDA 能否守住 68%，三条<b>仍未披露</b>——前两条是因为截至本页构建时 FY2026 Q3 的 10-Q 尚未申报（去年同季为发布后第 6 天），第三条是因为公司停止披露该指标。「回购恢复到 US$2B 以上」<b>被证伪</b>：本季为零。"
   },
   "tracked_metric_verdicts": {
+    "period": "Q2 2026",
     "labels": [
       "优于阈值",
       "符合阈值",
@@ -2199,13 +2443,16 @@
       "expected_release": "2026 年 12 月上旬",
       "revenue_usd_bn": 34.8,
       "revenue_form": "point",
+      "formal_qualifier": "approximately",
       "non_gaap_operating_margin_pct": 66.0,
       "adjusted_ebitda_margin_pct": null,
       "ai_semiconductor_revenue_usd_bn": 21.7,
+      "ai_semiconductor_revenue_quote": "to accelerate to $21.7 billion",
       "note": "正式指引这次只有两条，都在「Fourth Quarter Fiscal Year 2026 Business Outlook」区块里，都是单点（approximately）：收入约 US$34.8B、non-GAAP 营业利润率约为收入的 66%。Adjusted EBITDA 指引消失了——上一份还同时给营业利润率和 EBITDA 两条，这一份只剩前者。第三条 AI 半导体收入 US$21.7B 出自 CEO 引语、不在 Business Outlook 区块内，而且不带 approximately（原文 “to $21.7 billion”），口径级别与前两条不同，本页分开画。"
     }
   },
   "next_kpi": {
+    "period": "Q2 2026",
     "quantified": [
       {
         "metric": "AI 半导体收入（季）",
@@ -2213,6 +2460,7 @@
         "threshold": 21700.0,
         "current": 16700.0,
         "unit": "usd_m",
+        "threshold_kind": "growth",
         "note": "公司对下季给出 US$21.7B。注意这条出自 CEO 引语、不在 Business Outlook 区块里，且原文<b>不带</b> approximately，与下面两条正式指引不是同一个证据等级。"
       },
       {
@@ -2221,6 +2469,7 @@
         "threshold": 34800.0,
         "current": 29591.0,
         "unit": "usd_m",
+        "threshold_kind": "growth",
         "note": "公司对下季给出「约 US$34.8B」的单点指引。这一条接替了退役的 Adjusted EBITDA 利润率：那条线本季起无数可结算，而收入是本份新闻稿里仅有的两条正式指引之一。"
       },
       {
@@ -2229,6 +2478,7 @@
         "threshold": 8752.0,
         "current": 8752.0,
         "unit": "usd_m",
+        "threshold_kind": "level",
         "note": "<b>本季新闻稿没有给软件分部的下季指引</b>，上一季那个 US$8.9B 的口径这次没有对应项。所以这里不写公司数，改用本季实际值做持平线：跌破 US$8,752M 即为脉冲回落。阈值是本地设定，不是公司指引。"
       },
       {
@@ -2237,6 +2487,7 @@
         "threshold": 66.0,
         "current": 67.9,
         "unit": "pct",
+        "threshold_kind": "level",
         "note": "下季指引约 66%，比上季给的 67% 低一格。这条指引到本季为止只结算过一次（67.91% vs 67%），历史兑现记录仍然只有一个点。"
       },
       {
@@ -2245,6 +2496,7 @@
         "threshold": 2000.0,
         "current": 0.0,
         "unit": "usd_m",
+        "threshold_kind": "level",
         "note": "本季回购为零，是设定这条线以来离恢复线最远的一次；公司未解释。历史上零回购出现过 15 次，所以零本身不是异常，连续零才是。"
       }
     ],
@@ -2394,6 +2646,11 @@
     "total_debt": "取资产负债表的 LongTermDebtNoncurrent + LongTermDebtCurrent，**不是**业绩发布上的债务行 —— 两者按定义就不同，逐季相差几十到几千不等。一个具体的例子值得记下来，因为它看起来最像抄错：2022-05-01 与 2022-07-31 两个季末，本站都写 41,227。那不是重复粘贴：FY2022 Q2 的 10-Q（0001730168-22-000081，2022-06-09）与 FY2022 Q3 的 10-Q（0001730168-22-000094，2022-09-08）**两份互相独立的申报**都印着 40,958 + 269，那两个季度之间公司确实没有发债也没有到期。两个连续季度的债务余额一模一样是可能的，看到它先去核第二份申报，不要先假定是抄错。",
     "share_repurchases": "发布稿在没有回购的季度印一个破折号，本站写 0.0 —— 同一件事的两种写法，不是差异。",
     "common_dividends": "本站这一条只含普通股股息。业绩发布在 2019Q4–2022Q3 的十二个季度里多出 75（或 74），那是 8.00% 强制可转换优先股 Series A 的股息，发布稿自己写明「preferred stock, totaling $75 million」；2018Q1 多出的 39 是付给 Broadcom Cayman L.P. 份额持有人的分配。"
+  },
+  "capital_return_story": {
+    "period": "Q2 2026",
+    "buyback_change_explained": false,
+    "evidence": "2026-09-02 那份 EX-99.1 里「repurchase」只出现在两处：前瞻性陈述的免责条款，与现金流量表的「Repurchases of common stock - repurchase program」一行（本季 —，上季 (600)）；要点行、正文与 CEO、CFO 两段引语都没有提回购。本页据此写「公司没有解释」，只以业绩新闻稿为据。"
   },
   "window_note_2016_2017": "33 季 → 41 季（2026-08 回填）→ 42 季。前面新增的八季（Q1 2016–Q4 2017，即财政 FY2016 Q2 至 FY2018 Q1）由两条互相独立的路径各取一遍：10-Q/10-K 的 XBRL R 表，与各季业绩 8-K 的 EX-99.1。**48 个两边都有值的格子里只有 1 格不同**，而那一格正是下面记的那次重述。两个申报主体：2018 年 4 月迁册之前是 Broadcom Limited / Broadcom Pte. Ltd.（CIK 1649338），之后是 Broadcom Inc.（CIK 1730168）。财年闭合：FY2016 与 FY2017 的四季之和对 10-K 全年，九条线全部零残差。窗口现为 42 季：2026-09-02 发布的 FY2026 Q3（本站 Q2 2026，截至 2026-08-02）已接入。",
   "q3_2017_restatement": {

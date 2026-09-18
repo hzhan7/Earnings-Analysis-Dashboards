@@ -58,7 +58,11 @@ sys.path.insert(0, str(ROOT))
 
 from build import mu  # noqa: E402
 from build.all import ENTRIES, GROUPS, build_all, roster_payload  # noqa: E402
-from build.board import headroom  # noqa: E402
+from build.board import cn_count, headroom  # noqa: E402
+
+# From this quarter on every release prints the full statement (cost of goods
+# sold, R&D, SG&A); before it the record has a seventeen-quarter hole.
+FULL_STATEMENT_FROM = "Q4 2021"
 
 
 def js_payload(path: Path, marker: str) -> dict:
@@ -132,8 +136,14 @@ class MuSeriesTest(unittest.TestCase):
                     self.assertAlmostEqual(
                         gross - sum(legs), operating, places=4,
                         msg="gross margin less the three expense lines must equal operating income")
-        self.assertEqual(gross_checked, 25)
-        self.assertEqual(expense_checked, 19)
+        # Counted against the disclosure's own shape rather than a typed total,
+        # so appending a quarter moves both sides together: cost of goods sold
+        # exists for the first six quarters and for every quarter from Q4 2021
+        # on (FULL_STATEMENT_FROM); the expense split only for the latter.
+        tail = len(self.periods) - self.periods.index(FULL_STATEMENT_FROM)
+        self.assertEqual(gross_checked, 6 + tail)
+        self.assertEqual(expense_checked, tail)
+        self.assertGreaterEqual(expense_checked, 19)
 
     def test_the_company_free_cash_flow_definition_reproduces_its_own_figure(self) -> None:
         """`adjusted free cash flow = operating cash flow - investments in capex, net`.
@@ -234,9 +244,11 @@ class MuSeriesTest(unittest.TestCase):
                 self.assertAlmostEqual(
                     tech["dram_revenue_usd_m"][index] / self.fin["revenue_usd_m"][index] * 100,
                     tech["dram_share_pct"][index], places=1)
-        self.assertEqual(checked, 19)
         pad = len(self.periods) - checked
+        # The pad is history and does not move with a roll: the split starts
+        # at Q4 2021, the 24th quarter of the record.
         self.assertEqual(pad, 23)
+        self.assertEqual(self.periods[pad], FULL_STATEMENT_FROM)
         self.assertTrue(all(v is None for v in tech["dram_revenue_usd_m"][:pad]))
         self.assertTrue(all(v is not None for v in tech["dram_revenue_usd_m"][pad:]))
 
@@ -309,8 +321,11 @@ class MuSeriesTest(unittest.TestCase):
                         self.bal["inventories_usd_m"][index]
                         / self.fin["cost_of_goods_sold_usd_m"][index] * days,
                         self.bal["dio_days"][index], places=2)
-        self.assertEqual(dso_checked, 41)
-        self.assertEqual(dio_checked, 24)
+        # DSO runs from the second quarter on; DIO shares the COGS hole, with
+        # five early quarters and everything from Q4 2021.
+        self.assertEqual(dso_checked, len(self.periods) - 1)
+        self.assertEqual(dio_checked,
+                         5 + len(self.periods) - self.periods.index(FULL_STATEMENT_FROM))
 
     def test_the_annual_cycle_covers_a_full_swing_in_both_directions(self) -> None:
         """The long series is the page's whole argument; assert it is really long.
@@ -778,7 +793,7 @@ class MuPublishedArtefactTest(unittest.TestCase):
             self.assertNotIn("8 月底制财年", text)
             # the site-wide README gate keys on this phrase in cadence_label
             self.assertIn("本站按自然年季度标注", text)
-        self.assertIn("2026-09-03", self.payload["subtitle"])
+        self.assertIn(self.staging["_checks"]["fiscal_year_end"], self.payload["subtitle"])
         # No count of how many past years ended in September: that number moves
         # with the next 10-K and nothing on the page recomputes it. The rule and
         # the filer record do not move, and the page is pinned to a quarter
@@ -802,11 +817,75 @@ class MuPublishedArtefactTest(unittest.TestCase):
         a gap, and a page that does not say so reads as though the data ran out.
         """
         notes = " ".join(self.payload["notes"])
-        self.assertIn("业务单元序列只有八个季度", notes)
+        units = self.staging["business_units"]
+        self.assertIn(f"业务单元序列只有{cn_count(len(units['quarters']))}个季度", notes)
         self.assertIn("不往前补", notes)
         self.assertIn("不画未完结的财年", notes)
-        units = self.staging["business_units"]
-        self.assertEqual(len(units["quarters"]), 8)
+        # The unit table starts at the release that first printed it and runs
+        # to the page's quarter, one column per quarter, with no gap.
+        self.assertEqual(units["quarters"][0], "Q3 2024")
+        self.assertEqual(units["quarters"],
+                         self.staging["periods"][self.staging["periods"].index("Q3 2024"):])
+
+
+class MuChecksTest(unittest.TestCase):
+    """The page's quarter against a record keyed separately from the filing.
+
+    `_checks` in the series file is typed once per quarter from the earnings
+    release itself, with the place in the document it was read from -- it is
+    not copied out of the arrays, and the builder never reads it (asserted in
+    `test_data_only_roll`). Every assertion here compares what the builder
+    computed from the arrays with that separate reading, so a roll that
+    misaligns a column, drops the new quarter or keeps last quarter's sentence
+    fails here. Rolling a quarter re-keys `_checks`; this file does not change.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(mu.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.checks = cls.staging["_checks"]
+        cls.fin = cls.staging["financials"]
+        cls.payload = mu.build_payload(cls.staging)
+        cls.exhibits = [exhibit for section in cls.payload["sections"]
+                        for exhibit in section["exhibits"]]
+
+    def test_the_page_names_the_checked_quarter_both_ways(self) -> None:
+        self.assertIn(self.checks["period"], self.payload["title"])
+        self.assertIn(f"本页 {self.checks['period']} 即公司所称 {self.checks['fiscal_label']}",
+                      self.payload["subtitle"])
+        self.assertIn(f"季度截至 {self.checks['period_end']}", self.payload["subtitle"])
+
+    def test_the_series_ends_on_the_checked_figures(self) -> None:
+        checks, fin = self.checks, self.fin
+        self.assertEqual(fin["revenue_usd_m"][-1], checks["revenue_usd_m"])
+        # The release prints both margins to one decimal; the series carries
+        # them unrounded, so they must round to what was printed.
+        self.assertEqual(round(fin["gaap_gross_margin_pct"][-1], 1), checks["gaap_gross_margin_pct"])
+        self.assertEqual(round(fin["non_gaap_gross_margin_pct"][-1], 1),
+                         checks["non_gaap_gross_margin_pct"])
+        self.assertEqual(fin["gaap_diluted_eps_usd"][-1], checks["gaap_diluted_eps_usd"])
+        self.assertEqual(fin["non_gaap_diluted_eps_usd"][-1], checks["non_gaap_diluted_eps_usd"])
+        self.assertEqual(round(fin["adjusted_free_cash_flow_usd_m"][-1] / 1000, 1),
+                         checks["adjusted_free_cash_flow_usd_bn"])
+        outlook = self.staging["next_quarter_guidance"]
+        self.assertEqual(outlook["revenue_usd_m"], checks["next_quarter_revenue_guide_usd_m"])
+        self.assertEqual(outlook["non_gaap_gross_margin_pct"],
+                         checks["next_quarter_non_gaap_gross_margin_guide_pct"])
+
+    def test_the_headline_prints_the_checked_figures(self) -> None:
+        headline = self.payload["headline"]
+        self.assertIn(f"收入 US${self.checks['revenue_usd_m']:,.0f}M", headline)
+        self.assertIn(f"non-GAAP 毛利率 {self.checks['non_gaap_gross_margin_pct']:.1f}%", headline)
+        self.assertIn(f"每股收益 US${self.checks['non_gaap_diluted_eps_usd']:.2f}", headline)
+
+    def test_the_cash_chart_and_the_outlook_table_print_the_checked_figures(self) -> None:
+        cash = next(e for e in self.exhibits if "的现金三条" in e["title"])
+        self.assertIn(f"调整后自由现金流 US${self.checks['adjusted_free_cash_flow_usd_bn']:.1f}B",
+                      cash["title"])
+        rows = {row[0]: row for row in self.payload["guidance"]["rows"]}
+        self.assertIn(f"US${self.checks['next_quarter_revenue_guide_usd_m'] / 1000:.1f}B", rows["收入"][2])
+        self.assertIn(f"{self.checks['next_quarter_non_gaap_gross_margin_guide_pct']:.1f}%",
+                      rows["毛利率"][2])
 
 
 if __name__ == "__main__":

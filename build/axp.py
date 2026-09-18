@@ -41,6 +41,7 @@ from build.board import (  # noqa: E402
     ai_capex_cycle_table,
     delivery_band,
     headroom_exhibit,
+    latest_block,
     midpoint_deviation,
     number_exhibits,
     threshold_exhibit,
@@ -812,6 +813,17 @@ def routine_charts(staging: dict) -> list[dict]:
     return [price_chart, share_chart, rate_chart, buyback_chart]
 
 
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    fin = staging["financials"]
+    fees = fin["net_card_fees_usd_m"]
+    vce = (fin["rewards_usd_m"][-1] + fin["card_member_services_usd_m"][-1]
+           + fin["business_development_usd_m"][-1])
+    return [f"Revenue ${fin['revenue_usd_m'][-1] / 1000:.1f}B",
+            f"净卡费 {(fees[-1] / fees[-5] - 1) * 100:+.1f}%",
+            f"VCE 占收入 {vce / fin['revenue_usd_m'][-1] * 100:.1f}%"]
+
+
 def build_payload(staging: dict) -> dict:
     fin = staging["financials"]
     om = staging["operating_metrics"]
@@ -926,15 +938,10 @@ def build_payload(staging: dict) -> dict:
             "group": "payment_networks",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": "2026-06-30",
-            "release_date": "2026-07-24",
-            "analysis_date": "2026-08-29",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=staging["period_labels"][-1],
+            period_end=staging["period_ends"][-1]),
         "tracker": "Watchlist Quarterly Tracker · AXP",
         "title": "American Express (AXP)：Q2 2026 季报仪表盘",
         "subtitle": ("截至 2026-06-30 · 发布 2026-07-24 · US GAAP · 未审计 · "

@@ -1,5 +1,11 @@
 {
   "_provenance": "所有公司披露值逐季读自 SEC EDGAR 上 Visa Inc.（CIK 1403161）的申报文件：55 份 10-Q 与 10-K 的合并损益表、收入分解附注（Service / Data processing / International transaction / Other 四条毛收入线与 Client incentives 抵减线、以及 U.S./International 分地区净收入）、合并现金流量表，以及各季业绩 8-K 的 EX-99.1。财政年度截至 9 月 30 日；本页一律按自然年季度标注（FY 的 Q1→上一自然年 Q4，Q2→Q1，Q3→Q2，Q4→Q3）。10-Q 的损益表本身就印三个月栏，故会计季 Q1–Q3 为申报值、无需任何差分；会计季 Q4 无 10-Q，其损益表各行为 10-K 全年数减去 6 月 10-Q 的九个月栏，两端均为申报值。现金流量表在 10-Q 里只有年初至今栏，故除会计 Q1 外每季均为相邻两次申报值之差。每股口径不可相减：EPS 不是可加项，加权平均股数也无法由减法还原，因此会计季 Q4 在每股序列里是<b>空档</b>而不是推算值，四条水平序列每年缺第四个点。四条毛收入线之和减去 Client incentives 等于申报净收入、U.S. 与 International 之和等于申报净收入、净收入减营业费用等于营业利润，55 个季度逐季核对全部相等。",
+  "latest": {
+    "period": "Q2 2026",
+    "release_date": "2026-07-28",
+    "analysis_date": "2026-07-29",
+    "audit_status": "unaudited"
+  },
   "periods": [
     "Q3 2024",
     "Q4 2024",

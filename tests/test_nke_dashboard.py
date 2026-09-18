@@ -42,7 +42,20 @@ sys.path.insert(0, str(ROOT))
 
 from build.all import ENTRIES, GROUPS  # noqa: E402
 from build.board import headroom  # noqa: E402
+from build.board import stamped_block  # noqa: E402
 from build.nke import build_payload, compact_period, fiscal_to_calendar  # noqa: E402
+
+
+def quarters_between(first: str, last: str) -> int:
+    """Calendar quarters from ``first`` to ``last`` inclusive: ``'Q3 2016'``..``'Q2 2026'`` → 40."""
+    (q1, y1), (q2, y2) = (label.split() for label in (first, last))
+    return (int(y2) - int(y1)) * 4 + int(q2[1]) - int(q1[1]) + 1
+
+
+def latest_fiscal_year(fiscal_label: str) -> int:
+    """The last fiscal year a 10-K has closed, as of the quarter ``'FY2026Q4'`` names."""
+    year, quarter = int(fiscal_label[2:6]), int(fiscal_label[-1])
+    return year if quarter == 4 else year - 1
 
 
 def js_payload(path: Path, assignment: str) -> dict:
@@ -62,6 +75,7 @@ class NkeDashboardTest(unittest.TestCase):
         cls.seg = cls.source["segments_usd_m"]
         cls.history = cls.source["long_history"]
         cls.targets = cls.source["filed_targets"]
+        cls.one_off = stamped_block(cls.source, "one_off_usd_m", cls.source["periods"][-1])
 
     # ── shape ────────────────────────────────────────────────────────────────
     def test_the_window_is_eight_quarters_and_complete(self) -> None:
@@ -89,18 +103,18 @@ class NkeDashboardTest(unittest.TestCase):
             else:
                 self.assertEqual(quarter, f"Q{int(fiscal_quarter) - 2}")
                 self.assertEqual(int(year), int(fiscal_year))
-        self.assertEqual(self.source["periods"][-1], "Q2 2026")
-        self.assertEqual(self.source["fiscal_labels"][-1], "FY2026Q4")
-        self.assertEqual(self.source["period_ends"][-1], "2026-05-31")
 
-    def test_the_long_quarterly_record_is_forty_quarters(self) -> None:
+    def test_the_long_quarterly_record_runs_from_fy2017_to_the_page_quarter(self) -> None:
+        """Forty quarters when this was written; the invariant is the span."""
         long_q = self.source["long_quarters"]
-        self.assertEqual(len(long_q["periods"]), 40)
         self.assertEqual(long_q["fiscal_labels"][0], "FY2017Q1")
-        self.assertEqual(long_q["fiscal_labels"][-1], "FY2026Q4")
+        self.assertEqual(long_q["periods"][-1], self.source["periods"][-1])
+        self.assertEqual(long_q["fiscal_labels"][-1], self.source["fiscal_labels"][-1])
+        span = quarters_between(long_q["periods"][0], long_q["periods"][-1])
+        self.assertGreaterEqual(span, 40)
         for key, values in long_q.items():
             if isinstance(values, list):
-                self.assertEqual(len(values), 40, key)
+                self.assertEqual(len(values), span, key)
 
     def test_the_channel_record_starts_at_asc_606_and_is_not_padded(self) -> None:
         """The revenue-disaggregation note begins with ASC 606 in FY2019.  The
@@ -110,8 +124,10 @@ class NkeDashboardTest(unittest.TestCase):
         is the honest answer; padding it backwards would invent the split."""
         channel = self.source["channel_quarters"]
         self.assertEqual(channel["fiscal_labels"][0], "FY2019Q1")
-        self.assertEqual(len(channel["fiscal_labels"]), 32)
         self.assertEqual(channel["periods"][0], "Q3 2018")
+        self.assertEqual(channel["periods"][-1], self.source["periods"][-1])
+        self.assertEqual(len(channel["fiscal_labels"]),
+                         quarters_between(channel["periods"][0], channel["periods"][-1]))
 
     # ── statement identities, in all forty quarters ──────────────────────────
     def test_income_statement_closes_to_the_dollar(self) -> None:
@@ -220,22 +236,35 @@ class NkeDashboardTest(unittest.TestCase):
                 history["nike_direct_usd_m"][index] / history["nike_brand_usd_m"][index] * 100,
                 history["nike_direct_share_pct"][index], places=3, msg=str(year))
         self.assertEqual(history["fiscal_years"][0], 2014)
-        self.assertEqual(history["fiscal_years"][-1], 2026)
+        # The annual record ends at the last year a 10-K has closed.
+        self.assertEqual(history["fiscal_years"][-1],
+                         latest_fiscal_year(self.source["fiscal_labels"][-1]))
         self.assertAlmostEqual(history["nike_direct_share_pct"][0], 20.3, delta=0.05)
         self.assertAlmostEqual(max(history["nike_direct_share_pct"]), 43.7, delta=0.05)
-        self.assertAlmostEqual(history["nike_direct_share_pct"][-1], 39.2, delta=0.05)
 
     # ── the one-off items ────────────────────────────────────────────────────
     def test_the_tariff_refund_is_isolated_to_one_quarter(self) -> None:
-        one_off = self.source["one_off_usd_m"]
+        """A one-quarter story lives in a block stamped with that quarter.
+
+        While the block is current its pieces have to add up; once a roll moves
+        past it the block is dropped and no refund language may survive on the
+        page -- the failure this replaces is last quarter's refund narrated under
+        this quarter's label.
+        """
+        one_off = self.one_off
+        if one_off is None:
+            blob = json.dumps(self.payload, ensure_ascii=False)
+            self.assertNotIn("IEEPA", blob.split('"tables"')[0])
+            return
         refund = one_off["ieepa_tariff_refund_benefit"]
-        self.assertEqual(refund[:-1], [None] * 7,
+        self.assertEqual(refund[:-1], [None] * (len(refund) - 1),
                          "the refund is a single quarter's event, not a series of zeros")
-        self.assertEqual(refund[-1], 986.0)
         self.assertEqual(one_off["ieepa_refund_north_america"] + one_off["ieepa_refund_converse"],
-                         986.0)
+                         refund[-1])
         self.assertEqual(one_off["ieepa_cash_received_by_period_end"]
-                         + one_off["ieepa_receivable_at_period_end"], 986.0)
+                         + one_off["ieepa_receivable_at_period_end"], refund[-1])
+        # the year's refund in the annual record is the same money
+        self.assertEqual(self.history["ieepa_refund_usd_m"][-1], refund[-1])
 
     def test_gross_margin_ex_refund_is_the_refund_removed_and_nothing_else(self) -> None:
         fin, one_off = self.fin, self.source["one_off_usd_m"]
@@ -245,13 +274,13 @@ class NkeDashboardTest(unittest.TestCase):
                         / fin["revenue_usd_m"][index] * 100)
             self.assertAlmostEqual(expected, fin["gross_margin_ex_tariff_refund_pct"][index],
                                    places=3, msg=self.source["periods"][index])
-        self.assertAlmostEqual(fin["gross_margin_pct"][-1], 49.15, delta=0.02)
-        self.assertAlmostEqual(fin["gross_margin_ex_tariff_refund_pct"][-1], 40.17, delta=0.02)
-        # The company's own release says the quarter's gross margin carried an
-        # "approximately 900 basis point benefit"; the subtraction gives 8.99pp.
-        self.assertAlmostEqual(
-            fin["gross_margin_pct"][-1] - fin["gross_margin_ex_tariff_refund_pct"][-1],
-            9.0, delta=0.05)
+        # The release prints the margin and the refund's effect in basis points;
+        # both are keyed separately into `_checks` and the series must agree.
+        checks = self.source["_checks"]
+        self.assertEqual(round(fin["gross_margin_pct"][-1], 1), checks["gross_margin_pct"])
+        refund_pp = fin["gross_margin_pct"][-1] - fin["gross_margin_ex_tariff_refund_pct"][-1]
+        self.assertAlmostEqual(refund_pp * 100, checks.get("refund_gross_margin_benefit_bp", 0),
+                               delta=5)
 
     def test_the_fiscal_fourth_quarter_severance_is_a_difference_of_two_filed_figures(self) -> None:
         """The 10-Q prints "three months ... and nine months" in one sentence.
@@ -265,17 +294,17 @@ class NkeDashboardTest(unittest.TestCase):
         quarter put MORE into cost of sales than the whole nine months before it,
         while releasing part of the operating-overhead accrual.
         """
-        sev, one_off = self.source["severance"], self.source["one_off_usd_m"]
-        year = sev["total_usd_m"][sev["fiscal_years"].index(2026)]
-        self.assertEqual(year, 385.0)
-        self.assertEqual(sev["fy2026_nine_months_total_usd_m"], 304.0)
-        self.assertEqual(sev["fy2026_q3_quarter_total_usd_m"], 230.0)
-        self.assertEqual(one_off["severance_q4_total"], year - sev["fy2026_nine_months_total_usd_m"])
-        self.assertEqual(one_off["severance_q4_total"], 81)
+        sev, one_off = self.source["severance"], self.one_off
+        if one_off is None:
+            return          # no fiscal-fourth decomposition is published this quarter
+        year = sev["total_usd_m"][sev["fiscal_years"].index(sev["interim_fiscal_year"])]
+        self.assertEqual(one_off["severance_q4_total"], year - sev["nine_months_total_usd_m"])
+        self.assertNotEqual(one_off["severance_q4_total"], year - sev["q3_quarter_total_usd_m"],
+                            "reading the quarter as the nine months gives a different fourth quarter")
         self.assertEqual(one_off["severance_q4_cost_of_sales"],
-                         sev["cost_of_sales_usd_m"][-1] - sev["fy2026_nine_months_cost_of_sales_usd_m"])
+                         sev["cost_of_sales_usd_m"][-1] - sev["nine_months_cost_of_sales_usd_m"])
         self.assertEqual(one_off["severance_q4_operating_overhead"],
-                         sev["operating_overhead_usd_m"][-1] - sev["fy2026_nine_months_overhead_usd_m"])
+                         sev["operating_overhead_usd_m"][-1] - sev["nine_months_overhead_usd_m"])
         self.assertEqual(one_off["severance_q4_cost_of_sales"]
                          + one_off["severance_q4_operating_overhead"],
                          one_off["severance_q4_total"])
@@ -402,9 +431,15 @@ class NkeDashboardTest(unittest.TestCase):
         stops being true, and this is what says so.
         """
         entries = self.source["prior_kpi_settlement"]
-        self.assertEqual(len(entries), 4)
-        signs = [headroom(e["direction"], e["threshold"], e["actual"]) > 0 for e in entries]
-        self.assertEqual(signs, [False, True, False, True])
+        # Recounted here, and the chart's title must say the same thing.
+        bull = [e for e in entries if "加仓门槛" in e["metric"]]
+        fired = sum(1 for e in entries
+                    if (headroom(e["direction"], e["threshold"], e["actual"]) > 0) == (e in bull))
+        title = self.by_section["settled"][0]["title"]
+        if fired == 0:
+            self.assertIn("一个动作都没触发", title)
+        else:
+            self.assertNotIn("一个动作都没触发", title)
 
     def test_the_target_headroom_chart_plots_the_last_vintage_only(self) -> None:
         latest = next(v for v in self.targets["vintages"] if v["key"] == "fy2025")
@@ -420,7 +455,14 @@ class NkeDashboardTest(unittest.TestCase):
                          ["settled", "quarter_highlights", "next_quarter", "routine"])
         self.assertEqual([ex["n"] for ex in self.exhibits],
                          list(range(1, len(self.exhibits) + 1)))
-        self.assertEqual(len(self.exhibits), 24)
+        # 22 charts every quarter, plus the gross-margin bridge while a stamped
+        # one-off block exists and the buyback-price chart while the programme
+        # block describes the latest fiscal year.
+        buyback = self.source.get("buyback_programme")
+        optional = ((self.one_off is not None)
+                    + (buyback is not None
+                       and buyback["as_of_fiscal_year"] == self.history["fiscal_years"][-1]))
+        self.assertEqual(len(self.exhibits), 22 + optional)
         for exhibit in self.exhibits:
             self.assertNotIn("ref", exhibit, exhibit["n"])
             for field in ("title", "note", "src_extra"):
@@ -480,6 +522,10 @@ class NkeDashboardTest(unittest.TestCase):
         rest of the section settles.
         """
         guidance = self.payload["guidance"]
+        if stamped_block(self.source, "guidance", self.source["periods"][-1]) is None:
+            self.assertIsNone(guidance)
+            return
+        self.assertNotIn("period", guidance)
         self.assertIn("电话会", guidance["title"])
         self.assertIn("不在任何申报文件中", guidance["title"])
         self.assertIn("conference call", guidance["note"])
@@ -532,6 +578,63 @@ class NkeDashboardTest(unittest.TestCase):
         self.assertEqual(fiscal_to_calendar("FY2026Q4"), "Q2 2026")
         self.assertEqual(fiscal_to_calendar("FY2026Q1"), "Q3 2025")
         self.assertEqual(fiscal_to_calendar("FY2018Q3"), "Q1 2018")
+
+
+
+class NkeChecksTest(unittest.TestCase):
+    """The page's quarter against `_checks`, keyed separately from the release.
+
+    Same contract as the other migrated pages: the builder never reads
+    `_checks` (asserted in `test_data_only_roll`), a roll re-keys it from the
+    new release, and nothing in this class changes with the quarter.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads((ROOT / "series" / "nke.json").read_text(encoding="utf-8"))
+        cls.checks = cls.source["_checks"]
+        cls.payload = build_payload(cls.source)
+        cls.fin = cls.source["financials"]
+        cls.history = cls.source["long_history"]
+
+    def test_the_page_names_the_checked_quarter_both_ways(self) -> None:
+        self.assertIn(self.checks["period"], self.payload["title"])
+        self.assertIn(f"本页 {self.checks['period']} 即公司所称 {self.checks['fiscal_label']}",
+                      self.payload["subtitle"])
+        self.assertIn(f"三个月截至 {self.checks['period_end']}", self.payload["subtitle"])
+        self.assertIn(self.checks["fiscal_label"].replace(" ", ""), self.source["fiscal_labels"][-1])
+
+    def test_the_series_ends_on_the_checked_figures(self) -> None:
+        checks, fin = self.checks, self.fin
+        self.assertEqual(fin["revenue_usd_m"][-1], checks["revenue_usd_m"])
+        self.assertEqual(fin["diluted_eps_usd"][-1], checks["diluted_eps_usd"])
+        self.assertAlmostEqual((fin["gross_margin_pct"][-1] - fin["gross_margin_pct"][-5]) * 100,
+                               checks["gross_margin_yoy_bp"], delta=5)
+        self.assertEqual(self.source["segments_usd_m"]["north_america_ebit"][-1],
+                         checks["north_america_ebit_usd_m"])
+        growth = self.source["growth_pct"]
+        self.assertEqual(growth["north_america_currency_neutral"][-1],
+                         checks["north_america_revenue_cn_pct"])
+        self.assertEqual(growth["greater_china_currency_neutral"][-1],
+                         checks["greater_china_revenue_cn_pct"])
+        at = self.history["fiscal_years"].index(checks["fiscal_year"])
+        self.assertEqual(self.history["revenue_usd_m"][at], checks["fiscal_year_revenue_usd_m"])
+        self.assertEqual(round(self.history["gross_margin_pct"][at], 1),
+                         checks["fiscal_year_gross_margin_pct"])
+        self.assertEqual(round(self.history["ebit_margin_pct"][at], 1),
+                         checks["fiscal_year_ebit_margin_pct"])
+        refund = self.history["ieepa_refund_usd_m"][at] or 0
+        self.assertEqual(refund, checks.get("ieepa_refund_usd_m", 0))
+
+    def test_the_head_prints_the_checked_figures(self) -> None:
+        checks = self.checks
+        self.assertIn(f"报表毛利率 {checks['gross_margin_pct']:.1f}%", self.payload["headline"])
+        exhibits = [e for section in self.payload["sections"] for e in section["exhibits"]]
+        america = next(e for e in exhibits if e["title"].startswith("北美收入同比"))
+        self.assertIn(f"本季 {checks['north_america_revenue_cn_pct']:+.0f}%", america["title"])
+        china = next(e for e in exhibits if e["title"].startswith("大中华区收入同比"))
+        self.assertIn(f"本季 {checks['greater_china_revenue_cn_pct']:+.0f}%".replace("-", "−"),
+                      china["title"])
 
 
 if __name__ == "__main__":

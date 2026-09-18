@@ -452,8 +452,8 @@ class KerDashboardTest(unittest.TestCase):
         self.assertIn(self.payload["latest"]["release_date"], card)
         self.assertIn(self.payload["latest"]["disclosed_period_label"], card)
         self.assertIn("KER.PA", card)
-        entry = next(e for e in ENTRIES if e["slug"] == "ker")
-        self.assertIn(" · ".join(entry["headline_metrics"]), card)
+        staging = json.loads(ker.STAGING_PATH.read_text(encoding="utf-8"))
+        self.assertIn(" · ".join(ker.headline_metrics(staging)), card)
 
 
 if __name__ == "__main__":

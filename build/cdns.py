@@ -33,6 +33,7 @@ from build.board import (  # noqa: E402
     delivery_band,
     headroom,
     headroom_exhibit,
+    latest_block,
     midpoint_deviation,
     number_exhibits,
     threshold_exhibit,
@@ -256,6 +257,13 @@ def guidance_delivery_charts(staging: dict) -> list[dict]:
         ),
     )
     return [revenue_band, revenue_dev, margin_band, margin_dev, eps_band, eps_dev]
+
+
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    return [f"Revenue ${staging['quarterly_usd_m']['revenue_total'][-1] / 1000:.2f}B",
+            f"Backlog ${staging['quarterly_other']['backlog_usd_bn'][-1]:.1f}B",
+            f"Non-GAAP OpM {staging['quarterly_pct']['non_gaap_operating_margin'][-1]:.1f}%"]
 
 
 def build_payload(staging: dict) -> dict:
@@ -1333,15 +1341,10 @@ def build_payload(staging: dict) -> dict:
             "group": "semiconductor_ai",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026（自然年季度）",
-            "period_end": "2026-06-30",
-            "release_date": "2026-07-27",
-            "analysis_date": "2026-07-28",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=staging["periods"][-1],
+            full_label=f'{staging["periods"][-1]}（自然年季度）'),
         "tracker": "Watchlist Quarterly Tracker · CDNS",
         "title": "Cadence Design Systems (CDNS)：Q2 2026 季报仪表盘",
         "subtitle": (
@@ -1420,7 +1423,9 @@ def build_payload(staging: dict) -> dict:
             "不做任何日历调整。",
             "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，"
             "每张图下一到两句解释；支撑表格收在核对抽屉里。",
-            f"Exhibit 2 与 Exhibit {len(settled_ex) + len(highlight_ex) + 2} 的阈值是本地研究设定，"
+            # Both numbers are the thresholds charts' own, read after numbering:
+            # the first used to be typed as 2, which is the follow-up chart.
+            f"Exhibit {settled_charts[1]['n']} 与 Exhibit {next_charts[0]['n']} 的阈值是本地研究设定，"
             "不是公司指引，也不构成评级或投资建议；「距阈值余量」统一为正值代表安全侧。",
             "本页只发布公司披露值、可复算的简单派生值，以及明确标注的市场预期；D 标记代表 Derived / 自算。",
             "指引兑现记录取自各季业绩 8-K 的 EX-99.02 CFO Commentary，"

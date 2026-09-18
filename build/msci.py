@@ -38,6 +38,7 @@ from build.board import (  # noqa: E402
     delivery_band,
     headroom,
     headroom_exhibit,
+    latest_block,
     number_exhibits,
     threshold_exhibit,
     threshold_table,
@@ -205,6 +206,14 @@ def guidance_charts(staging: dict) -> tuple[list[dict], list[dict]]:
                        "headers": ["年度", "年内第一次指引", "当年最后一次指引", "全年实际", "对最后一次指引"],
                        "rows": rows})
     return charts, tables
+
+
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    fin = staging["financials"]
+    return [f"Revenue ${fin['revenue_usd_m'][-1]:.0f}M",
+            f"ETF AUM ${staging['operating_metrics']['aum_period_end_usd_b'][-1]:,.0f}B",
+            f"Adj EBITDA {fin['adj_ebitda_margin_pct'][-1]:.1f}%"]
 
 
 def build_payload(staging: dict) -> dict:
@@ -506,15 +515,10 @@ def build_payload(staging: dict) -> dict:
             "group": "financial_data_indices",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": "2026-06-30",
-            "release_date": "2026-07-21",
-            "analysis_date": "2026-08-29",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=staging["period_labels"][-1],
+            period_end=staging["period_ends"][-1]),
         "tracker": "Watchlist Quarterly Tracker · MSCI",
         "title": "MSCI Inc. (MSCI)：Q2 2026 季报仪表盘",
         "subtitle": ("截至 2026-06-30 · 发布 2026-07-21 · US GAAP · 未审计 · "

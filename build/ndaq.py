@@ -45,6 +45,7 @@ from build.board import (  # noqa: E402
     delivery_band,
     headroom,
     headroom_exhibit,
+    latest_block,
     number_exhibits,
     threshold_exhibit,
     threshold_table,
@@ -649,6 +650,14 @@ def routine_section(staging: dict) -> list[dict]:
     }]
 
 
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    fin = staging["financials"]
+    return [f"Net revenue ${fin['net_revenue'][-1] / 1000:.2f}B",
+            f"ETP AUM ${staging['etp_aum']['period_end_usd_b'][-1]:,.0f}B",
+            f"Non-GAAP OpM {fin['nongaap_margin_pct'][-1]:.1f}%"]
+
+
 def build_payload(staging: dict) -> dict:
     fin = staging["financials"]
     seg = staging["segments"]
@@ -726,15 +735,10 @@ def build_payload(staging: dict) -> dict:
             "group": "financial_data_indices",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": "2026-06-30",
-            "release_date": "2026-07-23",
-            "analysis_date": "2026-08-29",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=staging["period_labels"][-1],
+            period_end=staging["period_ends"][-1]),
         "tracker": "Watchlist Quarterly Tracker · NDAQ",
         "title": "Nasdaq, Inc. (NDAQ)：Q2 2026 季报仪表盘",
         "subtitle": ("截至 2026-06-30 · 发布 2026-07-23 · US GAAP · 未审计 · "

@@ -182,7 +182,22 @@
       302.1,
       297.6,
       295.5
-    ]
+    ],
+    "pro_forma_adjusted_diluted_eps_usd": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      3.92,
+      null,
+      null,
+      null,
+      4.83
+    ],
+    "_pro_forma_adjusted_eps_note": "公司口径的 pro forma non-GAAP adjusted diluted EPS，取自 2026-07-28 业绩新闻稿（8-K EX-99.1）「Second Quarter 2026 Pro Forma Diluted Earnings Per Share」表：2Q'26 $4.83、2Q'25 $3.92（同一张表里的可比列）。其余季度本文件未取数，留空。这一行不是 diluted_eps_usd 的调整版：两者口径不同（pro forma 剔除 Mobility 分拆），不可相减。"
   },
   "long_history": {
     "quarters": [

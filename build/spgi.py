@@ -60,6 +60,7 @@ from build.board import (  # noqa: E402
     delivery_band,
     headroom,
     headroom_exhibit,
+    latest_block,
     midpoint_deviation,
     number_exhibits,
     threshold_exhibit,
@@ -1271,6 +1272,15 @@ def long_capital(staging: dict) -> dict:
     }
 
 
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    fin = staging["financials"]
+    transaction = staging["ratings_revenue_split_usd_m"]["transaction"]
+    return [f"Revenue ${fin['revenue_usd_m'][-1] / 1000:.2f}B",
+            f"Ratings 交易性 {(transaction[-1] / transaction[-5] - 1) * 100:+.0f}%",
+            f"调整后 EPS ${fin['pro_forma_adjusted_diluted_eps_usd'][-1]:.2f}"]
+
+
 def build_payload(staging: dict) -> dict:
     financials = staging["financials"]
     periods = staging["periods"]
@@ -1446,15 +1456,10 @@ def build_payload(staging: dict) -> dict:
             "group": "financial_data_indices",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": "2026-06-30",
-            "release_date": "2026-07-28",
-            "analysis_date": "2026-08-29",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=staging["periods"][-1],
+            period_end=staging["period_ends"][-1]),
         "tracker": "Watchlist Quarterly Tracker · SPGI",
         "title": "S&P Global (SPGI)：Q2 2026 季报仪表盘",
         "subtitle": (

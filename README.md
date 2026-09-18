@@ -114,32 +114,32 @@ no dependency at all, and is what actually runs on a fresh clone.
   addable to either. The cross-page capex table stays in US dollars on every
   page, because it compares four filers that all report in that currency.
 - Quarters are labelled by calendar quarter on every page. Microsoft's fiscal
-  year ends in June, so its `Q2 2026` is the quarter ended 2026-06-30, which the
-  company itself calls FY2026 Q4; NVIDIA's ends in late January, so its
-  `Q1 2026` is the quarter ended 2026-04-26, which the company calls FY2027 Q1;
-  Synopsys' ends in October, so its `Q2 2026` is the quarter ended 2026-07-31,
-  which the company calls FY2026 Q3; Broadcom's ends in early November, so its
-  `Q2 2026` is the quarter ended 2026-08-02, which the company calls FY2026 Q3;
-  Visa's ends in September, so its `Q2 2026`
-  is the quarter ended 2026-06-30, which the company also calls FY2026 Q3;
+  year ends in June, so a calendar Q2 is the quarter the company itself calls
+  Q4 of the same-numbered fiscal year; NVIDIA's ends in late January, so a
+  calendar Q1 — the quarter to late April — is its fiscal Q1 of the year
+  numbered one ahead; Synopsys' ends in October, so a calendar Q2 is its
+  fiscal Q3, ending in late July; Broadcom's ends in early November, so a
+  calendar Q2 is its fiscal Q3, ending in early August; Visa's ends in
+  September, so a calendar Q2 is also its fiscal Q3;
   Costco's ends on the Sunday nearest 31 August and Micron's on the Thursday
   nearest it — their SEC filer records carry 08-30 and 09-03 — so neither
-  reliably ends in August at all. Their `Q2 2026` are the twelve weeks ended
-  2026-05-10 and the quarter ended 2026-05-28, which each company calls
-  FY2026 Q3; TJX's ends on the Saturday nearest 31 January (filer record 02-01),
-  so its `Q2 2026` is the thirteen weeks ended 2026-08-01, which the company
-  calls FY2027 Q2 — a fiscal year numbered one ahead of the calendar year it
-  mostly sits in;
-  NIKE's ends in May, so its `Q2 2026` is the quarter ended 2026-05-31, which
-  the company calls FY2026 Q4 — and because that year-end sits mid-quarter, the
-  offset is not constant across its own year: NIKE's fiscal Q1 and Q2 land in
-  the *previous* calendar year (`Q3` and `Q4`) while its Q3 and Q4 land in the
-  same one; Richemont's ends on 31 March, so its `Q2 2026` is the quarter ended
-  2026-06-30, which the company calls FY2027 Q1, and its profit exists only for
-  the half-years ending 30 September and 31 March, which that page labels by the
-  month each half ends. Each page says so in its subtitle and notes. Without one convention the
-  cross-company capex table would compare different three-month periods and look
-  fine doing it.
+  reliably ends in August at all. For both, a calendar Q2 is the fiscal Q3:
+  Costco's twelve-week one, ending in early May, and Micron's, ending in late
+  May; TJX's ends on the Saturday nearest 31 January (filer record 02-01),
+  so a calendar Q2 is its thirteen-week fiscal Q2 — in a fiscal year numbered
+  one ahead of the calendar year it mostly sits in;
+  NIKE's ends in May, so a calendar Q2 is its fiscal Q4 — and because that
+  year-end sits mid-quarter, the offset is not constant across its own year:
+  NIKE's fiscal Q1 and Q2 land in the *previous* calendar year (`Q3` and `Q4`)
+  while its Q3 and Q4 land in the same one; Richemont's ends on 31 March, so a
+  calendar Q2 is its fiscal Q1 of the year numbered one ahead, and its profit
+  exists only for the half-years ending 30 September and 31 March, which that
+  page labels by the month each half ends. The mapping is stated as a rule
+  rather than as this quarter's example because the example is the part that
+  goes stale with every roll; each page names its own latest quarter both ways
+  in its title or subtitle. Without one convention the
+  cross-company capex table would compare different three-month periods and
+  look fine doing it.
 
 ## Page modules
 
@@ -201,11 +201,11 @@ Charts are ordered the way the note is actually used:
    filed dollars, thirty-eight quarters of revenue against the two margins
    that diverge across them, and the operating cash flow of a company whose
    capital expenditure has never exceeded 17.4% of it in ten years; NIKE gets
-   thirteen years of its direct-to-consumer share against the gross margin
-   that shift was supposed to buy, the two channels in dollars, thirty-two
-   quarters of the same share at quarterly resolution, the two
+   its direct-to-consumer share since FY2014 against the gross margin that
+   shift was supposed to buy, the two channels in dollars, the same share at
+   quarterly resolution since the FY2019 revenue-disaggregation note, the two
    selling-and-administrative lines that carry the cost of running a direct
-   business, ten years of cash flow against capital returned, and the price it
+   business, cash flow against capital returned since FY2017, and the price it
    actually paid for its own stock; Nasdaq gets forty-six quarters of its two operating margins and
    the amortization gap between them, the same window showing the trading
    business shrinking from 37% of net revenue to 23%, and the index assets that
@@ -226,13 +226,14 @@ Charts are ordered the way the note is actually used:
    that moves against it, the slope that turns a 1% move in contracts into a
    0.66% move in revenue, the slice of the clearing fee its published volumes
    do not cover, and the basis points it keeps out of the interest earned on
-   client collateral; Micron gets the fifteen fiscal years its record
-   quarter has to be read against — an annual gross margin running from −9.1%
-   to 58.9% across them, against 84.6% in the quarter this page reports — the
-   capital intensity whose peaks land on the revenue troughs rather than on
-   its peaks, the three cash-flow lines whose capital-expenditure leg has not yet
-   turned, and nineteen quarters of inventory measured against cost of goods
-   sold rather than against a selling price that has multiplied;
+   client collateral; Micron gets every fiscal year since FY2011 as the record
+   its latest quarter has to be read against — annual gross margin from the
+   loss-making year to the peak, with the quarter's own margin set beside it on
+   the page — the capital intensity whose peaks land on the revenue troughs
+   rather than on its peaks, the three cash-flow lines whose capital-expenditure
+   leg has not yet turned, and the inventory line since late 2021 measured
+   against cost of goods sold rather than against a selling price that has
+   multiplied;
    Hermès International gets the two growth rates it prints beside every cell
    — the published one and its own constant-currency one — and the wedge
    between them that went from +1.3pp to −7.0pp in four quarters and left the
@@ -753,7 +754,7 @@ a zero there would have drawn it as clean operating profit.
 
 Broadcom files a quarterly outlook too, and its record answers a question none
 of the others do: **what happens to a delivery record when the company changes
-the shape of the promise.** Across 34 earnings 8-Ks the `Business Outlook` block
+the shape of the promise.** Across its earnings 8-Ks the `Business Outlook` block
 takes four forms. It opens as a GAAP/non-GAAP table with a revenue range
 (`$5,047M +/- $75M`); becomes a fiscal-year number for the whole of FY2019;
 returns as a quarterly range through the first COVID year; and from the FY2021
@@ -766,11 +767,12 @@ lists the annual guidance that replaced them.
 
 The two halves say opposite-looking things. In the **five** quarters Broadcom
 published a revenue *range*, the reported number landed **inside it every
-time** — never above, never below. In the **nineteen** finished quarters it
-published a *point*, the number came in **above every time**. Read uniformly
-against the guided point or midpoint, all **25** finished quarters are positive,
+time** — never above, never below. In **every** finished quarter it
+published a *point*, the number came in **above** it. Read uniformly
+against the guided point or midpoint, every finished quarter is positive,
 and Adjusted EBITDA margin cleared its guided percentage in all **18** quarters
-where both sides exist. That second record is now closed rather than continuing:
+where both sides exist. The page counts the first two on every build, and a
+quarter that broke either would change the sentence rather than leave it false. That second record is now closed rather than continuing:
 the 2026-09-02 release dropped Adjusted EBITDA entirely — the actual, the
 reconciliation block and the guidance all went at once — so the guide already
 given for that quarter can never be settled. The page leaves the cell empty and
@@ -780,12 +782,13 @@ performance stops being distinguishable from it.
 
 A record with no misses would normally be the finding. Here it is the setup for
 a better one, and two facts do the work. First, the beats are tiny and
-astonishingly regular: revenue deviation spans +0.17% to +3.53% with a median of
-+0.78%, across eight years that contain a COVID quarter, a US$69B acquisition
-and a four-fold increase in revenue. Second — the Cadence caveat again, and
-sharper — the outlook goes out with the *previous* quarter's results, a median
-of 31 days into the 91-day quarter it guides. A third of the quarter is already
-banked when the number is published. So the page says on every guidance chart
+astonishingly regular: every revenue deviation sits a few percent above zero
+(the page prints the band and its median as of its quarter), across a record
+that contains a COVID quarter, a US$69B acquisition and a several-fold increase
+in revenue. Second — the Cadence caveat again, and sharper — the outlook goes
+out with the *previous* quarter's results, about a month into the 91-day quarter
+it guides. Roughly a third of the quarter is already banked when the number is
+published. So the page says on every guidance chart
 that this is much less a forecast than a disclosure of something already largely
 known, and it declines to read "never missed" as forecasting skill.
 
@@ -798,23 +801,24 @@ split roughly evenly** — the margin leg is the larger half in 12 of 18 quarter
 
 A second identity carries the segment view. The two reportable segments' filed
 operating incomes sum to the company's non-GAAP operating income **exactly, in
-all 30 quarters the segment note covers** (with the retired IP-licensing segment
+every quarter the segment note covers** (with the retired IP-licensing segment
 included for FY2019 and earlier), so the margin the company guides can be
 attributed to the semiconductor engine and the software engine without an
-estimate. It is worth attributing: as of the last quarter with a segment note (`Q1 2026`),
-infrastructure software was 32% of revenue and 38% of segment operating profit.
-The two figures stop being co-dated whenever an earnings 8-K arrives before its
-10-Q, as it has for `Q2 2026`: the release prints segment *revenue* only.
+estimate. It is worth attributing: infrastructure software earns a larger share
+of segment operating profit than of revenue, and the page prints both shares
+dated to the last quarter with a segment note. The two stop being co-dated
+whenever an earnings 8-K arrives before its 10-Q: the release prints segment
+*revenue* only.
 
 Two things its page refuses. **Segment gross margin** is not plotted: Broadcom
 first disclosed segment cost of revenue under ASU 2023-07 in the FY2025 10-K, so
-the quarterly series is two points long — and a threshold the local note set on
-it ("semiconductor segment GM below 68%") is therefore reported as
+the quarterly series is too short to draw — and when a local note set a
+threshold on it ("semiconductor segment GM below 68%"), the page reported it as
 **unsettleable rather than passed or failed**. And **AI semiconductor revenue**,
 the number the whole equity story runs on, is not a reportable segment: it
 appears only in the CEO's quote in the earnings release, rounded to US$0.1B, in
 one quarter as an inequality (`over $4.4 billion`) and in another not as a level
-at all. The page plots the seven readings it has, in a chart kept deliberately
+at all. The page plots the readings it has, in a chart kept deliberately
 apart from the formal record, and says on the chart why they are not the same
 kind of number.
 

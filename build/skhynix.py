@@ -47,7 +47,9 @@ sys.path.insert(0, str(ROOT))
 
 from build.board import (  # noqa: E402
     ai_capex_cycle_table,
+    display_period,
     headroom_exhibit,
+    latest_block,
     number_exhibits,
     threshold_exhibit,
     threshold_table,
@@ -155,6 +157,14 @@ def phrase_band_exhibit(ref: str, title: str, quarters: list[str], block: dict,
         "note": note,
         "src_extra": src_extra,
     }
+
+
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    fin = staging["financials_krw_bn"]
+    return [f"Revenue ₩{fin['revenue'][-1] / 1000:.1f}T",
+            f"营业利润率 {fin['operating_profit'][-1] / fin['revenue'][-1] * 100:.1f}%",
+            "量价只给用词"]
 
 
 def build_payload(staging: dict) -> dict:
@@ -759,15 +769,11 @@ def build_payload(staging: dict) -> dict:
             "group": "semiconductor_ai",
             "accounting_standard": "K-IFRS",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": "2026-06-30",
-            "release_date": "2026-07-29",
-            "analysis_date": "2026-08-29",
-            "audit_status": "provisional",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=display_period(staging["periods"][-1]),
+            period_end=staging["period_ends"][-1],
+            release_date=staging["release_dates"][-1]),
         "tracker": "Watchlist Quarterly Tracker · SK hynix",
         "title": "SK hynix Inc. (000660.KS / SKHY)：Q2 2026 季报仪表盘",
         "subtitle": ("截至 2026-06-30 · 发布 2026-07-29 · K-IFRS · 暂定数，外部审计未完成 · "

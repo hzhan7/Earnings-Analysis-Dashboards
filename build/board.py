@@ -11,6 +11,7 @@ reader sees which lines are breached without parsing units.
 from __future__ import annotations
 
 import json
+import re
 import statistics
 from pathlib import Path
 from typing import Callable
@@ -385,6 +386,150 @@ def midpoint_deviation(ref: str, metric: str, xlabels: list[str], low: list[floa
     return chart
 
 
+def _period_key(label: str) -> str:
+    """``'2026Q2'`` / ``'Q2 2026'`` / ``'Q2'26'`` → ``'Q2 2026'``; halves likewise.
+
+    The series files spell the same quarter three ways, and the stamp check in
+    `latest_block` must not fail on spelling while it is looking for staleness.
+    """
+    text = str(label).strip()
+    for pattern, fmt in (
+        (r"^(\d{4})\s*([QH][1-4])$", "{1} {0}"),
+        (r"^([QH][1-4])\s+(\d{4})$", "{0} {1}"),
+        (r"^([QH][1-4])'(\d{2})$", "{0} 20{1}"),
+    ):
+        match = re.match(pattern, text)
+        if match:
+            return fmt.format(*match.groups())
+    return text
+
+
+def display_period(label: str) -> str:
+    """The display form of a period label: ``'2026Q2'`` → ``'Q2 2026'``."""
+    return _period_key(label)
+
+
+def latest_block(staging: dict, *, period: str, period_end: str | None = None,
+                 release_date: str | None = None,
+                 full_label: str | None = None) -> dict:
+    """The page's ``latest`` block, read from the series instead of typed into a builder.
+
+    Period label, period end and release date come from the series arrays where
+    the file has them (``periods[-1]``, ``period_ends[-1]``, ``release_dates[-1]``)
+    and are passed in by the builder. What no filing carries -- the date this
+    page was last reviewed and the quarter's audit status -- lives in the series
+    file's own ``latest`` block, together with the period that block was written
+    for. A roll that appends a quarter to the arrays and leaves that block on the
+    previous one fails here, instead of shipping last quarter's review date on
+    this quarter's page. Files with no release-date or period-end array keep
+    those two values in the same stamped block.
+    """
+    meta = staging["latest"]
+    stamped = next((meta[key] for key in ("period", "disclosed_period_label", "period_label")
+                    if key in meta), None)
+    if stamped is None or _period_key(stamped) != _period_key(period):
+        raise ValueError(
+            f"series `latest` block is stamped {stamped!r} but the series ends at "
+            f"{period!r}: update latest.period / analysis_date / audit_status with the roll")
+    return {
+        "disclosed_period_label": period,
+        "full_financial_period_label": full_label or period,
+        "period_end": period_end if period_end is not None else meta["period_end"],
+        "release_date": release_date if release_date is not None else meta["release_date"],
+        "analysis_date": meta["analysis_date"],
+        "audit_status": meta["audit_status"],
+        "status": meta.get("status", "history_ready"),
+    }
+
+
+def minus_sign(text: str) -> str:
+    """Swap the ASCII hyphen Python's ``+`` format flag emits for U+2212.
+
+    The prose on these pages writes a negative number with a typographic minus,
+    so a figure formatted with ``f"{value:+.1f}"`` and one typed by hand would
+    otherwise print two different characters for the same sign.
+    """
+    return text.replace("-", "−")
+
+
+def round_half_up(value: float, digits: int) -> str:
+    """``5.185`` → ``'5.19'``: round the way a filer's own text rounds.
+
+    ``f"{5185 / 1000:.2f}"`` prints ``5.18``, because the binary value of 5.185
+    sits just below the half. Interactive Brokers prints its 5,185 thousand
+    accounts as "5.19 million"; the page quoting that figure has to round the
+    way the filer did, or it publishes a number the filer never printed.
+    """
+    from decimal import ROUND_HALF_UP, Decimal
+    return str(Decimal(repr(value)).quantize(Decimal(1).scaleb(-digits), rounding=ROUND_HALF_UP))
+
+
+def stamped_block(staging: dict, key: str, period: str) -> dict | None:
+    """A block of the series file that describes one quarter, or None.
+
+    Some of what a page says is not a series at all: the supply-agreement
+    figures in one 10-Q, what management said on one call, a one-off in one
+    quarter's statement. Those blocks carry the quarter they describe as
+    ``period``. A block for another quarter is last quarter's story, and
+    publishing it under this quarter's label is exactly the stale-prose failure
+    this repo keeps finding, so it stops the build; a missing block means this
+    quarter has no such story, and the page simply leaves that part out.
+    """
+    block = staging.get(key)
+    if block is None:
+        return None
+    if _period_key(block.get("period", "")) != _period_key(period):
+        raise ValueError(f"series block `{key}` is stamped {block.get('period')!r}, "
+                         f"but the series ends at {period!r}: update it or remove it")
+    return block
+
+
+_CN_DIGITS = "零一二三四五六七八九"
+
+
+def cn_count(value: int) -> str:
+    """Chinese numeral for a count, the way this site's prose writes one.
+
+    ``8`` → ``八``, ``15`` → ``十五``, ``19`` → ``十九``, ``26`` → ``二十六``,
+    ``42`` → ``四十二``, and ``2`` → ``两`` because a count stands before a
+    measure word (「两次」「两个数量级」). Prose on these pages spells counts in
+    words (「十九个季度」「十五个财年」), and those are exactly the numbers a
+    roll changes, so they are computed here rather than typed. For 「第N」 use
+    `cn_ordinal`.
+    """
+    if value == 2:
+        return "两"
+    return cn_ordinal(value)
+
+
+def cn_ordinal(value: int) -> str:
+    """Like `cn_count` but for 「第N」 and other non-count uses: ``2`` → ``二``."""
+    if value < 0:
+        raise ValueError(value)
+    if value < 10:
+        return _CN_DIGITS[value]
+    if value < 100:
+        tens, ones = divmod(value, 10)
+        head = "" if tens == 1 else _CN_DIGITS[tens]
+        return head + "十" + (_CN_DIGITS[ones] if ones else "")
+    if value < 1000:
+        hundreds, rest = divmod(value, 100)
+        if rest == 0:
+            return _CN_DIGITS[hundreds] + "百"
+        if rest < 10:
+            return _CN_DIGITS[hundreds] + "百零" + _CN_DIGITS[rest]
+        tail = cn_ordinal(rest)
+        return _CN_DIGITS[hundreds] + "百" + ("一" + tail if tail.startswith("十") else tail)
+    raise ValueError(f"cn_ordinal only spells numbers below 1000, got {value}")
+
+
+def cn_fraction(share: float) -> str:
+    """The nearest unit fraction, in words: 0.198 → 「五分之一」, 0.385 → 「三分之一」,
+    0.494 → 「一半」."""
+    denominator = min(range(2, 11), key=lambda d: abs(share - 1 / d))
+    return "一半" if denominator == 2 else f"{cn_ordinal(denominator)}分之一"
+
+
 def number_exhibits(exhibits: list[dict], start: int = 2) -> list[dict]:
     """Assign exhibit numbers in render order.
 
@@ -436,8 +581,48 @@ _CASH_CAPEX_SOURCES = [
 ]
 
 
+# Revenue beside the capex above, for the one comparison a page makes against
+# the whole row: how much of its revenue each hyperscaler spends.
+_REVENUE_SOURCES = {
+    "amzn": lambda d: d["quarterly_usd_m"]["revenue_total"],
+    "googl": lambda d: d["quarterly"]["revenue_total"],
+    "meta": lambda d: d["quarterly_usd_m"]["revenue_total"],
+    "msft": lambda d: d["quarterly_usd_m"]["revenue_total"],
+}
+
+
 def _load(slug: str) -> dict:
     return json.loads((SERIES_DIR / f"{slug}.json").read_text(encoding="utf-8"))
+
+
+def _period_order(label: str) -> tuple[int, int]:
+    quarter, year = _period_key(label).split()
+    return int(year), int(quarter[1:])
+
+
+def hyperscaler_capex_share(period: str) -> tuple[str, list[float]] | None:
+    """Cash capex as a percent of revenue for each company in the capex table.
+
+    Read from each company's own series, in the latest quarter on or before
+    `period` that all of them have reported, so a page comparing itself with
+    "the four clouds" says what their files say rather than what they said
+    when the sentence was written. Returns that quarter and the shares in
+    table order, or None when the four have no quarter in common.
+    """
+    readings = []
+    for slug, _label, accessor in _CASH_CAPEX_SOURCES:
+        data = _load(slug)
+        company_periods, capex = accessor(data)
+        revenue = _REVENUE_SOURCES[slug](data)
+        readings.append({label: (spent, sales) for label, spent, sales
+                         in zip(company_periods, capex, revenue)
+                         if spent is not None and sales})
+    common = set.intersection(*(set(reading) for reading in readings))
+    usable = [label for label in common if _period_order(label) <= _period_order(period)]
+    if not usable:
+        return None
+    quarter = max(usable, key=_period_order)
+    return quarter, [reading[quarter][0] / reading[quarter][1] * 100 for reading in readings]
 
 
 def ai_capex_cycle_table(n: int) -> dict:

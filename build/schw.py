@@ -44,8 +44,10 @@ sys.path.insert(0, str(ROOT))
 
 from build.board import (  # noqa: E402
     ai_capex_cycle_table,
+    display_period,
     headroom,
     headroom_exhibit,
+    latest_block,
     number_exhibits,
     threshold_exhibit,
     threshold_table,
@@ -555,6 +557,14 @@ def routine_exhibits(staging: dict, fin: dict, periods: list, ops: dict) -> list
     return [assets, flows, share_chart, lending]
 
 
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    op = staging["operating"]
+    return [f"Revenue ${staging['financials']['revenue_usd_m'][-1] / 1000:.2f}B",
+            f"NIM {op['nim_pct'][-1]:.2f}%",
+            f"DATs {op['dats_thousands'][-1] / 1000:.1f}M"]
+
+
 def build_payload(staging: dict) -> dict:
     periods = staging["periods"]
     fin = staging["financials"]
@@ -630,15 +640,10 @@ def build_payload(staging: dict) -> dict:
             "group": "brokerage_wealth",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": "2026-06-30",
-            "release_date": "2026-07-21",
-            "analysis_date": "2026-08-29",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=display_period(staging["periods"][-1]),
+            period_end=staging["period_ends"][-1]),
         "tracker": "Watchlist Quarterly Tracker · SCHW",
         "title": "Charles Schwab (SCHW)：Q2 2026 季报仪表盘",
         "subtitle": (

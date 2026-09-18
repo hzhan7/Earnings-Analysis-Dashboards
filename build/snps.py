@@ -42,6 +42,7 @@ from build.board import (  # noqa: E402
     delivery_band,
     headroom,
     headroom_exhibit,
+    latest_block,
     midpoint_deviation,
     number_exhibits,
     threshold_exhibit,
@@ -341,6 +342,14 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
             f"{shares_actual[index]:.3f}M" if done else "—",
         ])
     return charts, table
+
+
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    ip = staging["segments_usd_m"]["design_ip_revenue"]
+    return [f"Revenue ${staging['financials']['revenue_usd_m'][-1] / 1000:.2f}B",
+            f"Design IP {(ip[-1] / ip[-5] - 1) * 100:+.1f}%",
+            f"Non-GAAP OpM {staging['financials']['non_gaap_operating_margin_pct'][-1]:.1f}%"]
 
 
 def build_payload(staging: dict) -> dict:
@@ -1290,15 +1299,10 @@ def build_payload(staging: dict) -> dict:
             "group": "semiconductor_ai",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": "2026-07-31",
-            "release_date": "2026-08-26",
-            "analysis_date": "2026-08-27",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=staging["periods"][-1],
+            period_end=staging["period_ends"][-1]),
         "tracker": "Watchlist Quarterly Tracker · SNPS",
         "title": "Synopsys (SNPS)：Q2 2026 季报仪表盘",
         "subtitle": (

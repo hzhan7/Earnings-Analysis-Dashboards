@@ -38,6 +38,7 @@ from build.board import (  # noqa: E402
     ai_capex_cycle_table,
     headroom,
     headroom_exhibit,
+    latest_block,
     number_exhibits,
     threshold_exhibit,
     threshold_table,
@@ -97,6 +98,16 @@ def pct_change(current: float, comparison: float) -> float:
 
 def rounded(values: list[float | None], digits: int = 6) -> list[float | None]:
     return [None if value is None else round(value, digits) for value in values]
+
+
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    pn = staging["payment_network_usd_m"]
+    gross = sum(pn[line][-1] for line in ASSESSMENT_LINES)
+    rebates = gross - pn["payment_network_net_revenue"][-1]
+    return [f"Revenue ${pn['total_net_revenue'][-1] / 1000:.2f}B",
+            f"Rebate ratio {rebates / gross * 100:.1f}%",
+            f"VAS share {pn['value_added_services_net_revenue'][-1] / pn['total_net_revenue'][-1] * 100:.1f}%"]
 
 
 def build_payload(staging: dict) -> dict:
@@ -1078,15 +1089,7 @@ def build_payload(staging: dict) -> dict:
             "group": "payment_networks",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": "2026-06-30",
-            "release_date": "2026-07-30",
-            "analysis_date": "2026-07-31",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(staging, period=staging["periods"][-1]),
         "tracker": "Watchlist Quarterly Tracker · MA",
         "title": "Mastercard (MA)：Q2 2026 季报仪表盘",
         "subtitle": (
@@ -1180,7 +1183,7 @@ def build_payload(staging: dict) -> dict:
             "两个累计值相减后误差可达 ±0.1 百万股，本季对应约 ±$5 的区间。",
             "「剔除诉讼计提与重组」的经营利润率是把两条申报行加回经营利润，"
             "不是本站自定义的非 GAAP 指标：它逐季吻合公司自己公布的调整后经营利润率，核对表列出八个对照季。",
-            f"Exhibit 3 与 Exhibit {len(settled_charts) + len(highlights) + 2} 的阈值是本地研究设定，"
+            f"Exhibit {settled_charts[1]['n']} 与 Exhibit {next_charts[0]['n']} 的阈值是本地研究设定，"
             "不是公司指引，也不构成评级或投资建议；「距阈值余量」统一为正值代表安全侧。"
             "其中跨境 travel 的两条只出现在公司季度业绩演示文稿，不进任何申报文件，本站不为其建历史序列。",
             "市场预期一律标注为「市场预期」并给出取数时点，不写卖方机构名，也不发布评级、目标价或估值。"
