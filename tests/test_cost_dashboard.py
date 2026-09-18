@@ -28,6 +28,7 @@ value here rather than left to the prose.
 
 from __future__ import annotations
 
+import copy
 import json
 import re
 import sys
@@ -41,7 +42,14 @@ sys.path.insert(0, str(ROOT))
 
 from build.all import ENTRIES, build_all, roster_payload  # noqa: E402
 from build.board import headroom  # noqa: E402
-from build.cost import build_payload, compact_period  # noqa: E402
+from build.cost import build_payload, compact_period, headline_metrics  # noqa: E402
+
+# The quarter the history pins below were read through. A roll appends quarters
+# and fiscal years after it; the pins are bounded here so they stay true of the
+# record they were checked against instead of being retyped each quarter.
+PINNED_THROUGH = "Q2 2026"
+PINNED_FISCAL_YEAR = 2025      # last fiscal year whose capex actual was pinned
+PINNED_GUIDED_YEAR = 2026      # last guided year whose opening plan was pinned
 
 
 def js_payload(path: Path, assignment: str) -> dict:
@@ -67,7 +75,7 @@ class CostDashboardTest(unittest.TestCase):
     # ── shape ───────────────────────────────────────────────────────────────
     def test_the_window_is_eight_quarters_and_complete(self) -> None:
         self.assertEqual(len(self.source["periods"]), 8)
-        self.assertEqual(self.source["periods"][-1], "Q2 2026")
+        self.assertEqual(self.source["periods"][-1], self.source["latest"]["period"])
         for name, values in self.fin.items():
             self.assertEqual(len(values), 8, name)
             self.assertIsNotNone(values[-1], f"{name} has no current value")
@@ -88,7 +96,9 @@ class CostDashboardTest(unittest.TestCase):
 
     def test_the_sixteen_week_quarters_are_where_the_fiscal_fourths_are(self) -> None:
         weeks = self.source["weeks"]
-        self.assertEqual(weeks, [16, 12, 12, 12, 16, 12, 12, 12])
+        self.assertTrue(set(weeks) <= {12, 16, 17}, weeks)
+        self.assertEqual(sum(1 for week in weeks if week > 12), 2,
+                         "eight quarters hold exactly two fiscal fourth quarters")
         for index, week in enumerate(weeks):
             fiscal = self.source["fiscal_labels"][index]
             self.assertEqual(week > 12, fiscal.endswith("Q4"), fiscal)
@@ -101,17 +111,27 @@ class CostDashboardTest(unittest.TestCase):
         page that did not would show a growth collapse that is a calendar
         artefact.
         """
+        by_period = self.source["weeks_by_period"]
+        for index, period in enumerate(self.source["periods"]):
+            quarter, year = period.split()
+            comparative = f"{quarter} {int(year) - 1}"
+            with self.subTest(period=period):
+                self.assertEqual(self.source["yoy_week_mismatch"][index],
+                                 by_period[period] != by_period[comparative])
         mismatch = [period for period, flag
                     in zip(self.source["periods"], self.source["yoy_week_mismatch"]) if flag]
-        self.assertEqual(mismatch, ["Q3 2024"])
-        contribution = self.source["merchandise_categories"]["net_sales_yoy_pct"]
-        index = self.source["periods"].index("Q3 2024")
-        self.assertLess(contribution[index], 2.0)
-        self.assertGreater(min(v for i, v in enumerate(contribution) if i != index), 6.0)
         cats = next(ex for ex in self.by_section["quarter_highlights"]
                     if "四条商品线" in ex["title"])
-        self.assertIn("Q3'24", cats.get("annot", ""))
-        self.assertIn("17 周", cats["note"])
+        if "Q3 2024" in self.source["periods"]:
+            # the one such quarter the record has, pinned by value while it is in the window
+            self.assertEqual(mismatch, ["Q3 2024"])
+            contribution = self.source["merchandise_categories"]["net_sales_yoy_pct"]
+            index = self.source["periods"].index("Q3 2024")
+            self.assertLess(contribution[index], 2.0)
+        for period in mismatch:
+            quarter, year = period.split()
+            self.assertIn(compact_period(period), cats.get("annot", ""))
+            self.assertIn(f"{by_period[f'{quarter} {int(year) - 1}']} 周", cats["note"])
 
     # ── identities ──────────────────────────────────────────────────────────
     def test_income_statement_closes_to_the_dollar(self) -> None:
@@ -155,7 +175,9 @@ class CostDashboardTest(unittest.TestCase):
         """
         derived = [period for period, flag
                    in zip(self.seg["periods"], self.seg["is_derived"]) if flag]
-        self.assertEqual(derived, ["Q3 2024", "Q3 2025"])
+        self.assertEqual(derived, [period for period, fiscal
+                                   in zip(self.source["periods"], self.source["fiscal_labels"])
+                                   if fiscal.endswith("Q4")])
         for period in derived:
             index = self.source["periods"].index(period)
             total = sum(self.seg[key]["revenue_usd_m"][index]
@@ -195,8 +217,8 @@ class CostDashboardTest(unittest.TestCase):
         comparative; before that a fifth leg would be needed and the page says so.
         """
         bridge = self.source["eps_growth_bridge_pct"]
-        self.assertEqual(len(bridge["periods"]), 11)
-        self.assertEqual(bridge["periods"][-1], "Q2 2026")
+        self.assertEqual(bridge["periods"][0], "Q4 2023")
+        self.assertEqual(bridge["periods"][-1], self.source["periods"][-1])
         for index, period in enumerate(bridge["periods"]):
             with self.subTest(period=period):
                 product = 1.0
@@ -211,7 +233,8 @@ class CostDashboardTest(unittest.TestCase):
     def test_the_two_legs_of_the_operating_margin_close_every_year(self) -> None:
         """The page's signature long series is an identity, in all thirteen years."""
         ann = self.ann
-        self.assertEqual(len(ann["fiscal_years"]), 13)
+        self.assertEqual(ann["fiscal_years"],
+                         [f"FY{year}" for year in range(2013, 2013 + len(ann["fiscal_years"]))])
         for index, year in enumerate(ann["fiscal_years"]):
             with self.subTest(year=year):
                 self.assertAlmostEqual(
@@ -220,10 +243,11 @@ class CostDashboardTest(unittest.TestCase):
                     ann["operating_margin_on_net_sales_pct"][index],
                     places=4)
         # And the finding the chart states, pinned by value rather than by prose.
+        pinned = ann["fiscal_years"].index(f"FY{PINNED_FISCAL_YEAR}")
         self.assertGreater(ann["membership_fee_share_of_operating_income_pct"][0], 74.0)
-        self.assertLess(ann["membership_fee_share_of_operating_income_pct"][-1], 52.0)
-        self.assertLess(ann["membership_leg_pct_of_net_sales"][-1]
-                        - ann["merchandising_leg_pct_of_net_sales"][-1], 0.15)
+        self.assertLess(ann["membership_fee_share_of_operating_income_pct"][pinned], 52.0)
+        self.assertLess(ann["membership_leg_pct_of_net_sales"][pinned]
+                        - ann["merchandising_leg_pct_of_net_sales"][pinned], 0.15)
 
     def test_membership_fee_per_member_is_week_normalised(self) -> None:
         """A 16-week quarter would otherwise print a third more fee per member."""
@@ -273,7 +297,7 @@ class CostDashboardTest(unittest.TestCase):
         further back would be two definitions under one label.
         """
         self.assertEqual(self.hist["periods"][0], "Q1 2016")
-        self.assertEqual(len(self.hist["periods"]), 42)
+        self.assertEqual(self.hist["periods"][-1], self.source["periods"][-1])
         # The record now reaches through fiscal 2019 rather than starting after
         # it, and the one-basis rule is kept where it actually matters: every
         # quarter that carries an adjusted figure carries it on the gasoline-and-
@@ -301,14 +325,14 @@ class CostDashboardTest(unittest.TestCase):
     def test_the_gap_finding_is_pinned_by_value(self) -> None:
         """The page's sharpest claim: gasoline and currency have suppressed the
         headline more often than they have flattered it."""
+        through = self.hist["periods"].index(PINNED_THROUGH) + 1
+        pinned = [value for value in self.hist["gap_pp"][:through] if value is not None]
+        # 19 of the 38 quarters that have this basis through Q2 2026 -- the record
+        # ran 42 quarters then, four of which (fiscal 2019) carry no adjusted figure.
+        self.assertEqual((sum(1 for value in pinned if value < 0), len(pinned)), (19, 38))
+        self.assertEqual([round(value, 1) for value in pinned[-4:]], [-0.7, 0.0, 0.7, 3.2])
         gap = [value for value in self.hist["gap_pp"] if value is not None]
         negative = sum(1 for value in gap if value < 0)
-        # 19 of the 38 quarters that have this basis -- the record now runs 42
-        # quarters, four of which (fiscal 2019) carry no adjusted figure at all.
-        self.assertEqual((negative, len(gap)), (19, 38))
-        self.assertEqual(len(self.hist["gap_pp"]), 42)
-        self.assertAlmostEqual(gap[-1], 3.2, places=6)
-        self.assertEqual([round(value, 1) for value in gap[-4:]], [-0.7, 0.0, 0.7, 3.2])
         chart = next(ex for ex in self.by_section["quarter_highlights"]
                      if "抬高（或压低）" in ex["title"])
         self.assertIn(f"{negative} 季", chart["title"])
@@ -332,10 +356,18 @@ class CostDashboardTest(unittest.TestCase):
             with self.subTest(period=comp["periods"][index]):
                 self.assertEqual(filed[index], round(release[index]))
                 self.assertEqual(filed[index], int(filed[index]))
-        self.assertEqual([round(v, 1) for v in release[-3:]], [6.4, 6.7, 6.6])
-        self.assertEqual(filed[-3:], [6.0, 7.0, 7.0])
+        # The claim about the two precisions is printed from the last three
+        # quarters, both ways, and the page must print exactly those numbers.
+        # A fiscal fourth quarter has no whole-number reading, so the three are
+        # the last three quarters that have both precisions.
+        both = [i for i, value in enumerate(filed) if value is not None][-3:]
+        chart = next(ex for ex in self.by_section["settled"] if ex["title"].startswith("剔除汽油与汇率后"))
+        self.assertIn("、".join(f"{filed[i]:.0f}%" for i in both), chart["note"])
+        self.assertIn("、".join(f"{release[i]:.1f}%" for i in both), chart["note"])
+        if max(release[i] for i in both) - min(release[i] for i in both) > 0.5:
+            self.assertNotIn("是一条平线", chart["note"])
         table = next(t for t in self.payload["tables"] if "同店销售完整记录" in t["title"])
-        self.assertEqual(len(table["rows"]), 42)
+        self.assertEqual(len(table["rows"]), len(self.hist["periods"]))
 
     def test_the_digital_metric_break_is_marked_not_spliced(self) -> None:
         names = self.hist["digital_metric_name"]
@@ -401,14 +433,28 @@ class CostDashboardTest(unittest.TestCase):
             return counts
 
         opening, final = tally("verdict_vs_opening"), tally("verdict_vs_final")
-        self.assertEqual(opening, {"ABOVE": 5, "BELOW": 5, "INSIDE": 2})
-        self.assertEqual(final, {"ABOVE": 6, "BELOW": 3, "INSIDE": 4})
+        through = record["guided_fiscal_years"].index(PINNED_FISCAL_YEAR) + 1
+        pinned = {key: record[key][:through] for key in record}
+        pinned_opening = {"ABOVE": 0, "BELOW": 0, "INSIDE": 0}
+        pinned_final = {"ABOVE": 0, "BELOW": 0, "INSIDE": 0}
+        for o, f, actual in zip(pinned["verdict_vs_opening"], pinned["verdict_vs_final"],
+                                pinned["actual_capex_usd_m"]):
+            if actual is not None:
+                pinned_opening[o] = pinned_opening.get(o, 0) + (o in pinned_opening)
+                pinned_final[f] = pinned_final.get(f, 0) + (f in pinned_final)
+        self.assertEqual({k: pinned_opening[k] for k in ("ABOVE", "BELOW", "INSIDE")},
+                         {"ABOVE": 5, "BELOW": 5, "INSIDE": 2})
+        self.assertEqual({k: pinned_final[k] for k in ("ABOVE", "BELOW", "INSIDE")},
+                         {"ABOVE": 6, "BELOW": 3, "INSIDE": 4})
+        opening, final = ({k: pinned_opening[k] for k in ("ABOVE", "BELOW", "INSIDE")},
+                          {k: pinned_final[k] for k in ("ABOVE", "BELOW", "INSIDE")})
+        live_final = tally("verdict_vs_final")
         self.assertNotEqual(opening["ABOVE"] == opening["BELOW"],
                             final["ABOVE"] == final["BELOW"],
                             "the two vintages must not tell the same story")
         band = next(ex for ex in self.by_section["settled"] if "资本开支计划与实际" in ex["title"])
         self.assertIn("只对年初那一版成立", band["note"])
-        self.assertIn(f"{final['ABOVE']} 年高于上限", band["note"])
+        self.assertIn(f"{live_final['ABOVE']} 年高于上限", band["note"])
 
     def test_the_full_record_is_drawn_and_contradicts_the_short_window(self) -> None:
         """The symmetry is a property of the recent twelve years.
@@ -420,10 +466,12 @@ class CostDashboardTest(unittest.TestCase):
         """
         full = self.source["capex_record_full"]
         years = full["guided_fiscal_years"]
-        self.assertEqual((years[0], years[-1]), (1995, 2026))
-        self.assertEqual(years, list(range(1995, 2027)), "contiguous, no gaps")
+        self.assertEqual(years[0], 1995)
+        self.assertEqual(years[-1], self.source["capex_guidance"]["guided_fiscal_years"][-1])
+        self.assertEqual(years, list(range(1995, years[-1] + 1)), "contiguous, no gaps")
 
-        settled = [i for i, v in enumerate(full["deviation_vs_opening_pct"]) if v is not None]
+        live = [i for i, v in enumerate(full["deviation_vs_opening_pct"]) if v is not None]
+        settled = [i for i in live if years[i] <= PINNED_FISCAL_YEAR]
         self.assertEqual(len(settled), 30)
 
         def tally(indexes):
@@ -453,7 +501,7 @@ class CostDashboardTest(unittest.TestCase):
 
         dev = next(ex for ex in self.by_section["settled"] if "相对计划中值的偏离" in ex["title"])
         self.assertEqual(len(dev["xlabels"]), len(years))
-        self.assertIn(f"{len(settled)} 个已完结年度", dev["title"])
+        self.assertIn(f"{len(live)} 个已完结年度", dev["title"])
         self.assertIn("不是这家公司的性质", dev["note"])
         band = next(ex for ex in self.by_section["settled"] if "资本开支计划与实际" in ex["title"])
         self.assertIn("但这只是最近这一段", band["note"])
@@ -464,7 +512,8 @@ class CostDashboardTest(unittest.TestCase):
         identical -- the same category error the NVIDIA page avoids for opex."""
         full = self.source["capex_record_full"]
         years = full["guided_fiscal_years"]
-        settled = [i for i, v in enumerate(full["deviation_vs_opening_pct"]) if v is not None]
+        settled = [i for i, v in enumerate(full["deviation_vs_opening_pct"])
+                   if v is not None and years[i] <= PINNED_FISCAL_YEAR]
         points = [years[i] for i in settled if full["guidance_shape"][i] == "point"]
         self.assertEqual(points, [2009, 2010, 2011])
         for i in settled:
@@ -492,7 +541,7 @@ class CostDashboardTest(unittest.TestCase):
         both = [i for i, (a, b) in enumerate(zip(full["deviation_vs_opening_pct"],
                                                  full["deviation_vs_final_pct"]))
                 if a is not None and b is not None]
-        self.assertEqual(len(both), 12)
+        self.assertEqual(sum(1 for i in both if full["guided_fiscal_years"][i] <= PINNED_FISCAL_YEAR), 12)
         opening = sum(abs(full["deviation_vs_opening_pct"][i]) for i in both) / len(both)
         final = sum(abs(full["deviation_vs_final_pct"][i]) for i in both) / len(both)
         self.assertGreater(opening, final)
@@ -517,7 +566,8 @@ class CostDashboardTest(unittest.TestCase):
         """"approximately $X to $Y" is not a hard bound; two overshoots sit
         inside what the word plausibly covers, and the chart says which."""
         record = self.source["capex_guidance"]
-        numeric = [i for i, lo in enumerate(record["guided_low_usd_m"]) if lo is not None]
+        numeric = [i for i, lo in enumerate(record["guided_low_usd_m"])
+                   if lo is not None and record["guided_fiscal_years"][i] <= PINNED_GUIDED_YEAR]
         hedged = [i for i in numeric
                   if "approximately" in (record["figure_as_printed"][i] or "").lower()]
         self.assertEqual((len(hedged), len(numeric)), (12, 13))
@@ -535,9 +585,12 @@ class CostDashboardTest(unittest.TestCase):
         some are not, and the caption has to match the data rather than assert a
         hole every year."""
         core = self.source["core_on_core"]
+        through = core["periods"].index(PINNED_THROUGH) + 1
+        pinned_q4 = [i for i, period in enumerate(core["periods"][:through]) if period.startswith("Q3 ")]
+        self.assertEqual((sum(1 for i in pinned_q4 if core["change_bps"][i] is not None), len(pinned_q4)),
+                         (2, 10))
         q4 = [i for i, period in enumerate(core["periods"]) if period.startswith("Q3 ")]
         filled = [i for i in q4 if core["change_bps"][i] is not None]
-        self.assertEqual((len(filled), len(q4)), (2, 10))
         for index in filled:
             self.assertIn("EX-99.2", core["value_source"][index])
         for index in set(q4) - set(filled):
@@ -745,6 +798,157 @@ class CostDashboardTest(unittest.TestCase):
 
     def test_compact_period(self) -> None:
         self.assertEqual(compact_period("Q2 2026"), "Q2'26")
+
+    # ── a roll edits the series and nothing else ─────────────────────────────
+    def test_the_fy1995_plan_is_the_filed_aggregate(self) -> None:
+        """The FY1994 10-K says "approximately $600 million to $700 million during
+        fiscal 1995", one aggregate; the record held 550 for the low end until
+        2026-09-19. The note that quotes it and the chart that draws it now agree."""
+        full = self.source["capex_record_full"]
+        at = full["guided_fiscal_years"].index(1995)
+        self.assertEqual((full["guided_low_usd_m"][at], full["guided_high_usd_m"][at]), (600.0, 700.0))
+        self.assertAlmostEqual(full["deviation_vs_opening_pct"][at],
+                               (full["actual_usd_m"][at] / 650.0 - 1) * 100, places=5)
+        band = next(ex for ex in self.by_section["settled"] if "资本开支计划与实际" in ex["title"])
+        self.assertIn("US$600–700M", band["note"])
+        self.assertIn("$600 million to $700 million", "\n".join(self.payload["notes"]))
+
+    def test_the_filing_lags_come_from_the_filings(self) -> None:
+        """Every lag is a filing date less a fiscal year's first day, and the two
+        records that carry one agree wherever both do."""
+        full, recent = self.source["capex_record_full"], self.source["capex_guidance"]
+        by_year = dict(zip(full["guided_fiscal_years"], zip(full["guidance_filed_on"],
+                                                          full["lag_days_into_guided_year"])))
+        for year, filed, lag in zip(recent["guided_fiscal_years"], recent["guidance_filed_on"],
+                                    recent["lag_days_into_guided_year"]):
+            with self.subTest(year=year):
+                self.assertEqual(by_year[year], (filed, lag))
+        early = [lag for year, (_, lag) in by_year.items() if year <= 2007]
+        band = next(ex for ex in self.by_section["settled"] if "资本开支计划与实际" in ex["title"])
+        self.assertIn(f"第 {min(early)} 到 {max(early)} 天", band["note"])
+
+    def test_quarter_blocks_refuse_to_publish_under_another_quarter(self) -> None:
+        for key in ("prior_kpi", "next_kpi", "local_note", "followup_closure"):
+            stale = copy.deepcopy(self.source)
+            stale[key]["period"] = "Q1 1999"
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "stamped"):
+                    build_payload(stale)
+
+    def test_a_quarter_without_its_blocks_leaves_them_out(self) -> None:
+        bare = copy.deepcopy(self.source)
+        for key in ("prior_kpi", "next_kpi", "local_note", "followup_closure"):
+            del bare[key]
+        payload = build_payload(bare)
+        text = json.dumps(payload, ensure_ascii=False)
+        for gone in ("上季阈值", "本地笔记", "「结构性", "下季阈值（原始单位）", "待验证问题"):
+            with self.subTest(term=gone):
+                self.assertNotIn(gone, text)
+        self.assertIn("本地笔记", json.dumps(self.payload, ensure_ascii=False))
+
+    def test_the_prose_claims_follow_the_data(self) -> None:
+        """Turn two readings around and the sentences that described them must go."""
+        turned = copy.deepcopy(self.source)
+        deck = turned["supplement"]
+        deck["comp_traffic_pct"][-1] = deck["comp_traffic_pct"][-2] + 1.0
+        deck["comp_ticket_pct"][-1] = deck["comp_ticket_pct"][-2] - 1.0
+        before = json.dumps(self.payload, ensure_ascii=False)
+        after = json.dumps(build_payload(turned), ensure_ascii=False)
+        for claim in ("客流在走软", "缺口由客单补上", "客单在补位"):
+            with self.subTest(claim=claim):
+                self.assertIn(claim, before)
+                self.assertNotIn(claim, after)
+
+
+class CostChecksTest(unittest.TestCase):
+    """The page's quarter against `_checks`, keyed separately from the release.
+
+    Same contract as the other migrated pages: the builder never reads `_checks`
+    (asserted in `test_data_only_roll`), a roll re-keys it from the new release
+    and deck, and nothing in this class changes with the quarter. Where the
+    company prints a figure the page also computes -- the margin changes in
+    basis points, the comp gap, the Executive share's two legs -- the page must
+    land on what the company printed.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads((ROOT / "series" / "cost.json").read_text(encoding="utf-8"))
+        cls.checks = cls.source["_checks"]
+        cls.payload = build_payload(cls.source)
+        cls.exhibits = [ex for section in cls.payload["sections"] for ex in section["exhibits"]]
+
+    def exhibit(self, prefix: str) -> dict:
+        return next(ex for ex in self.exhibits if ex["title"].startswith(prefix))
+
+    def test_the_page_names_the_checked_quarter_both_ways(self) -> None:
+        checks = self.checks
+        self.assertIn(checks["period"], self.payload["title"])
+        self.assertIn(f"本页 {checks['period']} 即公司所称 {checks['fiscal_label']}",
+                      self.payload["subtitle"])
+        self.assertIn(f"周截至 {checks['period_end']} · 发布 {checks['release_date']}",
+                      self.payload["subtitle"])
+        self.assertEqual(self.source["weeks"][-1], checks["weeks"])
+
+    def test_the_series_ends_on_the_checked_figures(self) -> None:
+        checks, source = self.checks, self.source
+        fin = source["financials"]
+        for key, check in (("net_sales_usd_m", "net_sales_usd_m"),
+                           ("membership_fees_usd_m", "membership_fees_usd_m"),
+                           ("total_revenue_usd_m", "total_revenue_usd_m"),
+                           ("operating_income_usd_m", "operating_income_usd_m"),
+                           ("net_income_usd_m", "net_income_usd_m"),
+                           ("diluted_eps_usd", "diluted_eps_usd")):
+            with self.subTest(field=key):
+                self.assertEqual(fin[key][-1], checks[check])
+        self.assertEqual(round(fin["net_sales_yoy_pct"][-1], 1), checks["net_sales_yoy_pct"])
+        hist = source["comp_history_pct"]
+        self.assertEqual(hist["reported_total_pct"][-1], checks["comparable_sales_total_pct"])
+        self.assertEqual(hist["adjusted_total_pct"][-1], checks["comparable_sales_adjusted_total_pct"])
+        self.assertEqual(hist["digital_reported_pct"][-1], checks["digitally_enabled_comparable_sales_pct"])
+        bal = source["balance_sheet_usd_m"]
+        self.assertEqual(bal["cash_and_short_term_investments_usd_m"][-1],
+                         checks["cash_and_equivalents_usd_m"] + checks["short_term_investments_usd_m"])
+        deck = source["supplement"]
+        self.assertEqual(deck["comp_traffic_pct"][-1], checks["comparable_traffic_pct"])
+        self.assertEqual(deck["comp_ticket_pct"][-1], checks["comparable_ticket_pct"])
+        self.assertEqual(deck["adjusted_comp_ticket_pct"][-1], checks["adjusted_comparable_ticket_pct"])
+        self.assertEqual(deck["executive_members_mm"][-1], checks["executive_members_mm"])
+        self.assertEqual(deck["paid_members_mm"][-1], checks["paid_members_mm"])
+        self.assertEqual(deck["core_on_core_bps"][-1], checks["core_on_core_bps"])
+        mem = source["membership"]
+        self.assertEqual(mem["renewal_rate_us_canada_pct"][-1], checks["renewal_rate_us_canada_pct"])
+        self.assertEqual(mem["renewal_rate_worldwide_pct"][-1], checks["renewal_rate_worldwide_pct"])
+        mdna = source["mdna_margins_pct"]
+        at = mdna["periods"].index(checks["period"])
+        self.assertEqual(mdna["gross_margin_change_bps"][at], checks["gross_margin_change_bps"])
+        self.assertEqual(mdna["sga_change_bps"][at], checks["sga_rate_change_bps"])
+        self.assertEqual(source["warehouse_estimate"]["fy_end_estimate"][-1], checks["fy_end_warehouse_estimate"])
+
+    def test_the_page_prints_what_the_company_printed(self) -> None:
+        checks = self.checks
+        self.assertIn(f"总收入 US${checks['total_revenue_usd_m']:,}M", self.payload["headline"])
+        self.assertIn(f"报告 comp {checks['comparable_sales_total_pct']:+.1f}%", self.payload["headline"])
+        self.assertIn(f"comp 是 {checks['comparable_sales_adjusted_total_pct']:+.1f}%", self.payload["headline"])
+        self.assertEqual(headline_metrics(self.source)[0],
+                         f"Revenue ${checks['total_revenue_usd_m'] / 1000:.1f}B")
+        self.assertEqual(headline_metrics(self.source)[1],
+                         f"调整后 comp {checks['comparable_sales_adjusted_total_pct']:+.1f}%")
+        # The margin bridge quotes the company's own basis points, not the ones the
+        # dollars round to: SG&A comes to -20.9bp from the statement, the MD&A says 20.
+        margins = self.exhibit("毛利率 ")
+        self.assertIn(f"毛利率 {checks['gross_margin_change_bps']:+d}bp".replace("-", "−"), margins["note"])
+        self.assertIn(f"SG&A 率 {checks['sga_rate_change_bps']:+d}bp".replace("-", "−"), margins["note"])
+        traffic = self.exhibit("客流与客单")
+        self.assertIn(f"本季客流 {checks['comparable_traffic_pct']:+.1f}%", traffic["title"])
+        self.assertIn(f"客单 {checks['adjusted_comparable_ticket_pct']:+.1f}%", traffic["title"])
+        execs = self.exhibit("Executive 会员")
+        self.assertIn(f"Executive 会员 {checks['executive_members_mm']:.1f}MM", execs["title"])
+        self.assertIn(f"{checks['executive_members_mm'] / checks['paid_members_mm'] * 100:.1f}%", execs["title"])
+        core = next(ex for ex in self.exhibits if ex["title"].startswith("核心商品"))
+        self.assertIn(f"本季 {checks['core_on_core_bps']:+.0f}bp", core["title"])
+        estimate = next(ex for ex in self.exhibits if ex["title"].startswith("公司自己估的财年末仓库数"))
+        self.assertIn(f"{checks['fy_end_warehouse_estimate']} 家", estimate["title"])
 
 
 if __name__ == "__main__":
