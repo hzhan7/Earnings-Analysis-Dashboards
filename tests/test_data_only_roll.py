@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -137,6 +138,35 @@ class ChecksBlockTest(unittest.TestCase):
             with self.subTest(slug=slug):
                 self.assertEqual(MODULES[slug].build_payload(stripped),
                                  MODULES[slug].build_payload(staging))
+
+
+class ExhibitReferenceTest(unittest.TestCase):
+    """A sentence that names an exhibit by number must name the right one.
+
+    Five pages say "Exhibit A 与 Exhibit B 的阈值是本地研究设定" in their notes.
+    The numbers used to be typed, or computed by adding up list lengths, and two
+    of the five had drifted: CDNS named the follow-up chart instead of the
+    prior thresholds, GOOGL a highlights chart instead of the next ones. Both
+    numbers are now read from the charts after numbering; this pins that each
+    one lands on a thresholds chart, on every page that says it.
+    """
+
+    def test_threshold_references_land_on_threshold_charts(self) -> None:
+        pattern = re.compile(r"Exhibit (\d+) 与 Exhibit (\d+) 的阈值")
+        seen = 0
+        for slug, payload in sorted(build_all().items()):
+            exhibits = {ex["n"]: ex for section in payload["sections"]
+                        for ex in section["exhibits"]}
+            for note in payload["notes"]:
+                for match in pattern.finditer(note):
+                    prior, following = (exhibits[int(match.group(1))], exhibits[int(match.group(2))])
+                    with self.subTest(slug=slug):
+                        self.assertEqual(prior["kind"], "diverging_bars")
+                        self.assertTrue(prior["title"].startswith("上季") and "阈值" in prior["title"])
+                        self.assertEqual(following["kind"], "diverging_bars")
+                        self.assertTrue(following["title"].startswith("下季") and "阈值" in following["title"])
+                    seen += 1
+        self.assertGreaterEqual(seen, 5)
 
 
 if __name__ == "__main__":

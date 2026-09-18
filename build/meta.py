@@ -1119,7 +1119,7 @@ def build_payload(staging: dict) -> dict:
         "tables": tables,
         "notes": [
             "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
-            f"Exhibit 3 与 Exhibit {len(settled_charts) + len(highlights) + 2} 的阈值是本地研究设定，"
+            f"Exhibit {settled_charts[1]['n']} 与 Exhibit {next_charts[0]['n']} 的阈值是本地研究设定，"
             "不是公司指引，也不构成评级或投资建议；「距阈值余量」统一为正值代表安全侧。",
             "本页只发布公司披露值、可复算的简单派生值，以及明确标注的市场预期；D 标记代表 Derived / 自算。",
             "市场预期一律标注为「市场预期」并给出取数时点，不写卖方机构名，也不发布评级、目标价或估值。",

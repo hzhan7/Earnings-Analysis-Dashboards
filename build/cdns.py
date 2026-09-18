@@ -1423,7 +1423,9 @@ def build_payload(staging: dict) -> dict:
             "不做任何日历调整。",
             "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，"
             "每张图下一到两句解释；支撑表格收在核对抽屉里。",
-            f"Exhibit 2 与 Exhibit {len(settled_ex) + len(highlight_ex) + 2} 的阈值是本地研究设定，"
+            # Both numbers are the thresholds charts' own, read after numbering:
+            # the first used to be typed as 2, which is the follow-up chart.
+            f"Exhibit {settled_charts[1]['n']} 与 Exhibit {next_charts[0]['n']} 的阈值是本地研究设定，"
             "不是公司指引，也不构成评级或投资建议；「距阈值余量」统一为正值代表安全侧。",
             "本页只发布公司披露值、可复算的简单派生值，以及明确标注的市场预期；D 标记代表 Derived / 自算。",
             "指引兑现记录取自各季业绩 8-K 的 EX-99.02 CFO Commentary，"
