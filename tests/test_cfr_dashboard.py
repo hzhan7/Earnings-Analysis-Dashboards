@@ -431,16 +431,18 @@ class CfrPayloadTest(unittest.TestCase):
         e = self.s["quarterly_eur_m"]["total"][-1]
         cer = self.s["quarterly_cer_pct"]["total"][-1]
         jm = self.hv["margin"]["jewellery_maisons"][self.hv["last"]]
-        self.assertEqual(entry["headline_metrics"],
-                         [f"Sales €{e:,.0f}M", f"恒定汇率 {cer:+.0f}%", f"珠宝 H2 利润率 {jm:.1f}%"])
+        half = self.s["halves"][-1][-2:]
+        # The card figures are computed by the builder from the series (no
+        # longer typed into ENTRIES); recomputed here from the half-year view.
+        self.assertEqual(cfr.headline_metrics(self.s),
+                         [f"Sales €{e:,.0f}M", f"恒定汇率 {cer:+.0f}%", f"珠宝 {half} 利润率 {jm:.1f}%"])
 
     def test_the_home_page_card_matches_the_payload(self) -> None:
         home = (ROOT / "index.html").read_text(encoding="utf-8")
         card = home.split('href="cfr/"', 1)[1].split("</a>", 1)[0]
         self.assertIn(self.payload["latest"]["release_date"], card)
         self.assertIn(self.payload["latest"]["disclosed_period_label"], card)
-        entry = next(e for e in ENTRIES if e["slug"] == "cfr")
-        self.assertIn(" · ".join(entry["headline_metrics"]), card)
+        self.assertIn(" · ".join(cfr.headline_metrics(self.s)), card)
 
 
 if __name__ == "__main__":

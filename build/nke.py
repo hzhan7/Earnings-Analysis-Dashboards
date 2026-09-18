@@ -51,6 +51,7 @@ from build.board import (  # noqa: E402
     ai_capex_cycle_table,
     headroom,
     headroom_exhibit,
+    latest_block,
     number_exhibits,
     threshold_exhibit,
     threshold_table,
@@ -875,6 +876,14 @@ def routine_charts(staging: dict) -> list[dict]:
     ]
 
 
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    fin = staging["financials"]
+    return [f"Revenue ${fin['revenue_usd_m'][-1] / 1000:.2f}B",
+            f"ex-退款 GM {fin['gross_margin_ex_tariff_refund_pct'][-1]:.1f}%",
+            f"直营占比 {staging['channels_usd_m']['nike_direct_share_pct'][-1]:.1f}%"]
+
+
 def build_payload(staging: dict) -> dict:
     fin = staging["financials"]
     seg = staging["segments_usd_m"]
@@ -1057,15 +1066,11 @@ def build_payload(staging: dict) -> dict:
             "group": "consumer_retail",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": "2026-05-31",
-            "release_date": "2026-06-30",
-            "analysis_date": "2026-08-29",
-            "audit_status": "audited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=staging["periods"][-1],
+            period_end=staging["period_ends"][-1],
+            release_date=staging["release_dates"][-1]),
         "tracker": "Watchlist Quarterly Tracker · NKE",
         "title": "NIKE, Inc. (NKE)：Q2 2026 季报仪表盘",
         "subtitle": (

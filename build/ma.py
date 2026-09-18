@@ -38,6 +38,7 @@ from build.board import (  # noqa: E402
     ai_capex_cycle_table,
     headroom,
     headroom_exhibit,
+    latest_block,
     number_exhibits,
     threshold_exhibit,
     threshold_table,
@@ -97,6 +98,16 @@ def pct_change(current: float, comparison: float) -> float:
 
 def rounded(values: list[float | None], digits: int = 6) -> list[float | None]:
     return [None if value is None else round(value, digits) for value in values]
+
+
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    pn = staging["payment_network_usd_m"]
+    gross = sum(pn[line][-1] for line in ASSESSMENT_LINES)
+    rebates = gross - pn["payment_network_net_revenue"][-1]
+    return [f"Revenue ${pn['total_net_revenue'][-1] / 1000:.2f}B",
+            f"Rebate ratio {rebates / gross * 100:.1f}%",
+            f"VAS share {pn['value_added_services_net_revenue'][-1] / pn['total_net_revenue'][-1] * 100:.1f}%"]
 
 
 def build_payload(staging: dict) -> dict:
@@ -1078,15 +1089,7 @@ def build_payload(staging: dict) -> dict:
             "group": "payment_networks",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": "2026-06-30",
-            "release_date": "2026-07-30",
-            "analysis_date": "2026-07-31",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(staging, period=staging["periods"][-1]),
         "tracker": "Watchlist Quarterly Tracker · MA",
         "title": "Mastercard (MA)：Q2 2026 季报仪表盘",
         "subtitle": (

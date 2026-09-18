@@ -44,6 +44,7 @@ from build.board import (  # noqa: E402
     ai_capex_cycle_table,
     delivery_band,
     headroom_exhibit,
+    latest_block,
     number_exhibits,
     threshold_exhibit,
     threshold_table,
@@ -664,6 +665,15 @@ def routine_charts(staging: dict, der: dict, labels: list[str]) -> list[dict]:
     return [cash_chart, net_cash_chart, days_chart, elim_chart, rnd_chart]
 
 
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    fin = staging["financials_krw_bn"]
+    memory = staging["segment_revenue_krw_tn"]["memory"][-1]
+    return [f"合并收入 {fin['revenue'][-1] / 1000:.1f} 兆韩元",
+            f"营业利润率 {fin['operating_profit'][-1] / fin['revenue'][-1] * 100:.1f}%",
+            f"Memory 占收入 {memory * 1000 / fin['revenue'][-1] * 100:.1f}%"]
+
+
 def build_payload(staging: dict) -> dict:
     periods = staging["periods"]
     labels = [compact_period(period) for period in periods]
@@ -813,15 +823,11 @@ def build_payload(staging: dict) -> dict:
             "group": "semiconductor_ai",
             "accounting_standard": "K-IFRS",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": "2026-06-30",
-            "release_date": "2026-07-30",
-            "analysis_date": "2026-08-29",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=staging["periods"][-1],
+            period_end=staging["period_ends"][-1],
+            release_date=staging["final_release_dates"][-1]),
         "tracker": "Watchlist Quarterly Tracker · 005930.KS",
         "title": "Samsung Electronics（005930.KS）：Q2 2026 季报仪表盘",
         "subtitle": (

@@ -1,5 +1,12 @@
 {
  "_about": "Kering (KER.PA). Built by consolidate/make_series.py from twelve adjudicated ledgers (two blind transcriptions per unit, every disagreement settled against the page). Kering is not an SEC filer; every source is a kering.com download or an AMF OAM filing.",
+ "latest": {
+  "period": "Q2 2026",
+  "period_end": "2026-06-30",
+  "release_date": "2026-07-28",
+  "analysis_date": "2026-09-17",
+  "audit_status": "limited_review"
+ },
  "long_quarters": [
   "2016Q1",
   "2016Q2",

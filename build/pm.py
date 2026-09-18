@@ -46,6 +46,7 @@ from build.board import (  # noqa: E402
     delivery_band,
     headroom,
     headroom_exhibit,
+    latest_block,
     number_exhibits,
     threshold_exhibit,
     threshold_table,
@@ -625,6 +626,14 @@ def cash_series(staging: dict) -> dict:
 # ── payload ────────────────────────────────────────────────────────────────
 
 
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    fin = staging["financials"]
+    return [f"Revenue ${fin['net_revenues_usd_m'][-1] / 1000:.2f}B",
+            f"无烟收入占比 {staging['annual']['smoke_free_share_pct'][-1]:.1f}%",
+            f"Adj EPS ${fin['adjusted_diluted_eps_usd'][-1]:.2f}"]
+
+
 def build_payload(staging: dict) -> dict:
     fin = staging["financials"]
     labels = staging["period_labels"]
@@ -807,15 +816,10 @@ def build_payload(staging: dict) -> dict:
             "group": "consumer_staples",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": "2026-06-30",
-            "release_date": "2026-07-22",
-            "analysis_date": "2026-08-29",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=staging["period_labels"][-1],
+            period_end=staging["period_ends"][-1]),
         "tracker": "Watchlist Quarterly Tracker · PM",
         "title": "Philip Morris International (PM)：Q2 2026 季报仪表盘",
         "subtitle": ("截至 2026-06-30 · 发布 2026-07-22 · US GAAP · 未审计 · "

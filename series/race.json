@@ -13,7 +13,9 @@
     "period": "Q2 2026",
     "fiscal_label": "FY2026 Q2",
     "period_end": "2026-06-30",
-    "release_date": "2026-07-30"
+    "release_date": "2026-07-30",
+    "analysis_date": "2026-08-29",
+    "audit_status": "unaudited"
   },
   "periods": [
     "Q3 2024",

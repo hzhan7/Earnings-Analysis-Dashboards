@@ -114,32 +114,32 @@ no dependency at all, and is what actually runs on a fresh clone.
   addable to either. The cross-page capex table stays in US dollars on every
   page, because it compares four filers that all report in that currency.
 - Quarters are labelled by calendar quarter on every page. Microsoft's fiscal
-  year ends in June, so its `Q2 2026` is the quarter ended 2026-06-30, which the
-  company itself calls FY2026 Q4; NVIDIA's ends in late January, so its
-  `Q1 2026` is the quarter ended 2026-04-26, which the company calls FY2027 Q1;
-  Synopsys' ends in October, so its `Q2 2026` is the quarter ended 2026-07-31,
-  which the company calls FY2026 Q3; Broadcom's ends in early November, so its
-  `Q2 2026` is the quarter ended 2026-08-02, which the company calls FY2026 Q3;
-  Visa's ends in September, so its `Q2 2026`
-  is the quarter ended 2026-06-30, which the company also calls FY2026 Q3;
+  year ends in June, so a calendar Q2 is the quarter the company itself calls
+  Q4 of the same-numbered fiscal year; NVIDIA's ends in late January, so a
+  calendar Q1 — the quarter to late April — is its fiscal Q1 of the year
+  numbered one ahead; Synopsys' ends in October, so a calendar Q2 is its
+  fiscal Q3, ending in late July; Broadcom's ends in early November, so a
+  calendar Q2 is its fiscal Q3, ending in early August; Visa's ends in
+  September, so a calendar Q2 is also its fiscal Q3;
   Costco's ends on the Sunday nearest 31 August and Micron's on the Thursday
   nearest it — their SEC filer records carry 08-30 and 09-03 — so neither
-  reliably ends in August at all. Their `Q2 2026` are the twelve weeks ended
-  2026-05-10 and the quarter ended 2026-05-28, which each company calls
-  FY2026 Q3; TJX's ends on the Saturday nearest 31 January (filer record 02-01),
-  so its `Q2 2026` is the thirteen weeks ended 2026-08-01, which the company
-  calls FY2027 Q2 — a fiscal year numbered one ahead of the calendar year it
-  mostly sits in;
-  NIKE's ends in May, so its `Q2 2026` is the quarter ended 2026-05-31, which
-  the company calls FY2026 Q4 — and because that year-end sits mid-quarter, the
-  offset is not constant across its own year: NIKE's fiscal Q1 and Q2 land in
-  the *previous* calendar year (`Q3` and `Q4`) while its Q3 and Q4 land in the
-  same one; Richemont's ends on 31 March, so its `Q2 2026` is the quarter ended
-  2026-06-30, which the company calls FY2027 Q1, and its profit exists only for
-  the half-years ending 30 September and 31 March, which that page labels by the
-  month each half ends. Each page says so in its subtitle and notes. Without one convention the
-  cross-company capex table would compare different three-month periods and look
-  fine doing it.
+  reliably ends in August at all. For both, a calendar Q2 is the fiscal Q3:
+  Costco's twelve-week one, ending in early May, and Micron's, ending in late
+  May; TJX's ends on the Saturday nearest 31 January (filer record 02-01),
+  so a calendar Q2 is its thirteen-week fiscal Q2 — in a fiscal year numbered
+  one ahead of the calendar year it mostly sits in;
+  NIKE's ends in May, so a calendar Q2 is its fiscal Q4 — and because that
+  year-end sits mid-quarter, the offset is not constant across its own year:
+  NIKE's fiscal Q1 and Q2 land in the *previous* calendar year (`Q3` and `Q4`)
+  while its Q3 and Q4 land in the same one; Richemont's ends on 31 March, so a
+  calendar Q2 is its fiscal Q1 of the year numbered one ahead, and its profit
+  exists only for the half-years ending 30 September and 31 March, which that
+  page labels by the month each half ends. The mapping is stated as a rule
+  rather than as this quarter's example because the example is the part that
+  goes stale with every roll; each page names its own latest quarter both ways
+  in its title or subtitle. Without one convention the
+  cross-company capex table would compare different three-month periods and
+  look fine doing it.
 
 ## Page modules
 

@@ -1,5 +1,11 @@
 {
   "_provenance": "所有公司披露值逐季读自 SEC EDGAR 上 Synopsys（CIK 883241）的申报文件：24 份季度业绩 8-K 的 EX-99.1（合并损益表、分部与调整后分部营业利润调节表、下一季与全年 Financial Targets 表）、各季 10-Q 与各年 10-K（分部、分地区、backlog、现金流与回购）。财政年度截至 10 月 31 日；本页一律按自然年季度标注（FY 的 Q1→上一自然年 Q4，Q2→Q1，Q3→Q2，Q4→Q3）。会计季 Q4 无 10-Q，其分部与分地区值为财年数减去九个月数，两端均为申报值。FY2024 Q1 的年同比分母 1,510.989 为 FY2024 Q2 业绩 8-K 所载六个月 2,965.701 减去该季 1,454.712；FY2023 Q4 的 1,467.383 为重述后的 Design Automation 953.718 与 Design IP 513.665 之和。",
+  "latest": {
+    "period": "Q2 2026",
+    "release_date": "2026-08-26",
+    "analysis_date": "2026-08-27",
+    "audit_status": "unaudited"
+  },
   "periods": [
     "Q3 2024",
     "Q4 2024",

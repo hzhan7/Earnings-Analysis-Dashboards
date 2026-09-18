@@ -64,8 +64,10 @@ sys.path.insert(0, str(ROOT))
 
 from build.board import (  # noqa: E402
     ai_capex_cycle_table,
+    display_period,
     headroom,
     headroom_exhibit,
+    latest_block,
     number_exhibits,
     threshold_exhibit,
     threshold_table,
@@ -896,6 +898,15 @@ def audit_tables(s: dict, qv: dict, hv: dict, entries: list[dict], first: int) -
             ai_capex_cycle_table(first + 8)]
 
 
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    sales = staging["half_segment_sales_eur_m"]["jewellery_maisons"][-1]
+    result = staging["half_segment_result_eur_m"]["jewellery_maisons"][-1]
+    return [f"Sales €{staging['quarterly_eur_m']['total'][-1]:,.0f}M",
+            f"恒定汇率 {staging['quarterly_cer_pct']['total'][-1]:+.0f}%",
+            f"珠宝 {staging['halves'][-1][-2:]} 利润率 {result / sales * 100:.1f}%"]
+
+
 def build_payload(staging: dict) -> dict:
     s = staging
     qv = quarter_view(s)
@@ -930,15 +941,10 @@ def build_payload(staging: dict) -> dict:
             "group": "luxury_brands",
             "accounting_standard": "IFRS",
         },
-        "latest": {
-            "disclosed_period_label": latest["disclosed_period_label"],
-            "full_financial_period_label": f"H2 FY{halves[hl][2:4]}",
-            "period_end": latest["period_end"],
-            "release_date": latest["release_date"],
-            "analysis_date": latest["analysis_date"],
-            "audit_status": latest["audit_status"],
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            s,
+            period=display_period(s["quarters"][-1]),
+            full_label=f"H2 FY{halves[hl][2:4]}"),
         "tracker": "Watchlist Quarterly Tracker · CFR",
         "title": "Richemont (CFR)：Q2 2026（公司 FY27 第一季）销售与 FY26 下半年利润仪表盘",
         "subtitle": (

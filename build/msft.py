@@ -32,6 +32,7 @@ from build.board import (  # noqa: E402
     ai_capex_cycle_table,
     headroom,
     headroom_exhibit,
+    latest_block,
     number_exhibits,
     threshold_exhibit,
     threshold_table,
@@ -84,6 +85,15 @@ def signed(value: float, digits: int = 1, suffix: str = "%") -> str:
 
 def pct_change(current: float, comparison: float) -> float:
     return (current / comparison - 1) * 100
+
+
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    q = staging["quarterly_usd_m"]
+    fcf = q["operating_cash_flow"][-1] - q["cash_paid_for_property_and_equipment"][-1]
+    return [f"Revenue ${q['revenue_total'][-1] / 1000:.1f}B",
+            f"Azure {staging['azure_growth_cc_pct'][-1]:+.0f}%",
+            f"FCF {'-' if fcf < 0 else ''}${abs(fcf) / 1000:.1f}B"]
 
 
 def build_payload(staging: dict) -> dict:
@@ -827,15 +837,10 @@ def build_payload(staging: dict) -> dict:
             "group": "software_cloud",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026（FY2026 Q4）",
-            "period_end": "2026-06-30",
-            "release_date": "2026-07-29",
-            "analysis_date": "2026-07-30",
-            "audit_status": "audited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=staging["periods"][-1],
+            full_label=f'{staging["periods"][-1]}（{staging["latest"]["fiscal_period"]}）'),
         "tracker": "Watchlist Quarterly Tracker · MSFT",
         "title": "Microsoft (MSFT)：Q2 2026 季报仪表盘",
         "subtitle": (

@@ -1,5 +1,11 @@
 {
   "_provenance": "所有季度值取自 SEC EDGAR：2017Q1–2026Q2 的利润表来自各期 10-Q 与 10-K 的Condensed Consolidated Statements of Income（R 文件），第四季度为当年 10-K 全年数减去同年三份 10-Q 的三个季度，四条腿都是申报值；经营指标取自各季业绩 8-K 的 EX-99.1 新闻稿「Financial and Operating Highlights」与「Net Interest Revenue」两张表。全部数值以公司披露口径为准，派生值在页面上以 D 标注。",
+  "latest": {
+    "period": "Q2 2026",
+    "release_date": "2026-07-21",
+    "analysis_date": "2026-08-29",
+    "audit_status": "unaudited"
+  },
   "periods": [
     "2016Q1",
     "2016Q2",

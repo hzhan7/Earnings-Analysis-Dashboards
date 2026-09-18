@@ -56,6 +56,7 @@ from build.board import (  # noqa: E402
     delivery_band,
     headroom,
     headroom_exhibit,
+    latest_block,
     number_exhibits,
     threshold_exhibit,
     threshold_table,
@@ -631,6 +632,14 @@ def gaap_wedge(staging: dict) -> dict:
     }
 
 
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    fin = staging["financials"]
+    return [f"Net revenue ${fin['net_revenue_usd_m'][-1] / 1000:.1f}B",
+            f"激励率 {fin['incentive_rate_pct'][-1]:.1f}%",
+            f"GAAP OpM {fin['operating_income_usd_m'][-1] / fin['net_revenue_usd_m'][-1] * 100:.1f}%"]
+
+
 def build_payload(staging: dict) -> dict:
     financials = staging["financials"]
     periods = staging["periods"]
@@ -976,15 +985,10 @@ def build_payload(staging: dict) -> dict:
             "group": "payment_networks",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": "2026-06-30",
-            "release_date": "2026-07-28",
-            "analysis_date": "2026-07-29",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=staging["periods"][-1],
+            period_end=staging["period_ends"][-1]),
         "tracker": "Watchlist Quarterly Tracker · V",
         "title": "Visa (V)：Q2 2026 季报仪表盘",
         "subtitle": (

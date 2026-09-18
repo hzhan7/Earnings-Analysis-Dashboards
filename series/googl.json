@@ -3,12 +3,12 @@
   "slug": "googl",
   "ticker": "GOOGL",
   "company": "Alphabet",
-  "period": {
-    "fiscal_label": "Q2 2026",
-    "previous_fiscal_label": "Q1 2026",
+  "latest": {
+    "period": "Q2 2026",
+    "period_end": "2026-06-30",
     "release_date": "2026-07-22",
     "analysis_date": "2026-07-23",
-    "period_identity_status": "frontmatter"
+    "audit_status": "unaudited"
   },
   "snapshot": {
     "title": "关键指标一览（Q2 2026 vs Q1 2026 vs Q2 2025）",

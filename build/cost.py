@@ -68,6 +68,7 @@ sys.path.insert(0, str(ROOT))
 from build.board import (  # noqa: E402
     ai_capex_cycle_table,
     headroom_exhibit,
+    latest_block,
     number_exhibits,
     threshold_exhibit,
     threshold_table,
@@ -499,6 +500,14 @@ DECK_SOURCE = (
     "这份材料自 2024-05-30（FY2024 Q3 业绩）起随每份业绩 8-K 一并 furnish，共 9 期，"
     "在此之前这些数字只在电话会上口头给出，因此本页的这条序列从那一季开始，不向前回补。"
 )
+
+
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    return [f"Revenue ${staging['financials']['total_revenue_usd_m'][-1] / 1000:.1f}B",
+            f"调整后 comp {staging['comparable_sales_pct']['adjusted_total_pct'][-1]:+.1f}%",
+            "会员费/营业利润 "
+            f"{staging['annual']['membership_fee_share_of_operating_income_pct'][-1]:.0f}%"]
 
 
 def build_payload(staging: dict) -> dict:
@@ -1295,15 +1304,11 @@ def build_payload(staging: dict) -> dict:
             "group": "consumer_retail",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": staging["latest"]["period"],
-            "full_financial_period_label": staging["latest"]["period"],
-            "period_end": staging["latest"]["period_end"],
-            "release_date": staging["latest"]["release_date"],
-            "analysis_date": "2026-08-29",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=staging["periods"][-1],
+            period_end=staging["period_ends"][-1],
+            release_date=staging["release_dates"][-1]),
         "tracker": "Watchlist Quarterly Tracker · COST",
         "title": "Costco Wholesale Corporation (COST)：Q2 2026 季报仪表盘",
         "subtitle": (

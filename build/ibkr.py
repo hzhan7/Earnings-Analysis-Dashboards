@@ -60,7 +60,9 @@ sys.path.insert(0, str(ROOT))
 from build.board import (  # noqa: E402
     ai_capex_cycle_table,
     headroom_exhibit,
+    latest_block,
     number_exhibits,
+    round_half_up,
     threshold_exhibit,
     threshold_table,
 )
@@ -805,6 +807,15 @@ def commission_long(staging: dict) -> dict:
 
 # ── payload ─────────────────────────────────────────────────────────────────
 
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    # The filer's own text rounds 5,185 thousand accounts to "5.19 million";
+    # binary float formatting would print 5.18. See `round_half_up`.
+    return [f"Revenue ${staging['financials_usd_m']['total_net_revenues'][-1] / 1000:.2f}B",
+            f"NIM {staging['nim']['nim_pct'][-1]:.2f}%",
+            f"账户 {round_half_up(staging['operating']['accounts_thousands'][-1] / 1000, 2)}M"]
+
+
 def build_payload(staging: dict) -> dict:
     periods = staging["periods"]
     labels = [compact_period(period) for period in periods]
@@ -1037,15 +1048,10 @@ def build_payload(staging: dict) -> dict:
             "group": "brokerage_wealth",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": "2026-06-30",
-            "release_date": "2026-07-21",
-            "analysis_date": "2026-08-29",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=staging["periods"][-1],
+            release_date=staging["release_dates"][staging["periods"][-1]]),
         "tracker": "Watchlist Quarterly Tracker · IBKR",
         "title": "Interactive Brokers (IBKR)：Q2 2026 季报仪表盘",
         "subtitle": (

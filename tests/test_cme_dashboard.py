@@ -521,7 +521,8 @@ class CmeDashboardTest(unittest.TestCase):
         entry = next(e for e in ENTRIES if e["slug"] == "cme")
         self.assertIn('href="cme/"', home)
         self.assertIn(entry["name"], home)
-        self.assertIn(" · ".join(entry["headline_metrics"]), home)
+        staging = json.loads(cme.STAGING_PATH.read_text(encoding="utf-8"))
+        self.assertIn(" · ".join(cme.headline_metrics(staging)), home)
 
     def test_the_shell_links_the_payload_by_content_hash(self) -> None:
         shell = (ROOT / "cme" / "index.html").read_text(encoding="utf-8")

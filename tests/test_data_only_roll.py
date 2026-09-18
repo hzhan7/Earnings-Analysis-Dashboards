@@ -1,0 +1,103 @@
+"""A quarter roll edits `series/<slug>.json` and nothing else.
+
+The owner's rule of 2026-09-19: rolling a page to a new quarter is a data edit.
+Four layers used to need hand edits beside the series -- the builder's `latest`
+block and its prose, `build/all.py`'s card figures, the home page's cards and
+counts, the README's fiscal-year paragraph -- and none of them had a gate. This
+file pins the shared half of the fix, for every page:
+
+* every builder gets its `latest` block from the series (`board.latest_block`),
+  and that block refuses to build when the series file's own `latest` stamp is
+  a quarter behind its arrays -- so a roll cannot ship last quarter's review
+  date on this quarter's page;
+* every builder computes its home-page card figures from the series
+  (`headline_metrics`), so `build/all.py` types none;
+* the home page's cards and counts are exactly what `build/home.py` writes from
+  the roster and the payloads, so a stale card cannot survive a build.
+"""
+
+from __future__ import annotations
+
+import copy
+import json
+import sys
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from build.all import ENTRIES, MODULES, build_all, roster_payload  # noqa: E402
+from build.home import HOME, render_home  # noqa: E402
+
+
+def staging_of(slug: str) -> dict:
+    return json.loads(MODULES[slug].STAGING_PATH.read_text(encoding="utf-8"))
+
+
+class SharedLayerTest(unittest.TestCase):
+    def test_every_builder_refuses_a_series_whose_latest_stamp_is_stale(self) -> None:
+        """Tamper the stamp and nothing else: the build must stop, and say why.
+
+        A builder that still typed its own `latest` block would build happily
+        here, which is exactly the rot this replaces.
+        """
+        for slug in MODULES:
+            staging = staging_of(slug)
+            meta = staging["latest"]
+            stamps = [key for key in ("period", "disclosed_period_label", "period_label")
+                      if key in meta]
+            self.assertTrue(stamps, f"{slug}: series `latest` block carries no period stamp")
+            stale = copy.deepcopy(staging)
+            for key in stamps:
+                stale["latest"][key] = "Q1 1999"
+            with self.subTest(slug=slug):
+                with self.assertRaisesRegex(ValueError, "stamped"):
+                    MODULES[slug].build_payload(stale)
+
+    def test_the_latest_block_carries_what_no_filing_does_from_the_series_file(self) -> None:
+        for slug in MODULES:
+            staging = staging_of(slug)
+            latest = MODULES[slug].build_payload(staging)["latest"]
+            with self.subTest(slug=slug):
+                self.assertEqual(latest["analysis_date"], staging["latest"]["analysis_date"])
+                self.assertEqual(latest["audit_status"], staging["latest"]["audit_status"])
+
+    def test_every_card_figure_is_computed_by_its_builder(self) -> None:
+        roster = roster_payload(build_all())
+        for entry, item in zip(ENTRIES, roster["items"]):
+            slug = entry["slug"]
+            with self.subTest(slug=slug):
+                self.assertNotIn("headline_metrics", entry,
+                                 "card figures are computed, not typed into ENTRIES")
+                figures = MODULES[slug].headline_metrics(staging_of(slug))
+                self.assertEqual(item["headline_metrics"], figures)
+                self.assertEqual(len(figures), 3)
+                self.assertTrue(all(isinstance(text, str) and text for text in figures))
+
+    def test_the_home_page_is_what_the_generator_writes(self) -> None:
+        """Rendering the committed page again must change nothing."""
+        payloads = build_all()
+        roster = roster_payload(payloads)
+        text = HOME.read_text(encoding="utf-8")
+        self.assertEqual(render_home(text, roster, payloads), text,
+                         "index.html is stale: run build/all.py")
+
+    def test_the_home_page_card_names_the_payload_period(self) -> None:
+        """The NVIDIA card sat a quarter behind its own page while every test
+        passed, because another card happened to carry the same date string.
+        Each card is now checked against its own payload, inside its own anchor.
+        """
+        home = HOME.read_text(encoding="utf-8")
+        payloads = build_all()
+        for entry in ENTRIES:
+            slug = entry["slug"]
+            card = home.split(f'<a class="hcard" href="{slug}/">', 1)[1].split("</a>", 1)[0]
+            latest = payloads[slug]["latest"]
+            with self.subTest(slug=slug):
+                self.assertIn(f"发布 {latest['release_date']}", card)
+                self.assertIn(latest["disclosed_period_label"], card)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,5 +1,11 @@
 {
   "_provenance": "八季公司披露值逐季读自 SEC EDGAR 上 NVIDIA（CIK 1045810）的季度业绩 8-K（EX-99.1 新闻稿与 EX-99.2 CFO commentary）。自本季（FY2027 Q2，acc 0001045810-26-000075）起，10-Q 首次成为本页的承重来源：子分部重述、供应与产能承诺、担保最大敞口、单一客户集中度、海外收入占比、客户预付款六项只在 10-Q 里，8-K 完全没有。42 季长序列（2016Q1 起）逐季读自各季 8-K 的合并损益表三个月列（财年第四季取每年 2 月全年 8-K 里与全年列并排印出的 Q4 三个月列），并与各财年 10-K 全年数逐年勾稽。重述后（含股权激励费用）的 non-GAAP 历史取自公司 IR 的《Non-GAAP Historical Financial Tables including Stock-Based Compensation Expense》（随 FY2026 Q4 业绩发布，覆盖 FY2026 四季）与各季 8-K 对账表；FY2025 两季公司未按新口径印出，本页按同一机械规则自算并已用 FY2025 年度列闭合校验。",
+  "latest": {
+    "period": "Q2 2026",
+    "release_date": "2026-08-26",
+    "analysis_date": "2026-08-30",
+    "audit_status": "unaudited"
+  },
   "periods": [
     "Q3 2024",
     "Q4 2024",

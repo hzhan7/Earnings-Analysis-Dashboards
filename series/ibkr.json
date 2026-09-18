@@ -8,6 +8,12 @@
     "units": "financials_usd_m 为百万美元；operating 各列单位见键名",
     "built_from": "SEC XBRL companyfacts + 各季业绩 8-K EX-99.1"
   },
+  "latest": {
+    "period": "Q2 2026",
+    "period_end": "2026-06-30",
+    "analysis_date": "2026-08-29",
+    "audit_status": "unaudited"
+  },
   "periods": [
     "Q1 2016",
     "Q2 2016",

@@ -46,6 +46,7 @@ from build.board import (  # noqa: E402
     ai_capex_cycle_table,
     delivery_band,
     headroom_exhibit,
+    latest_block,
     midpoint_deviation,
     number_exhibits,
     threshold_exhibit,
@@ -312,6 +313,14 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
     eps_dev["break_label"] = COVID_BREAK_LABEL
     charts = [eps_band, eps_dev, margin_band, margin_dev, comp_band, comp_dev]
     return charts, delivery_table
+
+
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    fin = staging["financials"]
+    return [f"Revenue ${fin['net_sales_usd_m'][-1] / 1000:.2f}B",
+            f"Comp {staging['comparable_sales_pct']['consolidated'][-1]:+.0f}%",
+            f"Adjusted EPS ${fin['adjusted_diluted_eps_usd'][-1]:.2f}"]
 
 
 def build_payload(staging: dict) -> dict:
@@ -920,15 +929,11 @@ def build_payload(staging: dict) -> dict:
             "group": "consumer_retail",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": "2026-08-01",
-            "release_date": "2026-08-19",
-            "analysis_date": "2026-08-29",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=staging["periods"][-1],
+            period_end=staging["period_ends"][-1],
+            release_date=staging["release_dates"][-1]),
         "tracker": "Watchlist Quarterly Tracker · TJX",
         "title": "The TJX Companies (TJX)：Q2 2026 季报仪表盘",
         "subtitle": (

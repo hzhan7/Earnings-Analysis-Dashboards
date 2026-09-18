@@ -1,5 +1,10 @@
 {
   "_provenance": "所有公司披露值逐季读自 SEC EDGAR 上 Broadcom Inc.（CIK 1730168）的申报文件：34 份季度业绩 8-K 的 EX-99.1 新闻稿（指引、Adjusted EBITDA 与 non-GAAP 营业利润、分部收入、当季现金流），25 份 10-Q 与 8 份 10-K 的分部附注 R 文件（分部收入与分部营业利润），以及 XBRL companyfacts（损益表、现金流量表、资产负债表与采购承诺）。两条独立来源在重叠的 28 个季度上收入与 GAAP 营业利润逐季完全一致，7 个完整财年的四季合计亦与申报年度数完全一致。",
+  "latest": {
+    "period": "Q2 2026",
+    "analysis_date": "2026-09-09",
+    "audit_status": "unaudited"
+  },
   "cik": "0001730168",
   "fiscal_year_end": "11-01",
   "period_ends": [

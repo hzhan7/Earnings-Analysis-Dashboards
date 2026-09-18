@@ -46,6 +46,7 @@ from build.board import (  # noqa: E402
     ai_capex_cycle_table,
     delivery_band,
     headroom,
+    latest_block,
     midpoint_deviation,
     number_exhibits,
     threshold_exhibit,
@@ -1037,6 +1038,14 @@ def routine_charts(staging: dict) -> list[dict]:
     return [cycle, capex_chart, cash_generation, inventory]
 
 
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    fin = staging["financials"]
+    return [f"Revenue ${fin['revenue_usd_m'][-1] / 1000:.2f}B",
+            f"non-GAAP GM {fin['non_gaap_gross_margin_pct'][-1]:.1f}%",
+            f"销货成本环比 {fin['cost_of_goods_sold_qoq_pct'][-1]:+.1f}%"]
+
+
 def build_payload(staging: dict) -> dict:
     periods = staging["periods"]
     fin = staging["financials"]
@@ -1255,15 +1264,11 @@ def build_payload(staging: dict) -> dict:
             "group": "semiconductor_ai",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": "2026-05-28",
-            "release_date": "2026-06-24",
-            "analysis_date": "2026-08-29",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=staging["periods"][-1],
+            period_end=staging["period_ends"][-1],
+            release_date=staging["next_quarter_guidance"]["published_on"]),
         "tracker": "Watchlist Quarterly Tracker · MU",
         "title": "Micron Technology (MU)：Q2 2026 季报仪表盘",
         "subtitle": (

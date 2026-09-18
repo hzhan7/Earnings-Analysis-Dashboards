@@ -16,6 +16,7 @@ from build import (  # noqa: E402
     skhynix, snps,
     spgi, tjx, tsm, v,
 )
+from build.home import write_home  # noqa: E402
 from build.payload_guard import write_js  # noqa: E402
 
 
@@ -73,8 +74,10 @@ GROUPS = [
 
 # Everything here is navigation copy, not analysis: it is what a reader sees
 # before choosing a page, so it must be short and it must not drift from the
-# payload. The three fields that can go stale on their own -- period label,
-# release date, status -- are read from the payload instead of typed here.
+# payload. Nothing that moves with a quarter is typed here: period label,
+# release date and status are read from the payload, and the three card
+# figures come from each builder's `headline_metrics(staging)`, computed from
+# the series the page itself is built from.
 ENTRIES = [
     {
         "slug": "amzn",
@@ -83,7 +86,6 @@ ENTRIES = [
         "aliases": ["Amazon", "亚马逊", "AWS"],
         "group": "internet",
         "cadence_label": "自然年季度；完整披露",
-        "headline_metrics": ["Revenue $200.6B", "AWS +37%", "TTM FCF -$7.6B"],
         "search_text": "amzn amazon 亚马逊 aws 云 电商 零售 广告 互联网 trainium prime",
     },
     {
@@ -93,8 +95,6 @@ ENTRIES = [
         "aliases": ["Broadcom", "博通", "VMware"],
         "group": "semiconductor_ai",
         "cadence_label": "11 月制财年；本站按自然年季度标注",
-        "headline_metrics": ["Revenue $29.59B", "AI 半导体 $16.7B",
-                             "non-GAAP 营业利润率 67.9%"],
         "search_text": "avgo broadcom 博通 半导体 ai xpu 定制加速器 asic networking 以太网 tomahawk jericho vmware 基础设施软件 vcf",
     },
     {
@@ -104,7 +104,6 @@ ENTRIES = [
         "aliases": ["American Express", "美国运通", "运通"],
         "group": "payment_networks",
         "cadence_label": "自然年季度；全年指引逐季修订",
-        "headline_metrics": ["Revenue $19.6B", "净卡费 +15.4%", "VCE 占收入 44.6%"],
         "search_text": ("axp american express 美国运通 运通 支付 卡组织 发卡行 高端 platinum 白金卡 "
                         "年费 卡费 折扣率 商户 消费额 billed business 拨备 准备金 信用卡 cet1"),
     },
@@ -115,7 +114,6 @@ ENTRIES = [
         "aliases": ["Brunello Cucinelli", "库奇内利", "BCU.MI"],
         "group": "luxury_brands",
         "cadence_label": "自然年财年；季度只发营收，完整损益一年两次",
-        "headline_metrics": ["Revenues €749.4M", "恒定汇率 +13.3%", "EBIT 利润率 17.1%"],
         "search_text": ("bc brunello cucinelli 布鲁内罗 库奇内利 奢侈品 意大利 羊绒 成衣 "
                         "静奢 quiet luxury 零售 批发 单品牌 恒定汇率 cfx ifrs 欧元 "
                         "米兰交易所 euronext milan 半年报 指引 门店 dos"),
@@ -127,7 +125,6 @@ ENTRIES = [
         "aliases": ["Cboe", "芝加哥期权交易所", "VIX", "SPX"],
         "group": "exchanges",
         "cadence_label": "自然年季度；全年指引逐季修订",
-        "headline_metrics": ["Net revenue $731.6M", "Multi-listed RPC $0.064", "调整后 OpM 70.4%"],
         "search_text": ("cboe 芝加哥期权交易所 交易所 期权 指数期权 spx vix 0dte 波动率 "
                         "multi-listed 做市返点 市占率 每合约收入 rpc adv 日均成交量 "
                         "data vantage 市场数据 期货 外汇 场外大宗 ats section 31 规费 事件合约"),
@@ -139,7 +136,6 @@ ENTRIES = [
         "aliases": ["Cadence", "楷登", "EDA"],
         "group": "semiconductor_ai",
         "cadence_label": "自然年季度；完整披露",
-        "headline_metrics": ["Revenue $1.58B", "Backlog $8.1B", "Non-GAAP OpM 45.5%"],
         "search_text": "cdns cadence 楷登 eda 半导体 设计 ip palladium 硬件仿真 agentic 芯片设计",
     },
     {
@@ -149,7 +145,6 @@ ENTRIES = [
         "aliases": ["Richemont", "历峰", "CFR.SW", "Cartier"],
         "group": "luxury_brands",
         "cadence_label": "3 月底制财年；本站按自然年季度标注；销售按季，利润仅半年度",
-        "headline_metrics": ["Sales €6,329M", "恒定汇率 +20%", "珠宝 H2 利润率 28.4%"],
         "search_text": ("cfr richemont 历峰 奢侈品 珠宝 cartier 卡地亚 van cleef arpels 梵克雅宝 buccellati "
                         "腕表 vacheron constantin 江诗丹顿 jaeger-lecoultre iwc piaget 伯爵 panerai "
                         "baume mercier montblanc 蒙布朗 chloé ynap 恒定汇率 半年度 瑞士 six 欧元 ifrs"),
@@ -161,7 +156,6 @@ ENTRIES = [
         "aliases": ["CME Group", "芝商所", "芝加哥商品交易所"],
         "group": "exchanges",
         "cadence_label": "自然年季度；申报文件只指引资本开支",
-        "headline_metrics": ["Revenue $1.71B", "清算费同比 −2.6%", "调整后 OpM 69.5%"],
         "search_text": ("cme cme group 芝商所 芝加哥商品交易所 交易所 衍生品 期货 期权 清算 "
                         "adv 成交量 rpc 每手费率 分级费率 利率期货 股指期货 国债 "
                         "brokertec ebs 抵押品 保证金 行情数据 未平仓合约"),
@@ -173,7 +167,6 @@ ENTRIES = [
         "aliases": ["Costco", "好市多", "开市客", "仓储会员店"],
         "group": "consumer_retail",
         "cadence_label": "财年末为最接近 8 月 31 日的星期日；本站按自然年季度标注",
-        "headline_metrics": ["Revenue $70.5B", "调整后 comp +6.6%", "会员费/营业利润 51%"],
         "search_text": ("cost costco 好市多 开市客 仓储会员店 零售 会员费 续费率 executive "
                         "同店销售 comp 汽油 加油站 自有品牌 kirkland 药房 电商 仓库 山姆"),
     },
@@ -184,7 +177,6 @@ ENTRIES = [
         "aliases": ["Google", "谷歌"],
         "group": "internet",
         "cadence_label": "自然年季度；完整披露",
-        "headline_metrics": ["Revenue $119.8B", "Cloud +81.8%", "FCF -$5.9B"],
         "search_text": "googl google alphabet 谷歌 互联网 cloud search youtube",
     },
     {
@@ -194,7 +186,6 @@ ENTRIES = [
         "aliases": ["HKEX", "香港交易所", "港交所", "00388"],
         "group": "exchanges",
         "cadence_label": "自然年季度；只有单数季印损益表，双数季由减法得到",
-        "headline_metrics": ["收入及其他收益 HK$8,499M", "EBITDA 利润率 80.2%", "42 季里 21 季为自算"],
         "search_text": ("hkex 00388 388 港交所 香港交易所 香港交易及结算所 交易所 现货市场 "
                         "日均成交额 adt 衍生品 期交所 股票期权 lme 伦敦金属交易所 金属 "
                         "沪港通 深港通 互联互通 stock connect 北向 南向 债券通 "
@@ -207,7 +198,6 @@ ENTRIES = [
         "aliases": ["Interactive Brokers", "盈透证券", "IB"],
         "group": "brokerage_wealth",
         "cadence_label": "自然年季度；完整披露",
-        "headline_metrics": ["Revenue $1.90B", "NIM 1.93%", "账户 5.19M"],
         "search_text": ("ibkr interactive brokers 盈透证券 券商 经纪 交易 保证金 "
                         "净息差 nim 客户权益 darts 期权 期货 清算 托管 up-c"),
     },
@@ -218,7 +208,6 @@ ENTRIES = [
         "aliases": ["Kering", "开云", "开云集团", "Gucci", "古驰"],
         "group": "luxury_brands",
         "cadence_label": "自然年季度；收入按季披露，利润仅半年度",
-        "headline_metrics": ["本季可比 +2%", "Gucci 可比 −2%", "半年利润率 12.8%"],
         "search_text": ("ker kering 开云 开云集团 gucci 古驰 saint laurent 圣罗兰 ysl bottega veneta 葆蝶家 "
                         "balenciaga 巴黎世家 mcqueen boucheron 宝诗龙 珠宝 眼镜 kering eyewear kering beauté "
                         "奢侈品 时装与皮具 可比增速 半年度 欧元 ifrs"),
@@ -230,7 +219,6 @@ ENTRIES = [
         "aliases": ["Mastercard", "万事达", "支付网络"],
         "group": "payment_networks",
         "cadence_label": "自然年季度；完整披露",
-        "headline_metrics": ["Revenue $9.28B", "Rebate ratio 52.4%", "VAS share 41.2%"],
         "search_text": "ma mastercard 万事达 支付 网络 跨境 清算 返点 激励 增值服务 vas 发卡行 收单 稳定币",
     },
     {
@@ -240,7 +228,6 @@ ENTRIES = [
         "aliases": ["LVMH", "路威酩轩", "Louis Vuitton", "Dior"],
         "group": "luxury_brands",
         "cadence_label": "自然年季度；收入按季披露，利润仅半年度",
-        "headline_metrics": ["半年收入 €38.6B", "半年经营利润率 22.5%", "本季有机 +3%"],
         "search_text": ("mc lvmh 路威酩轩 奢侈品 louis vuitton 路易威登 dior 迪奥 tiffany 蒂芙尼 "
                         "bvlgari 宝格丽 sephora 丝芙兰 hennessy 轩尼诗 干邑 香槟 时装 皮具 "
                         "手表 珠宝 精品零售 有机增速 半年度 欧元 ifrs"),
@@ -252,7 +239,6 @@ ENTRIES = [
         "aliases": ["Moody's", "穆迪", "评级"],
         "group": "financial_data_indices",
         "cadence_label": "自然年季度；全年指引逐季修订",
-        "headline_metrics": ["Revenue $2.19B", "MIS adj OpM 68.3%", "调整后 EPS $4.68"],
         "search_text": ("mco moodys 穆迪 评级 信用评级 mis ma 债券 发行量 issuance "
                         "arr 订阅 金融数据 指数 全年指引"),
     },
@@ -263,7 +249,6 @@ ENTRIES = [
         "aliases": ["Facebook", "脸书", "元宇宙"],
         "group": "internet",
         "cadence_label": "自然年季度；完整披露",
-        "headline_metrics": ["Revenue $60.8B", "Ads +27.5%", "FCF $0.8B"],
         "search_text": "meta facebook instagram whatsapp 脸书 广告 reality labs 互联网",
     },
     {
@@ -273,7 +258,6 @@ ENTRIES = [
         "aliases": ["MSCI", "明晟", "指数"],
         "group": "financial_data_indices",
         "cadence_label": "自然年季度；完整披露",
-        "headline_metrics": ["Revenue $867M", "ETF AUM $2,818B", "Adj EBITDA 62.1%"],
         "search_text": ("msci 明晟 指数 index analytics 分析 可持续 sustainability climate "
                         "私募资产 private assets etf aum 基点费率 run rate 留存率 订阅 资产型费用"),
     },
@@ -284,7 +268,6 @@ ENTRIES = [
         "aliases": ["微软", "Azure"],
         "group": "software_cloud",
         "cadence_label": "6 月制财年；本站按自然年季度标注",
-        "headline_metrics": ["Revenue $90.0B", "Azure +43%", "FCF $19.6B"],
         "search_text": "msft microsoft 微软 azure copilot m365 云 软件",
     },
     {
@@ -294,7 +277,6 @@ ENTRIES = [
         "aliases": ["Micron", "美光", "内存", "存储器"],
         "group": "semiconductor_ai",
         "cadence_label": "财年末为最接近 8 月 31 日的星期四；本站按自然年季度标注",
-        "headline_metrics": ["Revenue $41.46B", "non-GAAP GM 84.9%", "\u9500\u8d27\u6210\u672c\u73af\u6bd4 +4.8%"],
         "search_text": ("mu micron 美光 内存 存储器 半导体 dram nand hbm 闪存 "
                         "颗粒 位元 售价 asp 周期 涨价 数据中心 服务器 ssd "
                         "供货协议 sca take-or-pay 资本开支 晶圆厂"),
@@ -306,7 +288,6 @@ ENTRIES = [
         "aliases": ["Nasdaq", "纳斯达克", "交易所"],
         "group": "financial_data_indices",
         "cadence_label": "自然年季度；仅指引费用与税率",
-        "headline_metrics": ["Net revenue $1.50B", "ETP AUM $1,114B", "Non-GAAP OpM 57.3%"],
         "search_text": ("ndaq nasdaq 纳斯达克 交易所 上市 listing 指数 index etp aum "
                         "金融科技 fintech verafin adenza calypso axiomsl 反金融犯罪 "
                         "监管科技 arr 订阅 做市返点 section 31 规费 市占率"),
@@ -318,7 +299,6 @@ ENTRIES = [
         "aliases": ["Nike", "耐克", "Jordan", "Converse"],
         "group": "consumer_retail",
         "cadence_label": "5 月制财年；本站按自然年季度标注",
-        "headline_metrics": ["Revenue $10.97B", "ex-退款 GM 40.2%", "直营占比 37.8%"],
         "search_text": ("nke nike 耐克 运动鞋 服装 jordan converse 直营 dtc nike direct 批发 "
                         "大中华区 关税 退款 ieepa 遣散 重组 投资者日 长期财务目标"),
     },
@@ -329,7 +309,6 @@ ENTRIES = [
         "aliases": ["英伟达", "Nvidia"],
         "group": "semiconductor_ai",
         "cadence_label": "1 月制财年；本站按自然年季度标注",
-        "headline_metrics": ["Revenue $81.6B", "Data Center +92%", "GM 75.0%"],
         "search_text": "nvda nvidia 英伟达 半导体 gpu ai 数据中心 hyperscale acie networking blackwell rubin",
     },
     {
@@ -339,7 +318,6 @@ ENTRIES = [
         "aliases": ["Philip Morris", "菲利普莫里斯", "IQOS", "ZYN"],
         "group": "consumer_staples",
         "cadence_label": "自然年季度；完整披露",
-        "headline_metrics": ["Revenue $11.19B", "无烟收入占比 41.5%", "Adj EPS $2.20"],
         "search_text": ("pm philip morris 菲利普莫里斯 烟草 尼古丁 无烟 smoke-free iqos "
                         "heets terea zyn 尼古丁袋 veev 电子烟 marlboro 卷烟 消费必需品 提价"),
     },
@@ -350,7 +328,6 @@ ENTRIES = [
         "aliases": ["Ferrari", "法拉利", "跃马"],
         "group": "luxury_brands",
         "cadence_label": "自然年季度；只报 6-K，无 10-Q",
-        "headline_metrics": ["Net revenues \u20ac1,938M", "EBIT margin 31.2%", "\u51fa\u8d27 3,366 \u53f0"],
         "search_text": ("race ferrari \u6cd5\u62c9\u5229 \u8dc3\u9a6c \u5962\u4f88\u54c1 \u8c6a\u534e\u6c7d\u8f66 \u8dd1\u8f66 "
                         "\u4e2a\u6027\u5316 personalization \u51fa\u8d27 shipments f1 \u4e00\u7ea7\u65b9\u7a0b\u5f0f ifrs \u6b27\u5143 20-f 6-k"),
     },
@@ -361,7 +338,6 @@ ENTRIES = [
         "aliases": ["Hermès", "Hermes", "爱马仕"],
         "group": "luxury_brands",
         "cadence_label": "自然年季度；收入按季披露，利润仅半年度",
-        "headline_metrics": ["Q2 revenue €4,094M", "固定汇率 +6.7%", "H1 经营利润率 41.0%"],
         "search_text": ("rms hermes hermès 爱马仕 奢侈品 皮具 马具 birkin kelly 铂金包 "
                         "成衣 丝绸 香水 钟表 珠宝 métier 板块 固定汇率 cc constant currency "
                         "亚太 日本 美洲 中东 半年报 ifrs 欧元 巴黎 euronext"),
@@ -373,7 +349,6 @@ ENTRIES = [
         "aliases": ["Samsung", "三星", "三星电子", "삼성전자"],
         "group": "semiconductor_ai",
         "cadence_label": "自然年季度；季末速报与月末完整财报分两次披露",
-        "headline_metrics": ["Revenue 171.5 兆韩元", "Memory 占收入 70.4%", "营业利润率 52.2%"],
         "search_text": ("samsung 三星 三星电子 삼성전자 005930 半导体 存储 内存 dram nand "
                         "hbm hbm4 服务器 ssd 代工 foundry 晶圆 系统lsi 手机 galaxy mx "
                         "面板 oled sdc harman 韩国 韩元 krw k-ifrs dart 存储周期 涨价"),
@@ -385,7 +360,6 @@ ENTRIES = [
         "aliases": ["嘉信理财", "Schwab"],
         "group": "brokerage_wealth",
         "cadence_label": "自然年季度；完整披露",
-        "headline_metrics": ["Revenue $7.07B", "NIM 3.00%", "DATs 11.9M"],
         "search_text": "schw schwab 嘉信 嘉信理财 券商 经纪 财富管理 银行 净利息收入 nim sweep 现金 交易 nna 客户资产",
     },
     {
@@ -395,7 +369,6 @@ ENTRIES = [
         "aliases": ["SK hynix", "SK 海力士", "海力士", "000660", "HBM"],
         "group": "semiconductor_ai",
         "cadence_label": "自然年季度；不发布任何财务指引",
-        "headline_metrics": ["Revenue \u20a979.3T", "\u8425\u4e1a\u5229\u6da6\u7387 76.3%", "\u91cf\u4ef7\u53ea\u7ed9\u7528\u8bcd"],
         "search_text": ("skhynix sk hynix sk\u6d77\u529b\u58eb \u6d77\u529b\u58eb 000660 skhy \u5b58\u50a8 \u5185\u5b58 \u534a\u5bfc\u4f53 "
                         "dram nand \u95ea\u5b58 hbm hbm3e hbm4 \u97e9\u56fd k-ifrs \u97e9\u5143 \u51fa\u8d27\u91cf \u5e73\u5747\u552e\u4ef7 asp "
                         "\u5468\u671f \u8d44\u672c\u5f00\u652f \u5ba2\u6237\u96c6\u4e2d\u5ea6 solidigm kioxia adr 20-f 6-k"),
@@ -407,7 +380,6 @@ ENTRIES = [
         "aliases": ["新思科技", "Ansys"],
         "group": "semiconductor_ai",
         "cadence_label": "10 月制财年；本站按自然年季度标注",
-        "headline_metrics": ["Revenue $2.48B", "Design IP +10.8%", "Non-GAAP OpM 41.6%"],
         "search_text": "snps synopsys 新思科技 eda 半导体 设计 ip ansys 仿真 芯片设计 backlog agentic",
     },
     {
@@ -417,7 +389,6 @@ ENTRIES = [
         "aliases": ["标普全球", "S&P", "标普"],
         "group": "financial_data_indices",
         "cadence_label": "自然年季度；完整披露",
-        "headline_metrics": ["Revenue $4.15B", "Ratings 交易性 +25%", "调整后 EPS $4.83"],
         "search_text": ("spgi s&p global 标普全球 标普 评级 信用评级 指数 ratings indices "
                         "market intelligence 大宗商品 能源 mobility 分拆 发行量 订阅"),
     },
@@ -428,7 +399,6 @@ ENTRIES = [
         "aliases": ["TJ Maxx", "Marshalls", "HomeGoods", "TK Maxx", "折扣零售"],
         "group": "consumer_retail",
         "cadence_label": "财年末为最接近 1 月 31 日的星期六；本站按自然年季度标注",
-        "headline_metrics": ["Revenue $15.18B", "Comp +4%", "Adj EPS $1.22"],
         "search_text": "tjx tj maxx marshalls homegoods winners tk maxx sierra homesense 折扣零售 off-price 服装 家居 零售 关税 marmaxx",
     },
     {
@@ -438,7 +408,6 @@ ENTRIES = [
         "aliases": ["台积电", "Taiwan Semiconductor"],
         "group": "semiconductor_ai",
         "cadence_label": "自然年季度；完整披露",
-        "headline_metrics": ["Revenue $40.2B", "HPC 66%", "GM 67.7%"],
         "search_text": "tsm tsmc taiwan semiconductor 台积电 半导体 foundry hpc ai 2nm",
     },
     {
@@ -448,7 +417,6 @@ ENTRIES = [
         "aliases": ["Visa", "维萨", "签证卡"],
         "group": "payment_networks",
         "cadence_label": "9 月制财年；本站按自然年季度标注",
-        "headline_metrics": ["Net revenue $11.6B", "激励率 28.7%", "GAAP OpM 59.1%"],
         "search_text": "v visa 维萨 支付 卡组织 网络 跨境 client incentives 激励 借记卡 信用卡 发卡行 收单",
     },
 ]
@@ -462,9 +430,17 @@ def roster_payload(payloads: dict) -> dict:
     """
     items = []
     for entry in ENTRIES:
-        latest = payloads[entry["slug"]]["latest"]
+        slug = entry["slug"]
+        latest = payloads[slug]["latest"]
+        module = MODULES[slug]
+        staging = json.loads(module.STAGING_PATH.read_text(encoding="utf-8"))
+        item = {}
+        for key, value in entry.items():
+            item[key] = value
+            if key == "cadence_label":
+                item["headline_metrics"] = module.headline_metrics(staging)
         items.append({
-            **entry,
+            **item,
             "latest_label": latest["disclosed_period_label"],
             "latest_full_label": latest["full_financial_period_label"],
             "release_date": latest["release_date"],
@@ -495,7 +471,12 @@ def main() -> int:
     # Roster first: each page's shell stamps the content hash of every script it
     # loads, roster.js included, so the roster has to be final before the shells
     # are rendered or they would carry the previous build's digest for it.
-    write_roster(roster_payload(build_all()))
+    payloads = build_all()
+    roster = roster_payload(payloads)
+    write_roster(roster)
+    # The home page's cards and counts are written from the same roster and
+    # payloads, so a quarter roll never has to retype a card.
+    write_home(roster, payloads)
     for module in MODULES.values():
         module.main()
     print(f"Quarterly Results: {len(MODULES)} reviewed companies + shared roster")

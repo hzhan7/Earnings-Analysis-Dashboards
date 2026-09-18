@@ -1,5 +1,11 @@
 {
   "_provenance": "所有公司披露值逐季读自 SEC EDGAR 上 MSCI Inc.（CIK 1408198）的申报文件：31 份季度业绩 8-K 的 EX-99.1 新闻稿（Table 2 合并损益表、Table 5 分部与收入类型经营结果、Table 6 销售与留存率、Table 7 挂钩 MSCI 股票指数的 ETF AUM、Table 8 Run Rate、Table 10 调整后每股收益调节、Table 11 营业费用与调整后 EBITDA 费用调节、Table 12 经营现金流与自由现金流调节，以及全年 Guidance 表），覆盖 2018Q4 至 2026Q2。全年实际值只取各年 Q4 发布中的 Year Ended 列。量纲逐表读自该表自己的单位表头（千美元／百万美元／十亿美元在不同年份的不同表之间来回切换）。",
+  "latest": {
+    "period": "Q2 2026",
+    "release_date": "2026-07-21",
+    "analysis_date": "2026-08-29",
+    "audit_status": "unaudited"
+  },
   "periods": [
     "2024Q3",
     "2024Q4",

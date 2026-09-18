@@ -1,5 +1,10 @@
 {
   "_provenance": "所有公司披露值逐季读自 SEC EDGAR 上 Micron Technology（CIK 723125）的 36 份季度业绩 8-K EX-99.1 新闻稿、各季 10-Q 的收入注释与业务单元表，以及 FY2011–FY2025 十五份 10-K。每份业绩稿并排印出三个季度（本季、上季、去年同季），因此除最新一季外的每个季度都被两到三份不同的文件各读了一遍，读数不一致的地方在下面的 reading_disagreements 里逐条记录，不做静默取舍。",
+  "latest": {
+    "period": "Q2 2026",
+    "analysis_date": "2026-08-29",
+    "audit_status": "unaudited"
+  },
   "periods": [
     "Q1 2016",
     "Q2 2016",

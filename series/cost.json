@@ -10,7 +10,9 @@
     "fiscal_label": "FY2026 Q3",
     "period_end": "2026-05-10",
     "release_date": "2026-05-28",
-    "weeks": 12
+    "weeks": 12,
+    "analysis_date": "2026-08-29",
+    "audit_status": "unaudited"
   },
   "periods": [
     "Q3 2024",

@@ -81,8 +81,10 @@ sys.path.insert(0, str(ROOT))
 
 from build.board import (  # noqa: E402
     ai_capex_cycle_table,
+    display_period,
     headroom,
     headroom_exhibit,
+    latest_block,
     number_exhibits,
     threshold_table,
 )
@@ -1026,6 +1028,15 @@ def audit_tables(staging: dict, entries: list[dict], check: dict,
     return [ledger, reconcile, census, thresholds, ai_capex_cycle_table(first + 4)]
 
 
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    q = staging["quarterly"]
+    derived = sum(1 for basis in staging["quarter_basis"] if basis == "derived")
+    return [f"收入及其他收益 HK${q['revenue_and_other_income'][-1]:,.0f}M",
+            f"EBITDA 利润率 {q['ebitda'][-1] / q['revenue_and_other_income'][-1] * 100:.1f}%",
+            f"{len(staging['quarters'])} 季里 {derived} 季为自算"]
+
+
 def build_payload(staging: dict) -> dict:
     check = box_check(staging)
     recon = reconcile_against_printed(staging)
@@ -1051,7 +1062,7 @@ def build_payload(staging: dict) -> dict:
     exhibits = number_exhibits(disclosure_ex + quarter_ex + investment_ex + volume_ex, start=1)
     tables = audit_tables(staging, entries, check, recon, len(exhibits) + 1)
 
-    latest = staging["latest"]
+    latest = latest_block(staging, period=display_period(staging["quarters"][-1]))
     return {
         "schema_version": "quarterly-dashboard/hkex-v1",
         "page": {"slug": "hkex", "language": "zh-CN"},

@@ -49,8 +49,11 @@ sys.path.insert(0, str(ROOT))
 
 from build.board import (  # noqa: E402
     ai_capex_cycle_table,
+    display_period,
     headroom,
     headroom_exhibit,
+    latest_block,
+    minus_sign,
     number_exhibits,
     threshold_exhibit,
     threshold_table,
@@ -665,6 +668,16 @@ def routine_charts(st: dict, der: dict) -> list[dict]:
     ]
 
 
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    comp = staging["quarterly_comparable_pct"]
+    half = staging["half_group"]
+    return [minus_sign(f"本季可比 {comp['group_first_published'][-1]:+.0f}%"),
+            minus_sign(f"Gucci 可比 {comp['gucci'][-1]:+.0f}%"),
+            "半年利润率 "
+            f"{half['recurring_operating_income']['values'][-1] / half['revenue']['values'][-1] * 100:.1f}%"]
+
+
 def build_payload(st: dict) -> dict:
     der = derived(st)
     said_ex = settled_charts(st, der)
@@ -778,15 +791,10 @@ def build_payload(st: dict) -> dict:
         "page": {"slug": "ker", "language": "zh-CN"},
         "company": {"ticker": "KER.PA", "name": "Kering SA", "group": "luxury_brands",
                     "accounting_standard": "IFRS"},
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "H1 2026",
-            "period_end": "2026-06-30",
-            "release_date": "2026-07-28",
-            "analysis_date": "2026-09-17",
-            "audit_status": "limited_review",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            st,
+            period=display_period(st["long_quarters"][-1]),
+            full_label=st["halves"][-1]),
         "tracker": "Watchlist Quarterly Tracker · KER.PA",
         "title": "Kering（KER.PA）：Q2 2026 / H1 2026 季报仪表盘",
         "subtitle": ("截至 2026-06-30 · 发布 2026-07-28 · IFRS 合并 · 全部以欧元列示 · "

@@ -51,6 +51,7 @@ from build.board import (  # noqa: E402
     delivery_band,
     headroom,
     headroom_exhibit,
+    latest_block,
     number_exhibits,
     threshold_exhibit,
     threshold_table,
@@ -740,6 +741,16 @@ def routine_exhibits(staging: dict) -> list[dict]:
     return charts
 
 
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    fin = staging["financials"]
+    kpi = staging["kpi"]
+    rpc = kpi["multi_listed_rpc_usd"][kpi["quarters"].index(staging["periods"][-1])]
+    return [f"Net revenue ${fin['net_revenue'][-1]:.1f}M",
+            f"Multi-listed RPC ${rpc:.3f}",
+            f"调整后 OpM {fin['adj_op_margin_pct'][-1]:.1f}%"]
+
+
 def build_payload(staging: dict) -> dict:
     settled_ex, _, stats = settled_exhibits(staging)
     highlight_ex, counts = highlight_exhibits(staging)
@@ -872,15 +883,11 @@ def build_payload(staging: dict) -> dict:
             "group": "exchanges",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": "Q2 2026",
-            "full_financial_period_label": "Q2 2026",
-            "period_end": staging["period_ends"][-1],
-            "release_date": latest_release,
-            "analysis_date": "2026-08-29",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=staging["period_labels"][-1],
+            period_end=staging["period_ends"][-1],
+            release_date=latest_release),
         "tracker": "Watchlist Quarterly Tracker · CBOE",
         "title": "Cboe Global Markets, Inc. (CBOE)：Q2 2026 季报仪表盘",
         "subtitle": (

@@ -64,6 +64,7 @@ from build.board import (  # noqa: E402
     delivery_band,
     headroom,
     headroom_exhibit,
+    latest_block,
     midpoint_deviation,
     number_exhibits,
     threshold_exhibit,
@@ -362,6 +363,16 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], list[dict]]:
     }
     return [range_chart, point_chart, dev_chart, margin_chart, margin_dev, legs_chart], \
            [record_table, gap_table]
+
+
+def headline_metrics(staging: dict) -> list[str]:
+    """The three figures on this company's home-page card, computed from the series."""
+    fin = staging["financials_usd_m"]
+    ai = staging["ai_semiconductor_disclosures"]
+    ai_now = ai["actual_usd_bn"][ai["periods"].index(staging["periods"][-1])]
+    return [f"Revenue ${fin['revenue'][-1] / 1000:.2f}B",
+            f"AI 半导体 ${ai_now:.1f}B",
+            f"non-GAAP 营业利润率 {fin['non_gaap_operating_income'][-1] / fin['revenue'][-1] * 100:.1f}%"]
 
 
 def build_payload(staging: dict) -> dict:
@@ -1033,15 +1044,11 @@ def build_payload(staging: dict) -> dict:
             "group": "semiconductor_ai",
             "accounting_standard": "US GAAP",
         },
-        "latest": {
-            "disclosed_period_label": periods[-1],
-            "full_financial_period_label": periods[-1],
-            "period_end": ends[-1],
-            "release_date": staging["release_dates"][-1],
-            "analysis_date": "2026-09-09",
-            "audit_status": "unaudited",
-            "status": "history_ready",
-        },
+        "latest": latest_block(
+            staging,
+            period=periods[-1],
+            period_end=ends[-1],
+            release_date=staging["release_dates"][-1]),
         "tracker": "Watchlist Quarterly Tracker · AVGO",
         "title": f"Broadcom (AVGO)：{periods[-1]} 季报仪表盘",
         "subtitle": (
