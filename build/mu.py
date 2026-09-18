@@ -48,6 +48,7 @@ sys.path.insert(0, str(ROOT))
 from build.board import (  # noqa: E402
     ai_capex_cycle_table,
     cn_count,
+    cn_fraction,
     cn_ordinal,
     delivery_band,
     headroom,
@@ -143,13 +144,6 @@ def trim(value: float, digits: int = 1) -> str:
 def usd(value: float, digits: int = 2) -> str:
     """``-1.91`` → ``'−US$1.91'``: the sign sits outside the currency."""
     return f"{'−' if value < 0 else ''}US${abs(value):.{digits}f}"
-
-
-def cn_fraction(share: float) -> str:
-    """The nearest unit fraction, in words: 0.198 → 「五分之一」, 0.385 → 「三分之一」,
-    0.494 → 「一半」."""
-    denominator = min(range(2, 11), key=lambda d: abs(share - 1 / d))
-    return "一半" if denominator == 2 else f"{cn_ordinal(denominator)}分之一"
 
 
 def fiscal_name(label: str) -> str:

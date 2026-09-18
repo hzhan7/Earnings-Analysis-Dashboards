@@ -523,6 +523,13 @@ def cn_ordinal(value: int) -> str:
     raise ValueError(f"cn_ordinal only spells numbers below 1000, got {value}")
 
 
+def cn_fraction(share: float) -> str:
+    """The nearest unit fraction, in words: 0.198 → 「五分之一」, 0.385 → 「三分之一」,
+    0.494 → 「一半」."""
+    denominator = min(range(2, 11), key=lambda d: abs(share - 1 / d))
+    return "一半" if denominator == 2 else f"{cn_ordinal(denominator)}分之一"
+
+
 def number_exhibits(exhibits: list[dict], start: int = 2) -> list[dict]:
     """Assign exhibit numbers in render order.
 
@@ -574,8 +581,48 @@ _CASH_CAPEX_SOURCES = [
 ]
 
 
+# Revenue beside the capex above, for the one comparison a page makes against
+# the whole row: how much of its revenue each hyperscaler spends.
+_REVENUE_SOURCES = {
+    "amzn": lambda d: d["quarterly_usd_m"]["revenue_total"],
+    "googl": lambda d: d["quarterly"]["revenue_total"],
+    "meta": lambda d: d["quarterly_usd_m"]["revenue_total"],
+    "msft": lambda d: d["quarterly_usd_m"]["revenue_total"],
+}
+
+
 def _load(slug: str) -> dict:
     return json.loads((SERIES_DIR / f"{slug}.json").read_text(encoding="utf-8"))
+
+
+def _period_order(label: str) -> tuple[int, int]:
+    quarter, year = _period_key(label).split()
+    return int(year), int(quarter[1:])
+
+
+def hyperscaler_capex_share(period: str) -> tuple[str, list[float]] | None:
+    """Cash capex as a percent of revenue for each company in the capex table.
+
+    Read from each company's own series, in the latest quarter on or before
+    `period` that all of them have reported, so a page comparing itself with
+    "the four clouds" says what their files say rather than what they said
+    when the sentence was written. Returns that quarter and the shares in
+    table order, or None when the four have no quarter in common.
+    """
+    readings = []
+    for slug, _label, accessor in _CASH_CAPEX_SOURCES:
+        data = _load(slug)
+        company_periods, capex = accessor(data)
+        revenue = _REVENUE_SOURCES[slug](data)
+        readings.append({label: (spent, sales) for label, spent, sales
+                         in zip(company_periods, capex, revenue)
+                         if spent is not None and sales})
+    common = set.intersection(*(set(reading) for reading in readings))
+    usable = [label for label in common if _period_order(label) <= _period_order(period)]
+    if not usable:
+        return None
+    quarter = max(usable, key=_period_order)
+    return quarter, [reading[quarter][0] / reading[quarter][1] * 100 for reading in readings]
 
 
 def ai_capex_cycle_table(n: int) -> dict:
