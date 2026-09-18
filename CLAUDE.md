@@ -73,8 +73,11 @@ git show origin/main:build/all.py | grep -c '"key": "<你的键>"'
    反否定。漏了，`git add` 会以 rc=0 跳过你的 series，`git diff --cached` 里也看不见。
 2. **`build/all.py`** —— 顶部 import 行、`MODULES`、`ENTRIES`、必要时 `GROUPS`。
    `MODULES` 与 `ENTRIES` 严格按 slug 字典序，**同序同索引**。按位置插入，不要追加：
-   `'amzn' < 'avgo' < 'axp' < 'cdns' < 'cost'`。
-3. **`index.html`** —— 手写，不读 payload。卡片块 + 第 14 行的 masthead 计数。
+   `'amzn' < 'avgo' < 'axp' < 'cdns' < 'cost'`。`ENTRIES` 里**不写**卡片上的三个数：
+   它们由 builder 的 `headline_metrics(staging)` 从 series 现算（见 §9）。
+3. **`index.html`** —— 卡片、masthead 的两个计数与「N 张时间轴图里 M 张」都夹在
+   `<!-- generated:… -->` 标记之间，由 `build/all.py`（`build/home.py`）写入，**不要手改**；
+   新公司进了 `ENTRIES` 就有卡片。标记之外的正文仍是手写。
 4. **`tests/test_content_boundary.py`** —— 模块级 `COMPANY_SLUGS` 常量（在文件顶部，
    不在测试函数里）。变红就加 slug，**不要改断言**。
 5. **`tests/test_tsm_dashboard.py`** —— `test_published_payload_roster_and_shell`
@@ -738,3 +741,74 @@ for (const slug of SLUGS) {
 这一族和 §6 那条不同 —— 那条讲的是理解了形态仍会复现它,靠闸门防;这一条是**记账**:
 在数自己的战绩时把别人的一笔算了进来。今天对树上每一个数字都要求了度量,唯独对
 「我做了什么」用了记忆。
+
+---
+
+## 9. 换季只改数据文件：已迁移页怎么换季、未迁移页怎么迁移
+
+所有者 2026-09-19 定的：图表是模版，换季就是把新数据套进去 —— **换季只改 `series/<slug>.json`**，
+不改 `build/<slug>.py`、不改测试、不改 `build/all.py` / `index.html` / README；**图注和正文里的数
+只能来自计算**。一页迁移了没有，看它的 series 里有没有 `_checks` 块
+（`tests/test_data_only_roll.py` 的 `checked_slugs()`）。
+
+### 9.1 已迁移的页：换季只动这个文件
+
+1. 对齐数组各追加一格（`periods` / `period_ends` / `fiscal_labels` / `release_dates` 与各数据块）。
+2. `latest`：`period`、`analysis_date`、`audit_status`。忘了改，`board.latest_block` 以 "stamped"
+   报错 —— 上季的复核日期不会再印到本季页上。
+3. **带 `period` 戳的一季块**（各页名字不同：MU 的 `spoken_outlook` / `filed_vs_spoken`，NKE 的
+   `spoken` / `one_off_usd_m` / `guidance`，AVGO 的 `followup_closure` / `tracked_metric_verdicts` /
+   `next_kpi` / `capital_return_story`）：换成新一季的内容并改戳；**这一季没有这件事就删掉整块**
+   （页面整段不出），不要留着上季的 —— 戳是别的季度，`board.stamped_block` 报错。按发布日对戳的
+   块（AVGO 的 `guidance.next_quarter.released`、AI 下季指引）同理。
+4. `sources` 加本季新闻稿；builder 按标签查本季那一条，查不到就报错。
+5. **`_checks` 从一手申报独立重读录入**：期号、季末、发布日、几个头条数、每个数在原文哪一处
+   （`source`）与 `checked_on`。**不要从 series 抄** —— 抄过去的核对块只能证明 series 等于它自己。
+   builder 从不读 `_checks`（`test_no_builder_reads_its_checks`）；各页的 `<Slug>ChecksTest`
+   断言 series 末格、页面印出的头条数、页面的四舍五入都与它一致。
+6. `python3 build/all.py` → §5 的全量测试（条数只增不减，skip/failure/error 为 0）→
+   `node tests/render_check.js .`。**测试文件不用改**：已迁移页的测试只断言不变量与 `_checks`。
+7. 自算值与官方公布值不一致时，页面用官方值：把官方印出的那个数存进 series（先例：RMS 的
+   `roi_margin_printed_pct` 41.0% 对自算 41.05%；IBKR 账户数按公司的舍入 `round_half_up` 印
+   5.19 百万），差异写进给所有者的总结。
+
+### 9.2 迁移一页（一页一个 commit）
+
+1. **基线**：先 `python3 build/all.py`，留一份 `data/<slug>.js`；迁移后逐字节比对。
+2. **找手写**：builder 里每一段中文里的阿拉伯数字、期号、日期、中文计数（「八季」「十九个」
+   「两次」）、「本季/上季 + 某件事」、「首次/第二次」、全称命题（「从未」「全部」「一次都没有」
+   「每一季都」）。起手：`grep -nP '\d|[一二两三四五六七八九十百]+(季|年|个|次|条|家|倍|成)' build/<slug>.py`，
+   再逐句读 —— grep 只能找到数字，找不到「追平并反超」这种对着数据是错的描述。
+3. **逐类处理**：
+   - 当季的数、期号、日期 → 从 series 现算（`periods[-1]`、`release_dates[-1]`……）；
+   - 计数 → `len(...)`；写成中文用 `board.cn_count`（2 写「两」）、`cn_ordinal`（「第二」）、
+     `cn_fraction`（「三分之一」）；
+   - **全称命题 → 让数据守着**：条件成立才印这句，不成立换一句。测试里真的造一个反例、断言那几处
+     措辞消失（`test_the_record_sentences_are_computed_not_remembered` 是样板）—— 只重算数字的
+     测试发现不了全称命题变假（§5 那条「反例在你数的那堆之外」）；
+   - 只属于一季的叙述（电话会原话、一次性项目、闭环与判定、下季阈值、「公司没有解释」）→ series
+     里带 `period` 戳的块，builder 用 `stamped_block` 读，块缺席时整段不出；
+   - 固定的历史（事件年份、并购金额、一手原文引语）可以留在代码里 —— 前提是它不随换季变，并在
+     commit message 里点名。
+4. 卡片三个数与 `latest` 块已在共享层迁好（`headline_metrics`、`latest_block`）；来源链接按
+   `sources` 的标签查本季新闻稿，不要把 URL 写进 builder。
+5. `_checks` 与 `<Slug>ChecksTest`；原测试里写死的当季数改成不变量或从 `_checks` 读（`len == N`
+   改成「等于数据推出来的 N」）。
+6. **逐字节比对**：除「手写数与数据或官方值不符」的改正外，`data/<slug>.js` 必须与基线相同，其他
+   页一字不变。每一处改正写进 commit message：原文、数据给的值、出处。
+7. **回退演练**：把仓拷到临时目录（不动工作树），只改这家 series、退一季 —— 对齐数组去掉末格；
+   一季块换成上一季的真实原件（`git log -- series/<slug>.json` 找上次换季前的版本）并改戳；
+   `_checks` 删掉。`build/all.py` 必须不改代码就通过；再扫新页面里最新一季的标签与数值，
+   命中逐条看（作为「下季」出现、跨页表、别的数的子串都是正常的）。
+8. 闸门全绿后提交。
+
+### 9.3 迁移时踩过的
+
+- **迁移顺手查出的手写错，比迁移本身的改动更值钱**：MU 8 处、NKE 9 处、AVGO 13 处。形态几乎都是
+  「当时对、后来没跟着变」：窗口从 8 季拉到 42 季后，「窗口初」「本来就只有 1%」还按 8 季写；「首次
+  给这条指引」在第二次之后仍然写着；全窗口最大值被安到了另一件事上（AVGO「VMware 之后扩大到 43pp」，
+  43.1pp 是 2018 年 CA 那季）；「去年同季是发布后第 8 天」对 EDGAR 是 6 天。
+- series 文件的缩进各不相同（2 或 1，有的结尾带换行）：改完按原缩进、原结尾写回，不然 diff 满屏，
+  逐字节比对也看不出改了什么。
+- 迁移前先 `find build tests -name __pycache__ -prune -exec rm -rf {} +`：变异测试跑的是旧字节码时
+  「变异没打中」看起来和「测试没反应」一模一样。
