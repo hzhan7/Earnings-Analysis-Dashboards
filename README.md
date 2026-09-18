@@ -201,11 +201,11 @@ Charts are ordered the way the note is actually used:
    filed dollars, thirty-eight quarters of revenue against the two margins
    that diverge across them, and the operating cash flow of a company whose
    capital expenditure has never exceeded 17.4% of it in ten years; NIKE gets
-   thirteen years of its direct-to-consumer share against the gross margin
-   that shift was supposed to buy, the two channels in dollars, thirty-two
-   quarters of the same share at quarterly resolution, the two
+   its direct-to-consumer share since FY2014 against the gross margin that
+   shift was supposed to buy, the two channels in dollars, the same share at
+   quarterly resolution since the FY2019 revenue-disaggregation note, the two
    selling-and-administrative lines that carry the cost of running a direct
-   business, ten years of cash flow against capital returned, and the price it
+   business, cash flow against capital returned since FY2017, and the price it
    actually paid for its own stock; Nasdaq gets forty-six quarters of its two operating margins and
    the amortization gap between them, the same window showing the trading
    business shrinking from 37% of net revenue to 23%, and the index assets that
