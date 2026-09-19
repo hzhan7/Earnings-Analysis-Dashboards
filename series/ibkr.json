@@ -6,13 +6,136 @@
     "fiscal_year_end": "12-31",
     "quarter_convention": "自然年季度；公司财年即自然年，无需映射",
     "units": "financials_usd_m 为百万美元；operating 各列单位见键名",
-    "built_from": "SEC XBRL companyfacts + 各季业绩 8-K EX-99.1"
+    "built_from": "SEC XBRL companyfacts + 各季业绩 8-K EX-99.1",
+    "coverage_start": "Q2 2026"
   },
   "latest": {
     "period": "Q2 2026",
     "period_end": "2026-06-30",
     "analysis_date": "2026-08-29",
     "audit_status": "unaudited"
+  },
+  "_checks": {
+    "period": "Q2 2026",
+    "company_label": "2Q2026",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-21",
+    "income_statement_usd_m": {
+      "total_net_revenues": [
+        1896,
+        1480
+      ],
+      "commissions": [
+        673,
+        516
+      ],
+      "other_fees_and_services": [
+        87,
+        62
+      ],
+      "other_income": [
+        79,
+        42
+      ],
+      "interest_income": [
+        2236,
+        1891
+      ],
+      "interest_expense": [
+        1179,
+        1031
+      ],
+      "net_interest_income": [
+        1057,
+        860
+      ],
+      "total_non_interest_expenses": [
+        440,
+        376
+      ],
+      "employee_compensation": [
+        182,
+        163
+      ],
+      "pretax_income": [
+        1456,
+        1104
+      ],
+      "income_tax": [
+        118,
+        98
+      ],
+      "net_income": [
+        1338,
+        1006
+      ],
+      "net_income_noncontrolling": [
+        1026,
+        782
+      ],
+      "net_income_common": [
+        312,
+        224
+      ]
+    },
+    "pretax_margin_printed_pct": 77,
+    "accounts_thousands": {
+      "this_quarter": 5185,
+      "year_ago": 3866,
+      "prior_quarter": 4754
+    },
+    "accounts_printed_millions": "5.19",
+    "customer_equity_usd_bn": {
+      "this_quarter": 930.3,
+      "year_ago": 664.6,
+      "prior_quarter": 789.4
+    },
+    "darts_thousands": {
+      "this_quarter": 4824,
+      "year_ago": 3552,
+      "prior_quarter": 4368
+    },
+    "printed_yoy_pct": {
+      "accounts": 34,
+      "customer_equity": 40,
+      "darts": 36,
+      "customer_credits": 27,
+      "customer_margin_loans": 67
+    },
+    "printed_qoq_pct": {
+      "accounts": 9
+    },
+    "commission_per_order_usd": {
+      "this_quarter": 2.64,
+      "year_ago": 2.65
+    },
+    "customer_credits_usd_bn": 182.4,
+    "customer_margin_loans_usd_bn": 108.5,
+    "net_interest_margin_table": {
+      "avg_earning_assets_usd_m": [
+        228615,
+        166621
+      ],
+      "nim_pct": [
+        1.93,
+        2.07
+      ],
+      "yield_segregated_pct": [
+        3.32,
+        3.86
+      ],
+      "yield_margin_loans_pct": [
+        4.1,
+        4.67
+      ],
+      "yield_credits_pct": [
+        2.23,
+        2.64
+      ]
+    },
+    "_pairs": "两个数的列表是 [本季, 去年同季]，都读自同一份新闻稿的两栏。",
+    "source": "IBKR 2Q2026 业绩新闻稿（8-K EX-99.1，2026-07-21，acc 0001381197-26-000118）：首段「results for the quarter ended June 30, 2026」与电头「GREENWICH, CT, July 21, 2026」；CONSOLIDATED STATEMENTS OF INCOME 三个月两栏（Commissions 673 / 516 … Net income available for common stockholders 312 / 224）；Financial Highlights「Pretax profit margin … was 77%」；Business Highlights「Customer accounts increased 34% to 5.19 million」「Customer equity increased 40% to $930.3 billion」「Total DARTs increased 36% to 4.82 million」「Customer credits increased 27% to $182.4 billion」「Customer margin loans increased 67% to $108.5 billion」；OPERATING DATA, CONTINUED 的 Year over Year 表（Total Accounts 5,185 / 3,866；Customer Equity 930.3 / 664.6；Total Customer DARTs 4,824 / 3,552；Commission per Cleared Commissionable Order 2.64 / 2.65）与 Consecutive Quarters 表（4,754 / 789.4 / 4,368，账户数 9%）；NET INTEREST MARGIN 表三个月两栏（平均生息资产 228,615 / 166,621，NIM 1.93 / 2.07，年化收益率 3.32 / 3.86、4.10 / 4.67、2.23 / 2.64）。",
+    "checked_on": "2026-09-19"
   },
   "periods": [
     "Q1 2016",
@@ -1466,41 +1589,47 @@
     "Q2 2026": "2026-07-21"
   },
   "next_kpi": {
+    "period": "Q2 2026",
     "quantified": [
       {
         "metric": "净息差 NIM",
         "direction": "up",
         "threshold": 1.8,
         "unit": "pct",
-        "current": 1.93
+        "current": 1.93,
+        "note": "阈值取的是本季再向下一个台阶，不是长期趋势的外推：跌破它意味着降息对利差的侵蚀开始快过生息资产的扩张。"
       },
       {
         "metric": "账户数环比增速",
         "direction": "up",
         "threshold": 6.0,
         "unit": "pct",
-        "current": 9.07
+        "current": 9.07,
+        "note": "跌破它说明揽客速度回到加息周期之前的水平。"
       },
       {
         "metric": "每笔已清算订单佣金",
         "direction": "up",
         "threshold": 2.55,
         "unit": "usd_eps",
-        "current": 2.64
+        "current": 2.64,
+        "note": "跌破它意味着单价开始承压，而 IBKR 的佣金增长至今几乎全部来自笔数。"
       },
       {
         "metric": "非息费用 / 总净收入",
         "direction": "down",
         "threshold": 25.0,
         "unit": "pct",
-        "current": 23.21
+        "current": 23.21,
+        "note": "<b>这条阈值天生偏松，说明写在这里而不是藏起来</b>：分母含净利息收入，利率下行会让这条线自己上移，所以越过 {threshold:.0f}% 不必然是费用出了问题。真正要看的是越线时费用的绝对额是否同步跳升。"
       },
       {
         "metric": "少数股东占净利润比",
         "direction": "down",
         "threshold": 77.5,
         "unit": "pct",
-        "current": 76.68
+        "current": 76.68,
+        "note": "回到阈值以上意味着上市主体收购 LLC 权益单位的节奏中断，上市公司股东对利润的 claim 停止扩大。"
       },
       {
         "metric": "客户保证金贷款",
@@ -1510,7 +1639,7 @@
         "current": 108.5
       }
     ],
-    "excluded": "本节六条阈值每一条都有自己的历史序列，因此<b>没有一条是「只有一个点、无法作图」而被略去的</b>。真正不接入的是另外三类：（1）<b>公司对下一季的任何数字</b> —— IBKR 从不在申报文件里给季度指引，本页因此没有指引兑现记录，详见第一节与口径说明；（2）<b>分产品、分地区的佣金拆分</b> —— 公司只按地区披露「来自客户合同的收入」，不把佣金按股票 / 期权 / 期货拆成金额，用交易量占比去反推单位费率会把三种完全不同的费率结构混成一个数；（3）<b>客户资产的净流入</b> —— 公司披露的是期末客户权益，而权益变动同时包含净入金与市值波动，两者在申报文件里没有分开，把权益的环比变动读成净流入会把一轮上涨行情记成揽客成果。"
+    "excluded": "本节{count}条阈值每一条都有自己的历史序列，因此<b>没有一条是「只有一个点、无法作图」而被略去的</b>。真正不接入的是另外三类：（1）<b>公司对下一季的任何数字</b> —— IBKR 从不在申报文件里给季度指引，本页因此没有指引兑现记录，详见第一节与口径说明；（2）<b>分产品、分地区的佣金拆分</b> —— 公司只按地区披露「来自客户合同的收入」，不把佣金按股票 / 期权 / 期货拆成金额，用交易量占比去反推单位费率会把三种完全不同的费率结构混成一个数；（3）<b>客户资产的净流入</b> —— 公司披露的是期末客户权益，而权益变动同时包含净入金与市值波动，两者在申报文件里没有分开，把权益的环比变动读成净流入会把一轮上涨行情记成揽客成果。"
   },
   "sources": [
     {
