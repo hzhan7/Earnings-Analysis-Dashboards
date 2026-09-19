@@ -9,11 +9,11 @@ Three things about Cboe's disclosure are easy to get wrong, and each has a test
 below because each was actually hit while building this page.
 
 The first is the segment table's SIXTH row. Five named segments do not sum to
-the printed total in 25 of 37 quarters, and the residual changes sign partway
+the printed total in 16 of 37 quarters, and the residual changes sign partway
 through, because the sixth row is "Corporate" (small, positive) until 2022 and
 "Digital" (NEGATIVE -- Cboe Digital, bought in 2022 and wound down) after it.
 Reading five rows and trusting the total produces a chart that is quietly wrong
-in two thirds of its window. The sum identity here is what makes that loud.
+in those quarters. The sum identity here is what makes that loud.
 
 The second is that the operating-metrics table is published five quarters at a
 time, so consecutive releases overlap by four. Stitching them without checking
@@ -21,14 +21,15 @@ the overlap splices two vintages of the same quarter together.
 
 The third is the guidance the page refuses to score. Organic net revenue growth
 is guided as a number through 2024 and as a phrase from 2025, and the page
-converts neither: the numeric years have no published actual to score against
-("organic" is never restated as a full-year figure), and a phrase is not a
+converts neither: the numeric years have no full-year actual to score against
+(none in the four February releases or the FY2025 10-K), and a phrase is not a
 range. `test_word_guidance_is_never_given_numeric_endpoints` is what keeps a
 future edit from quietly turning "mid to high teens" into 15-19%.
 """
 
 from __future__ import annotations
 
+import copy
 import json
 import re
 import sys
@@ -40,12 +41,27 @@ sys.path.insert(0, str(ROOT))
 
 from build import cboe  # noqa: E402
 from build.all import ENTRIES, build_all, roster_payload  # noqa: E402
-from build.board import headroom  # noqa: E402
+from build.board import cn_count, cn_ordinal, headroom, stamped_block  # noqa: E402
 
 
 def js_payload(path: Path, marker: str) -> dict:
     text = path.read_text(encoding="utf-8")
     return json.loads(text.split(f"{marker} = ", 1)[1].rstrip().rstrip(";"))
+
+
+def published_text(payload: dict) -> str:
+    return json.dumps({key: payload[key] for key in
+                       ("title", "subtitle", "headline", "brief", "sections", "notes", "tables")},
+                      ensure_ascii=False)
+
+
+def contiguous(quarters: list[str]) -> bool:
+    for earlier, later in zip(quarters, quarters[1:]):
+        y1, q1 = int(earlier[:4]), int(earlier[5])
+        y2, q2 = int(later[:4]), int(later[5])
+        if (y2, q2) != ((y1 + 1, 1) if q1 == 4 else (y1, q1 + 1)):
+            return False
+    return True
 
 
 class CboeDashboardTest(unittest.TestCase):
@@ -54,12 +70,15 @@ class CboeDashboardTest(unittest.TestCase):
         cls.staging = json.loads(cboe.STAGING_PATH.read_text(encoding="utf-8"))
         cls.payload = cboe.build_payload(cls.staging)
 
-    # ── the eight-quarter window ────────────────────────────────────────────
-    def test_the_window_is_eight_quarters_and_complete(self) -> None:
+    # ── the short window ────────────────────────────────────────────────────
+    def test_the_short_window_starts_in_2024q3_and_is_complete(self) -> None:
+        """It grows by one quarter a roll; what stays true is where it starts."""
         fin = self.staging["financials"]
-        self.assertEqual(len(self.staging["periods"]), 8)
+        periods = self.staging["periods"]
+        self.assertEqual(periods[0], "2024Q3")
+        self.assertTrue(contiguous(periods))
         for name, values in fin.items():
-            self.assertEqual(len(values), 8, name)
+            self.assertEqual(len(values), len(periods), name)
             self.assertTrue(all(v is not None for v in values), name)
 
     def test_quarters_are_contiguous_calendar_labels(self) -> None:
@@ -83,7 +102,7 @@ class CboeDashboardTest(unittest.TestCase):
 
     def test_the_window_is_the_tail_of_the_long_series(self) -> None:
         long = self.staging["long"]
-        self.assertEqual(long["quarters"][-8:], self.staging["periods"])
+        self.assertEqual(long["quarters"][-len(self.staging["periods"]):], self.staging["periods"])
         for offset, quarter in enumerate(self.staging["periods"]):
             index = long["quarters"].index(quarter)
             self.assertAlmostEqual(long["adj_opex"][index],
@@ -141,7 +160,7 @@ class CboeDashboardTest(unittest.TestCase):
     def test_six_segment_rows_sum_to_the_printed_total(self) -> None:
         """Five rows do not. This is the test that says which quarters have six.
 
-        Taking only the five named segments leaves a residual in 25 of the 37
+        Taking only the five named segments leaves a residual in 16 of the 37
         quarters, and the residual is positive early (a "Corporate" row) and
         negative later (a "Digital" row, negative because the table is net of
         cost of revenues). Both signs are small enough to look like rounding and
@@ -210,21 +229,30 @@ class CboeDashboardTest(unittest.TestCase):
                                    places=6, msg=quarter)
 
     def test_the_divergence_count_is_what_the_headline_says(self) -> None:
-        """The headline number is recomputed here, not copied from the copy."""
+        """The headline number is recomputed here, not copied from the copy.
+
+        Through 2026Q2 opposite is the majority -- pinned on those quarters,
+        which a roll only appends to; the page words its later record from the
+        data either way.
+        """
         div = self.staging["divergence"]
         steps = cboe.direction_steps(div["share_pct"], div["daily_revenue_usd_m"])
         self.assertEqual(steps["same"] + steps["opposite"], steps["steps"])
-        self.assertGreater(steps["opposite"], steps["same"],
+        upto = div["quarters"].index("2026Q2") + 1
+        history = cboe.direction_steps(div["share_pct"][:upto], div["daily_revenue_usd_m"][:upto])
+        self.assertGreater(history["opposite"], history["same"],
                            "the page's whole claim is that opposite is the majority")
         headline = self.payload["headline"]
         self.assertIn(f"{steps['steps']} 次环比", headline)
         self.assertIn(f"{steps['opposite']} 次方向相反", headline)
 
     def test_share_fell_while_the_money_rose_over_the_window(self) -> None:
-        """The single sentence the page is built on, asserted as arithmetic."""
+        """The single sentence the page is built on, asserted as arithmetic
+        through 2026Q2 (a roll only appends to that record)."""
         div = self.staging["divergence"]
-        self.assertLess(div["share_pct"][-1], div["share_pct"][0])
-        self.assertGreater(div["daily_revenue_usd_m"][-1], div["daily_revenue_usd_m"][0])
+        at = div["quarters"].index("2026Q2")
+        self.assertLess(div["share_pct"][at], div["share_pct"][0])
+        self.assertGreater(div["daily_revenue_usd_m"][at], div["daily_revenue_usd_m"][0])
 
     def test_divergence_window_starts_where_share_is_first_published(self) -> None:
         kpi = self.staging["kpi"]
@@ -373,7 +401,10 @@ class CboeDashboardTest(unittest.TestCase):
     def test_settled_thresholds_carry_a_filed_actual(self) -> None:
         fin = self.staging["financials"]
         div = self.staging["divergence"]
-        entries = {e["metric"]: e for e in self.staging["settled_kpi"]["quantified"]}
+        settled = stamped_block(self.staging, "settled_kpi", self.staging["period_labels"][-1])
+        if not settled:
+            return
+        entries = {e["metric"]: e for e in settled["quantified"]}
         self.assertAlmostEqual(entries["Multi-listed 期权市占"]["actual"],
                                div["share_pct"][-1], places=6)
         self.assertAlmostEqual(entries["调整后营业费用（季）"]["actual"],
@@ -382,27 +413,32 @@ class CboeDashboardTest(unittest.TestCase):
     def test_the_share_threshold_cleared_while_the_money_fell(self) -> None:
         """The page's reason for rewriting the metric, asserted rather than asserted at.
 
-        Last quarter's threshold sat on market share and did not trigger. Over
-        the same quarter the money fell. Both halves have to stay true or the
-        page's argument for changing the metric evaporates.
+        In Q2 2026 last quarter's threshold sat on market share and did not
+        trigger, while the money fell. The page says so only while both halves
+        are true of the quarter it publishes.
         """
-        entry = next(e for e in self.staging["settled_kpi"]["quantified"]
-                     if e["metric"] == "Multi-listed 期权市占")
-        self.assertGreaterEqual(
-            headroom(entry["direction"], entry["threshold"], entry["actual"]), 0,
-            "the share threshold is supposed to have cleared")
+        settled = stamped_block(self.staging, "settled_kpi", self.staging["period_labels"][-1])
+        entry = next((e for e in (settled or {}).get("quantified", [])
+                      if e["metric"] == "Multi-listed 期权市占"), None)
         div = self.staging["divergence"]
-        self.assertLess(div["daily_revenue_usd_m"][-1], div["daily_revenue_usd_m"][-2],
-                        "daily revenue is supposed to have fallen in the same quarter")
+        both = (entry is not None
+                and headroom(entry["direction"], entry["threshold"], entry["actual"]) >= 0
+                and div["daily_revenue_usd_m"][-1] < div["daily_revenue_usd_m"][-2])
+        claim = "但它守住的这一季，这门生意的日均收入环比少了"
+        self.assertEqual(claim in json.dumps(self.payload, ensure_ascii=False), both)
 
     def test_next_thresholds_carry_a_current_value(self) -> None:
-        for entry in self.staging["next_kpi"]["quantified"]:
+        kpi = stamped_block(self.staging, "next_kpi", self.staging["period_labels"][-1])
+        for entry in (kpi or {}).get("quantified", []):
             self.assertIn(entry["direction"], ("up", "down"), entry["metric"])
             self.assertIsNotNone(entry["current"], entry["metric"])
             self.assertNotEqual(entry["threshold"], 0, entry["metric"])
 
     def test_the_rewritten_threshold_is_on_the_money_not_the_share(self) -> None:
-        metrics = [e["metric"] for e in self.staging["next_kpi"]["quantified"]]
+        kpi = stamped_block(self.staging, "next_kpi", self.staging["period_labels"][-1])
+        if not kpi:
+            return
+        metrics = [e["metric"] for e in kpi["quantified"]]
         self.assertTrue(any(m.startswith("Multi-listed 日均收入") for m in metrics), metrics)
         self.assertFalse(any("市占" in m for m in metrics),
                          "the page argues share is the wrong thing to track")
@@ -491,7 +527,251 @@ class CboeDashboardTest(unittest.TestCase):
         blob = json.dumps(self.payload, ensure_ascii=False)
         for series_key in ("spx_adv", "0dte", "spx_options_adv"):
             self.assertNotIn(series_key, blob)
-        self.assertIn("SPX", self.staging["settled_kpi"]["excluded"])
+        settled = stamped_block(self.staging, "settled_kpi", self.staging["period_labels"][-1])
+        if settled:
+            self.assertIn("SPX", settled["excluded"])
+
+
+
+class CboeChecksTest(unittest.TestCase):
+    """The page's quarter against a record keyed separately from the release.
+
+    `_checks` is typed once per quarter from the earnings release, with the
+    place in the document each figure was read from; the builder never reads it
+    (asserted in `test_data_only_roll`). Pairs are [this quarter, year-ago];
+    triples are [this quarter, last quarter, year-ago], all from this release.
+    Rolling a quarter re-keys `_checks`; this class does not change.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(cboe.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.checks = cls.staging["_checks"]
+        cls.payload = cboe.build_payload(cls.staging)
+        cls.period = cls.staging["period_labels"][-1]
+
+    def test_the_page_names_the_checked_quarter(self) -> None:
+        checks = self.checks
+        self.assertIn(checks["period"], self.payload["title"])
+        self.assertIn(f"截至 {checks['period_end']}", self.payload["subtitle"])
+        self.assertIn(f"发布 {checks['release_date']}", self.payload["subtitle"])
+        quarter, year = checks["period"].split()
+        label = f"Cboe {year} 年第{cn_ordinal(int(quarter[1]))}季度业绩新闻稿"
+        release = next(x for x in self.staging["sources"] if x["label"].startswith(label))
+        self.assertEqual(self.payload["source_url"], release["url"])
+
+    def test_the_series_ends_on_the_checked_figures(self) -> None:
+        """Both columns: the year-ago the page divides by is the one this
+        release reprinted, not only the one first printed."""
+        nr, fin = self.staging["net_revenue_window"], self.staging["financials"]
+        for line, (now, ago) in self.checks["income_statement_usd_m"].items():
+            block = nr if line in nr else fin
+            with self.subTest(line=line):
+                self.assertAlmostEqual(block[line][-1], now, places=6)
+                self.assertAlmostEqual(block[line][-5], ago, places=6)
+        self.assertEqual(nr["regulatory_fees_revenue"][-1], self.checks["regulatory_fees_revenue_usd_m"][0])
+        for group in ("per_share", "adjusted"):
+            for line, (now, ago) in self.checks[group].items():
+                with self.subTest(line=line):
+                    self.assertAlmostEqual(fin[line][-1], now, places=6)
+                    self.assertAlmostEqual(fin[line][-5], ago, places=6)
+        for block, rows in (("segments", "segments_usd_m"), ("categories", "categories_usd_m")):
+            for line, (now, ago) in self.checks[rows].items():
+                with self.subTest(line=line):
+                    self.assertAlmostEqual(self.staging[block][line][-1], now, places=6)
+                    self.assertAlmostEqual(self.staging[block][line][-5], ago, places=6)
+        for block, rows in (("kpi", "kpi"), ("cash_markets", "cash_markets"), ("offexchange", "offexchange")):
+            for line, (now, prior, ago) in self.checks[rows].items():
+                with self.subTest(line=line):
+                    values = self.staging[block][line]
+                    self.assertEqual([values[-1], values[-2], values[-5]], [now, prior, ago])
+        capital = self.staging["capital"]
+        for line, value in self.checks["capital"].items():
+            with self.subTest(line=line):
+                self.assertAlmostEqual(capital[line][-1], value, places=6)
+        guide = self.staging["annual_guidance_history"]
+        for line in ("adjusted_operating_expenses", "adjusted_effective_tax_rate", "capex",
+                     "depreciation_and_amortization"):
+            with self.subTest(guide=line):
+                last = guide[line]["by_year"][str(max(guide[line]["years"]))]["guided"][-1]
+                self.assertEqual(last, [*self.checks["guidance"][line], self.checks["release_date"]])
+
+    def test_the_printed_rates_agree_with_the_page_at_printed_precision(self) -> None:
+        fin = self.staging["financials"]
+        printed = self.checks["printed_pct"]
+        now, ago = self.checks["income_statement_usd_m"]["net_revenue"]
+        self.assertEqual(round((fin["net_revenue"][-1] / fin["net_revenue"][-5] - 1) * 100),
+                         printed["net_revenue_growth"])
+        self.assertEqual(round(fin["gaap_op_margin_pct"][-1], 1), printed["gaap_op_margin"])
+        self.assertEqual(fin["tax_rate_pct"][-1], printed["tax_rate"])
+        self.assertEqual(fin["adj_tax_rate_pct"][-1], printed["adj_tax_rate"])
+        self.assertIn(f"净收入 US${now:,.1f}M、同比 {(now / ago - 1) * 100:+.1f}%", self.payload["headline"])
+
+    def test_the_thresholds_current_values_are_the_series(self) -> None:
+        """A typed 「当前值」 can flip a verdict; each one is read back here."""
+        kpi, fin, long = self.staging["kpi"], self.staging["financials"], self.staging["long"]
+        settled = stamped_block(self.staging, "settled_kpi", self.period)
+        if settled:
+            actual = {
+                "Multi-listed 期权市占": kpi["multi_listed_share_pct"][-1],
+                "调整后营业费用（季）": long["adj_opex"][-1],
+                "净收入同比增速": round((fin["net_revenue"][-1] / fin["net_revenue"][-5] - 1) * 100, 1),
+            }
+            for entry in settled["quantified"]:
+                with self.subTest(settled=entry["metric"]):
+                    self.assertAlmostEqual(entry["actual"], actual[entry["metric"]], places=6)
+        upcoming = stamped_block(self.staging, "next_kpi", self.period)
+        if upcoming:
+            current = {
+                "Multi-listed 日均收入（US$M/日）":
+                    round(kpi["multi_listed_adv_k"][-1] * kpi["multi_listed_rpc_usd"][-1] / 1000, 3),
+                "指数期权日均收入（US$M/日）":
+                    round(kpi["index_options_adv_k"][-1] * kpi["index_options_rpc_usd"][-1] / 1000, 3),
+                "季度净收入": fin["net_revenue"][-1],
+                "调整后营业费用（季）": long["adj_opex"][-1],
+                "调整后营业利润率": fin["adj_op_margin_pct"][-1],
+            }
+            for entry in upcoming["quantified"]:
+                with self.subTest(next=entry["metric"]):
+                    self.assertAlmostEqual(entry["current"], current[entry["metric"]], places=6)
+
+    def test_the_quarter_context_is_what_the_release_printed(self) -> None:
+        context = stamped_block(self.staging, "quarter_context", self.period)
+        if context and "opex_guidance_carve_out" in context:
+            self.assertEqual(context["opex_guidance_carve_out"]["usd_m"],
+                             self.checks["guidance"]["opex_reduced_for_australia_usd_m"])
+        words = self.staging["revenue_growth_guidance"]["by_year"][self.period.split()[1]]
+        self.assertIn(self.checks["guidance"]["organic_total_words"], words["total"][-1]["text"])
+        self.assertIn(self.checks["guidance"]["data_vantage_words"], words["data_vantage"][-1]["text"])
+
+
+class CboeRollTest(unittest.TestCase):
+    """A roll edits the series and nothing else: the one-quarter blocks and the
+    sentences about the record are held to what the series says."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(cboe.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = cboe.build_payload(cls.staging)
+        cls.text = published_text(cls.payload)
+
+    def rebuilt(self, edit) -> dict:
+        changed = copy.deepcopy(self.staging)
+        edit(changed)
+        return cboe.build_payload(changed)
+
+    def moves(self, claims, edit, present_before=True) -> None:
+        after = published_text(self.rebuilt(edit))
+        for claim in claims:
+            with self.subTest(claim=claim):
+                self.assertEqual(claim in self.text, present_before)
+                self.assertEqual(claim in after, not present_before)
+
+    def test_quarter_blocks_refuse_to_publish_under_another_quarter(self) -> None:
+        for key in ("settled_kpi", "next_kpi", "quarter_context"):
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "stamped"):
+                    self.rebuilt(lambda s, key=key: s[key].__setitem__("period", "Q1 1999"))
+        quarter, year = self.staging["period_labels"][-1].split()
+        label = f"Cboe {year} 年第{cn_ordinal(int(quarter[1]))}季度业绩新闻稿"
+        with self.assertRaisesRegex(ValueError, "sources"):
+            self.rebuilt(lambda s: s.__setitem__(
+                "sources", [x for x in s["sources"] if not x["label"].startswith(label)]))
+
+    def test_a_quarter_without_its_blocks_leaves_them_out(self) -> None:
+        def strip(s):
+            for key in ("settled_kpi", "next_kpi", "quarter_context"):
+                del s[key]
+        payload = self.rebuilt(strip)
+        sections = {sec["id"]: sec for sec in payload["sections"]}
+        self.assertEqual(sections["next_quarter"]["exhibits"], [])
+        self.assertEqual(len(payload["tables"]), len(self.payload["tables"]) - 2)
+        text = published_text(payload)
+        self.assertNotRegex(text, r"\{EX_[A-Z_]+\}")
+        for gone in ("澳洲出售", "本地分析上季正是这么错的", "SPX 期权的日均成交量",
+                     "其中第一条是本页这次唯一改动过的一条", "其中最关键的一条"):
+            with self.subTest(gone=gone):
+                self.assertIn(gone, self.text)
+                self.assertNotIn(gone, text)
+
+    def test_the_record_sentences_are_computed_not_remembered(self) -> None:
+        # A second year over the top of the expense band: "the only overshoot" goes.
+        def second_over(s):
+            block = s["annual_guidance_history"]["adjusted_operating_expenses"]["by_year"]["2014"]
+            block["actual"] = block["guided"][-1][1] + 5
+        self.moves(("唯一一次超出上限是 FY2017",), second_over)
+
+        # Only FY2013's last range was a reaffirmation; make all four reaffirmed.
+        def all_reaffirmed(s):
+            by_year = s["annual_guidance_history"]["adjusted_operating_expenses"]["by_year"]
+            for year in ("2019", "2021", "2023"):
+                guided = by_year[year]["guided"]
+                guided[-1][:2] = list(guided[-2][:2])
+                by_year[year]["actual"] = guided[-1][0] - 1
+        self.moves(("刚重申过区间之后落在区间下方",), all_reaffirmed, present_before=False)
+        self.moves(("FY2021 是刚上调过的区间",), all_reaffirmed)
+
+        # Index-option RPC falls in 14 of 41 steps; make it monotone.
+        def index_rpc_monotone(s):
+            for block in ("kpi", "kpi_long"):
+                values = s[block]["index_options_rpc_usd"]
+                s[block]["index_options_rpc_usd"] = [0.5 + 0.01 * i for i in range(len(values))]
+        self.moves(("几乎只往上", "RPC 同期只往上"), index_rpc_monotone, present_before=False)
+        self.moves(("41 次环比里 14 次回落", "RPC 同期总体向上"), index_rpc_monotone)
+
+        # Net revenue is just over half of gross this quarter.
+        def gross_heavier(s):
+            nr = s["net_revenue_window"]
+            nr["cost_of_revenues"][-1] = nr["total_revenues"][-1] * 0.6
+        self.moves(("「总收入」这条线一半以上不属于公司",), gross_heavier, present_before=False)
+        self.moves(("「总收入」这条线本季有 49.3% 不属于公司",), gross_heavier)
+
+        # The share line has never been below 22%; put one quarter under it.
+        def once_below(s):
+            s["divergence"]["share_pct"][3] = 21.0
+            s["kpi"]["multi_listed_share_pct"][s["kpi"]["quarters"].index(s["divergence"]["quarters"][3])] = 21.0
+        self.moves(("从未跌破上季那条 22% 的线",), once_below)
+
+        # Off-exchange share's year-on-year gain is the best of the five share lines.
+        def exchange_better(s):
+            s["cash_markets"]["us_share_pct"][-1] = s["cash_markets"]["us_share_pct"][-5] + 5
+        self.moves(("是全公司最漂亮的一条",), exchange_better)
+
+        # The upper bound of the expense guide leaves more than this quarter; lower it.
+        def tighter_guide(s):
+            guided = s["annual_guidance_history"]["adjusted_operating_expenses"]["by_year"]["2026"]["guided"]
+            guided[-1][1] = 830.0
+            guided[-1][0] = 815.0
+        self.moves(("只比本季实际高",), tighter_guide)
+
+    def test_the_counts_on_the_page_are_recounted_here(self) -> None:
+        seg = self.staging["segments"]
+        five = [sum(seg[key][i] for key in ("options", "north_american_equities",
+                                            "europe_and_apac", "futures", "global_fx"))
+                for i in range(len(seg["quarters"]))]
+        off = sum(1 for f, t in zip(five, seg["total"]) if abs(f - t) > 0.05)
+        self.assertIn(f"只取前五行会在 {len(seg['quarters'])} 个季度里的 {off} 个对不上", self.text)
+        self.assertNotIn("25 个对不上", self.text)
+        self.assertNotIn("窗口只画最近 20 季", self.text)
+        self.assertNotIn("掉了 -", self.text)
+        self.assertNotIn("同一批季度", self.text)
+        self.assertNotIn("公司从不公布", self.text)
+        self.assertNotIn("电话会里说明其中含", self.text)
+        div = cboe.divergence_long(self.staging)
+        start = cboe.share_window(div)
+        self.assertIn(f"日均收入 US${div['daily_revenue_usd_m'][start]:.3f}M → ", self.payload["brief"])
+        rpc = self.staging["kpi_long"]["index_options_rpc_usd"]
+        falls = sum(1 for a, b in zip(rpc, rpc[1:]) if b < a)
+        self.assertIn(f"{len(rpc) - 1} 次环比里 {falls} 次回落", self.text)
+        guide = self.staging["annual_guidance_history"]["adjusted_operating_expenses"]
+        low, high, _ = guide["by_year"][str(max(guide["years"]))]["guided"][-1]
+        long = self.staging["long"]
+        spent = sum(v for q, v in zip(long["quarters"], long["adj_opex"])
+                    if q.startswith(str(max(guide["years"]))))
+        quarters = sum(1 for q in long["quarters"] if q.startswith(str(max(guide["years"]))))
+        if quarters < 4:
+            self.assertIn(f"还有约 US${(high - spent) / (4 - quarters):.1f}M 的额度", self.text)
+            self.assertIn(f"按指引中值倒推则是 US${((low + high) / 2 - spent) / (4 - quarters):.1f}M", self.text)
 
 
 if __name__ == "__main__":
