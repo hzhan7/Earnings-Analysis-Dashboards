@@ -13,13 +13,13 @@ no 10-Q behind them, because TJX prints a thirteen-week column in its Q4 release
 rather than leaving the quarter to be differenced out of the year.
 
 The guidance record needs its own guards.  It runs across a stock split, a
-seven-quarter withdrawal and quarters whose adjusting item did not exist when
-the range was set, and the tempting mistake in every one of those places is to
-make the record look cleaner than it is.  So the counts through the quarter this
-page was migrated at are pinned by value (``PINNED_THROUGH``), the withdrawal is
-pinned as a gap rather than a run of misses, the split conversion is pinned on
-the one pair that straddles it, and the publication lag -- the fact that the
-outlook goes out *after* the quarter has begun -- is recomputed from the dates.
+withdrawn range followed by seven quarters of no guidance, and quarters whose
+adjusting item did not exist when the range was set, and the tempting mistake in
+every one of those places is to make the record look cleaner than it is.  So the
+counts through ``PINNED_THROUGH`` are pinned by value, the withdrawal is pinned
+as a gap rather than a run of misses, the split conversion is pinned on the one
+pair that straddles it, and the publication lag -- the fact that the outlook
+goes out *after* the quarter has begun -- is recomputed from the dates.
 
 Rolling the page is a data edit (CLAUDE.md §9): nothing in this file names the
 page's quarter or its figures.  `TjxChecksTest` compares the page with
@@ -133,6 +133,13 @@ def starts(st: dict) -> list[datetime.date]:
         before = f"Q4 {year - 1}" if number == 1 else f"Q{number - 1} {year}"
         out.append(day(ends[before]) + datetime.timedelta(days=1))
     return out
+
+
+def scorable(record: dict, lo_key: str, actual_key: str) -> list[int]:
+    """Indices with a reported value and a range still standing (not withdrawn)."""
+    gone = set(record.get("withdrawn_guidance", {}))
+    return [i for i, (q, lo, a) in enumerate(zip(record["quarters"], record[lo_key], record[actual_key]))
+            if lo is not None and a is not None and q not in gone]
 
 
 def pinned(record: dict) -> int:
@@ -560,25 +567,31 @@ class TjxDashboardTest(unittest.TestCase):
         missing = [q for q, a in zip(record["quarters"][:page + 1], record["actual_eps_usd"])
                    if a is None]
         self.assertEqual(missing, list(EPS_HOLES))
-        finished = sum(1 for v in record["actual_eps_usd"] if v is not None)
+        finished = len(scorable(record, "guide_eps_lo_usd", "actual_eps_usd"))
         band = find(self.payload, "摊薄每股收益（近 16 季）")
-        self.assertIn(f"整段记录（{n} 季指引、{finished} 季已完结）", band["note"])
+        self.assertIn(f"整段记录（{n} 季指引、{finished} 季已完结并计分）", band["note"])
 
     def test_eps_hit_rate_is_pinned_by_value(self) -> None:
-        """32 above / 8 inside / 3 below through PINNED_THROUGH (38 / 8 / 3 when the page
-        was migrated at Q2 2026), and the page prints whatever the record now says."""
+        """35 above / 6 inside / 1 below through PINNED_THROUGH, and the page prints
+        whatever the record now says.
+
+        It was 32 / 8 / 3 while Q1 2020 was scored against a range the company had
+        withdrawn and three quarters with a post-guidance adjusting item were scored
+        on the reported figure (Q2 2014 and Q3 2016 inside, Q1 2022 below); one rule
+        for every quarter moves those three above the range and takes Q1 2020 out.
+        """
         record = self.record
         lo, hi = record["guide_eps_lo_usd"], record["guide_eps_hi_usd"]
         actual = record["actual_eps_usd"]
-        finished = [i for i, v in enumerate(actual[:pinned(record)]) if v is not None]
+        finished = [i for i in scorable(record, "guide_eps_lo_usd", "actual_eps_usd")
+                    if i < pinned(record)]
         above = [i for i in finished if actual[i] > hi[i]]
         below = [i for i in finished if actual[i] < lo[i]]
         self.assertEqual((len(above), len(finished) - len(above) - len(below), len(below)),
-                         (32, 8, 3))
-        # The three breaches, named on the chart, are these three quarters.
-        self.assertEqual([record["quarters"][i] for i in below],
-                         ["Q1 2014", "Q1 2020", "Q1 2022"])
-        every = [i for i, v in enumerate(actual) if v is not None]
+                         (35, 6, 1))
+        # The one breach, named on the chart.
+        self.assertEqual([record["quarters"][i] for i in below], ["Q1 2014"])
+        every = scorable(record, "guide_eps_lo_usd", "actual_eps_usd")
         up = sum(1 for i in every if actual[i] > hi[i])
         down = sum(1 for i in every if actual[i] < lo[i])
         dev = find(self.payload, "摊薄每股收益相对指引中值的偏离")
@@ -599,21 +612,41 @@ class TjxDashboardTest(unittest.TestCase):
                          (9, 0, 1))
         self.assertEqual([record["quarters"][i] for i in below], ["Q4 2022"])
 
+        # consolidated comp, backfilled to 2012: 32 quarters 2012-2019 plus eight
+        # of 2023-2024; the withdrawn Q1 2020 range is not scored
         clo, chi = record["guide_comp_lo_pct"], record["guide_comp_hi_pct"]
         cactual = record["actual_comp_pct"]
-        cfinished = [i for i, v in enumerate(cactual[:closed]) if v is not None and clo[i] is not None]
+        cfinished = [i for i in scorable(record, "guide_comp_lo_pct", "actual_comp_pct") if i < closed]
         cabove = [i for i in cfinished if cactual[i] > chi[i]]
         cbelow = [i for i in cfinished if cactual[i] < clo[i]]
         self.assertEqual((len(cabove), len(cfinished) - len(cabove) - len(cbelow), len(cbelow)),
-                         (5, 3, 0))
+                         (30, 9, 1))
+        self.assertEqual([record["quarters"][i] for i in cbelow], ["Q3 2017"])
+        every = scorable(record, "guide_comp_lo_pct", "actual_comp_pct")
+        up = sum(1 for i in every if cactual[i] > chi[i])
+        down = sum(1 for i in every if cactual[i] < clo[i])
+        band = find(self.payload, "合并同店销售：")
+        self.assertIn(f"{len(every)} 个已完结季里 {up} 季超出上限、{len(every) - up - down} 季落在区间内",
+                      band["title"])
+        self.assertIn(f"合并 comp {len(every)} 季" + ("一次没跌破过。" if not down else f"里 {down} 季跌破。"),
+                      self.payload["brief"])
 
     def test_the_withdrawal_is_a_gap_and_not_a_run_of_misses(self) -> None:
-        """Seven quarters have no guidance at all, and the axis has to show it.
+        """Seven quarters have no guidance at all, one more had it withdrawn, and
+        the axis has to show both.
 
         Counting "never missed" over a record that quietly drops the quarters a
         company refused to guide is the failure this test exists to prevent.
         The page once said "五份业绩稿"; seven releases, 2020-05-21 through
-        2021-11-17, each say the company is not providing guidance.
+        2021-11-17, each say the company is not providing guidance. Before them
+        the Q1 2020 range (2020-02-26) was withdrawn by the 8-K of 2020-03-19,
+        and it was scored for a while anyway -- as a -224% bar and one of three
+        "misses". It is now out of every tally and off the deviation axis.
+
+        The break also used to sit at the *record* index of Q1 2022 on a chart
+        that draws finished quarters only, so the two unreported quarters of
+        2012-2013 pushed the red line two bars late, between Q2'22 and Q3'22.
+        It is checked here on the chart's own labels.
         """
         record = self.record
         self.assertEqual(len(record["guidance_gap_quarters"]), 7)
@@ -625,12 +658,33 @@ class TjxDashboardTest(unittest.TestCase):
         self.assertEqual(ordinals[jumps[0]] - ordinals[jumps[0] - 1] - 1, 7)
         self.assertEqual(record["quarters"][jumps[0] - 1], "Q1 2020")
         self.assertEqual(record["quarters"][jumps[0]], "Q1 2022")
+        # the withdrawn range: published with the Q4 FY2020 release, withdrawn after it
+        withdrawn = record["withdrawn_guidance"]
+        self.assertEqual(list(withdrawn), ["Q1 2020"])
+        item = withdrawn["Q1 2020"]
+        index = record["quarters"].index("Q1 2020")
+        self.assertEqual(item["published"], record["guidance_published"][index])
+        self.assertGreater(day(item["withdrawn"]), day(item["published"]))
+        self.assertIn("withdrawing its first quarter", item["words"])
         deviation = find(self.payload, "摊薄每股收益相对指引中值的偏离")
-        self.assertEqual(deviation["break_at"], jumps[0])
+        at = deviation["break_at"]
+        self.assertEqual((deviation["xlabels"][at - 1], deviation["xlabels"][at]), ("Q4'19", "Q1'22"))
+        self.assertNotIn("Q1'20", deviation["xlabels"])
+        self.assertIn("Q1'20 指引撤回", deviation["break_label"])
+        self.assertIn(f"{item['withdrawn']} 的 8-K（Item {item['item']}）撤回", deviation["note"])
+        # the comp charts skip the same quarters and the U.S.-only year after them
+        for prefix in ("合并同店销售：", "合并同店销售相对指引中值"):
+            with self.subTest(chart=prefix):
+                chart = find(self.payload, prefix)
+                at = chart["break_at"]
+                self.assertEqual((chart["xlabels"][at - 1], chart["xlabels"][at]), ("Q4'19", "Q1'23"))
+                self.assertNotIn("Q1'20", chart["xlabels"])
+                self.assertIn("Q1'20 指引撤回", chart["break_label"])
         releases = record["withheld_releases"]
         self.assertEqual(len(releases), len(record["guidance_gap_quarters"]))
         self.assertIn(f"的{cn(len(releases))}份业绩稿里写明", deviation["note"])
         self.assertTrue(any(f"的{cn(len(releases))}份业绩稿里写明不提供指引" in note
+                            and f"{item['withdrawn']} 的 8-K" in note
                             for note in self.payload["notes"]))
 
     def test_the_split_conversion_is_pinned_on_the_pair_that_straddles_it(self) -> None:
@@ -682,39 +736,69 @@ class TjxDashboardTest(unittest.TestCase):
         self.assertIn(f"已过去 {min(lags)}–{max(lags)} 天", table["title"])
 
     def test_adjusted_basis_is_used_only_where_the_company_judged_on_it(self) -> None:
-        """Q4 2025 (litigation settlement) and Q2 2026 (tariff refunds) are scored
-        on the company's adjusted figures, because neither event existed when the
-        range was set. Everywhere else the reported figure is used -- including
-        Q1 2022, where the company also printed an adjusted EPS (US$0.68, above
-        plan) and the page says so rather than claiming none was printed.
+        """One rule for every quarter: an adjusting item that arrived after the range
+        (or that the range said it left out), and an adjusted figure the company
+        printed that removes only that item, means the quarter is scored on it.
+
+        Through PINNED_THROUGH that is five quarters -- the Q3 2013 tax reversal,
+        the Q2 2014 and Q3 2016 debt-extinguishment charges (Q3 2016 with the
+        pension settlement its range said it excluded), the Q1 2022 Familia
+        write-down and the Q3 2022 tax benefit on selling it. Q1 2022 used to be
+        the page's one admitted exception, scored as a miss on the reported
+        US$0.49; the release's adjusted US$0.68 was above plan.
         """
         record = self.record
         index = {p: i for i, p in enumerate(self.periods)}
-        scored = [q for q in record["scored_on_adjusted"] if q in record["quarters"]
-                  and record["actual_eps_usd"][record["quarters"].index(q)] is not None]
-        self.assertTrue(scored)
-        for quarter in scored:
+        scored = record["scored_on_adjusted"]
+        self.assertEqual([q for q in scored if order(q) <= order(PINNED_THROUGH)],
+                         ["Q3 2013", "Q2 2014", "Q3 2016", "Q1 2022", "Q3 2022"])
+        self.assertIn("Q4 2025", scored)
+        split = record["quarters"].index(record["split_adjusted_before"])
+        for quarter, item in scored.items():
             r = record["quarters"].index(quarter)
             with self.subTest(quarter=quarter):
-                self.assertEqual(record["actual_eps_usd"][r], self.fin["adjusted_diluted_eps_usd"][index[quarter]])
-                self.assertAlmostEqual(record["actual_pretax_margin_pct"][r],
-                                       self.fin["adjusted_pretax_margin_pct"][index[quarter]], places=6)
-        self.assertIn("Q4 2025", scored)
-        for quarter, item in record["scored_on_reported_despite_adjusted"].items():
-            r = record["quarters"].index(quarter)
-            self.assertEqual(record["actual_eps_usd"][r], item["reported"])
-            self.assertGreater(item["adjusted"], record["guide_eps_hi_usd"][r])
+                if record["actual_eps_usd"][r] is None:
+                    continue
+                self.assertEqual(record["actual_eps_usd"][r], item["adjusted"])
+                self.assertNotEqual(item["reported"], item["adjusted"])
+                self.assertTrue(item["source"].strip() and item["event"].strip())
+                if r < split:
+                    # pre-split quarters are halved from a cent-quoted figure
+                    for value in (item["reported"], item["adjusted"]):
+                        self.assertAlmostEqual(value * 200, round(value * 200), places=6)
+                if quarter in index:
+                    self.assertEqual(round(self.fin["diluted_eps_usd"][index[quarter]], 3),
+                                     round(item["reported"], 3))
+                    if self.fin["adjusted_diluted_eps_usd"][index[quarter]] is not None:
+                        self.assertEqual(self.fin["adjusted_diluted_eps_usd"][index[quarter]],
+                                         item["adjusted"])
+                if "pretax_margin" in item["metrics"]:
+                    self.assertAlmostEqual(record["actual_pretax_margin_pct"][r],
+                                           self.fin["adjusted_pretax_margin_pct"][index[quarter]],
+                                           places=6)
+        # the rule, and the quarters it moved, are on the page; the old admission is not
         note = next(text for text in self.payload["notes"] if "相对 plan" in text)
-        self.assertNotIn("其余季度公司未披露调整项", note)
-        self.assertIn("Q1 2022（报表 US$0.49", note)
+        self.assertIn(f"这样计的有{cn(len(scored))}季", note)
+        for quarter in scored:
+            self.assertIn(quarter, note)
+        for gone in ("没有改按调整后口径计分", "其余季度公司未披露调整项"):
+            self.assertNotIn(gone, text_of(self.payload))
+        self.assertNotIn("scored_on_reported_despite_adjusted", record)
+        # the core table prints the adjusted figure it scored, not 「同 GAAP」
+        core = next(t for t in self.payload["tables"] if "季核心" in t["title"])
+        for row in core["rows"]:
+            if row[0] in scored:
+                with self.subTest(core=row[0]):
+                    self.assertEqual(row[10], f"${scored[row[0]]['adjusted']:.2f}")
 
     def test_every_miss_is_explained_and_the_explanation_is_the_filings(self) -> None:
-        """The three EPS misses and the one margin miss each carry a reason, and
-        Q1 2022's is the Familia write-down the release names -- not "2022 年的成本
-        冲击": the release's adjusted EPS cleared the top of the range."""
+        """Every miss on every chart carries a reason from the filing that reported it.
+
+        Q1 2022's was once 「2022 年的成本冲击」; it was the Familia write-down, and
+        on the release's adjusted figure it is not a miss at all. The one comp miss
+        in the backfilled record, Q3 2017, is the release's own two reasons."""
         dev = find(self.payload, "摊薄每股收益相对指引中值的偏离")
-        self.assertIn("Q1'14 差 US$0.005（拆股调整后）", dev["note"])
-        self.assertIn("Familia", dev["note"])
+        self.assertIn("唯一一次跌破是 Q1'14 差 US$0.005（拆股调整后）", dev["note"])
         self.assertNotIn("成本冲击", dev["note"])
         band = find(self.payload, "税前利润率：")
         rec = self.record
@@ -727,6 +811,11 @@ class TjxDashboardTest(unittest.TestCase):
         else:
             self.assertIn(f"<b>{cn(len(below))}次跌破：</b>", band["note"])
         self.assertIn("unplanned shrink charge", band["note"])
+        comp = find(self.payload, "合并同店销售：")
+        self.assertIn("<b>唯一一次跌破是 Q3'17 的 0% 对 1–2%</b>", comp["note"])
+        self.assertIn("the hurricanes had a negative impact", comp["note"])
+        # a stale note for a quarter that is no longer a miss is not kept around
+        self.assertEqual(sorted(rec["miss_notes"]["eps"]), ["Q1 2014"])
 
     def test_the_marmaxx_low_is_named_from_the_record(self) -> None:
         """「八季最低」on a 42-quarter chart was the window talking, not the record:
@@ -743,14 +832,48 @@ class TjxDashboardTest(unittest.TestCase):
             self.assertNotIn("以来最低", chart["title"])
         self.assertNotIn("八季", chart["title"])
 
-    def test_the_comp_record_says_it_starts_where_it_was_read_not_where_the_disclosure_does(self) -> None:
-        """Consolidated comp guidance is in the filed releases long before 2023 --
-        as the comp growth each EPS outlook rested on (2020-02-26: 2% to 3%). The
-        page used to say the guidance "从 Q1'23 才开始"."""
+    def test_the_comp_record_starts_where_the_disclosure_does(self) -> None:
+        """Consolidated comp guidance is in the filed releases from the first one in
+        the record -- as the comp growth each EPS outlook rested on. The page first
+        said the guidance "从 Q1'23 才开始", then that the earlier ones were "本页尚未
+        接入"; the 2012-2020 ranges and 2012-2019 actuals are now read in, each cell
+        with its accession and words in `_comp_sources`."""
+        record = self.record
         band = find(self.payload, "合并同店销售：")
         self.assertNotIn("才开始", band["note"])
-        self.assertIn("本页尚未接入", band["note"])
-        self.assertIn("2020-02-26", band["note"])
+        self.assertNotIn("尚未接入", band["note"])
+        first = next(i for i, v in enumerate(record["guide_comp_lo_pct"]) if v is not None)
+        self.assertEqual(record["quarters"][first], record["quarters"][0])
+        self.assertEqual(band["xlabels"][0], short(record["quarters"][0]))
+        self.assertEqual(band["xlabels"][-1], short(record["quarters"][-1]))
+        sources = record["_comp_sources"]
+        backfilled = [q for q in record["quarters"] if order(q) <= order("Q1 2020")]
+        self.assertEqual(sorted(sources, key=order), backfilled)
+        for quarter in backfilled:
+            i = record["quarters"].index(quarter)
+            item = sources[quarter]
+            with self.subTest(quarter=quarter):
+                self.assertEqual(item["guide"]["released"], record["guidance_published"][i])
+                self.assertRegex(item["guide"]["accession"], r"^\d{10}-\d{2}-\d{6}$")
+                lo, hi = record["guide_comp_lo_pct"][i], record["guide_comp_hi_pct"][i]
+                words = item["guide"]["text"]
+                self.assertIn("comparable store sales growth", words)
+                self.assertTrue(f"{lo:.0f}% to {hi:.0f}%" in words
+                                or (lo == 0 and f"flat to {hi:.0f}%" in words)
+                                or (lo == hi and f"growth of {lo:.0f}%" in words), words)
+                actual = record["actual_comp_pct"][i]
+                if actual is None:
+                    self.assertIn("没有 comp", item["actual"]["text"])
+                else:
+                    cell = f"+{actual:.0f}%" if actual else "0%"
+                    self.assertIn(f"TJX | {cell} |", item["actual"]["text"])
+        # where the quarterly series already has the quarter, the backfill agrees with it
+        series = dict(zip(self.periods, self.source["comparable_sales_pct"]["consolidated"]))
+        overlap = [(q, a) for q, a in zip(record["quarters"], record["actual_comp_pct"])
+                   if q in series and a is not None]
+        self.assertTrue(overlap)
+        for quarter, actual in overlap:
+            self.assertEqual(series[quarter], actual, quarter)
 
     def test_the_half_and_half_arithmetic_behind_the_slope_chart(self) -> None:
         """Rest-of-year implied = full-year guided midpoint − year to date, both filed."""
@@ -1153,6 +1276,11 @@ class TjxRollTest(unittest.TestCase):
         r = rec["quarters"].index(unexplained["periods"][-1])
         rec["actual_eps_usd"][r] = rec["guide_eps_lo_usd"][r] - 0.05
         cases["miss_notes.eps says nothing about"] = unexplained
+        comp_unexplained = copy.deepcopy(full)
+        rec = comp_unexplained["quarterly_guidance_history"]
+        r = rec["quarters"].index(comp_unexplained["periods"][-1])
+        rec["actual_comp_pct"][r] = rec["guide_comp_lo_pct"][r] - 1
+        cases["miss_notes.comp says nothing about"] = comp_unexplained
         misdated = copy.deepcopy(full)
         misdated["period_ends"][-1] = (day(misdated["period_ends"][-1]) + datetime.timedelta(days=2)).isoformat()
         cases["not a whole number of weeks"] = misdated
@@ -1227,6 +1355,7 @@ class TjxRollTest(unittest.TestCase):
             r = rec(st)
             i = r["quarters"].index("Q1 2024")
             r["actual_comp_pct"][i] = r["guide_comp_lo_pct"][i] - 1
+            r["miss_notes"]["comp"]["Q1 2024"] = "（测试用的原因）"
 
         def margin_second_miss(st):
             comp_clean(st)
@@ -1320,16 +1449,24 @@ class TjxRollTest(unittest.TestCase):
             long = st["long_history"]
             long["share_repurchases_usd_m"][0] = long["dividends_paid_usd_m"][0] = 1.0
 
+        def lifted(r):
+            # the new ranges must not invent misses the record has no reasons for
+            for i, (lo, a) in enumerate(zip(r["guide_comp_lo_pct"], r["actual_comp_pct"])):
+                if lo is not None and a is not None:
+                    r["actual_comp_pct"][i] = max(a, lo)
+
         def one_mid(st):
             r = rec(st)
             for i, lo in enumerate(r["guide_comp_lo_pct"]):
                 if lo is not None:
                     r["guide_comp_lo_pct"][i], r["guide_comp_hi_pct"][i] = 2.0, 3.0
+            lifted(r)
 
         def mixed_mids(st):
             r = rec(st)
             for n, i in enumerate(i for i, lo in enumerate(r["guide_comp_lo_pct"]) if lo is not None):
                 r["guide_comp_lo_pct"][i], r["guide_comp_hi_pct"][i] = 1.0 + n, 2.0 + n
+            lifted(r)
 
         def upward(st):
             r = rec(st)
