@@ -8,12 +8,62 @@
   },
   "latest": {
     "period": "Q2 2026",
-    "previous_period": "Q1 2026",
-    "prior_year_period": "Q2 2025",
     "period_end": "2026-06-30",
     "release_date": "2026-07-30",
     "analysis_date": "2026-08-01",
     "audit_status": "unaudited"
+  },
+  "_checks": {
+    "period": "Q2 2026",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-30",
+    "revenue_usd_m": 200606,
+    "revenue_year_ago_usd_m": 167702,
+    "revenue_growth_printed_pct": 20,
+    "operating_income_usd_m": 27461,
+    "operating_margin_printed_pct": 13.7,
+    "net_income_usd_m": 62647,
+    "diluted_eps_usd": 5.75,
+    "income_before_income_taxes_usd_m": 80857,
+    "other_income_expense_net_usd_m": 53415,
+    "operating_cash_flow_usd_m": 45387,
+    "purchases_of_property_and_equipment_usd_m": 54208,
+    "proceeds_from_property_and_equipment_sales_and_incentives_usd_m": 1132,
+    "free_cash_flow_ttm_usd_m": -7604,
+    "segments_usd_m": {
+      "na_revenue": 116177,
+      "na_operating_income": 9123,
+      "intl_revenue": 42197,
+      "intl_operating_income": 1717,
+      "aws_revenue": 42232,
+      "aws_operating_income": 16621
+    },
+    "segment_margin_printed_pct": {
+      "na": 7.9,
+      "intl": 4.1,
+      "aws": 39.4
+    },
+    "aws_growth_printed_pct": 37,
+    "advertising_services_usd_m": 19809,
+    "commitments_not_yet_recognized_usd_bn": 496,
+    "next_quarter": {
+      "quarter": "Q3 2026",
+      "net_sales_usd_bn": [
+        197.0,
+        202.0
+      ],
+      "operating_income_usd_bn": [
+        22.5,
+        26.5
+      ],
+      "fx_bps_unfavorable": 80
+    },
+    "one_off_items_usd_m": {
+      "tariff_refund": 640,
+      "energy_derivative_gain": 551
+    },
+    "source": "Q2 2026 业绩 8-K EX-99.1（accession 0001018724-26-000024）：Consolidated Statements of Operations 的 Total net sales / Operating income / Other income (expense), net / Income before income taxes / Net income / Diluted earnings per share 列；Consolidated Statements of Cash Flows 三个月列的 operating activities 合计、Purchases of property and equipment 与 Proceeds from property and equipment sales and incentives；Segment Information 表的三个分部；Supplemental 表的 Free cash flow -- TTM、Advertising services、AWS -- Y/Y growth, excluding F/X 与 Operating margin 各行；首页要点「Net sales increased 20%」；Financial Guidance 段的 Q3 区间与「unfavorable impact of approximately 80 basis points」。Q2 2026 10-Q（accession 0001018724-26-000026）：Note 1 能源合约段「net unrealized gains of $551 million in Q2 2026」、关税退款段「approximately $640 million of tariff refunds」、承诺附注「approximately $496 billion」。",
+    "checked_on": "2026-09-19"
   },
   "periods": [
     "Q3 2023",
@@ -1324,11 +1374,11 @@
       "unfavorable",
       "unfavorable"
     ],
-    "provenance": "37 个被指引的季度（Q3 2017 – Q3 2026）逐季读自 SEC EDGAR 上 Amazon 每季业绩 8-K 的 EX-99.1 「Financial Guidance」段（CIK 1018724，item 2.02）。亚马逊每季对**净销售额与经营利润同时**给出区间，这是本站五家里唯一一家两条都进申报文件的：台积电给三条、英伟达给三条、Meta 只给收入一条，微软的新闻稿明写指引只在电话会给出、Alphabet 不给季度数字指引。",
+    "provenance": "43 个被指引的季度（Q1 2016 – Q3 2026，Q1 2016–Q2 2017 六季为回补，见 backfill_note_2016_2017）逐季读自 SEC EDGAR 上 Amazon 每季业绩 8-K 的 EX-99.1 「Financial Guidance」段（CIK 1018724，item 2.02）。亚马逊每季对**净销售额与经营利润同时**给出区间，（此前这里写「这是本站五家里唯一一家两条都进申报文件的」—— 站点早已不止五家，Synopsys、台积电、美光、英伟达、TJX 等页的指引同样是写进申报文件的多个区间，那句「唯一」已撤下。）微软的新闻稿明写指引只在电话会给出、Alphabet 不给季度数字指引。",
     "format_notes": [
       "Q3 2017 – Q1 2018 的经营利润指引以百万美元印刷，其余季度以十亿美元印刷，本表统一折成十亿美元。",
-      "Q4 2021、Q3 2022、Q4 2022、Q1 2023 的下限印作「$0」，没有单位词；Q3 2017、Q2 2020、Q2 2022 的下限为负数、以括号印刷（如 $(1.5) billion），这三季新闻稿的行标题也相应写作「Operating income (loss)」。",
-      "2020 年疫情季亚马逊没有撤回指引：Q1 2020 的新闻稿照常给出 Q2 2026 区间，只是把经营利润下限放到 $(1.5)B。"
+      "Q4 2021、Q3 2022、Q4 2022、Q1 2023 的下限印作「$0」，没有单位词（回补的 Q4 2016 下限同样为 0）；Q3 2017、Q2 2020、Q2 2022 的下限为负数、以括号印刷（如 $(1.5) billion），这三季新闻稿的行标题也相应写作「Operating income (loss)」。",
+      "2020 年疫情季亚马逊没有撤回指引：Q1 2020 的新闻稿照常给出 Q2 2020 区间，只是把经营利润下限放到 $(1.5)B。"
     ],
     "backfill_note_2016_2017": "Q1 2016–Q2 2017 共 6 季为回补。此前停在 Q3 2017 的理由写的是「亚马逊 2021Q3 才开始给经营利润区间」—— **那句话是错的**：2016 年第一季度那份指引 Q2 2016 的发布稿原话是「Operating income is expected to be between $375 million and $975 million」（accession 0001018724-16-000225）。本次独立复核只回到 2015 年第四季那份发布，所以只断言「至少到 Q1 2016 为止确实存在」，不断言那就是这条披露的起点。**Q1–Q3 2016 三季的汇率影响（bps）在指引段里根本没给**，故为空 —— 这是这条序列第一次出现空值，空不是零。与既有最近八季重叠比对 62 格，0 处不一致。"
   },
@@ -1554,7 +1604,7 @@
       45387
     ],
     "depreciation_and_amortization_usd_m": [
-      null,
+      1827,
       1909,
       2084,
       2297,
@@ -1644,8 +1694,8 @@
     "capex_first_reported": "2017Q1",
     "finance_lease_first_reported": "2018Q1",
     "provenance": "42 个季度（2016Q1–2026Q2）来自 SEC EDGAR 上 Amazon 的 10-Q / 10-K XBRL 事实（CIK 1018724）。亚马逊的 10-Q 现金流量表同时列示三个月、年初至今与滚动十二个月三栏，所以除第四季外的季度现金流是**申报值本身**，不需要用相邻两个年初至今值相减；无 10-Q 的第四季度按「全年 − 前三季」倒推，但 2019 与 2020 两年的第四季在 10-K 里另有直接申报的三个月事实，则采用申报值。",
-    "identity_checks": "2017–2025 每个自然年的四个季度之和已与申报的全年值对账：收入、经营利润、经营现金流、资本开支、折旧摊销、股权激励六条线的年度缺口全部落在 **±2** US$M 的四舍五入范围内 —— 此处此前写的是 ±1，而 FY2017 国际分部经营利润的缺口是 2（−481 −724 −936 −919 = −3,060，申报 −3,062），四个季度各自四舍五入再求和，理论误差本来就是 ±2。2016 年只有五条线参与对账：资本开支那一条在 2016 是空的，见 capital_expenditures_basis。",
-    "capex_note": "资本开支与折旧摊销的季度事实回到 2016Q2：2016Q1 的两条线亚马逊只申报了年初至今口径且当年年度值缺失，无法在不发明数字的前提下补齐，故留空而不是外推。",
+    "identity_checks": "对账由 builder 现算：long_history 里收入、经营利润、经营现金流、资本开支、折旧摊销五条线，凡四个季度齐全的自然年，四季之和与 annual_filed_usd_m 的申报全年值之差都印在页面注释里（当前最大 1 US$M）。此处此前写的是「六条线……±2」：第六条股权激励不在 long_history 里，±2 的例子（FY2017 国际分部经营利润）也不在本文件的任何序列里，两句都与本文件对不上，已改。融资租赁本金 2018 年四季之和与全年差 2，它不画长图、不参与页面那句对账。",
+    "capex_note": "折旧摊销回到 2016Q1。此前这里写「2016Q1 亚马逊只申报了年初至今口径且当年年度值缺失」并把那一格留空 —— 那句话是错的：第一季的年初至今就是这一季本身，2016 年第一季 10-Q 的现金流量表三个月列印着 1,827（accession 0001018724-16-000227，2017 年第一季 10-Q 的对比列同为 1,827），全年 8,116 也在 FY2016 10-K 里。没抓到的原因是标签：2016 年三份 10-Q 用 DepreciationAndAmortization，2017 年起才换成 DepreciationDepletionAndAmortization，只按后者取数就会在 2016Q1 落空（Q2、Q3 有 2017 年 10-Q 的对比列兜住）。四季 1,827 + 1,909 + 2,084 + 2,297 = 8,117，对全年 8,116 差 1。资本开支（gross）另从 2017Q1 起，理由不同，见 capital_expenditures_basis。",
     "finance_lease_note": "融资租赁本金偿还自 2018Q1 起才有季度事实（ASC 842 之前不单列）。",
     "aws_revenue_usd_m": [
       2566,
@@ -1740,170 +1790,91 @@
     "capital_expenditures_basis": {
       "series": "gross（购买物业及设备，未扣出售与激励所得）",
       "starts": "2017Q1",
-      "why_2016_is_empty": "2016 那四格现在是洞，此前它们是有数的 —— 而那是**混口径**：亚马逊 2016 年的现金流量表只印一行 net（已扣出售与激励所得），2017 年起才把 gross 与 proceeds 拆开。XBRL 里两件事同时发生：2016 三个季度 1,179 / 1,711 / 1,841 全部等于 **net**，而 2017Q1 起仓库存的 2,148 / 3,113 / 3,074 全部等于 **gross**（同期 net 是 1,861 / 2,501 / 2,659）。所以这条线在 2016/2017 交界处凭空跳约 15%，而那一跳是口径变更，不是资本开支。2016Q4 更糟，它是 7,804 − 4,731 = 3,073：**重述后的全年 gross 减掉旧口径的九个月 net**，两端根本不是同一个量。同口径的 Q4 2016 是 6,737 − 4,731 = 2,006，而 2016 年第四季业绩稿 EX-99.1 的三个月十二月列直接印着 (2,005)。2016 年的**季度 gross 不存在**：当年的申报里没有这一行，所以这条线只能从 2017Q1 起，四个 2016 的格子留空。",
+      "why_2016_is_empty": "2016 那四格现在是洞，此前它们是有数的 —— 而那是<b>混口径</b>：亚马逊 2016 年的现金流量表只印一行 net（已扣出售与激励所得），2017 年起才把 gross 与 proceeds 拆开。XBRL 里两件事同时发生：2016 三个季度 1,179 / 1,711 / 1,841 全部等于 <b>net</b>，而 2017Q1 起仓库存的 2,148 / 3,113 / 3,074 全部等于 <b>gross</b>（同期 net 是 1,861 / 2,501 / 2,659）。所以这条线在 2016/2017 交界处凭空跳约 15%，而那一跳是口径变更，不是资本开支。2016Q4 更糟，它是 7,804 − 4,731 = 3,073：<b>重述后的全年 gross 减掉旧口径的九个月 net</b>，两端根本不是同一个量。同口径的 Q4 2016 是 6,737 − 4,731 = 2,006，而 2016 年第四季业绩稿 EX-99.1 的三个月十二月列直接印着 (2,005)。2016 年的<b>季度 gross 不存在</b>：当年的申报里没有这一行，所以这条线只能从 2017Q1 起，四个 2016 的格子留空。",
       "net_2016_usd_m": [
         1179.0,
         1711.0,
         1841.0,
         2005.0
       ],
-      "net_2016_source": "1,179 / 1,711 / 1,841 来自 2016 年三份 10-Q 的三个月列；2,005 来自 2016 年第四季业绩 8-K 的 EX-99.1 现金流量表三个月列（accession 0001018724-17-000003，同列 2015Q4 = 1,309）。四季相加 6,736，与 FY2016 10-K 的全年 net 6,737 差 1，是公司自己两处披露的舍入差。"
+      "net_2016_source": "1,179 / 1,711 / 1,841 来自 2016 年三份 10-Q 的三个月列；2,005 来自 2016 年第四季业绩 8-K 的 EX-99.1 现金流量表三个月列（accession 0001018724-17-000003，同列 2015Q4 = 1,309）。四季相加 6,736，与 FY2016 10-K 的全年 net 6,737 差 1，是公司自己两处披露的舍入差。",
+      "chart_start_reason": "2016 年的季度 gross 资本开支不存在（当年现金流量表只印一行净额），本页不拿净额充数"
+    },
+    "annual_filed_usd_m": {
+      "years": [
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "revenue_usd_m": [
+        135987,
+        177866,
+        232887,
+        280522,
+        386064,
+        469822,
+        513983,
+        574785,
+        637959,
+        716924
+      ],
+      "operating_income_usd_m": [
+        4186,
+        4106,
+        12421,
+        14541,
+        22899,
+        24879,
+        12248,
+        36852,
+        68593,
+        79975
+      ],
+      "operating_cash_flow_usd_m": [
+        17203,
+        18365,
+        30723,
+        38514,
+        66064,
+        46327,
+        46752,
+        84946,
+        115877,
+        139514
+      ],
+      "capital_expenditures_usd_m": [
+        7804,
+        11955,
+        13427,
+        16861,
+        40140,
+        61053,
+        63645,
+        52729,
+        82999,
+        131819
+      ],
+      "depreciation_and_amortization_usd_m": [
+        8116,
+        11478,
+        15341,
+        21789,
+        25180,
+        34433,
+        41921,
+        48663,
+        52795,
+        65756
+      ],
+      "source": "各年 10-K 的合并损益表与现金流量表（SEC XBRL 年度事实，CIK 1018724；每年取最近一份 10-K 的列示值）。2016 年的资本开支是 FY2018 10-K 按 gross 重述后的 7,804，而 2016 年的季度 gross 不存在（见 capital_expenditures_basis），所以 2016 这一年只有季度齐全的三条线参与对账。"
     }
-  },
-  "current_snapshot": {
-    "note": "三列依次为 Q2 2025 / Q1 2026 / Q2 2026，来自当季与历史各期业绩 8-K EX-99.1 与 10-Q。",
-    "revenue_usd_m": [
-      167702,
-      181519,
-      200606
-    ],
-    "operating_income_usd_m": [
-      19171,
-      23852,
-      27461
-    ],
-    "net_income_usd_m": [
-      18164,
-      30255,
-      62647
-    ],
-    "diluted_eps_usd": [
-      1.68,
-      2.78,
-      5.75
-    ],
-    "diluted_shares_m": [
-      10806,
-      10874,
-      10903
-    ],
-    "pre_tax_income_usd_m": [
-      20857,
-      39834,
-      80857
-    ],
-    "other_income_expense_net_usd_m": [
-      1117,
-      15647,
-      53415
-    ],
-    "provision_for_income_taxes_usd_m": [
-      -2678,
-      -9560,
-      -18199
-    ],
-    "interest_expense_usd_m": [
-      -516,
-      -800,
-      -1314
-    ],
-    "operating_cash_flow_usd_m": [
-      32515,
-      26032,
-      45387
-    ],
-    "purchases_of_property_and_equipment_usd_m": [
-      32183,
-      44203,
-      54208
-    ],
-    "proceeds_from_pe_sales_and_incentives_usd_m": [
-      815,
-      969,
-      1132
-    ],
-    "net_capex_usd_m": [
-      31368,
-      43234,
-      53076
-    ],
-    "operating_cash_flow_ttm_usd_m": [
-      121137,
-      148531,
-      161403
-    ],
-    "net_capex_ttm_usd_m": [
-      102953,
-      147299,
-      169007
-    ],
-    "free_cash_flow_ttm_usd_m": [
-      18184,
-      1232,
-      -7604
-    ],
-    "share_based_compensation_usd_m": [
-      6534,
-      4032,
-      6038
-    ],
-    "worldwide_shipping_costs_usd_m": [
-      23370,
-      25709,
-      27873
-    ],
-    "paid_units_yoy_pct": [
-      12,
-      15,
-      17
-    ],
-    "employees": [
-      1546000,
-      1575000,
-      1595000
-    ],
-    "long_term_debt_usd_m": [
-      null,
-      null,
-      128894
-    ],
-    "long_term_debt_at_2025_12_31_usd_m": 65648,
-    "stockholders_equity_usd_m": [
-      null,
-      null,
-      551620
-    ],
-    "stockholders_equity_at_2025_12_31_usd_m": 411065,
-    "property_and_equipment_net_usd_m": [
-      null,
-      null,
-      446046
-    ],
-    "operating_lease_assets_usd_m": [
-      null,
-      null,
-      92743
-    ],
-    "goodwill_usd_m": [
-      null,
-      null,
-      23504
-    ],
-    "cash_paid_for_income_taxes_ttm_usd_m": [
-      11788,
-      null,
-      6635
-    ],
-    "deferred_income_taxes_addback_usd_m": [
-      11,
-      12798,
-      17691
-    ],
-    "increase_in_unpaid_capex_usd_m": [
-      -1600,
-      9920,
-      10700
-    ]
-  },
-  "one_off_items": {
-    "note": "本季两笔一次性经营项，金额均取 10-Q 原文而不是电话会口径；两笔都计入经营利润，因此任何「经营利润率环比改善」的读数都必须先扣掉它们。",
-    "tariff_refund_usd_m": 640,
-    "tariff_refund_basis": "10-Q：Q2 2026 收到约 US$640M 的 IEEPA 关税退款，主要冲减「Cost of sales」，主要落在北美分部。",
-    "energy_derivative_gain_usd_m": 551,
-    "energy_derivative_basis": "10-Q：能源合约公允价值计量在 Q2 2026 产生净未实现收益 US$551M（上半年累计 US$599M）。电话会口径说的是「约 US$600M」，与上半年数更接近；本页采用 10-Q 的单季 551。",
-    "total_usd_m": 1191,
-    "management_ex_derivative_margin_bp": 520,
-    "why_the_filed_number_wins": "用 551 还原的 AWS 经营利润率是 38.05%、同比 +514bp，用 600 还原是 37.94%、同比 +503bp；管理层在电话会上给的口径是「同比约 +520bp」，与前者相差 6bp、与后者相差 17bp —— 申报值同时更精确也更贴合公司自己的说法。"
   },
   "aws_backlog": {
     "periods": [
@@ -2014,35 +1985,155 @@
       5.5,
       6.4
     ],
-    "basis": "10-Q / 10-K 原文：「主要与 AWS 相关、原始期限超过一年且尚未确认的客户合约承诺」。Q1 2026 为 US$364B（加权剩余年限 5.5 年），Q2 2026 为 US$496B（6.4 年）。Q3 / Q4 2025 两点来自当季电话会口径，。　**更正**：本文件此前写「公司未在 Q3 2025 与 Q4 2025 两期给出加权年限」，那是错的。已回原文核对：2025 年第三季 10-Q 原话「The weighted-average remaining life of our long-term contracts is 3.8 years.」（accession 0001018724-25-000123），FY2025 10-K 原话「The weighted average remaining life of our long-term contracts is 4.1 years.」（accession 0001018724-26-000004）。两个数已补入。这条注解写在那两份申报出现之前，此后没有人回去重读 —— **一条「公司没给」的注解，寿命只到公司下次给为止。**",
-    "concentration_disclosure": "公司连续两季拒绝披露前三大客户占比。可从申报文件下限推算的只有两笔：OpenAI 原有 US$38.0B 承诺加 Q1 2026 扩容的 US$100.0B / 8 年，Anthropic 于 Q2 2026 扩容「超过 US$100.0B」/ 10 年，两者合计 ≥US$238B、占 US$496B 的 ≥48%。",
+    "basis": "10-Q / 10-K 原文：「主要与 AWS 相关、原始期限超过一年且尚未确认的客户合约承诺」。每一格都取自当季 10-Q（第四季为 10-K）的这一段，Q2 2026 为「approximately $496 billion」、加权剩余年限 6.4 年。此处此前写「Q3 / Q4 2025 两点来自当季电话会口径」—— 那两格同样在申报里（Q3 2025 10-Q、FY2025 10-K 的「approximately $244 billion … 4.1 years」），已改。　**更正**：本文件更早还写过「公司未在 Q3 2025 与 Q4 2025 两期给出加权年限」，那也是错的。已回原文核对：2025 年第三季 10-Q 原话「The weighted-average remaining life of our long-term contracts is 3.8 years.」（accession 0001018724-25-000123），FY2025 10-K 原话「The weighted average remaining life of our long-term contracts is 4.1 years.」（accession 0001018724-26-000004）。两个数已补入。这条注解写在那两份申报出现之前，此后没有人回去重读 —— **一条「公司没给」的注解，寿命只到公司下次给为止。**",
     "floor_note": "Q1 2018–Q2 2025 共 30 季为回补 —— 此前只有 4 季，理由写的是公司只给过四个季度，实为没抓。**但 2016–2017 是真的没有**：这条披露是 ASC 606 带来的剩余履约义务附注，亚马逊 2018-01-01 才采用；已直接查过 FY2017 10-K 与 2017 年第三季 10-Q，零次出现。所以这张图诚实的下限是 2018Q1，不是 2016Q1。两处口径变化：① 2024 年第三季起公司从「$156.6 billion」这样精确到 0.1B 改成「approximately $164 billion」的整数十亿；② FY2018 10-K 起措辞从「the amount of revenue not yet recognized」改为「those commitments not yet recognized」，同一个量、换了名字。"
   },
-  "guidance": {
-    "next_quarter_label": "Q3 2026",
-    "net_sales_usd_bn": [
-      197.0,
-      202.0
+  "current_snapshot": {
+    "period": "Q2 2026",
+    "columns": [
+      "Q2 2025",
+      "Q1 2026",
+      "Q2 2026"
     ],
+    "note": "三列依次为 columns 所列的去年同季 / 上季 / 本季，来自当季与历史各期业绩 8-K EX-99.1 与 10-Q；与 quarterly_usd_m 重复的各行已删，只留数组里没有的。",
+    "diluted_eps_usd": [
+      1.68,
+      2.78,
+      5.75
+    ],
+    "diluted_shares_m": [
+      10806,
+      10874,
+      10903
+    ],
+    "pre_tax_income_usd_m": [
+      20857,
+      39834,
+      80857
+    ],
+    "other_income_expense_net_usd_m": [
+      1117,
+      15647,
+      53415
+    ],
+    "provision_for_income_taxes_usd_m": [
+      -2678,
+      -9560,
+      -18199
+    ],
+    "interest_expense_usd_m": [
+      -516,
+      -800,
+      -1314
+    ],
+    "cash_paid_for_income_taxes_ttm_usd_m": [
+      11788,
+      null,
+      6635
+    ],
+    "deferred_income_taxes_addback_usd_m": [
+      11,
+      12798,
+      17691
+    ],
+    "increase_in_unpaid_capex_usd_m": [
+      -1600,
+      9920,
+      10700
+    ],
+    "aws_growth_ex_fx_pct": [
+      17,
+      28,
+      37
+    ],
+    "balance_sheet": {
+      "as_of": [
+        "2025-12-31",
+        "2026-06-30"
+      ],
+      "long_term_debt_usd_m": [
+        65648,
+        128894
+      ],
+      "stockholders_equity_usd_m": [
+        411065,
+        551620
+      ],
+      "property_and_equipment_net_usd_m": [
+        357025,
+        446046
+      ],
+      "operating_lease_assets_usd_m": [
+        86054,
+        92743
+      ],
+      "goodwill_usd_m": [
+        23273,
+        23504
+      ]
+    }
+  },
+  "one_off_items": {
+    "period": "Q2 2026",
+    "note": "本季两笔一次性经营项，金额均取 10-Q 原文而不是电话会口径；两笔都计入经营利润，因此任何「经营利润率环比改善」的读数都必须先扣掉它们。",
+    "tariff_refund_usd_m": 640,
+    "tariff_refund_basis": "10-Q：Q2 2026 收到约 US$640M 的 IEEPA 关税退款，主要冲减「Cost of sales」，主要落在北美分部。",
+    "energy_derivative_gain_usd_m": 551,
+    "energy_derivative_gain_ytd_usd_m": 599,
+    "energy_derivative_gain_on_call_usd_m": 600,
+    "energy_derivative_basis": "10-Q：能源合约公允价值计量在 Q2 2026 产生净未实现收益 US$551M（上半年累计 US$599M）。电话会口径说的是「约 US$600M」，与上半年数更接近；本页采用 10-Q 的单季 551。",
+    "management_ex_derivative_margin_bp": 520,
+    "why_the_filed_number_wins": "用 551 还原的 AWS 经营利润率是 38.05%、同比 +514bp，用 600 还原是 37.94%、同比 +503bp；管理层在电话会上给的口径是「同比约 +520bp」，与前者相差 6bp、与后者相差 17bp —— 申报值同时更精确也更贴合公司自己的说法。"
+  },
+  "other_income_story": {
+    "period": "Q2 2026",
+    "private_equity_upward_adjustment_usd_bn": 50.5,
+    "holding": "Anthropic 持仓",
+    "short": "Anthropic",
+    "primarily_from": "我们持有的 Anthropic 无投票权优先股",
+    "fair_value_level": "Level 3",
+    "brief_title": "利润的质量低于账面",
+    "basis": "Q2 2026 10-Q：「The upward adjustments relating to equity investments in private companies of $50.5 billion in Q2 2026 … reflect observable changes in prices, primarily from our nonvoting preferred stock in Anthropic」；同一附注称这些调整为 Level 3 公允价值计量。"
+  },
+  "backlog_concentration": {
+    "period": "Q2 2026",
+    "largest_single_addition": {
+      "customer": "Anthropic",
+      "more_than_usd_bn": 100.0
+    },
+    "top_three_share_undisclosed_quarters": 2,
+    "brief_title": "backlog 增量高度集中",
+    "text": "公司连续两季拒绝披露前三大客户占比。可从申报文件下限推算的只有两笔：OpenAI 原有 US$38.0B 承诺加 Q1 2026 扩容的 US$100.0B / 8 年，Anthropic 于 Q2 2026 扩容「超过 US$100.0B」/ 10 年，两者合计 ≥US$238B、占 US$496B 的 ≥48%。",
+    "basis": "Q2 2026 10-Q：「In Q2 2026, AWS and Anthropic announced an expansion of the strategic collaboration and existing multi-year commitment by more than $100.0 billion over 10.0 years」。前三大客户占比两季都没有披露。"
+  },
+  "guidance": {
+    "period": "Q2 2026",
+    "for_period": "Q3 2026",
     "net_sales_growth_pct": [
       9,
       12
     ],
-    "operating_income_usd_bn": [
-      22.5,
-      26.5
-    ],
-    "prior_year_operating_income_usd_bn": 17.4,
-    "fx_bps": -80,
-    "prime_day_bridge_bps": 400,
     "assumptions": "指引假设不含能源衍生品重估，也不含新增并购、重组或法律和解；并说明剔除两年 Prime Day 时点差异后，Q3 同比增速会高出近 400 个基点。",
-    "fy2026_capex": "US$220B",
-    "fy2026_capex_prior": "US$200B",
-    "fy2026_capex_basis": "全年资本开支为电话会给出的约数（原文为「约 US$220B」，上一季为「约 US$200B」），不在新闻稿的 Financial Guidance 段里；管理层把上修原因明确归为内存成本上涨。",
-    "h1_2026_net_capex_usd_m": 96310,
-    "implied_h2_2026_capex_usd_bn": 123.7
+    "assumptions_short": "不含能源衍生品重估，也不含新增并购、重组或法律和解",
+    "fy_capex": {
+      "year": 2026,
+      "usd_bn": 220,
+      "prior_usd_bn": 200,
+      "reason": "管理层把原因明确归为内存成本上涨",
+      "basis": "全年资本开支为电话会给出的约数（原文为「约 US$220B」，上一季为「约 US$200B」），不在新闻稿的 Financial Guidance 段里；管理层把上修原因明确归为内存成本上涨。"
+    },
+    "basis": "区间、汇率假设与上年同期对照都在 quarterly_guidance_history 的末格与 quarterly_usd_m 里，这里不再抄一份（此前 net_sales_usd_bn / operating_income_usd_bn / fx_bps / prior_year_operating_income_usd_bn / h1_2026_net_capex_usd_m / implied_h2_2026_capex_usd_bn 六个字段是那些数组的手抄副本或算术）。"
+  },
+  "calendar_shift": {
+    "period": "Q2 2026",
+    "event": "Prime Day",
+    "out_of": "Q3",
+    "bridge_for": "Q3",
+    "bridge_bps": 400,
+    "basis": "Q2 2026 业绩 8-K 的 Financial Guidance：「Excluding the impact of Prime Day in both 2025 and 2026, third quarter 2026 year-over-year growth would be nearly 400 basis points higher.」—— 公司只给了 Q3 的桥；Prime Day 今年落在 Q2、去年整场在 Q3 为电话会口径。"
   },
   "market_expectation": {
+    "period": "Q2 2026",
     "label": "市场预期（财报前一致预期，来源不具名）",
     "as_of": "2026-07-30",
     "diluted_eps_usd": 1.82,
@@ -2050,6 +2141,7 @@
     "note": "只发布财报前的每股收益预期与财报次日的股价变动幅度两项，均不具名、不附机构来源，也不发布评级、目标价或估值倍数。"
   },
   "prior_kpi_settlement": {
+    "period": "Q2 2026",
     "set_in": "Q1 2026",
     "settled_in": "Q2 2026",
     "framing": "上季设的每条指标都给了「多头确认线」与「风险线」两条。本节的余量图按风险线画（正值 = 没有触发风险线），另一张按多头确认线画（正值 = 多头论证被兑现），因为这两条线在本季给出的答案不一样。",
@@ -2122,17 +2214,31 @@
       }
     ],
     "qualitative_triggered": [
-      "Trainium 累计承诺的客户集中度连续两季未披露：上季设的「披露前三大客户占比」没有兑现，而且上季用的「Trainium 累计承诺 US$225B」口径本季直接消失，被更宽的 AWS backlog US$496B 取代。",
-      "没有出现第三个 multi-GW 客户：本季 backlog 净增 US$132B，其中单笔 Anthropic 扩容就 >US$100B。"
+      {
+        "short": "Trainium 客户集中度连续两季未披露",
+        "text": "Trainium 累计承诺的客户集中度连续两季未披露：上季设的「披露前三大客户占比」没有兑现，而且上季用的「Trainium 累计承诺 US$225B」口径本季直接消失，被更宽的 AWS backlog US$496B 取代。"
+      },
+      {
+        "short": "未出现第三个 multi-GW 客户",
+        "text": "没有出现第三个 multi-GW 客户：本季 backlog 净增 US$132B，其中单笔 Anthropic 扩容就 >US$100B。"
+      }
     ],
     "retired": [
-      "「AWS 同比增速能否守住 X%」退役：在产能受限的状态下同比增速由产能上线节奏决定，与同比基数关系不大，上季用高基数推断「加速难度大」得出的方向是错的。下季改用 AWS 环比绝对收入增量。"
+      {
+        "short": "AWS 同比增速阈值",
+        "text": "「AWS 同比增速能否守住 X%」退役：在产能受限的状态下同比增速由产能上线节奏决定，与同比基数关系不大，上季用高基数推断「加速难度大」得出的方向是错的。下季改用 AWS 环比绝对收入增量。"
+      }
     ],
     "excluded_from_chart": [
-      "「前三大客户占比 ≤55%」：公司未披露，没有可判定的实际值，只能记为未兑现。"
-    ]
+      {
+        "short": "前三大客户占比",
+        "text": "「前三大客户占比 ≤55%」：公司未披露，没有可判定的实际值，只能记为未兑现。"
+      }
+    ],
+    "bull_lesson": "上季那套阈值把「增长」与「现金流」当成同向变量，而本季实际发生的是增长兑现、现金流恶化同时成立，这个组合在上季的框架里没有位置。"
   },
   "next_kpi": {
+    "period": "Q2 2026",
     "for_period": "Q3 2026",
     "quantified": [
       {
@@ -2168,7 +2274,10 @@
         "direction": "down",
         "threshold": 65.0,
         "current": 53.076,
-        "unit": "usd_bn"
+        "unit": "usd_bn",
+        "label": "单季现金 CapEx",
+        "short": "CapEx",
+        "down_reason": "说明支出节奏已经越过全年指引所隐含的水平"
       },
       {
         "metric": "TTM 自由现金流",
@@ -2179,14 +2288,44 @@
       }
     ],
     "disclosure_gated": [
-      "AWS backlog 中是否出现第三个大客户，或公司是否首次给出前三大客户占比。",
-      "Anthropic 那笔总额 US$20.0B、余额 US$15.0B 的融资安排是否被动用、动用多少 —— 它只在 10-Q 披露，新闻稿与电话会均未提。",
-      "OpenAI 剩余 US$21.3B 出资已于 6 月 30 日之后完成，下季现金流量表里它落在哪一行。",
-      "2027 年资本开支指引（按惯例在 Q4 财报给出），以及内存价格是否继续推高单位产能成本。"
+      {
+        "short": "backlog 客户结构",
+        "text": "AWS backlog 中是否出现第三个大客户，或公司是否首次给出前三大客户占比。"
+      },
+      {
+        "short": "Anthropic 授信额度是否被动用",
+        "text": "Anthropic 那笔总额 US$20.0B、余额 US$15.0B 的融资安排是否被动用、动用多少 —— 它只在 10-Q 披露，新闻稿与电话会均未提。"
+      },
+      {
+        "short": "OpenAI 剩余出资的现金流归属",
+        "text": "OpenAI 剩余 US$21.3B 出资已于 6 月 30 日之后完成，下季现金流量表里它落在哪一行。"
+      },
+      {
+        "short": "2027 资本开支指引",
+        "text": "2027 年资本开支指引（按惯例在 Q4 财报给出），以及内存价格是否继续推高单位产能成本。"
+      }
     ],
     "excluded_from_chart": [
-      "「非 AWS 收入剔除 Prime Day 后的同比」：Prime Day 规模不是公司披露值，只能用 Q3 指引里的近 400bp 桥反推，且只有本季一个点，没有可画的历史，故不入图，只在正文给出区间。"
+      {
+        "short": "剔除 Prime Day 后的非 AWS 收入同比",
+        "text": "「非 AWS 收入剔除 Prime Day 后的同比」：Prime Day 规模不是公司披露值，只能用 Q3 指引里的近 400bp 桥反推，且只有本季一个点，没有可画的历史，故不入图，只在正文给出区间。"
+      }
     ]
+  },
+  "quarter_story": {
+    "period": "Q2 2026",
+    "headline_verdict": "是本季唯一真实的结构性变化",
+    "aws_anchor_note": "<b>本页把 AWS 的锚定指标从同比增速换成了环比绝对增量。</b>在产能受限的状态下增速由机柜上电的节奏决定，与同比基数关系不大 —— 上季正是用「高基数所以难加速」推断出了方向相反的结论。",
+    "not_yet_tracked": [
+      "Anthropic 那笔总额 US$20.0B 授信安排的动用情况（只在 10-Q 披露，尚无季度序列）",
+      "Amazon Leo 与 Zoox 的收入口径（公司未量化）"
+    ]
+  },
+  "local_note_errata": {
+    "period": "Q2 2026",
+    "series": "TTM 自由现金流",
+    "claim": "2014 年以来首次转负",
+    "lead": "<b>这条线是本页唯一一条纠正了本地分析稿的序列。</b>"
   },
   "sources": [
     {
