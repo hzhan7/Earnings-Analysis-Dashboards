@@ -158,9 +158,10 @@ Charts are ordered the way the note is actually used:
 4. **长期常规** — the routine multi-quarter series, chosen per company rather
    than from a template. Alphabet gets revenue/capital intensity/depreciation/
    geography; Amazon gets revenue growth, capital intensity, how far the
-   depreciation wave still has to run, and AWS's two shares — a fifth of the
-   revenue and three fifths of the operating profit; Meta gets the depreciation curve, trailing cash conversion and its
-   two non-advertising revenue lines; Microsoft gets capital intensity, margins,
+   depreciation wave still has to run, and AWS's two shares — of the revenue
+   and, far larger, of the operating profit; Meta gets the depreciation curve,
+   trailing cash conversion and its two non-advertising revenue lines; Microsoft
+   gets capital intensity, margins,
    the depreciation curve and the finance-lease channel that sits outside its
    capex definition; Cadence gets the ASC 606 revenue record, ten years of
    margin, the same margin with stock compensation put back as a cost, the
@@ -176,18 +177,18 @@ Charts are ordered the way the note is actually used:
    Mastercard gets its two revenue legs, the operating margin on the same basis
    the company adjusts to, the leverage its buyback now runs on, and the price
    it paid for its own stock quarter by quarter; Visa
-   gets thirteen years of its client-incentive rate, the two revenue growth
+   gets its client-incentive rate back to fiscal 2013, the two revenue growth
    rates whose gap is that rate moving, the mix shift across its four gross
    revenue lines, the non-US share of net revenue, and capital returned against
    the cash flow that funds it; Interactive Brokers gets the revenue mix that a
    full rate cycle rewrote, net interest margin against the earning assets that
-   quadrupled under it, accounts and the equity each one carries, the Up-C wedge,
+   multiplied under it, accounts and the equity each one carries, the Up-C wedge,
    operating leverage, and the realised fee per order, which ends the record
-   below where it starts; Moody's gets eight years of the operating margin
-   cycle its guidance rides, the widening and narrowing gap between GAAP and
+   below where it starts; Moody's gets the operating margin cycle its guidance
+   rides, back to FY2016, the widening and narrowing gap between GAAP and
    adjusted EPS, the two cash-flow legs, and the adjusted operating income of
-   its two segments — one line that has not retraced in twenty-one quarters
-   and one that has travelled a full cycle inside them; S&P Global gets the
+   its two segments — one subscription line that has climbed across the window
+   and one that has travelled a full cycle inside it; S&P Global gets the
    two legs of Ratings across a full issuance cycle, its reported operating
    margin against the same margin with disposition gains taken out, the
    revenue and segment structure the IHS Markit merger rewrote, the six filed
@@ -198,19 +199,19 @@ Charts are ordered the way the note is actually used:
    engine, ten years of buybacks against the share count, and the three-bar
    cash structure that shows what is left for shareholders after the stores
    are built; Philip Morris gets ten years of the smoke-free transition in
-   filed dollars, thirty-eight quarters of revenue against the two margins
-   that diverge across them, and the operating cash flow of a company whose
+   filed dollars, quarterly revenue since 2016 against the two margins
+   that diverge across it, and the operating cash flow of a company whose
    capital expenditure has never exceeded 17.4% of it in ten years; NIKE gets
    its direct-to-consumer share since FY2014 against the gross margin that
    shift was supposed to buy, the two channels in dollars, the same share at
    quarterly resolution since the FY2019 revenue-disaggregation note, the two
    selling-and-administrative lines that carry the cost of running a direct
    business, cash flow against capital returned since FY2017, and the price it
-   actually paid for its own stock; Nasdaq gets forty-six quarters of its two operating margins and
-   the amortization gap between them, the same window showing the trading
-   business shrinking from 37% of net revenue to 23%, and the index assets that
-   went from US$114B to over a trillion; American Express gets
-   thirty-eight quarters of the two prices it charges — the annual fee per
+   actually paid for its own stock; Nasdaq gets its two operating margins since
+   2015 and the amortization gap between them, the same window showing the
+   trading business's shrinking share of net revenue, and the index assets its
+   Index business is paid on, multiplied several times over since 2015; American
+   Express gets the two prices it charges since 2016 — the annual fee per
    card against the merchant discount rate — the four revenue legs those two
    prices land in, and the wedge between net income and earnings per share
    that its buyback opens; Costco gets the two legs its operating margin
@@ -218,14 +219,14 @@ Charts are ordered the way the note is actually used:
    that is the one of the two that actually moved, how long a single
    membership-fee increase takes to finish arriving, and what a retailer
    running at 2% capital intensity does with the cash it keeps; Cboe gets
-   the fourteen-year adjusted operating margin, the fifty-nine quarters of
-   index-option volume against a per-contract price that never had to be
-   discounted, the second revenue split the company publishes alongside its
+   its adjusted operating margin back to 2012, index-option volume back to 2011
+   against a per-contract price that has risen across the record without rising
+   every quarter, the second revenue split the company publishes alongside its
    segments, and the buyback against the price it actually paid; CME Group
-   gets fifty-four quarters of contract volume against the per-contract rate
-   that moves against it, the slope that turns a 1% move in contracts into a
-   0.66% move in revenue, the slice of the clearing fee its published volumes
-   do not cover, and the basis points it keeps out of the interest earned on
+   gets contract volume since 2013 against the per-contract rate that moves
+   against it, the regression slope that says how much less than one-for-one
+   revenue moves with contracts, the slice of the clearing fee its published
+   volumes do not cover, and the basis points it keeps out of the interest earned on
    client collateral; Micron gets every fiscal year since FY2011 as the record
    its latest quarter has to be read against — annual gross margin from the
    loss-making year to the peak, with the quarter's own margin set beside it on
@@ -236,36 +237,36 @@ Charts are ordered the way the note is actually used:
    multiplied;
    Hermès International gets the two growth rates it prints beside every cell
    — the published one and its own constant-currency one — and the wedge
-   between them that went from +1.3pp to −7.0pp in four quarters and left the
-   two with opposite signs in four region-quarters, the seven métiers and six
-   regions measured by what they contribute rather than by the size of their
-   own percentage, and a profit record that runs on halves because the company
+   between them, which the currency swings from one sign to the other and which
+   can leave the two with opposite signs for the same region and quarter, the
+   seven métiers and six regions measured by what they contribute rather than
+   by the size of their own percentage, and a profit record that runs on halves because the company
    publishes an income statement only twice a year; LVMH gets the same split
    read from the other side — revenue four times a year against profit twice,
-   so that not one of the eight quarters on its page carries a profit figure
-   of its own — the two thirds of this quarter's improvement in reported
-   growth that came from the currency line rather than from demand, the three
+   so that not one quarter on its page carries a profit figure of its own —
+   the two thirds of this quarter's improvement in reported growth that came from the currency line rather than from demand, the three
    consecutive years in which the second half carried more revenue and a
    thinner margin than the first, and a guidance record made entirely of
    sentences, in which the one stated most firmly in the negative is the one
    that was wrong; Hong Kong Exchanges and Clearing gets the two
-   clocks its own disclosure runs on — every one of its forty-two quarters
-   printed as a discrete column somewhere, but a first or third quarter
-   inside six weeks and a second quarter, until 2022, only in the annual
-   report eight and a half months later, so twenty-one of them are a
-   subtraction here and all of them reconcile, two hundred and ninety-six
-   comparisons without an exception, leaving only thirteen quarters whose
-   revenue has never been split by anyone — the
-   rebate that hands more than half the interest earned on clearing margin
-   back to the participants who posted it and is visible only twice a
-   year, and the twenty-two quarters of turnover that are the only ones
-   that exist, because an average per trading day cannot be subtracted the
-   way a revenue line can; Richemont gets the two margin ranges its CFO gave
+   clocks its own disclosure runs on — every quarter in its window printed as
+   a discrete column somewhere, but a first or third quarter inside six weeks
+   and a second quarter, until 2022, only in the annual report eight and a half
+   months later, so the even quarters are a subtraction here, and checked cell
+   by cell against the company's own later printing they reconcile, so far
+   without an exception, leaving a minority of quarters whose revenue has never
+   been split by anyone — the rebate that hands a share of the interest earned
+   on clearing margin back to the participants who posted it, a share that has
+   run from almost nothing to most of it, and is visible only twice a year, and
+   quarterly turnover only from 2021, the first quarter that exists as one,
+   because an average per trading day cannot be subtracted the way a revenue
+   line can; Richemont gets the two margin ranges its CFO gave
    on results calls, each drawn against every half-year that followed, the
    jewellery share of sales across the window beside the quarters that do not
    exist because the company once reported five months instead of a quarter,
    the half-years in which jewellery alone earned more than the whole group,
-   and how long each quarter waited before it was printed as a quarter at all;
+   and how long each quarter waited before it was printed as a quarter at all —
+   and which quarters never were;
    Kering gets the three operating-income guides it printed in 2024 settled on
    reported figures, the Gucci and Saint Laurent medium-term targets from its
    FY2018 presentation and its FY2022 registration document set against every
@@ -277,24 +278,25 @@ Charts are ordered the way the note is actually used:
    Samsung Electronics gets the one number the company
    actually guides -- next quarter's DRAM and NAND bit shipments, and only as a
    phrase -- beside the price it never guides, the eight quarters in which
-   Memory went from twenty-eight per cent of group revenue to seventy, the
-   handset division's first operating loss, caused by its own semiconductor
-   division's prices, and the intersegment elimination the segment table has no
-   line for; and Brunello Cucinelli gets the guidance sentence it has repeated
-   for five years — revenue growth of "around 10%" — set against the two
-   different answers it produces, because 110 of the 120 quantified forward
-   statements in its results calls never say which exchange-rate basis they are
-   on, the eighteen quarters of which only five were ever published as a
-   quarter, the eleven half-years that are the only frequency at which a full
-   income statement exists, and the lease-adjusted EBITDA line the company
-   published for four years and then withdrew.
+   Memory went from a minority of group revenue to the bulk of it, the
+   handset division's operating margin set against its own semiconductor
+   division's prices -- the group sits on both sides of the same price rise --
+   and the intersegment elimination the segment table has no
+   line for; and Brunello Cucinelli gets the guidance sentence it repeats year
+   after year — revenue growth of "around 10%" — set against the two
+   different answers it produces, because none of the 110 quantified forward
+   statements in its results calls before December 2025 says which
+   exchange-rate basis it is on, the quarters most of which were never
+   published as a quarter at all, the half-years that are the only frequency at
+   which a full income statement exists, and the lease-adjusted EBITDA line the
+   company published for four years and then withdrew.
 
 On the Alphabet, Meta and Microsoft pages these run on the ten-year record
 rather than eight quarters, because eight quarters cannot tell a trend from a
 wobble and — for capital intensity — is barely one build cycle. It changes what
 several of them say: Microsoft's capital intensity sat in a narrow band from
-2016 to 2019 and is now at a ten-year high, and Alphabet's revenue
-reacceleration reads as a third episode rather than a first.
+2016 to 2019 and has since climbed far out of it, and Alphabet's revenue
+reacceleration reads as the latest of several episodes rather than a first.
 
 The window is per chart, not per page, and it stops where the company's own
 disclosure stops rather than being padded:
@@ -310,15 +312,21 @@ disclosure stops rather than being padded:
   side by side, so every quarter but the fiscal fourth is a filed figure. Even
   the fourth is printed — in the Q4 press release — and where it is, it wins:
   2020Q4 capex derives to 14,823 and the release prints 14,824. Amazon's
-  quarterly capex and depreciation stop at 2016Q2 rather than 2016Q1, because
-  the earlier quarter exists only year-to-date and that year's annual total is
-  not tagged either; the charts start where the number does.
+  quarterly gross capex starts at 2017Q1 rather than 2016: the 2016 cash-flow
+  statements print only a net line, and the page does not stand a net figure in
+  for a gross one. Depreciation does reach 2016Q1 — a first quarter's
+  year-to-date column is the quarter itself, and it is printed; it was only
+  tagged under a different XBRL element that year. The charts start where each
+  number does.
 - Three charts keep a short axis because the number does not exist further back,
   and each says so on the chart. Microsoft discloses depreciation annually to
   2009 but quarterly only recently; Alphabet tagged no comparable quarterly
   depreciation line before 2023; Meta's two segment lines begin when segment
-  reporting began, and its finance-lease principal begins with ASC 842, which is
-  what its own free-cash-flow definition nets.
+  reporting began. Meta's trailing free-cash-flow line is not one of them: it
+  nets finance-lease principal the way the company's own definition does, and
+  that principal is filed every quarter from 2016Q1 — under an older line name
+  before ASC 842, not first disclosed with it — so the line starts at Q4 2016
+  only because a trailing sum needs four quarters before its first point.
 - Meta's Family-of-Apps other revenue for 2024Q4 was 522 here and 519 in the
   company's own release — 519 is also what the filed year minus the three
   reported quarters gives, while 522 overshoots the year by 3. Corrected, with a
@@ -352,7 +360,9 @@ disclosure stops rather than being padded:
   only six quarters, so the previous trough is invisible unless you stack them.
   The page plots all thirty and says so. Amazon also moved the *definition*
   twice, in 2018 and 2019, ending at "net of proceeds from sales and
-  incentives"; the series starts after the last move rather than splicing.
+  incentives". The series starts in 2019Q1, after the 2018 move; the 2019 one
+  changed only the wording — 2019Q1's trailing net capex is the same US$11,316M
+  in the releases on either side of it — so nothing is spliced.
 
 Amazon's, Broadcom's, Cadence's, Synopsys', TJX's, TSMC's, NVIDIA's and Meta's
 first sections are built out further than the others, because those eight
@@ -367,13 +377,15 @@ numeric one — a **full-year outlook table** in the EX-99.1 of every earnings 8
 set in February and revised in April, July and October. So the object its first
 section settles is a *year*, and the variable that turns out to matter is not
 whether the company cleared its range but **how far ahead it was standing when it
-drew one**. Against the final October range, seven finished years look like every
-other never-missed record here: adjusted diluted EPS landed above the top four
-times, inside three, and never once below. Against the initial February range the
-same seven years land above six times and below once — and **not once inside**.
-The February band has never contained the answer. The two vintages' mean absolute
-deviation from the guided midpoint is **13.3% in February and 1.9% in October** —
-a seventh of the error for the same metric, the same years, and the same company.
+drew one**. Against the final October range, the finished years look almost like
+every other never-missed record here: adjusted diluted EPS lands above the top or
+inside it, and the break below the bottom so far is FY2018 — a year an earlier
+build of this page had left out for a reason that turned out to be wrong.
+Against the initial February range the same years land above or below — and
+**not once inside**. The February band has never contained the answer. The two
+vintages' mean absolute deviation from the guided midpoint is **several times
+larger in February than in October** for the same metric, the same years, and
+the same company; the page prints both.
 
 The gap between those two tallies is the page, and 2022 is why. Debt issuance
 collapsed with rates, and because MIS revenue is issuance-driven and issuance is
@@ -401,32 +413,39 @@ which is not a range with endpoints, so those lines get no band and no hit rate.
 Two traps in that record are handled rather than smoothed. The two guidance
 columns **swap order** partway through the history — `Current` first until 2022,
 `Last Publicly Disclosed` first after — so a fixed column position silently
-produces the wrong series for half the record; the page reads the header. FY2018
-is excluded outright: the filing window opens in October 2018, so that year has
-only its final revision and no February setting, and counting it would put a stub
-year beside seven complete ones.
+produces the wrong series for half the record; the page reads the header. And
+FY2018 is in the record, not excluded: an earlier build left it out on the
+grounds that the filing window opened in October 2018 with only the final
+revision, but the original releases carry all four vintages, February setting
+included — and FY2018 is the year that broke its October floor.
 
 Moody's segment columns swap the same way — MIS first until April 2023, MA first
 after — and its **segment margins are struck on total segment revenue while the
-page charts external revenue**. MIS bills MA about US$50M a quarter internally, so
-dividing adjusted operating income by the plotted revenue overstates MIS's margin
-by 2–3pp. Against total revenue the identity closes to within 0.05pp in all 21
-quarters, which is the rounding of the published percentage and nothing else.
+page charts external revenue**. MIS bills MA tens of millions of dollars a quarter
+internally, so dividing adjusted operating income by the plotted revenue
+overstates MIS's margin by a few percentage points. Against total revenue the
+identity closes to within 0.05pp in every quarter, which is the rounding of the
+published percentage and nothing else.
 
 One series exists on this site because the number that decides the year is not one
 any filing prints as such: **MIS's share of revenue against its share of adjusted
-operating income.** Ratings run 44.6%–63.1% of revenue across 21 quarters but
-57.4%–83.0% of adjusted operating income — a minority of the top line in bad
-years and always the majority of the profit. That asymmetry is the mechanism
+operating income.** Across the window Ratings' share of adjusted operating income
+sits well above its share of revenue in every quarter — a minority of the top
+line in bad years and always the majority of the profit; the page prints both
+ranges. That asymmetry is the mechanism
 behind the February guidance's error distribution, and neither share is a figure
 the company reports; both are two filed numbers divided.
 
 TSMC guides three numbers every quarter — revenue, gross margin and operating
-margin — and fifteen quarters pulled from the fifteen earnings 6-Ks themselves
-answer it. The answer differs sharply by metric: revenue cleared the top of its
-range in 8 of 14 quarters, gross margin in 9, and **operating margin in all 14 — not one
-quarter landed back inside the range**. That last one reframes the guidance as
-a floor rather than a forecast, which is not visible from any single quarter.
+margin — and the earnings 6-Ks themselves answer it, back to 2016. The answer
+differs sharply by metric and by window. Read over the quarters from 2023 alone,
+**operating margin keeps clearing the top of its range, and the quarters that do
+not clear it land exactly on it**, which reframes the guidance as a floor rather
+than a forecast — something not visible from any single quarter. The full
+record says that reading is recent: before 2023 the same metric landed inside
+its range and below it too, so the floor is a property of the last few years,
+the ones in which the company's pricing power changed, and not of the company.
+The page prints the tallies for all three metrics.
 
 Two more charts sit with them. One splits each revenue beat into what the
 company produced and what the currency did — an identity, not an estimate,
@@ -482,32 +501,33 @@ together.
 Meta guides one number — next-quarter revenue, as a dollar range in the Outlook
 section of every quarterly 8-K EX-99.1 — so its page carries the same pair of
 charts: the range against the reported result, then the distance from the guided
-midpoint. Its answer is a third distinct shape. In 18 finished quarters Meta
-cleared the top of its range 8 times, landed inside it 10, and **never once
-missed the bottom**, so that lower bound has never been tested and reads as a
-floor the company is willing to publish rather than one end of a forecast. The
-midpoint chart adds what the band cannot show: the beat is narrowing.
+midpoint. Its answer is a third distinct shape. Across its finished quarters
+Meta has cleared the top of its range or landed inside it, and has **never once
+missed the bottom** — the page prints the split — so that lower bound has never
+been tested and reads as a floor the company is willing to publish rather than
+one end of a forecast. The midpoint chart adds what the band cannot show: how
+wide the beat is, and whether it is widening or narrowing.
 
-Amazon is the only company here that puts **two** ranges in every filing — net
-sales and operating income, in the `Financial Guidance` block of each quarterly
-8-K's EX-99.1, in the same sentence structure, unbroken for 37 guided quarters
-back to Q3 2017. It did not withdraw guidance in 2020 either; it widened the
-operating-income range to $(1.5)B–$1.5B and kept publishing. The record is a
-fourth distinct shape: in 36 finished quarters net sales cleared the top 21
-times and operating income 27 times, and **neither one ever landed below the
-bottom**.
+Amazon puts **two** ranges in every filing — net sales and operating income, in
+the `Financial Guidance` block of each quarterly 8-K's EX-99.1, in the same
+sentence structure, unbroken back to Q1 2016. (It is not the only page here
+with more than one filed range; what it adds is a range on a level and a range
+on a profit side by side.) It did not withdraw guidance in 2020 either; it
+widened the operating-income range to $(1.5)B–$1.5B and kept publishing. The
+record is a fourth distinct shape: net sales often clears the top, operating
+income clears it in most quarters, and **neither one has ever landed below the
+bottom** — the page prints the tallies.
 
 Having both is what makes the interesting chart possible. Guiding a level and a
 profit implies an operating margin Amazon never prints, and the distance from
 what it reported splits exactly two ways — a revenue leg and a margin leg, no
-estimate anywhere. The revenue leg never exceeds $0.60B in nine years; the
-margin leg carries the rest, $5.00B of the $5.46B beat in the latest quarter. So
-the demand forecast is close to honest and the *cost* forecast is the half held
-back, which is not how a "beats its own guidance" record usually reads — and it
-is the reason the page's own thresholds, set a quarter earlier against
-management's guided midpoint, all held. A framework anchored on the guidance of
-a company that has never missed the bottom of either range is anchored too low
-by construction.
+estimate anywhere. The revenue leg stays small in every quarter of the record;
+the margin leg carries the rest and is the larger of the two in almost every
+quarter. So the demand forecast is close to honest and the *cost* forecast is
+the half held back, which is not how a "beats its own guidance" record usually
+reads — and it is why a threshold set against management's guided midpoint is
+easy to clear. A framework anchored on the guidance of a company that has never
+missed the bottom of either range is anchored too low by construction.
 
 Cadence files the longest record of the five, and the most one-sided. Its
 quarterly outlook — revenue, GAAP and non-GAAP operating margin, GAAP and
@@ -586,9 +606,9 @@ the rest, which shows the US$105M of raises breaking down into US$80M of Ansys
 and US$25M of everything else — and names the quarterly split in the excluded
 list instead of deriving it.
 
-S&P Global was the first **annual** guidance record on this site — Nasdaq is the
-other one, and the two are not the same object, because S&P Global guides
-earnings and Nasdaq guides only costs. S&P Global
+S&P Global's is one of several **annual** guidance records on this site —
+Nasdaq's is another, and the two are not the same object, because S&P Global
+guides earnings and Nasdaq guides only costs. S&P Global
 produces the sharpest two-sided answer of the earnings records. It has never published a
 quarterly outlook at all; what it files, in the EX-99.1 of every quarterly
 earnings 8-K, is a full-year outlook that it then revises once a quarter. So the
@@ -596,44 +616,47 @@ object the six pages above are built on does not exist here, and the honest
 isomorph is built instead: for each fiscal year the successive vintages (opening
 guidance, then the Q1, Q2 and Q3 revisions) are drawn as one continuous band, and
 the year's reported result lands on the **final** vintage, the cell that settles
-it. Thirty-one vintages across FY2019-FY2026 come out of the releases themselves.
+it. Every vintage from FY2016 onward comes out of the releases themselves.
 
 The finding is that the two earnings numbers on the same table behave like
-different objects. In seven finished years **adjusted diluted EPS never once
-landed below its final range** - five years above the top, two inside. **GAAP
-diluted EPS landed below in three of those same seven years.** Same release,
+different objects. In every finished year **adjusted diluted EPS has landed
+above the top of its final range or inside it, never below**. **GAAP diluted EPS,
+guided alongside it in almost all of those years, has landed below its range
+again and again.** Same release,
 same table, same twelve-month horizon; the gap between them is entirely the
 items the company itself excludes - deal amortization, disposition gains and
 losses, impairments. The number that never misses is the one the company
 defines. A third metric completes the picture rather than muddying it: adjusted
-free cash flow, guided only since FY2023, came in **below** its floor in two of
-three years. The earnings guidance behaves like a floor and the cash guidance
+free cash flow, guided only since FY2023, has already come in **below** its floor
+more than once. The earnings guidance behaves like a floor and the cash guidance
 like a forecast.
 
 Two things about that record needed handling rather than smoothing. The timing
 caveat is stronger here than on Cadence's page: the four vintages are published
-in February, April-May, July-August and October-November **of the year they
-guide**, so the last one goes out with about ten of twelve months already
+in February-March, April-May, July-August and October-November **of the year
+they guide**, so the last one goes out with about ten of twelve months already
 banked. "Never missed the final range" is close to a tautology, and the page
 says so on every band. What still carries information is the *opening* vintage,
 so the page adds a chart the band cannot draw - the deviation of each year's
 result from **every** one of its four vintages, which shows the funnel closing
-from 8.9% average absolute error to 1.6%. It also shows that the opening
-guidance was beaten in six of seven years, and that the single exception is
-FY2022 - the year S&P Global **withdrew** its guidance mid-year, on 2022-06-01,
-citing extraordinarily weak market conditions for its Ratings business. That is
-the same year the transaction leg of Ratings revenue hit the bottom of its
-cycle, which is the other thing this page is about.
+from a wide average absolute error at the opening vintage to a narrow one at the
+last (the page prints both). It also shows that the opening guidance was beaten
+in most years. Of the years that finished below the opening midpoint so far,
+FY2018 missed it by a fraction of a percent and stayed inside the opening range,
+while FY2022 broke the range - the year S&P Global **withdrew** its guidance
+mid-year, on 2022-06-01, citing extraordinarily weak market conditions for its
+Ratings business. That is the same year the transaction leg of Ratings revenue
+hit the bottom of its cycle, which is the other thing this page is about.
 
 Because Ratings charges per rated issue, S&P Global's revenue contains a genuine
 cycle and an annuity side by side, and both are filed separately every quarter
-back to 2017Q4. Over 35 quarters the transaction leg ran US$624M to US$244M to
-US$746M - a 61% drawdown and a full recovery to a record - while the
-non-transaction leg (surveillance, annual fees, entity ratings) never fell
-through the same window. Eight quarters cannot see either half of that. The
-company's own billed-issuance KPI is deliberately *not* used to carry this
-argument: it entered SEC filings only in the 1Q2024 10-Q, so an honest series
-starts at 2023Q1, contains no down-cycle at all, and three of its fourteen
+back to 2016Q1. Across that record the transaction leg went from its 2020Q2 peak
+of US$624M down to US$244M in 2022Q3 - a 61% drawdown - and then all the way
+back, while the non-transaction leg (surveillance, annual fees, entity ratings)
+never collapsed the same way through the same window. Eight quarters cannot see
+either half of that. The company's own billed-issuance KPI is deliberately *not*
+used to carry this argument: it entered SEC filings only in the 1Q2024 10-Q, so
+an honest series starts at 2023Q1, contains no down-cycle at all, and its fourth
 quarters are residuals rather than printed figures. It is plotted, with that
 window stated on the chart.
 
@@ -664,22 +687,21 @@ this page's first section settles is the company's own budget, and the question
 other page here.
 
 The record is one-sided in both directions, and they are opposite directions.
-Against the year's **last** range, full-year non-GAAP operating expense landed
-inside 7 times in eleven finished years and above it 4 times — and **not once
-below**. The floor of the expense band has never bound: Nasdaq has never spent
-less than it told you it would. Against the same final vintage the non-GAAP tax
-rate landed inside 5 times in seven years and below twice, and **not once above**
-— and three of those five "inside" verdicts sit exactly on the range's lower
-edge. One guided number is never beaten downward and the other is never missed
-upward.
+Against the year's **last** range, full-year non-GAAP operating expense has landed
+inside it or above it in every finished year — and **not once below**. The floor
+of the expense band has never bound: Nasdaq has never spent less than it told you
+it would. Against the same final vintage the non-GAAP tax rate has landed inside
+or below, and **not once above** — and several of the "inside" verdicts sit
+exactly on the range's lower edge. One guided number is never beaten downward and
+the other is never missed upward. The page prints both tallies.
 
-Against the year's **first** range the expense record stops being one-sided:
-5 inside, 3 above, 3 below. The mean absolute distance from the guided midpoint
-runs 2.84% in January against 0.97% in October, and the range narrows from US$60M
-wide to US$22M. That gap is the page. Most of what reads as discipline in the
-October record is the ten months already banked when it is published, which is
-the same caution the Cadence and S&P Global pages apply to their own never-missed
-records.
+Against the year's **first** range the expense record stops being one-sided: it
+lands inside, above and below. The mean absolute distance from the guided
+midpoint is several times larger in January than in October, and the range
+narrows sharply across the year. That gap is the page. Most of what reads as
+discipline in the October record is the ten months already banked when it is
+published, which is the same caution the Cadence and S&P Global pages apply to
+their own never-missed records.
 
 Four caveats are carried on the charts rather than smoothed away, because three
 of the four "above" verdicts and two of the three "below" ones have an
@@ -701,18 +723,23 @@ The second thing this page is about is that Nasdaq's **gross revenue line
 contains a government fee**. Its headline top line is "revenues less
 transaction-based expenses", and the two expenses subtracted are transaction
 rebates paid to liquidity providers and a line called brokerage, clearance and
-exchange fees. That second line ran US$274M in 2025Q1, then **US$6M in each of
-the next three quarters, then US$320M** — a swing that no earnings release
+exchange fees. That second line ran US$274M in 2025Q1 and US$155M in 2025Q2,
+then **US$6M in each of the next three quarters, then US$320M** in 2026Q2 — a
+swing that no earnings release
 anywhere in the corpus explains. It is the SEC's Section 31 fee, whose rate went
 to zero and came back, and the quarterly figures for it exist only in the MD&A
 tables of the 10-Q and 10-K: not XBRL-tagged, not in the R-files, so the primary
 document has to be parsed directly. What licenses the split is that the residual
-— the real brokerage and clearing cost — sits between US$4M and US$8M in every
-one of eighteen quarters. The 10-Q states the mechanism in its own words: the fee
-is recorded in revenue and in expense in equal amounts, so "there is no impact on
-our net revenues". Anyone quoting Nasdaq's total revenue growth is partly quoting
-a fee schedule; this quarter gross Market Services revenue grew 25.9% and the net
-line 11.1%, and the gap is almost entirely that.
+— the real brokerage and clearing cost — stays a nearly flat line of small
+amounts across the whole record back to 2016, while the fee moves by hundreds of
+millions. The 10-Q states the mechanism in its own words:
+the fee is recorded in revenue and in expense in equal amounts, so "there is no
+impact on our net revenues". Anyone quoting Nasdaq's total revenue growth is
+partly quoting a fee schedule: whenever the fee switches on or off, gross Market
+Services revenue growth and net growth part company, and the gap between them is
+almost entirely the fee. The page prints both rates, each against the
+prior-year figures the current release reprints rather than the ones first
+printed a year earlier.
 
 Two reporting-basis traps had to be handled rather than smoothed, and both were
 caught by an identity failing rather than by reading the releases. Nasdaq has run
@@ -727,18 +754,18 @@ across releases, Capital Access ARR appears to grow 2.4x in one quarter, and the
 year-over-year rate comes out at 5.6% where the company's own release says 8% —
 Solovis was sold in October 2025 and the prior year restated. Growth rates on this
 page are read off the two columns printed side by side in one release. The
-company itself publishes both readings this quarter, 11% reported and 12%
-organic, and the difference is exactly that divestiture.
+company itself prints total ARR growth both reported and organic, and while the
+sale sits inside the comparison the difference between the two is exactly that
+divestiture.
 
 Two things the page refuses to publish. Index revenue divided by ETP assets would
 print as a basis-point fee rate and is not one — that revenue also includes index
-options and futures licensing, which the company says has been doubling
-year-over-year, and Nasdaq has never disclosed a fee rate. And the pass-through
-ratio is drawn only over the fifteen quarters since 2022Q4, because before that
-the Market Services line included businesses carrying no transaction-based
-expense at all; the same 2022Q3 is US$305M on the old basis and US$245M on the
-new, and a single line through that would read a reclassification as a rise in
-the cost of doing business.
+options and futures licensing, and Nasdaq has never disclosed a fee rate. And the
+pass-through ratio is drawn only from 2022Q4, because before that the Market
+Services line included businesses carrying no transaction-based expense at all;
+the same 2022Q3 is US$305M on the old basis and US$239M on the new, and a single
+line through that would read a reclassification as a rise in the cost of doing
+business.
 
 One derivation on that page exists because the obvious form has a hole in it.
 S&P Global's income statement reads `revenue - expenses + gain on dispositions +
@@ -822,28 +849,30 @@ at all. The page plots the readings it has, in a chart kept deliberately
 apart from the formal record, and says on the chart why they are not the same
 kind of number.
 
-American Express files an annual outlook too — full-year revenue growth and
-full-year EPS, in the CEO's quote in the EX-99.1 of every earnings 8-K, revised
-once a quarter across eleven fiscal years and 43 releases. **It is the first
-record on this site that cannot be settled**, and that is the page rather than a
-caveat on it. Six of the eleven years have no honest answer: FY2016 printed a
-GAAP range and an ex-restructuring range for the same year; FY2017's guidance of
-$5.80–$5.90 is not comparable to a GAAP result of $2.97 after the Tax Act;
-FY2018 changed basis mid-year to adjusted EPS with the release stating a GAAP
-reconciliation was unavailable; FY2020 was withdrawn — not in an earnings 8-K
-but in a separate Item 7.01 filing on 2020-03-17, so reading only the earnings
-set reports it as "never guided" rather than "guided, then withdrawn"; FY2021
-was never guided at all, and seven consecutive releases carry no annual number
-of either kind; FY2026 is still open.
+American Express files an annual outlook too — full-year EPS, joined by
+full-year revenue growth from FY2018, in the CEO's quote in the EX-99.1 of its
+earnings 8-Ks, revised once a quarter since FY2016. **It is the first record on
+this site that cannot be settled**, and that is the page rather than a caveat on
+it. Many of the years have no honest EPS answer: FY2016 printed a GAAP range and
+an ex-restructuring range for the same year; FY2017's guidance of $5.80–$5.90 is
+not comparable to a GAAP result of $2.97 after the Tax Act; FY2018 changed basis
+mid-year to adjusted EPS with the release stating a GAAP reconciliation was
+unavailable; FY2019, like FY2016, printed a GAAP and an adjusted range side by
+side, and the adjusted one cannot be settled against a GAAP result; FY2020 was
+withdrawn — not in an earnings 8-K but in a separate Item 7.01 filing on
+2020-03-17, so reading only the earnings set reports it as "never guided" rather
+than "guided, then withdrawn"; FY2021 was never guided at all, and seven
+consecutive releases carry no annual number of either kind; and the current year
+is still open.
 
 What survives is a two-sided answer that exists only because both metrics sit in
-the same sentence of the same release. In the five years where EPS settles it
-**never landed below its range** — four inside, one above. In the six where
-revenue growth settles it **landed below its floor once**, in FY2023. The number
-management can steer clears its range; the number it cannot does not, and the
-page's second section is the mechanism: the year-over-year change in pretax
-income splits exactly two ways, an operating leg and a provision leg, and in the
-latest quarter the provision line carries US$321M of a US$521M increase.
+the same sentence of the same release. In the years where EPS settles it
+**has never landed below its range**. In the years where revenue growth settles
+it **has landed below its floor**, in FY2023. The number management can steer
+clears its range; the number it cannot does not, and the page's second section
+is the mechanism: the year-over-year change in pretax income splits exactly two
+ways, an operating leg and a provision leg, and the page shows each quarter how
+much of the change each leg carried.
 
 The FY2023 miss is itself a basis question rather than a verdict. Guidance was
 15%–17% and the company reported "up 14 percent (15 percent FX-adjusted)": the
@@ -860,17 +889,17 @@ quotients are in the audit drawer.
 One American Express series exists on this site because the company stopped
 publishing the number. Its **average discount rate** — the price it charges
 merchants — appears in the statistical tables every quarter from 2015 to the
-Q4 2022 release and never again. Over the 24 quarters inside this page's window
-it runs 2.43% to 2.34%. The obvious continuation is not published as one: the
-company's footnote computes that rate on proprietary *and* network-partner
-volume net of what a third-party acquirer retains, so it is not discount revenue
-over billed business, and in the eight quarters where both exist the derived
-ratio sits a steady 3.9–5.0bp below the printed one. Joining them would draw
-that offset as a step at the quarter the disclosure ended. The derived ratio is
-plotted separately and starts at 2021Q1, because in 2020 its numerator still
-contains processed revenue while its denominator had already been recast to
-proprietary-only — old numerator over new denominator reads as a price rise that
-never happened, and no filed identity catches it.
+Q4 2022 release and never again. Over the 28 quarters inside this page's window,
+from 2016Q1, it runs 2.44% to 2.34%. The obvious continuation is not published
+as one: the company's footnote computes that rate on proprietary *and*
+network-partner volume net of what a third-party acquirer retains, so it is not
+discount revenue over billed business, and in the eight quarters where both
+exist the derived ratio sits a steady 3.9–5.0bp below the printed one. Joining
+them would draw that offset as a step at the quarter the disclosure ended. The
+derived ratio is plotted separately and starts at 2021Q1, because in 2020 its
+numerator still contains processed revenue while its denominator had already
+been recast to proprietary-only — old numerator over new denominator reads as a
+price rise that never happened, and no filed identity catches it.
 
 The same page refuses the same splice a second time, in the two **credit
 quality** series. What it tracks — 30+ days past due and the net write-off rate
@@ -915,42 +944,44 @@ due **loans** as a % of total*, and only later drops the word.
 
 Two further windows on that page are the length of the disclosure rather than a
 choice. **VCE** — the company's own defined aggregate of Card Member rewards,
-business development and Card Member services — runs 22 quarters, because
+business development and Card Member services — runs only from 2021, because
 business development only left the combined `Marketing and business development`
 line in the April 2022 release and only 2021 was recast. The **four current
-segments** run 26 quarters, from the appendix in the October 2022 release that
-recast them back to 2020Q1; before that the company reported a different
-three-segment structure it never recast. And the whole page starts at 2017Q1
-rather than earlier because ASC 606 restated 2017 in the company's own tables
-and never restated 2016 — Q1 2017 discount revenue is 4,519 in the January 2018
-release and 5,387 in the April 2018 one.
-
-**Microsoft, Alphabet, Mastercard, Visa and Interactive Brokers get no such
-record, and that is a
+segments** run only from 2020Q1, the point the appendix in the October 2022
+release recast them back to; before that the company reported a different
+three-segment structure it never recast. And the whole page reaches back to
+2016Q1 only through a filing outside the earnings series: ASC 606 restated 2017
+in the company's own release tables and never restated 2016 there — Q1 2017
+discount revenue is 4,519 in the January 2018 release and 5,387 in the April
+2018 one — but the Item 7.01 8-K of 2018-03-09 prints 2016 and 2017 as recast,
+and the page takes every restated 2016 line from that.
 
 Philip Morris files the longest record here — every quarterly earnings 8-K
-since the March 2008 spin-off carries a full-year EPS forecast, revised each
-quarter, seventy-one vintages across eighteen years — and it is the only
+since the March 2008 spin-off but one, the April 2020 withdrawal, carries a
+full-year EPS forecast, revised each quarter — and it is the only
 company on this site that guides **the same earnings number at two horizons and
 on two definitions**. From the 2020 second quarter the releases add a
 next-quarter forecast, and in 2022–2023 the guided quarterly metric moved from
 reported diluted EPS to adjusted diluted EPS. Four records fall out of that,
 and they disagree.
 
-On the reported basis the record is the only two-sided one on this site: across
-sixteen years with a published range, the year landed **above the top seven
-times, inside four, and below the bottom five**. On the adjusted basis — same
-company, same release, same table — the next-quarter number has cleared the top
+On the reported basis the record is two-sided: across the years with a published
+range, the year has landed **above the top, inside, and below the bottom — the
+last of them repeatedly** (the page prints the tally). On the adjusted basis —
+same company, same release, same table — the next-quarter number has cleared the top
 **twelve times out of twelve** and the full year has missed once in six.
 
 The reason is written into the guidance rather than inferred, which is why the
 page is worth building. Across the 56 releases from April 2008 to February
-2022, 54 attached the same clause to the forecast: it excludes future
-acquisitions, unanticipated asset impairment and exit-cost charges, and any
-unusual event. (The two exceptions are 2008-10-22 and the April 2020
-withdrawal, which published no annual forecast at all.) The number labelled GAAP was therefore never a forecast of GAAP;
+2022, 52 attached the same clause to the forecast — every one from April 2009
+on: it excludes future acquisitions, asset impairment and exit-cost charges,
+and any unusual event. (The four exceptions are the first four after the
+spin-off, 2008-04-23, 2008-07-23, 2008-10-22 and 2009-02-04, which name at most
+acquisitions. The April 2020 release withdrew the annual forecast but kept the
+clause, attached to the quarterly forecast it gave instead.) The number labelled
+GAAP was therefore never a forecast of GAAP;
 it was a GAAP number conditional on nothing unusual happening, and each of the
-five misses is a year in which something unusual happened. FY2024 is the clean
+misses is a year in which something unusual happened. FY2024 is the clean
 case — reported EPS of US$4.52 against a final guidance of US$6.20–6.26,
 entirely a US$1.49 non-cash impairment of the deconsolidated Canadian affiliate
 recognised as a subsequent event after that guidance was published. The
@@ -980,12 +1011,12 @@ definition moves; a pro-forma guidance scored against the group actual sitting
 next to it in the same release is the plausible-and-wrong version of that
 chart. The same care applies to the currency decomposition: PMI prints its
 full-year adjusted EPS guidance twice, in dollars and excluding currency, and
-the two often move in opposite directions — FY2024's ex-currency midpoint rose
-US$0.39 across the year while the dollar midpoint rose US$0.10, and FY2026's
-ex-currency band is byte-identical across all three vintages published so far
-while the dollar midpoint fell US$0.12. FY2022 is left out of that chart alone,
-because its dollar row was the group and its ex-currency row the pro forma, so
-subtracting one from the other would compare two companies.
+the two do not move together — usually the same way by different amounts, as
+when FY2024's ex-currency midpoint rose US$0.39 across the year while the dollar
+midpoint rose US$0.10, and in FY2023 in opposite directions. FY2022 is left out
+of that chart alone, because its dollar row was the group and its ex-currency
+row the pro forma, so subtracting one from the other would compare two
+companies.
 
 One series on that page exists because the number is filed and the percentage
 everyone quotes is not: **net revenues split between combustible and smoke-free
@@ -1000,20 +1031,22 @@ FY2022 10-K when Wellness and Healthcare moved into the smoke-free category.
 Three things that page refuses. **ZYN's US retail value share** (about 57% this
 quarter) reaches the earnings call and not the release, so it is named in the
 excluded list rather than plotted — the same rule that keeps fifteen quarters
-of webcast guidance off the Microsoft page. **Net debt to adjusted EBITDA** has
-a company-defined denominator PMI publishes annually and not in a quarterly
-filing, so the ratio cannot be recomputed; the company's own target is quoted
-in words. And the ZYN retail-offtake series ends in a hole rather than a zero:
-the company described the latest quarter as "flat to slightly growing" and gave
-no percentage, and filling in a zero would turn a phrase into a number a model
-could use.
+of webcast guidance off the Microsoft page. **Net debt to adjusted EBITDA** is
+not drawn as a line yet: PMI does print the ratio every quarter, on a trailing
+twelve-month basis in the EX-99.2 of its earnings 8-K, but on a company-defined
+denominator, so the page quotes the company's own ratio and target rather than
+building a series of its own. And the ZYN retail-offtake series ends in a hole
+rather than a zero: the company described the latest quarter as "flat to
+slightly growing" and gave no percentage, and filling in a zero would turn a
+phrase into a number a model could use.
 
-The segment charts on that page are four quarters long and cannot be extended.
-PMI replaced six geographic segments with three (International Smoke-Free,
-International Combustibles, U.S.) effective 2026Q1 and did not restate the
-history into a filing, so the only comparable prior-year quarters are the two
-restated columns the 2026 releases print beside the current ones. The page
-draws those four and declines to splice them onto the segments they replaced.
+The segment charts on that page are short, and could be longer. PMI replaced
+four geographic segments with three (International Smoke-Free, International
+Combustibles, U.S.) effective 2026Q1. The page so far draws only the quarters
+the 2026 releases print, current and restated prior-year columns side by side,
+and declines to splice them onto the segments they replaced. The company did
+reprint 2023–2025 on the new segments, as unaudited supplementary information
+in an 8-K of 2026-03-13; the page has not taken that series in yet.
 
 TJX files the longest *quarterly* record on this site and the most one-sided,
 and it is the first page here whose company sells nothing to a data centre. Every quarterly
@@ -1104,7 +1137,8 @@ names no base year, which matters once: the fiscal-2023 EPS goal is met at
 +22.5% from FY2018 and missed at +4.3% from FY2017, because FY2018's earnings
 carry the Tax Act's one-off charge at a 55.3% effective rate. That one is
 published as base-dependent rather than as a hit. The fiscal-2025 misses need no
-such care — they run 4 to 11 percentage points wide.
+such care — they run 1 to 26 percentage points wide, and no reading of the words
+turns one of them into a hit.
 
 The mechanism behind them is in the same filings, which is why the long section
 is built around it rather than around a template. **NIKE Direct went from 20.3%
@@ -1154,15 +1188,20 @@ of the complete submission text instead.
 What that exhibit contains is unusually complete: a three-month column beside
 the cumulative one in every release, shipments split four ways by region,
 revenue split by category, the full EBITDA and EBIT reconciliations, capex,
-industrial free cash flow and net industrial debt. So **42 consecutive quarters
-back to 2016Q1** come out of the releases with no differencing anywhere — the
-fourth quarter included, which on most pages here has to be derived.
+industrial free cash flow and net industrial debt. So **every quarter back to
+2016Q1** comes out of the releases as a printed three-month figure — the fourth
+quarter included, which on most pages here has to be derived. The main exception,
+listed with two smaller ones in the page's notes, is capex and capitalised R&D
+for 2016–2018, which the releases did not yet carry: those quarters are
+differenced from the cumulative columns of the interim 6-K reports and the 20-F's
+annual totals.
 
 **And the guidance record it files has a shape no other page here carries.** The
 other guidance pages settle a range: did the reported number land inside it.
 Ferrari's full-year outlook mostly is not a range at all — it is a one-sided
-inequality. Across 31 vintages and five guided metrics, 69 readings are floors,
-31 are points, 6 are ceilings, and only 49 are two-sided ranges.
+inequality. Across its vintages and five guided metrics, floors are the most
+common form, and two-sided ranges are a minority of the readings; the page
+prints the count of each form.
 
 The finding is what happens to that mix as a year runs. The opening, Q1 and Q2
 vintages carry 15 to 17 ranges each. The Q3 vintage — the one that settles the
@@ -1178,8 +1217,8 @@ What it plots instead is the distance above the floor, and the deviation of each
 finished year from *every* one of its four vintages, which shows the funnel
 closing from 11.3% average absolute error at the opening vintage to 3.4% at the
 last. Industrial free cash flow is the loosest of the five: even at the final
-vintage it sits 11.7% from the answer on average, and it has cleared its own
-number in all seven finished years.
+vintage it sits further from the answer on average than any other metric, and
+in the finished years it has come in at or above what was guided, never below.
 
 Three hazards on that page are handled rather than smoothed, and the first is
 the reason the year-sum test exists at all:
@@ -1190,19 +1229,22 @@ the reason the year-sum test exists at all:
   fixed side puts half-year and nine-month figures into three years of quarterly
   slots — and every within-quarter identity still closes while that is true,
   because all the components go cumulative together. Only *four quarters must
-  sum to the filed year* catches it; that check now runs over 10 fiscal years
-  and 7 metrics and passes 70 of 70.
-- **The guidance column moves.** The outlook table puts the current-year
-  guidance in the last column in every release from 2018 to 2025 and in the
-  **first** column from 2026. A fixed position would have published the
-  prior-year actual, €7.15B, as the FY2026 revenue guidance. The page reads the
-  header row.
+  sum to the filed year* catches it; that check now runs over every fiscal year
+  and seven metrics, and where a year does not close the page says why —
+  FY2025 industrial free cash flow is €34M short because the company reprinted
+  its second quarter to move withholding taxes into later quarters that have not
+  been reprinted yet.
+- **The guidance column moves.** The outlook table usually puts the
+  current-year guidance in the last column, but five vintages carry a growth
+  column to its right, the November 2019 one has no table at all, only text, and
+  from May 2026 the guidance sits in the **first** column. A fixed position would
+  have published the prior-year actual, €7.15B, as the FY2026 revenue guidance.
+  The page reads the header row.
 - **A point guidance is settled at its printed precision.** FY2019 adjusted
   EBITDA came in at €1.269B against a guided `~1.27`, three million euro under a
   number the company printed to two decimals. That is recorded as landing *on*
   the guidance, not below it — scoring it as a miss would apply a threshold
-  finer than the disclosure it is measured against, the same reason Mastercard's
-  currency-neutral threshold was retired.
+  finer than the disclosure it is measured against.
 
 Two things the page refuses. **Personalisation as a share of Cars and spare
 parts revenue** is the number the local note leans on hardest and the one the
@@ -1216,18 +1258,18 @@ numerator and only whole cars in the denominator, and is therefore not an ASP.
 
 One series on that page exists because the number that decides the quarter is
 not one any filing prints as such: **the quarterly depreciation and amortisation
-line against the run-rate the full-year guidance implies.** Ferrari's latest
-quarter set a record EBIT margin of 31.2% while its EBITDA margin *fell*, and
-the entire gap between those two facts is D&A, which at €150M is the lowest
-reading in eight quarters. Subtracting the half-year actual from the "more than
-€700M" the company put on the year gives an implied second-half average of
-€188M — within a million of what the company actually booked two quarters
-earlier. So the record margin sits below the depreciation line, and the page
-draws both legs rather than reporting the record.
+line against the run-rate the full-year guidance implies.** When the EBIT margin
+and the EBITDA margin move apart — a record EBIT margin in a quarter whose
+EBITDA margin fell, as in 2026Q2 — the entire gap between those two facts is
+D&A. So whenever management puts a number on the year's D&A, the page subtracts
+the actual to date from it to get the quarterly run-rate the rest of the year
+implies and draws each quarter's D&A against that line — and it draws both
+margin legs rather than reporting a record on its own.
 
-**Microsoft, Alphabet, Mastercard and Visa get no such record, and that is a
-sourcing limit rather than an editorial choice.** Microsoft's own 8-K says in as
-many words that guidance is given on the earnings call and webcast, so nothing in
+**Microsoft, Alphabet, Mastercard, Visa and Interactive Brokers get no such
+record, and that is a sourcing limit rather than an editorial choice.**
+Microsoft's own 8-K says in as many words that guidance is given on the earnings
+call and webcast, so nothing in
 its filings can carry a range; the quarterly outlook block on its page comes from
 the call, one quarter at a time. Alphabet gives no quarterly numeric guidance at
 all — its capital-expenditure commitment for the year reaches a press release
@@ -1245,32 +1287,34 @@ avoid.
 Visa is the sharpest version of the same limit, because the thing it withholds
 is not the number but the *unit*. It has never filed a numeric **quarterly**
 outlook at all: every Financial Outlook it ever published was fiscal-full-year,
-so the object the other five pages are built on — a next-quarter range and the
-quarter that settles it — does not exist anywhere in its filing history. Even
-the full-year outlook is leaving, in four visible steps: numeric on some metrics
-through fiscal 2020, present but explicitly withheld in fiscal 2020–2021, absent
-from most of 2022–2023, reduced in fiscal 2024 to a single sentence pointing at
-an earnings presentation that is **not archived on EDGAR**, and gone entirely
-from every release after 2025-01-30. The page prints that era map and
-deliberately prints no tally of how many releases carried a number: a count
-sampled from eighteen of a forty-plus release window does not generalise, and a
-precise-looking ratio would be the least defensible sentence on the page.
+so the object the quarterly-guidance pages here are built on — a next-quarter
+range and the quarter that settles it — does not exist anywhere in its filing
+history. Even the full-year outlook is leaving, in four visible steps: numeric
+on some metrics through fiscal 2020, present but explicitly withheld in fiscal
+2020–2021, absent from most of 2022–2023, reduced in fiscal 2024 to a single
+sentence pointing at an earnings presentation that is **not archived on EDGAR**,
+and gone entirely from every release after 2025-01-30. The page prints that era
+map and deliberately prints no tally of how many releases carried a number: a
+count sampled from eighteen of the more than fifty releases since the fiscal
+2013 opening does not generalise, and a precise-looking ratio would be the least
+defensible sentence on the page.
 
 What Visa did guide, repeatedly and numerically, turns out to be the one number
 its page is actually about. `Client incentives as a percent of gross revenues`
-appears as a range in the release that opens each fiscal year from 2017 to 2020.
+appears as a range in the release that opens each fiscal year from 2013 to 2020.
 Both legs are filed — the range from the release, the delivered rate from that
 year's 10-K revenue note — and the record is one-sided in the *helpful*
-direction: three of the four years came in **below** the guided floor and none
+direction: five of the eight years came in **below** the guided floor and none
 ever exceeded the ceiling, meaning Visa handed back less of its gross revenue
 than it had told the market it would. Then it stopped publishing the number, and
-in the six years since, the rate has gone from 23.4% to 28.7%.
+the rate has kept rising since; the page shows how far.
 
 That rate is a filed figure every quarter back to 2012, because the four gross
 revenue lines and the client-incentive contra line are disclosed separately, so
 the ratio is division on disclosed numbers rather than an estimate — and the
-five reconcile to filed net revenue in all fifty-five quarters, fiscal fourths
-included. Over that window it climbs from 16.3% to 28.7%. Eight quarters cannot
+five reconcile to filed net revenue in every quarter, fiscal fourths included.
+Over that window it rises in every full fiscal year, though not in every
+quarter. Eight quarters cannot
 see it: across the last eight the line just oscillates between 27% and 29% and
 reads as noise. It is the clearest case on this site of a series whose meaning
 is entirely a function of its window.
@@ -1281,47 +1325,51 @@ where the obvious arithmetic gives the wrong answer:
 - **Service revenue is recognised on the previous quarter's payments volume**,
   which Visa states in every release, while that same release's headline
   `Key Business Drivers` table prints the *current* quarter's volume. Lining the
-  two up is off by exactly one quarter, every quarter. Worse, Visa discloses
-  volume only as a year-over-year **percentage** and never as a quarterly dollar
-  amount, so a unit take-rate cannot be recomputed from the filings at all. The
-  page therefore publishes **no** revenue-versus-volume comparison and says why,
-  rather than reproducing a misaligned one.
+  two up is off by exactly one quarter, every quarter. The pair that does line
+  up is in the 10-Q: its MD&A prints the previous quarter's nominal payments
+  volume in dollars, the base service revenue is recognised on, but the page has
+  not taken that series in yet. Cross-border volume, which international
+  transaction revenue rides on, is disclosed only as a year-over-year
+  **percentage**, so that take-rate cannot be recomputed from the filings at
+  all. The page therefore publishes **no** revenue-versus-volume comparison and
+  says why, rather than reproducing a misaligned one.
 - **The litigation escrow is measured against the accrual it actually funds.**
   The U.S. Retrospective Responsibility Plan escrow pays U.S. covered litigation
   and nothing else; the balance sheet's `Accrued litigation` line is larger
   because it also carries VE Territory and uncovered matters the escrow cannot
   touch. Visa prints the split itself, in a table whose title says so. Against
-  the covered accrual the latest quarter is a US$66M **surplus** — US$888M
-  against US$822M. Against the total it looks like a US$386M shortfall, which is
-  what the local note read it as and what produced a forecast of an imminent
-  large top-up. Both lines are on the chart and the page names which pair
-  belongs together.
+  the covered accrual the escrow has shown a **surplus** in every quarter of the
+  window. Against the total it looks like a shortfall, which is what the local
+  note read it as and what produced a forecast of an imminent large top-up.
+  Both lines are on the chart and the page names which pair belongs together.
 
 **Mastercard's page answers the same question with a different quantity, and
 that is the reason it was worth building.** The interesting thing about a
 payment network is not whether it beats a range it never published; it is how
-much of what it bills it actually keeps. So the first two sections carry
-eighteen quarters of the rebate share of gross billings, and the answer has the
-same one-sided shape the guidance records have: **the ratio rose from 44.5% to
-52.4%, and in the fourteen comparable year-over-year readings it went up
-thirteen times — the single exception is 0.31pp.** A ratio that has essentially
-never come back is a structure, not a quarter.
+much of what it bills it actually keeps. So the first two sections carry the
+rebate share of gross billings for every quarter since 2022, and the answer has
+the same one-sided shape the guidance records have: **the ratio has risen across
+the record, and year over year it has almost never fallen — the page prints the
+count and the size of the exception.** A ratio that has essentially never come
+back is a structure, not a quarter.
 
-That number is not printed anywhere. Under the presentation Mastercard adopted
-in the first quarter of 2023, the four assessment lines are printed gross and
-the payment network is printed net, so the rebate is the difference of two filed
-figures. What licenses the series is that the company publishes the *growth
-rate* of the line it does not print: it says rebates rose 22% in the quarter and
-22% in the six months, and the subtraction gives 21.8% and 22.5%. A test pins
-both.
+The ratio is printed nowhere, and the rebate itself is in no table. Under the
+presentation Mastercard adopted in the first quarter of 2023, the four assessment
+lines are printed gross and the payment network is printed net, so the rebate is
+the difference of two filed figures. Two things license the series: the 10-Q's
+MD&A states the quarter's rebate amount in a sentence of its text, and the page
+checks its subtraction against it to the million; and the company publishes the
+line's *growth rate*, which the subtraction has to agree with at the precision
+the company prints. Tests pin both.
 
 Having the gross and the net side by side is what makes the page's own
 decomposition possible, and it is an identity rather than an estimate: net
 revenue = gross assessments − rebates + value-added services, so each quarter's
 year-over-year change splits exactly three ways. It reframes the quarter. The
-gross leg grew from US$944M to US$1,580M over fourteen quarters — and the part
-that reached net payment-network revenue has sat in a US$506–570M band for seven
-straight quarters. Everything extra the company billed was handed back. More
+gross leg's year-over-year increment is far larger than in the first comparable
+quarter, in 2023, while the part that reached net payment-network revenue has
+sat in a narrow band for quarters on end; the page counts how many. Everything
+extra the company billed was handed back. More
 than half of the net revenue increase now comes from the value-added services
 leg, which carries no rebate at all.
 
@@ -1331,12 +1379,13 @@ quarterly earnings presentation and reaches no filing, so no history is built
 for it; the filings give total cross-border volume, gross dollar volume and
 switched transactions, and the page plots those three instead and says which
 question they cannot answer. One threshold from the previous quarter is reported
-as **unsettleable rather than passed or failed**: it was written as "a
-currency-neutral revenue growth of +11–12% triggers a downgrade", and Mastercard
-publishes currency-neutral growth only to the whole percentage point. The
-published figure was exactly +12%, sitting on the boundary, so the same number
-reads as both outcomes. The threshold had a finer resolution than the disclosure
-and has been retired.
+as **unsettleable rather than passed or failed**: it was written against the
+full-year currency-neutral revenue guidance — "a cut to +11–12% triggers a
+downgrade" — and Mastercard's full-year guidance exists only as a phrase on the
+earnings call, "high end of low double-digit", with no number to compare
+against. An earlier version of the page read the quarter's own +12%
+currency-neutral growth as if it were that guidance; it is not. The threshold
+asked for a number the disclosure does not contain and has been retired.
 
 **Interactive Brokers is the first page here whose subject is a price the
 company does not set.** Its quarter reads as an unambiguous record — accounts up
@@ -1349,15 +1398,16 @@ More than half of total net revenues is net interest rather than commissions, so
 the volume story and the price story pull in opposite directions and only one of
 them is management's to control.
 
-Thirty quarters are what make that legible, and the window was chosen to cover
-one full rate cycle rather than to look long. Inside it the two revenue lines
-cross **twice**: zero rates pushed net interest below commissions in Q1 2020 and
-kept it there for nine quarters, and the hiking cycle pushed it back on top in
-Q2 2022. The net interest margin bottomed at 0.94% in Q3 2020 and peaked at 2.46%
-in Q3 2023, and for three quarters of 2021 the yield on segregated customer cash
-was **negative** — the company was paying to hold it. Average interest-earning
-assets grew 3.7x across the same window, dipping in only two quarters of the
-thirty. Eight quarters of
+The record back to 2016 is what makes that legible, and the window was chosen
+to cover one full rate cycle rather than to look long. Inside it the two revenue
+lines cross **more than once** (the page counts the crossings), and the stretch
+that matters is the rate cycle's: zero rates pushed net interest below
+commissions in Q1 2020 and kept it there for nine quarters, and the hiking cycle
+pushed it back on top in Q2 2022. The net interest margin bottomed at 0.94% in
+Q3 2020 and peaked at 2.46% in Q3 2023, and for three quarters of 2021 the yield
+on segregated customer cash was **negative** — the company was paying to hold
+it. Average interest-earning assets multiplied across the same window and dipped
+in only a handful of its quarters. Eight quarters of
 any of this would show a trend that is really a position in a cycle.
 
 Two things on that page are structural rather than analytical, and both are
@@ -1375,9 +1425,10 @@ drawing a step that reads as a business event.
 
 One correction the data forced during the build is worth recording, because the
 plausible version was wrong in both directions. Per-account equity looks like a
-dilution story — accounts grew 8.3x while the average account shrank 24% — and
-the first draft of that chart said the dilution had not yet begun. It had: the
-average fell from US$268,966 in Q4 2020 to US$142,694 in Q3 2022. But it has
+dilution story — accounts multiplied many times over while the average account
+ended the window below where it started — and the first draft of that chart
+said the dilution had not yet begun. It had: the average fell from US$268,966 in
+Q4 2020 to US$142,694 in Q3 2022. But it has
 since recovered 25.7% while accounts more than doubled again, so the honest
 reading is that the dilution happened, ended three years ago, and has not
 resumed. The same pass caught a caption calling the per-order commission "stable"
@@ -1425,7 +1476,8 @@ final revision the recent twelve land six above, four inside and three below —
 so the symmetry does not survive a change of vintage either. **The revision buys
 less than it looks like**: over the twelve years that have both vintages, mean
 absolute error falls only from 9.1% to 5.1%, where Moody's and S&P Global,
-guiding a year the same way, close their funnels to about a fifth or a seventh.
+guiding a year the same way, close their funnels several times further (their
+pages print the ratios).
 And **twelve of the thirteen recent numeric ranges are printed "approximately
 $X to $Y"**; two of the five overshoots clear the top by under 5%, inside what
 that word plausibly covers, while the other three are 8–12% over.
@@ -1489,10 +1541,10 @@ local note's central claim — that the ex-gasoline, ex-currency comp is a flat
 line at about 6.5% — exists only at the finer one. In the filings the same three
 quarters read 6%, 7%, 7%, which looks like acceleration. The page plots the
 release series, carries the 10-Q series in the audit drawer, and says which is
-which. Its adjusted comparable-sales record starts at fiscal 2020 Q1 for a
-different reason: for the four quarters of fiscal 2019 the column labelled
-"Adjusted" also strips an ASC 606 accounting change, so it is a second
-definition wearing the first one's label.
+which. Its adjusted comparable-sales record runs back to 2016 but leaves the
+four quarters of fiscal 2019 blank, for a different reason: in those quarters
+the column labelled "Adjusted" also strips an ASC 606 accounting change, so it
+is a second definition wearing the first one's label.
 
 One more thing the page refuses. Costco is the only company here that publishes
 a sales figure **between** earnings dates — a comparable-sales reading for every
@@ -1538,12 +1590,15 @@ quarter is not one any filing prints:
   about, and it is four filed numbers and no estimate.
 - Microsoft's **free cash flow adjusted for unpaid capex**. Reported free cash
   flow counts only capex that was paid; the 10-K discloses how much was still
-  sitting in accounts payable, so subtracting that year's increase turns a
-  −6.5% year into a −31.6% one using three disclosed numbers and no estimate.
+  sitting in accounts payable, so subtracting that year's increase gives the
+  free cash flow the year actually generated, using three disclosed numbers and
+  no estimate; the page prints the reported and the adjusted change side by
+  side.
 - Mastercard's **payment network rebates and incentives**, above, and the
-  **share of gross billings** it represents. The company nets the line away
-  before printing anything, so the eighteen-quarter record is a subtraction the
-  company's own published growth rate has to agree with.
+  **share of gross billings** it represents. The income statement nets the line
+  away and no table prints it, so the record since 2022 is a subtraction that has
+  to agree with both the growth rate the company publishes and the amount the
+  10-Q states in its text.
 - Mastercard's **implied repurchase price**, quarter by quarter: the cash it
   spent divided by the shares it bought, both filed. It fell to US$500 in the
   quarter it spent more than in any other quarter this page holds, and the
@@ -1555,9 +1610,10 @@ quarter is not one any filing prints:
   minority of the operating LLC, so most of the reported profit is booked to the
   noncontrolling holder: US$1,026M of this quarter's US$1,338M, leaving US$312M.
   The company prints both figures but never the ratio, and the ratio is the whole
-  point — it has fallen from 84.9% to 76.7% across thirty quarters as the listed
-  entity buys units back, which is 8.2pp in seven and a half years. On that
-  gradient the wedge is not a rounding item that will close; it is the structure.
+  point — it has drifted down across the whole window as the listed entity buys
+  units back, slowly and not monotonically (the page prints the endpoints). On
+  that gradient the wedge is not a rounding item that will close; it is the
+  structure.
 
 - Costco's **two legs of the operating margin**. Operating income over net sales
   splits exactly into a merchandising leg (gross margin less SG&A less
@@ -1579,9 +1635,10 @@ quarter is not one any filing prints:
 - Costco's **gasoline-and-currency gap in comparable sales** — reported comp
   minus the company's own ex-gasoline, ex-currency comp. Both legs are filed to
   one decimal; the difference is not, and the company never splits the two
-  causes apart. Over 27 quarters the gap has been *negative* in 15, so gasoline
-  and currency have suppressed the headline more often than flattered it, and it
-  swung from −0.7pp to +3.2pp in four quarters. The local note read this
+  causes apart. Across the quarters with a comparable adjusted figure the gap
+  has been *negative* more often than positive, so gasoline and currency have
+  suppressed the headline more often than flattered it; the page prints the
+  tally and the latest swing. The local note read this
   quarter's tailwind as a risk still to come; the record says the tailwind is
   the unusual state.
 
@@ -1630,9 +1687,9 @@ outside the chain shipped the block with no explanation, and a reader who meets
 a foundry table in an off-price retailer's drawer deserves one sentence telling
 them it is a site-wide reference.
 
-Amazon joined this table when its page was built. It is the largest spender of
-the four in every quarter of the window, so leaving it out understated each row
-by roughly a third.
+Amazon joined this table when its page was built. It is among the largest
+spenders of the four, so leaving it out understated every row by far more than
+rounding; the table prints each company's column.
 
 NVIDIA sits between the two ends rather than at one of them, so the table now
 carries its **Data Center** line as a middle column: hyperscaler cash capex →
