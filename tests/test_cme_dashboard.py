@@ -30,10 +30,18 @@ year-to-date, a prior-year quarter or a prior full year depending on which of
 four shapes it takes. The check that catches a swap is that the retained spread
 lands in a narrow band while the gross yield on the same balance moves by a
 factor of two and a half -- a mis-paired numerator would not do that.
+
+**Rolling a quarter edits `series/cme.json` and nothing else, including this
+file.** The windows are asserted by where they start (2013Q1, 2016Q1, 2024Q3
+for the adjusted table) and that they run without a gap to the checked quarter;
+the quarter's own figures are held to `_checks` (`CmeChecksTest`); and every
+sentence that states a first, a record, an "all six" or a ranking is recounted
+or made false on purpose (`CmeRollTest`).
 """
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import re
@@ -46,9 +54,34 @@ sys.path.insert(0, str(ROOT))
 
 from build import cme  # noqa: E402
 from build.all import ENTRIES, GROUPS, build_all, roster_payload  # noqa: E402
-from build.board import headroom  # noqa: E402
+from build.board import cn_count, cn_ordinal, headroom  # noqa: E402
 
 CLASS_KEYS = ("rates", "equity", "fx", "energy", "ags", "metals")
+
+
+def period_key(label: str) -> str:
+    """``'Q2 2026'`` -> ``'2026Q2'``, the form the `long` block uses."""
+    quarter, year = label.split()
+    return f"{year}{quarter}"
+
+
+def quarters_from(first: str, last: str) -> list[str]:
+    year, quarter = int(first[:4]), int(first[-1])
+    out = [first]
+    while out[-1] != last:
+        quarter += 1
+        if quarter == 5:
+            year, quarter = year + 1, 1
+        out.append(f"{year}Q{quarter}")
+        if year > 2100:
+            raise ValueError(f"{last} does not follow {first}")
+    return out
+
+
+def published_text(payload: dict) -> str:
+    return json.dumps({key: payload[key] for key in
+                       ("title", "subtitle", "headline", "brief", "sections", "notes", "tables")},
+                      ensure_ascii=False)
 
 
 def js_payload(path: Path, marker: str) -> dict:
@@ -64,11 +97,14 @@ class CmeDashboardTest(unittest.TestCase):
         cls.payload = cme.build_payload(cls.staging)
 
     # ── the two windows ─────────────────────────────────────────────────────
-    def test_the_window_is_eight_quarters_and_complete(self) -> None:
+    def test_the_short_window_starts_where_the_adjusted_table_does(self) -> None:
+        """2024Q3 is the year-ago column of the first release that printed it."""
         fin = self.staging["financials"]
-        self.assertEqual(len(self.staging["periods"]), 8)
+        periods = self.staging["periods"]
+        self.assertEqual(periods[0], "2024Q3")
+        self.assertEqual(periods, quarters_from("2024Q3", period_key(self.staging["_checks"]["period"])))
         for name, values in fin.items():
-            self.assertEqual(len(values), 8, name)
+            self.assertEqual(len(values), len(periods), name)
             self.assertTrue(all(v is not None for v in values), name)
 
     def test_quarters_are_contiguous_calendar_labels(self) -> None:
@@ -78,11 +114,10 @@ class CmeDashboardTest(unittest.TestCase):
                 y2, q2 = int(later[:4]), int(later[5])
                 self.assertEqual((y2, q2), (y1 + 1, 1) if q1 == 4 else (y1, q1 + 1))
 
-    def test_the_long_series_is_fifty_four_contiguous_quarters(self) -> None:
+    def test_the_long_series_runs_from_2013_without_a_gap(self) -> None:
         quarters = self.staging["long"]["quarters"]
-        self.assertEqual(len(quarters), 54)
-        self.assertEqual(quarters[0], "2013Q1")
-        self.assertEqual(quarters[-1], "2026Q2")
+        last = period_key(self.staging["_checks"]["period"])
+        self.assertEqual(quarters, quarters_from("2013Q1", last))
         # Where a series is allowed to have holes, and where the holes are. A
         # series not listed here must be complete; a series listed here must
         # actually have its holes in the stated range, so an entry cannot be
@@ -90,7 +125,7 @@ class CmeDashboardTest(unittest.TestCase):
         holes = {
             # A line the company retired at 2018Q4. Holes, not backfills --
             # see the fold test below.
-            "access_comm": ("2018Q4", "2026Q2"),
+            "access_comm": ("2018Q4", last),
             # Adjusted figures were backfilled to 2016Q1, which is where this
             # site's window starts; 2013Q1-2015Q4 was not fetched. That is a
             # scope decision, not a disclosure limit -- the reconciliation
@@ -102,7 +137,7 @@ class CmeDashboardTest(unittest.TestCase):
         for name, values in self.staging["long"].items():
             if not isinstance(values, list):
                 continue          # provenance strings and the outlier record
-            self.assertEqual(len(values), 54, name)
+            self.assertEqual(len(values), len(quarters), name)
             missing = [quarters[i] for i, v in enumerate(values) if v is None]
             if name not in holes:
                 self.assertEqual(missing, [], name)
@@ -269,8 +304,9 @@ class CmeDashboardTest(unittest.TestCase):
         long = self.staging["long"]
         contracts = cme.qoq(long["contracts_m"])
         slope, r2 = cme.slope_and_r2(contracts, cme.qoq(long["total_revenues"]))
-        self.assertEqual(len(contracts), 53)
+        self.assertEqual(len(contracts), len(long["quarters"]) - 1)
         self.assertIn(f"{slope:.2f}", self.payload["headline"])
+        self.assertIn(f"{cn_count(len(contracts))}次环比变动测出来的同一条斜率", self.payload["headline"])
         self.assertLess(slope, 1.0)
         self.assertGreater(r2, 0.85)
 
@@ -283,9 +319,9 @@ class CmeDashboardTest(unittest.TestCase):
     # ── the capital-expenditure record ──────────────────────────────────────
     def test_every_guided_year_carries_an_ordered_range_and_a_named_form(self) -> None:
         capex = self.staging["capex_guidance"]
-        self.assertEqual(len(capex["years"]), 17)
         self.assertEqual(capex["years"][0], "2010")
-        self.assertEqual(capex["years"][-1], "2026")
+        self.assertEqual(capex["years"],
+                         [str(y) for y in range(2010, int(capex["years"][-1]) + 1)])
         for year in capex["years"]:
             block = capex["by_year"][year]
             self.assertLessEqual(block["low"], block["high"], year)
@@ -303,15 +339,13 @@ class CmeDashboardTest(unittest.TestCase):
     def test_finished_years_have_an_actual_and_the_open_year_does_not(self) -> None:
         capex = self.staging["capex_guidance"]
         finished = cme.finished_capex_years(capex)
-        self.assertEqual(len(finished), 16)
-        self.assertEqual(finished[-1], "2025")
-        self.assertIsNone(capex["by_year"]["2026"]["actual"])
+        self.assertEqual(finished, capex["years"][:-1])
+        self.assertIsNone(capex["by_year"][capex["years"][-1]]["actual"])
 
     def test_the_tally_the_page_publishes_is_the_one_in_the_data(self) -> None:
         capex = self.staging["capex_guidance"]
         tally = cme.capex_tally(capex)
-        self.assertEqual(sum(tally.values()), 16)
-        self.assertEqual(tally, {"below": 11, "above": 4, "inside": 1})
+        self.assertEqual(sum(tally.values()), len(cme.finished_capex_years(capex)))
         brief = self.payload["brief"]
         self.assertIn(f'{tally["below"]} 年低于下限', brief)
         self.assertIn(f'{tally["above"]} 年高于上限', brief)
@@ -327,10 +361,12 @@ class CmeDashboardTest(unittest.TestCase):
         US$245M. It is asserted separately from the tally for that reason.
         """
         capex = self.staging["capex_guidance"]
-        above = [y for y in cme.finished_capex_years(capex)
+        # Pinned to the years this was checked through; later years only add.
+        through = [y for y in cme.finished_capex_years(capex) if y <= "2025"]
+        above = [y for y in through
                  if capex["by_year"][y]["actual"] > capex["by_year"][y]["high"]]
         self.assertEqual(above, ["2018", "2019", "2020", "2024"])
-        below_mid = [y for y in cme.finished_capex_years(capex)
+        below_mid = [y for y in through
                      if capex["by_year"][y]["actual"]
                      < cme.mid(capex["by_year"][y]["low"], capex["by_year"][y]["high"])]
         self.assertEqual(len(below_mid), 12)
@@ -373,7 +409,7 @@ class CmeDashboardTest(unittest.TestCase):
         coll = self.staging["collateral"]
         post_zirp = coll["retained_bp"][2:]
         gross = coll["gross_bp"][2:]
-        self.assertEqual(len(post_zirp), 12)
+        self.assertGreaterEqual(len(post_zirp), 12)
         self.assertGreater(min(post_zirp), 20.0)
         self.assertLess(max(post_zirp), 40.0)
         self.assertGreater(max(gross) / min(gross), 2.0)
@@ -406,7 +442,8 @@ class CmeDashboardTest(unittest.TestCase):
     def test_the_call_only_expense_guidance_is_named_and_not_published(self) -> None:
         notes = " ".join(self.payload["notes"])
         self.assertIn("只在业绩电话会上出现", notes)
-        self.assertIn("16.95", notes)
+        guidance = self.staging["quarter_context"]["call_expense_guidance"]
+        self.assertIn(f"{guidance['adj_opex_ex_license_usd_m'] / 100:.2f}", notes)
         blob = json.dumps(self.payload, ensure_ascii=False)
         self.assertNotIn("1,695", blob)
         self.assertNotIn("1695", blob)
@@ -533,6 +570,186 @@ class CmeDashboardTest(unittest.TestCase):
         for name, _, digest in sources:
             expected = hashlib.sha256((ROOT / name).read_bytes()).hexdigest()[:8]
             self.assertEqual(digest, expected, name)
+
+
+
+class CmeChecksTest(unittest.TestCase):
+    """The page's quarter against a record keyed separately from the filing.
+
+    `_checks` is typed once per quarter from the release, with the place in it
+    each figure was read from; the builder never reads it (asserted in
+    `test_data_only_roll`). Rolling a quarter re-keys `_checks`; this class does
+    not change.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(cme.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.checks = cls.staging["_checks"]
+        cls.payload = cme.build_payload(cls.staging)
+        cls.exhibits = [ex for section in cls.payload["sections"] for ex in section["exhibits"]]
+
+    def test_the_page_names_the_checked_quarter_both_ways(self) -> None:
+        checks = self.checks
+        self.assertIn(checks["period"], self.payload["title"])
+        self.assertIn(f"截至 {checks['period_end']}", self.payload["subtitle"])
+        self.assertIn(f"发布 {checks['release_date']}", self.payload["subtitle"])
+        quarter, year = checks["period"].split()
+        self.assertIn(f"CME Group {year} 年第{cn_ordinal(int(quarter[1]))}季度业绩新闻稿",
+                      self.payload["source"])
+
+    def test_the_series_ends_on_the_checked_figures(self) -> None:
+        long, fin, checks = self.staging["long"], self.staging["financials"], self.checks
+        for line, (now, year_ago) in checks["income_statement_usd_m"].items():
+            with self.subTest(line=line):
+                self.assertAlmostEqual(long[line][-1], now, places=6)
+                self.assertAlmostEqual(long[line][-5], year_ago, places=6)
+        for line, (now, year_ago) in checks["adjusted_usd_m"].items():
+            with self.subTest(line=line):
+                self.assertAlmostEqual(fin[line][-1], now, places=6)
+                self.assertAlmostEqual(fin[line][-5], year_ago, places=6)
+        for key, (now, prior, year_ago) in checks["adv_k"].items():
+            name = "adv_k" if key == "total" else f"adv_{key}"
+            with self.subTest(adv=key):
+                self.assertEqual([long[name][-1], long[name][-2], long[name][-5]], [now, prior, year_ago])
+        for key, (now, prior, year_ago) in checks["rpc"].items():
+            name = "rpc" if key == "total" else f"rpc_{key}"
+            with self.subTest(rpc=key):
+                self.assertEqual([long[name][-1], long[name][-2], long[name][-5]], [now, prior, year_ago])
+        self.assertEqual([long["trading_days"][-1], long["trading_days"][-2], long["trading_days"][-5]],
+                         checks["trading_days"])
+        self.assertEqual(self.staging["window_collateral_balance_usd_m"][-1],
+                         checks["performance_bonds_usd_m"])
+
+    def test_what_the_release_says_about_its_quarter_the_series_says_too(self) -> None:
+        """"The third highest quarterly ADV" and "a record" market data line."""
+        long = self.staging["long"]
+        rank = sorted(long["adv_k"], reverse=True).index(long["adv_k"][-1]) + 1
+        self.assertEqual(rank, self.checks["adv_rank_printed"])
+        if self.checks["market_data_record_printed"]:
+            self.assertEqual(long["market_data"][-1], max(long["market_data"]))
+
+    def test_the_headline_prints_the_checked_figures(self) -> None:
+        income = self.checks["income_statement_usd_m"]
+        headline = self.payload["headline"]
+        now, before = income["total_revenues"]
+        self.assertIn(f"总收入 US${now:,.1f}M、同比 {(now / before - 1) * 100:+.1f}%", headline)
+        now, before = income["clearing_fees"]
+        self.assertIn(f"清算与交易费同比 {(now / before - 1) * 100:+.1f}%", headline)
+        adjusted = self.checks["adjusted_usd_m"]["adj_operating_income"][0]
+        self.assertIn(f"调整后 {adjusted / income['total_revenues'][0] * 100:.1f}%",
+                      next(ex["title"] for ex in self.exhibits if ex["title"].startswith("两条营业利润率")))
+
+
+class CmeRollTest(unittest.TestCase):
+    """A roll edits the series and nothing else: the one-quarter blocks and the
+    sentences about the record are held to what the series says."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(cme.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = cme.build_payload(cls.staging)
+        cls.text = published_text(cls.payload)
+        cls.exhibits = [ex for section in cls.payload["sections"] for ex in section["exhibits"]]
+
+    def rebuilt(self, edit) -> dict:
+        changed = copy.deepcopy(self.staging)
+        edit(changed)
+        return cme.build_payload(changed)
+
+    def test_quarter_blocks_refuse_to_publish_under_another_quarter(self) -> None:
+        for key in ("next_kpi", "quarter_context"):
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "stamped"):
+                    self.rebuilt(lambda s, key=key: s[key].__setitem__("period", "Q1 1999"))
+        quarter, year = self.staging["period_labels"][-1].split()
+        label = f"CME Group {year} 年第{cn_ordinal(int(quarter[1]))}季度业绩新闻稿"
+        with self.assertRaisesRegex(ValueError, "sources"):
+            self.rebuilt(lambda s: s.__setitem__(
+                "sources", [x for x in s["sources"] if not x["label"].startswith(label)]))
+
+    def test_a_quarter_without_its_blocks_leaves_them_out(self) -> None:
+        def strip(s):
+            del s["next_kpi"]
+            del s["quarter_context"]
+        payload = self.rebuilt(strip)
+        sections = {sec["id"]: sec for sec in payload["sections"]}
+        self.assertEqual(sections["next_quarter"]["exhibits"], [])
+        self.assertEqual(len(payload["tables"]), len(self.payload["tables"]) - 1)
+        text = published_text(payload)
+        for gone in ("逐字检索过", "逐份检索过", "逐字搜过", "亿美元；", "本页数据截至"):
+            with self.subTest(gone=gone):
+                self.assertIn(gone, self.text)
+                self.assertNotIn(gone, text)
+
+    def test_the_record_sentences_are_computed_not_remembered(self) -> None:
+        def moves(claims, edit, present_before=True):
+            after = published_text(self.rebuilt(edit))
+            for claim in claims:
+                with self.subTest(claim=claim):
+                    self.assertEqual(claim in self.text, present_before)
+                    self.assertEqual(claim in after, not present_before)
+
+        # The clearing line's earlier negative quarter is what makes this one the second.
+        def earlier_quarter_positive(s):
+            i = s["periods"].index("2025Q3")
+            s["financials"]["clearing_fees"][i] = s["financials"]["clearing_fees"][i - 4] + 1
+        moves(("第二次同比转负", "第二次转负"), earlier_quarter_positive)
+        moves(("是本窗口内第一次转负",), earlier_quarter_positive, present_before=False)
+
+        # Agricultural ADV rose with its rate; make it fall and all six move against rate.
+        def ags_down(s):
+            s["long"]["adv_ags"][-1] = s["long"]["adv_ags"][-2] - 100
+        moves(("六个品种的量与价同时反向",), ags_down, present_before=False)
+
+        # The market-data line has carried all the growth once before (2018Q3).
+        def not_before(s):
+            i = s["long"]["quarters"].index("2018Q3")
+            s["long"]["total_revenues"][i] = s["long"]["total_revenues"][i - 4] + 100
+        moves(("第一次单独扛起全公司的同比增长",), not_before, present_before=False)
+
+    def test_the_rankings_and_counts_are_recounted_here(self) -> None:
+        staging, text = self.staging, self.text
+        long, fin, capex = staging["long"], staging["financials"], staging["capex_guidance"]
+        finished = cme.finished_capex_years(capex)
+        under = sum(1 for y in finished if capex["by_year"][y]["actual"]
+                    < cme.mid(capex["by_year"][y]["low"], capex["by_year"][y]["high"]))
+        self.assertIn(f"{cn_count(len(finished))}年里{cn_count(under)}年偏高", self.payload["brief"])
+        self.assertNotIn("一直偏高", text)
+        self.assertNotIn("一直往同一个方向不准", text)
+        # The EPS gap: the tax-reform quarter is the narrowest, not the widest.
+        start = long["quarters"].index("2016Q1")
+        gaps = [a - g for a, g in zip(long["adj_diluted_eps"][start:], long["diluted_eps"][start:])]
+        eps = next(ex for ex in self.exhibits if "两条摊薄每股收益" in ex["title"])
+        widest = long["quarters"][start + gaps.index(max(gaps))]
+        self.assertIn(f"最宽 ${max(gaps):.2f}（{widest}）", eps["note"])
+        self.assertIn(f"最窄的是 ${min(gaps):.2f}（{long['effective_tax_outlier']['quarter']}", eps["note"])
+        # Investment income peaked before this quarter.
+        income = long["investment_income"]
+        invest = next(ex for ex in self.exhibits if "投资收益与利息分配支出" in ex["title"])
+        self.assertIn(f"US${max(income):,.0f}M", invest["title"])
+        # The biggest riser among the six classes is named, not the biggest mover.
+        yoy = {name: long[f"adv_{key}"][-1] / long[f"adv_{key}"][-5] - 1 for key, name, _ in cme.CLASSES}
+        riser = max(yoy, key=yoy.get)
+        self.assertIn(f"{riser}同比", text)
+        self.assertIn("同比涨得最多的一条", text)
+        self.assertNotIn("同比幅度最大的一条", text)
+        # The margin threshold has been broken inside the window.
+        entry = next(e for e in staging["next_kpi"]["quantified"] if e["metric"] == "调整后营业利润率")
+        below = sum(1 for v in fin["adj_margin_pct"] if v < entry["threshold"])
+        self.assertIn(f"窗口里有{cn_count(below)}季低于它", text)
+        self.assertNotIn("最低的一格再往下一点", text)
+        # The run of quarters under the RPC line is 2021-2023.
+        rpc_entry = next(e for e in staging["next_kpi"]["quantified"] if e["metric"] == "平均每手费率 RPC")
+        self.assertNotIn("2019–2021 年的常态", text)
+        rpc = long["rpc"][start:]
+        years = sorted({long["quarters"][start + i][:4] for i, v in enumerate(rpc) if v < rpc_entry["threshold"]})
+        self.assertTrue(set(years) >= {"2021", "2022", "2023"})
+        # Every count of filings searched is the same count everywhere.
+        searched = staging["quarter_context"]["searched"]
+        self.assertEqual(text.count(searched), 4)
+        for stale in ("三份 10-Q", "两份 10-Q"):
+            self.assertNotIn(stale, text)
 
 
 if __name__ == "__main__":

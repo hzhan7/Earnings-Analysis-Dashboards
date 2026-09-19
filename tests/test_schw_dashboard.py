@@ -4,6 +4,13 @@ Same purpose as the other companies': nothing derived reaches the page until it
 has been checked against a statement identity or a figure the company disclosed
 separately.  Schwab's page rests on three of them.
 
+Rolling a quarter edits `series/schw.json` and nothing else, including this
+file: the window is asserted as "2016Q1 to the last quarter without a gap",
+the quarter's own figures are held to `_checks` (a separate reading of the
+release, `SchwChecksTest`), and every sentence that states a record, a low, an
+"all" or an "only" is tested by making the series disagree
+(`SchwRollTest`).
+
 The first two are the income statement itself.  Its five revenue lines -- net
 interest revenue, asset management and administration fees, trading revenue,
 bank deposit account fees and other -- add to the net revenues the company
@@ -24,6 +31,7 @@ the window, which is what licenses the page to plot those quarters at all.
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import re
@@ -34,8 +42,20 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from build.board import headroom  # noqa: E402
+from build.board import cn_count, headroom  # noqa: E402
 from build.schw import build_payload, compact  # noqa: E402
+
+
+def period_key(label: str) -> str:
+    """``'Q2 2026'`` -> ``'2026Q2'``, the form this series uses."""
+    quarter, year = label.split()
+    return f"{year}{quarter}"
+
+
+def published_text(payload: dict) -> str:
+    return json.dumps({key: payload[key] for key in
+                       ("title", "subtitle", "headline", "brief", "sections", "notes", "tables")},
+                      ensure_ascii=False)
 
 
 def js_payload(path: Path, assignment: str) -> dict:
@@ -99,11 +119,11 @@ class SchwDashboardTest(unittest.TestCase):
 
     def test_the_window_is_calendar_quarters_without_holes(self) -> None:
         periods = self.periods
+        last = period_key(self.source["_checks"]["period"])
         self.assertEqual(periods[0], "2016Q1")
-        self.assertEqual(periods[-1], "2026Q2")
-        self.assertEqual(len(periods), 42)
-        expected = [f"{year}Q{q}" for year in range(2016, 2027) for q in (1, 2, 3, 4)]
-        self.assertEqual(periods, [p for p in expected if "2016Q1" <= p <= "2026Q2"])
+        self.assertEqual(periods[-1], last)
+        expected = [f"{year}Q{q}" for year in range(2016, int(last[:4]) + 1) for q in (1, 2, 3, 4)]
+        self.assertEqual(periods, [p for p in expected if "2016Q1" <= p <= last])
         self.assertEqual(len(self.source["period_ends"]), len(periods))
 
     def test_every_financial_series_is_full_length(self) -> None:
@@ -121,7 +141,7 @@ class SchwDashboardTest(unittest.TestCase):
         self.assertEqual(ops["periods"], self.periods,
                          "the two blocks used to run on different axes")
         self.assertEqual(ops["periods"][0], "2016Q1")
-        self.assertEqual(ops["periods"][-1], "2026Q2")
+        self.assertEqual(ops["periods"][-1], period_key(self.source["_checks"]["period"]))
         for key, values in ops.items():
             if key in ("periods", "period_ends") or not isinstance(values, list):
                 continue
@@ -298,22 +318,28 @@ class SchwDashboardTest(unittest.TestCase):
 
     # ── thresholds ───────────────────────────────────────────────────────────
     def test_threshold_headroom_signs_match_the_stated_verdicts(self) -> None:
-        """Two of last quarter's four thresholds held; the page must say so."""
-        entries = self.source["settled_thresholds"]
+        """However many of last quarter's thresholds held, the page says that many.
+
+        Recounted here from the block, and checked in the title, the headline
+        and the chart note, each of which states the count in its own words.
+        """
+        entries = self.source["settled_thresholds"]["entries"]
         held = [e["metric"] for e in entries
                 if headroom(e["direction"], e["threshold"], e["actual"]) >= 0]
         broken = [e["metric"] for e in entries
                   if headroom(e["direction"], e["threshold"], e["actual"]) < 0]
-        self.assertEqual(len(held), 2, held)
-        self.assertEqual(len(broken), 2, broken)
         overview = next(ex for ex in self.by_section["settled"]
                         if ex["kind"] == "diverging_bars")
-        self.assertIn("2 条守住", overview["title"])
+        self.assertIn(f"{len(held)} 条守住、{len(broken)} 条越过", overview["title"])
+        self.assertTrue(overview["note"].startswith(
+            f"{cn_count(len(entries))}条里{cn_count(len(held))}条守住、{cn_count(len(broken))}条没有。"))
+        self.assertIn(f"上季设下的{cn_count(len(entries))}条阈值守住{cn_count(len(held))}条",
+                      self.payload["headline"])
 
     def test_every_threshold_names_a_direction_and_a_real_series(self) -> None:
         ops = self.ops
         for group in ("settled_thresholds",):
-            for entry in self.source[group]:
+            for entry in self.source[group]["entries"]:
                 with self.subTest(metric=entry["metric"]):
                     self.assertIn(entry["direction"], ("up", "down"))
                     if entry.get("series_key"):
@@ -326,10 +352,14 @@ class SchwDashboardTest(unittest.TestCase):
 
     def test_a_threshold_without_a_series_is_named_as_excluded(self) -> None:
         """A metric left off the per-metric charts has to say why on the page."""
-        without = [e["metric"] for e in self.source["settled_thresholds"]
-                   if not e.get("series_key")]
-        self.assertEqual(without, ["交易性 sweep 现金（季末）"])
-        self.assertIn("sweep", self.source["settled_excluded"])
+        block = self.source["settled_thresholds"]
+        without = [e["metric"] for e in block["entries"] if not e.get("series_key")]
+        overview = next(ex for ex in self.by_section["settled"] if ex["kind"] == "diverging_bars")
+        for metric in without:
+            words = re.findall(r"[A-Za-z]+", metric) or [metric]
+            with self.subTest(metric=metric):
+                self.assertTrue(any(word in block["excluded"] for word in words))
+                self.assertIn(block["excluded"], overview["note"])
 
     # ── content boundary ─────────────────────────────────────────────────────
     def test_the_page_publishes_no_rating_or_valuation(self) -> None:
@@ -363,7 +393,11 @@ class SchwDashboardTest(unittest.TestCase):
     def test_the_page_states_why_it_drops_the_monthly_series(self) -> None:
         notes = " ".join(self.payload["notes"])
         self.assertIn("不发布月度数据", notes)
-        self.assertIn("119.8", notes)  # the aggregation is shown to be checkable
+        checks = self.source["_checks"]
+        # the aggregation is shown to be checkable, with the release's own months
+        self.assertIn(" + ".join(f"{m:g}" for m in checks["core_nna_monthly_usd_bn"])
+                      + f" 恰好等于公司自己公布的季度 core 净新增资产 "
+                      f"US${checks['core_net_new_assets_usd_bn']:,.1f}B", notes)
         self.assertIn("月度", self.source["next_kpi"]["excluded_note"])
 
     def test_no_exhibit_plots_a_monthly_series(self) -> None:
@@ -435,6 +469,209 @@ class SchwDashboardTest(unittest.TestCase):
             for label in exhibit.get("xlabels", []):
                 if label and re.fullmatch(r"\d{4}Q[1-4]", str(label)):
                     self.fail(f"{exhibit['title']} carries a four-digit year label")
+
+
+
+class SchwChecksTest(unittest.TestCase):
+    """The page's quarter against a record keyed separately from the filing.
+
+    `_checks` is typed once per quarter from the release (and, for the two gross
+    interest legs, the 10-Q), with the place in each document it was read from.
+    The builder never reads it (asserted in `test_data_only_roll`). Rolling a
+    quarter re-keys `_checks`; this class does not change.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads((ROOT / "series" / "schw.json").read_text(encoding="utf-8"))
+        cls.checks = cls.source["_checks"]
+        cls.payload = build_payload(cls.source)
+        cls.exhibits = [ex for section in cls.payload["sections"] for ex in section["exhibits"]]
+
+    def test_the_page_names_the_checked_quarter_both_ways(self) -> None:
+        checks = self.checks
+        self.assertIn(checks["period"], self.payload["title"])
+        self.assertIn(f"截至 {checks['period_end']}", self.payload["subtitle"])
+        self.assertIn(f"发布 {checks['release_date']}", self.payload["subtitle"])
+        self.assertIn(f"Charles Schwab {checks['company_label']} 业绩新闻稿", self.payload["source"])
+
+    def test_the_series_ends_on_the_checked_figures(self) -> None:
+        fin, ops, checks = self.source["financials"], self.source["operating"], self.checks
+        for line, (now, year_ago) in checks["income_statement_usd_m"].items():
+            with self.subTest(line=line):
+                self.assertEqual(fin[line][-1], now)
+                self.assertEqual(fin[line][-5], year_ago)
+        for line, value in checks["gross_interest_legs_10q_usd_m"].items():
+            with self.subTest(line=line):
+                self.assertEqual(fin[line][-1], value)
+        for key in ("nim_pct", "dats_thousands", "revenue_per_trade_usd"):
+            with self.subTest(metric=key):
+                self.assertEqual(ops[key][-1], checks[key]["this_quarter"])
+                self.assertEqual(ops[key][-5], checks[key]["year_ago"])
+                self.assertEqual(ops[key][-2], checks[key]["prior_quarter"])
+        self.assertEqual(ops["pretax_margin_pct_disclosed"][-1], checks["pretax_margin_pct"][0])
+        self.assertEqual(ops["pretax_margin_pct_disclosed"][-5], checks["pretax_margin_pct"][1])
+        self.assertEqual(ops["client_assets_usd_bn"][-1], checks["client_assets_usd_bn"]["total"])
+        self.assertEqual(ops["net_new_assets_usd_bn"][-1], checks["net_new_assets_usd_bn"]["total"])
+        self.assertEqual(ops["net_market_gains_usd_bn"][-1], checks["net_market_gains_usd_bn"])
+        self.assertEqual(ops["margin_loans_usd_bn"][-1], checks["margin_loans_usd_bn"]["this_quarter"])
+        self.assertEqual(ops["bank_loans_usd_bn"][-2], checks["bank_loans_usd_bn"]["prior_quarter"])
+        self.assertEqual(ops["transactional_sweep_cash_usd_bn"][-2],
+                         checks["transactional_sweep_cash_usd_bn"]["prior_quarter"])
+        self.assertEqual(ops["adjusted_tier1_leverage_pct"][-1], checks["adjusted_tier1_leverage_pct"])
+
+    def test_every_rate_the_page_computes_rounds_to_the_one_the_release_prints(self) -> None:
+        fin, checks = self.source["financials"], self.checks
+        for line, printed in checks["printed_yoy_pct"].items():
+            with self.subTest(line=line):
+                self.assertEqual(round((fin[line][-1] / fin[line][-5] - 1) * 100), printed)
+        growth = next(ex for ex in self.exhibits if ex["title"].startswith("本季五条收入线的同比增速"))
+        for word, pct in re.findall(r"([^：、\s]+) ([+−-]\d+)%", growth["title"]):
+            key = {"银行存款账户费": "bda_usd_m", "其他": "other_usd_m", "交易": "trading_usd_m",
+                   "净利息收入": "net_interest_revenue_usd_m", "资产管理费": "amaf_usd_m"}[word]
+            with self.subTest(line=word):
+                self.assertEqual(int(pct), checks["printed_yoy_pct"][key])
+        self.assertIn(f"税前利润率 {checks['pretax_margin_pct'][0]:.1f}%", self.payload["headline"])
+
+    def test_the_expense_threshold_carries_the_official_growth(self) -> None:
+        """The series once carried 9.9 here, which no line of the release gives.
+
+        The entry says it is this quarter's adjusted expense growth; the release's
+        reconciliation prints adjusted total expenses of 3,233 and 2,920, 10.7%
+        (it says "up 11%"). On 9.9 the bar sat safely under the 10.5% threshold;
+        on the official figure it is over it.
+        """
+        now, before = self.checks["adjusted_total_expenses_usd_m"]
+        official = round((now / before - 1) * 100, 1)
+        self.assertEqual(round(official), self.checks["adjusted_total_expenses_printed_yoy_pct"])
+        entry = next(e for e in self.source["next_kpi"]["entries"] if "费用" in e["metric"])
+        self.assertEqual(entry["current"], official)
+
+    def test_trading_revenue_is_not_called_a_record_it_is_not(self) -> None:
+        """The release says record trading *activity*; revenue sat US$1M under 1Q21."""
+        high = self.checks["trading_revenue_high_before"]
+        fin = self.source["financials"]
+        self.assertEqual(fin["trading_usd_m"][self.source["periods"].index(high["period"])], high["usd_m"])
+        self.assertLess(fin["trading_usd_m"][-1], high["usd_m"])
+        text = published_text(self.payload)
+        for claim in ("交易收入仍创纪录", "交易收入仍然创了纪录", "交易收入创纪录", "<b>交易创纪录"):
+            with self.subTest(claim=claim):
+                self.assertNotIn(claim, text)
+        self.assertIn(f"{high['period']} 的纪录 US${high['usd_m']:,.0f}M", text)
+
+
+class SchwRollTest(unittest.TestCase):
+    """A roll edits the series and nothing else: the one-quarter blocks and the
+    sentences that describe the record are held to what the series says."""
+
+    BLOCKS = ("followup_closure", "tracked_metric_verdicts", "settled_thresholds",
+              "next_kpi", "latest_disclosures")
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads((ROOT / "series" / "schw.json").read_text(encoding="utf-8"))
+        cls.payload = build_payload(cls.source)
+        cls.exhibits = [ex for section in cls.payload["sections"] for ex in section["exhibits"]]
+
+    def rebuilt(self, edit) -> dict:
+        changed = copy.deepcopy(self.source)
+        edit(changed)
+        return build_payload(changed)
+
+    def test_quarter_blocks_refuse_to_publish_under_another_quarter(self) -> None:
+        for key in self.BLOCKS:
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "stamped"):
+                    self.rebuilt(lambda s, key=key: s[key].__setitem__("period", "Q1 1999"))
+        with self.assertRaisesRegex(ValueError, "stamped"):
+            self.rebuilt(lambda s: s["guidance"]["scenario"].__setitem__("period", "Q1 1999"))
+        label = f"Schwab {self.source['_checks']['company_label']} 业绩新闻稿"
+        with self.assertRaisesRegex(ValueError, "sources"):
+            self.rebuilt(lambda s: s.__setitem__(
+                "sources", [x for x in s["sources"] if not x["label"].startswith(label)]))
+
+    def test_a_quarter_without_its_stories_leaves_them_out(self) -> None:
+        def strip(s):
+            for key in self.BLOCKS:
+                del s[key]
+            del s["guidance"]["scenario"]
+        payload = self.rebuilt(strip)
+        sections = {sec["id"]: sec for sec in payload["sections"]}
+        self.assertEqual(sections["settled"]["exhibits"], [])
+        self.assertEqual(sections["next_quarter"]["exhibits"], [])
+        text = published_text(payload)
+        for gone in ("个问题", "条判断", "阈值守住", "最值得看", "Summer Business Update",
+                     "公司给的全年区间", "空头贷记", "本季回购", "恰好等于"):
+            with self.subTest(gone=gone):
+                self.assertIn(gone, published_text(self.payload))
+                self.assertNotIn(gone, text)
+        self.assertEqual(len(payload["tables"]), len(self.payload["tables"]) - 2)
+
+    def test_the_record_sentences_are_computed_not_remembered(self) -> None:
+        def claim_moves(claims, edit, present_before=True):
+            after = published_text(self.rebuilt(edit))
+            before = published_text(self.payload)
+            for claim in claims:
+                with self.subTest(claim=claim):
+                    self.assertEqual(claim in before, present_before)
+                    self.assertEqual(claim in after, not present_before)
+
+        # Records the series has: they go when an earlier quarter beats them.
+        def higher_margin_before(s):
+            fin = s["financials"]
+            i = s["periods"].index("2019Q1")
+            fin["pretax_usd_m"][i] = fin["revenue_usd_m"][i] * 0.6
+        claim_moves(("是这段窗口里的最高值", "年窗口里的最高值"), higher_margin_before)
+
+        def one_line_down(s):
+            s["financials"]["other_usd_m"][-1] = s["financials"]["other_usd_m"][-5] - 1
+        claim_moves(("五条线全部同比为正", "五条收入线全部同比为正"), one_line_down)
+
+        def second_downward_line(s):
+            entry = next(e for e in s["next_kpi"]["entries"] if e["metric"] == "银行贷款余额")
+            entry["direction"] = "down"
+        claim_moves(("唯一一条<b>向下为安全</b>",), second_downward_line)
+
+        # A record the series does not have: it appears only when it becomes true.
+        def trading_record(s):
+            s["financials"]["trading_usd_m"][-1] = max(s["financials"]["trading_usd_m"]) + 1
+        claim_moves(("交易收入仍然创了纪录", "交易收入仍创纪录"), trading_record, present_before=False)
+
+    def test_a_cross_reference_to_the_notes_lands_on_the_item_it_means(self) -> None:
+        """Section three sends the reader to the notes item about monthly data by number."""
+        overview = next(ex for ex in self.exhibits if ex["title"].startswith("下季"))
+        match = re.search(r"见口径说明第(.)条", overview["note"])
+        self.assertIsNotNone(match)
+        position = next(i for i, note in enumerate(self.payload["notes"])
+                        if "不发布月度数据" in note) + 1
+        self.assertEqual(match.group(1), cn_count(position) if position != 2 else "二")
+
+    def test_the_rankings_and_counts_are_recounted_here(self) -> None:
+        fin, periods = self.source["financials"], self.source["periods"]
+        lines = {"净利息收入": "net_interest_revenue_usd_m", "资产管理费": "amaf_usd_m",
+                 "交易": "trading_usd_m", "银行存款账户费": "bda_usd_m", "其他": "other_usd_m"}
+        growth = {name: fin[key][-1] / fin[key][-5] - 1 for name, key in lines.items()}
+        top = sorted(growth, key=growth.get, reverse=True)
+        chart = next(ex for ex in self.exhibits if ex["title"].startswith("本季五条收入线的同比增速"))
+        self.assertIn(f"：{top[0]} ", chart["title"])
+        self.assertIn(f"、{top[1]} ", chart["title"])
+        mix = next(ex for ex in self.exhibits if ex["title"].startswith("五条收入线（"))
+        self.assertTrue(mix["title"].endswith(f"最快的是{top[0]}"), mix["title"])
+        # Shares did not fall every quarter after the deal.
+        shares = fin["diluted_shares_m"]
+        after = shares[periods.index("2020Q4"):]
+        rose = any(b > a for a, b in zip(after, after[1:]))
+        text = published_text(self.payload)
+        self.assertEqual("此后逐季回落" in text, not rose)
+        # Compensation, not variable cost, led the expense increase.
+        comp = fin["compensation_usd_m"][-1] - fin["compensation_usd_m"][-5]
+        rest = (fin["total_expenses_usd_m"][-1] - fin["total_expenses_usd_m"][-5]) - comp
+        self.assertEqual("涨得最多的是薪酬福利" in text, comp > rest > 0)
+        # "Back above 3%" needs an earlier quarter above 3%.
+        nim = [v for v in self.source["operating"]["nim_pct"] if v is not None]
+        self.assertEqual("NIM 回到 3% 以上" in text, any(v >= 3 for v in nim[:-1]) and nim[-1] >= 3)
+        # Fee revenue by full year, counted rather than called "almost monotonic".
+        self.assertNotIn("几乎单调上升", text)
 
 
 if __name__ == "__main__":
