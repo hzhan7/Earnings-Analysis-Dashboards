@@ -98,7 +98,9 @@ no dependency at all, and is what actually runs on a fresh clone.
 - Inputs: the local Earnings Analysis note plus company-reported quarterly data.
   Every page updates on one cadence — quarterly — so nothing plotted here can
   move between earnings dates.
-- Published numbers: company-reported figures and transparent arithmetic
+- Published numbers: company-reported figures, official statistics named and
+  linked where they are used (the Bank of Korea's quarterly average won/dollar
+  rate in the Samsung page's currency note), and transparent arithmetic
   derivations only. Short commentary is research interpretation, not company
   guidance or a rating.
 - Market expectations may be published as a labelled, dated comparison point

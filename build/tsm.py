@@ -11,9 +11,10 @@ expectations, and arithmetic reproducible from the audit tables.
 
 Rolling a quarter is a data edit (see CLAUDE.md §9): every period label, count
 and figure in the prose below is computed from ``series/tsm.json``. What
-belongs to one quarter only -- the snapshot columns, this call's guidance and
-full-year outlook, the market expectation, a one-off in net income, the
-follow-up closure, the thresholds, the call's own readings -- sits in blocks
+belongs to one quarter only -- the snapshot columns, the latest declared
+dividend, this call's guidance and full-year outlook, the market expectation, a
+one-off in net income, the follow-up closure, the thresholds, the call's own
+readings -- sits in blocks
 stamped with that quarter and read through ``board.stamped_block``; a block
 stamped with another quarter stops the build, an absent one leaves its part of
 the page out. Every "all / never / first / only" sentence is printed only while
@@ -94,6 +95,20 @@ def deck_short(period: str) -> str:
     """``'Q2 2026'`` → ``'2Q26'``, the way TSMC names its own reports."""
     quarter, year = period.split()
     return f"{quarter[1]}Q{year[-2:]}"
+
+
+def per_share_text(value: float) -> str:
+    """``7.0`` → ``'7.0'``, ``7.25`` → ``'7.25'``: a per-share amount the way
+    TSMC's board resolutions print it (one decimal unless it needs two)."""
+    text = f"{value:.2f}"
+    return text[:-1] if text.endswith("0") else text
+
+
+def declared_dividend_annual(dividend: dict) -> float:
+    """Annualised dividend in NT$B: the latest declared quarterly amount per
+    share × 4 × shares outstanding (thousands), not the cash paid this quarter,
+    which is the dividend declared two quarters earlier."""
+    return dividend["per_share_ntd"] * 4 * dividend["shares_outstanding_thousands"] / 1e6
 
 
 def quarter_word(period: str) -> str:
@@ -593,9 +608,9 @@ def check_stamps(staging: dict) -> dict:
     """
     period = staging["periods"][-1]
     blocks = {key: stamped_block(staging, key, period) for key in (
-        "current_snapshot", "guidance", "market_expectation", "net_income_bridge",
-        "capex_guidance_history", "guidance_delivery", "followup_closure", "next_kpi",
-        "quarter_story")}
+        "current_snapshot", "declared_dividend", "guidance", "market_expectation",
+        "net_income_bridge", "capex_guidance_history", "guidance_delivery", "followup_closure",
+        "next_kpi", "quarter_story")}
     if blocks["current_snapshot"] is None or blocks["next_kpi"] is None:
         raise ValueError("series blocks `current_snapshot` and `next_kpi` are required every quarter")
     following = shift_period(period, 1)
@@ -982,10 +997,12 @@ def build_payload(staging: dict) -> dict:
 
     free_cash = long_cash["free_cash_flow"]
     negative_fcf = [value for value in free_cash if value < 0]
-    dividends_annual = snapshot["cash_dividends_ntd_bn"][0] * 4
+    dividend = blocks["declared_dividend"]
     this_year = [value for quarter, value in zip(long_quarters, free_cash)
                  if quarter[:4] == long_quarters[-1][:4]]
-    coverage = sum(this_year) / len(this_year) * 4 / dividends_annual
+    if dividend:
+        dividends_annual = declared_dividend_annual(dividend)
+        coverage = sum(this_year) / len(this_year) * 4 / dividends_annual
     cash_chart = {
         "kind": "grouped_bars",
         "title": (
@@ -1007,9 +1024,11 @@ def build_payload(staging: dict) -> dict:
         "ylab": "NT$B",
         "bar_labels": False,
         "note": (
-            f"资本强度见 Exhibit {{EX_INTENSITY}}；股息年化 NT${dividends_annual:.0f}B，"
-            f"本年自由现金流仍可覆盖约{cn_count(round(coverage))}倍"
-            + ("，现金流压缩暂未威胁股东回报。" if coverage >= 1 and free_cash[-1] < free_cash[-2] else "。")
+            "资本强度见 Exhibit {EX_INTENSITY}"
+            + (f"；按已宣告的每股 NT${per_share_text(dividend['per_share_ntd'])} 季度股利年化，"
+               f"股息约 NT${dividends_annual:.0f}B，本年自由现金流仍可覆盖约{cn_count(round(coverage))}倍"
+               + ("，现金流压缩暂未威胁股东回报。" if coverage >= 1 and free_cash[-1] < free_cash[-2] else "。")
+               if dividend else "。")
             + f"<b>{decade}年里自由现金流为负的季度有 {len(negative_fcf)} 个</b>"
             + (f"（最低 {min(free_cash):,.0f} NT$B，{long_labels[free_cash.index(min(free_cash))]}）—— "
                "在一家把资本开支按付款节奏落账的公司里，单季自由现金流转负是扩产的常态而不是警讯"
@@ -1017,7 +1036,14 @@ def build_payload(staging: dict) -> dict:
             + (f"，{cn_count(len(periods))}季的窗口里一次都看不到。"
                if negative_fcf and min(free_cash[-len(periods):]) >= 0 else "。")
         ),
-        "src_extra": "季度新台币现金流口径；FCF = 经营现金流 − 现金支付资本开支，按 TSMC 定义复算。",
+        "src_extra": (
+            "季度新台币现金流口径；FCF = 经营现金流 − 现金支付资本开支，按 TSMC 定义复算。"
+            + (f"股息年化 = 每股 NT${per_share_text(dividend['per_share_ntd'])} × 4 × "
+               f"{dividend['shares_outstanding_thousands']:,} 千股：每股股利为 {dividend['board_date']} "
+               f"董事会决议的 {deck_short(dividend['dividend_quarter'])} 现金股利，股数为 "
+               f"{dividend['shares_as_of']} 合并财报的已发行股数（均见 6-K）。"
+               if dividend else "")
+        ),
     }
 
     entries = next_kpi["quantified"]
@@ -1693,7 +1719,7 @@ def build_payload(staging: dict) -> dict:
         ),
         "source": source,
         "source_url": hub["url"],
-        "source_links": staging["sources"],
+        "source_links": staging["sources"] + (blocks["declared_dividend"] or {}).get("links", []),
         "summary": {"blocks": []},
         "guidance": None,
         "sections": [

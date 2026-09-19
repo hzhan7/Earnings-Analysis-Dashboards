@@ -369,7 +369,7 @@ class SamsungDashboardTest(unittest.TestCase):
         self.assertIn("0000879316", disclosure)
 
     def test_sources_are_official_https_links(self) -> None:
-        allowed = {"www.samsung.com", "images.samsung.com", "dart.fss.or.kr"}
+        allowed = {"www.samsung.com", "images.samsung.com", "dart.fss.or.kr", "ecos.bok.or.kr"}
         self.assertTrue(self.payload["source_links"])
         for link in self.payload["source_links"]:
             with self.subTest(url=link["url"]):
@@ -608,9 +608,9 @@ class SamsungRollTest(unittest.TestCase):
     page does when it does not.
 
     Everything that belongs to one quarter -- the call quotes and the bonus
-    accrual (`quarter_story`), the forward statements (`guidance`), the
-    thresholds and the sell-side assumption behind one of them (`next_kpi`),
-    the bit and price record, the flash-versus-final record, the next
+    accrual and the Bank of Korea rates behind the currency note
+    (`quarter_story`), the forward statements (`guidance`), the thresholds
+    (`next_kpi`), the bit and price record, the flash-versus-final record, the next
     quarter's bit guide -- carries the quarter it describes. A block stamped
     with another quarter is last quarter's story and stops the build; a block
     that is absent means this quarter has no such story, and the page leaves
@@ -632,7 +632,7 @@ class SamsungRollTest(unittest.TestCase):
             "guidance": lambda d: d["guidance"].__setitem__("period", "Q1 1999"),
             "guidance.quarter": lambda d: d["guidance"].__setitem__("quarter", "Q1 1999"),
             "next_kpi": lambda d: d["next_kpi"].__setitem__("period", "Q1 1999"),
-            "sellside": lambda d: d["next_kpi"]["sellside_asp_assumption"].__setitem__("quarter", "Q1 1999"),
+            "fx quarters": lambda d: d["quarter_story"]["krw_per_usd_average"]["quarters"].__setitem__(-1, "Q1 1999"),
             "bits": lambda d: d["memory_bit_and_price"]["quarters"].__setitem__(-1, "Q1 1999"),
             "next_bit_guide": lambda d: d["memory_bit_and_price"]["next_quarter_guide"].__setitem__("quarter", "Q1 1999"),
             "flash": lambda d: d["provisional_vs_final"]["quarters"].__setitem__(-1, "Q1 1999"),
@@ -656,7 +656,7 @@ class SamsungRollTest(unittest.TestCase):
         present = (f"{bonus['basis']}的 {bonus['pct']:.1f}%", f"{story['accrual_capex_krw_tn']:.1f} 兆韩元",
                    f"约 {story['fx_operating_profit_qoq_krw_tn']:.1f} 兆韩元",
                    story["dx_outlook_quote"], story["dx_reason_quote"], "季度历史新高",
-                   "公司自称缺货", "随销售结转")
+                   "公司自称缺货", "随销售结转", "韩国银行", "ecos.bok.or.kr")
         for text in present:
             self.assertIn(text, self.blob)
         bare = copy.deepcopy(self.source)
@@ -677,6 +677,20 @@ class SamsungRollTest(unittest.TestCase):
             with self.subTest(text=text):
                 self.assertIn(text, self.blob)
                 self.assertNotIn(text, after)
+
+    def test_a_sell_side_range_in_the_series_does_not_reach_the_page(self) -> None:
+        """The page used to print a sell-side range for next quarter's ASP under
+        one threshold. No original source for it was found (2026-09-19), and the
+        site publishes a market expectation only as a dated, unattributed point
+        with a checkable source, so the builder no longer reads such a block at
+        all: putting one back into the series must leave the page byte-identical.
+        """
+        seeded = copy.deepcopy(self.source)
+        seeded["next_kpi"]["sellside_asp_assumption"] = {
+            "quarter": samsung.shift_period(self.source["periods"][-1], 1),
+            "low_pct": 12, "high_pct": 20, "source": "test"}
+        self.assertEqual(self.build(seeded), self.blob)
+        self.assertNotIn("卖方对", self.blob)
 
     def test_the_record_sentences_are_computed_not_remembered(self) -> None:
         """Break each "all / first / only / highest" claim in the data once; the
@@ -821,6 +835,24 @@ class SamsungChecksTest(unittest.TestCase):
         rnd = next(ex for ex in self.exhibits if ex["title"].startswith("研发支出"))
         self.assertIn(f"研发支出 {c['rnd_krw_tn']:.1f} 兆韩元", rnd["title"])
         self.assertIn(f"环比 +{c['rnd_qoq_pct']}%", rnd["note"])
+
+    def test_the_won_move_is_the_bank_of_korea_averages(self) -> None:
+        """The currency note's rates and depreciation against the Bank of Korea
+        averages keyed into `_checks`: depreciation measured on the won's own
+        price in dollars, 1 − year-ago ÷ this quarter, printed to one decimal."""
+        c = self.checks
+        period = c["period"]
+        year_ago = samsung.shift_period(period, -4)
+        rates = c["krw_per_usd_average"]
+        fx = self.staging["quarter_story"]["krw_per_usd_average"]
+        self.assertEqual(dict(zip(fx["quarters"], fx["krw_per_usd"])), rates)
+        self.assertEqual(round((1 - rates[year_ago] / rates[period]) * 100, 1),
+                         c["krw_depreciation_yoy_pct"])
+        note = next(n for n in self.payload["notes"] if n.startswith("全页以韩元列示"))
+        self.assertIn(f"{rates[year_ago]:,.2f} 韩元/美元", note)
+        self.assertIn(f"{rates[period]:,.2f}", note)
+        self.assertIn(f"对美元贬值 {c['krw_depreciation_yoy_pct']:.1f}% D", note)
+        self.assertIn(fx["source_url"], [link["url"] for link in self.payload["source_links"]])
 
 
 if __name__ == "__main__":

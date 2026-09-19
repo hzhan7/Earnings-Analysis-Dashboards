@@ -866,9 +866,9 @@ class TsmRollTest(unittest.TestCase):
         return json.dumps(build_payload(staging), ensure_ascii=False)
 
     def test_a_block_stamped_with_another_quarter_stops_the_build(self) -> None:
-        stamped = ("current_snapshot", "guidance", "market_expectation", "net_income_bridge",
-                   "capex_guidance_history", "guidance_delivery", "followup_closure", "next_kpi",
-                   "quarter_story")
+        stamped = ("current_snapshot", "declared_dividend", "guidance", "market_expectation",
+                   "net_income_bridge", "capex_guidance_history", "guidance_delivery",
+                   "followup_closure", "next_kpi", "quarter_story")
         for key in stamped:
             stale = copy.deepcopy(self.source)
             stale[key]["period"] = "Q1 1999"
@@ -908,6 +908,8 @@ class TsmRollTest(unittest.TestCase):
                               story["inventory_test"], "管理层首次量化"),
             "guidance": ("兑现、", "全年 outlook", "海外厂毛利率稀释"),
             "capex_guidance_history": ("CapEx 预算半年内", "口径依次为"),
+            "declared_dividend": ("股息约 NT$", "股息年化 =",
+                                  self.source["declared_dividend"]["links"][0]["url"]),
         }
         for key, texts in cases.items():
             bare = copy.deepcopy(self.source)
@@ -1083,6 +1085,25 @@ class TsmChecksTest(unittest.TestCase):
         rows = {row[0]: row for row in self.payload["tables"][0]["rows"]}
         low, high = c["next_quarter_revenue_usd_bn"]
         self.assertEqual(rows["收入（美元）"][4], f"US${low:.1f}–{high:.1f}B")
+
+    def test_the_annualised_dividend_is_the_declared_rate_times_the_shares(self) -> None:
+        """The cash-flow note annualises the dividend the board last declared,
+        per share × 4 × shares outstanding, both keyed into `_checks` from the
+        6-Ks -- not four times the cash paid this quarter, which is the dividend
+        declared two quarters earlier. Recomputed here from `_checks`, not
+        through the builder."""
+        c, block = self.checks, self.source["declared_dividend"]
+        self.assertEqual(block["per_share_ntd"], c["declared_dividend_per_share_ntd"])
+        self.assertEqual(block["dividend_quarter"], c["declared_dividend_quarter"])
+        self.assertEqual(block["board_date"], c["declared_dividend_board_date"])
+        self.assertEqual(block["shares_outstanding_thousands"], c["shares_outstanding_thousands"])
+        self.assertIn(f"NT${c['declared_dividend_per_share_ntd']:.1f} per share", block["wording"])
+        annual = c["declared_dividend_per_share_ntd"] * 4 * c["shares_outstanding_thousands"] / 1e6
+        cash = next(ex for ex in self.exhibits if "自由现金流" in ex["title"] and "股息" in ex["note"])
+        self.assertIn(f"股息约 NT${annual:.0f}B", cash["note"])
+        self.assertNotIn(f"NT${self.source['current_snapshot']['cash_dividends_ntd_bn'][0] * 4:.0f}B",
+                         cash["note"])
+        self.assertIn(f"{c['shares_outstanding_thousands']:,} 千股", cash["src_extra"])
 
 
 if __name__ == "__main__":
