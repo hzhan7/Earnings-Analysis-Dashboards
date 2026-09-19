@@ -1,11 +1,17 @@
 """HKEX page: the identities that license half of what it publishes.
 
-Twenty-one of this page's forty-two quarters were never printed by anybody.
-HKEX's first- and third-quarter announcements each carry a three-month column
-in the condensed income statement; the interim announcement carries six months
-and the annual twelve, and neither ever prints the discrete second or fourth
-quarter. So every even quarter here is `H1 - Q1` or `FY - 9M`, and the whole
-page rests on that subtraction being right.
+Half of this page's quarters are this page's own arithmetic. HKEX's first- and
+third-quarter announcements each carry a three-month column in the condensed
+income statement; the interim announcement carries six months and the annual
+twelve. So every even quarter here is `H1 - Q1` or `FY - 9M`. The company does
+print those quarters too -- in the annual report's quarterly table since
+FY2016, and from 2022 in a summary box in the interim announcement -- only
+later; the page's first draft said they were never printed, and that was the
+error the page was rewritten to fix.
+
+Rolling a quarter appends to these records; the tests below pin what was true
+through 2026Q2 (a roll only adds to that history) and hold the rest as
+invariants, so a data-only roll does not have to edit this file.
 
 Three separate things could make it wrong without anything else noticing, and
 each has a test below.
@@ -41,6 +47,7 @@ complete and is fabricated.
 
 from __future__ import annotations
 
+import copy
 import json
 import re
 import sys
@@ -52,7 +59,7 @@ sys.path.insert(0, str(ROOT))
 
 from build import hkex  # noqa: E402
 from build.all import ENTRIES, GROUPS, build_all, roster_payload  # noqa: E402
-from build.board import headroom  # noqa: E402
+from build.board import cn_count, display_period, headroom, stamped_block  # noqa: E402
 
 FEE_LINES = ("trading_fees", "clearing_fees", "listing_fees", "depository_fees",
              "market_data_fees", "other_revenue")
@@ -70,6 +77,19 @@ def quarter_step(earlier: str, later: str) -> bool:
     return (y2, q2) == ((y1 + 1, 1) if q1 == 4 else (y1, q1 + 1))
 
 
+# The record this file's exact pins were written against. A roll appends to it;
+# nothing at or before this quarter may change.
+PINNED_THROUGH = "2026Q2"
+
+DOC_KIND = {"1": "Q1", "2": "H1", "3": "Q3", "4": "FY"}
+
+
+def published_text(payload: dict) -> str:
+    return json.dumps({key: payload[key] for key in
+                       ("title", "subtitle", "headline", "brief", "sections", "notes", "tables")},
+                      ensure_ascii=False)
+
+
 class HkexSeriesTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -80,8 +100,9 @@ class HkexSeriesTest(unittest.TestCase):
     def test_the_window_runs_from_2016q1_and_is_contiguous(self) -> None:
         quarters = self.staging["quarters"]
         self.assertEqual(quarters[0], "2016Q1")
-        self.assertEqual(quarters[-1], "2026Q2")
-        self.assertEqual(len(quarters), 42)
+        self.assertEqual(display_period(quarters[-1]),
+                         self.staging["latest"]["disclosed_period_label"])
+        self.assertIn(PINNED_THROUGH, quarters)
         for earlier, later in zip(quarters, quarters[1:]):
             self.assertTrue(quarter_step(earlier, later), f"{earlier} -> {later}")
 
@@ -108,7 +129,7 @@ class HkexSeriesTest(unittest.TestCase):
                 self.assertIn(doc, roster, quarter)
 
     def test_the_announcement_roster_covers_the_window_exactly(self) -> None:
-        """42 documents in, 42 quarters out -- no gap, no document counted twice.
+        """One document per quarter -- no gap, no document counted twice.
 
         Written as a set identity rather than a count, because the failure this
         is for is a document quietly standing in for its neighbour, which a
@@ -116,9 +137,7 @@ class HkexSeriesTest(unittest.TestCase):
         """
         docs = [a["doc"] for a in self.staging["announcements"]]
         self.assertEqual(len(docs), len(set(docs)))
-        expected = {f"{year}_{kind}"
-                    for year in range(2016, 2026) for kind in ("Q1", "H1", "Q3", "FY")}
-        expected |= {"2026_Q1", "2026_H1"}
+        expected = {f"{quarter[:4]}_{DOC_KIND[quarter[5]]}" for quarter in self.staging["quarters"]}
         self.assertEqual(set(docs), expected)
         for entry in self.staging["announcements"]:
             self.assertTrue(entry["url"].startswith("https://"), entry["doc"])
@@ -188,7 +207,8 @@ class HkexSeriesTest(unittest.TestCase):
         residual = [roi - rev for roi, rev
                     in zip(q["revenue_and_other_income"], q["revenue"])]
         negative = [quarter for quarter, value
-                    in zip(self.staging["quarters"], residual) if value < 0]
+                    in zip(self.staging["quarters"], residual)
+                    if value < 0 and quarter <= PINNED_THROUGH]
         self.assertEqual(negative, ["2020Q1"])
         self.assertLess(min(residual), -40.0)
 
@@ -196,15 +216,17 @@ class HkexSeriesTest(unittest.TestCase):
     def test_every_printed_box_figure_matches_this_page_exactly(self) -> None:
         check = hkex.box_check(self.staging)
         self.assertEqual(check["mismatches"], 0)
-        # 33 comparisons on the eleven derived quarters -- the ones that are
-        # evidence for the subtraction -- and 72 including the printed quarters,
-        # where the box only cross-checks the statement parse.
-        self.assertEqual(check["derived_comparisons"], 33)
-        self.assertEqual(check["comparisons"], 72)
-        self.assertEqual(len(check["covered"]), 11)
         self.assertEqual(check["covered"][0], "2021Q2")
-        self.assertEqual(check["derived_total"], 21)
-        self.assertEqual(check["unchecked"], 10)
+        # Through 2026Q2: 33 comparisons on the eleven derived quarters -- the
+        # ones that are evidence for the subtraction -- and 72 including the
+        # printed quarters, where the box only cross-checks the statement parse.
+        history = copy.deepcopy(self.staging)
+        history["printed_box"] = {q: box for q, box in history["printed_box"].items()
+                                  if q <= PINNED_THROUGH}
+        pinned = hkex.box_check(history)
+        self.assertEqual(pinned["derived_comparisons"], 33)
+        self.assertEqual(pinned["comparisons"], 72)
+        self.assertEqual(len(pinned["covered"]), 11)
 
     def test_the_only_cells_resting_on_arithmetic_alone_are_the_fee_lines(self) -> None:
         """The page's first draft asserted ten quarters had no counterpart.
@@ -218,10 +240,15 @@ class HkexSeriesTest(unittest.TestCase):
         the same thing about a question that is no longer the page's claim.
         """
         missing = hkex.never_printed(self.staging, hkex.FEE_LINES)
-        self.assertEqual(missing, ["2016Q2", "2016Q4", "2017Q2", "2017Q4",
-                                   "2018Q2", "2018Q4", "2019Q2", "2019Q4",
-                                   "2020Q2", "2020Q4", "2021Q2", "2021Q4",
-                                   "2026Q2"])
+        self.assertEqual([q for q in missing if q < "2022"],
+                         ["2016Q2", "2016Q4", "2017Q2", "2017Q4",
+                          "2018Q2", "2018Q4", "2019Q2", "2019Q4",
+                          "2020Q2", "2020Q4", "2021Q2", "2021Q4"])
+        # from FY2022 an even quarter waits only for the annual table of its year
+        tables = self.staging["ar_quarter_tables"]["by_year"]
+        self.assertEqual([q for q in missing if q >= "2022"],
+                         [q for q in self.staging["quarters"]
+                          if q >= "2022" and q[5] in "24" and q[:4] not in tables])
         # every headline line, by contrast, has been printed for every quarter
         self.assertEqual(hkex.never_printed(self.staging, hkex.HEADLINE_LINES), [])
 
@@ -237,15 +264,19 @@ class HkexSeriesTest(unittest.TestCase):
         """
         recon = hkex.reconcile_against_printed(self.staging)
         self.assertEqual(recon["mismatches"], 0, recon["bad"][:5])
-        self.assertEqual(recon["compared"], 296)
-        self.assertEqual(recon["derived_compared"], 148)
-        self.assertEqual(recon["years"], [str(y) for y in range(2016, 2026)])
-        # every even quarter but the one just reported has a counterpart
-        self.assertEqual(recon["uncovered_even"], ["2026Q2"])
+        # 296 and 148 through FY2025; a new annual table only adds to them
+        self.assertGreaterEqual(recon["compared"], 296)
+        self.assertGreaterEqual(recon["derived_compared"], 148)
+        years = recon["years"]
+        self.assertEqual(years, [str(y) for y in range(2016, int(years[-1]) + 1)])
+        # every even quarter has a counterpart except those whose year's table is not out
+        self.assertEqual(recon["uncovered_even"],
+                         [q for q in self.staging["quarters"]
+                          if q[5] in "24" and q[:4] not in years])
 
     def test_the_disclosure_lag_has_the_two_clocks_the_page_describes(self) -> None:
         """Odd and even quarters are public on visibly different schedules."""
-        quarters = self.staging["quarters"]
+        quarters = [q for q in self.staging["quarters"] if q <= PINNED_THROUGH]
         odd, even = [], []
         for quarter in quarters:
             lag = hkex.disclosure_lag(self.staging, quarter, hkex.HEADLINE_LINES)
@@ -270,7 +301,7 @@ class HkexSeriesTest(unittest.TestCase):
         appeared in the 2022 interim announcement.
         """
         lags = {n: [] for n in (1, 2, 3, 4)}
-        for quarter in self.staging["quarters"]:
+        for quarter in [q for q in self.staging["quarters"] if q <= PINNED_THROUGH]:
             lags[int(quarter[5])].append(
                 (quarter, hkex.disclosure_lag(self.staging, quarter,
                                               hkex.HEADLINE_LINES)))
@@ -315,7 +346,7 @@ class HkexSeriesTest(unittest.TestCase):
         every total still added up on both sides of it.
         """
         census = self.staging["restatement_census"]
-        self.assertEqual(self.staging["restatement_paired_readings"], 1091)
+        self.assertGreaterEqual(self.staging["restatement_paired_readings"], 1091)
         self.assertEqual(len(census), 2)
         self.assertEqual({row["field"] for row in census}, {"sundry_income"})
         self.assertEqual({row["period"] for row in census}, {"2020Q3", "20209M"})
@@ -359,8 +390,12 @@ class HkexSeriesTest(unittest.TestCase):
     def test_the_halves_alternate_printed_and_derived(self) -> None:
         halves, basis = self.staging["halves"], self.staging["half_basis"]
         self.assertEqual(halves[0], "2016H1")
-        self.assertEqual(halves[-1], "2026H1")
-        self.assertEqual(len(halves), 21)
+        last = self.staging["quarters"][-1]
+        # the last half is the one the latest reported quarter completes
+        expected_last = (f"{last[:4]}H1" if last[5] in "23" else
+                         (f"{last[:4]}H2" if last[5] == "4" else f"{int(last[:4]) - 1}H2"))
+        self.assertEqual(halves[-1], expected_last)
+        self.assertEqual(len(halves), 2 * (int(expected_last[:4]) - 2016) + int(expected_last[5]))
         for half, kind in zip(halves, basis):
             self.assertEqual(kind, "printed" if half.endswith("H1") else "derived", half)
 
@@ -369,14 +404,13 @@ class HkexSeriesTest(unittest.TestCase):
         share = [-r / g * 100 for r, g in zip(block["rebates"], block["gross"])]
         self.assertLess(share[0], 15.0)
         self.assertGreater(max(share), 65.0)
-        self.assertGreater(share[-1], 50.0)
+        self.assertGreater(share[self.staging["halves"].index("2026H1")], 50.0)
 
     # ── the volume block, and the subtraction it must never use ─────────────
     def test_the_kpi_window_starts_where_the_company_started_printing(self) -> None:
         kq = self.staging["kpi_quarters"]
         self.assertEqual(kq[0], "2021Q1")
-        self.assertEqual(kq[-1], "2026Q2")
-        self.assertEqual(len(kq), 22)
+        self.assertEqual(kq[-1], self.staging["quarters"][-1])
         for earlier, later in zip(kq, kq[1:]):
             self.assertTrue(quarter_step(earlier, later), f"{earlier} -> {later}")
         self.assertEqual(kq, self.staging["quarters"][-len(kq):])
@@ -412,8 +446,8 @@ class HkexSeriesTest(unittest.TestCase):
         """
         years = self.staging["kpi_years"]
         self.assertEqual(years[0], "2016")
-        self.assertEqual(years[-1], "2025")
-        self.assertEqual(len(years), 10)
+        self.assertEqual(years, [str(y) for y in range(2016, int(years[-1]) + 1)])
+        self.assertLessEqual(int(years[-1]), int(self.staging["quarters"][-1][:4]))
         self.assertEqual(self.staging["kpi_annual"]["adt_headline"][0], 66.9)
         for name, values in self.staging["kpi_annual"].items():
             self.assertEqual(len(values), len(years), name)
@@ -421,15 +455,21 @@ class HkexSeriesTest(unittest.TestCase):
     # ── what the company does not say ───────────────────────────────────────
     def test_the_page_scores_no_company_guidance_because_there_is_none(self) -> None:
         census = self.staging["guidance_census"]
-        self.assertEqual(census["documents"], 42)
+        # a census that has not read the latest announcement must not be printed as current
+        self.assertEqual(census["documents"], len(self.staging["announcements"]))
+        self.assertEqual(self.staging["statement_identities"]["documents"],
+                         len(self.staging["announcements"]))
         self.assertEqual(census["financial_guidance"], 0)
         self.assertGreater(census["forward_statements_with_a_number"], 0)
         self.assertIsNone(self.payload["guidance"])
 
     def test_the_thresholds_are_declared_local_not_company_figures(self) -> None:
-        excluded = self.staging["next_kpi"]["excluded"]
+        kpi = stamped_block(self.staging, "next_kpi", self.staging["latest"]["disclosed_period_label"])
+        if not kpi:
+            return
+        excluded = kpi["excluded"]
         self.assertIn("本地研究阈值", excluded)
-        for entry in self.staging["next_kpi"]["quantified"]:
+        for entry in kpi["quantified"]:
             self.assertIn(entry["direction"], ("up", "down"))
             self.assertIsInstance(entry["current"], (int, float))
             headroom(entry["direction"], entry["threshold"], entry["current"])
@@ -618,7 +658,7 @@ class HkexPayloadTest(unittest.TestCase):
         ledger = next(t for t in self.payload["tables"] if "原值与来历" in t["title"])
         self.assertEqual(len(ledger["rows"]), len(self.staging["quarters"]))
         derived = sum(1 for row in ledger["rows"] if row[1].endswith("D"))
-        self.assertEqual(derived, 21)
+        self.assertEqual(derived, sum(1 for b in self.staging["quarter_basis"] if b == "derived"))
 
     def test_the_reconciliation_table_accounts_for_every_compared_cell(self) -> None:
         """The drawer must add up to the number the page's headline claims.
@@ -631,7 +671,7 @@ class HkexPayloadTest(unittest.TestCase):
         """
         recon = hkex.reconcile_against_printed(self.staging)
         table = next(t for t in self.payload["tables"] if "逐格对照" in t["title"])
-        self.assertEqual(len(table["rows"]), 10)
+        self.assertEqual(len(table["rows"]), len(self.staging["ar_quarter_tables"]["by_year"]))
         self.assertEqual(sum(int(r[3]) for r in table["rows"]), recon["compared"])
         self.assertEqual(sum(int(r[4]) for r in table["rows"]),
                          recon["derived_compared"])
@@ -639,7 +679,7 @@ class HkexPayloadTest(unittest.TestCase):
         # the generation boundary the page argues for, read off the table
         fields = {r[0]: int(r[2]) for r in table["rows"]}
         self.assertTrue(all(fields[str(y)] == 6 for y in range(2016, 2022)))
-        self.assertTrue(all(fields[str(y)] == 12 for y in range(2022, 2026)))
+        self.assertTrue(all(count == 12 for year, count in fields.items() if year >= "2022"))
 
     def test_the_entry_matches_the_payload_and_the_group_exists(self) -> None:
         entry = next(e for e in ENTRIES if e["slug"] == "hkex")
@@ -665,6 +705,226 @@ class HkexPayloadTest(unittest.TestCase):
             self.assertTrue(url.startswith("https://"), url)
             host = re.match(r"https://([^/]+)/", url).group(1)
             self.assertIn(host, allowed, url)
+
+
+
+class HkexChecksTest(unittest.TestCase):
+    """The page's quarter against a record keyed separately from the announcement.
+
+    `_checks` is typed once per quarter from the results announcement, with the
+    place in it each figure was read from; the builder never reads it (asserted
+    in `test_data_only_roll`). For an interim quarter the statement prints six
+    months, so the check on the derived quarter is the one that matters here:
+    this page's Q1 and Q2 must add up to the six months the announcement prints,
+    in both columns. Rolling a quarter re-keys `_checks`; this class does not change.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(hkex.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.checks = cls.staging["_checks"]
+        cls.payload = hkex.build_payload(cls.staging)
+        cls.quarters = cls.staging["quarters"]
+
+    def test_the_page_names_the_checked_quarter(self) -> None:
+        checks = self.checks
+        self.assertIn(checks["period"], self.payload["title"])
+        self.assertIn(f"截至 {checks['period_end']}", self.payload["subtitle"])
+        self.assertIn(f"发布 {checks['release_date']}", self.payload["subtitle"])
+        label = hkex.announcement_label(checks["period"])
+        release = next(x for x in self.staging["sources"] if x["label"].startswith(label))
+        self.assertIn(release["url"], self.payload["source"])
+        self.assertIn(label, self.payload["source"])
+
+    def test_the_two_quarters_add_up_to_the_printed_six_months(self) -> None:
+        """Both columns: this year's H1 and the H1 a year earlier."""
+        if "six_months_hkd_m" not in self.checks:
+            return
+        q = self.staging["quarterly"]
+        year = int(self.checks["period"].split()[1])
+        for line, (now, ago) in self.checks["six_months_hkd_m"].items():
+            if line not in q:
+                continue
+            for column, (y, value) in enumerate(((year, now), (year - 1, ago))):
+                first, second = (self.quarters.index(f"{y}Q1"), self.quarters.index(f"{y}Q2"))
+                with self.subTest(line=line, year=y):
+                    self.assertAlmostEqual(q[line][first] + q[line][second], value, delta=0.5)
+        half = self.staging["half_investment"]
+        index = self.staging["halves"].index(f"{year}H1")
+        six = self.checks["six_months_hkd_m"]
+        self.assertEqual(half["gross"][index], six["investment_income"][0])
+        self.assertEqual(half["rebates"][index], six["interest_rebates"][0])
+        self.assertEqual(half["net"][index], six["net_investment_income"][0])
+
+    def test_the_printed_quarter_box_is_the_series(self) -> None:
+        q = self.staging["quarterly"]
+        box = self.staging["printed_box"][self.quarters[-1]]
+        for line, (now, ago) in self.checks["key_financials_q2_hkd_m"].items():
+            with self.subTest(line=line):
+                self.assertEqual(box[line], now)
+                if line in q:
+                    self.assertEqual(q[line][-1], now)
+                    self.assertEqual(q[line][-5], ago)
+
+    def test_the_market_statistics_are_the_series(self) -> None:
+        kpi = self.staging["kpi_quarterly"]
+        for line, (now, ago) in self.checks["market_statistics_q2"].items():
+            with self.subTest(line=line):
+                self.assertEqual(kpi[line][-1], now)
+                self.assertEqual(kpi[line][-5], ago)
+
+    def test_the_printed_rates_agree_with_the_page_at_printed_precision(self) -> None:
+        q = self.staging["quarterly"]
+        printed = self.checks["printed"]
+        roi, profit = q["revenue_and_other_income"], q["profit_attributable"]
+        self.assertEqual(round(hkex.pct(roi[-1], roi[-5])), printed["q2_revenue_and_other_income_growth_pct"])
+        self.assertEqual(round(hkex.pct(profit[-1], profit[-5])), printed["q2_profit_growth_pct"])
+        company = q["ebitda"][-1] / (roi[-1] + q["transaction_expenses"][-1]) * 100
+        self.assertEqual(round(company), printed["q2_ebitda_margin_pct"])
+        context = stamped_block(self.staging, "quarter_context", self.checks["period"])
+        if context:
+            self.assertEqual(context["printed_ebitda_margin_pct"], printed["q2_ebitda_margin_pct"])
+        if printed["record_quarterly_revenue_and_profit"]:
+            self.assertEqual(roi[-1], max(roi))
+            self.assertEqual(profit[-1], max(profit))
+            self.assertIn("新高", self.payload["headline"])
+
+    def test_the_thresholds_current_values_are_the_series(self) -> None:
+        kpi = stamped_block(self.staging, "next_kpi", self.checks["period"])
+        if not kpi:
+            return
+        q = self.staging["quarterly"]
+        half = self.staging["half_investment"]
+        non_trading = q["listing_fees"][-1] + q["depository_fees"][-1] + q["market_data_fees"][-1]
+        current = {
+            "EBITDA 利润率": q["ebitda"][-1] / q["revenue_and_other_income"][-1] * 100,
+            "现货市场日均成交额": self.staging["kpi_quarterly"]["adt_headline"][-1],
+            "保证金投资收益返还比例（半年）": -half["rebates"][-1] / half["gross"][-1] * 100,
+            "非交易类收入占收入": non_trading / q["revenue"][-1] * 100,
+            "LME 计费日均手数": self.staging["kpi_quarterly"]["adv_lme"][-1],
+            "有效税率": -q["taxation"][-1] / q["profit_before_tax"][-1] * 100,
+        }
+        for entry in kpi["quantified"]:
+            with self.subTest(metric=entry["metric"]):
+                self.assertAlmostEqual(entry["current"], current[entry["metric"]], places=2)
+
+
+class HkexRollTest(unittest.TestCase):
+    """A roll edits the series and nothing else: the one-quarter blocks and the
+    sentences about the record are held to what the series says."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(hkex.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = hkex.build_payload(cls.staging)
+        cls.text = published_text(cls.payload)
+
+    def rebuilt(self, edit) -> dict:
+        changed = copy.deepcopy(self.staging)
+        edit(changed)
+        return hkex.build_payload(changed)
+
+    def moves(self, claims, edit, present_before=True) -> None:
+        after = published_text(self.rebuilt(edit))
+        for claim in claims:
+            with self.subTest(claim=claim):
+                self.assertEqual(claim in self.text, present_before)
+                self.assertEqual(claim in after, not present_before)
+
+    def test_quarter_blocks_refuse_to_publish_under_another_quarter(self) -> None:
+        for key in ("next_kpi", "quarter_context"):
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "stamped"):
+                    self.rebuilt(lambda s, key=key: s[key].__setitem__("period", "Q1 1999"))
+        label = hkex.announcement_label(self.staging["latest"]["disclosed_period_label"])
+        with self.assertRaisesRegex(ValueError, "sources"):
+            self.rebuilt(lambda s: s.__setitem__(
+                "sources", [x for x in s["sources"] if not x["label"].startswith(label)]))
+
+    def test_a_quarter_without_its_blocks_leaves_them_out(self) -> None:
+        def strip(s):
+            del s["next_kpi"]
+            del s["quarter_context"]
+        payload = self.rebuilt(strip)
+        self.assertEqual(len(payload["tables"]), len(self.payload["tables"]) - 1)
+        text = published_text(payload)
+        for gone in ("条本地阈值离触发还有多远", "公司在同一份公告里印的是", "条本地阈值的原始单位"):
+            with self.subTest(gone=gone):
+                self.assertIn(gone, self.text)
+                self.assertNotIn(gone, text)
+
+    def test_the_record_sentences_are_computed_not_remembered(self) -> None:
+        # Profit is a 42-quarter high this quarter; make an earlier quarter higher.
+        def profit_not_record(s):
+            s["quarterly"]["profit_attributable"][-3] = s["quarterly"]["profit_attributable"][-1] + 1
+        self.moves(("两者都是",), profit_not_record)
+
+        # The quarter before had the higher margin; lower it.
+        def last_quarter_lower(s):
+            q = s["quarterly"]
+            q["ebitda"][-2] = q["revenue_and_other_income"][-2] * 0.5
+        self.moves(("上一季也比它高",), last_quarter_lower)
+
+        # The rebate share dipped to 1.4% on its way to the peak; take the dip out.
+        def no_dip(s):
+            block = s["half_investment"]
+            for i in range(len(block["gross"])):
+                block["rebates"][i] = -block["gross"][i] * (0.1 + 0.03 * i)
+                block["net"][i] = block["gross"][i] + block["rebates"][i]
+        self.moves(("（中间在 2020H2 低到 1.4%）",), no_dip)
+
+        # Once FY2026 prints its quarter table, the quarter just published is no longer waiting.
+        def annual_table_out(s):
+            for field in hkex.FEE_LINES:
+                s["first_printed"][f"2026Q2|{field}"] = {"doc": "2026_FY", "published": "2027-02-25"}
+            s["ar_quarter_tables"]["by_year"]["2026"] = {
+                "source": "2026_FY",
+                "values": {"revenue_and_other_income": [
+                    s["quarterly"]["revenue_and_other_income"][-2],
+                    s["quarterly"]["revenue_and_other_income"][-1], 0, 0]}}
+        self.moves(("加上刚发布的 2026Q2", "刚发布的 2026Q2 要等到", "唯一还没有对照物的是刚发布的"),
+                   annual_table_out)
+
+    def test_the_counts_on_the_page_are_recounted_here(self) -> None:
+        q = self.staging["quarterly"]
+        gaps = [e / (r + t) * 100 - e / r * 100 for e, r, t in
+                zip(q["ebitda"], q["revenue_and_other_income"], q["transaction_expenses"])
+                if t is not None]
+        self.assertIn(f"两者的差在 {min(gaps):.1f}–{max(gaps):.1f} 个百分点之间", self.text)
+        gross, net = self.staging["half_investment"]["gross"], self.staging["half_investment"]["net"]
+        moves = [((g1 > g0) - (g1 < g0), (n1 > n0) - (n1 < n0))
+                 for g0, g1, n0, n1 in zip(gross, gross[1:], net, net[1:])]
+        opposite = sum(1 for a, b in moves if a * b < 0)
+        self.assertIn(f"毛额与净额在 {len(moves)} 次半年环比里有 {opposite} 次走出相反方向", self.text)
+        before_fy2022 = [x for x in self.staging["quarters"] if x < "2022" and x[5] in "24"]
+        self.assertIn(f"{len(before_fy2022)} 个更早的季度没有", self.text)
+        for stale in ("一路降到", "一路走到", "毛额腰斩", "公司自 2021Q1 起按季印出",
+                      "下面两张图分别是", "两者的差在 1 个百分点以内", "两次走出相反方向",
+                      "13 个更早的季度没有"):
+            with self.subTest(stale=stale):
+                self.assertNotIn(stale, self.text)
+        # The regression recomputed here, not by calling the builder's own
+        # function -- a check that derives its expectation from the code under
+        # test cannot fail (CLAUDE.md §5).
+        kq, quarters, q = self.staging["kpi_quarters"], self.staging["quarters"], self.staging["quarterly"]
+        rows = [quarters.index(x) for x in kq]
+
+        def changes(values):
+            return [(b / a - 1) * 100 for a, b in zip(values, values[1:])]
+
+        def slope(xs, ys):
+            mx, my = sum(xs) / len(xs), sum(ys) / len(ys)
+            return (sum((x - mx) * (y - my) for x, y in zip(xs, ys))
+                    / sum((x - mx) ** 2 for x in xs))
+
+        turnover = changes(self.staging["kpi_quarterly"]["adt_headline"])
+        slopes = [slope(turnover, changes(values)) for values in (
+            [q["trading_fees"][i] + q["clearing_fees"][i] for i in rows],
+            [q["revenue"][i] for i in rows],
+            [q["revenue_and_other_income"][i] for i in rows])]
+        self.assertIn("斜率 " + " → ".join(f"{v:.2f}" for v in slopes), self.text)
+        self.assertNotIn("fee_elasticity", self.staging,
+                         "the regression is computed from the arrays; a stored copy goes stale")
 
 
 if __name__ == "__main__":

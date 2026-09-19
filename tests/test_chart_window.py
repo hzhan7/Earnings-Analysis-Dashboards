@@ -357,8 +357,8 @@ CONVERTED = {
                             "is release dates, not quarters.",
         "Market Services 毛收入的去向": "the 2022 reorganisation moved Trade Management "
                                 "Services out of Market Services, so the denominator "
-                                "changed; 2022Q3 reads 305 on the old basis and 245 "
-                                "on the new one.",
+                                "changed; 2022Q3 reads 305 on the old basis and 239 "
+                                "on the new one (the Q3 2023 release's 2022 column).",
         "三个分部的净收入": "same 2022Q4 segment floor.",
         "Financial Technology 的三条子线": "same segment floor; one sub-line begins later "
                                   "still and is left empty rather than filled.",
@@ -1416,8 +1416,6 @@ UNDERIVABLE_QUARTER_COUNTS = {
     "ker Ex9":   ([12], "Gucci 可比增速自 2023Q3 起连续为负的季度数，是一段区间的长度；"
                         "builder 用 trailing_streak 从 series 现算，test_ker_dashboard 另算一遍断言"),
     "meta Ex9":  ([13], "价格腿同比为负的季度数，是条件计数"),
-    "ndaq Ex7":  ([18], "Section 31 规费按金额单列的季度数（18 季），少于该图 42 季的窗口 —— "
-                        "更早的季度只在 MD&A 脚注里给合计，未按两条收入线拆开"),
     "axp Ex16":  ([16], "两条口径同时被印出来的季度数（16 季），是重叠区间的长度，"
                         "不是该图 42 季的窗口 —— 图注拿它论证两条线不能接成一条"),
     "axp Ex17":  ([16], "同上，同一句重叠区间长度出现在另一张信用图的图注里"),

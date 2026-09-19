@@ -5837,6 +5837,7 @@
     "floor_note": "2016 四季为回补 —— 此前停在 2017Q1 的理由写的是「资本块从 2017Q1 开始」，实为没抓：CBOE Holdings 至少自 2016Q1 起每季披露回购金额、股数与均价，回购计划本身可回溯到 2011 年。两处取数细节：每股股息 2016 四季（0.23/0.23/0.25/0.25）在当季新闻稿里没印，取自 FY2016 10-K 第 5 项的季度股息表，并与现金流量表隐含的费率交叉核对；已付股息按相邻两期累计现金流相减得到（发布稿只给年初至今）。**总债务 2016 四季为 0.0 不是缺失**：并购前的 CBOE Holdings 没有债务，2017Q1 起出现的债务是 Bats 收购融资，而那笔交易 2017-01-12 才交割。"
   },
   "settled_kpi": {
+    "period": "Q2 2026",
     "quantified": [
       {
         "metric": "Multi-listed 期权市占",
@@ -5861,16 +5862,20 @@
       }
     ],
     "note": "上一份本地分析立了五条阈值，这里画的是其中三条 —— 能用公司申报值直接结清的那三条。",
-    "excluded": "另外两条不接入：（1）<b>SPX 期权的日均成交量</b> —— 上季那份分析把阈值写在 SPX ADV 上（4.5M），但 SPX 这个产品级的量只出现在电话会里，业绩新闻稿的经营指标表只印到「指数期权」这一层，本站不发布只在电话会里说过的数；（2）<b>事件合约能否在 2026-12-31 前上线</b> —— 那不是一个数字，没有可以画的余量，而且公司自己在本季新闻稿的指引里明说未计入任何相关贡献。还有一条<b>全年</b>调整后营业费用的阈值（US$860M）本季结不了：2026 财年没走完，公司印出全年实际值要等 2027 年 2 月那期。"
+    "excluded": "另外两条不接入：（1）<b>SPX 期权的日均成交量</b> —— 上季那份分析把阈值写在 SPX ADV 上（4.5M），但 SPX 这个产品级的量只出现在电话会里，业绩新闻稿的经营指标表只印到「指数期权」这一层，本站不发布只在电话会里说过的数；（2）<b>事件合约能否在 2026-12-31 前上线</b> —— 那不是一个数字，没有可以画的余量。还有一条<b>全年</b>调整后营业费用的阈值（US$860M）本季结不了：2026 财年没走完，公司印出全年实际值要等 2027 年 2 月那期。"
   },
   "next_kpi": {
+    "period": "Q2 2026",
+    "description": "同样的问题指向下一季。上季那份分析的第一条阈值设在市占率上，本页按第二节的记录把它改写在日均收入上 —— 这是本页对那份分析唯一改动过的一条，理由全部在 Exhibit 里。",
+    "lead": "<b>其中第一条是本页这次唯一改动过的一条</b> —— 上季那份分析把它写在市占率上，本页按 Exhibit {EX_DIVERGE} 的记录改写在日均收入上。",
     "quantified": [
       {
         "metric": "Multi-listed 日均收入（US$M/日）",
         "direction": "up",
         "threshold": 1.1,
         "unit": "usd_eps",
-        "current": 1.002
+        "current": 1.002,
+        "why": "阈值取上一季的水平 —— 连续两季低于它，才说明这不是一次波动。"
       },
       {
         "metric": "指数期权日均收入（US$M/日）",
@@ -5903,6 +5908,16 @@
     ],
     "excluded": "四条不接入本页：（1）<b>指引隐含的下半年单季收入区间</b> —— 要得到它必须先把「mid to high teens」这句话换算成 15%–19% 两个端点，而本站不做这一步（见口径说明）。能公布的是它的输入端而不是输出端：FY2025 净收入 US$2,429.1M 是公司在 2026-02-06 那期印出来的，四个季度 565.2 + 587.3 + 605.5 + 671.1 正好等于它，喂给本页的那份本地分析当时把 2025Q3 估成约 US$625M、全年估成约 US$2,449M，比申报值高了 US$19.9M。（2）<b>事件合约的上线时点与首季成交量</b> —— 不是数字，且公司明说 2026 指引未计入。（3）<b>Cboe Canada 与 Australia 的出售对价</b> —— 连续两季未披露，没有可跟踪的数。（4）<b>SPX 与 0DTE 的产品级成交量</b> —— 只在电话会里，不在申报表内。"
   },
+  "quarter_context": {
+    "period": "Q2 2026",
+    "opex_guidance_carve_out": {
+      "what": "澳洲出售",
+      "usd_m": 11,
+      "source": "Cboe 2Q26 业绩新闻稿第 1 页与第 4 页指引脚注 (2)：「Given an expected third quarter sale completion for Cboe Australia, 2026 adjusted operating expenses guidance is being reduced by $11 million」；同一份的指引段写的是「Reaffirms adjusted operating expenses ... $838 to $853 million」。1Q26 新闻稿（2026-05-01）的同一条脚注里没有这句。"
+    },
+    "wedge_story": "喂给本页的那份本地分析上季正是这么错的，本季自己更正了过来。",
+    "call_only_note": "上一季那份本地分析里引用的若干口径 —— 例如 SPX 期权的日均成交量 —— 只出现在电话会里、不在业绩新闻稿的经营指标表内，因此不进本页的任何序列。"
+  },
   "sources": [
     {
       "label": "Cboe 2026 年第二季度业绩新闻稿（8-K EX-99.1）",
@@ -5932,5 +5947,263 @@
       "label": "Cboe 投资者关系（季度业绩与电话会）",
       "url": "https://ir.cboe.com/financial-results"
     }
-  ]
+  ],
+  "_checks": {
+    "period": "Q2 2026",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-31",
+    "_pairs": "两个数的列表是 [本季, 去年同季]；三个数的列表是 [本季, 上季, 去年同季]。都读自本季新闻稿。",
+    "income_statement_usd_m": {
+      "total_revenues": [
+        1442.8,
+        1173.5
+      ],
+      "liquidity_payments": [
+        453.7,
+        418.0
+      ],
+      "routing_and_clearing": [
+        20.8,
+        20.7
+      ],
+      "regulatory_fees_cost": [
+        153.9,
+        85.3
+      ],
+      "royalty_and_other_cost": [
+        82.8,
+        62.2
+      ],
+      "cost_of_revenues": [
+        711.2,
+        586.2
+      ],
+      "net_revenue": [
+        731.6,
+        587.3
+      ],
+      "opex": [
+        255.6,
+        248.2
+      ],
+      "op_income": [
+        476.0,
+        339.1
+      ],
+      "net_income_common": [
+        351.8,
+        233.9
+      ]
+    },
+    "regulatory_fees_revenue_usd_m": [
+      164.6,
+      96.8
+    ],
+    "per_share": {
+      "diluted_eps": [
+        3.35,
+        2.23
+      ],
+      "adj_diluted_eps": [
+        3.56,
+        2.46
+      ],
+      "diluted_shares_m": [
+        104.9,
+        105.0
+      ]
+    },
+    "adjusted": {
+      "adj_opex": [
+        216.7,
+        213.3
+      ],
+      "adj_op_income": [
+        514.9,
+        374.0
+      ],
+      "adj_op_margin_pct": [
+        70.4,
+        63.7
+      ],
+      "adj_net_income_common": [
+        373.6,
+        257.8
+      ]
+    },
+    "printed_pct": {
+      "net_revenue_growth": 25,
+      "gaap_op_margin": 65.1,
+      "tax_rate": 28.6,
+      "adj_tax_rate": 28.5
+    },
+    "segments_usd_m": {
+      "options": [
+        473.9,
+        364.8
+      ],
+      "north_american_equities": [
+        114.7,
+        98.4
+      ],
+      "europe_and_apac": [
+        84.8,
+        70.4
+      ],
+      "futures": [
+        30.6,
+        30.1
+      ],
+      "global_fx": [
+        27.6,
+        23.6
+      ],
+      "total": [
+        731.6,
+        587.3
+      ]
+    },
+    "categories_usd_m": {
+      "derivatives": [
+        412.7,
+        316.6
+      ],
+      "cash_and_spot": [
+        141.1,
+        115.6
+      ],
+      "data_vantage": [
+        177.8,
+        155.1
+      ]
+    },
+    "kpi": {
+      "industry_options_adv_k": [
+        72838,
+        68894,
+        57203
+      ],
+      "company_options_adv_k": [
+        21862,
+        20076,
+        17301
+      ],
+      "multi_listed_adv_k": [
+        15654,
+        13940,
+        12615
+      ],
+      "index_options_adv_k": [
+        6208,
+        6136,
+        4686
+      ],
+      "total_options_share_pct": [
+        30.0,
+        29.1,
+        30.2
+      ],
+      "multi_listed_share_pct": [
+        23.5,
+        22.3,
+        24.0
+      ],
+      "total_options_rpc_usd": [
+        0.317,
+        0.343,
+        0.3
+      ],
+      "multi_listed_rpc_usd": [
+        0.064,
+        0.08,
+        0.068
+      ],
+      "index_options_rpc_usd": [
+        0.953,
+        0.94,
+        0.923
+      ]
+    },
+    "cash_markets": {
+      "us_share_pct": [
+        9.4,
+        9.8,
+        10.5
+      ],
+      "us_net_capture_per_100": [
+        0.019,
+        0.017,
+        0.012
+      ],
+      "european_share_pct": [
+        24.4,
+        25.5,
+        25.1
+      ],
+      "european_net_capture_bps": [
+        0.289,
+        0.272,
+        0.261
+      ],
+      "global_fx_adnv_usd_bn": [
+        60.6,
+        70.4,
+        55.9
+      ],
+      "global_fx_net_capture_per_musd": [
+        2.96,
+        2.87,
+        2.81
+      ]
+    },
+    "offexchange": {
+      "adv_m_shares": [
+        237.5,
+        249.2,
+        125.5
+      ],
+      "share_pct": [
+        18.8,
+        16.7,
+        14.9
+      ],
+      "net_capture_per_100": [
+        0.058,
+        0.063,
+        0.082
+      ]
+    },
+    "capital": {
+      "buyback_usd_m": 32.6,
+      "buyback_shares_k": 127,
+      "buyback_avg_price_usd": 256.61,
+      "dividends_paid_usd_m": 75.7,
+      "dividend_per_share_usd": 0.72,
+      "adjusted_cash_usd_m": 2346.8,
+      "total_debt_usd_m": 1443.8
+    },
+    "guidance": {
+      "adjusted_operating_expenses": [
+        838,
+        853
+      ],
+      "adjusted_effective_tax_rate": [
+        27.5,
+        29.5
+      ],
+      "capex": [
+        98,
+        108
+      ],
+      "depreciation_and_amortization": [
+        54,
+        58
+      ],
+      "organic_total_words": "mid to high teens",
+      "data_vantage_words": "low teens",
+      "opex_reduced_for_australia_usd_m": 11
+    },
+    "source": "Cboe 2Q26 业绩新闻稿（8-K EX-99.1，2026-07-31，acc 0001628280-26-051217，cboe-20260731xex991.htm）：电头「CHICAGO, IL – July 31, 2026」、「Record Net Revenue for the Quarter of $731.6 million, Up 25 percent」；Table 1（Operating Margin 65.1% / 57.7%，adjusted 70.4% / 63.7%）；Condensed Consolidated Statements of Income 三个月两栏（Total Revenues 1,442.8 / 1,173.5；Liquidity payments 453.7 / 418.0；Routing and clearing 20.8 / 20.7；Regulatory fees cost of revenues 153.9 / 85.3；Royalty fees and other 82.8 / 62.2；Total Cost of Revenues 711.2 / 586.2；Revenues Less Cost of Revenues 731.6 / 587.3；Total Operating Expenses 255.6 / 248.2；Operating Income 476.0 / 339.1；Net Income Allocated to Common Stockholders 351.8 / 233.9；Diluted 3.35 / 2.23；diluted shares 104.9 / 105.0）；正文 adjusted operating expenses 216.7 / 213.3、effective tax rate 28.6%、on adjusted earnings 28.5%；Table 2 分部两栏；Net Revenue by Revenue Caption（三类总收入减成本：680.9−268.2、580.3−439.2、181.6−3.8；去年 527.6−211.0、487.6−372.0、158.3−3.2；Regulatory fees 收入 164.6 / 96.8）；Key Performance Statistics 五季表的 2Q26 / 1Q26 / 2Q25 三列；Capital Management 段（adjusted cash 2,346.8，total debt 1,443.8，dividends 75.7 / $0.72，回购 32.6、约 127 千股、均价 $256.61）；2026 Fiscal Year Financial Guidance 段与脚注 (2)（$838–853M reaffirmed、reduced by $11 million for Cboe Australia；27.5–29.5%；capex $98–108M；D&A $54–58M；organic total 'mid to high teens'，Data Vantage 'low teens'）。adjusted diluted EPS 3.56 / 2.46 与 adjusted net income 373.6 / 257.8 见 Table 1。",
+    "checked_on": "2026-09-19"
+  }
 }
