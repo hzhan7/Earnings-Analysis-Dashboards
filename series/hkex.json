@@ -3131,20 +3131,6 @@
    }
   ]
  },
- "fee_elasticity": {
-  "window": [
-   "2021Q1",
-   "2026Q2"
-  ],
-  "steps": 21,
-  "slope_trading_clearing": 0.664,
-  "r2_trading_clearing": 0.828,
-  "slope_revenue": 0.442,
-  "r2_revenue": 0.81,
-  "slope_revenue_and_other_income": 0.366,
-  "r2_revenue_and_other_income": 0.735,
-  "opposite_direction_steps": 1
- },
  "guidance_census": {
   "documents": 42,
   "forward_statements_with_a_number": 24,
@@ -3156,7 +3142,13 @@
   "corrupted_by_glued_marker": 50,
   "note": "公司用上标标注「新的季度/半年度纪录」。PDF 的纯文本导出会把那个上标并进数字本身：日均成交额 283.0 变成 283.04，衍生品日均 849 变成 8494。本页的市场统计数据因此不从文本层读取，而是按字形磅值筛选后再解析（正文 10pt、上标 6.5pt）。两种读法逐格对照，1076 个数字里有 50 个会被文本层读错，而读错之后的数字全部是合法的、看不出问题的数。"
  },
+ "statement_identities": {
+  "documents": 42,
+  "identities": 648,
+  "source": "解析 42 份业绩公告的简明综合损益表时逐份跑的报表自身算术闸门（六项费用相加等于收入、加其他收入等于收入及其他收益、EBITDA 减折旧摊销等于经营溢利、除税前溢利减税项等于期内溢利、股东应占加非控股权益等于期内溢利等），9f34235 接入时记下；增加一份公告就要重跑并同时改 documents 与 identities。"
+ },
  "next_kpi": {
+  "period": "Q2 2026",
   "quantified": [
    {
     "metric": "EBITDA 利润率",
@@ -3201,7 +3193,13 @@
     "current": 15.8864
    }
   ],
-  "excluded": "本页<b>不接入</b>任何公司指引，因为一条都不存在：42 份公告里带数字的前瞻表述 24 处，没有一处是财务指引，分析师演示材料里也没有。上面六条全部是<b>本地研究阈值</b>，不是公司给的数，用途只是把「下一季看什么」写死成一个数而不是一句话。另有两类量本页拿得到却不设阈值：（1）<b>第二季与第四季的收入分项</b> —— 公司从未按季印过，本页那一半是减出来的，给一个减出来的分项设阈值等于给自己的算术设阈值；（2）<b>保证金投资收益的毛额与返还额</b>的季度值 —— 只在半年报与年报的损益表上出现，季度损益表只印一个净额，所以那条阈值只能是半年频率。"
+  "excluded": "本页<b>不接入</b>任何公司指引，因为一条都不存在：42 份公告里带数字的前瞻表述 24 处，没有一处是财务指引，分析师演示材料里也没有。上面六条全部是<b>本地研究阈值</b>，不是公司给的数，用途只是把「下一季看什么」写死成一个数而不是一句话。另有两类量本页拿得到却不设阈值：（1）<b>第二季与第四季的收入分项</b> —— 公司从未按季印过，本页那一半是减出来的，给一个减出来的分项设阈值等于给自己的算术设阈值；（2）<b>保证金投资收益的毛额与返还额</b>的季度值 —— 只在半年报与年报的损益表上出现，季度损益表只印一个净额，所以那条阈值只能是半年频率。",
+  "current_from": "EBITDA 利润率、非交易类收入占比与有效税率由损益表自算，现货日均成交额与 LME 计费日均手数取自同一份公告的市场统计表，返还比例按半年频率取自损益表的投资收益毛额与返还额两行。"
+ },
+ "quarter_context": {
+  "period": "Q2 2026",
+  "printed_ebitda_margin_pct": 81,
+  "source": "HKEX 2026 年中期业绩公告（2026-08-19）第 4 页「Comparison of Q2 2026 with Q2 2025 Results」：「EBITDA margin stood at 81 per cent」；分母为 revenue and other income less transaction-related expenses（同页脚注 1）。"
  },
  "sources": [
   {
@@ -5507,5 +5505,161 @@
    "doc": "2026_H1 (Key Financials)",
    "published": "2026-08-19"
   }
+ },
+ "_checks": {
+  "period": "Q2 2026",
+  "period_end": "2026-06-30",
+  "release_date": "2026-08-19",
+  "_pairs": "两个数的列表是 [本期, 去年同期]。six_months 是中期公告简明综合损益表的六个月两栏；key_financials_q2 是同一份公告第 4 页「Comparison of Q2 2026 with Q2 2025」摘要框的三个月两栏；market_statistics_q2 是同页的三个月市场统计（去掉并进数字的纪录上标 4）。",
+  "six_months_hkd_m": {
+   "trading_fees": [
+    5991,
+    4906
+   ],
+   "clearing_fees": [
+    4349,
+    3155
+   ],
+   "listing_fees": [
+    1051,
+    816
+   ],
+   "depository_fees": [
+    911,
+    668
+   ],
+   "market_data_fees": [
+    634,
+    565
+   ],
+   "other_revenue": [
+    1044,
+    924
+   ],
+   "revenue": [
+    13980,
+    11034
+   ],
+   "investment_income": [
+    5757,
+    4996
+   ],
+   "interest_rebates": [
+    -3197,
+    -2121
+   ],
+   "net_investment_income": [
+    2560,
+    2875
+   ],
+   "donation_income": [
+    145,
+    78
+   ],
+   "sundry_income": [
+    17,
+    89
+   ],
+   "revenue_and_other_income": [
+    16702,
+    14076
+   ],
+   "transaction_expenses": [
+    -136,
+    -164
+   ],
+   "staff_costs": [
+    -2148,
+    -1952
+   ],
+   "operating_expenses": [
+    -3155,
+    -2973
+   ],
+   "ebitda": [
+    13411,
+    10939
+   ],
+   "operating_profit": [
+    12634,
+    10196
+   ],
+   "profit_before_tax": [
+    12606,
+    10164
+   ],
+   "taxation": [
+    -2008,
+    -1602
+   ],
+   "profit_attributable": [
+    10568,
+    8519
+   ]
+  },
+  "key_financials_q2_hkd_m": {
+   "revenue_and_other_income": [
+    8499,
+    7219
+   ],
+   "operating_expenses": [
+    1613,
+    1457
+   ],
+   "ebitda": [
+    6819,
+    5685
+   ],
+   "profit_attributable": [
+    5380,
+    4442
+   ]
+  },
+  "printed": {
+   "q2_ebitda_margin_pct": 81,
+   "q2_revenue_and_other_income_growth_pct": 18,
+   "q2_profit_growth_pct": 21,
+   "record_quarterly_revenue_and_profit": true
+  },
+  "market_statistics_q2": {
+   "adt_headline": [
+    289.5,
+    237.7
+   ],
+   "adt_equity": [
+    272.0,
+    220.3
+   ],
+   "adt_dw_cbbc": [
+    17.5,
+    17.4
+   ],
+   "adt_northbound": [
+    366.1,
+    151.8
+   ],
+   "adt_southbound": [
+    123.7,
+    112.0
+   ],
+   "adv_futures": [
+    849,
+    763
+   ],
+   "adv_stock_opts": [
+    941,
+    771
+   ],
+   "adv_lme": [
+    810,
+    733
+   ],
+   "adt_bond_conn": [
+    45.0,
+    45.5
+   ]
+  },
+  "source": "HKEX 2026 年中期业绩公告（hkexnews 2026081900213.pdf，2026-08-19）：封面「2026 INTERIM RESULTS」；第 3 页 1H 摘要；第 4 页「Comparison of Q2 2026 with Q2 2025 Results」—— 「Q2 2026 revenue and other income, and profit, both reached record quarterly highs」、「$8,499 million was 18 per cent higher」、「EBITDA margin stood at 81 per cent」、「Profit attributable to shareholders of $5,380 million was 21 per cent above」，Key Financials 三个月两栏（8,499 / 7,219，1,613 / 1,457，6,819 / 5,685，5,380 / 4,442）与 Key Market Statistics 三个月两栏（289.54 即 289.5 加纪录上标 4 …）；第 32 页 CONDENSED CONSOLIDATED INCOME STATEMENT 六个月两栏（Trading fees 5,991 / 4,906 … Profit attributable 10,568 / 8,519）。",
+  "checked_on": "2026-09-19"
  }
 }

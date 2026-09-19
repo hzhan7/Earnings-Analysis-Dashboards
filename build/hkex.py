@@ -81,11 +81,15 @@ sys.path.insert(0, str(ROOT))
 
 from build.board import (  # noqa: E402
     ai_capex_cycle_table,
+    cn_count,
+    cn_fraction,
     display_period,
     headroom,
     headroom_exhibit,
     latest_block,
+    minus_sign,
     number_exhibits,
+    stamped_block,
     threshold_table,
 )
 from build.page_shell import render_shell  # noqa: E402
@@ -112,8 +116,123 @@ TRACKED_LINES = [
 BOX_LINES = ["revenue_and_other_income", "ebitda", "profit_attributable"]
 
 
+AUDIT_WORDS = {"unaudited": "未审计", "audited": "已审计"}
+
+# The announcement each quarter's results arrive in, by the quarter's number.
+ANNOUNCEMENT_KIND = {"1": "第一季度业绩公告", "2": "中期业绩公告",
+                     "3": "第三季度业绩公告", "4": "全年业绩公告"}
+
+# The two stretches the gross-and-net chart tells as stories (fixed history):
+# rates at the floor, measured from the half the rebate share was last near
+# 30 per cent to the half it bottomed; and rates coming back, one year on from
+# the half the gross line bottomed.
+FLOOR_EPISODE = ("2020H1", "2021H1")
+RISE_EPISODE = ("2022H1", "2023H1")
+
+
 def pct(current: float, base: float) -> float:
     return (current / base - 1) * 100.0
+
+
+def half_words(staging: dict) -> str:
+    """「本半年」 when the page's quarter closes the latest half, else that half by name.
+
+    A first- or third-quarter page reports a half-year that ended a quarter
+    earlier; calling it 本半年 there would put last half's rebate under this
+    quarter's label.
+    """
+    last, half = staging["quarters"][-1], staging["halves"][-1]
+    closes = half == f"{last[:4]}H{1 if last[5] == '2' else 2}" and last[5] in "24"
+    return "本半年" if closes else f"最近一个半年（{half}）"
+
+
+def announcement_label(period: str) -> str:
+    """``'Q2 2026'`` → ``'HKEX 2026 年中期业绩公告'``, the way `sources` labels it."""
+    quarter, year = period.split()
+    return f"HKEX {year} 年{ANNOUNCEMENT_KIND[quarter[1]]}"
+
+
+def release_source(staging: dict) -> dict:
+    label = announcement_label(display_period(staging["quarters"][-1]))
+    found = next((item for item in staging["sources"] if item["label"].startswith(label)), None)
+    if found is None:
+        raise ValueError(f"series `sources` has no entry for the {label}: add this "
+                         "quarter's announcement with the roll")
+    return found
+
+
+def fee_split_gaps(staging: dict) -> tuple[list[str], list[str]]:
+    """Quarters whose fee lines nobody has printed, split at FY2022.
+
+    Before FY2022 the annual quarter table stopped at revenue and other income,
+    so every even quarter of 2016-2021 is permanent. From FY2022 the table
+    carries the fee lines, so an even quarter is missing only until the annual
+    results that print its year -- that is the recent part, and it moves.
+    """
+    missing = never_printed(staging, FEE_LINES)
+    return [q for q in missing if q < "2022"], [q for q in missing if q >= "2022"]
+
+
+def pending_words(staging: dict, recent: list[str], wait: bool = True,
+                  spaced: bool = True) -> str:
+    """「刚发布的 2026Q2（要等 2027 年 2 月的全年公告）」 for each quarter still waiting.
+
+    ``spaced`` puts the space this site sets between a Chinese word and a period
+    label in front of a label that does not start with 「刚发布的」; a caller
+    whose text ends in a full-width comma passes False.
+    """
+    latest = staging["quarters"][-1]
+    words = "、".join(("刚发布的 " if quarter == latest else "") + quarter
+                      + (f"（要等 {int(quarter[:4]) + 1} 年 2 月的全年公告）" if wait else "")
+                      for quarter in recent)
+    return words if words.startswith("刚发布的") or not spaced else " " + words
+
+
+def elasticities(staging: dict) -> dict:
+    """Slope and R² of three revenue lines on headline turnover, from the series.
+
+    These used to be read from a block stored beside the arrays; a roll that
+    extended the arrays and not the block would have printed last quarter's
+    regression under this quarter's axis.
+    """
+    kq = staging["kpi_quarters"]
+    quarters, q = staging["quarters"], staging["quarterly"]
+    index_of = [quarters.index(x) for x in kq]
+    turnover = qoq(staging["kpi_quarterly"]["adt_headline"])
+    out = {"steps": len(turnover)}
+    lines = {
+        "trading_clearing": [q["trading_fees"][i] + q["clearing_fees"][i] for i in index_of],
+        "revenue": [q["revenue"][i] for i in index_of],
+        "revenue_and_other_income": [q["revenue_and_other_income"][i] for i in index_of],
+    }
+    for name, values in lines.items():
+        slope, r2 = slope_and_r2(turnover, qoq(values))
+        out[f"slope_{name}"], out[f"r2_{name}"] = slope, r2
+    out["opposite_direction_steps"] = sum(
+        1 for a, b in zip(turnover, qoq(lines["trading_clearing"])) if a * b < 0)
+    return out
+
+
+def half_direction_steps(staging: dict) -> tuple[int, int]:
+    """Half-on-half steps in which gross investment income and net moved opposite ways."""
+    gross, net = staging["half_investment"]["gross"], staging["half_investment"]["net"]
+    steps = list(zip(zip(gross, gross[1:]), zip(net, net[1:])))
+    opposite = sum(1 for (g0, g1), (n0, n1) in steps if (g1 - g0) * (n1 - n0) < 0)
+    return opposite, len(steps)
+
+
+def company_margin_gap(staging: dict) -> tuple[float, float] | None:
+    """How far the company's EBITDA margin sits above this page's, where both exist.
+
+    The company divides by revenue and other income less transaction-related
+    expenses; the page by revenue and other income. The page used to say the
+    two stay within one percentage point; 2023Q3-2024Q3 are 1.1-1.2 apart.
+    """
+    q = staging["quarterly"]
+    gaps = [e / (r + t) * 100 - e / r * 100
+            for e, r, t in zip(q["ebitda"], q["revenue_and_other_income"], q["transaction_expenses"])
+            if t is not None]
+    return (min(gaps), max(gaps)) if gaps else None
 
 
 def signed(value: float, digits: int = 1, suffix: str = "%") -> str:
@@ -307,8 +426,8 @@ def reconcile_against_printed(staging: dict) -> dict:
 
 # ── section one: what is printed, and what this page had to work out ─────────
 
-def disclosure_section(staging: dict, check: dict,
-                       recon: dict) -> tuple[list[dict], list[dict]]:
+def disclosure_section(staging: dict, check: dict, recon: dict,
+                       kpi: dict | None) -> tuple[list[dict], list[dict]]:
     quarters = staging["quarters"]
     q = staging["quarterly"]
     basis = staging["quarter_basis"]
@@ -341,12 +460,15 @@ def disclosure_section(staging: dict, check: dict,
             f"{len(derived)} 格是 H1 减 Q1、全年减前九个月得到的。"
             "<b>但公司自己也把这些季度印出来过</b> —— 每份年报里的"
             "「Analysis of Results by Quarter」按列印全四个季度，只是要晚得多。"
-            "下面两张图分别是「晚多久」和「本页的减法对不对」。"),
+            # 「下面两张图」: the reconciliation is the third chart below, not the second.
+            "下面第一张与第三张分别是「晚多久」和「本页的减法对不对」。"),
         "src_extra": (
-            "各季数字取自公司 42 份业绩公告的简明综合损益表。"
+            f"各季数字取自公司 {len(staging['announcements'])} 份业绩公告的简明综合损益表。"
             "解析后先用报表自身的算术核对：六项费用相加等于收入、加其他收入等于收入及其他收益、"
             "EBITDA 减折旧摊销等于经营溢利、除税前溢利减税项等于期内溢利、"
-            "股东应占加非控股权益等于期内溢利 —— 42 份公告共 648 条恒等式全部成立。"),
+            "股东应占加非控股权益等于期内溢利 —— "
+            f"{staging['statement_identities']['documents']} 份公告共 "
+            f"{staging['statement_identities']['identities']} 条恒等式全部成立。"),
     }
 
     lag_head = [disclosure_lag(staging, qq, HEADLINE_LINES) for qq in quarters]
@@ -358,6 +480,10 @@ def disclosure_section(staging: dict, check: dict,
     box_from = min((qq for qq in quarters if qq[-1] in "24"
                     and (first_printed(staging, qq, "ebitda") or {}).get("doc", "")
                     .endswith("(Key Financials)")), default=None)
+    q2_all = by_pos[2]
+    cliff = ("<b>图上那一道是断崖不是斜坡</b>：没有任何一个第二季落在 60 天与 250 天之间。"
+             if not any(60 <= v <= 250 for v in q2_all if v is not None) else "")
+    all_printed = all(v is not None for v in lag_head)
     coverage = {
         "ref": "EX_LAG",
         "kind": "gs_line",
@@ -378,15 +504,16 @@ def disclosure_section(staging: dict, check: dict,
             "而这张图是改正后的样子。</b>"
             "每一份年报里都有一张「Analysis of Results by Quarter」，"
             "把当年四个季度按列印全 —— <b>FY2016 就有</b>。"
-            "所以 42 个季度的主线没有一个是没被印过的，差别只在等多久 —— "
-            "<b>而慢的不是「双数季」，是第二季一个。</b>"
+            + (f"所以 {len(quarters)} 个季度的主线没有一个是没被印过的，差别只在等多久 —— "
+               if all_printed else "所以主线的差别主要在等多久 —— ")
+            + "<b>而慢的不是「双数季」，是第二季一个。</b>"
             f"第一、三季度在自己的季度公告里（{min(odd_lags)}–{max(odd_lags)} 天）；"
             f"第四季随全年业绩公告一起出来（{min(by_pos[4])}–{max(by_pos[4])} 天，"
             "从来不是异类）。只有第二季要等年报："
-            f"连续六年 {min(q2_old)}–{max(q2_old)} 天，也就是八个半月。"
+            f"连续{cn_count(len(q2_old))}年 {min(q2_old)}–{max(q2_old)} 天，也就是八个半月。"
             f"{box_from} 起中期公告正文补印双数季摘要框，第二季的等待一步降到 "
             f"{min(q2_new)}–{max(q2_new)} 天。"
-            "<b>图上那一道是断崖不是斜坡</b>：没有任何一个第二季落在 60 天与 250 天之间。"),
+            + cliff),
         "src_extra": (
             "每一格是「季末日」到「最早印出该季全部四条主线的那份文件的发布日」的日历天数。"
             "文件与发布日逐格记在 series 的 first_printed 里，"
@@ -397,6 +524,7 @@ def disclosure_section(staging: dict, check: dict,
                     if disclosure_lag(staging, qq, FEE_LINES) is not None]
     fee_lags = [disclosure_lag(staging, qq, FEE_LINES) for qq in fee_quarters]
     missing = never_printed(staging, FEE_LINES)
+    old_gaps, recent_gaps = fee_split_gaps(staging)
     fee_view = {
         "ref": "EX_FEESPLIT",
         "kind": "gs_line",
@@ -418,8 +546,9 @@ def disclosure_section(staging: dict, check: dict,
             "六项费用收入是 <b>FY2022 才加进去的</b>。"
             f"于是单数季从 2016 年起一直有（在自己的季度公告里），"
             f"双数季要到 2022 年才有；{len(missing)} 个季度至今没有任何人印过它的收入分项："
-            f"{missing[0]}–{missing[-2]} 的全部双数季，加上刚发布的 {missing[-1]}"
-            "（要等 2027 年 2 月的全年公告）。"
+            f"{old_gaps[0]}–{old_gaps[-1]} 的全部双数季"
+            + (f"，加上{pending_words(staging, recent_gaps)}" if recent_gaps else "")
+            + "。"
             "<b>本页第二节那张收入构成图里，这些季度的分项是本页减出来的。</b>"),
         "src_extra": (
             "「印过」的判据是该季六项费用收入全部出现在某一份文件的三个月列或年度季度表里；"
@@ -453,17 +582,23 @@ def disclosure_section(staging: dict, check: dict,
             f"其中 {recon['derived_compared']} 次落在本页用减法得到的格子上，"
             f"<b>{recon['mismatches']} 处不同</b>。"
             "先前这一页只拿到 33 次比对，因为它只知道 2022 年起的摘要框；"
-            "年报那张季度表把同一道算术的对照物扩到四倍，"
-            f"而唯一还没有对照物的是刚发布的 {recon['uncovered_even'][0]}。"
-            "两条线画在一起而不是画差额：差额恒为零，画出来是一排看不见的柱子。"),
+            "年报那张季度表把同一道算术的对照物扩到四倍"
+            + ((f"，而唯一还没有对照物的是{'刚发布的 ' if recon['uncovered_even'][0] == quarters[-1] else ' '}"
+                f"{recon['uncovered_even'][0]}。")
+               if len(recon["uncovered_even"]) == 1 else
+               (f"，而还没有对照物的是 {'、'.join(recon['uncovered_even'])}。"
+                if recon["uncovered_even"] else "，双数季已经全部有对照物。"))
+            + "两条线画在一起而不是画差额：差额恒为零，画出来是一排看不见的柱子。"),
         "src_extra": (
             "公司值取自各年年报或全年业绩公告的「Analysis of Results by Quarter」表；"
             "本页值取自季度公告损益表的减法结果。两者的来源文件互不相同。"),
     }
 
-    entries = staging["next_kpi"]["quantified"]
+    if not kpi:
+        return [revenue_bar, coverage, fee_view, reconcile], []
+    entries = kpi["quantified"]
     headroom_card = headroom_exhibit(
-        "六条本地阈值离触发还有多远（公司不发布任何财务指引）",
+        f"{cn_count(len(entries))}条本地阈值离触发还有多远（公司不发布任何财务指引）",
         entries, "current",
         note=(
             "<b>这一节没有兑现图，因为没有可兑现的东西。</b>"
@@ -471,20 +606,19 @@ def disclosure_section(staging: dict, check: dict,
             f"{staging['guidance_census']['forward_statements_with_a_number']} 处，"
             "全部是产品上线时点、指数纳入、股息寄发日期与税务安全港措辞，"
             "<b>没有一处是收入、利润、费用或资本开支的数字指引</b>；分析师演示材料里也没有。"
-            "所以上面六条是本地研究阈值，不是公司给的数，"
+            f"所以上面{cn_count(len(entries))}条是本地研究阈值，不是公司给的数，"
             "作用只是把「下一季看什么」写死成一个数而不是一句话。"
             "正值 = 仍在安全侧。"),
         src_extra=(
-            "当前值取自 2026 年中期业绩公告：EBITDA 利润率、非交易类收入占比与有效税率由损益表自算，"
-            "现货日均成交额与 LME 计费日均手数取自同一份公告的市场统计表，"
-            "返还比例按半年频率取自损益表的投资收益毛额与返还额两行。"),
+            f"当前值取自 {announcement_label(display_period(quarters[-1]))[5:]}："
+            + kpi.get("current_from", "")),
     )
     return [revenue_bar, coverage, fee_view, reconcile, headroom_card], entries
 
 
 # ── section two: this quarter, on the lines that exist every quarter ─────────
 
-def quarter_section(staging: dict) -> list[dict]:
+def quarter_section(staging: dict, context: dict | None) -> list[dict]:
     quarters = staging["quarters"]
     q = staging["quarterly"]
     roi = q["revenue_and_other_income"]
@@ -514,6 +648,12 @@ def quarter_section(staging: dict) -> list[dict]:
         opex_other.append(total + staff[index])   # staff是负数，total为正的开支合计
     opex_total = [-(s) + o for s, o in zip(staff, opex_other)]
     txn_latest = q["transaction_expenses"][-1]
+    printed_margin = (context or {}).get("printed_ebitda_margin_pct")
+    gap = company_margin_gap(staging)
+    old_gaps, recent_gaps = fee_split_gaps(staging)
+    worst = min(range(len(non_fee)), key=lambda i: non_fee[i])
+    nt_high = non_trading_share.index(max(non_trading_share))
+    nt_low = non_trading_share.index(min(non_trading_share))
 
     margin_line = {
         "ref": "EX_MARGIN",
@@ -533,8 +673,11 @@ def quarter_section(staging: dict) -> list[dict]:
             "公司自己在摘要框里印的 EBITDA 利润率用的是<b>扣除交易相关支出后的收入</b>做分母，"
             "而那一行只从 2020 年才出现在损益表上，所以本页统一用「EBITDA ÷ 收入及其他收益」"
             "自算全窗口 —— 口径一致优先于与公司口径逐格相同。"
-            f"本季自算 {margin[-1]:.1f}%，公司在同一份公告里印的是 81%（其分母较小，因此略高）。"
-            "两者的差在 1 个百分点以内，且方向固定。"),
+            + (f"本季自算 {margin[-1]:.1f}%，公司在同一份公告里印的是 {printed_margin:.0f}%"
+               "（其分母较小，因此略高）。" if printed_margin is not None else
+               f"本季自算 {margin[-1]:.1f}%。")
+            # 「两者的差在 1 个百分点以内」: 2023Q3-2024Q3 are 1.1-1.2 apart.
+            + (f"两者的差在 {gap[0]:.1f}–{gap[1]:.1f} 个百分点之间，且方向固定。" if gap else "")),
         "src_extra": "EBITDA 与收入及其他收益均取自各期损益表；比值为本页自算。",
     }
 
@@ -558,14 +701,20 @@ def quarter_section(staging: dict) -> list[dict]:
             "<b>这张图的双数季分项，2022 年之前没有任何人印过。</b>柱是六项费用收入，"
             "双数季的六项由 H1 减 Q1、全年减前九个月得到；FY2022 起年报那张季度表"
             "加入了六项费用收入，所以 2022 年之后的双数季有公司自己的对照，"
-            f"{len(never_printed(staging, FEE_LINES))} 个更早的季度没有。"
+            # This said 13 earlier quarters; the 13th is the one just published,
+            # which waits for next year's annual results rather than predating 2022.
+            f"{len(old_gaps)} 个更早的季度没有"
+            + (f"，{pending_words(staging, recent_gaps, wait=False, spaced=False)} 要等到 "
+               f"{int(recent_gaps[-1][:4]) + 1} 年 2 月的全年公告才有" if recent_gaps else "")
+            + "。"
             "红线是最直接跟着成交量走的那两条"
             "（交易费与结算交收费）占收入及其他收益的比例。"
             f"这一比例在窗口里在 {min(trading_share):.1f}% 与 {max(trading_share):.1f}% 之间，"
             f"本季 {trading_share[-1]:.1f}%。"
-            "<b>右轴画的是这一条而不是投资及其他收益的占比，理由在第三节第一张</b>："
-            "后者在 2020Q1 为负，而这一图型的右轴自零点起算，负值会被画到画布外。"
-            "右轴另显式设了 100% 的上界 —— 它默认封顶在 60，超过就同样落在画布外。"),
+            + ("<b>右轴画的是这一条而不是投资及其他收益的占比，理由在第三节第一张</b>："
+               f"后者在 {quarters[worst]} 为负，而这一图型的右轴自零点起算，负值会被画到画布外。"
+               if non_fee[worst] < 0 else "")
+            + "右轴另显式设了 100% 的上界 —— 它默认封顶在 60，超过就同样落在画布外。"),
         "src_extra": "六项费用收入与收入及其他收益逐期取自损益表；占比为本页自算。",
     }
 
@@ -617,7 +766,10 @@ def quarter_section(staging: dict) -> list[dict]:
         "ylab2": "占费用收入 %",
         "note": (
             "交易所最像订阅制的三条腿：上市费按年摊、存管费按持仓与动作收、市场数据费按终端收。"
-            f"三者合计占六项费用收入的比例从 {max(non_trading_share):.1f}% 一路降到 "
+            # 「一路降到」: the share zig-zags with the seasons (2023Q4 is 27.4%);
+            # what is true is the high and the low and when each came.
+            f"三者合计占六项费用收入的比例从 {quarters[nt_high]} 的 {max(non_trading_share):.1f}% "
+            f"{'降' if nt_high < nt_low else '升'}到 {quarters[nt_low]} 的 "
             f"{min(non_trading_share):.1f}%，本季 {non_trading_share[-1]:.1f}% —— "
             "<b>不是它们缩小了，是交易费和结算费涨得更快。</b>"
             "读这条线要注意分母：成交清淡的季度它会自动抬高。"
@@ -690,14 +842,16 @@ def investment_section(staging: dict) -> list[dict]:
         "ylab": "HK$M",
         "ylab2": "占比",
         "note": (
-            f"<b>{quarters[worst]} 这一格是负的 —— {hkd_m(non_fee[worst])}，占比 "
-            f"{non_fee_share[worst]:.2f}%。</b>那一季公司报的是一笔净投资亏损，"
-            "集体投资计划的公允价值在 2020 年 3 月被打下去。"
-            "本页把这一条单独画成柱线图而不是画在上一节的收入构成图右轴上，"
-            "就是因为这一格：堆叠双轴图的右轴自零点起算，"
-            "一个 −1.15% 的点会被静默画到画布之外，而图例照常显示它。"
-            "柱线图的右轴按数据算，负值画得出来。"
-            "这条线是季度频率能看到的全部 —— 它的毛额与返还额只在半年报上，下一张才有。"),
+            ((f"<b>{quarters[worst]} 这一格是负的 —— {hkd_m(non_fee[worst])}，占比 "
+              f"{non_fee_share[worst]:.2f}%。</b>"
+              + ("那一季公司报的是一笔净投资亏损，"
+                 "集体投资计划的公允价值在 2020 年 3 月被打下去。" if quarters[worst] == "2020Q1" else "")
+              + "本页把这一条单独画成柱线图而不是画在上一节的收入构成图右轴上，"
+              "就是因为这一格：堆叠双轴图的右轴自零点起算，"
+              f"一个 {minus_sign(f'{non_fee_share[worst]:.2f}')}% 的点会被静默画到画布之外，而图例照常显示它。"
+              "柱线图的右轴按数据算，负值画得出来。")
+             if non_fee[worst] < 0 else "")
+            + "这条线是季度频率能看到的全部 —— 它的毛额与返还额只在半年报上，下一张才有。"),
         "src_extra": (
             "投资及其他收益为「收入及其他收益 − 六项费用收入」，两个端点均取自损益表；"
             "它等于净投资收益加慈善基金捐款收入与杂项收入，"
@@ -711,11 +865,16 @@ def investment_section(staging: dict) -> list[dict]:
     net = staging["half_investment"]["net"]
     share = [-r / g * 100 for r, g in zip(rebates, gross)]
     derived = sum(1 for b in basis if b == "derived")
+    peak = share.index(max(share))
+    trough = share.index(min(share))
+    at = {half: i for i, half in enumerate(halves)}
+    f0, f1 = (at[h] for h in FLOOR_EPISODE)
+    r0, r1 = (at[h] for h in RISE_EPISODE)
 
     spread = {
         "ref": "EX_REBATE",
         "kind": "stacked_dual",
-        "title": (f"保证金投资收益是一道价差：本半年毛额 {hkd_m(gross[-1])}、"
+        "title": (f"保证金投资收益是一道价差：{half_words(staging)}毛额 {hkd_m(gross[-1])}、"
                   f"返还给结算参与者 {hkd_m(-rebates[-1])}、留下 {hkd_m(net[-1])}"),
         "xlabels": list(halves),
         "xrot": 90,
@@ -732,8 +891,11 @@ def investment_section(staging: dict) -> list[dict]:
             "<b>柱高是毛额，两段的分法才是这门生意。</b>公司把清算会员缴来的保证金拿去投资，"
             "再把其中大部分利息按约定返还给会员；损益表上「投资收益」与"
             "「支付予参与者的利息回赠」是两行，「净投资收益」是它们的和。"
-            f"返还比例从 {halves[0]} 的 {share[0]:.1f}% 一路走到 "
-            f"{halves[share.index(max(share))]} 的 {max(share):.1f}%，本半年 {share[-1]:.1f}%。"
+            # 「一路走到」: it went to 1.4% in 2020H2 on the way; the next chart says so.
+            f"返还比例从 {halves[0]} 的 {share[0]:.1f}% 走到 "
+            f"{halves[peak]} 的 {max(share):.1f}%"
+            + (f"（中间在 {halves[trough]} 低到 {min(share):.1f}%）" if 0 < trough < peak else "")
+            + f"，{half_words(staging)} {share[-1]:.1f}%。"
             "<b>利率上行时毛额和返还一起涨，净额涨得慢得多</b> —— "
             "把这门生意当成利率的线性敞口，会在两个方向上都算错。"
             "右轴显式设了 100% 的上界。"),
@@ -760,10 +922,17 @@ def investment_section(staging: dict) -> list[dict]:
         "ylab": "HK$M",
         "note": (
             "<b>这两条线在窗口里两次讲了相反的故事。</b>"
-            "2020 下半年到 2021 上半年利率见底，毛额腰斩而净额几乎没动 —— "
-            "返还比例同期从 28% 掉到 3%，会员那一侧先被压缩。"
-            "2022 下半年起利率回升，毛额一年之内涨了十倍以上，净额跟不上，"
-            "因为返还比例同时冲到六成。<b>季度损益表上只有其中一条线看得见</b>，"
+            # 「毛额腰斩而净额几乎没动 —— 返还比例同期从 28% 掉到 3%」: over the
+            # halves where the share went 28% to 3% the gross fell 32%, not half.
+            f"2020 下半年到 2021 上半年利率见底：{FLOOR_EPISODE[0]} 到 {FLOOR_EPISODE[1]} "
+            f"毛额 {minus_sign(signed(pct(gross[f1], gross[f0]), 0))}、"
+            f"净额只 {minus_sign(signed(pct(net[f1], net[f0]), 0))} —— "
+            f"返还比例同期从 {share[f0]:.0f}% 掉到 {share[f1]:.0f}%，会员那一侧先被压缩。"
+            "2022 下半年起利率回升，毛额一年之内"
+            + ("涨了十倍以上" if gross[r1] / gross[r0] - 1 >= 10 else
+               f"涨到 {gross[r1] / gross[r0]:.1f} 倍")
+            + f"，净额跟不上，因为返还比例同时冲到{cn_count(round(share[r0 + 1] / 10))}成。"
+            "<b>季度损益表上只有其中一条线看得见</b>，"
             "而它恰好是变动较小的那条。"),
         "src_extra": "两条线均取自中期与全年业绩公告的损益表；下半年为全年减上半年。",
     }
@@ -781,7 +950,7 @@ def volume_section(staging: dict) -> list[dict]:
     trading_clearing = [q["trading_fees"][i] + q["clearing_fees"][i] for i in index_of]
     adt = kpi["adt_headline"]
 
-    elasticity = staging["fee_elasticity"]
+    elasticity = elasticities(staging)
     steps_x = qoq(adt)
     steps_y = qoq(trading_clearing)
     slope, r2 = slope_and_r2(steps_x, steps_y)
@@ -858,7 +1027,8 @@ def volume_section(staging: dict) -> list[dict]:
             "<b>削平它的不是费率分档</b>（港交所现货交易费是按成交金额定率收的），"
             "而是混合：衍生品与 LME 的量、上市费与市场数据的订阅性收入，"
             "以及一整块跟着利率而不是跟着成交额走的投资收益。"),
-        "src_extra": "指数化仅用于同图比较；斜率与 R² 由本页对 21 次环比变动做最小二乘回归得到。",
+        "src_extra": (f"指数化仅用于同图比较；斜率与 R² 由本页对 {elasticity['steps']} 次环比变动"
+                      "做最小二乘回归得到。"),
     }
 
     volumes = {
@@ -925,7 +1095,7 @@ def volume_section(staging: dict) -> list[dict]:
     long_view = {
         "ref": "EX_ANNUAL",
         "kind": "bars_labeled",
-        "title": (f"季度成交数据只回到 2021Q1，年度口径回到 {years[0]}：现货日均成交额 "
+        "title": (f"季度成交数据只回到 {kq[0]}，年度口径回到 {years[0]}：现货日均成交额 "
                   f"HK${annual['adt_headline'][0]:,.1f}bn → HK${annual['adt_headline'][-1]:,.1f}bn"),
         "xlabels": list(years),
         "values": rounded(annual["adt_headline"]),
@@ -936,7 +1106,7 @@ def volume_section(staging: dict) -> list[dict]:
         "ylab": "HK$bn / 日",
         "note": (
             "<b>本页唯一一张年度图，而它只画一条序列 —— 那是这张图真正的结论。</b>"
-            "现货市场日均成交额这一行十年同一口径，每一年的值在两份公告里各出现一次"
+            f"现货市场日均成交额这一行{cn_count(len(years))}年同一口径，每一年的值在两份公告里各出现一次"
             "（当年全年公告的本期列、次年全年公告的比较列），逐年两两核对无差异。"
             "<b>衍生品与 LME 的年度成交量本来也该画在这张图的右轴上，本页不画</b>："
             "公司在同一个窗口里改过三次口径 —— FY2018 把 LME 那一行从「ADV」改成"
@@ -1023,9 +1193,13 @@ def audit_tables(staging: dict, entries: list[dict], check: dict,
         "rows": census_rows or [["—", "—", "—", "—", "—", "—"]],
     }
 
-    thresholds = threshold_table(
-        first + 3, "第一节六条本地阈值的原始单位", entries, "current", "当前值")
-    return [ledger, reconcile, census, thresholds, ai_capex_cycle_table(first + 4)]
+    tables = [ledger, reconcile, census]
+    if entries:
+        tables.append(threshold_table(
+            first + len(tables), f"第一节{cn_count(len(entries))}条本地阈值的原始单位",
+            entries, "current", "当前值"))
+    tables.append(ai_capex_cycle_table(first + len(tables)))
+    return tables
 
 
 def headline_metrics(staging: dict) -> list[str]:
@@ -1054,15 +1228,34 @@ def build_payload(staging: dict) -> dict:
     rebates = staging["half_investment"]["rebates"]
     share = [-r / g * 100 for r, g in zip(rebates, gross)]
     derived_total = sum(1 for b in staging["quarter_basis"] if b == "derived")
+    period = display_period(staging["quarters"][-1])
+    kpi = stamped_block(staging, "next_kpi", period)
+    context = stamped_block(staging, "quarter_context", period)
+    release = release_source(staging)
 
-    disclosure_ex, entries = disclosure_section(staging, check, recon)
-    quarter_ex = quarter_section(staging)
+    disclosure_ex, entries = disclosure_section(staging, check, recon, kpi)
+    quarter_ex = quarter_section(staging, context)
     investment_ex = investment_section(staging)
     volume_ex = volume_section(staging)
     exhibits = number_exhibits(disclosure_ex + quarter_ex + investment_ex + volume_ex, start=1)
     tables = audit_tables(staging, entries, check, recon, len(exhibits) + 1)
 
-    latest = latest_block(staging, period=display_period(staging["quarters"][-1]))
+    latest = latest_block(staging, period=period)
+    lag_head = [disclosure_lag(staging, qq, HEADLINE_LINES) for qq in quarters]
+    odd_lags = [v for qq, v in zip(quarters, lag_head) if qq[5] in "13"]
+    q4_lags = [v for qq, v in zip(quarters, lag_head) if qq[5] == "4"]
+    q2_old = [v for qq, v in zip(quarters, lag_head) if qq[5] == "2" and qq < "2022"]
+    elasticity = elasticities(staging)
+    opposite_halves, half_steps = half_direction_steps(staging)
+    old_gaps, recent_gaps = fee_split_gaps(staging)
+    records = [name for name, field in (("收入及其他收益", "revenue_and_other_income"),
+                                        ("股东应占溢利", "profit_attributable"))
+               if q[field][-1] == max(q[field])]
+    record_words = ("两者都是" if len(records) == 2 else (f"{records[0]}是" if records else "两者都不是"))
+    margin_before = margins[-2] > margins[-1]
+    printed_somewhere = [qq for qq in quarters if qq[5] in "24"
+                         and qq not in recon["covered_even"]]
+    margin_gap = company_margin_gap(staging)
     return {
         "schema_version": "quarterly-dashboard/hkex-v1",
         "page": {"slug": "hkex", "language": "zh-CN"},
@@ -1074,18 +1267,27 @@ def build_payload(staging: dict) -> dict:
         },
         "latest": latest,
         "tracker": "Watchlist Quarterly Tracker · HKEX",
-        "title": "香港交易及结算所有限公司 (00388.HK)：Q2 2026 季报仪表盘",
+        "title": f"香港交易及结算所有限公司 (00388.HK)：{period} 季报仪表盘",
         "subtitle": (
-            f"截至 {latest['period_end']} · 发布 {latest['release_date']} · HKFRS · 未审计 · "
+            f"截至 {latest['period_end']} · 发布 {latest['release_date']} · HKFRS · "
+            f"{AUDIT_WORDS[latest['audit_status']]} · "
             "自然年财年，季度标注无需换算"),
         "headline": (
             f"收入及其他收益 {hkd_m(roi[-1])}、同比 {signed(pct(roi[-1], roi[-5]))}，"
             f"股东应占溢利 {hkd_m(profit[-1])}、同比 {signed(pct(profit[-1], profit[-5]))}，"
-            f"两者都是 {len(quarters)} 季新高；"
-            f"EBITDA 利润率 {margin:.1f}% 不是 —— 它排第 {margin_rank}，"
-            f"最高的是 {margin_best_q} 的 {margin_best:.1f}%，上一季也比它高。"
-            f"但本页的对象不是这个季度：这 {len(quarters)} 格里有 {derived_total} 格"
-            "本页是减出来的 —— 而公司自己也把它们印出来过，在年报的季度表里，只是要晚得多。"
+            + ((f"{record_words} {len(quarters)} 季新高；"
+                + (f"EBITDA 利润率 {margin:.1f}% 不是 —— 它排第 {margin_rank}，"
+                   f"最高的是 {margin_best_q} 的 {margin_best:.1f}%"
+                   + ("，上一季也比它高。" if margin_before else "。")
+                   if margin_rank > 1 else f"EBITDA 利润率 {margin:.1f}% 也是。"))
+               if records else
+               f"EBITDA 利润率 {margin:.1f}%，在 {len(quarters)} 季里排第 {margin_rank}。")
+            + f"但本页的对象不是这个季度：这 {len(quarters)} 格里有 {derived_total} 格"
+            # 「在年报的季度表里」: the quarter just published is in the interim
+            # announcement's summary box and not yet in any annual table.
+            + "本页是减出来的 —— 而公司自己也把它们印出来过，在年报的季度表"
+            + ("或中期公告的摘要框" if printed_somewhere else "")
+            + "里，只是要晚得多。"
             f"两边逐格比对 {recon['compared']} 次，{recon['mismatches']} 处不同。"
             f"真正没有被任何人印过的是 {len(never_printed(staging, FEE_LINES))} 个季度的"
             "收入分项。"),
@@ -1093,25 +1295,34 @@ def build_payload(staging: dict) -> dict:
             '<h4>本季三条主线</h4><div class="takeaway-grid">'
             '<article><span>结构</span><b>等多久，比印没印重要</b>'
             f'<p>{len(quarters)} 季的主线全部被公司印过，差别在等多久 —— 而慢的只有第二季：'
-            f'第一、三季 19–42 天，第四季 54–79 天，第二季在 2022 年之前是 257–263 天。'
+            f'第一、三季 {min(odd_lags)}–{max(odd_lags)} 天，第四季 {min(q4_lags)}–{max(q4_lags)} 天，'
+            f'第二季在 2022 年之前是 {min(q2_old)}–{max(q2_old)} 天。'
             f'本页减出的 {derived_total} 格与公司印出的同一格比对 {recon["compared"]} 次，'
             f'{recon["mismatches"]} 处不同。<b>只有 {len(never_printed(staging, FEE_LINES))} 个季度的'
             '收入分项至今没有被任何人印过。</b></p></article>'
-            '<article><span>价差</span><b>保证金利息有一半以上不归公司</b>'
+            '<article><span>价差</span><b>保证金利息'
+            + ("有一半以上不归公司" if share[-1] > 50 else f"{half_words(staging)}有 {share[-1]:.0f}% 不归公司")
+            + '</b>'
             f'<p>返还给结算参与者的比例从 {share[0]:.0f}% 走到 {max(share):.0f}%，'
-            f'本半年 {share[-1]:.0f}%。毛额与净额在窗口里两次走出相反方向，'
+            # 「两次走出相反方向」: gross and net moved in opposite directions in
+            # four of the twenty half-on-half steps, none of them the two stories
+            # the section tells.
+            f'{half_words(staging)} {share[-1]:.0f}%。毛额与净额在 {half_steps} 次半年环比里有 '
+            f'{opposite_halves} 次走出相反方向，'
             '而季度损益表上只印净额那一条。</p></article>'
             '<article><span>量</span><b>成交额的波动，越往下走削得越平</b>'
             f'<p>日均成交额每变动 1%，交易与结算费变动 '
-            f'{staging["fee_elasticity"]["slope_trading_clearing"]:.2f}%、'
+            f'{elasticity["slope_trading_clearing"]:.2f}%、'
             f'收入及其他收益只变动 '
-            f'{staging["fee_elasticity"]["slope_revenue_and_other_income"]:.2f}%。'
+            f'{elasticity["slope_revenue_and_other_income"]:.2f}%。'
             '把成交额当成收入的代理变量会高估两个方向。</p></article>'
             '</div>'
         ),
         "source": (
-            'Source: <a href="' + staging["sources"][0]["url"] + '" rel="noopener">'
-            'HKEX 2026 年中期业绩公告（2026-08-19）</a>与 2016 年以来的 42 份季度／中期／全年业绩公告。'
+            'Source: <a href="' + release["url"] + '" rel="noopener">'
+            + announcement_label(period) + f'（{latest["release_date"]}）</a>与 '
+            f'{staging["announcements"][0]["doc"][:4]} 年以来的 {len(staging["announcements"])} 份'
+            '季度／中期／全年业绩公告。'
         ),
         "source_url": (
             "https://www.hkexgroup.com/Investor-Relations/"
@@ -1128,24 +1339,28 @@ def build_payload(staging: dict) -> dict:
                  "但公司自己也把这些季度印出来过，在年报的季度表里，FY2016 起每年都有。"
                  "差别不在印没印，在等多久：第二季在 2022 年之前要等八个半月。"
                  "本节用那张年度季度表逐格检验本页的减法，"
-                 "并说明为什么这里没有兑现图 —— 这家公司不发布任何财务指引。"),
+                 + ("并说明为什么这里没有兑现图 —— 这家公司不发布任何财务指引。" if kpi else
+                    "这家公司不发布任何财务指引，所以这里没有兑现图。")),
              "exhibits": disclosure_ex},
             {"id": "quarter", "title": "二、本季重点",
              "description": (
-                 "五张图，都画在每一季都存在、口径十年没变过的线上：利润率、收入构成、"
+                 f"{cn_count(len(quarter_ex))}张图，都画在每一季都存在、口径十年没变过的线上：利润率、收入构成、"
                  "溢利与税率、以及不随成交量走的那部分收入。"
-                 "收入构成那一张要记住第一节的结论 —— 它的柱子有一半是本页算出来的。"),
+                 "收入构成那一张要记住第一节的结论 —— 它的柱子有"
+                 f"{cn_fraction(derived_total / len(quarters))}是本页算出来的。"),
              "exhibits": quarter_ex},
             {"id": "investment", "title": "三、投资收益是一道价差，一年只露两次",
              "description": (
                  "保证金投资收益的毛额与返还给结算参与者的利息只出现在中期与全年的损益表上，"
                  "季度损益表只印一个净额。本节按半年频率画那道价差，"
-                 "并给出它在窗口内两次与净额走出相反方向的时点。"),
+                 # 「两次与净额走出相反方向的时点」: the two stretches the last chart
+                 # tells are divergences in size, not in direction.
+                 "并给出毛额与净额分道扬镳的两段时间。"),
              "exhibits": investment_ex},
             {"id": "volume", "title": "四、成交量：能画的那一段，和画不了的那一段",
              "description": (
                  "市场统计是每交易日的平均，因此第一节那道减法在这里用不了：一个六个月的平均"
-                 "减一个三个月的平均不是第二季。季度市场统计只回到 2021Q1，"
+                 f"减一个三个月的平均不是第二季。季度市场统计只回到 {staging['kpi_quarters'][0]}，"
                  "本节先画那一段，再用年度口径给一个更长的背景。"),
              "exhibits": volume_ex},
         ],
@@ -1167,15 +1382,16 @@ def build_payload(staging: dict) -> dict:
             f"落在减出来的格子上，{recon['mismatches']} 处不同。"
             "真正没有被任何人印过的是双数季的收入分项："
             "年报那张季度表在 FY2022 才加入六项费用收入，所以 2016–2021 的双数季"
-            f"（连同刚发布的 {recon['uncovered_even'][0]}）共 "
-            f"{len(never_printed(staging, FEE_LINES))} 个季度的收入拆分只有本页的算术。",
+            + (f"（连同{pending_words(staging, recent_gaps, wait=False)}）" if recent_gaps else "")
+            + f"共 {len(never_printed(staging, FEE_LINES))} 个季度的收入拆分只有本页的算术。",
             "每一个期间都被公司印过两次：一次在当期公告里作为本期，一次在一年后的同类公告里"
             "作为比较期。本页把两次读数逐格比对，"
             f"{staging['restatement_paired_readings']:,} 对读数里只有 "
             f"{len(staging['restatement_census'])} 处不同，都在 2020 年第三季与前九个月的"
-            "「其他收入」一行：34 百万港元从其他收入被重分类到当年新增的「慈善基金捐款收入」一行，"
+            f"「其他收入」一行：{abs(staging['restatement_census'][0]['again'] - staging['restatement_census'][0]['first']):,.0f} "
+            "百万港元从其他收入被重分类到当年新增的「慈善基金捐款收入」一行，"
             "收入及其他收益合计不变。"
-            "说清楚这句话的范围：这是本页逐格比对的那 1,091 对读数里唯一的一处，"
+            f"说清楚这句话的范围：这是本页逐格比对的那 {staging['restatement_paired_readings']:,} 对读数里唯一的一处，"
             "不是「公司在本窗口内只重分类过一次」—— 比对只覆盖本页跟踪的那些行，"
             "覆盖不到的行有没有动过，本页没有读数，也就不作断言。",
             "季度损益表只印一个「净投资收益」，投资收益毛额与「支付予参与者的利息回赠」"
@@ -1185,7 +1401,8 @@ def build_payload(staging: dict) -> dict:
             "EBITDA 利润率本页统一用「EBITDA ÷ 收入及其他收益」自算。"
             "公司自己印的那个比率分母是「扣除交易相关支出后的收入及其他收益」，"
             "而那一行 2020 年才出现在损益表上，用它会让 2020 年之前的窗口没有可比口径。"
-            "两者的差在 1 个百分点以内，方向固定（公司口径略高）。",
+            + (f"两者的差在 {margin_gap[0]:.1f}–{margin_gap[1]:.1f} 个百分点之间，方向固定（公司口径略高）。"
+               if margin_gap else ""),
             "营业开支合计由「收入及其他收益 − EBITDA」倒推，不由明细行相加："
             "明细行的行数在窗口内变过三次（2018 年起信息技术开支独立成行、"
             "2020 年起慈善基金捐款独立成行），而两个端点的定义十年没变。"
@@ -1193,7 +1410,11 @@ def build_payload(staging: dict) -> dict:
             "市场统计（日均成交额、日均张数、计费日均手数）不能用第一节那道减法："
             "它们是每交易日的平均值，六个月的平均减三个月的平均不是第二季，"
             "而正确的还原需要各期的交易日数，公司不在公告里印它。"
-            "公司自 2021Q1 起按季印出这些平均值，因此第四节的季度图从那里开始，"
+            # 「公司自 2021Q1 起按季印出」: the company began printing them in
+            # 2022, with one prior-year column that reaches back to 2021Q1 (the
+            # volume section's first chart says so).
+            "公司自 2022 年起在公告正文按季印出这些平均值，并带一个上年比较列，"
+            f"最早的离散季度因此是 {staging['kpi_quarters'][0]}，第四节的季度图从那里开始，"
             "更早的部分本页留空而不是补出来。",
             "市场统计不从 PDF 的文本层读取。公司用上标标注「新的季度／半年度纪录」，"
             "而纯文本导出会把上标并进数字本身：日均成交额 283.0 变成 283.04、"
@@ -1210,8 +1431,9 @@ def build_payload(staging: dict) -> dict:
             "公司在同一张表里并排印出，本页照原样画，不做换算 —— "
             "换算需要选一个汇率口径而公司没有给。南向成交计入现货市场日均成交额，北向不计入。",
             "本页不发布评级、目标价、估值与任何券商共识。"
-            "第一节的六条阈值是本地研究设定，不是公司指引："
-            f"{staging['guidance_census']['documents']} 份公告里带数字的前瞻表述 "
+            + (f"第一节的{cn_count(len(entries))}条阈值是本地研究设定，不是公司指引："
+               if entries else "本页没有可以兑现的公司指引：")
+            + f"{staging['guidance_census']['documents']} 份公告里带数字的前瞻表述 "
             f"{staging['guidance_census']['forward_statements_with_a_number']} 处，"
             "没有一处是收入、利润、费用或资本开支的数字指引，分析师演示材料里也没有。",
             "本页跨页对照表与其他公司页逐字相同，港交所本身不在那张表的任何一列里 —— "
