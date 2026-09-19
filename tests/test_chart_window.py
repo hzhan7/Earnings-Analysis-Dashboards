@@ -1544,7 +1544,15 @@ def _ker_run_counts() -> dict:
     runs = {"Gucci 本季收入": (gucci_run, "Gucci 可比增速连续为负的季度数，是一段区间的长度，按 series 现算"),
             "集团可比增速本季": (group_run, "集团可比增速这一段（非正或为正）的季度数，是一段区间的长度，按 series 现算")}
 
-    page = js_payload(ROOT / "data" / "ker.js", "window.DASH")
+    return _pin_runs("ker", runs)
+
+
+def _pin_runs(slug: str, runs: dict) -> dict:
+    """Pin each run length on the chart whose title starts with its key, where the
+    census would see it: counts under twelve are not policed, a count some chart
+    on the page can derive is not loose, and an exhibit with a derivable anchor
+    is skipped whole."""
+    page = js_payload(ROOT / "data" / f"{slug}.js", "window.DASH")
     charts = [ex for section in page["sections"] for ex in section["exhibits"]]
     derivable = set().union(*(ProseQuarterCountTest._derivable(ex)[1] for ex in charts))
     pins = {}
@@ -1555,11 +1563,29 @@ def _ker_run_counts() -> dict:
             prose = " ".join(ex.get(field) or "" for field in ("title", "note", "subtitle"))
             if {int(m.group(1)) for m in ProseQuarterCountTest.ANCHOR.finditer(prose)} & derivable:
                 continue
-            pins[f"ker Ex{ex['n']}"] = ([count], reason)
+            pins[f"{slug} Ex{ex['n']}"] = ([count], reason)
     return pins
 
 
+def _cfr_run_counts() -> dict:
+    """Richemont's business-area chart counts the jewellery Maisons' run of
+    double-digit constant-rate quarters (seven at 2026Q2) and, in the same title,
+    how many of those quarters the watchmakers were negative. The run is a stretch,
+    not a window; it is computed from `series/cfr.json` and pinned only when it is
+    long enough for the census to police."""
+    series = json.loads((ROOT / "series" / "cfr.json").read_text(encoding="utf-8"))
+    streak = 0
+    for value in reversed(series["quarterly_cer_pct"]["jewellery_maisons"]):
+        if value is None or value < 10:
+            break
+        streak += 1
+    return _pin_runs("cfr", {"三块业务的恒定汇率增速": (
+        streak if streak >= 2 else 0,
+        "珠宝恒定汇率增速连续两位数的季度数，是一段区间的长度，按 series 现算")})
+
+
 UNDERIVABLE_QUARTER_COUNTS.update(_ker_run_counts())
+UNDERIVABLE_QUARTER_COUNTS.update(_cfr_run_counts())
 
 if __name__ == "__main__":
     unittest.main()

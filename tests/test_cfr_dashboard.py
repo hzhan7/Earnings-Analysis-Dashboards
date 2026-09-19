@@ -34,10 +34,19 @@ not a basis change, and would be red here.
 **A computed number could be typed.** The headline, brief, titles and the home
 card all print counts and percentages; the payload tests recompute each from the
 series rather than trusting the sentence.
+
+**A roll could leave last quarter's words behind.** The page is rolled by editing
+`series/cfr.json` alone (CLAUDE.md §9), so nothing here names the page's quarter:
+`CfrRollTest` holds what a roll must change and what the page does when a block is
+stale or absent -- including the first interim roll, whose fiscal year has a
+first half and no annual yet -- and `CfrChecksTest` holds the quarter against
+`_checks`, a separate reading of the announcement. Rolling re-keys `_checks`; this
+file does not change.
 """
 
 from __future__ import annotations
 
+import copy
 import datetime
 import json
 import re
@@ -50,7 +59,7 @@ sys.path.insert(0, str(ROOT))
 
 from build import cfr  # noqa: E402
 from build.all import ENTRIES  # noqa: E402
-from build.board import UNIT_FORMATS, headroom  # noqa: E402
+from build.board import UNIT_FORMATS, cn_count, cn_ordinal, display_period, headroom  # noqa: E402
 
 REGIONS = ("europe", "asia_pacific", "americas", "japan", "middle_east_africa")
 CHANNELS = ("retail", "online_retail", "wholesale")
@@ -85,8 +94,12 @@ class CfrSeriesTest(unittest.TestCase):
     # ── the window and the calendar ─────────────────────────────────────────
     def test_the_window_runs_from_2016q1_and_is_contiguous(self) -> None:
         self.assertEqual(self.q[0], "2016Q1")
-        self.assertEqual(self.q[-1], "2026Q2")
-        self.assertEqual(len(self.q), 42)
+        self.assertEqual(display_period(self.q[-1]), self.s["latest"]["disclosed_period_label"])
+        for key in ("fiscal_quarters", "quarter_basis"):
+            self.assertEqual(len(self.s[key]), len(self.q), key)
+        for block in ("quarterly_eur_m", "quarterly_cer_pct", "quarterly_actual_pct"):
+            for line, values in self.s[block].items():
+                self.assertEqual(len(values), len(self.q), f"{block} {line}")
         for a, b in zip(self.q, self.q[1:]):
             self.assertTrue(quarter_step(a, b), (a, b))
 
@@ -97,8 +110,13 @@ class CfrSeriesTest(unittest.TestCase):
                     "2026Q1": "FY26Q4", "2016Q1": "FY16Q4"}
         mapping = dict(zip(self.q, self.s["fiscal_quarters"]))
         for quarter, fiscal in expected.items():
-            self.assertEqual(mapping[quarter], fiscal)
-        self.assertEqual(self.s["latest"]["fiscal_label"], "FY27 Q1")
+            self.assertEqual(mapping.get(quarter, fiscal), fiscal)
+        for quarter, fiscal in mapping.items():
+            year, number = int(quarter[:4]), int(quarter[5])
+            fy = year if number == 1 else year + 1
+            self.assertEqual(fiscal, f"FY{fy % 100:02d}Q{4 if number == 1 else number - 1}", quarter)
+        fy, number = mapping[self.q[-1]][:4], int(mapping[self.q[-1]][-1])
+        self.assertIn(f"（公司 {fy} 第{cn_ordinal(number)}季）", cfr.build_payload(self.s)["title"])
 
     # ── the holes ────────────────────────────────────────────────────────────
     def test_the_four_quarters_nobody_can_separate_are_the_five_month_years(self) -> None:
@@ -115,10 +133,14 @@ class CfrSeriesTest(unittest.TestCase):
                 self.assertIsNone(values[i], f"{quarter} growth {key} was filled")
 
     def test_the_basis_census_is_the_one_the_page_prints(self) -> None:
+        """The five derived and four missing quarters are history; every quarter
+        since is printed, so a roll adds one printed quarter and nothing else."""
         basis = self.s["quarter_basis"]
-        self.assertEqual((basis.count("printed"), basis.count("derived"), basis.count("missing")), (33, 5, 4))
         self.assertEqual([q for q, b in zip(self.q, basis) if b == "derived"],
                          ["2016Q1", "2017Q1", "2018Q1", "2018Q3", "2019Q1"])
+        self.assertEqual([q for q, b in zip(self.q, basis) if b == "missing"], UNSEPARABLE)
+        self.assertEqual(basis.count("printed"), len(self.q) - 9)
+        self.assertTrue(all(b == "printed" for b in basis[self.q.index("2019Q2"):]))
 
     def test_every_derived_quarter_is_its_two_legs(self) -> None:
         checked = 0
@@ -177,11 +199,12 @@ class CfrSeriesTest(unittest.TestCase):
                     continue
                 self.assertEqual(self.e[key][a] + self.e[key][b], half[i], f"{label} {key}")
                 compared += 1
-        self.assertEqual(compared, 72)
+        # 72 comparisons up to FY26H2; every half since adds four more
+        self.assertGreaterEqual(compared, 72)
 
     def test_every_later_print_matches_the_subtraction_but_one(self) -> None:
         checks = self.s["derived_checks"]
-        self.assertEqual(len(checks), 180)
+        self.assertGreaterEqual(len(checks), 180)
         differ = [c for c in checks if c["derived"] != c["printed"]]
         self.assertEqual({c["quarter"] for c in differ}, {"2022Q3"})
         docs = {d["doc_id"]: d for d in self.s["documents"]}
@@ -203,8 +226,10 @@ class CfrSeriesTest(unittest.TestCase):
         periods = {c["period"] for c in self.s["restatement_census"]}
         for period in periods:
             self.assertTrue(period.startswith("FY18") or period.startswith("FY22") or period == "FY23Q1", period)
-        self.assertEqual(len(self.s["restatement_census"]), 194)
-        self.assertEqual(self.s["restatement_paired_readings"], 1930)
+        self.assertGreaterEqual(len(self.s["restatement_census"]), 194)
+        self.assertGreaterEqual(self.s["restatement_paired_readings"], 1930)
+        # the census names how far it read, and never further than the corpus
+        self.assertLessEqual(self.s["restatement_census_documents"], len(self.s["documents"]))
 
     def test_a_printed_second_half_matches_the_subtraction(self) -> None:
         checks = self.s["half_checks"]
@@ -215,15 +240,24 @@ class CfrSeriesTest(unittest.TestCase):
     def test_each_half_year_pair_comes_from_one_generation_of_documents(self) -> None:
         docs = {d["doc_id"]: d for d in self.s["documents"]}
         for fy, src in self.s["half_sources"].items():
-            year_doc, h1_doc = docs[src["year_doc"]], docs[src["h1_doc"]]
-            self.assertEqual(year_doc["kind"], "annual_results")
+            h1_doc = docs[src["h1_doc"]]
             self.assertEqual(h1_doc["kind"], "interim_results")
             expected = f"FY{int(fy[2:]) + 1}" if src["mode"] == "next_year" else fy
-            self.assertEqual(year_doc["fiscal_year"], expected, fy)
             self.assertEqual(h1_doc["fiscal_year"], expected, fy)
-        # the two years that fall back do so for a recorded reason
-        own = sorted(fy for fy, v in self.s["half_sources"].items() if v["mode"] == "own_year")
-        self.assertEqual(own, ["FY19", "FY21", "FY26"])
+            if src.get("year_doc") is None:
+                # a fiscal year whose annual has not come yet: its first half only
+                self.assertEqual(fy, list(self.s["half_sources"])[-1])
+                self.assertEqual(self.s["halves"][-1], f"{fy}H1")
+                continue
+            year_doc = docs[src["year_doc"]]
+            self.assertEqual(year_doc["kind"], "annual_results")
+            self.assertEqual(year_doc["fiscal_year"], expected, fy)
+        # the two years that fall back do so for a recorded reason; the latest
+        # year falls back because nothing later exists
+        latest_fy = list(self.s["half_sources"])[-1]
+        own = sorted(fy for fy, v in self.s["half_sources"].items() if v["mode"] == "own_year" and fy != latest_fy)
+        self.assertEqual(own, ["FY19", "FY21"])
+        self.assertEqual(self.s["half_sources"][latest_fy]["mode"], "own_year")
 
     # ── what the disclosure shape says ───────────────────────────────────────
     def test_the_disclosure_lags_are_measured_from_release_dates(self) -> None:
@@ -237,31 +271,44 @@ class CfrSeriesTest(unittest.TestCase):
         self.assertEqual(sorted(self.s["first_printed"]), sorted(printed))
 
     def test_the_company_streak_claim_holds_on_its_own_printed_rates(self) -> None:
-        claim = next(c for c in self.s["company_claims"] if c["key"] == "jewellery_streak")
-        rates = self.s["quarterly_cer_pct"][claim["line"]]
-        streak = 0
-        for v in reversed(rates):
-            if v is None or v < claim["threshold_pct"]:
-                break
-            streak += 1
-        self.assertEqual(streak, claim["count"])
-        self.assertIn("seventh consecutive quarter of double-digit growth", claim["quote"])
+        """When the quarter's announcement makes the claim, the page counts it again
+        on the company's own printed rates and says whether it holds."""
+        block = self.s.get("company_claims")
+        claims = [] if block is None else [c for c in block["items"] if c["key"] == "jewellery_streak"]
+        payload = cfr.build_payload(self.s)
+        for claim in claims:
+            rates = self.s["quarterly_cer_pct"][claim["line"]]
+            streak = 0
+            for v in reversed(rates):
+                if v is None or v < claim["threshold_pct"]:
+                    break
+                streak += 1
+            self.assertIn("consecutive quarter of double-digit growth", claim["quote"])
+            area = next(ex for section in payload["sections"] for ex in section["exhibits"]
+                        if ex["ref"] == "EX_AREA_CER")
+            verdict = "成立" if streak == claim["count"] else f"不成立，本页逐季数到 {streak} 个"
+            self.assertIn(f"「第{cn_ordinal(claim['count'])}个连续双位数季度」", area["note"])
+            self.assertIn(f"本页逐季核过：{verdict}。", area["note"])
 
-    def test_the_jewellery_range_breaks_for_the_first_time_in_the_latest_half(self) -> None:
+    def test_the_jewellery_range_break_is_named_only_the_first_time(self) -> None:
         hv = cfr.half_view(self.s)
         margin = hv["margin"]["jewellery_maisons"]
-        below = [i for i in hv["jewel_after"] if margin[i] < 30.0]
-        self.assertEqual(below, [hv["last"]])
-        self.assertTrue(hv["jewel_first_break"])
+        rng = next(x for x in self.s["statements"] if x["key"] == "jewellery_margin_range")
+        below = [i for i in hv["jewel_after"] if margin[i] < rng["low"]]
+        payload = cfr.build_payload(self.s)
+        first_time = below == [hv["last"]]
+        self.assertEqual(hv["jewel_first_break"], first_time)
+        self.assertEqual("在这句话之后第一次被跌破" in payload["headline"], first_time)
         seg = self.s["half_segment_result_eur_m"]["jewellery_maisons"][hv["last"]]
         sales = self.s["half_segment_sales_eur_m"]["jewellery_maisons"][hv["last"]]
-        self.assertAlmostEqual(seg / sales * 100, 28.4, delta=0.05)
+        self.assertIn(f"珠宝经营利润率是 {seg / sales * 100:.1f}%", payload["headline"])
 
 
 class CfrPayloadTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.s = load()
+        cls.q = cls.s["quarters"]
         cls.payload = cfr.build_payload(cls.s)
         cls.exhibits = [ex for section in cls.payload["sections"] for ex in section["exhibits"]]
         cls.qv = cfr.quarter_view(cls.s)
@@ -292,10 +339,10 @@ class CfrPayloadTest(unittest.TestCase):
     def test_half_year_charts_are_labelled_by_the_month_each_half_ends(self) -> None:
         half = [ex for ex in self.exhibits if ex["xlabels"] and re.fullmatch(r"\d{4}-\d{2}", ex["xlabels"][0])]
         self.assertEqual(len(half), 5)
+        expected = ["09" if label.endswith("H1") else "03" for label in self.s["halves"]]
         for exhibit in half:
             months = [label[5:] for label in exhibit["xlabels"]]
-            self.assertEqual(len(months), len(self.s["halves"]))
-            self.assertEqual(months, ["09", "03"] * (len(months) // 2), exhibit["title"])
+            self.assertEqual(months, expected, exhibit["title"])
 
     def test_no_quarterly_chart_carries_a_profit_figure(self) -> None:
         for exhibit in self.quarterly():
@@ -350,7 +397,8 @@ class CfrPayloadTest(unittest.TestCase):
                       len(self.s["derived_checks"])):
             self.assertIn(str(count), brief)
         headline = self.payload["headline"]
-        self.assertIn(f"连续第 {self.qv['streak']} 个", headline)
+        if self.qv["streak"]:
+            self.assertIn(f"连续第 {self.qv['streak']} 个", headline)
         jm = self.hv["margin"]["jewellery_maisons"][self.hv["last"]]
         self.assertIn(f"{jm:.1f}%", headline)
         self.assertIn(f"{self.hv['jewel_of_op'][self.hv['last']]:.0f}%", headline)
@@ -371,6 +419,69 @@ class CfrPayloadTest(unittest.TestCase):
         over = sum(1 for v in self.hv["jewel_of_op"] if v > 100)
         self.assertIn(f"{len(self.s['halves'])} 个半年里 {over} 个", op["title"])
 
+    def test_the_growth_gaps_are_counted_from_the_record(self) -> None:
+        """The note under the business-area chart once said the fiscal Q2 and Q4
+        gaps before 2021Q2 were "mostly printed years later": four of those eleven
+        were ever printed as quarters, and three of the gaps had a single-quarter
+        group rate printed in the announcements' text. Every count in the sentence
+        is now read off the record."""
+        area = next(ex for ex in self.exhibits if ex["ref"] == "EX_AREA_CER")
+        cer = self.s["quarterly_cer_pct"]["jewellery_maisons"]
+        basis = self.s["quarter_basis"]
+        gaps = [i for i, v in enumerate(cer) if v is None]
+        later = [i for i in gaps if basis[i] == "printed"]
+        self.assertIn(f"{len(gaps)} 个缺口里 {len(later)} 个", area["note"])
+        self.assertIn(f"{sum(1 for i in gaps if basis[i] == 'derived')} 个只能减出，"
+                      f"{sum(1 for i in gaps if basis[i] == 'missing')} 个连金额也拆不出来", area["note"])
+        if later and min(self.qv["lags"][i] for i in later) > 365:
+            self.assertIn("在季末一年多以后才第一次被印成单独季度", area["note"])
+        for rate in self.s["text_quarter_rates"]:
+            if rate["line"] == "total" and self.q.index(rate["quarter"]) in gaps:
+                self.assertIn(f"{rate['quarter']} {cfr.signed(rate['cer_pct'])}", area["note"])
+        self.assertIn("没有在销售表里按单独季度印过增速", area["note"])
+        self.assertNotIn("多数是几年后才印", area["note"])
+
+    def test_a_region_that_sold_less_is_drawn_below_zero(self) -> None:
+        """`bars_labeled` has a zero floor; the rollback drill put Middle East & Africa's
+        −€65M under the plot. A negative increment switches the chart to the grouped
+        form, which draws below zero with the same labels."""
+        shrinking = copy.deepcopy(self.s)
+        e = shrinking["quarterly_eur_m"]["middle_east_africa"]
+        e[-1] = e[-5] - 50
+        chart = next(ex for section in cfr.build_payload(shrinking)["sections"] for ex in section["exhibits"]
+                     if ex["ref"] == "EX_INCREMENT")
+        self.assertEqual(chart["kind"], "grouped_bars")
+        self.assertLess(min(chart["groups"][0]["values"]), 0)
+        self.assertTrue(chart["bar_labels"])
+        mine = next(ex for ex in self.exhibits if ex["ref"] == "EX_INCREMENT")
+        values = mine.get("values") or mine["groups"][0]["values"]
+        self.assertEqual(mine["kind"], "bars_labeled" if min(values) >= 0 else "grouped_bars")
+
+    def test_the_increment_title_ranks_the_regions(self) -> None:
+        """The title used to name Asia Pacific, the Americas and Middle East & Africa
+        by hand; it now names the two largest increments and the smallest, whichever
+        regions they are."""
+        e = self.s["quarterly_eur_m"]
+        inc = {k: e[k][-1] - e[k][-5] for k in REGIONS}
+        ranked = sorted(REGIONS, key=lambda k: inc[k], reverse=True)
+        names = {"europe": "欧洲", "asia_pacific": "亚太", "americas": "美洲", "japan": "日本",
+                 "middle_east_africa": "中东与非洲"}
+        title = next(ex for ex in self.exhibits if ex["ref"] == "EX_INCREMENT")["title"]
+        first, second, least = ranked[0], ranked[1], ranked[-1]
+        self.assertIn(f"：{names[first]} {cfr.eur(inc[first])}、{names[second]} {cfr.eur(inc[second])}，"
+                      f"{names[least]}", title)
+
+    def test_the_tracking_note_counts_the_profit_thresholds(self) -> None:
+        """「利润类的两条」was typed; the six thresholds carry one half-year profit
+        measure (the gross margin), the rest are sales growth and net cash."""
+        chart = next(ex for ex in self.exhibits if ex["ref"] == "EX_HEADROOM")
+        profit = sum(1 for t in self.s["thresholds"]["entries"] if t["current_key"] == "half_gross_margin")
+        if profit:
+            self.assertIn(f"利润类的{cn_count(profit)}条要等 {self.s['latest']['next_release']['date']} ",
+                          chart["note"])
+        else:
+            self.assertNotIn("利润类的", chart["note"])
+
     def test_literal_slots_and_page_notes_carry_no_markup(self) -> None:
         for key in ("title", "subtitle", "headline", "tracker"):
             self.assertIsNone(re.search(r"</?[a-z][a-z0-9]*>", self.payload[key]), key)
@@ -388,14 +499,17 @@ class CfrPayloadTest(unittest.TestCase):
     def test_the_guidance_slot_is_empty_because_the_company_issues_none(self) -> None:
         self.assertIsNone(self.payload["guidance"])
         self.assertEqual(self.s["guidance_census"]["sales_or_growth_targets"], 0)
-        self.assertEqual(self.s["guidance_census"]["documents"], len(self.s["documents"]))
+        census = self.s["guidance_census"]
+        self.assertLessEqual(census["documents"], len(self.s["documents"]))
+        self.assertTrue(any(f"在 {census['documents']} 份公告里" in note for note in self.payload["notes"]),
+                        "the census prints its own scope, not the corpus size")
 
     def test_thresholds_use_known_units_and_the_chart_agrees_with_the_table(self) -> None:
         chart = next(ex for ex in self.exhibits if ex["ref"] == "EX_HEADROOM")
         table = next(t for t in self.payload["tables"] if "本地阈值的原始单位" in t["title"])
-        entries = [{**t, "current": None} for t in self.s["thresholds"]]
+        entries = [{**t, "current": None} for t in self.s["thresholds"]["entries"]]
         self.assertEqual(len(chart["values"]), len(entries))
-        for entry, value, row in zip(self.s["thresholds"], chart["values"], table["rows"]):
+        for entry, value, row in zip(self.s["thresholds"]["entries"], chart["values"], table["rows"]):
             self.assertIn(entry["unit"], UNIT_FORMATS)
             self.assertEqual(row[0], entry["metric"])
             self.assertEqual(f"{value:+.1f}%", row[4])
@@ -410,9 +524,12 @@ class CfrPayloadTest(unittest.TestCase):
             "cer_wholesale": cer["wholesale"][-1],
             "jewellery_two_year": round(self.qv["jewellery_two_year"], 1),
             "half_gross_margin": round(self.hv["gross"][-1], 1),
-            "net_cash": self.s["net_cash_quarter_end"]["eur_bn"],
+            # the trading update's own figure, or the balance sheet when the quarter ends a half
+            "net_cash": ((self.s.get("net_cash_quarter_end") or {}).get("eur_bn")
+                         or (self.s["balance"][-1]["net_cash_position"] / 1000
+                             if self.s["balance"][-1]["date"] == self.s["latest"]["period_end"] else None)),
         }
-        for entry, value in zip(self.s["thresholds"], chart["values"]):
+        for entry, value in zip(self.s["thresholds"]["entries"], chart["values"]):
             self.assertEqual(value, round(headroom(entry["direction"], entry["threshold"],
                                                    current[entry["current_key"]]), 1), entry["metric"])
 
@@ -443,6 +560,466 @@ class CfrPayloadTest(unittest.TestCase):
         self.assertIn(self.payload["latest"]["release_date"], card)
         self.assertIn(self.payload["latest"]["disclosed_period_label"], card)
         self.assertIn(" · ".join(cfr.headline_metrics(self.s)), card)
+
+
+def text_of(payload: dict) -> str:
+    return json.dumps(payload, ensure_ascii=False)
+
+
+def composed(payload: dict) -> str:
+    """The prose the builder composes; the typed rules and verdicts sit in the tables."""
+    return text_of({key: value for key, value in payload.items() if key != "tables"})
+
+
+def with_every_block(source: dict) -> dict:
+    """The series with every optional one-release block present and stamped for its
+    own periods, synthesised (with placeholder words) where this quarter has none,
+    so the tests below do not depend on which quarter the page is on."""
+    st = copy.deepcopy(source)
+    quarter = display_period(st["quarters"][-1])
+    half = st["halves"][-1]
+    st.setdefault("quarter_story", {"period": quarter})
+    story = st["quarter_story"]
+    story.setdefault("region_explanation", {"region": "middle_east_africa", "text": "测试用的地区解释"})
+    story.setdefault("china", "测试用的中国说明。")
+    story.setdefault("baume_mercier_brief", "测试用的简报句，下一次在 {next_month}。")
+    story.setdefault("baume_mercier_note", "测试用的注释，下一次在 {next_date}。")
+    st.setdefault("half_story", {"period": half, "margins": "测试用的毛利率说明。",
+                                 "watchmakers": "测试用的腕表说明，{announced}。"})
+    rates = st["quarterly_cer_pct"]["jewellery_maisons"]
+    streak = 0
+    for v in reversed(rates):
+        if v is None or v < 10:
+            break
+        streak += 1
+    st.setdefault("company_claims", {"period": quarter, "items": [
+        {"key": "jewellery_streak", "quote": "a test consecutive quarter of double-digit growth",
+         "count": streak, "line": "jewellery_maisons", "threshold_pct": 10}]})
+    st.setdefault("net_cash_quarter_end", {"period": quarter, "date": st["latest"]["period_end"], "eur_bn": 9.0,
+                                           "includes": [], "dividend_note": "测试用的股息说明。"})
+    st.setdefault("prior_thresholds", {"period": quarter, "set_on": "2000-01-01", "items": [
+        {"metric": "测试", "rule": "测试", "settles": "2000-01-01", "actual_key": "cer_jewellery", "verdict": "测试"}]})
+    return st
+
+
+def roll_forward(source: dict) -> tuple[dict, str, bool]:
+    """Append the next quarter with invented figures -- a shape test, nothing here is
+    published. An interim or annual announcement brings a half-year with it; the
+    first interim of a fiscal year brings a year with no annual behind it."""
+    st = copy.deepcopy(source)
+    q = st["quarters"]
+    year, number = int(q[-1][:4]), int(q[-1][5])
+    nxt = f"{year + (number == 4)}Q{number % 4 + 1}"
+    y, n = int(nxt[:4]), int(nxt[5])
+    fy = y if n == 1 else y + 1
+    fiscal = f"FY{fy % 100:02d}Q{4 if n == 1 else n - 1}"
+    f_number = int(fiscal[-1])
+    kind = {1: "q1_trading_update", 2: "interim_results", 3: "q3_trading_update", 4: "annual_results"}[f_number]
+    end = f"{y}-{QUARTER_END[str(n)]}"
+    release = (datetime.date.fromisoformat(end) + datetime.timedelta(days=15)).isoformat()
+    doc_id = f"test-{fiscal.lower()}"
+    url = f"https://www.richemont.com/media/test/{doc_id}.pdf"
+    st["documents"].append({"doc_id": doc_id, "kind": kind, "fiscal_year": fiscal[:4],
+                            "release_date": release, "title": "test", "url": url})
+    st["sources"].append({"label": f"Richemont {fiscal} 测试公告（{release}）", "url": url})
+    q.append(nxt)
+    st["fiscal_quarters"].append(fiscal)
+    st["quarter_basis"].append("printed")
+    st["quarter_sources"][nxt] = {"method": "printed", "value_doc": doc_id, "value_column": "current",
+                                  "docs": [doc_id]}
+    st["first_printed"][nxt] = {"doc": doc_id, "published": release, "column": "current", "lag_days": 15}
+    for block in ("quarterly_eur_m", "quarterly_cer_pct", "quarterly_actual_pct"):
+        for values in st[block].values():
+            values.append(values[-4])
+    adds_half = f_number in (2, 4)
+    if adds_half:
+        half = f"{fiscal[:4]}H{1 if f_number == 2 else 2}"
+        st["halves"].append(half)
+        st["half_basis"].append("printed" if f_number == 2 else "derived")
+        for block in ("half_eur_m", "half_segment_sales_eur_m", "half_segment_result_eur_m"):
+            for values in st[block].values():
+                values.append(values[-2])
+        previous = st["balance"][-2]
+        st["balance"].append({"date": end, "doc": doc_id, "net_cash_position": previous["net_cash_position"],
+                              "inventories": previous["inventories"]})
+        if f_number == 2:
+            st["half_sources"][fiscal[:4]] = {"mode": "own_year", "why": "test", "year_doc": None, "h1_doc": doc_id}
+        else:
+            st["half_sources"][fiscal[:4]]["year_doc"] = doc_id
+        st.pop("half_story", None)
+    stamp = display_period(nxt)
+    st["latest"].update(disclosed_period_label=stamp, period_end=end, release_date=release)
+    for key in ("thresholds", "prior_thresholds"):
+        if key in st:
+            st[key]["period"] = stamp
+    if "net_cash_quarter_end" in st:
+        st["net_cash_quarter_end"].update(period=stamp, date=end)
+    st.pop("company_claims", None)
+    st.pop("quarter_story", None)
+    return st, fiscal, adds_half
+
+
+class CfrRollTest(unittest.TestCase):
+    """What a roll has to change in `series/cfr.json`, and what the page does when it does not.
+
+    Six blocks describe one release: the thresholds, the previous note's thresholds,
+    the company's own streak claim, the quarter-end net cash and the quarter's story
+    are stamped with the quarter; the half's story with the half. A block stamped for
+    another period stops the build; an absent optional one takes its sentences with it.
+    Every case below first puts the series into the state it tests, so the file holds
+    whichever quarter the series is on.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = load()
+        cls.full = with_every_block(cls.source)
+        cls.payload = cfr.build_payload(cls.full)
+        cls.blob = text_of(cls.payload)
+
+    def test_a_block_stamped_with_another_period_stops_the_build(self) -> None:
+        for key, stale_period in (("thresholds", "Q1 1999"), ("prior_thresholds", "Q1 1999"),
+                                  ("company_claims", "Q1 1999"), ("net_cash_quarter_end", "Q1 1999"),
+                                  ("quarter_story", "Q1 1999"), ("half_story", "FY99H1")):
+            stale = copy.deepcopy(self.full)
+            stale[key]["period"] = stale_period
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "stamped"):
+                    cfr.build_payload(stale)
+        bare = copy.deepcopy(self.full)
+        del bare["thresholds"]
+        with self.assertRaisesRegex(ValueError, "`thresholds` is missing"):
+            cfr.build_payload(bare)
+        unknown = copy.deepcopy(self.full)
+        unknown["thresholds"]["entries"][0]["current_key"] = "not_a_measure"
+        with self.assertRaisesRegex(ValueError, "does not know how to measure"):
+            cfr.build_payload(unknown)
+        dated = copy.deepcopy(self.full)
+        dated["net_cash_quarter_end"]["date"] = "1999-03-31"
+        with self.assertRaisesRegex(ValueError, "net_cash_quarter_end"):
+            cfr.build_payload(dated)
+        uncashed = copy.deepcopy(self.full)
+        del uncashed["net_cash_quarter_end"]
+        ends_half = uncashed["balance"][-1]["date"] == uncashed["latest"]["period_end"]
+        if any(t["current_key"] == "net_cash" for t in uncashed["thresholds"]["entries"]) and not ends_half:
+            with self.assertRaisesRegex(ValueError, "net_cash_quarter_end"):
+                cfr.build_payload(uncashed)
+        orphan = copy.deepcopy(self.full)
+        doc = orphan["first_printed"][orphan["quarters"][-1]]["doc"]
+        url = next(d["url"] for d in orphan["documents"] if d["doc_id"] == doc)
+        orphan["sources"] = [x for x in orphan["sources"] if x["url"] != url]
+        with self.assertRaisesRegex(ValueError, "sources"):
+            cfr.build_payload(orphan)
+        typo = copy.deepcopy(self.full)
+        typo["quarter_story"]["china"] = "要看 {next_datee} 的公告。"
+        with self.assertRaisesRegex(ValueError, "does not fill"):
+            cfr.build_payload(typo)
+        # the rollback drill put a sales-only update here and the page promised
+        # profit on a date that has none
+        sales_only = copy.deepcopy(self.full)
+        sales_only["latest"]["next_release"] = {"label": "FY27 Q1 sales", "date": "2026-07-15"}
+        with self.assertRaisesRegex(ValueError, "next results announcement"):
+            cfr.build_payload(sales_only)
+
+    def test_a_half_end_quarter_reads_net_cash_off_the_balance_sheet(self) -> None:
+        """A quarter that ends a half is published with the half's balance sheet;
+        its net cash is that figure, not a trading update's (the rollback drill
+        printed 「季度公告另给过一个季末净现金」 for the annual results)."""
+        half_end = copy.deepcopy(self.full)
+        del half_end["net_cash_quarter_end"]
+        balance = half_end["balance"][-1]
+        half_end["latest"]["period_end"] = balance["date"]
+        payload = cfr.build_payload(half_end)
+        chart = next(ex for section in payload["sections"] for ex in section["exhibits"]
+                     if ex["ref"] == "EX_HEADROOM")
+        cash = next(ex for section in payload["sections"] for ex in section["exhibits"] if ex["ref"] == "EX_CASH")
+        if any(t["current_key"] == "net_cash" for t in half_end["thresholds"]["entries"]):
+            self.assertIn(f"净现金取 {balance['date']} 的半年末值", chart["note"])
+        self.assertNotIn("季度公告另给过一个季末净现金", cash["note"])
+
+    def test_a_period_without_a_story_leaves_it_out(self) -> None:
+        full = self.full
+        story, half = full["quarter_story"], full["half_story"]
+        region = story["region_explanation"]
+        cases = {
+            "quarter_story": (region["text"], story["china"].split("。")[0],
+                              story["baume_mercier_note"].split("，")[0]),
+            "half_story": (half["margins"].split("。")[0], half["watchmakers"].split("{")[0]),
+            "company_claims": ("是公司在本季公告里的原话", "公司说是连续第"),
+            "prior_thresholds": ("上一份笔记设定的",),
+        }
+        for key, texts in cases.items():
+            bare = copy.deepcopy(full)
+            del bare[key]
+            payload = cfr.build_payload(bare)
+            after = text_of(payload)
+            for text in texts:
+                with self.subTest(block=key, text=text):
+                    self.assertIn(text, self.blob)
+                    self.assertNotIn(text, after)
+            numbers = [ex["n"] for section in payload["sections"] for ex in section["exhibits"]]
+            self.assertEqual(numbers, list(range(1, 1 + len(numbers))))
+            tables = [t["n"] for t in payload["tables"]]
+            self.assertEqual(tables, list(range(len(numbers) + 1, len(numbers) + 1 + len(tables))))
+        # the quarter-end net cash goes with its sentence once no threshold needs it
+        bare = copy.deepcopy(full)
+        del bare["net_cash_quarter_end"]
+        bare["thresholds"]["entries"] = [t for t in bare["thresholds"]["entries"] if t["current_key"] != "net_cash"]
+        self.assertIn("季度公告另给过一个季末净现金", self.blob)
+        self.assertNotIn("季度公告另给过一个季末净现金", text_of(cfr.build_payload(bare)))
+
+    def test_the_record_sentences_are_computed_not_remembered(self) -> None:
+        """Make each "first / all / only / lowest" claim true in the data, then break
+        it once: the sentence that made it must go."""
+        def jewellery_margin(d, i, pct):
+            sales = d["half_segment_sales_eur_m"]["jewellery_maisons"][i]
+            d["half_segment_result_eur_m"]["jewellery_maisons"][i] = round(sales * pct / 100)
+
+        def after_halves(d):
+            return cfr.half_view(d)["jewel_after"]
+
+        def first_break(d):
+            for i in after_halves(d)[:-1]:
+                jewellery_margin(d, i, 32)
+            jewellery_margin(d, len(d["halves"]) - 1, 28)
+
+        def earlier_break(d):
+            jewellery_margin(d, after_halves(d)[0], 28)
+
+        def claim_matches(d):
+            d["company_claims"]["items"][0]["count"] = cfr.quarter_view(d)["streak"]
+
+        def claim_overstates(d):
+            d["company_claims"]["items"][0]["count"] = cfr.quarter_view(d)["streak"] + 1
+
+        def accelerating(d):
+            cj = d["quarterly_cer_pct"]["jewellery_maisons"]
+            cj[-2], cj[-1] = 12, 20
+
+        def decelerating(d):
+            accelerating(d)
+            d["quarterly_cer_pct"]["jewellery_maisons"][-1] = 11
+
+        def jewellery_carries(d, halves=2):
+            op = d["half_eur_m"]["operating_profit"]
+            for i in range(len(op) - halves, len(op)):
+                d["half_segment_result_eur_m"]["jewellery_maisons"][i] = op[i] + 100
+
+        def jewellery_no_longer(d):
+            jewellery_carries(d)
+            op = d["half_eur_m"]["operating_profit"]
+            d["half_segment_result_eur_m"]["jewellery_maisons"][-1] = op[-1] - 100
+
+        def full_years(d):
+            h = d["halves"]
+            return [(i, i + 1) for i in range(len(h) - 1) if h[i].endswith("H1") and h[i + 1] == h[i][:4] + "H2"]
+
+        def h2_lower(d):
+            for a, b in full_years(d):
+                jewellery_margin(d, a, 33)
+                jewellery_margin(d, b, 30)
+
+        def h2_higher(d):
+            for a, b in full_years(d):
+                jewellery_margin(d, a, 30)
+                jewellery_margin(d, b, 33)
+
+        def one_trap(d):
+            trap = next(x for x in d["first_print_derivations"] if x["derived_total"] != x["printed_total"])
+            d["derived_checks"] = [c for c in d["derived_checks"]
+                                   if c["derived"] == c["printed"] or c["quarter"] == trap["quarter"]]
+
+        def second_trap(d):
+            one_trap(d)
+            other = next(c for c in d["derived_checks"] if c["derived"] == c["printed"])
+            d["derived_checks"].append(dict(other, printed=other["printed"] + 1))
+
+        def japan_fx(d):
+            last = len(d["quarters"]) - 1
+            for k in REGIONS:
+                d["quarterly_actual_pct"][k][last] = d["quarterly_cer_pct"][k][last] - (16 if k == "japan" else 1)
+
+        def no_fx(d):
+            last = len(d["quarters"]) - 1
+            for k in REGIONS:
+                d["quarterly_actual_pct"][k][last] = d["quarterly_cer_pct"][k][last]
+
+        def mea_falls(d):
+            cer = d["quarterly_cer_pct"]["middle_east_africa"]
+            cer[-1] = cer[-5] - 10
+
+        def mea_rises(d):
+            cer = d["quarterly_cer_pct"]["middle_east_africa"]
+            cer[-1] = cer[-5] + 10
+
+        def mea_smallest_gain(d):
+            e = d["quarterly_eur_m"]
+            for k in REGIONS:
+                e[k][-1] = e[k][-5] + (5 if k == "middle_east_africa" else 100)
+
+        def mea_loses(d):
+            mea_smallest_gain(d)
+            e = d["quarterly_eur_m"]["middle_east_africa"]
+            e[-1] = e[-5] - 50
+
+        def ap_peak_moves(d):
+            e = d["quarterly_eur_m"]
+            e["asia_pacific"][-1] = e["total"][-1] * 0.9
+
+        def other_document(d):
+            ya = d["quarters"][-5]
+            d["quarter_sources"][ya] = dict(d["quarter_sources"][ya], value_doc=d["documents"][0]["doc_id"])
+
+        def lowest_ever(d):
+            jewellery_margin(d, len(d["halves"]) - 1, 5)
+
+        noop = lambda d: None
+        trap = next(x for x in self.full["first_print_derivations"]
+                    if x["derived_total"] != x["printed_total"])["quarter"]
+        cases = {
+            "first break of the range": (first_break, earlier_break,
+                                         ("在这句话之后第一次被跌破", "是这句话之后第一次跌破下沿")),
+            "the company's count holds": (claim_matches, claim_overstates, ("本页逐季核过成立", "本页逐季核过：成立")),
+            "jewellery accelerating": (accelerating, decelerating, ("销售在加速",)),
+            "jewellery carries the group": (jewellery_carries, jewellery_no_longer,
+                                            ("集团的利润越来越等于珠宝的利润", "连续如此")),
+            "second halves lower": (h2_lower, h2_higher, ("下半年系统性低于上半年",)),
+            "one quarter disagrees": (one_trap, second_trap, (f"全部在 {trap}",)),
+            "the yen": (japan_fx, no_fx, ("日本那一格要和实际汇率一起读", "日本那一根比恒定汇率口径小得多")),
+            "Middle East falls": (mea_falls, mea_rises, ("中东与非洲从上年同季的",)),
+            "smallest gain": (mea_smallest_gain, mea_loses, ("中东与非洲只有 €",)),
+            "Asia Pacific peak in 2020Q2": (noop, ap_peak_moves, ("是疫情那一季",)),
+            "both quarters from one document": (noop, other_document, ("取自同一份公告的本期列与上年同期列",)),
+            "lowest since an earlier half": (noop, lowest_ever, ("以来最低",)),
+        }
+        for name, (make_true, make_false, claims) in cases.items():
+            held = copy.deepcopy(self.full)
+            make_true(held)
+            before = composed(cfr.build_payload(held))
+            broken = copy.deepcopy(held)
+            make_false(broken)
+            after = composed(cfr.build_payload(broken))
+            for claim in claims:
+                with self.subTest(case=name, claim=claim):
+                    self.assertIn(claim, before)
+                    if name == "Middle East falls":
+                        self.assertIn("掉到", before)
+                        self.assertNotIn("掉到", after)
+                    else:
+                        self.assertNotIn(claim, after)
+
+    def test_the_next_quarter_rolls_without_touching_the_code(self) -> None:
+        rolled, fiscal, adds_half = roll_forward(self.full)
+        payload = cfr.build_payload(rolled)
+        stamp = display_period(rolled["quarters"][-1])
+        self.assertIn(f"{stamp}（公司 {fiscal[:4]} 第{cn_ordinal(int(fiscal[-1]))}季）", payload["title"])
+        self.assertEqual(payload["latest"]["disclosed_period_label"], stamp)
+        half = rolled["halves"][-1]
+        self.assertIn(cfr.half_name(half), payload["title"])
+        self.assertIn(f"利润截至 {cfr.half_end_date(half)} 半年", payload["subtitle"])
+        self.assertEqual(payload["latest"]["full_financial_period_label"], f"H{half[-1]} FY{half[2:4]}")
+        source_table = next(t for t in payload["tables"] if "半年数据各取自哪一对文件" in t["title"])
+        if adds_half and half.endswith("H1"):
+            self.assertEqual(source_table["rows"][-1][2], "—（全年尚未公布）")
+        # nothing the quarter's own story said survives it
+        for text in ("是公司在本季公告里的原话", "公司说是连续第", self.full["quarter_story"]["china"][:20]):
+            self.assertNotIn(text, text_of(payload))
+
+    def test_the_first_interim_of_a_year_rolls_too(self) -> None:
+        """Roll forward until an interim announcement adds a half with no annual
+        behind it, whatever quarter the series is on now."""
+        st = self.full
+        for _ in range(4):
+            st, fiscal, adds_half = roll_forward(st)
+            if fiscal.endswith("Q2"):
+                break
+        payload = cfr.build_payload(st)
+        self.assertTrue(st["halves"][-1].endswith("H1"))
+        self.assertIsNone(st["half_sources"][st["halves"][-1][:4]]["year_doc"])
+        self.assertIn(cfr.half_name(st["halves"][-1]), payload["headline"])
+        # a first half is printed, not derived: nothing on the page may call it D
+        self.assertNotIn("（本页减出）", payload["headline"])
+        jewel = next(ex for section in payload["sections"] for ex in section["exhibits"]
+                     if ex["ref"] == "EX_JEWEL_BAND")
+        self.assertNotIn("% D", jewel["title"])
+
+
+class CfrChecksTest(unittest.TestCase):
+    """The page's quarter against a record keyed separately from the series.
+
+    `_checks` is typed once per quarter from the announcement that first prints the
+    quarter -- its sales table (both columns, both growth rates), its prose and its
+    corporate calendar -- with the place each figure was read. The builder never
+    reads it (asserted in `test_data_only_roll`). Richemont prints its growth rates
+    as whole percentages and the retail share of sales as a whole percentage, so the
+    page's arithmetic has to round to those.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.s = load()
+        cls.c = cls.s["_checks"]
+        cls.payload = cfr.build_payload(cls.s)
+        cls.exhibits = {ex["ref"]: ex for section in cls.payload["sections"] for ex in section["exhibits"]}
+
+    def test_the_page_names_the_checked_quarter(self) -> None:
+        c = self.c
+        fy, number = c["fiscal_quarter"][:4], int(c["fiscal_quarter"][-1])
+        self.assertIn(f"{c['period']}（公司 {fy} 第{cn_ordinal(number)}季）", self.payload["title"])
+        self.assertIn(f"销售截至 {c['period_end']}", self.payload["subtitle"])
+        self.assertIn(f"发布 {c['release_date']}", self.payload["subtitle"])
+        self.assertEqual(self.s["fiscal_quarters"][-1], c["fiscal_quarter"])
+
+    def test_the_series_ends_on_the_checked_figures(self) -> None:
+        c, s = self.c, self.s
+        e, cer, act = s["quarterly_eur_m"], s["quarterly_cer_pct"], s["quarterly_actual_pct"]
+        self.assertEqual(e["total"][-1], c["sales_eur_m"])
+        self.assertEqual(e["total"][-5], c["prior_year_sales_eur_m"])
+        self.assertEqual((cer["total"][-1], act["total"][-1]), (c["sales_cer_pct"], c["sales_actual_pct"]))
+        for key in REGIONS:
+            with self.subTest(region=key):
+                self.assertEqual(e[key][-1], c["regions_eur_m"][key])
+                self.assertEqual(cer[key][-1], c["regions_cer_pct"][key])
+                self.assertEqual(act[key][-1], c["regions_actual_pct"][key])
+        for key in CHANNELS:
+            with self.subTest(channel=key):
+                self.assertEqual(e[key][-1], c["channels_eur_m"][key])
+                self.assertEqual(cer[key][-1], c["channels_cer_pct"][key])
+        for key, value in c["areas_eur_m"].items():
+            with self.subTest(area=key):
+                self.assertEqual(e[key][-1], value)
+                self.assertEqual(cer[key][-1], c["areas_cer_pct"][key])
+        if "jewellery_streak_count" in c:
+            claim = next(x for x in s["company_claims"]["items"] if x["key"] == "jewellery_streak")
+            self.assertEqual(claim["count"], c["jewellery_streak_count"])
+            self.assertIn(c["jewellery_streak_quote"], claim["quote"])
+        if "net_cash_eur_bn" in c:
+            block = s["net_cash_quarter_end"]
+            self.assertEqual(block["eur_bn"], c["net_cash_eur_bn"])
+            self.assertEqual(block["prior_year_eur_bn"], c["net_cash_prior_year_eur_bn"])
+        self.assertEqual(s["latest"]["next_release"]["date"], c["next_results_date"])
+
+    def test_the_rounding_the_page_uses_is_the_companys(self) -> None:
+        c, e = self.c, self.s["quarterly_eur_m"]
+        self.assertEqual(round(e["retail"][-1] / e["total"][-1] * 100), c["retail_share_pct_printed"])
+        for parts in (REGIONS, CHANNELS, list(c["areas_eur_m"])):
+            self.assertEqual(sum(e[k][-1] for k in parts), c["sales_eur_m"])
+
+    def test_the_page_prints_the_checked_figures(self) -> None:
+        c = self.c
+        headline = self.payload["headline"]
+        self.assertIn(f"本季集团销售 €{c['sales_eur_m']:,}M，恒定汇率 +{c['sales_cer_pct']}%、"
+                      f"实际汇率 +{c['sales_actual_pct']}%", headline)
+        self.assertIn(f"珠宝 €{c['areas_eur_m']['jewellery_maisons']:,}M、"
+                      f"+{c['areas_cer_pct']['jewellery_maisons']}%", headline)
+        self.assertIn(f"下一次利润数据在 {c['next_results_date']}", headline)
+        increment = self.exhibits["EX_INCREMENT"]
+        self.assertIn(f"€{c['sales_eur_m'] - c['prior_year_sales_eur_m']:,}M", increment["title"])
+        region = self.exhibits["EX_REGION_NOW"]
+        self.assertEqual(region["groups"][0]["values"],
+                         [c["regions_cer_pct"][k] for k in REGIONS] + [c["sales_cer_pct"]])
+        if "net_cash_eur_bn" in c:
+            self.assertIn(f"€{c['net_cash_eur_bn']:.1f}B", self.exhibits["EX_CASH"]["note"])
 
 
 if __name__ == "__main__":
