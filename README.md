@@ -1394,7 +1394,10 @@ cross-border split — travel against card-not-present — exists only in the
 quarterly earnings presentation and reaches no filing, so no history is built
 for it; the filings give total cross-border volume, gross dollar volume and
 switched transactions, and the page plots those three instead and says which
-question they cannot answer. One threshold from the previous quarter is reported
+question they cannot answer. Gross dollar volume is the one of the three that
+also comes in dollars, by region, in every release's Operating Performance
+table; the page stacks it by region, each quarter from the release that first
+printed it. One threshold from the previous quarter is reported
 as **unsettleable rather than passed or failed**: it was written against the
 full-year currency-neutral revenue guidance — "a cut to +11–12% triggers a
 downgrade" — and Mastercard's full-year guidance exists only as a phrase on the

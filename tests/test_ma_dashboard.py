@@ -192,6 +192,68 @@ class MaDashboardTest(unittest.TestCase):
             with self.subTest(period=label):
                 self.assertEqual(drivers["gdv"][periods.index(label)], by_quarter[label])
 
+    def test_regional_gdv_names_its_release_every_quarter(self) -> None:
+        """One value per quarter on every row, and each quarter says which
+        release's Operating Performance table it was read from."""
+        gdv = self.source["gdv_by_region"]
+        n = len(self.periods)
+        rows = [key for key, values in gdv.items() if isinstance(values, list)]
+        self.assertEqual(len(rows), 21)
+        for key in rows:
+            self.assertEqual(len(gdv[key]), n, key)
+            self.assertTrue(all(value is not None for value in gdv[key]), key)
+        self.assertEqual(list(gdv["source_by_period"]), self.periods)
+        month = {"1": "March 31", "2": "June 30", "3": "September 30", "4": "December 31"}
+        for period, text in gdv["source_by_period"].items():
+            with self.subTest(period=period):
+                self.assertRegex(text, r"acc 0001141391-\d{2}-\d{6}")
+                self.assertRegex(text, rf"Months Ended {month[period[1]]}, {period[-4:]}」")
+                self.assertIn("All Mastercard Credit, Charge and Debit Programs", text)
+
+    def test_the_regions_add_up_to_worldwide(self) -> None:
+        """Seven rows, rounded to the billion one by one: five regions sum to
+        Worldwide, and Worldwide less United States plus United States is
+        Worldwide, within rounding."""
+        gdv = self.source["gdv_by_region"]
+        regions = ("apmea", "canada", "europe", "latin_america", "united_states")
+        for i, period in enumerate(self.periods):
+            world = gdv["worldwide_usd_b"][i]
+            with self.subTest(period=period):
+                self.assertLessEqual(abs(sum(gdv[f"{r}_usd_b"][i] for r in regions) - world), 2)
+                self.assertLessEqual(abs(gdv["worldwide_less_us_usd_b"][i] + gdv["united_states_usd_b"][i] - world), 1)
+                self.assertLessEqual(abs(sum(gdv[f"{r}_usd_b"][i] for r in regions[:-1])
+                                         - gdv["worldwide_less_us_usd_b"][i]), 2)
+                # the US has no currency to translate
+                self.assertEqual(gdv["united_states_growth_usd_pct"][i], gdv["united_states_growth_local_pct"][i])
+
+    def test_worldwide_growth_agrees_with_the_key_drivers_row(self) -> None:
+        """Two documents, two precisions: the release table prints Worldwide GDV
+        growth to a tenth, the 10-Q (and the release's Key Business Drivers)
+        to a whole percent. They must agree to within the rounding. This is
+        what caught the 2022Q3 cell typed as 12% where both print 11%."""
+        table = self.source["gdv_by_region"]["worldwide_growth_local_pct"]
+        drivers = self.source["key_drivers_local_pct"]["gdv"]
+        for period, precise, whole in zip(self.periods, table, drivers):
+            with self.subTest(period=period):
+                self.assertLessEqual(abs(precise - whole), 0.5)
+        self.assertEqual(drivers[self.periods.index("Q3 2022")], 11)
+
+    def test_the_regional_chart_draws_the_series(self) -> None:
+        gdv = self.source["gdv_by_region"]
+        chart = self.by_ref["EX_GDV_REGION"]
+        self.assertEqual(chart["kind"], "stacked_dual")
+        self.assertEqual(chart["xlabels"], [compact_period(p) for p in self.periods])
+        drawn = {stack["name"]: stack["values"] for stack in chart["stacks"]}
+        for name, key in (("美国", "united_states"), ("欧洲", "europe"), ("APMEA", "apmea"),
+                          ("拉美", "latin_america"), ("加拿大", "canada")):
+            self.assertEqual(drawn[name], gdv[f"{key}_usd_b"], name)
+        share = [e / w * 100 for e, w in zip(gdv["europe_usd_b"], gdv["worldwide_usd_b"])]
+        for got, want in zip(chart["line"]["values"], share):
+            self.assertAlmostEqual(got, want, places=5)
+        self.assertLessEqual(max(share), chart["line"]["ymax"])
+        self.assertIn(f"欧洲 ${gdv['europe_usd_b'][-1]:,}B 占 {share[-1]:.1f}%", chart["title"])
+        self.assertIn(chart, self.by_section["routine"])
+
     def test_no_quarter_is_missing_its_diluted_per_share_pair(self) -> None:
         """Q4 2020 and Q4 2021 were empty while the note promised the release.
 
@@ -470,7 +532,8 @@ RELEASE_DAY = {1: "04-30", 2: "07-30", 3: "10-29", 4: "01-28"}
 QUARTER_BLOCKS = ("current_snapshot", "market_expectation", "followup_closure",
                   "prior_kpi_settlement", "next_kpi", "call_guidance", "quarter_story")
 AXIS_BLOCKS = ("payment_network_usd_m", "assessment_currency_neutral_growth_pct",
-               "key_drivers_local_pct", "quarterly_usd_m", "per_share", "balance_sheet_usd_m")
+               "key_drivers_local_pct", "gdv_by_region", "quarterly_usd_m", "per_share",
+               "balance_sheet_usd_m")
 PLACEHOLDER = r"\{[a-z_]+\}"
 
 
@@ -567,6 +630,27 @@ class MaChecksTest(unittest.TestCase):
         self.assertIn(f"发布 {c['release_date']}", self.payload["subtitle"])
         accession = re.search(r"acc (\d{10})-(\d{2})-(\d{6})", c["source"]).groups()
         self.assertIn("".join(accession), self.payload["source_url"])
+
+    def test_the_regional_gdv_is_the_release_s(self) -> None:
+        """The last cell of every regional row is the release's table, typed
+        separately into `_checks`, and the page prints those figures."""
+        c, gdv = self.c["gdv_by_region"], self.s["gdv_by_region"]
+        for column, suffix in (("usd_b", "usd_b"), ("growth_usd_pct", "growth_usd_pct"),
+                               ("growth_local_pct", "growth_local_pct")):
+            for region, value in c[column].items():
+                with self.subTest(region=region, column=column):
+                    self.assertEqual(gdv[f"{region}_{suffix}"][-1], value)
+        accession = re.search(r"acc (\d{10}-\d{2}-\d{6})", c["source"]).group(1)
+        self.assertIn(f"acc {accession}", gdv["source_by_period"][self.c["period"]])
+        chart = next(ex for ex in self.exhibits if ex["title"].startswith("分地区 GDV"))
+        usd = c["usd_b"]
+        self.assertIn(f"本季 ${usd['worldwide']:,}B，欧洲 ${usd['europe']:,}B "
+                      f"占 {usd['europe'] / usd['worldwide'] * 100:.1f}%", chart["title"])
+        self.assertIn(f"美国的 ${usd['united_states']:,}B", chart["title"])
+        for name, region in (("拉美", "latin_america"), ("欧洲", "europe"), ("美国", "united_states")):
+            self.assertIn(f"{name} {c['growth_local_pct'][region]:+.1f}%", chart["note"])
+        self.assertIn(f"美元口径 {c['growth_usd_pct']['europe']:+.1f}%", chart["note"])
+        self.assertEqual(round(c["growth_local_pct"]["worldwide"]), self.c["key_drivers_pct"]["gdv"])
 
     def test_the_series_ends_on_the_checked_figures(self) -> None:
         c, s = self.c, self.s
@@ -1079,10 +1163,32 @@ class MaFindingsTest(unittest.TestCase):
 
     def test_regional_gdv_is_not_growth_only(self) -> None:
         """「分地区的 GDV 金额（公司只披露增速）」: the release's Operating
-        Performance table prints GDV in US$ billions by region."""
+        Performance table prints GDV in US$ billions by region -- and the page
+        now draws it, so the not-wired list may not name it either."""
         self.assertNotIn("公司只披露增速、不披露金额", self.clean)
         self.assertNotIn("分地区的 GDV 金额（公司只披露增速）", self.clean)
-        self.assertIn("分地区的 GDV 金额（业绩发布的 Operating Performance 表按地区印着金额", self.clean)
+        self.assertNotIn("分地区的 GDV 金额（业绩发布的 Operating Performance 表按地区印着金额", self.clean)
+        self.assertNotIn("申报文件只给这三条", self.clean)
+        self.assertIn("分地区 GDV：本季 $2,881B", self.clean)
+
+    def test_the_regional_title_follows_europe_against_the_us(self) -> None:
+        self.assertIn("欧洲 $1,025B 占 35.6%，已连续 13 季高于美国的 $858B", self.clean)
+
+        def us_ahead(s):
+            gdv = s["gdv_by_region"]
+            gdv["united_states_usd_b"][-1] = gdv["europe_usd_b"][-1] + 1
+
+        behind = self.page(us_ahead)
+        self.assertNotIn("高于美国", behind)
+        self.assertIn("占 35.6%，美国 $1,026B", behind)
+
+        def just_passed(s):
+            gdv = s["gdv_by_region"]
+            gdv["united_states_usd_b"][-2] = gdv["europe_usd_b"][-2] + 1
+
+        once = self.page(just_passed)
+        self.assertIn("，本季高于美国的 $858B", once)
+        self.assertNotRegex(once, r"已连续 \d+ 季高于美国")
 
 
 if __name__ == "__main__":
