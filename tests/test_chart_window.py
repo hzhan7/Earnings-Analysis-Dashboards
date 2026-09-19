@@ -189,7 +189,7 @@ CONVERTED = {
         "Cloud backlog 环比": "remaining performance obligations first appear in the "
                          "FY2019 10-K.",
         "Cloud backlog 单季净增": "same RPO floor.",
-        "backlog 创": "same RPO floor; this is the level-and-net-add view of it.",
+        "单季净增从": "same RPO floor; this is the level-and-net-add view of it.",
         "Cloud 增速本季": "revenue by line begins with the 2018Q4 release.",
         "Search 增速本季": "revenue by line begins with the 2018Q4 release.",
     },
@@ -832,7 +832,7 @@ FLOOR_KIND = {
         'Search & other YoY': 'disclosure',
         'Cloud backlog 环比': 'disclosure',
         'Cloud backlog 单季净增': 'disclosure',
-        'backlog 创': 'disclosure',
+        '单季净增从': 'disclosure',
         'Cloud 增速本季': 'disclosure',
         'Search 增速本季': 'disclosure',
     },

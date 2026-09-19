@@ -10,498 +10,286 @@
     "analysis_date": "2026-07-23",
     "audit_status": "unaudited"
   },
+  "_checks": {
+    "period": "Q2 2026",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-22",
+    "revenue_usd_m": 119796,
+    "revenue_year_ago_usd_m": 96428,
+    "revenue_growth_printed_pct": 24,
+    "constant_currency_growth_printed_pct": 23,
+    "google_services_usd_m": 94540,
+    "search_and_other_usd_m": 63271,
+    "youtube_ads_usd_m": 11055,
+    "google_network_usd_m": 7303,
+    "subscriptions_platforms_devices_usd_m": 12911,
+    "google_cloud_usd_m": 24768,
+    "google_cloud_year_ago_usd_m": 13624,
+    "google_cloud_growth_printed_pct": 82,
+    "other_bets_usd_m": 382,
+    "operating_income_usd_m": 40770,
+    "operating_margin_printed_pct": 34,
+    "segment_operating_income_usd_m": {
+      "google_services": 39544,
+      "google_cloud": 8814,
+      "other_bets": -1799,
+      "alphabet_level": -5789
+    },
+    "other_income_usd_m": 97983,
+    "equity_securities_gain_usd_m": 99031,
+    "equity_gain_diluted_eps_effect_usd": 6.26,
+    "net_income_to_common_usd_m": 112107,
+    "diluted_eps_usd": 9.11,
+    "operating_cash_flow_usd_m": 39069,
+    "capital_expenditures_usd_m": 44924,
+    "free_cash_flow_usd_m": -5855,
+    "ttm_free_cash_flow_usd_m": 53273,
+    "depreciation_usd_m": 7104,
+    "stock_based_compensation_usd_m": 7957,
+    "repurchases_usd_m": 0,
+    "long_term_debt_usd_m": 98165,
+    "tac_usd_m": 16179,
+    "employees": 198933,
+    "geography_usd_m": {
+      "美国": 60846,
+      "EMEA": 32501,
+      "APAC": 19317,
+      "其他美洲": 7026
+    },
+    "cloud_backlog_usd_bn": 513.9,
+    "total_backlog_usd_bn": 519.5,
+    "source": "Alphabet Q2 2026 业绩新闻稿（8-K EX-99.1，acc 0001652044-26-000066，2026-07-22）逐项读取：首段「quarter ended June 30, 2026」与发布日 July 22, 2026；要点行「revenues increased 24%, or 23% in constant currency」「Google Cloud ... increased 82%」「operating margin expanded ... to 34%」；Q2 2026 Financial Highlights 表（Revenues 96,428 / 119,796；Operating income 40,770；Other income (expense), net 97,983；Net income available to common stockholders 112,107；Diluted net income per common share 9.11）；Supplemental Information 表（Search & other 63,271、YouTube ads 11,055、Google Network 7,303、subscriptions, platforms, and devices 12,911、Google Services total 94,540、Google Cloud 13,624 / 24,768、Other Bets 382；Total TAC 16,179；Number of employees 198,933）；Segment Operating Results（Services 39,544、Cloud 8,814、Other Bets (1,799)、Alphabet-level (5,789)）；资产负债表（Long-term debt 98,165）；现金流量表（Depreciation of property and equipment 7,104；Stock-based compensation expense 7,957；operating activities 39,069；Purchases of property and equipment (44,924)；Repurchases of stock 0）；OI&E 表（Gain on equity securities 99,031，脚注「diluted net income per common share by ... $6.26」）；FCF 对账表（Q2 2026 (5,855)，TTM 53,273）；Revenues by Geography（United States 60,846、EMEA 32,501、APAC 19,317、Other Americas 7,026）。backlog 两数取自同季 10-Q（acc 0001652044-26-000071，2026-07-23）「we had $519.5 billion of remaining performance obligations ... of which $513.9 billion related to Google Cloud」。",
+    "checked_on": "2026-09-19"
+  },
   "snapshot": {
-    "title": "关键指标一览（Q2 2026 vs Q1 2026 vs Q2 2025）",
-    "headers": [
-      "指标",
-      "Q2 2025",
-      "Q1 2026",
-      "Q2 2026",
-      "QoQ",
-      "YoY",
-      "来源"
-    ],
+    "period": "Q2 2026",
+    "why": "本季 vs 上季 vs 去年同季的核对表。series 里已有的数一律按键取（from），这里只存申报里有、series 里没有的三格原值（values，顺序同表头：去年同季、上季、本季；null = 未取）。QoQ / YoY 两列与所有比率由 builder 现算。",
     "rows": [
-      [
-        "总收入",
-        "$96,428M",
-        "$109,896M",
-        "$119,796M",
-        "+9.0%",
-        "+24.2%",
-        "Q2 PR p.1"
-      ],
-      [
-        "固定汇率收入 YoY",
-        "+13%",
-        "+19%",
-        "+23%",
-        "—",
-        "+4pp",
-        "Q2 PR p.1、p.10"
-      ],
-      [
-        "Google Services",
-        "$82,543M",
-        "$89,637M",
-        "$94,540M",
-        "+5.5%",
-        "+14.5%",
-        "Q2 PR p.2"
-      ],
-      [
-        "— Search & other",
-        "$54,190M",
-        "$60,399M",
-        "$63,271M",
-        "+4.8%",
-        "+16.8%",
-        "Q2 PR p.2"
-      ],
-      [
-        "— YouTube ads",
-        "$9,796M",
-        "$9,883M",
-        "$11,055M",
-        "+11.9%",
-        "+12.9%",
-        "Q2 PR p.2"
-      ],
-      [
-        "— Google Network",
-        "$7,354M",
-        "$6,971M",
-        "$7,303M",
-        "+4.8%",
-        "-0.7%",
-        "Q2 PR p.2"
-      ],
-      [
-        "— 订阅/平台/设备",
-        "$11,203M",
-        "$12,384M",
-        "$12,911M",
-        "+4.3%",
-        "+15.2%",
-        "Q2 PR p.2"
-      ],
-      [
-        "Google Cloud",
-        "$13,624M",
-        "$20,028M",
-        "$24,768M",
-        "+23.7%",
-        "+81.8%",
-        "Q2 PR p.2"
-      ],
-      [
-        "Other Bets",
-        "$373M",
-        "$411M",
-        "$382M",
-        "-7.1%",
-        "+2.4%",
-        "Q2 PR p.2"
-      ],
-      [
-        "经营利润",
-        "$31,271M",
-        "$39,696M",
-        "$40,770M",
-        "+2.7%",
-        "+30.4%",
-        "Q2 PR p.1"
-      ],
-      [
-        "经营利润率",
-        "32.43%",
-        "36.12%",
-        "34.03%",
-        "-2.09pp",
-        "+1.60pp",
-        "自算"
-      ],
-      [
-        "— Services OPM",
-        "40.06%",
-        "45.28%",
-        "41.83%",
-        "-3.45pp",
-        "+1.77pp",
-        "自算"
-      ],
-      [
-        "— Cloud OPM",
-        "20.74%",
-        "32.94%",
-        "35.59%",
-        "+2.65pp",
-        "+14.85pp",
-        "自算"
-      ],
-      [
-        "— Other Bets OI",
-        "-$1,246M",
-        "-$2,100M",
-        "-$1,799M",
-        "+$301M（亏损收窄）",
-        "-$553M（亏损扩大）",
-        "Q2 PR p.2"
-      ],
-      [
-        "— Alphabet-level",
-        "-$3,372M",
-        "-$5,391M",
-        "-$5,789M",
-        "-$398M",
-        "-$2,417M",
-        "Q2 PR p.2"
-      ],
-      [
-        "OI&E",
-        "$2,662M",
-        "$37,716M",
-        "$97,983M",
-        "—",
-        "—",
-        "Q2 PR p.8"
-      ],
-      [
-        "— 权益证券收益",
-        "$1,286M",
-        "$36,915M",
-        "$99,031M",
-        "—",
-        "—",
-        "Q2 PR p.8"
-      ],
-      [
-        "净利润（归属普通股）",
-        "$28,196M",
-        "$62,578M",
-        "$112,107M",
-        "+79.1%",
-        "+297.6%",
-        "Q2 PR p.6；自算"
-      ],
-      [
-        "GAAP 摊薄 EPS",
-        "$2.31",
-        "$5.11",
-        "$9.11",
-        "+78.3%",
-        "+294.4%",
-        "Q2 PR p.6"
-      ],
-      [
-        "EPS（剔权益证券收益，简单自算）",
-        "~$2.22",
-        "~$2.76",
-        "~$2.85",
-        "+3.3%",
-        "+28.4%",
-        "自算"
-      ],
-      [
-        "经营现金流",
-        "$27,747M",
-        "$45,790M",
-        "$39,069M",
-        "-14.7%",
-        "+40.8%",
-        "Q2 PR p.7"
-      ],
-      [
-        "CapEx",
-        "$22,446M",
-        "$35,674M",
-        "$44,924M",
-        "+25.9%",
-        "+100.1%",
-        "Q2 PR p.7 / p.9"
-      ],
-      [
-        "自由现金流",
-        "$5,301M",
-        "$10,116M",
-        "-$5,855M",
-        "转负",
-        "转负",
-        "Q2 PR p.9"
-      ],
-      [
-        "TTM 自由现金流",
-        "$66,728M",
-        "$64,429M",
-        "$53,273M",
-        "-17.3%",
-        "-27.6%",
-        "Q2 PR p.9"
-      ],
-      [
-        "折旧",
-        "$4,998M",
-        "$6,482M",
-        "$7,104M",
-        "+9.6%",
-        "+42.1%",
-        "Q2 PR p.6"
-      ],
-      [
-        "股权激励费用",
-        "$5,998M",
-        "$6,751M",
-        "$7,957M",
-        "+17.9%",
-        "+32.7%",
-        "Q2 PR p.6；自算"
-      ],
-      [
-        "总 TAC",
-        "$14,705M",
-        "—",
-        "$16,179M",
-        "—",
-        "+10.0%",
-        "Q2 PR p.2"
-      ],
-      [
-        "员工人数",
-        "187,103",
-        "—",
-        "198,933",
-        "—",
-        "+6.3%",
-        "Q2 PR p.2"
-      ],
-      [
-        "长期债务",
-        "—",
-        "$77,501M",
-        "$98,165M",
-        "+26.7%",
-        "—",
-        "Q2 PR p.5"
-      ],
-      [
-        "股票回购",
-        "$13,238M",
-        "$0M",
-        "$0M",
-        "—",
-        "-100%",
-        "Q2 PR p.6"
-      ],
-      [
-        "Cloud backlog",
-        "—",
-        "$462,300M",
-        "$513,900M",
-        "+11.2%",
-        "—",
-        "Q1/Q2 2026 10-Q（Google Cloud 单列口径）"
-      ]
+      {
+        "label": "总收入",
+        "from": "revenue",
+        "source": "Q2 PR p.1"
+      },
+      {
+        "label": "固定汇率收入 YoY",
+        "kind": "growth_pct",
+        "values": [
+          13,
+          19,
+          23
+        ],
+        "source": "Q2 PR p.1、p.10"
+      },
+      {
+        "label": "Google Services",
+        "from": "google_services",
+        "source": "Q2 PR p.2"
+      },
+      {
+        "label": "— Search & other",
+        "from": "search_and_other",
+        "source": "Q2 PR p.2"
+      },
+      {
+        "label": "— YouTube ads",
+        "from": "youtube_ads",
+        "source": "Q2 PR p.2"
+      },
+      {
+        "label": "— Google Network",
+        "from": "google_network",
+        "source": "Q2 PR p.2"
+      },
+      {
+        "label": "— 订阅/平台/设备",
+        "from": "google_subscriptions_platforms_devices",
+        "source": "Q2 PR p.2"
+      },
+      {
+        "label": "Google Cloud",
+        "from": "google_cloud",
+        "source": "Q2 PR p.2"
+      },
+      {
+        "label": "Other Bets",
+        "from": "other_bets",
+        "source": "Q2 PR p.2"
+      },
+      {
+        "label": "经营利润",
+        "from": "operating_income",
+        "source": "Q2 PR p.1"
+      },
+      {
+        "label": "经营利润率",
+        "from": "operating_margin",
+        "kind": "margin",
+        "source": "自算"
+      },
+      {
+        "label": "— Services OPM",
+        "from": "services_margin",
+        "kind": "margin",
+        "source": "自算"
+      },
+      {
+        "label": "— Cloud OPM",
+        "from": "cloud_margin",
+        "kind": "margin",
+        "source": "自算"
+      },
+      {
+        "label": "— Other Bets OI",
+        "from": "other_bets_operating_income",
+        "kind": "loss",
+        "source": "Q2 PR p.2"
+      },
+      {
+        "label": "— Alphabet-level",
+        "from": "alphabet_level",
+        "kind": "difference",
+        "source": "Q2 PR p.2"
+      },
+      {
+        "label": "OI&E",
+        "kind": "no_change",
+        "values": [
+          2662,
+          37716,
+          97983
+        ],
+        "source": "Q2 PR p.8"
+      },
+      {
+        "label": "— 权益证券收益",
+        "kind": "no_change",
+        "values": [
+          1286,
+          36915,
+          99031
+        ],
+        "source": "Q2 PR p.8"
+      },
+      {
+        "label": "净利润（归属普通股）",
+        "values": [
+          28196,
+          62578,
+          112107
+        ],
+        "source": "Q2 PR p.6；自算"
+      },
+      {
+        "label": "GAAP 摊薄 EPS",
+        "key": "gaap_diluted_eps",
+        "kind": "eps",
+        "values": [
+          2.31,
+          5.11,
+          9.11
+        ],
+        "source": "Q2 PR p.6"
+      },
+      {
+        "label": "EPS（剔权益证券收益，简单自算）",
+        "key": "eps_ex_equity_gains",
+        "kind": "eps_less",
+        "less_per_share": [
+          0.08,
+          2.35,
+          6.26
+        ],
+        "less_source": "各季业绩新闻稿 OI&E 表脚注「net effect of the gain on equity securities ... increased ... diluted net income per share by」：Q2 2025 $0.08（含 US$83M 投资业绩费）、Q1 2026 $2.35、Q2 2026 $6.26",
+        "source": "自算"
+      },
+      {
+        "label": "经营现金流",
+        "from": "operating_cash_flow",
+        "source": "Q2 PR p.7"
+      },
+      {
+        "label": "CapEx",
+        "from": "capital_expenditures",
+        "source": "Q2 PR p.7 / p.9"
+      },
+      {
+        "label": "自由现金流",
+        "from": "free_cash_flow",
+        "kind": "free_cash_flow",
+        "source": "Q2 PR p.9"
+      },
+      {
+        "label": "TTM 自由现金流",
+        "from": "ttm_free_cash_flow",
+        "source": "Q2 PR p.9"
+      },
+      {
+        "label": "折旧",
+        "from": "depreciation",
+        "source": "Q2 PR p.6"
+      },
+      {
+        "label": "股权激励费用",
+        "values": [
+          5998,
+          6751,
+          7957
+        ],
+        "source": "Q2 PR p.6；自算"
+      },
+      {
+        "label": "总 TAC",
+        "values": [
+          14705,
+          null,
+          16179
+        ],
+        "source": "Q2 PR p.2"
+      },
+      {
+        "label": "员工人数",
+        "kind": "count",
+        "values": [
+          187103,
+          null,
+          198933
+        ],
+        "source": "Q2 PR p.2"
+      },
+      {
+        "label": "长期债务",
+        "values": [
+          null,
+          77501,
+          98165
+        ],
+        "source": "Q2 PR p.5"
+      },
+      {
+        "label": "股票回购",
+        "from": "repurchases_of_stock",
+        "kind": "buyback",
+        "source": "Q2 PR p.6"
+      },
+      {
+        "label": "Cloud backlog",
+        "from": "cloud_backlog",
+        "kind": "backlog",
+        "source": "Q1/Q2 2026 10-Q（Google Cloud 单列口径）"
+      }
     ]
   },
   "guidance": null,
-  "trends": [
-    {
-      "title": "八季度趋势（收入侧）",
-      "headers": [
-        "季度",
-        "总收入",
-        "YoY",
-        "Search & other",
-        "YoY",
-        "YouTube ads",
-        "YoY",
-        "Cloud",
-        "YoY",
-        "Cloud OPM"
-      ],
-      "rows": [
-        [
-          "Q3 2024",
-          "$88,268M",
-          "—",
-          "$49,385M",
-          "—",
-          "$8,921M",
-          "—",
-          "$11,353M",
-          "—",
-          "17.15%"
-        ],
-        [
-          "Q4 2024",
-          "$96,469M",
-          "—",
-          "$54,034M",
-          "—",
-          "$10,473M",
-          "—",
-          "$11,955M",
-          "—",
-          "17.51%"
-        ],
-        [
-          "Q1 2025",
-          "$90,234M",
-          "—",
-          "$50,702M",
-          "—",
-          "$8,927M",
-          "—",
-          "$12,260M",
-          "—",
-          "17.76%"
-        ],
-        [
-          "Q2 2025",
-          "$96,428M",
-          "—",
-          "$54,190M",
-          "—",
-          "$9,796M",
-          "—",
-          "$13,624M",
-          "—",
-          "20.74%"
-        ],
-        [
-          "Q3 2025",
-          "$102,346M",
-          "+15.9%",
-          "$56,567M",
-          "+14.5%",
-          "$10,261M",
-          "+15.0%",
-          "$15,157M",
-          "+33.5%",
-          "23.71%"
-        ],
-        [
-          "Q4 2025",
-          "$113,828M",
-          "+18.0%",
-          "$63,073M",
-          "+16.7%",
-          "$11,383M",
-          "+8.7%",
-          "$17,664M",
-          "+47.8%",
-          "30.08%"
-        ],
-        [
-          "Q1 2026",
-          "$109,896M",
-          "+21.8%",
-          "$60,399M",
-          "+19.1%",
-          "$9,883M",
-          "+10.7%",
-          "$20,028M",
-          "+63.4%",
-          "32.94%"
-        ],
-        [
-          "Q2 2026",
-          "$119,796M",
-          "+24.2%",
-          "$63,271M",
-          "+16.8%",
-          "$11,055M",
-          "+12.9%",
-          "$24,768M",
-          "+81.8%",
-          "35.59%"
-        ]
-      ]
-    },
-    {
-      "title": "八季度趋势（现金与资本强度）",
-      "headers": [
-        "季度",
-        "经营现金流",
-        "CapEx",
-        "自由现金流",
-        "CapEx/收入"
-      ],
-      "rows": [
-        [
-          "Q4 2024",
-          "$39,113M",
-          "$14,276M",
-          "$24,837M",
-          "14.8%"
-        ],
-        [
-          "Q1 2025",
-          "$36,150M",
-          "$17,197M",
-          "$18,953M",
-          "19.1%"
-        ],
-        [
-          "Q2 2025",
-          "$27,747M",
-          "$22,446M",
-          "$5,301M",
-          "23.3%"
-        ],
-        [
-          "Q3 2025",
-          "$48,414M",
-          "$23,953M",
-          "$24,461M",
-          "23.4%"
-        ],
-        [
-          "Q4 2025",
-          "$52,402M",
-          "$27,851M",
-          "$24,551M",
-          "24.5%"
-        ],
-        [
-          "Q1 2026",
-          "$45,790M",
-          "$35,674M",
-          "$10,116M",
-          "32.5%"
-        ],
-        [
-          "Q2 2026",
-          "$39,069M",
-          "$44,924M",
-          "-$5,855M",
-          "37.5%"
-        ]
-      ]
-    }
-  ],
   "market_expectation": {
+    "period": "Q2 2026",
     "label": "市场预期（财报前一致预期，来源不具名）",
     "as_of": "2026-07-22",
     "operating_eps_low": 2.87,
     "operating_eps_high": 2.91,
     "operating_eps_mid": 2.89,
     "revenue_usd_m": 117000,
-    "post_earnings_price_change_pct": -4.9
-  },
-  "eps_bridge": {
-    "labels": [
-      "GAAP 摊薄 EPS",
-      "其中：权益证券收益",
-      "剔除后（简单自算）",
-      "市场预期"
-    ],
-    "values": [
-      9.11,
-      6.26,
-      2.85,
-      2.89
-    ]
+    "post_earnings_price_change_pct": -4.9,
+    "search_yoy_pct": 17
   },
   "capex_guidance_history": {
     "calls": [
@@ -513,6 +301,11 @@
       "2026-02-04",
       "2026-04-29",
       "2026-07-22"
+    ],
+    "fiscal_years": [
+      2026,
+      2026,
+      2026
     ],
     "low_usd_bn": [
       175,
@@ -615,96 +408,103 @@
     ],
     "basis": "27 季（2019Q4–2026Q2）的合同剩余履约义务。2019Q4–2025Q4 是 10-Q / 10-K 披露的**公司总额**（公司在附注里写明主要与 Google Cloud 相关，未单列）；2026Q1 起 10-Q 单列 Google Cloud 部分，本站从那一季起改用 Cloud 口径（2026Q1 总额 467.6、Cloud 462.3；2026Q2 总额 519.5、Cloud 513.9）。起点 2019Q4 是披露底：这一项首次出现在 FY2019 10-K，更早的申报里没有。",
     "basis_change_at": "2026Q1",
+    "from_call": [],
     "note_2026q2": "本站此前把 2026Q2 记成 514.0 并注明「尚无 10-Q，采用当季电话会口径」。10-Q 于 2026-07-23 已申报（accession 0001652044-26-000071），其 R41 印着 Google Cloud 513.9、公司总额 519.5，现改用申报值。",
     "rounding_note": "本站此前把这个环比印成 +11.3%，那是拿**已经四舍五入到整数**的展示值 462 → 514 算的（+11.26%）。用申报值 462.3 → 513.9 算是 +11.16%，一位小数下是 +11.2%。同一个数在同一页上曾经有两个值：snapshot 行硬写 11.3，图上由 builder 现算 11.2。"
   },
-  "geography": {
-    "labels": [
-      "美国",
-      "EMEA",
-      "APAC",
-      "其他美洲"
-    ],
-    "prior_year_usd_m": [
-      46063,
-      28262,
-      16480,
-      5735
-    ],
-    "current_usd_m": [
-      60846,
-      32501,
-      19317,
-      7026
-    ]
-  },
   "prior_kpi_settlement": {
+    "period": "Q2 2026",
     "set_in": "Q1 2026",
-    "settled_in": "Q2 2026",
+    "lead": "Cloud 两条大幅超出，",
     "quantified": [
       {
         "metric": "Cloud 收入 YoY",
         "direction": "up",
         "threshold": 55.0,
         "actual": 81.8,
-        "unit": "pct"
+        "unit": "pct",
+        "kind": "operating"
       },
       {
         "metric": "Cloud 经营利润率",
         "direction": "up",
         "threshold": 30.0,
         "actual": 35.59,
-        "unit": "pct"
+        "unit": "pct",
+        "kind": "operating"
       },
       {
         "metric": "Search & other YoY",
         "direction": "up",
         "threshold": 14.0,
         "actual": 16.8,
-        "unit": "pct"
+        "unit": "pct",
+        "kind": "operating"
       },
       {
         "metric": "折旧 YoY",
         "direction": "down",
         "threshold": 55.0,
         "actual": 42.1,
-        "unit": "pct"
+        "unit": "pct",
+        "kind": "operating"
       },
       {
         "metric": "Q2 CapEx（不超上限）",
         "direction": "down",
         "threshold": 55000.0,
         "actual": 44924.0,
-        "unit": "usd_m"
+        "unit": "usd_m",
+        "kind": "cash"
       },
       {
         "metric": "Cloud backlog 环比",
         "direction": "up",
         "threshold": 10.0,
         "actual": 11.2,
-        "unit": "pct"
+        "unit": "pct",
+        "kind": "operating"
       },
       {
         "metric": "TTM 自由现金流",
         "direction": "up",
         "threshold": 55000.0,
         "actual": 53273.0,
-        "unit": "usd_m"
+        "unit": "usd_m",
+        "kind": "cash"
       }
     ],
     "qualitative_triggered": [
-      "AI Mode / AIO 变现指标连续三季未披露",
-      "回购连续两季 $0M 且债务续升",
-      "Waymo 量化披露倒退"
+      {
+        "short": "AI Mode 变现披露",
+        "text": "AI Mode / AIO 变现指标连续三季未披露"
+      },
+      {
+        "short": "回购归零",
+        "text": "回购连续两季 $0M 且债务续升"
+      },
+      {
+        "short": "Waymo 披露倒退",
+        "text": "Waymo 量化披露倒退"
+      }
     ],
     "retired": [
-      "净现金 < $35,000M：可被增发直接规避，口径已失真，退役"
+      {
+        "short": "净现金",
+        "reason": "可被增发规避",
+        "text": "净现金 < $35,000M：可被增发直接规避，口径已失真，退役"
+      }
     ],
     "excluded_from_chart": [
-      "Network ads YoY：阈值 -5%、实际 -0.7%，未触发。阈值绝对值接近零会让「距阈值 %」失真，故不进图，只记录结果。"
+      {
+        "short": "Network ads",
+        "reason": "阈值接近零会使百分比失真",
+        "text": "Network ads YoY：阈值 -5%、实际 -0.7%，未触发。阈值绝对值接近零会让「距阈值 %」失真，故不进图，只记录结果。"
+      }
     ]
   },
   "next_kpi": {
+    "period": "Q2 2026",
     "for_period": "Q3 2026",
     "quantified": [
       {
@@ -754,15 +554,36 @@
         "direction": "up",
         "threshold": 52000.0,
         "current": 44924.0,
-        "unit": "usd_m"
+        "unit": "usd_m",
+        "note": "方向相反——低于 {threshold_bn} 反而说明全年指引有下修风险"
       }
     ],
     "disclosure_gated": [
-      "backlog 客户集中度：10-Q 确认单一客户 > 35% 即撤销多头",
-      "2027 CapEx 指引：> $280,000M 且 TTM FCF 为负即减仓",
-      "ATM 计划实际发行额：单季 > $10,000M 即警示",
-      "TPU 系统销售收入：首次量化即为双向重大催化",
-      "AI Mode / AIO 变现指标：仍不披露且 Search < +13% 即警示"
+      {
+        "metric": "backlog 客户集中度",
+        "short": "backlog 客户集中度",
+        "trigger": "10-Q 确认单一客户 > 35% 即撤销多头"
+      },
+      {
+        "metric": "2027 CapEx 指引",
+        "short": "2027 CapEx 指引",
+        "trigger": "> $280,000M 且 TTM FCF 为负即减仓"
+      },
+      {
+        "metric": "ATM 计划实际发行额",
+        "short": "ATM 发行额",
+        "trigger": "单季 > $10,000M 即警示"
+      },
+      {
+        "metric": "TPU 系统销售收入",
+        "short": "TPU 系统收入",
+        "trigger": "首次量化即为双向重大催化"
+      },
+      {
+        "metric": "AI Mode / AIO 变现指标",
+        "short": "AI Mode 变现指标",
+        "trigger": "仍不披露且 Search < +13% 即警示"
+      }
     ]
   },
   "quarterly": {
@@ -878,6 +699,20 @@
       35674,
       44924
     ],
+    "repurchases_of_stock": [
+      15787,
+      16191,
+      15696,
+      15684,
+      15291,
+      15551,
+      15068,
+      13238,
+      11904,
+      5499,
+      0,
+      0
+    ],
     "geography_usd_m": {
       "美国": [
         36354,
@@ -936,7 +771,8 @@
         7026
       ]
     },
-    "provenance": "季度值来自各期 10-Q（含上年同期比较列）与 10-K；无 10-Q 的第四季度按 全年 − 前三季 倒推。Q4 2025 总收入沿用当季 earnings release 的 113,828，与 10-K 倒挤值相差 1。Q2 2026 尚无 10-Q，采用当季 earnings release。"
+    "provenance": "季度值来自各期 10-Q（含上年同期比较列）与 10-K；无 10-Q 的第四季度按 全年 − 前三季 倒推。Q4 2025 总收入沿用当季 earnings release 的 113,828，与 10-K 倒挤值相差 1。Q2 2026 尚无 10-Q，采用当季 earnings release。",
+    "repurchases_provenance": "现金流量表「Repurchases of stock」，XBRL PaymentsForRepurchaseOfCommonStock 年初至今值逐季相减（2023Q3 = 45,313 − 29,526；2023Q4 = 61,504 − 45,313；2024Q2 = 31,380 − 15,696；2024Q3 = 46,671 − 31,380；2024Q4 = 62,222 − 46,671；2025Q2 = 28,306 − 15,068；2025Q3 = 40,210 − 28,306；2025Q4 = 45,709 − 40,210）；2024Q4 15,551、2025Q2 13,238、2025Q4 5,499 与各季新闻稿现金流量表的单季列一致，2026Q1、2026Q2 两季申报为 0。"
   },
   "long_history": {
     "quarters": [
@@ -1933,5 +1769,53 @@
       "source": "各期现金流量表的「Depreciation of property and equipment」，FY2023 10-K 起。"
     },
     "do_not_splice": "两个科目在 2023Q1–2023Q3 重叠三季，值分别是 3,060/3,279/3,671 与 2,635/2,824/3,171 —— 差的那一截是办公场地减值。所以它们是两条线，不是一条线的两段：拼起来会把 2023 年的减值画成折旧的一次跳升。"
-  }
+  },
+  "quarter_story": {
+    "period": "Q2 2026",
+    "youtube_driver": "由世界杯驱动，下季无对应赛事",
+    "backlog_reading": "{prev_q} 的 +{prev_add} 是一次性大单，{cur_q} 的 +{add} 才是常态化水平。TPU 系统销售已计入 backlog，但公司拒绝给出占比。",
+    "backlog_brief": "TPU 已计入，公司拒绝给占比。",
+    "fcf_context": "本季所得税现金流实为净流入，转负不能用季节性解释。",
+    "fcf_context_source": "Q2 2026 EX-99.1 现金流量表「Income taxes, net」本季 203（正数 = 经营现金流入）。"
+  },
+  "local_note_errata": {
+    "period": "Q2 2026",
+    "ttm_fcf_recorded_for": "Q2 2025",
+    "recorded_value_is_for": "Q3 2025",
+    "what": "本地分析稿把 Q3 2025 的 TTM 自由现金流记在了 Q2 2025 名下；本页按逐季现金流重算，同比的分母用 Q2 2025 的真值。"
+  },
+  "sources": [
+    {
+      "label": "Q2 2026 SEC Exhibit 99.1",
+      "url": "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000066/googexhibit991q22026.htm"
+    },
+    {
+      "label": "Q1 2026 SEC Exhibit 99.1",
+      "url": "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000043/googexhibit991q12026.htm"
+    },
+    {
+      "label": "Q4 2025 Alphabet earnings release",
+      "url": "https://s206.q4cdn.com/479360582/files/doc_news/2026/Feb/04/attachments/2025q4-alphabet-earnings-release.pdf"
+    },
+    {
+      "label": "Q3 2025 Alphabet earnings release",
+      "url": "https://s206.q4cdn.com/479360582/files/doc_news/2025/Oct/29/attachments/2025q3-alphabet-earnings-release.pdf"
+    },
+    {
+      "label": "Q2 2025 SEC Exhibit 99.1",
+      "url": "https://www.sec.gov/Archives/edgar/data/1652044/000165204425000056/googexhibit991q22025.htm"
+    },
+    {
+      "label": "Q2 2026 Alphabet earnings call webcast",
+      "url": "https://www.youtube.com/watch?v=LzExSq9DU9w"
+    },
+    {
+      "label": "Q1 2026 Alphabet earnings call webcast",
+      "url": "https://www.youtube.com/watch?v=LPJoiDiVkTI"
+    },
+    {
+      "label": "Q4 2025 Alphabet earnings call webcast",
+      "url": "https://www.youtube.com/watch?v=mIK5-yi7a-c"
+    }
+  ]
 }
