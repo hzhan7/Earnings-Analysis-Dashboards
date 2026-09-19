@@ -15,6 +15,55 @@
     "audit_status": "unaudited",
     "analysis_date": "2026-07-18"
   },
+  "_checks": {
+    "period": "Q2 2026",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-16",
+    "revenue_ntd_bn": 1270.38,
+    "revenue_usd_bn": 40.2,
+    "revenue_usd_qoq_pct": 12.0,
+    "revenue_usd_yoy_pct": 33.7,
+    "revenue_ntd_yoy_pct": 36.0,
+    "gross_margin_pct": 67.7,
+    "operating_margin_pct": 60.3,
+    "net_income_ntd_bn": 706.56,
+    "eps_ntd": 27.25,
+    "wafer_revenue_mix_pct": {
+      "2nm": 3,
+      "3nm": 30,
+      "5nm": 33,
+      "7nm": 11,
+      "advanced_7nm_and_below": 77
+    },
+    "hpc_pct": 66,
+    "smartphone_pct": 22,
+    "wafer_shipments_kpcs_12in_equiv": 4336,
+    "wafer_shipments_qoq_pct": 3.9,
+    "average_usd_ntd": 31.6,
+    "receivable_days": 29,
+    "inventory_days": 87,
+    "operating_cash_flow_ntd_bn": 783.36,
+    "capital_expenditures_ntd_bn": 496.0,
+    "free_cash_flow_ntd_bn": 287.36,
+    "capital_expenditures_usd_bn": 15.7,
+    "cash_dividends_ntd_bn": 155.59,
+    "vis_gain_ntd_bn": 63.2,
+    "next_quarter_revenue_usd_bn": [
+      44.6,
+      45.8
+    ],
+    "next_quarter_usd_ntd_assumption": 32,
+    "next_quarter_gross_margin_pct": [
+      65,
+      67
+    ],
+    "next_quarter_operating_margin_pct": [
+      56,
+      58
+    ],
+    "source": "TSMC 2Q26 业绩新闻稿（6-K EX-99.1 a2q26e_withguidancexfinal.htm，Jul. 16, 2026）：首段「second quarter ended June 30, 2026」、合并收入 NT$1,270.38B、净利 NT$706.56B、稀释 EPS NT$27.25；「In US dollars, second quarter revenue was $40.20 billion, which increased 33.7% year-over-year and increased 12.0%」；「Gross margin … 67.7%, operating margin was 60.3%」；制程 2nm 3% / 3nm 30% / 5nm 33% / 7nm 11%、Advanced 77%；Q3 指引（US$44.6–45.8B、1 US dollar to 32 NT dollars、毛利率 65–67%、营业利润率 56–58%）。2Q26 Quarterly Management Report（July 16, 2026）：Summary 表（Wafer Shipment 4,336、QoQ 3.9%、Average Exchange Rate 31.60）、I 节平台（HPC 66%、Smartphone 22%）、II-3 节 VIS 收益 NT$63.20B、III-2 节（Days of Receivable 29、Days of Inventory 87）、IV-1 节（Net Operating Sources 783.36、Capital Expenditures (496.00)、Cash Dividends (155.59)）、IV-2 节 Free Cash Flow 287.36、V 节 Capital Expenditures US$15.70B。",
+    "checked_on": "2026-09-19"
+  },
   "periods": [
     "Q3 2024",
     "Q4 2024",
@@ -253,6 +302,8 @@
     ]
   },
   "current_snapshot": {
+    "period": "Q2 2026",
+    "_note": "三列依次为本季、上季、去年同季（2Q26 Quarterly Management Report 的三栏）；换季整块换成新一季报告的三栏并改戳。",
     "revenue_usd_bn": [
       40.2,
       35.9,
@@ -318,6 +369,11 @@
       348.21,
       199.85
     ],
+    "cash_dividends_ntd_bn": [
+      155.59,
+      129.66,
+      116.7
+    ],
     "receivable_days": [
       29,
       26,
@@ -327,17 +383,18 @@
       87,
       80,
       76
-    ],
-    "vis_disposal_and_mark_to_market_gain_pretax_ntd_bn": 63.2
+    ]
   },
   "guidance": {
-    "q2_actual": {
+    "period": "Q2 2026",
+    "_note": "本季法说会给出的全部口径：reported 是本季实际，prior_guide 是上季法说会给本季的指引，next_guide 是本季法说会给下季的指引；fy_* 是当年全年口径（fiscal_year）。*_cn 是页面用的中文措辞，原文在不带 _cn 的字段里。",
+    "reported": {
       "revenue_usd_bn": 40.2,
       "gross_margin_pct": 67.7,
       "operating_margin_pct": 60.3,
       "usd_ntd": 31.6
     },
-    "q2_prior": {
+    "prior_guide": {
       "revenue_usd_bn": [
         39.0,
         40.2
@@ -352,7 +409,8 @@
       ],
       "usd_ntd": 31.7
     },
-    "q3_new": {
+    "next_guide": {
+      "quarter": "Q3 2026",
       "revenue_usd_bn": [
         44.6,
         45.8
@@ -367,19 +425,27 @@
       ],
       "usd_ntd": 32.0
     },
-    "fy2026_revenue_growth": "slightly above 40% in US dollar terms",
-    "fy2026_revenue_growth_prior": "above 30% in US dollar terms",
-    "fy2026_capex_usd_bn": [
+    "fiscal_year": 2026,
+    "fy_revenue_growth": "slightly above 40% in US dollar terms",
+    "fy_revenue_growth_cn": "略高于 40%",
+    "fy_revenue_growth_prior": "above 30% in US dollar terms",
+    "fy_revenue_growth_prior_cn": "高于 30%",
+    "fy_revenue_growth_prior_short_cn": "30%+",
+    "fy_revenue_growth_change_cn": "上调",
+    "fy_capex_usd_bn": [
       60,
       64
     ],
-    "fy2026_capex_prior_usd_bn": [
+    "fy_capex_prior_usd_bn": [
       52,
       56
     ],
-    "fy2026_capex_prior_positioning": "towards the high end",
+    "fy_capex_prior_positioning": "towards the high end",
+    "fy_capex_prior_positioning_cn": "接近上端",
     "long_term_gross_margin_floor_pct": 56,
-    "n2_h2_gross_margin_dilution_pp": [
+    "long_term_gross_margin_change_cn": "长期目标未上修，也未下修",
+    "n2_gross_margin_dilution_half": "2H26",
+    "n2_gross_margin_dilution_pp": [
       3,
       4
     ],
@@ -474,6 +540,7 @@
     "provenance": "逐季读自各季 quarterly management report 的「V. Capital Expenditures」美元表（书面表格，两位小数）。2026-08 由 earnings conference 的口头原句改用此表：同一批数字、更高精度，且与 long_history 同源，页内不会出现两个 CapEx 版本。换源改动了三个值（2024Q4 11.2→11.23、2025Q2 9.6→9.63、2025Q4 11.5→11.51），其余九季一致。前四季只用于计算同比，不进入展示窗口。与新台币口径 CapEx 相除得到的隐含汇率落在 29.6–32.9，与当期市场汇率一致。"
   },
   "market_expectation": {
+    "period": "Q2 2026",
     "label": "市场预期（财报前一致预期，来源不具名）",
     "as_of": "2026-07-16",
     "revenue_usd_bn": 39.94,
@@ -486,6 +553,10 @@
     "post_earnings_price_change_pct": -2.32
   },
   "net_income_bridge": {
+    "period": "Q2 2026",
+    "_note": "只在有一次性收益的季度存在：本季是处置世界先进（VIS）股份与保留股份重估的税前收益（2Q26 Management Report II-3 节 NT$63.20B）。没有一次性项的季度整块删掉，页面的核心/报告对照与净利桥整段不出。",
+    "one_off_short": "VIS",
+    "one_off_description": "处置世界先进股份与保留股份重估的税前一次性收益",
     "labels": [
       "报告净利",
       "其中：VIS 一次性（税前）",
@@ -500,6 +571,9 @@
     ]
   },
   "capex_guidance_history": {
+    "period": "Q2 2026",
+    "_note": "当年全年资本预算的逐次口径，最后一格是本季法说会给的；period 是最后一次法说会所报告的季度。换季时追加新一场的口径并改戳，换到下一财年时整块换成新一年的第一次口径。",
+    "fiscal_year": 2026,
     "calls": [
       "1 月年度 call",
       "4 月 Q1 call",
@@ -524,36 +598,45 @@
       "初始区间",
       "指向上端 closer to $56B",
       "上调至 $60–64B"
+    ],
+    "wording": [
+      "US$52–56B",
+      "closer to US$56B",
+      "US$60–64B"
     ]
   },
-  "q2_guidance_delivery": [
-    {
-      "metric": "收入 vs 指引中值",
-      "value": 1.52,
-      "unit": "pct"
-    },
-    {
-      "metric": "毛利率 vs 指引中值",
-      "value": 1.2,
-      "unit": "pp"
-    },
-    {
-      "metric": "营业利润率 vs 指引中值",
-      "value": 2.8,
-      "unit": "pp"
-    },
-    {
-      "metric": "有效税率 vs 指引（低为优）",
-      "value": 1.9,
-      "unit": "pp"
-    },
-    {
-      "metric": "新台币汇率 vs 假设（升值为逆风）",
-      "value": -0.3,
-      "unit": "pct"
-    }
-  ],
+  "guidance_delivery": {
+    "period": "Q2 2026",
+    "items": [
+      {
+        "metric": "收入 vs 指引中值",
+        "value": 1.52,
+        "unit": "pct"
+      },
+      {
+        "metric": "毛利率 vs 指引中值",
+        "value": 1.2,
+        "unit": "pp"
+      },
+      {
+        "metric": "营业利润率 vs 指引中值",
+        "value": 2.8,
+        "unit": "pp"
+      },
+      {
+        "metric": "有效税率 vs 指引（低为优）",
+        "value": 1.9,
+        "unit": "pp"
+      },
+      {
+        "metric": "新台币汇率 vs 假设（升值为逆风）",
+        "value": -0.3,
+        "unit": "pct"
+      }
+    ]
+  },
   "followup_closure": {
+    "period": "Q2 2026",
     "labels": [
       "已验证",
       "部分验证",
@@ -566,9 +649,22 @@
       1,
       4
     ],
-    "set_in": "Q1 2026"
+    "set_in": "Q1 2026",
+    "falsified": {
+      "metric": "库存天数",
+      "expected_low_days": 75,
+      "expected_high_days": 78
+    },
+    "undisclosed_topics": [
+      "节点毛利率",
+      "中东成本冲击的量化",
+      "N2P 首批客户",
+      "长期毛利率目标上修"
+    ],
+    "_note": "上季（1Q26）本地分析稿留下的 12 条待验证问题在本季的闭环：counts 与 labels 对齐；falsified 是被证伪且有长序列可画的那一条；undisclosed_topics 是「仍未披露」各条的主题（2Q26 本地分析稿闭环表 #3 N3 毛利率跨越时点、#4 中东局势成本量化、#8 N2P 首批客户、#10 长期毛利率目标上修）。"
   },
   "next_kpi": {
+    "period": "Q2 2026",
     "for_period": "Q3 2026",
     "quantified": [
       {
@@ -604,7 +700,8 @@
         "direction": "up",
         "threshold": 5.0,
         "current": 3.0,
-        "unit": "pct"
+        "unit": "pct",
+        "short": "2nm 占比"
       },
       {
         "metric": "USD/TWD 即期（升值为逆风）",
@@ -614,12 +711,38 @@
         "unit": "fx"
       }
     ],
+    "ramp_metric": "2nm 占晶圆收入",
+    "ramp_quote": "steep ramp",
+    "watch_metric": "库存天数",
     "disclosure_gated": [
-      "Q3 实际收入：低于指引下限 US$44.6B 即减仓评估",
-      "1 月年度 call 的 2027 CapEx 指引：≥ US$70B 且无对应收入指引即重新评估",
-      "1 月年度 call 是否正式上修长期毛利率目标至 58%+",
-      "Smartphone 连续三季负增长即警示终端弱于管理层口径"
+      {
+        "short": "Q3 实际收入",
+        "text": "Q3 实际收入：低于指引下限 US$44.6B 即减仓评估"
+      },
+      {
+        "short": "2027 CapEx 指引",
+        "text": "1 月年度 call 的 2027 CapEx 指引：≥ US$70B 且无对应收入指引即重新评估"
+      },
+      {
+        "short": "长期毛利率目标",
+        "text": "1 月年度 call 是否正式上修长期毛利率目标至 58%+"
+      },
+      {
+        "short": "Smartphone 连续负增长",
+        "text": "Smartphone 连续三季负增长即警示终端弱于管理层口径"
+      }
     ]
+  },
+  "quarter_story": {
+    "period": "Q2 2026",
+    "_note": "只属于这一季的叙述与判断（电话会口径与本页的读法，不是申报值）。换季时换成新一季的内容，没有这件事的字段就删掉；整块都没有时页面对应的句子整句不出。",
+    "source": "2Q26 法说会（2026-07-16）与 2Q26 Management Report；prior_call_quote 出自 1Q26 法说会 CFO 答问「the revenue growth outpaced the CapEx growth」。",
+    "market_sold": "资本强度",
+    "n2_dilution_first_quantified": true,
+    "prior_call_quote": "收入增速快于 CapEx 增速",
+    "crossover_reading": "这是股价的直接压制项",
+    "inventory_attribution": "N2 爬坡备货",
+    "inventory_test": "若下季 2nm 占比已跳升而库存仍不回落，备货解释即失效"
   },
   "quarterly_guidance_history": {
     "quarters": [

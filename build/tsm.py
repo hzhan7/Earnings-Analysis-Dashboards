@@ -8,13 +8,24 @@ capital intensity.
 
 The public payload contains only TSMC-reported figures, clearly labelled market
 expectations, and arithmetic reproducible from the audit tables.
+
+Rolling a quarter is a data edit (see CLAUDE.md §9): every period label, count
+and figure in the prose below is computed from ``series/tsm.json``. What
+belongs to one quarter only -- the snapshot columns, this call's guidance and
+full-year outlook, the market expectation, a one-off in net income, the
+follow-up closure, the thresholds, the call's own readings -- sits in blocks
+stamped with that quarter and read through ``board.stamped_block``; a block
+stamped with another quarter stops the build, an absent one leaves its part of
+the page out. Every "all / never / first / only" sentence is printed only while
+the data still says so.
 """
 
 from __future__ import annotations
 
 import json
-import statistics
+import math
 import sys
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,12 +33,14 @@ sys.path.insert(0, str(ROOT))
 
 from build.board import (  # noqa: E402
     ai_capex_cycle_table,
+    cn_count,
     delivery_band,
     headroom,
     headroom_exhibit,
     latest_block,
     midpoint_deviation,
     number_exhibits,
+    stamped_block,
     threshold_exhibit,
     threshold_table,
     unit_text,
@@ -43,6 +56,20 @@ STAGING_PATH = ROOT / "series" / "tsm.json"
 LONG_STEP = 4
 DATA_DIR = ROOT / "data"
 
+# The quarter operating margin started clearing its upper bound as a habit. It
+# is the page's reading of a pricing-power regime, not a figure that moves with
+# a roll; the counts measured from it are recomputed every build.
+REGIME_START = "2023Q1"
+
+# The quarter from which TSMC's own "advanced technologies" aggregate and this
+# page's summed 2/3/5/7nm line share one definition (its last redefinition).
+ADVANCED_BASIS_FROM = "2021Q1"
+
+# The two stretches the inventory-days sentence compares: before the 2021 build
+# cycle and from it on. Fixed analytic windows, not quantities a roll changes.
+INVENTORY_EARLY = ("2016Q1", "2019Q4")
+INVENTORY_LATE_FROM = "2021Q1"
+
 
 def signed(value: float, digits: int = 1, suffix: str = "%") -> str:
     return f"{value:+.{digits}f}{suffix}"
@@ -55,6 +82,30 @@ def pct_change(current: float, comparison: float) -> float:
 def compact_period(period: str) -> str:
     quarter, year = period.split()
     return f"{quarter}'{year[-2:]}"
+
+
+def iso_period(period: str) -> str:
+    """``'Q2 2026'`` → ``'2026Q2'``, the spelling the long record uses."""
+    quarter, year = period.split()
+    return f"{year}{quarter}"
+
+
+def deck_short(period: str) -> str:
+    """``'Q2 2026'`` → ``'2Q26'``, the way TSMC names its own reports."""
+    quarter, year = period.split()
+    return f"{quarter[1]}Q{year[-2:]}"
+
+
+def quarter_word(period: str) -> str:
+    """``'Q3 2026'`` → ``'Q3'``."""
+    return period.split()[0]
+
+
+def shift_period(period: str, step: int) -> str:
+    """``shift_period('Q4 2026', 1)`` → ``'Q1 2027'``."""
+    quarter, year = period.split()
+    index = int(year) * 4 + int(quarter[1]) - 1 + step
+    return f"Q{index % 4 + 1} {index // 4}"
 
 
 MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -89,6 +140,51 @@ def rounded(values: list[float | None], digits: int = 6) -> list[float | None]:
     return [None if value is None else round(value, digits) for value in values]
 
 
+def spaced(word: str) -> str:
+    """A word that opens with Latin letters or digits gets a space after Chinese
+    text (「归因于 N2 爬坡备货」); a Chinese one does not."""
+    return f" {word}" if word[:1].isascii() and word[:1].isalnum() else word
+
+
+def joined(names: list[str]) -> str:
+    """「毛利率与营业利润率」「A、B 与 HPC mix」: the last 「与」 is spaced the way
+    the page spaces Chinese against Latin text."""
+    if len(names) == 1:
+        return names[0]
+    head = "、".join(names[:-1])
+    last = names[-1]
+    left = " " if head[-1:].isascii() and head[-1:].isalnum() else ""
+    right = " " if last[:1].isascii() and last[:1].isalnum() else ""
+    return f"{head}{left}与{right}{last}"
+
+
+def usd_range(values: list[float]) -> str:
+    """``[60, 64]`` → ``'US$60–64B'``; a single-figure outlook reads ``'US$56B'``."""
+    low, high = values
+    return f"US${low}B" if low == high else f"US${low}–{high}B"
+
+
+def trim(value: float) -> str:
+    """``66.0`` → ``'66'``, ``66.5`` → ``'66.5'``: a midpoint at the precision it has."""
+    return f"{value:.1f}".rstrip("0").rstrip(".")
+
+
+def cn_share(share: float) -> str:
+    """The nearest simple fraction, in words: 0.66 → 「三分之二」, 0.52 → 「一半」."""
+    choices = [(1 / 10, "十分之一"), (1 / 5, "五分之一"), (1 / 4, "四分之一"), (1 / 3, "三分之一"),
+               (1 / 2, "一半"), (2 / 3, "三分之二"), (3 / 4, "四分之三")]
+    return min(choices, key=lambda choice: abs(share - choice[0]))[1]
+
+
+def cn_fraction_above(value: float) -> str:
+    """A share of revenue as the simple fraction it clears: 0.684 → 「三分之二以上」."""
+    for share, words in ((3 / 4, "四分之三"), (2 / 3, "三分之二"), (1 / 2, "一半"),
+                         (1 / 3, "三分之一"), (1 / 4, "四分之一")):
+        if value >= share:
+            return f"{words}以上"
+    return f"{value * 100:.0f}%"
+
+
 def resolve_exhibit_refs(exhibits: list[dict]) -> list[dict]:
     """Substitute ``{ref}`` placeholders with the numbers `number_exhibits` assigned.
 
@@ -109,45 +205,68 @@ def resolve_exhibit_refs(exhibits: list[dict]) -> list[dict]:
     return exhibits
 
 
-def expectation_chart(staging: dict) -> dict:
+def delivery_words(actual: float, low: float, high: float, unit: str = "pp") -> str:
+    """Where a reported figure landed against its own guided range, at the
+    precision the company prints (a figure on the bound is inside it)."""
+    if actual > high:
+        return f"高于上端 {actual - high:.1f}{unit} D"
+    if actual < low:
+        return f"低于下端 {low - actual:.1f}{unit} D"
+    return "区间上端" if actual == high else "区间内"
+
+
+def expectation_chart(staging: dict, consensus: dict, snapshot: dict,
+                      bridge: dict | None) -> dict:
     """Reported beat versus core beat, against the same market expectation.
 
     The page's other guidance charts ask whether the quarter cleared the
-    company's own bar. This asks whether it cleared the market's -- and it is
-    the one place where the answer changes depending on which profit line you
-    use. Both are plotted so the reader sees the gap rather than being told
-    about it.
+    company's own bar. This asks whether it cleared the market's -- and when
+    the quarter carries a one-off, it is the one place where the answer changes
+    depending on which profit line you use. Both are plotted so the reader sees
+    the gap rather than being told about it; a quarter without a one-off plots
+    the reported lines only.
     """
-    consensus = staging["market_expectation"]
-    snapshot = staging["current_snapshot"]
-    bridge = staging["net_income_bridge"]["values_ntd_bn"]
     financials = staging["financials"]
-
-    reported_net, core_net = bridge[0], bridge[2]
+    reported_net = snapshot["net_income_ntd_bn"][0]
     reported_eps = financials["eps_ntd"][-1]
-    # Core EPS is not disclosed: the one-off is a pre-tax non-operating gain, so
-    # scaling reported EPS by the core/reported profit ratio is the only
-    # arithmetic available and it is marked D like every other derived figure.
-    core_eps = reported_eps * core_net / reported_net
-
     rows = [
         ("营收（US$）", pct_change(financials["revenue_usd_bn"][-1], consensus["revenue_usd_bn"])),
         ("营收（NT$）", pct_change(snapshot["revenue_ntd_bn"][0], consensus["revenue_ntd_bn"])),
         ("毛利率（pp）", financials["gross_margin_pct"][-1] - consensus["gross_margin_pct"]),
         ("报告净利", pct_change(reported_net, consensus["net_income_ntd_bn"])),
         ("报告 EPS", pct_change(reported_eps, consensus["eps_ntd"])),
-        ("核心净利 D", pct_change(core_net, consensus["net_income_ntd_bn"])),
-        ("核心 EPS D", pct_change(core_eps, consensus["eps_ntd"])),
     ]
     headline = pct_change(reported_eps, consensus["eps_ntd"])
-    core = pct_change(core_eps, consensus["eps_ntd"])
-    one_off = bridge[1]
+    title = f"对市场预期：报告 EPS {'beat' if headline >= 0 else 'miss'} {headline:+.1f}%"
+    note = "毛利率一项是百分点，其余是百分比，两类单位并列只用于比较方向与相对幅度。"
+    src_core = ""
+    if bridge is not None:
+        values = bridge["values_ntd_bn"]
+        core_net = values[2]
+        # Core EPS is not disclosed: the one-off is a pre-tax non-operating gain,
+        # so scaling reported EPS by the core/reported profit ratio is the only
+        # arithmetic available and it is marked D like every other derived figure.
+        core_eps = reported_eps * core_net / values[0]
+        core_net_beat = pct_change(core_net, consensus["net_income_ntd_bn"])
+        core = pct_change(core_eps, consensus["eps_ntd"])
+        rows += [("核心净利 D", core_net_beat), ("核心 EPS D", core)]
+        share = values[1] / (values[0] - consensus["net_income_ntd_bn"])
+        title += f"，剔除一次性后{'只有' if abs(core) < abs(headline) / 2 else ''} {core:+.1f}%"
+        clean = [label for label, value in rows[:3] if value > 0]
+        note = (
+            f"{bridge['one_off_description']} NT${values[1]:.2f}B 解释了净利超预期金额的"
+            + ("绝大部分" if share >= 0.75 else "大部分" if share >= 0.5 else "一部分")
+            + f"：剔除后核心净利较预期只有 {core_net_beat:+.1f}%。"
+            + ("<b>干净的超预期在营收与毛利率，不在利润</b>。"
+               if len(clean) == 3 and abs(core_net_beat) < 5 else "")
+            + note
+        )
+        src_core = (f"核心净利 = 报告净利减一次性税前收益，未做税务调整；"
+                    "核心 EPS 按核心 / 报告净利之比折算报告 EPS，均为自算，不是公司定义的调整后指标。")
     return {
         "ref": "EX_EXPECTATION",
         "kind": "diverging_bars",
-        "title": (
-            f"对市场预期：报告 EPS beat {headline:+.1f}%，剔除一次性后只有 {core:+.1f}%"
-        ),
+        "title": title,
         "xlabels": [label for label, _ in rows],
         "values": [round(value, 2) for _, value in rows],
         "legend": "较市场预期",
@@ -158,33 +277,25 @@ def expectation_chart(staging: dict) -> dict:
         "label_fmt": "pct1",
         "ylab": "% 或 pp",
         "zero_line": True,
-        "note": (
-            f"处置世界先进股份与保留股份重估的税前一次性收益 NT${one_off:.2f}B 解释了净利超预期金额的"
-            f"绝大部分：剔除后核心净利较预期只有 {pct_change(core_net, consensus['net_income_ntd_bn']):+.1f}%。"
-            "<b>干净的超预期在营收与毛利率，不在利润</b>。"
-            "毛利率一项是百分点，其余是百分比，两类单位并列只用于比较方向与相对幅度。"
-        ),
+        "note": note,
         "src_extra": (
             f"实际值来自 {staging['latest']['period']} earnings release / management report；"
             f"市场预期为财报前一致预期（{consensus['as_of']}），不具名。"
-            "核心净利 = 报告净利减一次性税前收益，未做税务调整；"
-            "核心 EPS 按核心 / 报告净利之比折算报告 EPS，均为自算，不是公司定义的调整后指标。"
+            + src_core
         ),
     }
 
 
-def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
+def guidance_delivery_charts(staging: dict, guidance: dict | None) -> tuple[list[dict], dict]:
     """The full guided record for all three guided metrics, and what the beats are made of.
 
     TSMC guides three numbers every quarter -- revenue, gross margin, operating
     margin -- plus the exchange rate it assumed when setting them. The record
-    runs 42 finished quarters back to 2016Q1, and its length is the point: read
-    over the last fourteen, operating margin had cleared the upper bound every
-    single quarter and neither revenue nor gross margin had ever broken the
-    floor. Over the full record none of those three statements survives --
-    operating margin sits inside its band 14 times and below it 3, revenue
-    broke the floor in 2019Q1 and gross margin three times. A hit rate counted
-    inside one favourable window is not a hit rate.
+    runs back to 2016Q1, and its length is the point: read over the recent
+    stretch only, operating margin had cleared its upper bound almost every
+    quarter and neither revenue nor gross margin had broken the floor. Over the
+    full record none of those statements survives. A hit rate counted inside
+    one favourable window is not a hit rate.
 
     One basis break travels with the revenue series and is disclosed rather
     than smoothed: through 2017Q2 TSMC guided revenue in **NT dollars**, and
@@ -217,19 +328,17 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
 
     finished = [quarter for quarter in quarters if actual[quarter] is not None]
     beats = {quarter: (actual[quarter] / midpoint[quarter] - 1) * 100 for quarter in finished}
-    currency = dict(zip(quarters, guide["guide_currency"]))
-    ntd_guided = [quarter for quarter in quarters if currency[quarter] == "NTD"]
-    break_index = quarters.index(guide["currency_break"]["first_usd_quarter"])
     # The dollar band is the one chart here that cannot carry the whole record:
-    # the guided number runs from US$6.1B to US$45.8B, and a 2pp-wide band at
-    # the left edge of a linear dollar axis is a few pixels tall. The scale-free
-    # deviation chart beside it carries all 42.
+    # the guided number grows several-fold over it, and a band of about one per
+    # cent at the left edge of a linear dollar axis is a few pixels tall. The
+    # scale-free deviation chart beside it carries all of it.
     BAND_WINDOW = 16
 
     SOURCE_6K = (
         "指引区间与假设汇率来自各季法说会当场发布的 6-K；"
         "实际值来自随后一季 6-K 所载合并损益表。"
     )
+    first_half_width = (high[0] - low[0]) / 2 / ((high[0] + low[0]) / 2) * 100
     band_slice = slice(len(quarters) - BAND_WINDOW, len(quarters))
     revenue_band = delivery_band(
         "EX_RANGE", "收入", quarters[band_slice], low[band_slice], high[band_slice],
@@ -239,42 +348,74 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         extra_note=(
             f"<b>这张只画最近 {BAND_WINDOW} 季，不是数据缺失</b>：本页的指引记录一路回到 "
             f"{quarters[0]}，而指引的收入从 US${low[0]:.1f}B 长到 US${high[-1]:.1f}B，"
-            "七倍的量级差放在一根线性美元轴上，早年那条 ±2% 宽的带子会被压成几个像素。"
-            "完整 42 季的同一问题改用与量级无关的口径回答，见 Exhibit {EX_MIDPOINT}。"
+            f"{cn_count(int(high[-1] / low[0]))}倍的量级差放在一根线性美元轴上，"
+            f"早年那条 ±{first_half_width:.1f}% 宽的带子会被压成几个像素。"
+            f"完整 {len(finished)} 季的同一问题改用与量级无关的口径回答，见 Exhibit {{EX_MIDPOINT}}。"
             "指引与实际都是公司自己给的美元数，而美元数是新台币结果除以当季实际汇率的产物，"
             "所以每一格里都含一条汇率腿 —— 拆开见 Exhibit {EX_LEGS}。"
         ),
     )
+
+    gm_low, gm_high = guide["gross_margin_guide_low_pct"], guide["gross_margin_guide_high_pct"]
+    gm_actual = guide["gross_margin_actual_pct"]
+    gm_widths = {round(hi - lo, 6) for lo, hi in zip(gm_low, gm_high)}
+    gm_below = [quarters[i] for i, value in enumerate(gm_actual)
+                if value is not None and value < gm_low[i]]
+    gm_below_years = sorted({quarter[:4] for quarter in gm_below})
+    this_gm, next_gm_mid = gm_actual[-2], (gm_low[-1] + gm_high[-1]) / 2
+    dilution = (guidance or {}).get("n2_gross_margin_dilution_pp")
     margin_band = delivery_band(
-        "EX_GM", "毛利率", quarters,
-        guide["gross_margin_guide_low_pct"], guide["gross_margin_guide_high_pct"],
-        guide["gross_margin_actual_pct"],
+        "EX_GM", "毛利率", quarters, gm_low, gm_high, gm_actual,
         fmt="pct1", ylab="毛利率", unit="%", xstep=LONG_STEP,
         src_extra=SOURCE_6K + "实际毛利率 = 该季 6-K 合并损益表的毛利 ÷ 净销售额 D。",
         extra_note=(
-            "区间宽度一律 2pp，43 季无一例外，公司从不给单点。"
-            "<b>但「从不跌破」是短窗口的错觉</b>：把记录拉到 2016Q1，跌破下限的季度出现过三次，"
-            "全部在 2016 年到 2019 年那段产能与汇率同时逆风的时期。"
-            f"本季 {guide['gross_margin_actual_pct'][-2]:.1f}% 超出上限 "
-            f"{guide['gross_margin_actual_pct'][-2] - guide['gross_margin_guide_high_pct'][-2]:.1f}pp，"
-            f"而下季指引中值 "
-            f"{(guide['gross_margin_guide_low_pct'][-1] + guide['gross_margin_guide_high_pct'][-1]) / 2:.1f}%，"
-            "管理层同时把 2H26 的 N2 稀释量化为 3–4pp —— 这条线的方向已经确定向下。"
+            (f"区间宽度一律 {gm_widths.pop():g}pp，{len(quarters)} 季无一例外，公司从不给单点。"
+             if len(gm_widths) == 1 else "")
+            + (f"<b>但「从不跌破」是短窗口的错觉</b>：把记录拉到 {quarters[0]}，跌破下限的季度出现过"
+               f"{cn_count(len(gm_below))}次，全部在 {gm_below_years[0]} 年到 {gm_below_years[-1]} 年"
+               "那段产能与汇率同时逆风的时期。"
+               if gm_below and not any(q in gm_below for q in finished[-8:]) else "")
+            + f"本季 {this_gm:.1f}% "
+            + (f"超出上限 {this_gm - gm_high[-2]:.1f}pp" if this_gm > gm_high[-2] else
+               "落在区间内" if this_gm >= gm_low[-2] else f"跌破下限 {gm_low[-2] - this_gm:.1f}pp")
+            + f"，而下季指引中值 {next_gm_mid:.1f}%"
+            + (f"，管理层同时把 {guidance['n2_gross_margin_dilution_half']} 的 N2 稀释量化为 "
+               f"{dilution[0]}–{dilution[1]}pp" if dilution else "")
+            + (" —— 这条线的方向已经确定向下。" if next_gm_mid < this_gm else "。")
         ),
     )
+
+    om_low, om_high = guide["operating_margin_guide_low_pct"], guide["operating_margin_guide_high_pct"]
+    om_actual = guide["operating_margin_actual_pct"]
+    om_done = [i for i, value in enumerate(om_actual) if value is not None]
+    om_above = [i for i in om_done if om_actual[i] > om_high[i]]
+    om_below = [i for i in om_done if om_actual[i] < om_low[i]]
+    om_inside = len(om_done) - len(om_above) - len(om_below)
+    regime = [i for i in om_done if quarters[i] >= REGIME_START]
+    regime_above = [i for i in regime if om_actual[i] > om_high[i]]
+    regime_on_bound = [i for i in regime if om_actual[i] == om_high[i]]
+    regime_year = REGIME_START[:4]
+    regime_reading = (
+        f"按 {regime_year} 年起的那 {len(regime)} 季读，营业利润率"
+        + ("<b>每一季都从上限穿出去</b>" if len(regime_above) == len(regime) else
+           f"<b>{len(regime_above)} 季从上限穿出去、其余 {len(regime_on_bound)} 季恰好落在上限上</b>"
+           if len(regime_above) + len(regime_on_bound) == len(regime) else
+           f"有 {len(regime_above)} 季从上限穿出去")
+    )
+    floor_since_regime = not any(om_actual[i] < om_low[i] for i in regime)
     operating_band = delivery_band(
-        "EX_OM", "营业利润率", quarters,
-        guide["operating_margin_guide_low_pct"], guide["operating_margin_guide_high_pct"],
-        guide["operating_margin_actual_pct"],
+        "EX_OM", "营业利润率", quarters, om_low, om_high, om_actual,
         fmt="pct1", ylab="营业利润率", unit="%", xstep=LONG_STEP,
         src_extra=SOURCE_6K + "实际营业利润率 = 该季 6-K 合并损益表的营业利益 ÷ 净销售额 D。",
         extra_note=(
-            "<b>这张图是本次把窗口从 14 季拉到 42 季后改动最大的一张。</b>"
-            "按 2023 年起的那 14 季读，营业利润率<b>每一季都从上限穿出去</b>，"
-            "于是它看起来像一条底线而不是预测，「有没有超」这个问题根本不用问。"
-            "整段记录不是这样：落在区间内的季度有 14 个，跌破下限的有 3 个。"
-            "<b>「指引是底线」是 2023 年以后才成立的性质，不是这家公司的固有属性</b> —— "
-            "而那正好是它的定价权发生变化的同一段时间。"
+            f"<b>这张图是本次把窗口从 14 季拉到 {len(om_done)} 季后改动最大的一张。</b>"
+            + regime_reading
+            + ("，于是它看起来像一条底线而不是预测，「有没有超」这个问题根本不用问。"
+               if floor_since_regime else "。")
+            + f"整段记录不是这样：落在区间内的季度有 {om_inside} 个，跌破下限的有 {len(om_below)} 个。"
+            + (f"<b>「指引是底线」是 {regime_year} 年以后才成立的性质，不是这家公司的固有属性</b> —— "
+               "而那正好是它的定价权发生变化的同一段时间。"
+               if floor_since_regime and om_below else "")
         ),
     )
 
@@ -301,30 +442,35 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         "本页不给汇率对利润率的敏感度系数 —— 这批 6-K 没有披露，不自行编造。"
     )
     gm_midpoint_chart = midpoint_deviation(
-        "EX_GM_MIDPOINT", "毛利率", quarters,
-        guide["gross_margin_guide_low_pct"], guide["gross_margin_guide_high_pct"],
-        guide["gross_margin_actual_pct"], mode="pp", window=len(finished),
+        "EX_GM_MIDPOINT", "毛利率", quarters, gm_low, gm_high, gm_actual,
+        mode="pp", window=len(finished),
         xstep=LONG_STEP,
         label=lambda quarter: month_label(quarter_end_month(quarter)),
         axis_note="x 轴标的是该季最后一个月。",
-        
         src_extra=(SOURCE_6K + "实际毛利率 = 该季 6-K 合并损益表的毛利 ÷ 净销售额 D；"
                    "偏离为实际值减指引中值的自算值。"),
         extra_note=FX_SHARED,
     )
+    om_deviation = [om_actual[i] - (om_low[i] + om_high[i]) / 2 for i in om_done]
+    om_positive = sum(1 for value in om_deviation if value > 0)
+    regime_positive = all(om_actual[i] > (om_low[i] + om_high[i]) / 2 for i in regime)
     om_midpoint_chart = midpoint_deviation(
-        "EX_OM_MIDPOINT", "营业利润率", quarters,
-        guide["operating_margin_guide_low_pct"], guide["operating_margin_guide_high_pct"],
-        guide["operating_margin_actual_pct"], mode="pp", window=len(finished),
+        "EX_OM_MIDPOINT", "营业利润率", quarters, om_low, om_high, om_actual,
+        mode="pp", window=len(finished),
         xstep=LONG_STEP,
         label=lambda quarter: month_label(quarter_end_month(quarter)),
         axis_note="x 轴标的是该季最后一个月。",
-        
         src_extra=(SOURCE_6K + "实际营业利润率 = 该季 6-K 合并损益表的营业利益 ÷ 净销售额 D；"
                    "偏离为实际值减指引中值的自算值。"),
         extra_note=(
-            "这一条的柱<b>全部为正</b>，与 Exhibit {EX_OM} 的「没有一季落回区间内」是同一件事的"
-            "两种说法 —— 区间图已经饱和（每季都超上限，看不出多少），要读幅度只能看这张。"
+            ("这一条的柱<b>全部为正</b>，与 Exhibit {EX_OM} 的「没有一季落回区间内」是同一件事的"
+             "两种说法 —— 区间图已经饱和（每季都超上限，看不出多少），要读幅度只能看这张。"
+             if om_positive == len(om_deviation) and om_inside == 0 and not om_below else
+             f"这一条的柱 {len(om_deviation)} 根里 {om_positive} 根为正"
+             + (f"；{regime_year} 年起的 {len(regime)} 根<b>全部为正</b>，与 Exhibit {{EX_OM}} 里那段"
+                f"「{len(regime_above)} 季穿出上限、{len(regime_on_bound)} 季恰好落在上限」是同一件事的两种说法"
+                " —— 那一段的区间图已经饱和，要读幅度只能看这张。"
+                if regime_positive and regime else "。"))
             + FX_SHARED.replace("毛利率指引", "营业利润率指引")
         ),
     )
@@ -385,7 +531,7 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
                 if flipped
                 else ""
             )
-            + f"；其余 {headwind} 季汇率是<b>逆风</b>，美元口径反而低估了经营超额。"
+            + f"；全记录里有 {headwind} 季汇率是<b>逆风</b>，美元口径反而低估了经营超额。"
         ),
         "src_extra": SOURCE_6K + "两条腿均为自算，原值见核对表。",
     }
@@ -409,19 +555,17 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
     for index, quarter in enumerate(quarters):
         reported = actual[quarter]
         realised = actual_fx[quarter]
-        gm = guide["gross_margin_actual_pct"][index]
-        om = guide["operating_margin_actual_pct"][index]
+        gm = gm_actual[index]
+        om = om_actual[index]
         derived = reported is not None and realised is not None
         table["rows"].append([
             quarter,
             f"US${low[index]:.1f}–{high[index]:.1f}B",
             f"US${reported:.2f}B" if reported is not None else "—",
             f"{beats[quarter]:+.2f}% D" if reported is not None else "—",
-            f"{guide['gross_margin_guide_low_pct'][index]:.1f}–"
-            f"{guide['gross_margin_guide_high_pct'][index]:.1f}%",
+            f"{gm_low[index]:.1f}–{gm_high[index]:.1f}%",
             f"{gm:.2f}% D" if gm is not None else "—",
-            f"{guide['operating_margin_guide_low_pct'][index]:.1f}–"
-            f"{guide['operating_margin_guide_high_pct'][index]:.1f}%",
+            f"{om_low[index]:.1f}–{om_high[index]:.1f}%",
             f"{om:.2f}% D" if om is not None else "—",
             f"{guide_fx[quarter]:.1f}",
             f"{realised:.3f}" if realised is not None else "—",
@@ -433,8 +577,6 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
     return charts, table
 
 
-
-
 def headline_metrics(staging: dict) -> list[str]:
     """The three figures on this company's home-page card, computed from the series."""
     fin = staging["financials"]
@@ -443,77 +585,86 @@ def headline_metrics(staging: dict) -> list[str]:
             f"Gross margin {fin['gross_margin_pct'][-1]:.1f}%"]
 
 
+def check_stamps(staging: dict) -> dict:
+    """Read every one-quarter block, refusing any that belongs to another quarter.
+
+    Returns the blocks this quarter has; an absent one is None and the page
+    leaves its part out.
+    """
+    period = staging["periods"][-1]
+    blocks = {key: stamped_block(staging, key, period) for key in (
+        "current_snapshot", "guidance", "market_expectation", "net_income_bridge",
+        "capex_guidance_history", "guidance_delivery", "followup_closure", "next_kpi",
+        "quarter_story")}
+    if blocks["current_snapshot"] is None or blocks["next_kpi"] is None:
+        raise ValueError("series blocks `current_snapshot` and `next_kpi` are required every quarter")
+    following = shift_period(period, 1)
+    guide = staging["quarterly_guidance_history"]
+    if guide["quarters"][-1] != iso_period(following):
+        raise ValueError(f"series block `quarterly_guidance_history` is stamped "
+                         f"{guide['quarters'][-1]!r}, but the quarter after {period!r} is "
+                         f"{iso_period(following)!r}: add this call's guidance with the roll")
+    if staging["long_history"]["quarters"][-1] != iso_period(period):
+        raise ValueError(f"series block `long_history` is stamped "
+                         f"{staging['long_history']['quarters'][-1]!r}, but the series ends at "
+                         f"{period!r}: extend it with the roll")
+    if blocks["guidance"] and blocks["guidance"]["next_guide"]["quarter"] != following:
+        raise ValueError(f"series block `guidance.next_guide` is stamped "
+                         f"{blocks['guidance']['next_guide']['quarter']!r}, but the next quarter is "
+                         f"{following!r}: update it or remove it")
+    if blocks["next_kpi"]["for_period"] != following:
+        raise ValueError(f"series block `next_kpi` is stamped for {blocks['next_kpi']['for_period']!r}, "
+                         f"but the next quarter is {following!r}: update it with the roll")
+    closure = blocks["followup_closure"]
+    if closure and closure["set_in"] != shift_period(period, -1):
+        raise ValueError(f"series block `followup_closure` closes questions stamped "
+                         f"{closure['set_in']!r}, but last quarter was {shift_period(period, -1)!r}")
+    hub = f"TSMC {period} quarterly"
+    if not any(item["label"].startswith(hub) for item in staging["sources"]):
+        raise ValueError(f"series `sources` has no entry labelled {hub + ' results'!r}: add this "
+                         "quarter's results hub with the roll")
+    return blocks
+
+
 def build_payload(staging: dict) -> dict:
     periods = staging["periods"]
-    labels = [compact_period(period) for period in periods]
+    period = periods[-1]
+    following = shift_period(period, 1)
+    latest = latest_block(staging, period=period)
+    blocks = check_stamps(staging)
     financials = staging["financials"]
-    technology = staging["technology_mix_pct"]
-    platform = staging["platform_mix_pct"]
-    cash = staging["cash_flow_ntd_bn"]
-    working = staging["working_capital_days"]
-    guide_history = staging["revenue_guidance_history_usd_bn"]
-    snapshot = staging["current_snapshot"]
-    guidance = staging["guidance"]
-    consensus = staging["market_expectation"]
-    net_income_bridge = staging["net_income_bridge"]
-    capex_guide = staging["capex_guidance_history"]
-    delivery = staging["q2_guidance_delivery"]
-    closure = staging["followup_closure"]
-    next_kpi = staging["next_kpi"]
+    snapshot = blocks["current_snapshot"]
+    guidance = blocks["guidance"]
+    consensus = blocks["market_expectation"]
+    net_income_bridge = blocks["net_income_bridge"]
+    capex_guide = blocks["capex_guidance_history"]
+    delivery = blocks["guidance_delivery"]
+    closure = blocks["followup_closure"]
+    next_kpi = blocks["next_kpi"]
+    story = blocks["quarter_story"] or {}
+    hub = next(item for item in staging["sources"]
+               if item["label"].startswith(f"TSMC {period} quarterly"))
 
     source = (
-        'Source: <a href="https://investor.tsmc.com/english/quarterly-results/2026/q2" '
-        'rel="noopener">TSMC Investor Relations</a>（2Q26 earnings release、'
+        f'Source: <a href="{hub["url"]}" '
+        f'rel="noopener">TSMC Investor Relations</a>（{deck_short(period)} earnings release、'
         'management report 与 earnings conference）。'
     )
 
-    # Implied ASP is the cheapest honest volume/price split available: both
-    # inputs are reported every quarter, and it separates "more wafers" from
-    # "richer wafers" without assuming anything about node pricing.
-    shipments = financials["wafer_shipments_kpcs_12in_equiv"]
-    asp = [
-        financials["revenue_usd_bn"][index] * 1_000_000 / shipments[index]
-        for index in range(len(periods))
-    ]
-
-    q3_midpoint = sum(guidance["q3_new"]["revenue_usd_bn"]) / 2
-    q3_midpoint_growth = pct_change(q3_midpoint, guidance["q2_actual"]["revenue_usd_bn"])
-    q3_gm_midpoint = sum(guidance["q3_new"]["gross_margin_pct"]) / 2
-    capex_guide_mid = [
-        (low + high) / 2
-        for low, high in zip(capex_guide["low_usd_bn"], capex_guide["high_usd_bn"])
-    ]
     revenue_ntd_yoy = pct_change(snapshot["revenue_ntd_bn"][0], snapshot["revenue_ntd_bn"][2])
     capex_ntd_yoy = pct_change(
         snapshot["capital_expenditures_ntd_bn"][0], snapshot["capital_expenditures_ntd_bn"][2]
     )
-    shipment_qoq = pct_change(shipments[-1], shipments[-2])
-    asp_qoq = pct_change(asp[-1], asp[-2])
-    core_beat = pct_change(net_income_bridge["values_ntd_bn"][2], consensus["net_income_ntd_bn"])
-    headline_beat = pct_change(net_income_bridge["values_ntd_bn"][0], consensus["net_income_ntd_bn"])
-    gm_floor = guidance["long_term_gross_margin_floor_pct"]
 
-    # US-dollar CapEx carries twelve quarters so its y/y is populated from the
-    # first column, and both sides of the intensity ratio stay in one currency.
-    capex_usd_all = staging["capital_expenditures_usd_bn"]["values"]
-    capex_usd = capex_usd_all[-len(periods):]
-    capex_usd_yoy = [
-        (capex_usd_all[index] / capex_usd_all[index - 4] - 1) * 100
-        for index in range(len(capex_usd_all) - len(periods), len(capex_usd_all))
-    ]
-    capex_intensity_usd = [
-        capex / revenue * 100
-        for capex, revenue in zip(capex_usd, financials["revenue_usd_bn"])
-    ]
-
-    # ── The four routine charts run on the ten-year record, not the eight ─────
+    # ── The routine charts run on the ten-year record, not the eight ──────────
     # Eight quarters cannot show whether a mix shift is a trend or a wobble, and
     # for capital intensity eight quarters is barely one build cycle. Everything
     # below is company-reported per quarter; see long_history.provenance for the
     # three disciplines that keep it honest (no platform back-cast before 2018,
     # no derived days, no quoting of TSMC's own "advanced" aggregate).
     long = staging["long_history"]
-    long_labels = [quarter_label(quarter) for quarter in long["quarters"]]
+    long_quarters = long["quarters"]
+    long_labels = [quarter_label(quarter) for quarter in long_quarters]
     long_tech = long["technology_mix_pct"]
     long_platform = long["platform_mix_pct"]
     long_working = long["working_capital_days"]
@@ -522,17 +673,24 @@ def build_payload(staging: dict) -> dict:
         capex / revenue * 100
         for capex, revenue in zip(long_capex["capex_usd_bn"], long_capex["revenue_usd_bn"])
     ]
+    decade = cn_count(int(long_quarters[-1][:4]) - int(long_quarters[0][:4]))
     # Platform gets its own shorter axis rather than eight blank quarters on the
     # left: TSMC did not report HPC before 2019Q1 and only ever restated 2018.
     platform_from = leading_gap(long_platform["hpc"])
     platform_labels = long_labels[platform_from:]
     node_birth = long["node_first_reported"]
-    node_first_real = long["node_first_nonzero"]
+    # The first quarter each node printed a non-zero share, read off the series
+    # itself: a stored date can outlive the data it describes (rolled back a
+    # quarter, the page would name a first 2nm quarter that has not happened).
+    node_first_real = {
+        node: next((quarter for quarter, value in zip(long_quarters, long_tech[node]) if value), None)
+        for node in node_birth
+    }
     # Everything the eight-quarter window used to carry, on the ten-year one.
-    # The first four year-on-year cells are None rather than zero: 2015 is not
-    # in this record, so the growth rate for 2016Q1..Q4 has no denominator and
-    # inventing one would put a fabricated point at the left edge of every
-    # growth chart on the page.
+    # The first four year-on-year cells are None rather than zero: the year
+    # before the record is not in it, so the growth rate for its first four
+    # quarters has no denominator and inventing one would put a fabricated
+    # point at the left edge of every growth chart on the page.
     long_fin = long["financials"]
     long_cash = long["cash_flow_ntd_bn"]
     long_revenue = long_fin["revenue_usd_bn"]
@@ -548,10 +706,14 @@ def build_payload(staging: dict) -> dict:
 
     long_revenue_yoy = year_on_year(long_revenue)
     long_capex_usd_yoy = year_on_year(long_capex["capex_usd_bn"])
+    no_base_year = int(long_quarters[0][:4]) - 1
+
+    reported_fx = guidance["reported"]["usd_ntd"] if guidance else financials_fx(staging)
+    kpi_by_metric = {entry["metric"]: entry for entry in next_kpi["quantified"]}
 
     # CapEx is reported in NT$ but tracked against a US$ line, so the threshold
     # is converted at the quarter's own realised rate and marked as derived.
-    capex_threshold_ntd = round(19.0 * guidance["q2_actual"]["usd_ntd"], 1)
+    capex_threshold_ntd = round(kpi_by_metric["单季 CapEx"]["threshold"] * reported_fx, 1)
     # Each threshold now runs on the longest window its own series has, not on
     # a shared eight. Two of the five are shorter than the rest and it is the
     # disclosure that limits them, not this page: TSMC first reported the
@@ -589,7 +751,7 @@ def build_payload(staging: dict) -> dict:
             converted = (
                 ""
                 if override is None
-                else f"（US${entry['threshold']:.0f}B 按本季实际汇率 {guidance['q2_actual']['usd_ntd']} 折为 NT${override:,.1f}B D）"
+                else f"（US${entry['threshold']:.0f}B 按本季实际汇率 {reported_fx} 折为 NT${override:,.1f}B D）"
             )
             charts.append(threshold_exhibit(
                 headline(entry),
@@ -615,10 +777,33 @@ def build_payload(staging: dict) -> dict:
             ))
         return charts
 
-    built = [
-        {
+    # ── Section one: the follow-up closure and this quarter against its guide ─
+    guide_history = staging["quarterly_guidance_history"]
+    this_guide = guide_history["quarters"].index(iso_period(period))
+    rev_low = guide_history["guide_low_usd_bn"][this_guide]
+    rev_high = guide_history["guide_high_usd_bn"][this_guide]
+    revenue_now = financials["revenue_usd_bn"][-1]
+    gm_now, om_now = financials["gross_margin_pct"][-1], financials["operating_margin_pct"][-1]
+    gm_band = (guide_history["gross_margin_guide_low_pct"][this_guide],
+               guide_history["gross_margin_guide_high_pct"][this_guide])
+    om_band = (guide_history["operating_margin_guide_low_pct"][this_guide],
+               guide_history["operating_margin_guide_high_pct"][this_guide])
+    above_high = [name for name, value, band in (("毛利率", gm_now, gm_band), ("营业利润率", om_now, om_band))
+                  if value > band[1]]
+    revenue_position = ("超出指引上限" if revenue_now > rev_high else
+                        "落指引上端" if revenue_now == rev_high else
+                        "落在指引区间内" if revenue_now >= rev_low else "低于指引下限")
+
+    story_charts = []
+    if closure is not None:
+        labels_count = dict(zip(closure["labels"], closure["counts"]))
+        total = sum(closure["counts"])
+        falsified = closure.get("falsified")
+        undisclosed = closure["undisclosed_topics"]
+        story_charts.append({
             "kind": "bars_labeled",
-            "title": "上季 12 条待验证问题：3 条已验证、1 条被证伪、4 条仍未披露",
+            "title": (f"上季 {total} 条待验证问题：{labels_count['已验证']} 条已验证、"
+                      f"{labels_count['被证伪']} 条被证伪、{labels_count['仍未披露']} 条仍未披露"),
             "xlabels": closure["labels"],
             "values": closure["counts"],
             "legend": "问题条数",
@@ -627,16 +812,27 @@ def build_payload(staging: dict) -> dict:
             "label_fmt": "f0",
             "ylab": "条",
             "note": (
-                "被证伪的是库存天数——上季判断会回落到 75–78 天，实际升到 87 天；"
-                "仍未披露的四条集中在节点毛利率与长期目标上修。"
+                (f"被证伪的是{falsified['metric']}——上季判断会回落到 "
+                 f"{falsified['expected_low_days']}–{falsified['expected_high_days']} 天，"
+                 f"实际升到 {long_working['inventory_days'][-1]} 天；"
+                 if falsified and falsified["metric"] == "库存天数" else "")
+                + f"仍未披露的{cn_count(labels_count['仍未披露'])}条是{joined(undisclosed)}。"
             ),
-            "src_extra": "问题清单来自上季本地分析稿的 follow-up；验证结果依据 2Q26 earnings conference 与 management report。",
-        },
-        {
+            "src_extra": (f"问题清单来自上季本地分析稿的 follow-up；验证结果依据 {deck_short(period)} "
+                          "earnings conference 与 management report。"),
+        })
+    if delivery is not None:
+        items = delivery["items"]
+        fx_item = next(item for item in items if "汇率" in item["metric"])
+        others_better = all(item["value"] > 0 for item in items if item is not fx_item)
+        fx_headwind = fx_item["value"] < 0
+        story_charts.append({
             "kind": "diverging_bars",
-            "title": "Q2 全线优于自身指引中值，只有汇率是逆风",
-            "xlabels": [item["metric"] for item in delivery],
-            "values": [item["value"] for item in delivery],
+            "title": (f"{quarter_word(period)} 全线优于自身指引中值，只有汇率是逆风"
+                      if others_better and fx_headwind else
+                      f"{quarter_word(period)} 相对自身指引中值"),
+            "xlabels": [item["metric"] for item in items],
+            "values": [item["value"] for item in items],
             "legend": "优于指引中值的幅度",
             "positive_label": "优于指引",
             "negative_label": "逊于指引",
@@ -646,18 +842,365 @@ def build_payload(staging: dict) -> dict:
             "ylab": "% 或 pp",
             "zero_line": True,
             "note": (
-                "毛利率与营业利润率都超出指引区间上限，且是在新台币较汇率假设小幅升值的逆风下做到的。"
+                (f"{joined(above_high)}都超出指引区间上限" if len(above_high) == 2 else
+                 f"{above_high[0]}超出指引区间上限" if above_high else "毛利率与营业利润率都没有超出指引区间上限")
+                + ("，且是在新台币较汇率假设"
+                   + ("小幅" if abs(fx_item["value"]) < 1 else "")
+                   + "升值的逆风下做到的。" if fx_headwind and above_high else "。")
             ),
             "src_extra": (
                 "收入与汇率为百分比，毛利率 / 营业利润率 / 税率为百分点，两类单位并列于同一轴上，"
                 "只用于比较方向与相对幅度；原值见核对表。"
             ),
-        },
+        })
+    settled_lead = story_charts
+
+    # ── Section two ───────────────────────────────────────────────────────────
+    next_guide = guidance["next_guide"] if guidance else None
+    this_qoq = pct_change(long_revenue[-1], long_revenue[-2])
+    finished_yoy = [value for value in long_revenue_yoy if value is not None]
+    zero_crossings = sum(1 for a, b in zip(finished_yoy, finished_yoy[1:]) if (a < 0) != (b < 0))
+    recent_rising = all(value > 0 for value in long_revenue_yoy[-8:] if value is not None)
+    yoy_low = min(finished_yoy)
+    yoy_high = max(finished_yoy)
+    revenue_note = (
+        f"本季环比 {signed(this_qoq)}、同比 {signed(long_revenue_yoy[-1])}"
+        + (f"，较市场预期 US${consensus['revenue_usd_bn']:.2f}B "
+           f"{'高' if long_revenue[-1] >= consensus['revenue_usd_bn'] else '低'} "
+           f"{abs(pct_change(long_revenue[-1], consensus['revenue_usd_bn'])):.1f}%" if consensus else "")
+    )
+    if next_guide:
+        next_mid = sum(next_guide["revenue_usd_bn"]) / 2
+        next_growth = pct_change(next_mid, revenue_now)
+        revenue_note += (f"；{quarter_word(following)} 指引中值 US${next_mid:.1f}B，环比 {signed(next_growth)}"
+                         + ("，不减速" if next_growth >= this_qoq else "") + "。")
+    else:
+        revenue_note += "。"
+    revenue_note += (
+        f"<b>{decade}年的窗口里这条同比线穿越过零轴{cn_count(zero_crossings)}次</b>："
+        f"最低 {yoy_low:.0f}%"
+        f"（{long_labels[long_revenue_yoy.index(yoy_low)]}），"
+        f"最高 {yoy_high:.0f}%"
+        f"（{long_labels[long_revenue_yoy.index(yoy_high)]}）。"
+        + (f"{cn_count(len(periods))}季的窗口只能看到最近这一段单边上行。" if recent_rising else "")
+        + f"前四格没有同比线：{no_base_year} 年不在本记录内，没有分母。"
+    )
+    shipment_qoq = pct_change(long_shipments[-1], long_shipments[-2])
+    asp_qoq = pct_change(long_asp[-1], long_asp[-2])
+    two_nm_now = long_tech["2nm"][-1]
+    three_nm_move = long_tech["3nm"][-1] - long_tech["3nm"][-2]
+    hpc_move = long_platform["hpc"][-1] - long_platform["hpc"][-2]
+    mix_drivers = []
+    if two_nm_now and node_first_real["2nm"] == iso_period(period):
+        mix_drivers.append(f"2nm 首季贡献 {two_nm_now}%")
+    if three_nm_move > 0:
+        mix_drivers.append(f"3nm 占比 {three_nm_move:+}pp")
+    if hpc_move > 0:
+        mix_drivers.append("HPC mix")
+    asp_ratio = long_asp[-1] / long_asp[0]
+    shipment_ratio = long_shipments[-1] / long_shipments[0]
+    revenue_ratio = long_revenue[-1] / long_revenue[0]
+    price_share = math.log(1 + asp_qoq / 100) / math.log(1 + this_qoq / 100) if this_qoq > 0 else 0
+
+    margin_trough = min(range(len(long_quarters)), key=lambda i: long_fin["gross_margin_pct"][i])
+    before_trough = range(max(0, margin_trough - 4), margin_trough)
+    margin_peak = (max(before_trough, key=lambda i: long_fin["gross_margin_pct"][i])
+                   if margin_trough else None)
+    gm_levels = long_fin["gross_margin_pct"]
+    next_gm_mid = sum(next_guide["gross_margin_pct"]) / 2 if next_guide else None
+    dilution = (guidance or {}).get("n2_gross_margin_dilution_pp")
+    overseas_late = (guidance or {}).get("overseas_fab_gross_margin_dilution_latter_pp")
+
+    capex_chart = None
+    capex_raised = False
+    if capex_guide is not None:
+        mids = [(low + high) / 2 for low, high in zip(capex_guide["low_usd_bn"], capex_guide["high_usd_bn"])]
+        raises = sum(1 for a, b in zip(mids, mids[1:]) if b > a)
+        capex_raised = mids[-1] > mids[0]
+        first_call, last_call = (date.fromisoformat(capex_guide["dates"][0]),
+                                 date.fromisoformat(capex_guide["dates"][-1]))
+        months = (last_call.year - first_call.year) * 12 + last_call.month - first_call.month
+        fiscal = capex_guide["fiscal_year"]
+        capex_chart = {
+            "kind": "bars_labeled",
+            "title": (
+                f"FY{fiscal} CapEx 预算"
+                + (("半年内" if months <= 6 else f"{cn_count(months)}个月内")
+                   + f"{cn_count(raises)}次上调" if raises else "维持")
+                + f"，中点从 US${mids[0]:.0f}B {'抬到' if mids[-1] > mids[0] else '到'} US${mids[-1]:.0f}B"
+            ),
+            "xlabels": capex_guide["calls"],
+            "values": mids,
+            "legend": f"FY{fiscal} CapEx 指引中点",
+            "fmt": "usd0",
+            "yfmt": "usd0",
+            "label_fmt": "usd0",
+            "ylab": "US$B",
+            "note": (
+                f"新台币口径下本季 CapEx 同比 {signed(capex_ntd_yoy)}、收入同比 {signed(revenue_ntd_yoy)}；"
+                "两条增速的美元口径长序列对照见 Exhibit {EX_CROSSOVER}。"
+            ),
+            "src_extra": (
+                f"{cn_count(len(mids))}次口径依次为 "
+                + "、".join(f"{date.fromisoformat(day).month} 月 {words}"
+                           for day, words in zip(capex_guide["dates"], capex_guide["wording"]))
+                + "；同比增速为新台币口径自算，避免与全年美元预算混用。"
+            ),
+        }
+
+    bridge_chart = None
+    if net_income_bridge is not None and consensus is not None:
+        values = net_income_bridge["values_ntd_bn"]
+        core_beat = pct_change(values[2], consensus["net_income_ntd_bn"])
+        headline_beat = pct_change(values[0], consensus["net_income_ntd_bn"])
+        share = values[1] / (values[0] - consensus["net_income_ntd_bn"])
+        bridge_chart = {
+            "kind": "bars_labeled",
+            "title": (f"净利{'大幅' if headline_beat >= 5 else ''}超预期，但剔除 "
+                      f"{net_income_bridge['one_off_short']} 一次性后核心 beat "
+                      f"{'只有 ' if abs(core_beat) < abs(headline_beat) / 2 else ''}{core_beat:+.1f}%"),
+            "xlabels": net_income_bridge["labels"],
+            "values": values,
+            "legend": "净利润",
+            "fmt": "f0c",
+            "yfmt": "f0c",
+            "label_fmt": "f0c",
+            "ylab": "NT$B",
+            "note": (
+                f"报告净利较市场预期高 {headline_beat:+.1f}%，但{net_income_bridge['one_off_description']} "
+                f"NT${values[1]:.2f}B 解释了其中"
+                + ("绝大部分" if share >= 0.75 else "大部分" if share >= 0.5 else "一部分")
+                + "；真正干净的超预期在收入与毛利率。"
+                "本图是净利的金额桥，各项相对市场预期的百分比见 Exhibit {EX_EXPECTATION}。"
+            ),
+            "src_extra": (
+                f"报告净利与 {net_income_bridge['one_off_short']} 相关收益来自 {deck_short(period)} "
+                "management report；核心净利为两者相减的自算值（未做税务调整），"
+                "市场预期为财报前一致预期，不具名。"
+            ),
+        }
+
+    free_cash = long_cash["free_cash_flow"]
+    negative_fcf = [value for value in free_cash if value < 0]
+    dividends_annual = snapshot["cash_dividends_ntd_bn"][0] * 4
+    this_year = [value for quarter, value in zip(long_quarters, free_cash)
+                 if quarter[:4] == long_quarters[-1][:4]]
+    coverage = sum(this_year) / len(this_year) * 4 / dividends_annual
+    cash_chart = {
+        "kind": "grouped_bars",
+        "title": (
+            f"CapEx 环比 "
+            f"{signed(pct_change(long_cash['capital_expenditures'][-1], long_cash['capital_expenditures'][-2]))}，"
+            f"自由现金流 "
+            f"{signed(pct_change(free_cash[-1], free_cash[-2]))}"
+        ),
+        "xlabels": long_labels,
+        "xstep": LONG_STEP,
+        "groups": [
+            {"name": "经营现金流", "values": long_cash["operating_cash_flow"], "color": "BLUE"},
+            {"name": "资本开支", "values": long_cash["capital_expenditures"], "color": "NAVY"},
+            {"name": "自由现金流 D", "values": free_cash, "color": "MBLUE"},
+        ],
+        "fmt": "f0c",
+        "yfmt": "f0c",
+        "label_fmt": "f0c",
+        "ylab": "NT$B",
+        "bar_labels": False,
+        "note": (
+            f"资本强度见 Exhibit {{EX_INTENSITY}}；股息年化 NT${dividends_annual:.0f}B，"
+            f"本年自由现金流仍可覆盖约{cn_count(round(coverage))}倍"
+            + ("，现金流压缩暂未威胁股东回报。" if coverage >= 1 and free_cash[-1] < free_cash[-2] else "。")
+            + f"<b>{decade}年里自由现金流为负的季度有 {len(negative_fcf)} 个</b>"
+            + (f"（最低 {min(free_cash):,.0f} NT$B，{long_labels[free_cash.index(min(free_cash))]}）—— "
+               "在一家把资本开支按付款节奏落账的公司里，单季自由现金流转负是扩产的常态而不是警讯"
+               if negative_fcf else "")
+            + (f"，{cn_count(len(periods))}季的窗口里一次都看不到。"
+               if negative_fcf and min(free_cash[-len(periods):]) >= 0 else "。")
+        ),
+        "src_extra": "季度新台币现金流口径；FCF = 经营现金流 − 现金支付资本开支，按 TSMC 定义复算。",
+    }
+
+    entries = next_kpi["quantified"]
+    breached = [entry for entry in entries
+                if headroom(entry["direction"], entry["threshold"], entry["current"]) < 0]
+    ramp = kpi_by_metric.get(next_kpi.get("ramp_metric"))
+    watch = kpi_by_metric.get(next_kpi.get("watch_metric"))
+    only_ramp = len(breached) == 1 and ramp is not None and breached[0] is ramp
+    gated = next_kpi["disclosure_gated"]
+    headroom_chart = headroom_exhibit(
+        f"下季 {len(entries)} 条量化阈值："
+        + (f"{ramp.get('short', ramp['metric'])}是唯一需要"
+           f"{'大幅' if headroom(ramp['direction'], ramp['threshold'], ramp['current']) <= -20 else ''}"
+           f"{'上行' if ramp['direction'] == 'up' else '回落'}才能达标的一条"
+           if only_ramp else f"{len(breached)} 条已越过"),
+        entries,
+        "current",
+        (
+            "正值 = 仍在安全侧。"
+            + (f"{ramp.get('short', ramp['metric']).split(' ')[0]} 当前 {ramp['current']:g}%，"
+               f"而 {quarter_word(following)} 的「{next_kpi['ramp_quote']}」需要至少 {ramp['threshold']:g}%，"
+               "是唯一明显在阈值之下的指标"
+               if only_ramp and next_kpi.get("ramp_quote") else "")
+            + (f"；{watch['metric']}离 {watch['threshold']:g} 天的警戒只剩 "
+               f"{headroom(watch['direction'], watch['threshold'], watch['current']):.1f}%。"
+               if watch and watch["unit"] == "days"
+               and headroom(watch["direction"], watch["threshold"], watch["current"]) > 0 else "。")
+        ),
+        src_extra=(
+            f"阈值为本地研究设定，不是公司指引；当前值为 {period} 实际。"
+            + (f"另有 {len(gated)} 条需等披露才能判定（{'、'.join(item['short'] for item in gated)}）。"
+               if gated else "")
+        ),
+    )
+
+    advanced = long_tech["advanced_7nm_and_below"]
+    advanced_from = long_quarters.index(ADVANCED_BASIS_FROM)
+    advanced_agrees = snapshot["advanced_mix_pct"][0] == advanced[-1]
+    two_nm_first = node_first_real["2nm"] == iso_period(period)
+    tech_chart = {
+        "kind": "lines",
+        "title": (
+            f"{decade}年制程迁移：7nm 及以下从 {advanced[0]}% 升到 "
+            f"{advanced[-1]}%，2nm "
+            + (f"本季首次单列为 {long_tech['2nm'][-1]}%" if two_nm_first else
+               f"本季 {long_tech['2nm'][-1]}%")
+        ),
+        "xlabels": long_labels,
+        "xstep": LONG_STEP,
+        "series": [
+            {"name": "2nm", "values": long_tech["2nm"], "color": "GOLD"},
+            {"name": "3nm", "values": long_tech["3nm"], "color": "NAVY"},
+            {"name": "5nm", "values": long_tech["5nm"], "color": "MBLUE"},
+            {"name": "7nm", "values": long_tech["7nm"], "color": "GRAY"},
+            {"name": "7nm 及以下 D", "values": advanced, "color": "GREEN"},
+        ],
+        "fmt": "pct0",
+        "yfmt": "pct0",
+        "label_fmt": "pct0",
+        "zero_base": True,
+        "end_label": True,
+        "ylab": "晶圆收入占比",
+        "note": (
+            "<b>每条线从该节点第一次出现在公司表里的那一季起画，之前是空的 —— 那不是缺数据，"
+            "是当时表上根本没有这一行</b>（起始季 / 首次非零季）："
+            + "、".join(
+                f"{node} {quarter_label(node_birth[node])} / "
+                f"{quarter_label(node_first_real[node]) if node_first_real[node] else '—'}"
+                for node in node_birth
+            )
+            + "。两个日期不同，是因为新节点常先以公司自己印的 0% 出现在后续报告的"
+            "比较列里，几个季度后才真正放量。之后某季若该行没印出来，表示舍入到 0.5% 以下，"
+            "按 0 计（依据是该季印出来的各行仍合计 100%）。"
+            "<b>绿线「7nm 及以下」是本页自己把印出来的 2/3/5/7nm 四行相加</b>，"
+            "不是公司披露的 advanced technologies 口径 —— 那个口径 2019Q1 从「28nm 及以下」"
+            "改成「16nm 及以下」、2021Q1 再改成「7nm 及以下」，且从未重述，直接连起来会在"
+            "这两处砸出纯定义性的假悬崖（2021Q1 报出来是 62%→49%，同口径其实是微升）。"
+            + (f"自算值与公司口径在 {ADVANCED_BASIS_FROM} 起的 {len(long_quarters) - advanced_from} 个季度逐季相等。"
+               if advanced_agrees else
+               f"本季自算值 {advanced[-1]}% 与公司口径 {snapshot['advanced_mix_pct'][0]}% 不等。")
+        ),
+        "src_extra": (
+            f"制程组合分母为 total wafer revenue，口径{decade}年未变；逐季读自各季 "
+            "quarterly management report 的 Wafer Revenue by Technology 表。"
+        ),
+    }
+
+    hpc_line = kpi_by_metric.get("HPC 占比（集中度）")
+    platform_chart = {
+        "kind": "lines",
+        "title": (
+            f"HPC 从 {long_platform['hpc'][platform_from]}% 升到 "
+            f"{long_platform['hpc'][-1]}%，智能手机从 "
+            f"{long_platform['smartphone'][platform_from]}% 降到 "
+            f"{long_platform['smartphone'][-1]}%"
+        ),
+        "xlabels": platform_labels,
+        "xstep": LONG_STEP,
+        "series": [
+            {"name": "HPC", "values": long_platform["hpc"][platform_from:], "color": "NAVY"},
+            {"name": "Smartphone",
+             "values": long_platform["smartphone"][platform_from:], "color": "MBLUE"},
+        ],
+        "fmt": "pct0",
+        "yfmt": "pct0",
+        "label_fmt": "pct0",
+        "zero_base": True,
+        "end_label": True,
+        "ylab": "净收入占比",
+        "note": (
+            f"<b>这条线只能回到 {long_quarters[platform_from]}，不能到 {long_quarters[0][:4]}，"
+            "原因是口径断层不是数据缺失</b>："
+            "台积电 2019Q1 才把收入拆分从「按应用」（Communication / Computer / Consumer / "
+            "Industrial-Standard）改成「按平台」，<b>在那之前根本没有 HPC 这个类别</b>。"
+            "2018 那四季用的是公司自己在 2019 各季报告的去年同期列里给出的重述值，属公司报告值；"
+            "2016–2017 公司只发过年度平台数、季度值从未发布。两套类别是交叉分类而非重切"
+            "（公司给的映射是「Computer >95% 归 HPC」「Communication 约 2/3 是 Smartphone」"
+            "这类 30–60% 的定性区间），拿它换算就是估算，本页不做。"
+            + (f"集中度是这条曲线的另一面，HPC 站上 {hpc_line['threshold']:g}% 即触发本页的集中度跟踪线。"
+               if hpc_line else "")
+        ),
+        "src_extra": (
+            "平台组合分母为 net revenue，逐季读自各季 quarterly management report 的 "
+            "Net Revenue by Platform 表；本页仅接入 HPC 与 Smartphone 两类，"
+            "IoT / 汽车 / DCE 尚未接入。"
+        ),
+    }
+
+    inventory = long_working["inventory_days"]
+    receivable = long_working["receivable_days"]
+    early = [value for quarter, value in zip(long_quarters, inventory)
+             if INVENTORY_EARLY[0] <= quarter <= INVENTORY_EARLY[1]]
+    late = [value for quarter, value in zip(long_quarters, inventory) if quarter >= INVENTORY_LATE_FROM]
+    first_year_receivable = [value for quarter, value in zip(long_quarters, receivable)
+                             if quarter[:4] == long_quarters[0][:4]]
+    working_chart = {
+        "kind": "lines",
+        "title": (
+            f"库存天数{decade}年区间 {min(inventory)}–"
+            f"{max(inventory)} 天，本季 "
+            f"{inventory[-1]} 天；"
+            + (f"应收天数一路降到 {receivable[-1]} 天" if receivable[-1] == min(receivable) else
+               f"应收天数从 {receivable[0]} 天降到 {receivable[-1]} 天")
+        ),
+        "xlabels": long_labels,
+        "xstep": LONG_STEP,
+        "series": [
+            {"name": "库存天数", "values": inventory, "color": "NAVY"},
+            {"name": "应收天数", "values": receivable, "color": "MBLUE"},
+        ],
+        "fmt": "f0",
+        "yfmt": "f0",
+        "label_fmt": "f0",
+        "end_label": True,
+        "ylab": "天",
+        "note": (
+            (f"本季公司归因于{spaced(story['inventory_attribution'])}；{story['inventory_test']}。"
+             if story.get("inventory_attribution") else "")
+            + f"拉长看，库存天数在 {INVENTORY_EARLY[0][:4]}–{INVENTORY_EARLY[1][:4]} 年在 "
+            f"{min(early)}–{max(early)} 天之间，{INVENTORY_LATE_FROM[:4]} 年后"
+            f"{'抬到' if sorted(late)[len(late) // 2] > sorted(early)[len(early) // 2] else '在'} "
+            f"{min(late)}–{max(late)} 天，"
+            f"当前 {inventory[-1]} 天"
+            + ("仍在这个区间内而非异常值；" if min(late) <= inventory[-1] <= max(late) else "已在这个区间之外；")
+            + ("应收天数则整体下行，" if receivable[-1] < min(first_year_receivable) else "应收天数")
+            + f"从 {long_quarters[0][:4]} 年的 {min(first_year_receivable)}–{max(first_year_receivable)} 天"
+            f"{'降到' if receivable[-1] < min(first_year_receivable) else '到'}本季的 {receivable[-1]} 天。"
+            "<b>两条都是公司印在报告里的原值，本页不自己推导</b> —— 实测任何"
+            f"「余额 ÷ 日均」的公式都复现不出这 {len(long_quarters)} 个季度（最好的一版只精确命中一成），"
+            "公司也未公开其天数惯例。"
+        ),
+        "src_extra": (
+            "应收与库存天数逐季读自各季 quarterly management report 的 "
+            "「III - 2. Receivable/Inventory Days」表原值。"
+        ),
+    }
+
+    highlight = [
         {
             "kind": "gs_bar",
             "title": (
-                f"收入 US${long_revenue[-1]:.2f}B 落指引上端，"
-                f"十年里长到 {long_revenue[-1] / long_revenue[0]:.1f} 倍"
+                f"收入 US${long_revenue[-1]:.2f}B {revenue_position}，"
+                f"{decade}年里长到 {long_revenue[-1] / long_revenue[0]:.1f} 倍"
             ),
             "xlabels": long_labels,
             "xstep": LONG_STEP,
@@ -674,20 +1217,7 @@ def build_payload(staging: dict) -> dict:
                 "color": "GREEN",
                 "yfmt": "pct0",
             },
-            "note": (
-                f"本季环比 {signed(pct_change(long_revenue[-1], long_revenue[-2]))}、"
-                f"同比 {signed(long_revenue_yoy[-1])}，较市场预期 "
-                f"US${consensus['revenue_usd_bn']:.2f}B 高 "
-                f"{pct_change(long_revenue[-1], consensus['revenue_usd_bn']):.1f}%；"
-                f"Q3 指引中值 US${q3_midpoint:.1f}B，环比 {signed(q3_midpoint_growth)}，不减速。"
-                "<b>十年的窗口里这条同比线穿越过零轴三次</b>："
-                f"最低 {min(v for v in long_revenue_yoy if v is not None):.0f}%"
-                f"（{long_labels[long_revenue_yoy.index(min(v for v in long_revenue_yoy if v is not None))]}），"
-                f"最高 {max(v for v in long_revenue_yoy if v is not None):.0f}%"
-                f"（{long_labels[long_revenue_yoy.index(max(v for v in long_revenue_yoy if v is not None))]}）。"
-                "八季的窗口只能看到最近这一段单边上行。"
-                "前四格没有同比线：2015 年不在本记录内，没有分母。"
-            ),
+            "note": revenue_note,
             "src_extra": (
                 "美元收入逐季读自各季 earnings release 与法说会简报；同比为自算 D；"
                 "市场预期为财报前一致预期，不具名。"
@@ -696,7 +1226,8 @@ def build_payload(staging: dict) -> dict:
         {
             "kind": "gs_bar",
             "title": (
-                f"本季环比里大部分来自价与结构：出货 {signed(shipment_qoq)}，隐含 ASP {signed(asp_qoq)}"
+                f"本季环比里{'大部分' if price_share > 0.5 else '小部分'}来自价与结构："
+                f"出货 {signed(shipment_qoq)}，隐含 ASP {signed(asp_qoq)}"
             ),
             "xlabels": long_labels,
             "xstep": LONG_STEP,
@@ -714,13 +1245,13 @@ def build_payload(staging: dict) -> dict:
                 "yfmt": "f0c",
             },
             "note": (
-                f"隐含 ASP = 季度美元收入 / 晶圆出货，本季 ${long_asp[-1]:,.0f}/片；"
-                "抬价的是 2nm 首季贡献 3%、3nm 占比 +5pp 与 HPC mix，不是单纯提价。"
-                f"<b>十年的窗口说明这不是一次提价而是一条结构线</b>：ASP 从 "
-                f"${long_asp[0]:,.0f} 升到 ${long_asp[-1]:,.0f}（{long_asp[-1] / long_asp[0]:.1f} 倍），"
+                f"隐含 ASP = 季度美元收入 / 晶圆出货，本季 ${long_asp[-1]:,.0f}/片"
+                + (f"；抬价的是{spaced(joined(mix_drivers))}，不是单纯提价。" if asp_qoq > 0 and mix_drivers else "。")
+                + f"<b>{decade}年的窗口说明这不是一次提价而是一条结构线</b>：ASP 从 "
+                f"${long_asp[0]:,.0f} 升到 ${long_asp[-1]:,.0f}（{asp_ratio:.1f} 倍），"
                 f"而同期出货只从 {long_shipments[0]:,} 增到 {long_shipments[-1]:,} 千片"
-                f"（{long_shipments[-1] / long_shipments[0]:.1f} 倍）—— "
-                "收入的十倍增长里，量只解释了其中一小部分。"
+                f"（{shipment_ratio:.1f} 倍）—— "
+                f"收入的 {revenue_ratio:.1f} 倍增长里，量只解释了其中一小部分。"
             ),
             "src_extra": (
                 "出货量与美元收入来自各季 earnings release / management report；隐含 ASP 为两者相除的自算值，"
@@ -730,14 +1261,18 @@ def build_payload(staging: dict) -> dict:
         {
             "kind": "lines",
             "title": (
-                f"毛利率 {long_fin['gross_margin_pct'][-1]:.1f}% 超指引上限，"
-                f"但 Q3 指引中值已降到 {q3_gm_midpoint:.0f}%"
+                f"毛利率 {gm_levels[-1]:.1f}% "
+                + ("超指引上限" if gm_levels[-1] > gm_band[1] else "落在指引区间内"
+                   if gm_levels[-1] >= gm_band[0] else "低于指引下限")
+                + (f"，但 {quarter_word(following)} 指引中值已降到 {trim(next_gm_mid)}%"
+                   if next_gm_mid is not None and next_gm_mid < gm_levels[-1] else
+                   f"，{quarter_word(following)} 指引中值 {trim(next_gm_mid)}%" if next_gm_mid is not None else "")
             ),
             "ref": "EX_MARGIN_LEVEL",
             "xstep": LONG_STEP,
             "xlabels": long_labels,
             "series": [
-                {"name": "毛利率", "values": long_fin["gross_margin_pct"], "color": "NAVY"},
+                {"name": "毛利率", "values": gm_levels, "color": "NAVY"},
                 {"name": "营业利润率", "values": long_fin["operating_margin_pct"], "color": "MBLUE"},
             ],
             "fmt": "pct1",
@@ -746,226 +1281,40 @@ def build_payload(staging: dict) -> dict:
             "end_label": True,
             "ylab": "利润率",
             "note": (
-                f"管理层首次量化 2H26 的 N2 稀释 3–4pp，叠加海外厂后期 3–4pp；"
-                f"Q3 指引中值 {q3_gm_midpoint:.1f}%，较本季 "
-                f"{q3_gm_midpoint - long_fin['gross_margin_pct'][-1]:+.1f}pp。"
-                f"<b>但「本周期顶点」要放在十年里看才有意义</b>："
-                f"这条线的十年区间是 {min(long_fin['gross_margin_pct']):.1f}%"
-                f"（{long_labels[long_fin['gross_margin_pct'].index(min(long_fin['gross_margin_pct']))]}）到 "
-                f"{max(long_fin['gross_margin_pct']):.1f}%"
-                f"（{long_labels[long_fin['gross_margin_pct'].index(max(long_fin['gross_margin_pct']))]}），"
-                f"而 2018–2019 那一段曾在 {min(long_fin['gross_margin_pct']):.0f}% 附近连着走了两年 —— "
-                "这家公司的毛利率不是单调抬升的，它有过一段完整的下行。"
-                "本图画的是水平，逐季指引区间与兑现记录见 Exhibit {EX_GM}。"
+                (f"管理层{'首次' if story.get('n2_dilution_first_quantified') else ''}量化 "
+                 f"{guidance['n2_gross_margin_dilution_half']} 的 N2 稀释 {dilution[0]}–{dilution[1]}pp"
+                 + (f"，叠加海外厂后期 {overseas_late[0]}–{overseas_late[1]}pp" if overseas_late else "")
+                 + "；" if dilution else "")
+                + (f"{quarter_word(following)} 指引中值 {next_gm_mid:.1f}%，较本季 "
+                   f"{next_gm_mid - gm_levels[-1]:+.1f}pp。" if next_gm_mid is not None else "")
+                + f"<b>但「本周期顶点」要放在{decade}年里看才有意义</b>："
+                f"这条线的{decade}年区间是 {min(gm_levels):.1f}%"
+                f"（{long_labels[margin_trough]}）到 "
+                f"{max(gm_levels):.1f}%"
+                f"（{long_labels[gm_levels.index(max(gm_levels))]}），"
+                + (f"而 {long_quarters[margin_peak][:4]}–{long_quarters[margin_trough][:4]} 那一段曾从 "
+                   f"{gm_levels[margin_peak]:.1f}%（{long_labels[margin_peak]}）降到 "
+                   f"{gm_levels[margin_trough]:.1f}%（{long_labels[margin_trough]}） —— "
+                   "这家公司的毛利率不是单调抬升的，它有过一段完整的下行。"
+                   if margin_peak is not None and gm_levels[margin_peak] > gm_levels[margin_trough] else "")
+                + "本图画的是水平，逐季指引区间与兑现记录见 Exhibit {EX_GM}。"
             ),
-            "src_extra": "利润率与指引来自 TSMC earnings release；稀释幅度为管理层在电话会上的量化口径。",
-        },
-        {
-            "kind": "bars_labeled",
-            "title": "FY2026 CapEx 预算半年内两次上调，中点从 US$54B 抬到 US$62B",
-            "xlabels": capex_guide["calls"],
-            "values": capex_guide_mid,
-            "legend": "FY2026 CapEx 指引中点",
-            "fmt": "usd0",
-            "yfmt": "usd0",
-            "label_fmt": "usd0",
-            "ylab": "US$B",
-            "note": (
-                f"新台币口径下本季 CapEx 同比 {signed(capex_ntd_yoy)}、收入同比 {signed(revenue_ntd_yoy)}；"
-                "两条增速的美元口径长序列对照见 Exhibit {EX_CROSSOVER}。"
-            ),
-            "src_extra": (
-                "三次口径依次为 1 月 US$52–56B、4 月 closer to US$56B、7 月 US$60–64B；"
-                "同比增速为新台币口径自算，避免与全年美元预算混用。"
-            ),
-        },
-        {
-            "kind": "bars_labeled",
-            "title": f"净利大幅超预期，但剔除 VIS 一次性后核心 beat 只有 {core_beat:+.1f}%",
-            "xlabels": net_income_bridge["labels"],
-            "values": net_income_bridge["values_ntd_bn"],
-            "legend": "净利润",
-            "fmt": "f0c",
-            "yfmt": "f0c",
-            "label_fmt": "f0c",
-            "ylab": "NT$B",
-            "note": (
-                f"报告净利较市场预期高 {headline_beat:+.1f}%，但处置世界先进股份与保留股份重估的"
-                f"税前一次性收益 NT$63.20B 解释了其中绝大部分；真正干净的超预期在收入与毛利率。"
-                "本图是净利的金额桥，各项相对市场预期的百分比见 Exhibit {EX_EXPECTATION}。"
-            ),
-            "src_extra": (
-                "报告净利与 VIS 相关收益来自 2Q26 management report；核心净利为两者相减的自算值（未做税务调整），"
-                "市场预期为财报前一致预期，不具名。"
-            ),
-        },
-        {
-            "kind": "grouped_bars",
-            "title": (
-                f"CapEx 环比 "
-                f"{signed(pct_change(long_cash['capital_expenditures'][-1], long_cash['capital_expenditures'][-2]))}，"
-                f"自由现金流 "
-                f"{signed(pct_change(long_cash['free_cash_flow'][-1], long_cash['free_cash_flow'][-2]))}"
-            ),
-            "xlabels": long_labels,
-            "xstep": LONG_STEP,
-            "groups": [
-                {"name": "经营现金流", "values": long_cash["operating_cash_flow"], "color": "BLUE"},
-                {"name": "资本开支", "values": long_cash["capital_expenditures"], "color": "NAVY"},
-                {"name": "自由现金流 D", "values": long_cash["free_cash_flow"], "color": "MBLUE"},
-            ],
-            "fmt": "f0c",
-            "yfmt": "f0c",
-            "label_fmt": "f0c",
-            "ylab": "NT$B",
-            "bar_labels": False,
-            "note": (
-                "资本强度见 Exhibit {EX_INTENSITY}；股息年化 NT$622B，本年自由现金流仍可覆盖约两倍，"
-                "现金流压缩暂未威胁股东回报。"
-                f"<b>十年里自由现金流为负的季度有 "
-                f"{sum(1 for value in long_cash['free_cash_flow'] if value < 0)} 个</b>"
-                f"（最低 {min(long_cash['free_cash_flow']):,.0f} NT$B，"
-                f"{long_labels[long_cash['free_cash_flow'].index(min(long_cash['free_cash_flow']))]}）—— "
-                "在一家把资本开支按付款节奏落账的公司里，单季自由现金流转负是扩产的常态而不是警讯，"
-                "八季的窗口里一次都看不到。"
-            ),
-            "src_extra": "季度新台币现金流口径；FCF = 经营现金流 − 现金支付资本开支，按 TSMC 定义复算。",
-        },
-        headroom_exhibit(
-            "下季 6 条量化阈值：2nm 占比是唯一需要大幅上行才能达标的一条",
-            next_kpi["quantified"],
-            "current",
-            (
-                "正值 = 仍在安全侧。2nm 当前 3%，而 Q3 的「steep ramp」需要至少 5%，"
-                "是唯一明显在阈值之下的指标；库存天数离 90 天的警戒只剩 3.3%。"
-            ),
-            src_extra=(
-                "阈值为本地研究设定，不是公司指引；当前值为 Q2 2026 实际。"
-                "另有 4 条需等披露才能判定（Q3 实际收入、2027 CapEx 指引、长期毛利率目标、Smartphone 连续负增长）。"
-            ),
-        ),
-        {
-            "kind": "lines",
-            "title": (
-                f"十年制程迁移：7nm 及以下从 0% 升到 "
-                f"{long_tech['advanced_7nm_and_below'][-1]}%，2nm 本季首次单列为 "
-                f"{long_tech['2nm'][-1]}%"
-            ),
-            "xlabels": long_labels,
-            "xstep": LONG_STEP,
-            "series": [
-                {"name": "2nm", "values": long_tech["2nm"], "color": "GOLD"},
-                {"name": "3nm", "values": long_tech["3nm"], "color": "NAVY"},
-                {"name": "5nm", "values": long_tech["5nm"], "color": "MBLUE"},
-                {"name": "7nm", "values": long_tech["7nm"], "color": "GRAY"},
-                {"name": "7nm 及以下 D", "values": long_tech["advanced_7nm_and_below"],
-                 "color": "GREEN"},
-            ],
-            "fmt": "pct0",
-            "yfmt": "pct0",
-            "label_fmt": "pct0",
-            "zero_base": True,
-            "end_label": True,
-            "ylab": "晶圆收入占比",
-            "note": (
-                "<b>每条线从该节点第一次出现在公司表里的那一季起画，之前是空的 —— 那不是缺数据，"
-                "是当时表上根本没有这一行</b>（起始季 / 首次非零季）："
-                + "、".join(
-                    f"{node} {quarter_label(node_birth[node])} / "
-                    f"{quarter_label(node_first_real[node])}"
-                    for node in node_birth
-                )
-                + "。两个日期不同，是因为新节点常先以公司自己印的 0% 出现在后续报告的"
-                "比较列里，几个季度后才真正放量。之后某季若该行没印出来，表示舍入到 0.5% 以下，"
-                "按 0 计（依据是该季印出来的各行仍合计 100%）。"
-                "<b>绿线「7nm 及以下」是本页自己把印出来的 2/3/5/7nm 四行相加</b>，"
-                "不是公司披露的 advanced technologies 口径 —— 那个口径 2019Q1 从「28nm 及以下」"
-                "改成「16nm 及以下」、2021Q1 再改成「7nm 及以下」，且从未重述，直接连起来会在"
-                "这两处砸出纯定义性的假悬崖（2021Q1 报出来是 62%→49%，同口径其实是微升）。"
-                "自算值与公司口径在 2021Q1 起的 22 个季度逐季相等。"
-            ),
-            "src_extra": (
-                "制程组合分母为 total wafer revenue，口径十年未变；逐季读自各季 "
-                "quarterly management report 的 Wafer Revenue by Technology 表。"
-            ),
-        },
-        {
-            "kind": "lines",
-            "title": (
-                f"HPC 从 {long_platform['hpc'][platform_from]}% 升到 "
-                f"{long_platform['hpc'][-1]}%，智能手机从 "
-                f"{long_platform['smartphone'][platform_from]}% 降到 "
-                f"{long_platform['smartphone'][-1]}%"
-            ),
-            "xlabels": platform_labels,
-            "xstep": LONG_STEP,
-            "series": [
-                {"name": "HPC", "values": long_platform["hpc"][platform_from:], "color": "NAVY"},
-                {"name": "Smartphone",
-                 "values": long_platform["smartphone"][platform_from:], "color": "MBLUE"},
-            ],
-            "fmt": "pct0",
-            "yfmt": "pct0",
-            "label_fmt": "pct0",
-            "zero_base": True,
-            "end_label": True,
-            "ylab": "净收入占比",
-            "note": (
-                "<b>这条线只能回到 2018Q1，不能到 2016，原因是口径断层不是数据缺失</b>："
-                "台积电 2019Q1 才把收入拆分从「按应用」（Communication / Computer / Consumer / "
-                "Industrial-Standard）改成「按平台」，<b>在那之前根本没有 HPC 这个类别</b>。"
-                "2018 那四季用的是公司自己在 2019 各季报告的去年同期列里给出的重述值，属公司报告值；"
-                "2016–2017 公司只发过年度平台数、季度值从未发布。两套类别是交叉分类而非重切"
-                "（公司给的映射是「Computer >95% 归 HPC」「Communication 约 2/3 是 Smartphone」"
-                "这类 30–60% 的定性区间），拿它换算就是估算，本页不做。"
-                "集中度是这条曲线的另一面，HPC 站上 68% 即触发本页的集中度跟踪线。"
-            ),
-            "src_extra": (
-                "平台组合分母为 net revenue，逐季读自各季 quarterly management report 的 "
-                "Net Revenue by Platform 表；本页仅接入 HPC 与 Smartphone 两类，"
-                "IoT / 汽车 / DCE 尚未接入。"
-            ),
-        },
-        {
-            "kind": "lines",
-            "title": (
-                f"库存天数十年区间 {min(long_working['inventory_days'])}–"
-                f"{max(long_working['inventory_days'])} 天，本季 "
-                f"{long_working['inventory_days'][-1]} 天；应收天数一路降到 "
-                f"{long_working['receivable_days'][-1]} 天"
-            ),
-            "xlabels": long_labels,
-            "xstep": LONG_STEP,
-            "series": [
-                {"name": "库存天数", "values": long_working["inventory_days"], "color": "NAVY"},
-                {"name": "应收天数", "values": long_working["receivable_days"], "color": "MBLUE"},
-            ],
-            "fmt": "f0",
-            "yfmt": "f0",
-            "label_fmt": "f0",
-            "end_label": True,
-            "ylab": "天",
-            "note": (
-                "本季公司归因于 N2 爬坡备货；若下季 2nm 占比已跳升而库存仍不回落，备货解释即失效。"
-                "拉长看，库存天数在 2016–2019 年长期在 40–70 天，2021 年后台阶式抬到 80–99 天，"
-                "当前 " + str(long_working["inventory_days"][-1]) + " 天仍在这个高台阶内而非异常值；"
-                "应收天数则是单向下行，从 2016 年的 40 天出头降到二十几天。"
-                "<b>两条都是公司印在报告里的原值，本页不自己推导</b> —— 实测任何"
-                "「余额 ÷ 日均」的公式都复现不出这 42 个季度（最好的一版只精确命中一成），"
-                "公司也未公开其天数惯例。"
-            ),
-            "src_extra": (
-                "应收与库存天数逐季读自各季 quarterly management report 的 "
-                "「III - 2. Receivable/Inventory Days」表原值。"
-            ),
+            "src_extra": ("利润率与指引来自 TSMC earnings release"
+                          + ("；稀释幅度为管理层在电话会上的量化口径。" if dilution else "。")),
         },
     ]
+    if capex_chart:
+        highlight.append(capex_chart)
+    if bridge_chart:
+        highlight.append(bridge_chart)
+    highlight.append(cash_chart)
+
     # The check tables run on the same window as the charts they back. An
     # eight-row table under a forty-two-point chart is not a check.
     financial_table = []
     mix_table = []
     cash_table = []
-    for index, quarter in enumerate(long["quarters"]):
+    for index, quarter in enumerate(long_quarters):
         label = quarter_label(quarter)
         yoy = long_revenue_yoy[index]
         financial_table.append([
@@ -1004,63 +1353,56 @@ def build_payload(staging: dict) -> dict:
             f"{long_working['inventory_days'][index]}天",
         ])
 
-    guide_rows = [
-        [
-            "收入（美元）",
-            "US$39.0–40.2B",
-            "US$40.20B",
-            "区间上端",
-            "US$44.6–45.8B",
-            f"中值 US${q3_midpoint:.1f}B；环比 {signed(q3_midpoint_growth)} D",
-        ],
-        ["毛利率", "65.5–67.5%", "67.7%", "高于上端 0.2pp D", "65.0–67.0%", "中值环比 -1.7pp D"],
-        ["营业利润率", "56.5–58.5%", "60.3%", "高于上端 1.8pp D", "56.0–58.0%", "中值环比 -3.3pp D"],
-        ["USD / NTD", "31.7", "31.60", "较假设低 0.3% D", "32.0", "较 Q2 实际高 1.3% D"],
-        ["FY2026 美元收入增速", "高于 30%", "—", "上调", "略高于 40%", "公司年度 outlook"],
-        ["FY2026 CapEx", "US$52–56B；接近上端", "—", "上调", "US$60–64B", "中值较先前高端锚点 +US$6B D"],
-        ["2H26 N2 毛利率稀释", "—", "—", "—", "3–4pp", "管理层量化"],
-        ["海外厂毛利率稀释", "—", "—", "—", "初期 2–3pp", "后期扩大至 3–4pp"],
-        [
-            "长期 through-cycle 毛利率",
-            f"{gm_floor}% 及以上",
-            "67.7%",
-            f"高出 {financials['gross_margin_pct'][-1] - gm_floor:.1f}pp D",
-            f"{gm_floor}% 及以上",
-            "长期目标未上修，也未下修",
-        ],
-    ]
+    guide_rows = guidance_rows(guidance, financials, period) if guidance else []
 
-    inventory_expectation = threshold_exhibit(
-        f"上季判断库存回落到 75–78 天，实际升到 {long_working['inventory_days'][-1]} 天（被证伪）",
-        long_labels,
-        long_working["inventory_days"],
-        78.0,
-        xstep=LONG_STEP,
-        fmt="f0",
-        ylab="天",
-        actual_name="库存天数",
-        threshold_name="上季预期上沿 78 天",
-        note=(
-            "管理层归因于 N2 爬坡备货；这是上季 12 条判断里唯一被明确证伪的一条，"
-            "也是本页把 90 天设为下季警戒线的由来。"
-            f"<b>但 78 天这条线放在十年里并不高</b>：十年区间 "
-            f"{min(long_working['inventory_days'])}–{max(long_working['inventory_days'])} 天，"
-            f"高于 78 天的季度有 "
-            f"{sum(1 for value in long_working['inventory_days'] if value > 78)} 个，"
-            "上季那个「回落到 75–78 天」的预期本身就是拿最近几年的水平当常态。"
-        ),
-        src_extra="库存天数逐季读自各季 management report；75–78 天为上季本地分析稿的预期区间。",
-    )
+    falsified = (closure or {}).get("falsified")
+    inventory_expectation = None
+    if falsified and falsified["metric"] == "库存天数":
+        expected_low, expected_high = falsified["expected_low_days"], falsified["expected_high_days"]
+        above_expected = sum(1 for value in inventory if value > expected_high)
+        labels_count = dict(zip(closure["labels"], closure["counts"]))
+        watch_line = kpi_by_metric.get("库存天数")
+        inventory_expectation = threshold_exhibit(
+            f"上季判断库存回落到 {expected_low}–{expected_high} 天，实际升到 {inventory[-1]} 天（被证伪）",
+            long_labels,
+            inventory,
+            float(expected_high),
+            xstep=LONG_STEP,
+            fmt="f0",
+            ylab="天",
+            actual_name="库存天数",
+            threshold_name=f"上季预期上沿 {expected_high} 天",
+            note=(
+                (f"管理层归因于{spaced(story['inventory_attribution'])}；" if story.get("inventory_attribution") else "")
+                + (f"这是上季 {sum(closure['counts'])} 条判断里唯一被明确证伪的一条"
+                   if labels_count["被证伪"] == 1 else
+                   f"这是上季 {sum(closure['counts'])} 条判断里被明确证伪的{cn_count(labels_count['被证伪'])}条之一")
+                + (f"，也是本页把 {watch_line['threshold']:g} 天设为下季警戒线的由来。" if watch_line else "。")
+                + f"<b>但 {expected_high} 天这条线放在{decade}年里并不高</b>：{decade}年区间 "
+                f"{min(inventory)}–{max(inventory)} 天，"
+                f"高于 {expected_high} 天的季度有 {above_expected} 个，"
+                f"上季那个「回落到 {expected_low}–{expected_high} 天」的预期本身就是拿最近几年的水平当常态。"
+                if above_expected * 4 >= len(inventory) else
+                (f"管理层归因于{spaced(story['inventory_attribution'])}；" if story.get("inventory_attribution") else "")
+                + f"{decade}年区间 {min(inventory)}–{max(inventory)} 天，高于 {expected_high} 天的季度有 "
+                f"{above_expected} 个。"
+            ),
+            src_extra=(f"库存天数逐季读自各季 management report；{expected_low}–{expected_high} 天"
+                       "为上季本地分析稿的预期区间。"),
+        )
 
     intensity_low = min(long_intensity)
     intensity_low_at = long_labels[long_intensity.index(intensity_low)]
     intensity_high = max(long_intensity)
-    intensity_high_at = long_labels[long_intensity.index(intensity_high)]
+    intensity_high_index = long_intensity.index(intensity_high)
+    intensity_high_at = long_labels[intensity_high_index]
+    intensity_move = long_intensity[-1] - long_intensity[-2]
     capex_intensity_chart = {
         "ref": "EX_INTENSITY",
         "kind": "gs_line",
         "title": (
-            f"资本强度十年从 {long_intensity[0]:.1f}% 升到 {long_intensity[-1]:.1f}%，"
+            f"资本强度{decade}年从 {long_intensity[0]:.1f}% "
+            f"{'升到' if long_intensity[-1] >= long_intensity[0] else '降到'} {long_intensity[-1]:.1f}%，"
             f"期间峰值 {intensity_high:.1f}%（{intensity_high_at}）"
         ),
         "xlabels": long_labels,
@@ -1072,10 +1414,16 @@ def build_payload(staging: dict) -> dict:
         "label_fmt": "pct1",
         "ylab": "占收入比",
         "note": (
-            f"本季 {long_intensity[-1]:.1f}%，较上季 {long_intensity[-2]:.1f}% 跳升。"
-            f"十年区间 {intensity_low:.1f}%（{intensity_low_at}）到 "
-            f"{intensity_high:.1f}%（{intensity_high_at}）—— <b>本季并不是历史高位</b>，2021 年那轮扩产把单季资本支出打到收入的三分之二以上，八季的窗口看不到这件事。"
-            "单季比值天然比年度口径抖，因为 CapEx 按付款节奏落账、收入按季确认，"
+            f"本季 {long_intensity[-1]:.1f}%，较上季 {long_intensity[-2]:.1f}% "
+            + ("跳升" if intensity_move >= 3 else "上升" if intensity_move > 0 else "回落")
+            + "。"
+            f"{decade}年区间 {intensity_low:.1f}%（{intensity_low_at}）到 "
+            f"{intensity_high:.1f}%（{intensity_high_at}）"
+            + (f"—— <b>本季并不是历史高位</b>，{long_quarters[intensity_high_index][:4]} 年那轮扩产把单季资本支出"
+               f"打到收入的{cn_fraction_above(intensity_high / 100)}"
+               + (f"，{cn_count(len(periods))}季的窗口看不到这件事" if intensity_high_index < len(long_quarters) - len(periods) else "")
+               + "。" if intensity_high > long_intensity[-1] else "—— 本季就是历史高位。")
+            + "单季比值天然比年度口径抖，因为 CapEx 按付款节奏落账、收入按季确认，"
             "看趋势要顺着几个季度读，不要盯单点。"
             "这条线与 GOOGL 页同口径，可直接对照上下游的资本强度。"
         ),
@@ -1086,12 +1434,20 @@ def build_payload(staging: dict) -> dict:
         ),
     }
 
+    with_yoy = [i for i in range(len(long_quarters))
+                if long_capex_usd_yoy[i] is not None and long_revenue_yoy[i] is not None]
+    capex_ahead = [i for i in with_yoy if long_capex_usd_yoy[i] > long_revenue_yoy[i]]
+    crossings = [i for i in with_yoy[1:]
+                 if long_capex_usd_yoy[i] > long_revenue_yoy[i]
+                 and long_capex_usd_yoy[i - 1] <= long_revenue_yoy[i - 1]]
+    crossed_now = bool(crossings) and crossings[-1] == len(long_quarters) - 1
     growth_crossover_chart = {
         "ref": "EX_CROSSOVER",
         "kind": "lines",
         "title": (
-            f"CapEx 增速 {long_capex_usd_yoy[-1]:+.0f}% 反超收入增速 "
-            f"{long_revenue_yoy[-1]:+.0f}%"
+            f"CapEx 增速 {long_capex_usd_yoy[-1]:+.0f}% "
+            + ("反超" if long_capex_usd_yoy[-1] > long_revenue_yoy[-1] else "低于")
+            + f"收入增速 {long_revenue_yoy[-1]:+.0f}%"
         ),
         "xlabels": long_labels,
         "xstep": LONG_STEP,
@@ -1105,13 +1461,18 @@ def build_payload(staging: dict) -> dict:
         "end_label": True,
         "ylab": "同比增速",
         "note": (
-            "上季管理层称「收入增速快于 CapEx 增速」；本季两条线交叉，这是股价的直接压制项。"
-            "<b>十年的窗口说明交叉本身不稀奇 —— 稀奇的是它出现在这个位置</b>："
-            f"38 个有同比的季度里 CapEx 增速高于收入增速的有 "
-            f"{sum(1 for a, b in zip(long_capex_usd_yoy, long_revenue_yoy) if a is not None and b is not None and a > b)} 个，"
-            "但前几次都发生在收入增速本身很低甚至为负的下行段（扩产逆周期），"
-            "这一次两条线是在收入同比 30% 以上的位置交叉的。"
-            "两条都是美元口径，不含汇率错配。前四格没有同比：2015 年不在本记录内。"
+            (f"上季管理层称「{story['prior_call_quote']}」；"
+             + (f"本季两条线交叉，{story['crossover_reading']}。" if crossed_now else "")
+             if story.get("prior_call_quote") else
+             ("本季两条线交叉。" if crossed_now else ""))
+            + f"<b>{decade}年的窗口说明交叉本身不稀奇</b>："
+            f"{len(with_yoy)} 个有同比的季度里 CapEx 增速高于收入增速的有 {len(capex_ahead)} 个，"
+            f"从下方穿上来的有 {len(crossings)} 次（"
+            + "、".join(long_labels[i] if i != len(long_quarters) - 1 else "本季" for i in crossings)
+            + "），交叉当季的收入同比依次为 "
+            + "、".join(f"{long_revenue_yoy[i]:+.1f}%" for i in crossings)
+            + "。"
+            f"两条都是美元口径，不含汇率错配。前四格没有同比：{no_base_year} 年不在本记录内。"
         ),
         "src_extra": (
             "收入与美元 CapEx 逐季读自各季 earnings release 与 quarterly management report；"
@@ -1119,18 +1480,19 @@ def build_payload(staging: dict) -> dict:
         ),
     }
 
-    # Section one now carries the whole "did the quarter clear the bar" story in
-    # one place: the company's own three guided metrics over the full guided
-    # record, then the market's bar, then the follow-up list it was supposed to
-    # settle. The eight-quarter revenue range band that used to sit here was
-    # removed -- the fifteen-quarter one below is the same chart over a longer
-    # window, and two of them side by side said nothing the longer one did not.
-    delivery_charts, delivery_table = guidance_delivery_charts(staging)
+    # Section one carries the whole "did the quarter clear the bar" story in one
+    # place: the follow-up list and this quarter against its own guide, then the
+    # market's bar, then the company's three guided metrics over the full guided
+    # record, then the one falsified call that has a long series behind it.
+    delivery_charts, delivery_table = guidance_delivery_charts(staging, guidance)
     settled_charts = (
-        built[0:2] + [expectation_chart(staging)] + delivery_charts + [inventory_expectation]
+        settled_lead
+        + ([expectation_chart(staging, consensus, snapshot, net_income_bridge)] if consensus else [])
+        + delivery_charts
+        + ([inventory_expectation] if inventory_expectation else [])
     )
-    highlights = built[2:8] + [growth_crossover_chart]
-    next_charts = [built[8]] + tracking_charts(
+    highlights = highlight + [growth_crossover_chart]
+    next_charts = [headroom_chart] + tracking_charts(
         next_kpi["quantified"],
         "current",
         "下季阈值",
@@ -1139,7 +1501,7 @@ def build_payload(staging: dict) -> dict:
             f"当前 {unit_text(entry['unit'], entry['current'])}"
         ),
     )
-    routine = built[9:] + [capex_intensity_chart]
+    routine = [tech_chart, platform_chart, working_chart, capex_intensity_chart]
 
     exhibits = resolve_exhibit_refs(
         number_exhibits(settled_charts + highlights + next_charts + routine)
@@ -1155,48 +1517,160 @@ def build_payload(staging: dict) -> dict:
     settled_ex, highlight_ex, next_ex, routine_ex = grouped
     next_table_number = len(exhibits) + 2
 
-    tables = [
-        {
+    tables = []
+    if guide_rows:
+        tables.append({
             # Reference detail, not a lead module: the decision-relevant parts of
             # guidance are already in the settled and highlight sections.
-            "n": next_table_number,
-            "title": "Q2 兑现、Q3 指引与全年 outlook",
-            "headers": ["指标", "Q2 原指引", "Q2 实际", "兑现", "Q3 / FY26 新口径", "变化 / 备注"],
+            "title": f"{quarter_word(period)} 兑现、{quarter_word(following)} 指引与全年 outlook",
+            "headers": ["指标", f"{quarter_word(period)} 原指引", f"{quarter_word(period)} 实际", "兑现",
+                        f"{quarter_word(following)} / FY{str(guidance['fiscal_year'])[-2:]} 新口径",
+                        "变化 / 备注"],
             "rows": guide_rows,
-        },
+        })
+    tables += [
         threshold_table(
-            next_table_number + 1,
+            0,
             "下季阈值与当前值（原单位）",
             next_kpi["quantified"],
             "current",
             "当前值",
         ),
         {
-            "n": next_table_number + 2,
-            "title": f"{len(long['quarters'])} 季度财务、出货与隐含 ASP（2016Q1 起）",
+            "title": f"{len(long_quarters)} 季度财务、出货与隐含 ASP（{long_quarters[0]} 起）",
             "headers": ["期间", "收入", "收入 YoY", "毛利率", "营业利润率", "稀释 EPS", "晶圆出货", "隐含 ASP"],
             "rows": financial_table,
         },
         {
-            "n": next_table_number + 3,
-            "title": f"{len(long['quarters'])} 季度制程与平台收入组合（2016Q1 起）",
+            "title": f"{len(long_quarters)} 季度制程与平台收入组合（{long_quarters[0]} 起）",
             "headers": ["期间", "2nm", "3nm", "5nm", "7nm", "≤7nm", "HPC", "Smartphone"],
             "rows": mix_table,
         },
         {
-            "n": next_table_number + 4,
-            "title": f"{len(long['quarters'])} 季度现金流与营运资金（新台币，2016Q1 起）",
+            "title": f"{len(long_quarters)} 季度现金流与营运资金（新台币，{long_quarters[0]} 起）",
             "headers": ["期间", "经营现金流", "资本开支", "自由现金流", "应收天数", "库存天数"],
             "rows": cash_table,
         },
         # The eight-quarter guidance table used to sit here. It is gone: the
-        # full 43-quarter record below carries the same five columns and four
-        # more, so keeping both would mean two tables that must agree and one
-        # of them silently shorter.
-        {**delivery_table, "n": next_table_number + 5},
-        ai_capex_cycle_table(next_table_number + 6),
+        # full guided record below carries the same five columns and four more,
+        # so keeping both would mean two tables that must agree and one of them
+        # silently shorter.
+        delivery_table,
+        ai_capex_cycle_table(0),
+    ]
+    numbered = []
+    for offset, table in enumerate(tables):
+        table.pop("n", None)
+        number = next_table_number + offset
+        # The guided-record table has always carried its number last; the
+        # others first. Key order is part of the published bytes.
+        numbered.append({**table, "n": number} if table is delivery_table else {"n": number, **table})
+    tables = numbered
+
+    # ── Headline and brief ────────────────────────────────────────────────────
+    headline = ""
+    if guidance:
+        growth_raised = guidance["fy_revenue_growth_change_cn"] == "上调"
+        all_stronger = (revenue_now >= rev_high and gm_now > gm_band[1] and growth_raised)
+        headline = (
+            ("基本面全线更强——" if all_stronger else "")
+            + f"收入{revenue_position}、毛利率 {gm_now:.1f}% "
+            + ("超上限" if gm_now > gm_band[1] else "落在区间内" if gm_now >= gm_band[0] else "低于下限")
+            + f"、全年增速指引由{spaced(guidance['fy_revenue_growth_prior_short_cn'])}"
+            + (" " if guidance["fy_revenue_growth_prior_short_cn"][-1:].isascii() else "")
+            + f"{guidance['fy_revenue_growth_change_cn']}到{guidance['fy_revenue_growth_cn']}"
+        )
+        capex_ahead_now = capex_ntd_yoy > revenue_ntd_yoy
+        capex_range = guidance["fy_capex_usd_bn"]
+        headline += (
+            ("；但" if all_stronger and capex_ahead_now else "；")
+            + (f"股价当日 {consensus['post_earnings_price_change_pct']}%，" if consensus else "")
+            + (f"市场卖的是{story['market_sold']}：" if story.get("market_sold") else "")
+            + f"全年 CapEx {'上调至' if sum(capex_range) > sum(guidance['fy_capex_prior_usd_bn']) else '为'} "
+            f"{usd_range(capex_range)}，新台币口径 CapEx 同比 {signed(capex_ntd_yoy)} "
+            + ("已快于" if capex_ahead_now else "仍慢于")
+            + f"收入的 {signed(revenue_ntd_yoy)}。"
+        )
+    articles = []
+    delivered = (["收入"] if revenue_now > rev_high else []) + above_high
+    if delivered:
+        articles.append(
+            '<article><span>亮点</span>'
+            f'<b>{joined(delivered)}{"双" if len(delivered) == 2 else "三项全" if len(delivered) == 3 else ""}超指引上限</b>'
+            f'<p>US${revenue_now:.2f}B {"落区间上端" if revenue_now == rev_high else revenue_position}；'
+            f'GM {gm_now:.1f}%、OM {om_now:.1f}%'
+            + ("，均超上限" if len(above_high) == 2 else "")
+            + '。</p></article>')
+    if this_qoq > 0 and asp_qoq > 0:
+        articles.append(
+            '<article><span>结构</span>'
+            f'<b>增长约{cn_share(price_share)}来自价与 mix</b>'
+            f'<p>出货环比 {signed(shipment_qoq)}，隐含 ASP {signed(asp_qoq)}'
+            + (f'；2nm 首季即贡献 {two_nm_now}%' if two_nm_first else "")
+            + '。</p></article>')
+    if net_income_bridge is not None and consensus is not None:
+        values = net_income_bridge["values_ntd_bn"]
+        core_beat = pct_change(values[2], consensus["net_income_ntd_bn"])
+        articles.append(
+            '<article><span>存疑</span>'
+            f'<b>净利{"大 " if pct_change(values[0], consensus["net_income_ntd_bn"]) >= 5 else ""}beat 含一次性</b>'
+            f'<p>{net_income_bridge["one_off_short"]} 税前收益 NT${values[1]:.2f}B；'
+            f'核心净利较预期仅 {core_beat:+.1f}%。</p></article>')
+
+    guided = guide_history["quarters"]
+    finished_count = sum(1 for value in guide_history["actual_revenue_usd_bn"] if value is not None)
+    recent = [i for i, value in enumerate(guide_history["actual_revenue_usd_bn"])
+              if value is not None][-len(periods):]
+
+    def broken(low_key: str, actual_key: str, indices) -> bool:
+        return any(guide_history[actual_key][i] < guide_history[low_key][i] for i in indices)
+
+    finished_indices = [i for i, value in enumerate(guide_history["actual_revenue_usd_bn"]) if value is not None]
+    triples = (("guide_low_usd_bn", "actual_revenue_usd_bn"),
+               ("gross_margin_guide_low_pct", "gross_margin_actual_pct"),
+               ("operating_margin_guide_low_pct", "operating_margin_actual_pct"))
+    recent_clean = not any(broken(low, act, recent) for low, act in triples)
+    all_broken = all(broken(low, act, finished_indices) for low, act in triples)
+
+    notes = [
+        "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
+        f"Exhibit {next_ex[0]['n']} 与其后各图的阈值是本地研究设定，不是公司指引，也不构成评级或投资建议；「距阈值余量」统一为正值代表安全侧。",
+    ]
+    bands = [ex for ex in settled_ex if ex["kind"] == "range_band"]
+    margins_match = all(
+        abs(a - b) < 0.05
+        for key, published in (("gross_margin_actual_pct", "gross_margin_pct"),
+                               ("operating_margin_actual_pct", "operating_margin_pct"))
+        for a, b in zip([guide_history[key][i] for i in recent], financials[published]))
+    notes.append(
+        f"第一节的指引兑现三张图（Exhibit {'／'.join(str(ex['n']) for ex in bands)}）用的是同一批 6-K：每份法说会 6-K 同时给出下一季的收入区间、毛利率区间、营业利润率区间与假设汇率，实际值取自随后一季 6-K 的合并损益表；毛利率与营业利润率由毛利、营业利益分别除以净销售额得出"
+        + (f"，与本页 financials 的{cn_count(len(periods))}季逐季对到小数点后一位。" if margins_match else "。")
+        + "指引区间与实际值一律按公司发布的一位小数比较：区间本身只印到 0.1pp，用比它更细的精度裁定越界，等于让第二次取整决定结论 —— 本页上一版正是这样把 2024Q1 与 2025Q1 两季判成了「超出上限」，而按公司自己的口径它们恰好落在上限上。")
+    if net_income_bridge is not None and consensus is not None:
+        expectation_n = next(ex["n"] for ex in settled_ex if ex["title"].startswith("对市场预期"))
+        notes.append(
+            f"Exhibit {expectation_n} 的「核心」口径是报告净利减 {net_income_bridge['one_off_short']} "
+            "税前一次性收益的算术差，未做税务调整；核心 EPS 按核心 / 报告净利之比折算报告 EPS。"
+            "两者都不是公司定义的调整后指标，只用于回答「这个季度是不是真的超预期」。")
+    notes += [
+        "本页不接入月度营收公告，全页维持季度更新节奏。",
+        "本页只发布公司披露值、可复算的简单派生值，以及明确标注的市场预期；D 标记代表 Derived / 自算。",
+        "市场预期一律标注为「市场预期」并给出取数时点，不写卖方机构名，也不发布评级、目标价或估值。",
+        "隐含 ASP 为季度美元收入除以晶圆出货，仅用于量价拆分，不等同任何制程或封装的实际定价。",
+    ]
+    if net_income_bridge is not None:
+        notes.append(
+            f"核心净利为报告净利减 {net_income_bridge['one_off_short']} 相关税前收益的算术差，"
+            "未做税务调整，也不是公司定义的调整后利润。")
+    notes += [
+        "自由现金流按 TSMC 口径，以经营现金流减季度现金支付资本开支复算；不是利润表 non-GAAP 指标。",
+        "收入趋势采用美元口径，现金流采用新台币口径；季度现金支付 CapEx 不与全年美元 CapEx 预算相加。",
+        "制程占比的分母为晶圆收入，平台占比的分母为净收入；两组 mix 不可直接相加。",
+        "本页已知未接入：ROE、折旧、R&D / SG&A 费用线、IoT / 汽车 / DCE 平台占比、地区与客户类型组合，以及税率的指引兑现历史（尚未录入；收入、毛利率与营业利润率三项的逐季指引区间已全部录入，见第一节）。",
+        "电话会文字稿仅链接 TSMC 官方 IR 托管版本，公开仓不复制原件或逐字内容。",
     ]
 
+    audit_words = {"unaudited": "未审计", "audited": "已审计"}[latest["audit_status"]]
     return {
         "schema_version": "quarterly-dashboard/tsm-v3",
         "page": {"slug": "tsm", "language": "zh-CN"},
@@ -1206,27 +1680,19 @@ def build_payload(staging: dict) -> dict:
             "group": "semiconductor_ai",
             "accounting_standard": "TIFRS",
         },
-        "latest": latest_block(staging, period=staging["periods"][-1]),
+        "latest": latest,
         "tracker": "Watchlist Quarterly Tracker · TSM",
-        "title": "TSMC (TSM)：Q2 2026 季报仪表盘",
-        "subtitle": "截至 2026-06-30 · 发布 2026-07-16 · TIFRS · 未审计 · 收入为美元，现金流为新台币，另有注明除外",
-        "headline": (
-            "基本面全线更强——收入落指引上端、毛利率 67.7% 超上限、全年增速指引由 30%+ 上调到略高于 40%；"
-            f"但股价当日 {consensus['post_earnings_price_change_pct']}%，市场卖的是资本强度："
-            f"全年 CapEx 上调至 US$60–64B，新台币口径 CapEx 同比 {signed(capex_ntd_yoy)} 已快于收入的 {signed(revenue_ntd_yoy)}。"
-        ),
+        "title": f"TSMC (TSM)：{period} 季报仪表盘",
+        "subtitle": (f"截至 {latest['period_end']} · 发布 {latest['release_date']} · TIFRS · {audit_words} · "
+                     "收入为美元，现金流为新台币，另有注明除外"),
+        "headline": headline,
         "brief": (
-            '<h4>本季三条主线</h4><div class="takeaway-grid">'
-            '<article><span>亮点</span><b>收入与毛利率双超指引上限</b>'
-            '<p>US$40.20B 落区间上端；GM 67.7%、OM 60.3%，均超上限。</p></article>'
-            '<article><span>结构</span><b>增长约三分之二来自价与 mix</b>'
-            '<p>出货环比 +3.9%，隐含 ASP +7.8%；2nm 首季即贡献 3%。</p></article>'
-            '<article><span>存疑</span><b>净利大 beat 含一次性</b>'
-            f'<p>VIS 税前收益 NT$63.20B；核心净利较预期仅 {core_beat:+.1f}%。</p></article>'
-            '</div>'
+            f'<h4>本季{cn_count(len(articles))}条主线</h4><div class="takeaway-grid">'
+            + "".join(articles)
+            + '</div>'
         ),
         "source": source,
-        "source_url": "https://investor.tsmc.com/english/quarterly-results/2026/q2",
+        "source_url": hub["url"],
         "source_links": staging["sources"],
         "summary": {"blocks": []},
         "guidance": None,
@@ -1235,18 +1701,29 @@ def build_payload(staging: dict) -> dict:
                 "id": "settled",
                 "title": "一、上季跟踪指标兑现了吗",
                 "description": (
-                    "先看上季留的问题闭环了几条、这一季对公司自己的指引和对市场预期各兑现到什么程度，"
+                    "先看"
+                    + ("上季留的问题闭环了几条、" if closure is not None else "")
+                    + "这一季对公司自己的指引"
+                    + ("和对市场预期各" if consensus is not None else "")
+                    + "兑现到什么程度，"
                     "再谈本季。公司每季指引三个数——收入、毛利率、营业利润率——三张图各给一条完整记录，"
                     "最后拆开超额里经营与汇率各占多少。"
-                    "这条记录是 2016Q1 起的 42 个已完结季，不是最近八季：只看最近那一段，"
-                    "三条指引都像「从不被打破的底线」；整段记录里三条各自都被打破过。"
+                    f"这条记录是 {guided[0]} 起的 {finished_count} 个已完结季，不是最近{cn_count(len(periods))}季"
+                    + ("：只看最近那一段，三条指引都像「从不被打破的底线」；整段记录里三条各自都被打破过。"
+                       if recent_clean and all_broken else "。")
                 ),
                 "exhibits": settled_ex,
             },
             {
                 "id": "quarter_highlights",
                 "title": "二、本季重点",
-                "description": "收入与指引、量价拆分、毛利率拐点、资本开支上调，以及净利里的一次性成分。",
+                "description": (
+                    "收入与指引、量价拆分、"
+                    + ("毛利率拐点" if next_gm_mid is not None and next_gm_mid < gm_levels[-1] else "毛利率")
+                    + (("、资本开支上调" if capex_raised else "、资本开支") if capex_chart else "")
+                    + ("，以及净利里的一次性成分" if bridge_chart else "")
+                    + "。"
+                ),
                 "exhibits": highlight_ex,
             },
             {
@@ -1263,24 +1740,81 @@ def build_payload(staging: dict) -> dict:
             },
         ],
         "tables": tables,
-        "notes": [
-            "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
-            f"Exhibit {next_ex[0]['n']} 与其后各图的阈值是本地研究设定，不是公司指引，也不构成评级或投资建议；「距阈值余量」统一为正值代表安全侧。",
-            f"第一节的指引兑现三张图（Exhibit {settled_ex[3]['n']}／{settled_ex[4]['n']}／{settled_ex[5]['n']}）用的是同一批 6-K：每份法说会 6-K 同时给出下一季的收入区间、毛利率区间、营业利润率区间与假设汇率，实际值取自随后一季 6-K 的合并损益表；毛利率与营业利润率由毛利、营业利益分别除以净销售额得出，与本页 financials 的八季逐季对到小数点后一位。指引区间与实际值一律按公司发布的一位小数比较：区间本身只印到 0.1pp，用比它更细的精度裁定越界，等于让第二次取整决定结论 —— 本页上一版正是这样把 2024Q1 与 2025Q1 两季判成了「超出上限」，而按公司自己的口径它们恰好落在上限上。",
-            f"Exhibit {settled_ex[2]['n']} 的「核心」口径是报告净利减 VIS 税前一次性收益的算术差，未做税务调整；核心 EPS 按核心 / 报告净利之比折算报告 EPS。两者都不是公司定义的调整后指标，只用于回答「这个季度是不是真的超预期」。",
-            "本页不接入月度营收公告，全页维持季度更新节奏。",
-            "本页只发布公司披露值、可复算的简单派生值，以及明确标注的市场预期；D 标记代表 Derived / 自算。",
-            "市场预期一律标注为「市场预期」并给出取数时点，不写卖方机构名，也不发布评级、目标价或估值。",
-            "隐含 ASP 为季度美元收入除以晶圆出货，仅用于量价拆分，不等同任何制程或封装的实际定价。",
-            "核心净利为报告净利减 VIS 相关税前收益的算术差，未做税务调整，也不是公司定义的调整后利润。",
-            "自由现金流按 TSMC 口径，以经营现金流减季度现金支付资本开支复算；不是利润表 non-GAAP 指标。",
-            "收入趋势采用美元口径，现金流采用新台币口径；季度现金支付 CapEx 不与全年美元 CapEx 预算相加。",
-            "制程占比的分母为晶圆收入，平台占比的分母为净收入；两组 mix 不可直接相加。",
-            "本页已知未接入：ROE、折旧、R&D / SG&A 费用线、IoT / 汽车 / DCE 平台占比、地区与客户类型组合，以及收入以外的指引兑现历史（毛利率 / 营业利润率 / 税率的逐季指引区间尚未录入）。",
-            "电话会文字稿仅链接 TSMC 官方 IR 托管版本，公开仓不复制原件或逐字内容。",
-        ],
+        "notes": notes,
         "footer": "TSM quarterly results · 数据来自 TSMC 公开披露与透明自算 · 仅供研究，不构成投资建议",
     }
+
+
+def financials_fx(staging: dict) -> float:
+    """The quarter's realised USD/NTD when no guidance block is stamped for it."""
+    return staging["long_history"]["financials"]["usd_ntd_actual"][-1]
+
+
+def guidance_rows(guidance: dict, financials: dict, period: str) -> list[list[str]]:
+    """This call's guidance table, row by row from the stamped block."""
+    reported, prior, upcoming = guidance["reported"], guidance["prior_guide"], guidance["next_guide"]
+    fiscal = guidance["fiscal_year"]
+    next_mid = sum(upcoming["revenue_usd_bn"]) / 2
+    rows = [[
+        "收入（美元）",
+        f"US${prior['revenue_usd_bn'][0]:.1f}–{prior['revenue_usd_bn'][1]:.1f}B",
+        f"US${reported['revenue_usd_bn']:.2f}B",
+        delivery_words(reported["revenue_usd_bn"], *prior["revenue_usd_bn"], unit="B"),
+        f"US${upcoming['revenue_usd_bn'][0]:.1f}–{upcoming['revenue_usd_bn'][1]:.1f}B",
+        f"中值 US${next_mid:.1f}B；环比 {signed(pct_change(next_mid, reported['revenue_usd_bn']))} D",
+    ]]
+    for name, key in (("毛利率", "gross_margin_pct"), ("营业利润率", "operating_margin_pct")):
+        rows.append([
+            name,
+            f"{prior[key][0]:.1f}–{prior[key][1]:.1f}%",
+            f"{reported[key]:.1f}%",
+            delivery_words(reported[key], *prior[key]),
+            f"{upcoming[key][0]:.1f}–{upcoming[key][1]:.1f}%",
+            f"中值环比 {sum(upcoming[key]) / 2 - reported[key]:+.1f}pp D",
+        ])
+    against_assumption = pct_change(reported["usd_ntd"], prior["usd_ntd"])
+    next_against = pct_change(upcoming["usd_ntd"], reported["usd_ntd"])
+    rows.append([
+        "USD / NTD",
+        f"{prior['usd_ntd']}",
+        f"{reported['usd_ntd']:.2f}",
+        f"较假设{'低' if against_assumption < 0 else '高'} {abs(against_assumption):.1f}% D",
+        f"{upcoming['usd_ntd']:.1f}",
+        f"较 {quarter_word(period)} 实际{'高' if next_against > 0 else '低'} {abs(next_against):.1f}% D",
+    ])
+    capex, capex_prior = guidance["fy_capex_usd_bn"], guidance["fy_capex_prior_usd_bn"]
+    capex_move = sum(capex) / 2 - sum(capex_prior) / 2
+    rows += [
+        [f"FY{fiscal} 美元收入增速", guidance["fy_revenue_growth_prior_cn"], "—",
+         guidance["fy_revenue_growth_change_cn"], guidance["fy_revenue_growth_cn"], "公司年度 outlook"],
+        [f"FY{fiscal} CapEx",
+         f"{usd_range(capex_prior)}；{guidance['fy_capex_prior_positioning_cn']}", "—",
+         "上调" if capex_move > 0 else "下调" if capex_move < 0 else "重申",
+         usd_range(capex),
+         f"中值较先前高端锚点 {'+' if sum(capex) / 2 >= capex_prior[1] else '−'}"
+         f"US${abs(sum(capex) / 2 - capex_prior[1]):.0f}B D"],
+    ]
+    # The two dilution lines exist only in quarters whose call quantified them.
+    n2 = guidance.get("n2_gross_margin_dilution_pp")
+    if n2:
+        rows.append([f"{guidance['n2_gross_margin_dilution_half']} N2 毛利率稀释", "—", "—", "—",
+                     f"{n2[0]}–{n2[1]}pp", "管理层量化"])
+    early = guidance.get("overseas_fab_gross_margin_dilution_early_pp")
+    late = guidance.get("overseas_fab_gross_margin_dilution_latter_pp")
+    if early and late:
+        rows.append(["海外厂毛利率稀释", "—", "—", "—",
+                     f"初期 {early[0]}–{early[1]}pp", f"后期扩大至 {late[0]}–{late[1]}pp"])
+    floor = guidance["long_term_gross_margin_floor_pct"]
+    gm_now = financials["gross_margin_pct"][-1]
+    rows.append([
+        "长期 through-cycle 毛利率",
+        f"{floor}% 及以上",
+        f"{gm_now:.1f}%",
+        f"{'高出' if gm_now >= floor else '低于'} {abs(gm_now - floor):.1f}pp D",
+        f"{floor}% 及以上",
+        guidance["long_term_gross_margin_change_cn"],
+    ])
+    return rows
 
 
 def main() -> int:
