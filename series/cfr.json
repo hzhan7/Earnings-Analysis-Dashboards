@@ -23,18 +23,75 @@
  },
  "latest": {
   "disclosed_period_label": "Q2 2026",
-  "fiscal_label": "FY27 Q1",
   "period_end": "2026-06-30",
   "release_date": "2026-07-15",
   "analysis_date": "2026-09-17",
   "audit_status": "unaudited",
-  "half_label": "FY26H2",
-  "half_period": "2025-10/2026-03",
-  "half_release_date": "2026-05-22",
   "next_release": {
    "label": "FY27 H1 interim results",
    "date": "2026-11-13"
-  }
+  },
+  "_note": "next_release 是下一份带利润的业绩公告（中期或全年）；页面上「下一次利润数据」与等半年数的阈值都指向它。第一、三财季的销售公告不放在这里。"
+ },
+ "_checks": {
+  "period": "Q2 2026",
+  "fiscal_quarter": "FY27Q1",
+  "period_end": "2026-06-30",
+  "release_date": "2026-07-15",
+  "sales_eur_m": 6329,
+  "prior_year_sales_eur_m": 5412,
+  "sales_cer_pct": 20,
+  "sales_actual_pct": 17,
+  "regions_eur_m": {
+   "europe": 1429,
+   "asia_pacific": 2068,
+   "americas": 1670,
+   "japan": 632,
+   "middle_east_africa": 530
+  },
+  "regions_cer_pct": {
+   "europe": 11,
+   "asia_pacific": 21,
+   "americas": 27,
+   "japan": 36,
+   "middle_east_africa": 3
+  },
+  "regions_actual_pct": {
+   "europe": 10,
+   "asia_pacific": 19,
+   "americas": 25,
+   "japan": 20,
+   "middle_east_africa": 1
+  },
+  "channels_eur_m": {
+   "retail": 4504,
+   "online_retail": 373,
+   "wholesale": 1452
+  },
+  "channels_cer_pct": {
+   "retail": 24,
+   "online_retail": 18,
+   "wholesale": 9
+  },
+  "areas_eur_m": {
+   "jewellery_maisons": 4732,
+   "specialist_watchmakers": 873,
+   "other": 724
+  },
+  "areas_cer_pct": {
+   "jewellery_maisons": 24,
+   "specialist_watchmakers": 8,
+   "other": 9
+  },
+  "retail_share_pct_printed": 71,
+  "jewellery_streak_quote": "marking a seventh consecutive quarter of double-digit growth",
+  "jewellery_streak_count": 7,
+  "net_cash_eur_bn": 9.1,
+  "net_cash_prior_year_eur_bn": 7.4,
+  "avolta_inflow_eur_bn": 0.4,
+  "next_results_date": "2026-11-13",
+  "source": "Richemont「Ad hoc announcement pursuant to Art. 53 LR」，2026-07-15，FY27 第一季度销售公告（ad-hoc-announcement-pursuant-to-art-53-lr-fy27-q1-sales-en.pdf）：首页 April-June 表（By region / By distribution channel / By business area / Total，2026 与 2025 两列 €m 及 constant rates / actual rates 两列增速）；第 2 页正文「marking a seventh consecutive quarter of double-digit growth」「The Group’s net cash position at 30 June 2026 stood at € 9.1 billion (2025: € 7.4 billion), including a € 0.4 billion cash inflow from the disposal of the stake in Avolta」「In the Middle East & Africa region, sales grew by 3%, as robust local demand more than offset the significant drop in tourist spending」「sales rose by double digits in China, Hong Kong and Macau combined」「Retail sales rose by 24% … and accounted for 71% of Group sales」；第 3 页 Corporate calendar「The interim results … will be announced on Friday 13 November 2026」。",
+  "checked_on": "2026-09-19"
  },
  "documents": [
   {
@@ -8172,22 +8229,32 @@
    "inventories": 9715
   }
  ],
- "company_claims": [
-  {
-   "key": "jewellery_streak",
-   "doc": "ad-hoc-announcement-pursuant-to-art-53-lr-fy27-q1-sales-en",
-   "date": "2026-07-15",
-   "quote": "posted a remarkable combined 24% rise in sales, marking a seventh consecutive quarter of double-digit growth",
-   "count": 7,
-   "line": "jewellery_maisons",
-   "threshold_pct": 10
-  }
- ],
+ "company_claims": {
+  "period": "Q2 2026",
+  "items": [
+   {
+    "key": "jewellery_streak",
+    "doc": "ad-hoc-announcement-pursuant-to-art-53-lr-fy27-q1-sales-en",
+    "date": "2026-07-15",
+    "quote": "posted a remarkable combined 24% rise in sales, marking a seventh consecutive quarter of double-digit growth",
+    "count": 7,
+    "line": "jewellery_maisons",
+    "threshold_pct": 10
+   }
+  ]
+ },
  "net_cash_quarter_end": {
+  "period": "Q2 2026",
   "date": "2026-06-30",
   "eur_bn": 9.1,
   "prior_year_eur_bn": 7.4,
-  "includes_avolta_disposal_eur_bn": 0.4,
+  "includes": [
+   {
+    "what": "处置 Avolta 股权流入",
+    "eur_bn": 0.4
+   }
+  ],
+  "dividend_note": "FY26 的股息（每股 CHF 4.30，含 CHF 1.00 特别股息）在 2026 年 9 月支付，不在这个数里。",
   "doc": "ad-hoc-announcement-pursuant-to-art-53-lr-fy27-q1-sales-en",
   "quote": "The Group’s net cash position at 30 June 2026 stood at € 9.1 billion (2025: € 7.4 billion), including a € 0.4 billion cash inflow from the disposal of the stake in Avolta."
  },
@@ -8196,9 +8263,7 @@
   "held_for_sale_at": "2026-03-31",
   "write_down_eur_m": 59,
   "expected_close": "summer 2026",
-  "annual_report_quote": "The transaction is expected to conclude in summer 2026, subject to certain conditions precedent.",
-  "q1_fy27_maison_list": "A. Lange & Söhne, IWC Schaffhausen, Jaeger-LeCoultre, Panerai, Piaget, Roger Dubuis and Vacheron Constantin",
-  "q1_fy27_mentions": 0
+  "annual_report_quote": "The transaction is expected to conclude in summer 2026, subject to certain conditions precedent."
  },
  "statements": [
   {
@@ -8323,51 +8388,56 @@
   ],
   "refuter": "a third agent searched the 45 announcements and 20 call transcripts for any numeric target; the transcripts carry tax-rate ranges, capex as a share of sales and the two margin ranges above, none of them in an announcement"
  },
- "thresholds": [
-  {
-   "metric": "集团恒定汇率增速",
-   "direction": "up",
-   "threshold": 8.0,
-   "unit": "pct",
-   "current_key": "cer_total"
-  },
-  {
-   "metric": "腕表恒定汇率增速",
-   "direction": "up",
-   "threshold": -3.0,
-   "unit": "pct",
-   "current_key": "cer_watchmakers"
-  },
-  {
-   "metric": "批发与特许权收入恒定汇率增速",
-   "direction": "up",
-   "threshold": 5.0,
-   "unit": "pct",
-   "current_key": "cer_wholesale"
-  },
-  {
-   "metric": "珠宝两年恒定汇率年化",
-   "direction": "up",
-   "threshold": 15.0,
-   "unit": "pct",
-   "current_key": "jewellery_two_year"
-  },
-  {
-   "metric": "半年毛利率",
-   "direction": "up",
-   "threshold": 63.0,
-   "unit": "pct",
-   "current_key": "half_gross_margin"
-  },
-  {
-   "metric": "季末净现金",
-   "direction": "up",
-   "threshold": 6.8,
-   "unit": "eur_bn",
-   "current_key": "net_cash"
-  }
- ],
+ "thresholds": {
+  "period": "Q2 2026",
+  "_note": "本地研究设定的下季阈值，不是公司指引。当前值由页面按 current_key 从序列现算（恒定汇率增速读本季，珠宝两年年化读上年同季与本季，半年毛利率读最新半年，净现金读 net_cash_quarter_end）；换季时按新一季的本地分析改阈值并改戳。",
+  "entries": [
+   {
+    "metric": "集团恒定汇率增速",
+    "direction": "up",
+    "threshold": 8.0,
+    "unit": "pct",
+    "current_key": "cer_total"
+   },
+   {
+    "metric": "腕表恒定汇率增速",
+    "direction": "up",
+    "threshold": -3.0,
+    "unit": "pct",
+    "current_key": "cer_watchmakers"
+   },
+   {
+    "metric": "批发与特许权收入恒定汇率增速",
+    "direction": "up",
+    "threshold": 5.0,
+    "unit": "pct",
+    "current_key": "cer_wholesale"
+   },
+   {
+    "metric": "珠宝两年恒定汇率年化",
+    "direction": "up",
+    "threshold": 15.0,
+    "unit": "pct",
+    "current_key": "jewellery_two_year"
+   },
+   {
+    "metric": "半年毛利率",
+    "direction": "up",
+    "threshold": 63.0,
+    "unit": "pct",
+    "current_key": "half_gross_margin"
+   },
+   {
+    "metric": "季末净现金",
+    "direction": "up",
+    "threshold": 6.8,
+    "unit": "eur_bn",
+    "current_key": "net_cash"
+   }
+  ]
+ },
  "prior_thresholds": {
+  "period": "Q2 2026",
   "set_on": "2026-05-22",
   "items": [
    {
@@ -8445,5 +8515,33 @@
    "label": "Richemont 业绩、报告与演示材料（历年公告）",
    "url": "https://www.richemont.com/investors/results-reports-presentations/"
   }
- ]
+ ],
+ "quarter_story": {
+  "period": "Q2 2026",
+  "_what": "只属于本季公告的叙述：公告对某个地区的解释、中国的数字、Baume & Mercier 在本季公告里的状态。{next_date} / {next_month} 由页面按 latest.next_release 填。下一季换成那一季公告的内容，没有就删掉对应的键或整块。",
+  "doc": "ad-hoc-announcement-pursuant-to-art-53-lr-fy27-q1-sales-en",
+  "region_explanation": {
+   "region": "middle_east_africa",
+   "text": "公告的解释是本地需求抵消了游客消费的大幅下降",
+   "quote": "as robust local demand more than offset the significant drop in tourist spending owing to the conflict in the region"
+  },
+  "china": "中国的数字在季度公告正文里，口径换过：2022 年 7 月那份给的是中国大陆单独一季 −37%，近两年给的是中国大陆、香港与澳门三地合计（2026 年 1 月那份是 +2%），本季只写「double digits」，没有数字。",
+  "watchmaker_maisons_listed": "A. Lange & Söhne, IWC Schaffhausen, Jaeger-LeCoultre, Panerai, Piaget, Roger Dubuis and Vacheron Constantin",
+  "baume_mercier_mentions": 0,
+  "baume_mercier_brief": "Baume &amp; Mercier 的出售预计 2026 年夏天完成；它出表之后腕表的同比怎么列示，要看 {next_month}的中期公告。",
+  "baume_mercier_note": "本季公告列出的腕表 Maison 已经没有 Baume & Mercier，全文也没有提到它；FY26 年报附注说这笔出售预计在 2026 年夏天完成。它何时出表、比较期如何列示，要看 {next_date} 的中期公告。"
+ },
+ "half_story": {
+  "period": "FY26H2",
+  "_what": "只属于本半年（FY26 下半年，随 FY26 全年业绩公告发布）的叙述。{announced} 等由页面按 baume_mercier 填。换到下一个半年时按新一期公告重写或删掉。",
+  "margins": "FY26 全年业绩公告把毛利率下降归于不利汇率、原材料成本上升，以及程度较轻的美国关税；CFO 在电话会上说生产成本上升的三分之二来自原材料，主要是黄金。",
+  "watchmakers": "腕表分部在 FY26 仍含 Baume &amp; Mercier：公司 {announced} 宣布出售，{held_for_sale_at} 列为持有待售并减记 €{write_down_eur_m}M。"
+ },
+ "transcription": {
+  "double_read_documents": 45,
+  "cells_agreed": 6496,
+  "cells_disagreed": 4,
+  "_what": "按双人盲读转录过的公告份数（documents 的前 N 份）。换季新加的公告若只单人转录，这个数不动，注释会写明范围。"
+ },
+ "restatement_census_documents": 45
 }

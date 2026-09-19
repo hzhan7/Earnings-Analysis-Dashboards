@@ -7,10 +7,21 @@ four records are only worth putting beside each other if each leg is read on
 its own basis: a pro-forma guidance scored against a group actual, or a fiscal
 fourth quarter's EPS derived by subtraction, would produce a plausible number
 and a wrong finding.
+
+The page is rolled by editing `series/pm.json` alone (CLAUDE.md §9), so nothing
+here pins a count the next quarter changes: tallies are recomputed from the
+series and looked for on the page, the sentences that claim something about
+the whole record are made true and then false (`PmRollTest`), and the page's
+quarter is held to a separate reading of the release (`PmChecksTest`). What is
+pinned is closed history -- the reported-basis quarterly era, the pre-2009
+releases, 2016 -- which no roll can reopen.
 """
 
 from __future__ import annotations
 
+import copy
+import datetime
+import hashlib
 import json
 import re
 import sys
@@ -21,8 +32,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import pm  # noqa: E402
-from build.all import ENTRIES, build_all, roster_payload  # noqa: E402
-from build.board import headroom  # noqa: E402
+from build.all import ENTRIES, GROUPS, build_all, roster_payload  # noqa: E402
+from build.board import cn_count, headroom  # noqa: E402
 
 
 def js_payload(path: Path, marker: str) -> dict:
@@ -31,11 +42,45 @@ def js_payload(path: Path, marker: str) -> dict:
     return json.loads(body)
 
 
+def load() -> dict:
+    return json.loads(pm.STAGING_PATH.read_text(encoding="utf-8"))
+
+
+def text_of(payload: dict) -> str:
+    return json.dumps(payload, ensure_ascii=False)
+
+
+def composed(payload: dict) -> str:
+    """The prose the builder composes; the audit tables are left out."""
+    return text_of({key: value for key, value in payload.items() if key != "tables"})
+
+
+def exhibits_of(payload: dict) -> dict:
+    return {ex["ref"]: ex for section in payload["sections"] for ex in section["exhibits"] if "ref" in ex}
+
+
+def quarter_label(year: int, number: int) -> str:
+    return f"{year}Q{number}"
+
+
+def next_quarter(label: str) -> str:
+    year, number = pm.yq(label)
+    return quarter_label(year + 1, 1) if number == 4 else quarter_label(year, number + 1)
+
+
+def released_record(staging: dict) -> dict:
+    """The annual record this quarter's release updated (a Q4 release opens the next year)."""
+    released = staging["latest"]["release_date"]
+    return next(r for r in staging["annual_guidance"]["records"]
+                if r["vintages"] and r["vintages"][-1]["release_date"] == released)
+
+
 class PmDashboardTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.staging = json.loads(pm.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.staging = load()
         cls.payload = pm.build_payload(cls.staging)
+        cls.exhibits = exhibits_of(cls.payload)
 
     # ── the eight-quarter window ────────────────────────────────────────────
     def test_the_window_is_eight_quarters_and_complete(self) -> None:
@@ -46,21 +91,19 @@ class PmDashboardTest(unittest.TestCase):
             self.assertTrue(all(v is not None for v in values), name)
 
     def test_quarters_are_contiguous_calendar_labels(self) -> None:
-        periods = self.staging["periods"]
-        for earlier, later in zip(periods, periods[1:]):
-            y1, q1 = int(earlier[:4]), int(earlier[5])
-            y2, q2 = int(later[:4]), int(later[5])
-            self.assertEqual((y2, q2), (y1 + 1, 1) if q1 == 4 else (y1, q1 + 1))
+        for periods in (self.staging["periods"], self.staging["long"]["periods"]):
+            for earlier, later in zip(periods, periods[1:]):
+                self.assertEqual(next_quarter(earlier), later)
+        for period, label in zip(self.staging["long"]["periods"], self.staging["long"]["period_labels"]):
+            self.assertEqual(pm.display(period), label)
 
     def test_the_window_is_the_tail_of_the_long_series(self) -> None:
         """The two windows must not disagree about an overlapping quarter."""
         long = self.staging["long"]
         self.assertEqual(long["periods"][-8:], self.staging["periods"])
-        for offset, quarter in enumerate(self.staging["periods"]):
-            index = long["periods"].index(quarter)
-            self.assertAlmostEqual(long["net_revenues_usd_m"][index],
-                                   self.staging["financials"]["net_revenues_usd_m"][offset],
-                                   places=3, msg=quarter)
+        for key in ("net_revenues_usd_m", "gross_profit_usd_m", "operating_income_usd_m",
+                    "gross_margin_pct", "operating_margin_pct"):
+            self.assertEqual(long[key][-8:], self.staging["financials"][key], key)
 
     def test_margins_are_the_ratio_of_the_two_filed_lines(self) -> None:
         fin = self.staging["financials"]
@@ -71,31 +114,53 @@ class PmDashboardTest(unittest.TestCase):
             self.assertAlmostEqual(fin["operating_income_usd_m"][index] / revenue * 100,
                                    fin["operating_margin_pct"][index], places=2, msg=period)
 
+    def test_the_two_copies_of_each_guided_quarters_eps_agree(self) -> None:
+        """A settled quarterly guidance carries its actual, and the eight-quarter
+        table carries the same quarter's EPS: two typed copies of one number."""
+        fin = self.staging["financials"]
+        for row in self.staging["quarterly_guidance"]:
+            if row["guided_period"] not in self.staging["periods"] or row["basis"] == "pro_forma_adjusted":
+                continue
+            index = self.staging["periods"].index(row["guided_period"])
+            key = "reported_diluted_eps_usd" if row["basis"] == "reported" else "adjusted_diluted_eps_usd"
+            self.assertEqual(row["actual_eps"], fin[key][index], row["guided_period"])
+
     # ── the fiscal fourth quarter, which has no 10-Q ────────────────────────
     def test_the_four_quarters_of_a_year_sum_to_the_filed_year(self) -> None:
         """Q4 here is the filed year minus the filed nine months, so this is the
-        identity that has to hold for the derivation to be worth publishing."""
+        identity that has to hold for the derivation to be worth publishing.
+        Gross profit is on one basis per year: 2024 on the old one (10-K,
+        24,549), 2025 on the one PMI adopted in 2026 (the recast 8-K of
+        2026-03-13, 27,304) -- 2025Q3 and Q4 used to be the old basis while Q1
+        and Q2 were the new one."""
         long = self.staging["long"]
-        by_period = dict(zip(long["periods"], long["net_revenues_usd_m"]))
-        income = dict(zip(long["periods"], long["operating_income_usd_m"]))
-        # Filed annual totals, read from companyfacts at build time.
-        for year, revenue, operating in ((2024, 37878.0, 13402.0), (2025, 40648.0, 14892.0)):
+        by = {key: dict(zip(long["periods"], long[key]))
+              for key in ("net_revenues_usd_m", "operating_income_usd_m", "gross_profit_usd_m")}
+        filed = {2024: (37878.0, 13402.0, 24549.0), 2025: (40648.0, 14892.0, 27304.0)}
+        for year, totals in filed.items():
             quarters = [f"{year}Q{q}" for q in (1, 2, 3, 4)]
-            self.assertAlmostEqual(sum(by_period[q] for q in quarters), revenue,
-                                   delta=0.01, msg=str(year))
-            self.assertAlmostEqual(sum(income[q] for q in quarters), operating,
-                                   delta=0.01, msg=str(year))
+            for key, total in zip(("net_revenues_usd_m", "operating_income_usd_m", "gross_profit_usd_m"), totals):
+                self.assertAlmostEqual(sum(by[key][q] for q in quarters), total, delta=0.01,
+                                       msg=f"{year} {key}")
+        annual = self.staging["annual"]
+        for year, revenue in zip(annual["years"], annual["net_revenues_usd_m"]):
+            quarters = [f"{year}Q{q}" for q in (1, 2, 3, 4)]
+            self.assertAlmostEqual(sum(by["net_revenues_usd_m"][q] for q in quarters), revenue,
+                                   delta=0.5, msg=str(year))
+        self.assertIn("净收入四个季度相加等于全年，逐年核对无差", self.exhibits["EX_REV"]["note"])
 
     def test_a_fourth_quarter_eps_is_not_a_subtraction(self) -> None:
         """EPS is not additive, so a Q4 derived by subtraction would be wrong in
         a way no other identity on this page would notice. Q4 2024's reported
         EPS is negative and its adjusted EPS positive -- a subtraction cannot
-        produce that pair."""
+        produce that pair. Checked while that quarter is in the window."""
         periods = self.staging["periods"]
         fin = self.staging["financials"]
-        index = periods.index("2024Q4")
-        self.assertLess(fin["reported_diluted_eps_usd"][index], 0)
-        self.assertGreater(fin["adjusted_diluted_eps_usd"][index], 1.0)
+        if "2024Q4" in periods:
+            index = periods.index("2024Q4")
+            self.assertLess(fin["reported_diluted_eps_usd"][index], 0)
+            self.assertGreater(fin["adjusted_diluted_eps_usd"][index], 1.0)
+        self.assertIn("第四季读自当期新闻稿的 EPS 调节表", " ".join(self.payload["notes"]))
 
     # ── the annual guidance record ──────────────────────────────────────────
     def test_every_annual_vintage_belongs_to_the_year_it_was_filed_in(self) -> None:
@@ -113,47 +178,53 @@ class PmDashboardTest(unittest.TestCase):
         error rather than a miss."""
         years = [r["year"] for r in self.staging["annual_guidance"]["records"]]
         self.assertEqual(min(years), 2009)
-        notes = " ".join(self.payload["notes"])
-        self.assertIn("FY2008 不在记录内", notes)
+        self.assertEqual(years, list(range(2009, years[-1] + 1)))
+        self.assertIn("FY2008 不在记录内", " ".join(self.payload["notes"]))
 
     def test_the_floor_years_are_out_of_the_band_chart_and_in_the_table(self) -> None:
         """A floor has no upper bound; drawing it as a zero-width range would
         invent a ceiling the company never published."""
         banded, floors = pm.annual_records(self.staging)
         self.assertEqual([r["year"] for r in floors], [2019])
-        band = self.payload["sections"][0]["exhibits"][0]
+        band = self.exhibits["EX_FY_BAND"]
         self.assertNotIn("FY2019", band["xlabels"])
         self.assertEqual(band["break_label"], "2019 年只给下限，不在本图")
+        self.assertIn("横轴从 FY2018 跳到 FY2020", band["note"])
         table = next(t for t in self.payload["tables"] if "只给下限" in t["title"])
         self.assertIn("FY2019", [row[0] for row in table["rows"]])
         self.assertTrue(any(row[2].startswith("至少") for row in table["rows"]))
 
-    def test_the_reported_annual_record_is_two_sided(self) -> None:
-        """This is the page's headline and the only two-sided delivery record on
-        the site, so it is pinned rather than left to a recount."""
+    def test_the_reported_annual_record_is_two_sided_and_the_page_counts_it(self) -> None:
+        """The page's headline: a record that misses on both sides."""
         banded, _ = pm.annual_records(self.staging)
         rows = [(r["actual_reported_eps"], r["last_guided"]["low"], r["last_guided"]["high"])
                 for r in banded]
-        self.assertEqual(pm.tally(rows), (16, 7, 4, 5))
+        n, above, inside, below = pm.tally(rows)
+        self.assertGreater(above, 0)
+        self.assertGreater(below, 0)
+        self.assertIn(f"{n} 个完整年度里 {above} 年高于上限、{inside} 年落在区间内、{below} 年跌破下限",
+                      self.payload["brief"])
+        self.assertIn(f"{n} 个已完结年里 {above} 年超出上限、{inside} 年落在区间内、{below} 年跌破下限",
+                      self.exhibits["EX_FY_BAND"]["title"])
+        self.assertIn(f"报告口径那条自 {banded[0]['year']} 年起有 {n} 个完整年度",
+                      self.exhibits["EX_ADJ_BAND"]["note"])
 
     def test_the_adjusted_annual_record_is_the_same_years_read_differently(self) -> None:
-        hist = self.staging["annual_guidance"]
-        actuals = hist["annual_adjusted_eps_actual"]
-        rows = []
-        for record in hist["records"]:
-            vintages = [v for v in record["vintages"] if v.get("adj_low") is not None]
-            if not vintages:
-                continue
-            last = vintages[-1]
-            rows.append((actuals.get(str(record["year"])), last["adj_low"], last["adj_high"]))
-        self.assertEqual(pm.tally(rows), (6, 4, 1, 1))
+        rows = [(actual, low, high) for _, low, high, actual in pm.adjusted_rows(self.staging)]
+        n, above, inside, below = pm.tally(rows)
+        banded, _ = pm.annual_records(self.staging)
+        self.assertLess(n, len([r for r in banded if r["actual_reported_eps"] is not None]))
+        title = self.exhibits["EX_ADJ_BAND"]["title"]
+        if above and below:
+            self.assertIn(f"{n} 个已完结年里 {above} 年超出上限、{inside} 年落在区间内、{below} 年跌破下限", title)
+        else:
+            self.assertIn(f"{n} 个已完结年", title)
 
     def test_the_worst_reported_year_is_the_one_the_exclusion_clause_explains(self) -> None:
         """FY2024: reported EPS US$4.52 against a final guidance of
         US$6.20-6.26, and the adjusted line for the same year cleared its
         range. If those two ever stop disagreeing the page's argument is gone."""
-        record = next(r for r in self.staging["annual_guidance"]["records"]
-                      if r["year"] == 2024)
+        record = next(r for r in self.staging["annual_guidance"]["records"] if r["year"] == 2024)
         self.assertEqual(record["actual_reported_eps"], 4.52)
         self.assertLess(record["actual_reported_eps"], record["last_guided"]["low"])
         adjusted = [v for v in record["vintages"] if v.get("adj_low") is not None][-1]
@@ -161,10 +232,37 @@ class PmDashboardTest(unittest.TestCase):
         self.assertGreater(actual, adjusted["adj_high"])
 
     def test_the_2020_withdrawal_is_recorded_rather_than_smoothed(self) -> None:
-        record = next(r for r in self.staging["annual_guidance"]["records"]
-                      if r["year"] == 2020)
+        record = next(r for r in self.staging["annual_guidance"]["records"] if r["year"] == 2020)
         self.assertEqual(record["withdrawn"], ["2020-04-21"])
-        self.assertIn("撤回", " ".join(self.payload["notes"]))
+        withdrawn = [d for r in self.staging["annual_guidance"]["records"] for d in r["withdrawn"]]
+        notes = " ".join(self.payload["notes"])
+        self.assertIn("撤回", notes)
+        self.assertEqual("这是记录里唯一一次撤回" in notes, len(withdrawn) == 1)
+
+    def test_the_exclusion_clause_is_counted_release_by_release(self) -> None:
+        """The page said 54 of 56, with 2008-10-22 and 2020-04-21 as the
+        exceptions. Read one by one, the three-part clause first appears on
+        2009-04-23: the four releases before it name acquisitions at most, and
+        the 2020-04-21 release -- which withdrew the full-year forecast -- carries
+        the clause on the forecasts it gave instead. The census covers
+        2008-04 to 2022-02, after which the clause gave way to an itemised
+        table, so it is closed history and pinned."""
+        hist = self.staging["annual_guidance"]
+        census = hist["exclusion_clause_census"]
+        releases, without = census["releases"], census["without_clause"]
+        self.assertEqual(releases, sorted(set(releases)))
+        self.assertEqual((len(releases), tuple(without)), (56, pm.PRE_CLAUSE))
+        self.assertNotIn("2020-04-21", without)
+        # every full-year release inside the census window is in the census
+        vintages = {v["release_date"] for r in hist["records"] for v in r["vintages"]
+                    if v["release_date"] <= releases[-1]}
+        self.assertTrue(vintages <= set(releases))
+        counted = f"{len(releases)} 份新闻稿里有 {len(releases) - len(without)} 份写明该预测不含"
+        for text in (self.exhibits["EX_FY_BAND"]["note"], self.payload["notes"][5]):
+            self.assertIn(counted, text)
+            self.assertIn("2020-04-21 那份撤回了全年预测", text)
+            self.assertIn("点名排除的最多只有并购", text)
+            self.assertNotIn("未预料到的", text)
 
     # ── the quarterly guidance record ───────────────────────────────────────
     def test_no_quarter_is_scored_across_a_basis_change(self) -> None:
@@ -173,8 +271,7 @@ class PmDashboardTest(unittest.TestCase):
         chart."""
         for row in self.staging["quarterly_guidance"]:
             self.assertIn(row["basis"], {"reported", "adjusted", "pro_forma_adjusted"})
-        pro_forma = [r for r in self.staging["quarterly_guidance"]
-                     if r["basis"] == "pro_forma_adjusted"]
+        pro_forma = [r for r in self.staging["quarterly_guidance"] if r["basis"] == "pro_forma_adjusted"]
         self.assertEqual([r["guided_period"] for r in pro_forma], ["2022Q2", "2022Q3"])
         for row in pro_forma:
             # The group adjusted EPS for those quarters was 1.32 and 1.53; the
@@ -187,66 +284,90 @@ class PmDashboardTest(unittest.TestCase):
         for row in points:
             self.assertEqual(row["low"], row["high"])
 
-    def test_the_fourth_quarter_is_never_guided_except_once(self) -> None:
+    def test_the_fourth_quarter_gap_is_stated_while_it_holds(self) -> None:
         """A record that silently skips every Q4 measures its own filter, so the
-        gap is asserted here and stated on the chart."""
+        gap is stated on the chart -- and only while the record says so."""
         guided = {r["guided_period"] for r in self.staging["quarterly_guidance"]}
-        fourth = {p for p in guided if p.endswith("Q4")}
-        self.assertEqual(fourth, {"2020Q4"})
-        for year in range(2021, 2026):
-            self.assertNotIn(f"{year}Q4", guided)
-        band = next(ex for section in self.payload["sections"]
-                    for ex in section["exhibits"] if ex.get("ref") == "EX_Q_BAND")
-        self.assertIn("从不指引第四季", band["note"])
+        fourth = sorted(p for p in guided if p.endswith("Q4"))
+        note = self.exhibits["EX_Q_BAND"]["note"]
+        self.assertEqual("从不指引第四季" in note, len(fourth) == 1)
+        if len(fourth) == 1:
+            self.assertIn(f"唯一的例外是 {pm.cn_quarter(fourth[0], '季')}", note)
 
-    def test_the_adjusted_quarters_have_never_landed_inside_the_range(self) -> None:
+    def test_the_adjusted_quarter_tally_is_the_one_the_page_prints(self) -> None:
         rows = [(r["actual_eps"], r["low"], r["high"])
                 for r in self.staging["quarterly_guidance"] if r["basis"] != "reported"]
         finished, above, inside, below = pm.tally(rows)
-        self.assertEqual((finished, above, inside, below), (12, 12, 0, 0))
+        note = self.exhibits["EX_Q_DEV"]["note"]
+        self.assertEqual("全部高于上限" in note, above == finished)
+        self.assertEqual(f"{finished} 季<b>全部</b>高于上限" in self.payload["brief"], above == finished)
 
-    def test_the_only_quarterly_miss_is_on_the_reported_basis(self) -> None:
-        misses = [r for r in self.staging["quarterly_guidance"]
-                  if r["actual_eps"] is not None and r["actual_eps"] < r["low"]]
-        self.assertEqual([r["guided_period"] for r in misses], ["2021Q2"])
-        self.assertEqual(misses[0]["basis"], "reported")
+    def test_the_quarterly_band_names_every_basis_on_each_side_of_its_break(self) -> None:
+        """The break sits at the first non-reported quarter (2022Q2, pro forma);
+        the page said everything to its right was adjusted, but 2023Q1 was
+        guided on reported EPS again (US$1.28-1.33, 2023-02-09)."""
+        rows = self.staging["quarterly_guidance"]
+        first = next(i for i, r in enumerate(rows) if r["basis"] != "reported")
+        note = self.exhibits["EX_Q_BAND"]["note"]
+        back = [r for r in rows[first:] if r["basis"] == "reported"]
+        self.assertEqual([r["guided_period"] for r in back], ["2023Q1"])
+        for row in back:
+            self.assertIn(pm.cn_quarter(row["guided_period"], "季"), note.split("右段", 1)[1])
+        self.assertIn(f"那{cn_count(len(back))}格又回到报告口径", note)
+
+    def test_the_reported_era_has_one_miss_and_the_page_names_it(self) -> None:
+        """The quarterly guidance moved to the adjusted basis in 2022; the
+        reported-basis quarters are a closed record and pinned."""
+        reported = [r for r in self.staging["quarterly_guidance"] if r["basis"] == "reported"]
+        misses = [r["guided_period"] for r in reported if r["actual_eps"] < r["low"]]
+        self.assertEqual(misses, ["2021Q2"])
+        self.assertIn("唯一一次跌破下限是 2021 年第二季", self.exhibits["EX_Q_DEV"]["note"])
 
     def test_the_guidance_timing_is_stated_rather_than_assumed(self) -> None:
         """PMI publishes each quarter's outlook with the previous quarter's
         results, so the range is already under way when it is guided. The window
         is recomputed here from the release dates rather than read back out of
         the caption, so a caption that drifts from the record goes red."""
-        import datetime
-
         starts = {"1": "-01-01", "2": "-04-01", "3": "-07-01", "4": "-10-01"}
         days = []
         for row in self.staging["quarterly_guidance"]:
             period = row["guided_period"]
             start = datetime.date.fromisoformat(period[:4] + starts[period[-1]])
-            released = datetime.date.fromisoformat(row["release_date"])
-            days.append((released - start).days)
+            days.append((datetime.date.fromisoformat(row["release_date"]) - start).days)
         self.assertGreater(min(days), 0, "a guidance published before its quarter began")
-        band = next(ex for section in self.payload["sections"]
-                    for ex in section["exhibits"] if ex.get("ref") == "EX_Q_BAND")
-        self.assertIn(f"开始后 {min(days)}–{max(days)} 天", band["note"])
+        self.assertIn(f"开始后 {min(days)}–{max(days)} 天", self.exhibits["EX_Q_BAND"]["note"])
 
     # ── the currency decomposition ──────────────────────────────────────────
     def test_the_currency_chart_skips_the_year_whose_two_rows_were_two_bases(self) -> None:
         """FY2022's dollar row was the group and its ex-currency row the pro
         forma, so subtracting one from the other compares two companies."""
-        chart = next(ex for section in self.payload["sections"]
-                     for ex in section["exhibits"] if ex.get("ref") == "EX_FX")
+        chart = self.exhibits["EX_FX"]
         self.assertNotIn("FY2022", chart["xlabels"])
         self.assertIn("FY2022 不在图上", chart["note"])
 
-    def test_the_2026_ex_currency_band_has_not_moved(self) -> None:
-        """The page leads on this; it is three filed rows, not a claim."""
-        record = next(r for r in self.staging["annual_guidance"]["records"]
-                      if r["year"] == 2026)
-        bands = [(v["xfx_low"], v["xfx_high"]) for v in record["vintages"]
-                 if v.get("xfx_low") is not None]
-        self.assertEqual(len(bands), 3)
-        self.assertEqual(len(set(bands)), 1)
+    def test_the_currency_directions_are_counted(self) -> None:
+        """The page said the two rows "often move in opposite directions"; in
+        the record that happens in one year of five."""
+        moves = pm.currency_moves(self.staging)
+        opposite = [y for y, d, x, _ in moves if d * x < 0]
+        note = self.exhibits["EX_FX"]["note"]
+        self.assertEqual("经常朝相反方向走" in note, len(opposite) * 2 > len(moves))
+        same = [y for y, d, x, _ in moves if d * x > 0]
+        self.assertEqual("更常见的是同向" in note, bool(opposite) and len(opposite) * 2 <= len(moves)
+                         and len(same) * 2 > len(moves))
+        for year in opposite:
+            self.assertIn(f"FY{year}（美元口径", note)
+        self.assertEqual([f"FY{y}" for y, _, _, _ in moves], self.exhibits["EX_FX"]["xlabels"])
+
+    def test_the_open_year_ex_currency_band_is_called_unchanged_only_while_it_is(self) -> None:
+        year, _, _, vintages = pm.currency_moves(self.staging)[-1]
+        record = next(r for r in self.staging["annual_guidance"]["records"] if r["year"] == year)
+        bands = {(v["xfx_low"], v["xfx_high"]) for v in vintages}
+        unchanged = record["actual_reported_eps"] is None and len(bands) == 1
+        note = self.exhibits["EX_FX"]["note"]
+        self.assertEqual("逐字未动" in note, unchanged)
+        if unchanged:
+            self.assertIn(f"FY{year} 到目前为止剔除汇率的区间{cn_count(len(vintages))}次发布", note)
 
     # ── the quarter's own arithmetic ────────────────────────────────────────
     def test_the_revenue_bridge_walks_from_base_to_end(self) -> None:
@@ -257,16 +378,34 @@ class PmDashboardTest(unittest.TestCase):
                 walk = (block["base"][index] + block["price"][index]
                         + block["volume_mix_other"][index] + block["acq_div"][index]
                         + block["currency"][index])
-                self.assertAlmostEqual(walk, block["end"][index], delta=1.0,
-                                       msg=f"{period} {column}")
+                self.assertAlmostEqual(walk, block["end"][index], delta=1.0, msg=f"{period} {column}")
 
     def test_the_bridge_ends_where_the_filed_quarter_does(self) -> None:
         bridge = self.staging["revenue_bridge"]
         fin = self.staging["financials"]
+        long = self.staging["long"]
+        self.assertEqual(bridge["periods"][-1], self.staging["periods"][-1])
         for period in bridge["periods"]:
             index = self.staging["periods"].index(period)
-            self.assertAlmostEqual(bridge[period]["end"][0],
-                                   fin["net_revenues_usd_m"][index], delta=1.0, msg=period)
+            self.assertAlmostEqual(bridge[period]["end"][0], fin["net_revenues_usd_m"][index],
+                                   delta=1.0, msg=period)
+            ago = long["periods"].index(quarter_label(pm.yq(period)[0] - 1, pm.yq(period)[1]))
+            self.assertAlmostEqual(bridge[period]["base"][0], long["net_revenues_usd_m"][ago],
+                                   delta=1.0, msg=period)
+
+    def test_the_bridge_caption_describes_each_segment_from_its_own_column(self) -> None:
+        """The page said the U.S. had price and volume both negative; that
+        quarter its price was +US$15M."""
+        bridge = self.staging["revenue_bridge"]
+        latest = bridge[bridge["periods"][-1]]
+        note = self.exhibits["EX_BRIDGE"]["note"]
+        for index, name in ((1, "国际无烟"), (2, "国际组合烟草"), (3, "美国")):
+            shape = pm.segment_shape(name, latest, index, first=(index == 1))
+            self.assertIn(shape, note)
+            if latest["price"][index] > 0:
+                self.assertNotIn("价格是负的", shape)
+                self.assertNotIn("价格和量与结构都是负的", shape)
+        self.assertNotIn("两项都是负的", note)
 
     def test_the_three_segments_sum_to_the_filed_quarter(self) -> None:
         seg = self.staging["segments"]
@@ -274,63 +413,75 @@ class PmDashboardTest(unittest.TestCase):
         revenue = dict(zip(long["periods"], long["net_revenues_usd_m"]))
         profit = dict(zip(long["periods"], long["gross_profit_usd_m"]))
         for index, period in enumerate(seg["periods"]):
-            self.assertAlmostEqual(
-                sum(seg["net_revenues_usd_m"][key][index] for key in pm.SEG_KEYS),
-                revenue[period], delta=1.0, msg=period)
-            self.assertAlmostEqual(
-                sum(seg["gross_profit_usd_m"][key][index] for key in pm.SEG_KEYS),
-                profit[period], delta=1.0, msg=period)
+            self.assertAlmostEqual(sum(seg["net_revenues_usd_m"][key][index] for key in pm.SEG_KEYS),
+                                   revenue[period], delta=1.0, msg=period)
+            self.assertAlmostEqual(sum(seg["gross_profit_usd_m"][key][index] for key in pm.SEG_KEYS),
+                                   profit[period], delta=1.0, msg=period)
 
-    def test_the_segment_series_is_four_quarters_and_says_why(self) -> None:
-        """PMI reorganised its reportable segments in 2026Q1 and did not restate
-        the history into a filing, so this series cannot be extended backwards
-        and must not be spliced onto the six geographic segments it replaced."""
+    def test_the_segment_series_says_what_exists_and_what_it_took_in(self) -> None:
+        """PMI reorganised its reportable segments in 2026Q1. The page said the
+        history was never restated into a filing and "there will be no more";
+        the 8-K of 2026-03-13 recasts 2023-2025 on the new segments. And the
+        segments it replaced were four geographic ones, not six."""
         seg = self.staging["segments"]
-        self.assertEqual(seg["periods"], ["2025Q1", "2025Q2", "2026Q1", "2026Q2"])
-        chart = next(ex for section in self.payload["sections"]
-                     for ex in section["exhibits"] if ex.get("ref") == "EX_SEG_REV")
-        self.assertIn("不会再多", chart["note"])
+        self.assertEqual(seg["periods"][0], "2025Q1")
+        self.assertEqual(seg["periods"][-1], self.staging["periods"][-1])
+        chart = self.exhibits["EX_SEG_REV"]
+        notes = " ".join(self.payload["notes"])
+        self.assertNotIn("不会再多", chart["note"])
+        self.assertNotIn("六个地理分部", chart["note"] + notes)
+        self.assertIn(seg["recast_filing"]["date"], chart["note"])
+        self.assertIn(seg["recast_filing"]["accession"], chart["note"])
+        self.assertIn(f"只画了{cn_count(len(seg['periods']))}个季度", chart["note"])
+        self.assertIn(pm.segment_releases(self.staging), chart["src_extra"])
 
-    def test_the_us_gross_margin_fell_year_over_year(self) -> None:
-        """The page's second section leads on this pair."""
-        us = self.staging["segments"]["adjusted_gross_margin_pct"]["us"]
-        self.assertLess(us[2], us[0])      # Q1 2026 below Q1 2025
-        self.assertLess(us[3], us[1])      # Q2 2026 below Q2 2025
+    def test_the_us_margin_card_follows_the_year_ago_comparison(self) -> None:
+        seg = self.staging["segments"]
+        us = seg["adjusted_gross_margin_pct"]["us"]
+        ago = pm.year_ago_index(seg["periods"], len(seg["periods"]) - 1)
+        self.assertEqual("美国分部的单位经济性还在恶化" in self.payload["brief"], us[-1] < us[ago])
+        self.assertIn(f"同比 {us[-1] - us[ago]:+.1f}pp", self.payload["headline"])
 
     def test_the_missing_offtake_reading_is_a_hole_not_a_zero(self) -> None:
-        """The company described the latest quarter in words; filling a zero
-        would turn a phrase into a number a model could use."""
+        """The company described a quarter in words; filling a zero would turn a
+        phrase into a number a model could use."""
         zyn = self.staging["zyn"]
-        self.assertIsNone(zyn["offtake_yoy_pct"][-1])
-        self.assertTrue(zyn["offtake_latest_words"])
-        chart = next(ex for section in self.payload["sections"]
-                     for ex in section["exhibits"] if ex.get("ref") == "EX_ZYN")
-        self.assertIn(zyn["offtake_latest_words"], chart["note"])
+        chart = self.exhibits["EX_ZYN"]
+        self.assertEqual(zyn["periods"][-1], self.staging["periods"][-1])
+        self.assertEqual(len(zyn["offtake_yoy_pct"]), len(zyn["periods"]))
+        self.assertEqual(len(zyn["shipment_words"]), len(zyn["periods"]))
+        self.assertEqual(len(zyn["offtake_words"]), len(zyn["periods"]))
+        for value, words in zip(zyn["offtake_yoy_pct"], zyn["offtake_words"]):
+            self.assertEqual(value is None, bool(words))
+        if zyn["offtake_yoy_pct"][-1] is None:
+            self.assertIn(f"「{zyn['offtake_words'][-1]}」", chart["note"])
+            self.assertIn(zyn["period_labels"][-1], chart["annot"])
+        else:
+            self.assertNotIn("annot", chart)
 
     # ── the smoke-free transition ───────────────────────────────────────────
     def test_the_product_categories_sum_to_filed_net_revenues_every_year(self) -> None:
         annual = self.staging["annual"]
         for index, year in enumerate(annual["years"]):
             total = annual["combustible_usd_m"][index] + annual["smoke_free_usd_m"][index]
-            self.assertAlmostEqual(total, annual["net_revenues_usd_m"][index],
-                                   delta=1.0, msg=str(year))
+            self.assertAlmostEqual(total, annual["net_revenues_usd_m"][index], delta=1.0, msg=str(year))
 
     def test_the_smoke_free_share_is_the_ratio_of_two_filed_lines(self) -> None:
         annual = self.staging["annual"]
         for index, year in enumerate(annual["years"]):
-            share = (annual["smoke_free_usd_m"][index]
-                     / annual["net_revenues_usd_m"][index] * 100)
-            self.assertAlmostEqual(share, annual["smoke_free_share_pct"][index],
-                                   places=3, msg=str(year))
+            share = annual["smoke_free_usd_m"][index] / annual["net_revenues_usd_m"][index] * 100
+            self.assertAlmostEqual(share, annual["smoke_free_share_pct"][index], places=3, msg=str(year))
 
     def test_the_transition_is_additive_not_substitutional(self) -> None:
         """The page says combustible revenue barely moved while smoke-free grew;
-        if that ever stops being true the caption has to change."""
+        the words are printed only while that is true."""
         annual = self.staging["annual"]
         combustible = annual["combustible_usd_m"]
-        smoke_free = annual["smoke_free_usd_m"]
-        self.assertLess(abs(combustible[-1] / combustible[0] - 1), 0.15)
-        self.assertGreater(smoke_free[-1] / smoke_free[0], 20)
+        flat = abs(combustible[-1] / combustible[0] - 1) < 0.10
+        note = self.exhibits["EX_SF"]["note"]
+        self.assertEqual("几乎没动" in note, flat)
+        self.assertEqual("转型是加出来的" in note, flat)
+        self.assertGreater(annual["smoke_free_usd_m"][-1] / annual["smoke_free_usd_m"][0], 20)
 
     def test_the_excise_tax_story_is_a_label_trap_not_a_basis_change(self) -> None:
         """The reason this series used to stop at 2017Q1 was not true.
@@ -340,55 +491,43 @@ class PmDashboardTest(unittest.TestCase):
         US$26.7B. Those are two different measures of two different years:
         73.9B is 2015 gross, 26.7B is 2016 net. PMI's income statement carries
         both lines in both years -- 2015 net is 73,908 - 47,114 = 26,794, right
-        next to 2016's 26,685.
-
-        What is real is a *labelling* trap: in the 2016/2017 filings the line
-        captioned "Net revenues" is tagged us-gaap:SalesRevenueNet and is gross
-        of excise. Reading the tag by its caption is what produces the phantom
-        cliff. This test pins the arithmetic that settles it, so the claim
-        cannot come back as prose.
+        next to 2016's 26,685. The page's notes kept repeating the old claim
+        until this migration.
         """
         long = self.staging["long"]
         self.assertEqual(long["periods"][0], "2016Q1")
         self.assertEqual(sum(long["net_revenues_usd_m"][:4]), 26685.0)
-        # The gross and net FY2015 figures are both filed; the difference
-        # between them is the excise tax, not a change of basis.
         gross_2015, excise_2015 = 73908.0, 47114.0
         self.assertAlmostEqual(gross_2015 - excise_2015, 26794.0, places=6)
         self.assertLess(abs(26794.0 - sum(long["net_revenues_usd_m"][:4])), 1000.0,
                         "2015 net and 2016 net are the same order of magnitude; "
                         "the cliff only appears if you compare gross to net")
         # A year-sum check alone cannot see a compensating swap between two
-        # quarters, so the four quarters are pinned against a second, genuinely
-        # independent reading: the earnings-release Schedule 1, whose fourth
-        # quarter is printed as a standalone column rather than derived by
-        # subtraction the way the R-file route derives it.
+        # quarters, so the four quarters are pinned against a second reading:
+        # the earnings-release Schedule 1, whose fourth quarter is printed as a
+        # standalone column rather than derived by subtraction.
         route_b = long["route_b_2016"]
         self.assertEqual(route_b["quarters"], ["2016Q1", "2016Q2", "2016Q3", "2016Q4"])
         self.assertEqual(long["net_revenues_usd_m"][:4], route_b["net_revenues_usd_m"])
         self.assertEqual(long["gross_profit_usd_m"][:4], route_b["gross_profit_usd_m"])
         self.assertEqual(len(route_b["accessions"]), 4)
-        # ...and the margin each quarter carries is that quarter's own ratio.
         for index in range(4):
             self.assertAlmostEqual(
                 long["gross_profit_usd_m"][index] / long["net_revenues_usd_m"][index] * 100,
-                long["gross_margin_pct"][index], places=2,
-                msg=long["periods"][index])
-        chart = next(ex for section in self.payload["sections"]
-                     for ex in section["exhibits"] if ex.get("ref") == "EX_REV")
-        self.assertIn("那句话是错的", chart["note"])
+                long["gross_margin_pct"][index], places=2, msg=long["periods"][index])
+        self.assertIn("那句话是错的", self.exhibits["EX_REV"]["note"])
+        notes = " ".join(self.payload["notes"])
+        self.assertNotIn("不向前回补", notes)
+        self.assertIn(f"长期季度序列自 {pm.cn_quarter(long['periods'][0])}起", notes)
 
     def test_the_2016_operating_margin_is_a_hole_and_says_why(self) -> None:
         """Read, then deliberately not published -- and the two are different.
 
-        All four 2016 operating-income figures exist and were read twice, by two
-        independent routes that agree to the cent and sum to the filed FY2016.
-        They are still not on the chart, because PMI adopted ASU 2017-07
+        All four 2016 operating-income figures exist and were read twice. They
+        are still not on the chart, because PMI adopted ASU 2017-07
         retrospectively on 2018-01-01 and restated 2017 by quarter but never
         restated 2016 by quarter -- so the 2016Q4/2017Q1 seam would carry a step
-        that is purely an accounting-standard change. Revenue and gross profit
-        are unaffected and do run the whole window, which is what makes the four
-        holes specific rather than a blanket "no 2016 data".
+        that is purely an accounting-standard change.
         """
         long = self.staging["long"]
         margin = long["operating_margin_pct"]
@@ -396,52 +535,118 @@ class PmDashboardTest(unittest.TestCase):
         self.assertEqual(margin[:4], [None] * 4)
         self.assertEqual(income[:4], [None] * 4)
         self.assertTrue(all(value is not None for value in margin[4:]))
-        # ...while the two series that the restatement did not touch are whole.
         for key in ("net_revenues_usd_m", "gross_profit_usd_m", "gross_margin_pct"):
             self.assertTrue(all(value is not None for value in long[key]), key)
         self.assertIn("ASU 2017-07", long["operating_income_hole_2016"])
-        chart = next(ex for section in self.payload["sections"]
-                     for ex in section["exhibits"] if ex.get("ref") == "EX_MARGIN")
-        gross_line = next(series for series in chart["series"]
-                          if series["name"] == "毛利率")
-        margin_line = next(series for series in chart["series"]
-                           if "经营利润率" in series["name"])
+        chart = self.exhibits["EX_MARGIN"]
+        gross_line = next(series for series in chart["series"] if series["name"] == "毛利率")
+        margin_line = next(series for series in chart["series"] if "经营利润率" in series["name"])
         self.assertEqual(len(gross_line["values"]), len(chart["xlabels"]))
         self.assertEqual(len(margin_line["values"]), len(chart["xlabels"]))
         reported = sum(1 for value in margin_line["values"] if value is not None)
         self.assertEqual(len(chart["xlabels"]) - reported, 4)
+        self.assertIn("这条线的左端比毛利率短四格", chart["note"])
+
+    def test_the_long_window_is_counted_where_it_is_described(self) -> None:
+        """The section description said 38 quarters while its charts drew 42."""
+        n = len(self.staging["long"]["periods"])
+        self.assertIn(f"{n} 个季度的收入", self.payload["sections"][3]["description"])
+        self.assertEqual(len(self.exhibits["EX_REV"]["xlabels"]), n)
+        self.assertTrue(self.exhibits["EX_REV"]["title"].startswith(f"{n} 个季度的净收入"))
+
+    def test_the_seasonality_sentence_is_counted(self) -> None:
+        """The page said "every year Q1 is the low and Q2-Q3 the high"; 2020's
+        low was Q2 and the two highest quarters are usually Q3 and Q4."""
+        long = self.staging["long"]
+        by = dict(zip(long["periods"], long["net_revenues_usd_m"]))
+        years = [y for y in self.staging["annual"]["years"] if all(f"{y}Q{q}" in by for q in (1, 2, 3, 4))]
+        q1_low = [y for y in years if min(range(4), key=lambda i: by[f"{y}Q{i + 1}"]) == 0]
+        note = self.exhibits["EX_REV"]["note"]
+        seasonal = note.split("季节性明显", 1)[1]
+        self.assertIn(f"{cn_count(len(years))}年里有{cn_count(len(q1_low))}年第一季是低点", seasonal)
+        for year in sorted(set(years) - set(q1_low)):
+            self.assertIn(f"{year} 年", seasonal)
+        self.assertNotIn("每年第一季是低点", note)
 
     # ── thresholds, exhibits, publication ───────────────────────────────────
     def test_every_quantified_threshold_has_a_headroom_bar(self) -> None:
-        kpi = self.staging["next_kpi"]["quantified"]
+        _, entries = pm.kpi_entries(self.staging)
         bar = self.payload["sections"][2]["exhibits"][0]
-        self.assertEqual(bar["xlabels"], [entry["metric"] for entry in kpi])
-        for entry, value in zip(kpi, bar["values"]):
-            self.assertAlmostEqual(
-                headroom(entry["direction"], entry["threshold"], entry["current"]),
-                value, places=1, msg=entry["metric"])
+        self.assertEqual(bar["xlabels"], [entry["metric"] for entry in entries])
+        for entry, value in zip(entries, bar["values"]):
+            self.assertAlmostEqual(headroom(entry["direction"], entry["threshold"], entry["current"]),
+                                   value, places=1, msg=entry["metric"])
+        for entry in self.staging["next_kpi"]["quantified"]:
+            self.assertNotIn("current", entry, "a typed current value goes stale with the roll")
+
+    def test_threshold_current_values_are_measured_from_the_series(self) -> None:
+        _, entries = pm.kpi_entries(self.staging)
+        seg = self.staging["segments"]
+        current = {e["measure"]: e["current"] for e in entries}
+        self.assertEqual(current["segment_gm_us"], seg["adjusted_gross_margin_pct"]["us"][-1])
+        self.assertEqual(current["segment_gm_isf"], seg["adjusted_gross_margin_pct"]["international_smoke_free"][-1])
+        self.assertEqual(current["adjusted_oi_margin"], seg["adjusted_oi_margin_pct"][-1])
+        known = [v for v in self.staging["zyn"]["offtake_yoy_pct"] if v is not None]
+        self.assertEqual(current["zyn_offtake"], known[-1])
+        printed = self.staging["quarter_printed"]
+        self.assertEqual(current["organic_growth"], printed["organic_revenue_growth_pct"])
+        self.assertEqual(current["isf_organic_growth"], printed["isf_organic_revenue_growth_pct"])
+
+    def test_the_capex_contrast_reads_the_shared_table(self) -> None:
+        """The cross-page table's four-cloud total is a ratio, so it "grew to"
+        N times; the page said "grew by"."""
+        count, ratio = pm.hyperscaler_growth()
+        note = self.exhibits["EX_CASH"]["note"]
+        self.assertIn(f"{cn_count(count)}个季度里它们合计增长到 {ratio:.1f} 倍", note)
+        self.assertNotIn("增长了", note)
+
+    def test_threshold_source_lines_name_the_releases_the_lines_came_from(self) -> None:
+        """The ZYN line runs from Q2 2025, whose figures are in 2025 releases;
+        its source line said "2026 releases"."""
+        _, entries = pm.kpi_entries(self.staging)
+        charts = self.payload["sections"][2]["exhibits"][1:]
+        charted = [e for e in entries if e["measure"] in pm.SERIES_FOR]
+        self.assertEqual(len(charts), len(charted))
+        own = [p for p in self.staging["segments"]["periods"] if pm.yq(p) >= pm.yq(pm.NEW_SEGMENTS_FROM)]
+        for entry, chart in zip(charted, charts):
+            labels = self.staging["zyn"]["periods"] if entry["measure"] == "zyn_offtake" else own
+            years = sorted({pm.yq(p)[0] for p in labels})
+            span = str(years[0]) if len(years) == 1 else f"{years[0]}–{years[-1]}"
+            self.assertTrue(chart["src_extra"].startswith(f"{span} 年各季业绩 8-K"), chart["title"])
 
     def test_what_the_page_refuses_to_plot_is_named(self) -> None:
-        excluded = self.staging["next_kpi"]["excluded"]
+        kpi = self.staging["next_kpi"]
+        excluded = pm.not_tracked_text(kpi)
         for term in ["零售价值份额", "调整后 EBITDA", "自由现金流"]:
             self.assertIn(term, excluded)
+        self.assertIn(excluded, self.payload["sections"][2]["exhibits"][0]["note"])
+        self.assertIn(f"不接入的{cn_count(len(kpi['not_tracked']))}条", self.payload["sections"][2]["description"])
+        # PMI prints the net debt to adjusted EBITDA ratio every quarter (EX-99.2
+        # Schedule 16); the page used to say it was annual only.
+        self.assertNotIn("只按年披露", excluded + " ".join(self.payload["notes"]))
+        # the notes list the same items, from the same stamped block
+        listed = next(n for n in self.payload["notes"] if n.startswith("本页已知未接入："))
+        for item in kpi["not_tracked"]:
+            self.assertIn(item.get("note", item["name"]), listed)
 
     def test_no_market_expectation_is_published(self) -> None:
         self.assertNotIn("market_expectation", self.staging)
-        text = json.dumps(self.payload, ensure_ascii=False)
+        text = text_of(self.payload)
         self.assertNotIn("市场预期", text)
         self.assertNotIn("一致预期", text.replace("本页不发布市场一致预期", ""))
 
     def test_exhibits_are_numbered_in_render_order_and_refs_resolve(self) -> None:
-        numbers = [ex["n"] for section in self.payload["sections"]
-                   for ex in section["exhibits"]]
+        numbers = [ex["n"] for section in self.payload["sections"] for ex in section["exhibits"]]
         self.assertEqual(numbers, list(range(2, 2 + len(numbers))))
-        text = json.dumps(self.payload, ensure_ascii=False)
-        self.assertNotRegex(text, r"\{EX_[A-Z_]+\}")
+        self.assertNotRegex(text_of(self.payload), r"\{EX_[A-Z_]+\}")
+        self.assertIn(f"调整后口径见 Exhibit {self.exhibits['EX_ADJ_BAND']['n']}",
+                      self.exhibits["EX_FY_BAND"]["note"])
+        if pm.next_quarter_guidance(self.staging) is not None:
+            self.assertIn(f"Exhibit {self.exhibits['EX_Q_BAND']['n']} 上",
+                          self.payload["sections"][2]["exhibits"][0]["note"])
 
     def test_tables_are_numbered_after_the_exhibits(self) -> None:
-        last = max(ex["n"] for section in self.payload["sections"]
-                   for ex in section["exhibits"])
+        last = max(ex["n"] for section in self.payload["sections"] for ex in section["exhibits"])
         self.assertEqual([table["n"] for table in self.payload["tables"]],
                          list(range(last + 1, last + 1 + len(self.payload["tables"]))))
 
@@ -467,14 +672,35 @@ class PmDashboardTest(unittest.TestCase):
     def test_table_dicts_carry_only_the_keys_the_renderer_reads(self) -> None:
         """`tableHTML(title, headers, rows, cls)` is all of it; a `note` is dropped."""
         for table in self.payload["tables"]:
-            self.assertEqual(set(table), {"n", "title", "headers", "rows"},
-                             table["title"][:40])
+            self.assertEqual(set(table), {"n", "title", "headers", "rows"}, table["title"][:40])
 
     def test_the_guidance_block_has_the_shape_the_renderer_reads(self) -> None:
         guidance = self.payload["guidance"]
         self.assertEqual(set(guidance), {"title", "headers", "rows", "note"})
         for row in guidance["rows"]:
             self.assertEqual(len(row), len(guidance["headers"]))
+
+    def test_the_guidance_block_is_the_record_and_the_release(self) -> None:
+        """The EPS rows are the record's last two vintages; the rest is the
+        stamped block. The capital-return row used to promise dividend
+        increases the release never mentioned."""
+        guidance = self.payload["guidance"]
+        record = released_record(self.staging)
+        now, before = record["vintages"][-1], record["vintages"][-2]
+        self.assertIn(now["release_date"], guidance["title"])
+        self.assertIn(before["release_date"], guidance["headers"][2])
+        y = record["year"]
+        rows = {row[0]: row for row in guidance["rows"]}
+        for label, key in ((f"{y} 全年报告口径摊薄 EPS", ""), (f"{y} 全年调整后摊薄 EPS", "adj_"),
+                           (f"{y} 全年调整后摊薄 EPS（剔除汇率）", "xfx_")):
+            self.assertEqual(rows[label][1], f"${now[key + 'low']:.2f} – ${now[key + 'high']:.2f}")
+            self.assertEqual(rows[label][2], f"${before[key + 'low']:.2f} – ${before[key + 'high']:.2f}")
+            same = (now[key + "low"], now[key + "high"]) == (before[key + "low"], before[key + "high"])
+            self.assertEqual(rows[label][3] == "逐字未变", same)
+        upcoming = pm.next_quarter_guidance(self.staging)
+        if upcoming is not None:
+            self.assertEqual(guidance["rows"][0][1], f"${upcoming['low']:.2f} – ${upcoming['high']:.2f}")
+        self.assertNotIn("股息", " ".join(" ".join(row) for row in guidance["rows"]))
 
     def test_no_per_share_series_is_plotted_below_the_guidance_section(self) -> None:
         """PMI's EPS is only comparable inside one adjustment basis, which the
@@ -485,28 +711,38 @@ class PmDashboardTest(unittest.TestCase):
                 self.assertNotIn("每股", exhibit["title"], exhibit["title"])
 
     def test_the_published_payload_matches_a_fresh_build(self) -> None:
-        published = js_payload(ROOT / "data" / "pm.js", "window.DASH")
-        self.assertEqual(published, self.payload)
+        self.assertEqual(js_payload(ROOT / "data" / "pm.js", "window.DASH"), self.payload)
 
     def test_the_page_declares_the_calendar_convention_in_its_subtitle(self) -> None:
         self.assertIn("自然年财年", self.payload["subtitle"])
 
     def test_the_notes_say_what_the_two_bases_are(self) -> None:
         notes = " ".join(self.payload["notes"])
-        self.assertIn("排除条款", notes)
+        self.assertIn("排除条款", self.exhibits["EX_FY_BAND"]["note"])
         self.assertIn("下季指引的口径在记录中期发生变化", notes)
+        released = self.staging["latest"]["release_date"]
+        self.assertIn(f"以及 {int(released[:4])} 年 {int(released[5:7])} 月 {int(released[8:])} 日申报之后", notes)
 
     def test_sources_are_official_http_links(self) -> None:
         allowed_hosts = {"www.sec.gov", "www.pmi.com"}
         for source in self.payload["source_links"]:
-            parsed = source["url"]
-            self.assertTrue(parsed.startswith("https://"), parsed)
-            host = parsed.split("/")[2]
-            self.assertIn(host, allowed_hosts)
+            url = source["url"]
+            self.assertTrue(url.startswith("https://"), url)
+            self.assertIn(url.split("/")[2], allowed_hosts)
+            if "browse-edgar" in url:
+                # the query without dateb/owner/count answers 503 File Unavailable
+                self.assertIn("&count=", url)
+
+    def test_the_source_link_is_this_quarters_release(self) -> None:
+        name, url, report = pm.release_source(self.staging)
+        self.assertEqual(self.payload["source_url"], url)
+        self.assertIn(f'href="{url}"', self.payload["source"])
+        self.assertIn(report, self.payload["source"])
+        accession = re.search(r"\d{10}-\d{2}-\d{6}", self.staging["_checks"]["source"]).group(0)
+        self.assertIn(accession.replace("-", ""), url)
 
     def test_the_roster_carries_pm_with_the_payload_s_own_labels(self) -> None:
-        payloads = build_all()
-        roster = roster_payload(payloads)
+        roster = roster_payload(build_all())
         entry = next(item for item in roster["items"] if item["slug"] == "pm")
         self.assertEqual(entry["latest_label"], self.payload["latest"]["disclosed_period_label"])
         self.assertEqual(entry["release_date"], self.payload["latest"]["release_date"])
@@ -514,7 +750,6 @@ class PmDashboardTest(unittest.TestCase):
         self.assertIn(entry["group"], {group["key"] for group in roster["groups"]})
 
     def test_the_entry_group_exists_and_sits_where_its_order_says(self) -> None:
-        from build.all import GROUPS
         keys = [group["key"] for group in GROUPS]
         self.assertIn(self.payload["company"]["group"], keys)
         orders = [group["order"] for group in GROUPS]
@@ -523,13 +758,10 @@ class PmDashboardTest(unittest.TestCase):
         self.assertEqual(entry["group"], self.payload["company"]["group"])
 
     def test_the_shell_links_the_payload_by_content_hash(self) -> None:
-        import hashlib
-
         shell = (ROOT / "pm" / "index.html").read_text(encoding="utf-8")
         sources = re.findall(r'<script src="\.\./([^"?]+)(\?v=([0-9a-f]+))?"', shell)
         self.assertEqual([name for name, _, _ in sources],
-                         ["data/roster.js", "data/pm.js",
-                          "assets/charts.js", "assets/page.js"])
+                         ["data/roster.js", "data/pm.js", "assets/charts.js", "assets/page.js"])
         for name, _, digest in sources:
             expected = hashlib.sha256((ROOT / name).read_bytes()).hexdigest()[:8]
             self.assertEqual(digest, expected, name)
@@ -547,6 +779,681 @@ class PmDashboardTest(unittest.TestCase):
         self.assertNotIn(":nan", compact)
         self.assertNotIn(":infinity", compact)
         self.assertNotIn(":-infinity", compact)
+
+
+def with_every_block(source: dict) -> dict:
+    """The series with every optional one-release block present and stamped for
+    the quarter it ends on, synthesised with placeholder words where absent."""
+    st = copy.deepcopy(source)
+    period = st["period_labels"][-1]
+    story = st.setdefault("quarter_story", {"period": period})
+    story.setdefault("us_gross_margin_reason", "测试用的美国毛利率原因。")
+    story.setdefault("us_investment", "测试用的投入说法")
+    other = st.setdefault("guidance_other", {"period": period, "rows": [["测试行", "1", "1", "重申"]]})
+    other.setdefault("headline_quote", "测试用的标题")
+    other.setdefault("capex_low_usd_m", 1400.0)
+    other.setdefault("capex_high_usd_m", 1600.0)
+    st.setdefault("quarter_printed", {"period": period, "organic_revenue_growth_pct": 6.0,
+                                      "isf_organic_revenue_growth_pct": 11.0})
+    return st
+
+
+def roll_forward(source: dict) -> dict:
+    """Append the next quarter with invented figures -- a shape test, nothing
+    here is published. A Q4 release settles the year and opens the next."""
+    st = copy.deepcopy(source)
+    long, fin = st["long"], st["financials"]
+    new = next_quarter(long["periods"][-1])
+    year, number = pm.yq(new)
+    end = {1: "03-31", 2: "06-30", 3: "09-30", 4: "12-31"}[number]
+    release = {1: f"{year}-04-22", 2: f"{year}-07-22", 3: f"{year}-10-21", 4: f"{year + 1}-02-06"}[number]
+    label = f"Q{number} {year}"
+    prior = quarter_label(year - 1, number)
+    ago = long["periods"].index(prior)
+    long["periods"].append(new)
+    long["period_labels"].append(label)
+    for key in ("net_revenues_usd_m", "gross_profit_usd_m", "operating_income_usd_m"):
+        long[key].append(round(long[key][ago] * 1.05))
+    long["gross_margin_pct"].append(round(long["gross_profit_usd_m"][-1] / long["net_revenues_usd_m"][-1] * 100, 2))
+    long["operating_margin_pct"].append(
+        round(long["operating_income_usd_m"][-1] / long["net_revenues_usd_m"][-1] * 100, 2))
+    st["periods"] = long["periods"][-8:]
+    st["period_labels"] = long["period_labels"][-8:]
+    st["period_ends"] = st["period_ends"][1:] + [f"{year}-{end}"]
+    for key in fin:
+        fin[key] = long[key][-8:] if key in long else fin[key][1:] + [round(fin[key][-4] + 0.1, 2)]
+    # the quarterly record: settle the guided quarter; PMI does not guide a Q4
+    for row in st["quarterly_guidance"]:
+        if row["guided_period"] == new:
+            row["actual_eps"] = fin["adjusted_diluted_eps_usd"][-1] = round(row["high"] + 0.05, 2)
+    following = next_quarter(new)
+    if pm.yq(following)[1] != 4:
+        st["quarterly_guidance"].append({
+            "release_date": release, "guided_period": following, "period_label": pm.display(following),
+            "basis": "adjusted", "point": False, "low": 2.3, "high": 2.35, "currency_eps": 0.01,
+            "actual_eps": None})
+    records = st["annual_guidance"]["records"]
+    record = next(r for r in records if r["year"] == year)
+    base = dict(record["vintages"][-1], release_date=release)
+    if number == 4:
+        record["actual_reported_eps"] = 7.3
+        st["annual_guidance"]["annual_adjusted_eps_actual"][str(year)] = 8.4
+        first = dict(base, low=8.0, high=8.2, adj_low=9.0, adj_high=9.2, xfx_low=9.0, xfx_high=9.2)
+        records.append({"year": year + 1, "vintages": [first], "withdrawn": [], "actual_reported_eps": None,
+                        "first_guided": first, "last_guided": first})
+        st["annual_guidance"]["years"].append(year + 1)
+        annual = st["annual"]
+        for key in annual:
+            annual[key].append(year if key == "years" else annual[key][-1])
+        annual["net_revenues_usd_m"][-1] = sum(long["net_revenues_usd_m"][long["periods"].index(f"{year}Q1"):])
+        annual["combustible_usd_m"][-1] = annual["net_revenues_usd_m"][-1] - annual["smoke_free_usd_m"][-1]
+        annual["smoke_free_share_pct"][-1] = annual["smoke_free_usd_m"][-1] / annual["net_revenues_usd_m"][-1] * 100
+    else:
+        record["vintages"].append(base)
+        record["last_guided"] = base
+    # segments: the new quarter and, printed beside it, the year-ago one
+    seg = st["segments"]
+    for quarter in (prior, new):
+        if quarter in seg["periods"]:
+            continue
+        position = sorted(seg["periods"] + [quarter], key=pm.yq).index(quarter)
+        seg["periods"].insert(position, quarter)
+        seg["period_labels"].insert(position, pm.display(quarter))
+        for group in ("net_revenues_usd_m", "gross_profit_usd_m", "adjusted_gross_margin_pct"):
+            for part in seg[group].values():
+                part.insert(position, part[-1])
+        for key in ("adjusted_operating_income_usd_m", "adjusted_oi_margin_pct"):
+            seg[key].insert(position, seg[key][-1])
+    total = dict(zip(long["periods"], long["net_revenues_usd_m"]))
+    gross = dict(zip(long["periods"], long["gross_profit_usd_m"]))
+    for index, quarter in enumerate(seg["periods"]):
+        for group, whole in (("net_revenues_usd_m", total), ("gross_profit_usd_m", gross)):
+            parts = seg[group]
+            parts["us"][index] = (whole[quarter] - parts["international_smoke_free"][index]
+                                  - parts["international_combustibles"][index])
+    # the bridge and ZYN carry the new quarter
+    bridge = st["revenue_bridge"]
+    previous = bridge[bridge["periods"][-1]]
+    step = {key: list(previous[key]) for key in ("price", "volume_mix_other", "currency")}
+    step["acq_div"] = [0, 0, 0, 0]
+    step["base"] = [total[prior]] + list(previous["end"][1:])
+    step["end"] = [sum(step[key][i] for key in ("base", "price", "volume_mix_other", "acq_div", "currency"))
+                   for i in range(4)]
+    step["currency"][0] += total[new] - step["end"][0]
+    step["end"][0] = total[new]
+    bridge["periods"].append(new)
+    bridge["period_labels"].append(label)
+    bridge[new] = step
+    zyn = st["zyn"]
+    zyn["periods"].append(new)
+    zyn["period_labels"].append(label)
+    zyn["offtake_yoy_pct"].append(5.0)
+    zyn["offtake_words"].append(None)
+    zyn["shipment_words"].append("测试用的出货说法")
+    words = f"PMI {year} 年第{pm.CN_Q[number]}季度" + ("及全年" if number == 4 else "") + "业绩新闻稿"
+    st["sources"].insert(0, {"label": words + "（测试）",
+                             "url": f"https://www.sec.gov/Archives/edgar/data/1413329/test/{new}.htm"})
+    st["latest"].update(period=label, release_date=release)
+    st["next_kpi"]["period"] = label
+    for key in ("quarter_story", "guidance_other"):
+        st.pop(key, None)
+    st["quarter_printed"] = {"period": label, "organic_revenue_growth_pct": 5.5,
+                             "isf_organic_revenue_growth_pct": 10.5}
+    return st
+
+
+class PmRollTest(unittest.TestCase):
+    """What a roll has to change in `series/pm.json`, and what the page does when it does not.
+
+    Four blocks describe one release and carry its quarter: the thresholds
+    (`next_kpi`), the printed organic growth rates (`quarter_printed`), the
+    non-EPS forecast rows (`guidance_other`) and the quarter's explanations
+    (`quarter_story`). The bridge, the segment table and the ZYN block must end
+    on the page's quarter, and the annual record must carry this release's
+    vintage. A stale block stops the build; an absent story or forecast block
+    takes its sentences with it.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = load()
+        cls.full = with_every_block(cls.source)
+        cls.payload = pm.build_payload(cls.full)
+        cls.blob = text_of(cls.payload)
+
+    def test_a_block_stamped_with_another_quarter_stops_the_build(self) -> None:
+        for key in ("next_kpi", "quarter_printed", "guidance_other", "quarter_story"):
+            stale = copy.deepcopy(self.full)
+            stale[key]["period"] = "Q1 1999"
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "stamped"):
+                    pm.build_payload(stale)
+        for key in ("revenue_bridge", "segments", "zyn"):
+            behind = copy.deepcopy(self.full)
+            behind[key]["periods"][-1] = "1999Q1"
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "stamped"):
+                    pm.build_payload(behind)
+
+    def test_what_a_roll_forgets_stops_the_build(self) -> None:
+        cases = {}
+        bare = copy.deepcopy(self.full)
+        del bare["next_kpi"]
+        cases["`next_kpi` is missing"] = bare
+        unknown = copy.deepcopy(self.full)
+        unknown["next_kpi"]["quantified"][0]["measure"] = "not_a_measure"
+        cases["does not know how to measure"] = unknown
+        unprinted = copy.deepcopy(self.full)
+        del unprinted["quarter_printed"]
+        cases["`quarter_printed` has no"] = unprinted
+        orphan = copy.deepcopy(self.full)
+        _, url, _ = pm.release_source(orphan)
+        orphan["sources"] = [s for s in orphan["sources"] if s["url"] != url]
+        cases["`sources` has no"] = orphan
+        audited = copy.deepcopy(self.full)
+        audited["latest"]["audit_status"] = "reviewed"
+        cases["audit_status"] = audited
+        unsettled = copy.deepcopy(self.full)
+        row = next(r for r in unsettled["quarterly_guidance"] if r["guided_period"] == unsettled["periods"][-1])
+        row["actual_eps"] = None
+        cases["has no actual"] = unsettled
+        unvintaged = copy.deepcopy(self.full)
+        released_record(unvintaged)["vintages"].pop()
+        cases["has no vintage released"] = unvintaged
+        short = copy.deepcopy(self.full)
+        short["long"]["periods"].pop()
+        cases["append the quarter to both"] = short
+        wordless = copy.deepcopy(self.full)
+        wordless["zyn"]["offtake_yoy_pct"][-1] = None
+        wordless["zyn"]["offtake_words"][-1] = None
+        cases["no offtake figure and no offtake words"] = wordless
+        unpaired = copy.deepcopy(self.full)
+        unpaired["zyn"]["offtake_words"].pop()
+        cases["one entry per quarter"] = unpaired
+        stray = copy.deepcopy(self.full)
+        stray["annual_guidance"]["exclusion_clause_census"]["without_clause"].append("1999-01-01")
+        cases["outside its own releases"] = stray
+        for message, staging in cases.items():
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(ValueError, re.escape(message)):
+                    pm.build_payload(staging)
+
+    def test_a_quarter_without_a_story_leaves_it_out(self) -> None:
+        story, other = self.full["quarter_story"], self.full["guidance_other"]
+        cases = {
+            "quarter_story": [story["us_gross_margin_reason"][:10], story["us_investment"][:10], "这条判断下一季"],
+            "guidance_other": [other["rows"][0][0], other["headline_quote"], "这条判断下一季"],
+        }
+        for key, texts in cases.items():
+            bare = copy.deepcopy(self.full)
+            del bare[key]
+            after = text_of(pm.build_payload(bare))
+            for text in texts:
+                with self.subTest(block=key, text=text):
+                    self.assertIn(text, self.blob)
+                    self.assertNotIn(text, after)
+
+    def test_the_record_sentences_are_computed_not_remembered(self) -> None:
+        """Make each "only / every / all / usually / often" claim true in the data,
+        then break it once: the sentence that made it must go."""
+        def page_row(d):
+            return next(r for r in d["quarterly_guidance"] if r["guided_period"] == d["periods"][-1])
+
+        def adjusted_all_above(d):
+            for r in d["quarterly_guidance"]:
+                if r["basis"] != "reported" and r["actual_eps"] is not None:
+                    r["actual_eps"] = round(r["high"] + 0.05, 2)
+
+        def one_adjusted_inside(d):
+            adjusted_all_above(d)
+            r = next(r for r in d["quarterly_guidance"] if r["basis"] == "adjusted" and r["actual_eps"] is not None)
+            r["actual_eps"] = r["low"]
+
+        def second_reported_miss(d):
+            r = next(r for r in d["quarterly_guidance"] if r["guided_period"] == "2021Q3")
+            r["actual_eps"] = round(r["low"] - 0.05, 2)
+
+        def reported_all_positive(d):
+            for r in d["quarterly_guidance"]:
+                if r["basis"] == "reported":
+                    r["actual_eps"] = round(r["high"] + 0.05, 2)
+
+        def q4_guided_twice(d):
+            d["quarterly_guidance"].append({"release_date": "2021-10-19", "guided_period": "2021Q4",
+                                            "period_label": "Q4 2021", "basis": "reported", "point": False,
+                                            "low": 1.3, "high": 1.35, "currency_eps": 0.0, "actual_eps": 1.4})
+            d["quarterly_guidance"].sort(key=lambda r: pm.yq(r["guided_period"]))
+
+        def xfx_moves(d):
+            released_record(d)["vintages"][-1]["xfx_low"] += 0.05
+
+        def fx_mostly_opposite(d):
+            for record in d["annual_guidance"]["records"]:
+                vs = [v for v in record["vintages"] if v.get("adj_low") is not None and v.get("xfx_low") is not None]
+                if len(vs) >= 2 and record["year"] != 2022:
+                    vs[-1]["xfx_low"], vs[-1]["xfx_high"] = vs[0]["xfx_low"] + 0.3, vs[0]["xfx_high"] + 0.3
+                    vs[-1]["adj_low"], vs[-1]["adj_high"] = vs[0]["adj_low"] - 0.3, vs[0]["adj_high"] - 0.3
+
+        def fx_mostly_flat(d):
+            for record in d["annual_guidance"]["records"]:
+                if record["year"] in (2021, 2025):
+                    vs = [v for v in record["vintages"] if v.get("xfx_low") is not None]
+                    vs[-1]["xfx_low"], vs[-1]["xfx_high"] = vs[0]["xfx_low"], vs[0]["xfx_high"]
+
+        def bridge_price_led(d):
+            b = d["revenue_bridge"][d["revenue_bridge"]["periods"][-1]]
+            b["price"][2], b["volume_mix_other"][2] = 900, -200
+            b["currency"][2] = b["end"][2] - b["base"][2] - 700 - b["acq_div"][2]
+
+        def bridge_volume_led(d):
+            b = d["revenue_bridge"][d["revenue_bridge"]["periods"][-1]]
+            b["price"][2], b["volume_mix_other"][2] = 50, 400
+            b["currency"][2] = b["end"][2] - b["base"][2] - 450 - b["acq_div"][2]
+
+        def vmo_turns(d):
+            bridge = d["revenue_bridge"]
+            if len(bridge["periods"]) < 2:
+                # the first quarter of the segment bridge has no previous one; lend it one
+                first = bridge["periods"][0]
+                year, number = pm.yq(first)
+                before = quarter_label(year - 1, 4) if number == 1 else quarter_label(year, number - 1)
+                bridge[before] = copy.deepcopy(bridge[first])
+                bridge["periods"].insert(0, before)
+                bridge["period_labels"].insert(0, pm.display(before))
+            bridge[bridge["periods"][-2]]["volume_mix_other"][0] = -100
+            bridge[bridge["periods"][-1]]["volume_mix_other"][0] = 100
+
+        def vmo_stays(d):
+            vmo_turns(d)
+            bridge = d["revenue_bridge"]
+            bridge[bridge["periods"][-2]]["volume_mix_other"][0] = 50
+
+        def us_only_down(d):
+            seg = d["segments"]
+            rev = seg["net_revenues_usd_m"]
+            ago = pm.year_ago_index(seg["periods"], len(seg["periods"]) - 1)
+            rev["international_smoke_free"][-1] = rev["international_smoke_free"][ago] + 100
+            rev["international_combustibles"][-1] = rev["international_combustibles"][ago] + 100
+            rev["us"][-1] = rev["us"][ago] - 50
+
+        def two_segments_down(d):
+            us_only_down(d)
+            seg = d["segments"]
+            ago = pm.year_ago_index(seg["periods"], len(seg["periods"]) - 1)
+            rev = seg["net_revenues_usd_m"]
+            rev["international_combustibles"][-1] = rev["international_combustibles"][ago] - 10
+
+        def us_gm_alone_falls(d):
+            seg = d["segments"]
+            gm = seg["adjusted_gross_margin_pct"]
+            ago = pm.year_ago_index(seg["periods"], len(seg["periods"]) - 1)
+            for key in ("pmi", "international_smoke_free", "international_combustibles"):
+                gm[key][-1] = gm[key][ago] + 1
+            gm["us"][-1] = gm["us"][ago] - 3
+
+        def us_gm_recovers(d):
+            us_gm_alone_falls(d)
+            seg = d["segments"]
+            ago = pm.year_ago_index(seg["periods"], len(seg["periods"]) - 1)
+            seg["adjusted_gross_margin_pct"]["us"][-1] = seg["adjusted_gross_margin_pct"]["us"][ago] + 1
+
+        def zyn_slides(d):
+            z = d["zyn"]["offtake_yoy_pct"]
+            for i in range(len(z) - 1):
+                z[i] = 40.0 - i * 5
+            z[-1] = None
+            d["zyn"]["offtake_words"] = [None] * (len(z) - 1) + ["测试用的措辞"]
+
+        def zyn_words_twice(d):
+            zyn = d["zyn"]
+            zyn["offtake_yoy_pct"][-2] = None
+            zyn["offtake_words"][-2] = "测试用的上一季措辞"
+
+        def zyn_bounces(d):
+            zyn_slides(d)
+            z = d["zyn"]["offtake_yoy_pct"]
+            z[-2] = z[-3] + 1
+
+        def withdrawn_twice(d):
+            record = next(r for r in d["annual_guidance"]["records"] if r["year"] == 2014)
+            record["withdrawn"] = [record["vintages"][1]["release_date"]]
+
+        def no_withdrawal(d):
+            next(r for r in d["annual_guidance"]["records"] if r["year"] == 2020)["withdrawn"] = []
+
+        def q1_2023_adjusted(d):
+            next(r for r in d["quarterly_guidance"] if r["guided_period"] == "2023Q1")["basis"] = "adjusted"
+
+        def add_untracked(d):
+            d["next_kpi"]["not_tracked"].append({"name": "测试不接入项", "why": "测试用的原因。",
+                                                 "note": "测试不接入项（测试用的原因）"})
+
+        def drop_untracked(d):
+            d["next_kpi"]["not_tracked"] = [x for x in d["next_kpi"]["not_tracked"] if x["name"] != "测试不接入项"]
+
+        def sums_off(d):
+            d["annual"]["combustible_usd_m"][3] += 1
+
+        def combustible_moves(d):
+            a = d["annual"]
+            a["combustible_usd_m"][-1] = a["combustible_usd_m"][0] * 1.3
+            a["net_revenues_usd_m"][-1] = a["combustible_usd_m"][-1] + a["smoke_free_usd_m"][-1]
+
+        def gm_trend_down(d):
+            d["long"]["gross_margin_pct"][-1] = d["long"]["gross_margin_pct"][0] - 1
+
+        def adjusted_beat(d):
+            d["financials"]["adjusted_diluted_eps_usd"][-1] = round(page_row(d)["high"] + 0.1, 2)
+
+        def adjusted_inside(d):
+            d["financials"]["adjusted_diluted_eps_usd"][-1] = page_row(d)["low"]
+
+        def reported_falls(d):
+            eps = d["financials"]["reported_diluted_eps_usd"]
+            eps[-1] = round(eps[-5] - 0.1, 2)
+
+        def reported_rises(d):
+            eps = d["financials"]["reported_diluted_eps_usd"]
+            eps[-1] = round(eps[-5] + 0.1, 2)
+
+        def more_clause_gaps(d):
+            census = d["annual_guidance"]["exclusion_clause_census"]
+            census["without_clause"] = census["without_clause"] + ["2015-02-05"]
+
+        def census_scope_moves(d):
+            census = d["annual_guidance"]["exclusion_clause_census"]
+            census["releases"] = [r for r in census["releases"] if r != "2008-04-23"]
+            census["without_clause"] = [r for r in census["without_clause"] if r != "2008-04-23"]
+
+        def october_moved(d, months):
+            banded, _ = pm.annual_records(d)
+            finished = [r for r in banded if r["actual_reported_eps"] is not None
+                        and r["last_guided"]["release_date"][5:7] == "10"]
+            for record, month in zip(finished, months):
+                last = record["last_guided"]
+                record["last_guided"] = dict(last, release_date=f"{last['release_date'][:5]}{month}-20")
+
+        def october_plurality(d):
+            # October stays the most common month but is no longer the majority
+            october_moved(d, ["07"] * 5 + ["04"] * 4)
+
+        def october_gone(d):
+            october_moved(d, ["07"] * 40)
+
+        def isf_all_volume(d):
+            b = d["revenue_bridge"][d["revenue_bridge"]["periods"][-1]]
+            total = b["end"][1] - b["base"][1]
+            b["price"][1], b["currency"][1], b["acq_div"][1] = 0, 0, 0
+            b["volume_mix_other"][1] = total
+
+        def seasonal_breaks(d):
+            long = d["long"]
+            for year in (2017, 2018, 2019, 2021, 2022, 2023):
+                i = long["periods"].index(f"{year}Q1")
+                long["net_revenues_usd_m"][i] = long["net_revenues_usd_m"][i + 1] + 500
+
+        def noop(d):
+            return None
+
+        cases = {
+            "adjusted quarters all above": (adjusted_all_above, one_adjusted_inside,
+                                            ("<b>全部</b>高于上限", "全部高于上限")),
+            "the only reported miss": (noop, second_reported_miss, ("唯一一次跌破下限",)),
+            "reported both signs": (noop, reported_all_positive, ("有正有负",)),
+            "the only Q4 guided": (noop, q4_guided_twice, ("从不指引第四季", "唯一的例外是 2020 年第四季")),
+            "ex-currency unchanged": (noop, xfx_moves, ("逐字未动", "逐字未变」")),
+            "opposite directions rare": (noop, fx_mostly_opposite, ("方向相反的只有", "更常见的是同向")),
+            "same direction the commoner": (noop, fx_mostly_flat, ("更常见的是同向",)),
+            "combustibles price-led": (bridge_price_led, bridge_volume_led, ("国际组合烟草几乎全部来自价格",)),
+            "volume turns positive": (vmo_turns, vmo_stays, ("本季转正", "变成「价格＋正的量与结构」")),
+            "the only segment down": (us_only_down, two_segments_down, ("是唯一同比下降的",)),
+            "only the U.S. margin falls": (us_gm_alone_falls, us_gm_recovers,
+                                           ("只有美国一条在塌", "单位经济性还在恶化")),
+            "ZYN slides to words": (zyn_slides, zyn_bounces, ("一路降到公司只肯用措辞描述",)),
+            "the last figure is last quarter's": (zyn_slides, zyn_words_twice, ("当前值取的是上一季的",)),
+            "the only withdrawal": (noop, withdrawn_twice, ("这是记录里唯一一次撤回",)),
+            "the withdrawal that kept the clause": (noop, no_withdrawal, ("撤回了全年预测，这句话跟着", "撤回除外")),
+            "a reported quarter after the switch": (noop, q1_2023_adjusted, ("又回到报告口径",)),
+            "what is not tracked is this quarter's": (add_untracked, drop_untracked,
+                                                      ("测试不接入项（测试用的原因）", "<b>测试不接入项</b>")),
+            "the one-million gap": (noop, sums_off, ("只有 2017 年差 US$1M",)),
+            "combustibles flat": (noop, combustible_moves, ("几乎没动", "转型是加出来的")),
+            "gross margin trends up": (noop, gm_trend_down, ("毛利率的趋势向上",)),
+            "beat the quarter's own range": (adjusted_beat, adjusted_inside,
+                                             ("高于公司自己给的", "GAAP 那个数在被一次性项目拿走")),
+            "reported EPS down": (reported_falls, reported_rises, ("；但报告口径",)),
+            "every release since 2009-04": (noop, more_clause_gaps, ("起每一份都有", "点名排除的最多只有并购")),
+            "the census scope is its own": (noop, census_scope_moves, ("2008 年 4 月到", "点名排除的最多只有并购")),
+            "usually published in October": (noop, october_plurality, ("通常发布于 10 月",)),
+            "three quarters gone only in October": (noop, october_gone, ("此时全年已过去四分之三",)),
+            "mostly, not almost all": (noop, isf_all_volume, ("国际无烟的增量主要来自量与结构",)),
+            "Q1 is the usual low": (noop, seasonal_breaks, ("年第一季是低点",)),
+        }
+        for name, (make_true, make_false, claims) in cases.items():
+            held = copy.deepcopy(self.full)
+            make_true(held)
+            before = composed(pm.build_payload(held))
+            broken = copy.deepcopy(held)
+            make_false(broken)
+            after = composed(pm.build_payload(broken))
+            for claim in claims:
+                with self.subTest(case=name, claim=claim):
+                    self.assertIn(claim, before)
+                    self.assertNotIn(claim, after)
+
+    def test_the_reported_eps_direction_is_read_from_the_two_quarters(self) -> None:
+        for delta, word in ((-0.1, "下降"), (0.0, "持平"), (0.1, "上升")):
+            st = copy.deepcopy(self.full)
+            eps = st["financials"]["reported_diluted_eps_usd"]
+            eps[-1] = round(eps[-5] + delta, 2)
+            with self.subTest(word=word):
+                self.assertIn(f"报告口径每股收益 US${eps[-1]:.2f} 同比{word}", pm.build_payload(st)["headline"])
+
+    def test_the_segment_lines_are_called_first_only_while_they_are(self) -> None:
+        st = copy.deepcopy(self.full)
+        quantified = st["next_kpi"]["quantified"]
+        zyn = next(e for e in quantified if e["measure"] == "zyn_offtake")
+        quantified.remove(zyn)
+        quantified.insert(0, zyn)
+        notes = " ".join(ex["note"] for ex in pm.build_payload(st)["sections"][2]["exhibits"][1:])
+        self.assertIn("本节前三条线", " ".join(ex["note"] for ex in self.payload["sections"][2]["exhibits"][1:]))
+        self.assertNotIn("本节前三条线", notes)
+        self.assertIn("本节分部口径的三条线", notes)
+
+    def test_the_fourth_quarter_remark_follows_a_third_quarter_guidance(self) -> None:
+        """"Only Q3 is guided: PMI never guides Q4" reads as a reason only when
+        the guided quarter is the third; after a Q4 or a Q1 release it is a non
+        sequitur."""
+        remark = "PMI 从不指引第四季"
+        upcoming = pm.next_quarter_guidance(self.full)
+        self.assertEqual(remark in self.payload["guidance"]["note"], pm.yq(upcoming["guided_period"])[1] == 3)
+        st = copy.deepcopy(self.full)
+        row = pm.next_quarter_guidance(st)
+        year = pm.yq(st["periods"][-1])[0]
+        row["guided_period"], row["period_label"] = f"{year + 1}Q1", f"Q1 {year + 1}"
+        note = pm.build_payload(st)["guidance"]["note"]
+        self.assertIn("下季指引只覆盖第一季。", note)
+        self.assertNotIn(remark, note)
+
+    def test_a_currency_record_mostly_opposed_is_not_illustrated_by_a_same_direction_year(self) -> None:
+        st = copy.deepcopy(self.full)
+        for record in st["annual_guidance"]["records"]:
+            vs = [v for v in record["vintages"] if v.get("adj_low") is not None and v.get("xfx_low") is not None]
+            if len(vs) >= 2 and record["year"] not in (2022, 2024):
+                vs[-1]["xfx_low"], vs[-1]["xfx_high"] = vs[0]["xfx_low"] + 0.3, vs[0]["xfx_high"] + 0.3
+                vs[-1]["adj_low"], vs[-1]["adj_high"] = vs[0]["adj_low"] - 0.3, vs[0]["adj_high"] - 0.3
+        note = exhibits_of(pm.build_payload(st))["EX_FX"]["note"]
+        moves = pm.currency_moves(st)
+        opposite = [y for y, d, x, _ in moves if d * x < 0]
+        self.assertGreater(len(opposite) * 2, len(moves))
+        self.assertIn(f"{cn_count(len(moves))}年里有{cn_count(len(opposite))}年方向相反", note)
+        self.assertNotIn("FY2024 剔除汇率的指引一年抬了", note)
+
+    def test_the_next_quarter_rolls_without_touching_the_code(self) -> None:
+        rolled = roll_forward(self.full)
+        payload = pm.build_payload(rolled)
+        period = rolled["period_labels"][-1]
+        self.assertEqual(payload["title"], f"Philip Morris International (PM)：{period} 季报仪表盘")
+        self.assertIn(f"截至 {rolled['period_ends'][-1]} · 发布 {rolled['latest']['release_date']}",
+                      payload["subtitle"])
+        self.assertEqual(payload["source_url"], rolled["sources"][0]["url"])
+        self.assertIn(f"{len(rolled['long']['periods'])} 个季度的收入", payload["sections"][3]["description"])
+        self.assertIn(rolled["latest"]["release_date"], payload["guidance"]["title"])
+        blob = text_of(payload)
+        self.assertNotIn(self.full["quarter_story"]["us_gross_margin_reason"][:10], blob)
+        self.assertNotIn(self.full["guidance_other"]["headline_quote"], blob)
+        exhibits = exhibits_of(payload)
+        self.assertNotIn("annot", exhibits["EX_ZYN"])
+        self.assertNotIn("最后一格是空的", exhibits["EX_ZYN"]["note"])
+
+    def test_the_back_computed_year_ago_margins_are_named_once_they_are_not_all(self) -> None:
+        """The 2025 segment margins are back-computed from the printed pp change;
+        from 2027Q1 the year-ago column is a 2026 quarter the page read on its
+        own, and "the year-ago figures are back-computed" stops being true."""
+        note = exhibits_of(self.payload)["EX_SEG_GM"]["note"]
+        self.assertIn("上年同期的百分比是当期表里印出的百分点变化倒推的", note)
+        st = self.full
+        while pm.yq(st["periods"][-1]) < (2027, 1):
+            st = roll_forward(st)
+        rolled = exhibits_of(pm.build_payload(st))["EX_SEG_GM"]
+        self.assertNotIn("上年同期的百分比", rolled["note"])
+        self.assertIn("2025 年各季的百分比是当期表里印出的百分点变化倒推的", rolled["note"])
+        self.assertIn("2025 年各季由同表印出的 pp 变化倒推", rolled["src_extra"])
+
+    def test_a_fourth_quarter_settles_the_year_and_opens_the_next(self) -> None:
+        st = self.full
+        while not st["periods"][-1].endswith("Q4"):
+            st = roll_forward(st)
+        payload = pm.build_payload(st)
+        year = pm.yq(st["periods"][-1])[0]
+        self.assertIn("第四季度及全年业绩新闻稿", payload["source"])
+        self.assertIn(f"与 {year} 年度 Form 10-K", payload["source"])
+        banded, _ = pm.annual_records(st)
+        n = pm.tally([(r["actual_reported_eps"], r["last_guided"]["low"], r["last_guided"]["high"])
+                      for r in banded])[0]
+        self.assertIn(f"{n} 个完整年度里", payload["brief"])
+        # the February release's forecast table is the new year's first vintage
+        guidance = payload["guidance"]
+        self.assertIn(st["latest"]["release_date"], guidance["title"])
+        self.assertIn(f"{year + 1} 全年报告口径摊薄 EPS", [row[0] for row in guidance["rows"]])
+        self.assertEqual(guidance["headers"][2], "上一期指引")
+        exhibits = exhibits_of(payload)
+        self.assertNotIn("逐字未动", exhibits["EX_FX"]["note"])
+        # the fourth quarter has a 10-K, not a 10-Q
+        self.assertIn(pm.segment_releases(st), exhibits["EX_SEG_REV"]["src_extra"])
+        self.assertIn(f"{year} 年第一、二、三、四季度业绩 8-K", exhibits["EX_SEG_REV"]["src_extra"])
+        self.assertIn("同期 10-Q / 10-K 分部附注", exhibits["EX_SEG_REV"]["src_extra"])
+        # one more quarter and the segment releases span two years
+        after = pm.build_payload(roll_forward(st))
+        self.assertIn(f"{pm.cn_quarter(pm.NEW_SEGMENTS_FROM)}至{year + 1} 年第一季度各季业绩 8-K",
+                      exhibits_of(after)["EX_SEG_REV"]["src_extra"])
+
+
+class PmChecksTest(unittest.TestCase):
+    """The page's quarter against a record keyed separately from the series.
+
+    `_checks` is typed once per quarter from the quarter's earnings release --
+    the headline, the EPS reconciliation, the forecast table and assumptions,
+    and the operating-review tables -- with where each figure was read. The
+    builder never reads it (asserted in `test_data_only_roll`).
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.s = load()
+        cls.c = cls.s["_checks"]
+        cls.payload = pm.build_payload(cls.s)
+        cls.exhibits = exhibits_of(cls.payload)
+
+    def test_the_page_names_the_checked_quarter(self) -> None:
+        c = self.c
+        self.assertEqual(self.payload["title"], f"Philip Morris International (PM)：{c['period']} 季报仪表盘")
+        self.assertIn(f"截至 {c['period_end']} · 发布 {c['release_date']}", self.payload["subtitle"])
+        self.assertEqual(self.s["period_labels"][-1], c["period"])
+
+    def test_the_series_ends_on_the_checked_figures(self) -> None:
+        c, s = self.c, self.s
+        fin = s["financials"]
+        for key in ("net_revenues_usd_m", "gross_profit_usd_m", "operating_income_usd_m",
+                    "reported_diluted_eps_usd", "adjusted_diluted_eps_usd"):
+            with self.subTest(figure=key):
+                self.assertEqual(fin[key][-1], c[key])
+                self.assertEqual(fin[key][-5], c[f"prior_year_{key}"])
+        seg = s["segments"]
+        ago = pm.year_ago_index(seg["periods"], len(seg["periods"]) - 1)
+        for key in pm.SEG_KEYS:
+            with self.subTest(segment=key):
+                self.assertEqual(seg["net_revenues_usd_m"][key][-1], c["segment_net_revenues_usd_m"][key])
+                self.assertEqual(seg["net_revenues_usd_m"][key][ago], c["prior_year_segment_net_revenues_usd_m"][key])
+                self.assertEqual(seg["gross_profit_usd_m"][key][-1], c["segment_gross_profit_usd_m"][key])
+        gm = seg["adjusted_gross_margin_pct"]
+        for key, value in c["adjusted_gross_margin_pct"].items():
+            with self.subTest(margin=key):
+                self.assertEqual(gm[key][-1], value)
+                self.assertAlmostEqual(gm[key][-1] - gm[key][ago], c["adjusted_gross_margin_change_pp"][key], places=6)
+        self.assertEqual(seg["adjusted_operating_income_usd_m"][-1], c["adjusted_operating_income_usd_m"])
+        self.assertEqual(seg["adjusted_oi_margin_pct"][-1], c["adjusted_oi_margin_pct"])
+        self.assertEqual(seg["adjusted_oi_margin_pct"][ago], c["prior_year_adjusted_oi_margin_pct"])
+        bridge = s["revenue_bridge"][s["revenue_bridge"]["periods"][-1]]
+        for key, value in c["bridge_pmi"].items():
+            self.assertEqual(bridge[key][0], value, key)
+        printed = s["quarter_printed"]
+        self.assertEqual(printed["organic_revenue_growth_pct"], c["organic_revenue_growth_pct"])
+        self.assertEqual(printed["isf_organic_revenue_growth_pct"], c["isf_organic_revenue_growth_pct"])
+
+    def test_the_guidance_is_the_checked_forecast_table(self) -> None:
+        c, s = self.c, self.s
+        now = released_record(s)["vintages"][-1]
+        self.assertEqual(now["release_date"], c["release_date"])
+        fy = c["guidance_full_year"]
+        self.assertEqual([now["low"], now["high"]], fy["reported"])
+        self.assertEqual([now["adj_low"], now["adj_high"]], fy["adjusted"])
+        self.assertEqual([now["xfx_low"], now["xfx_high"]], fy["excluding_currency"])
+        self.assertEqual(now["currency_eps"], fy["currency"])
+        upcoming = pm.next_quarter_guidance(s)
+        nq = c.get("guidance_next_quarter")
+        if nq is None:
+            self.assertIsNone(upcoming)
+        else:
+            self.assertEqual(upcoming["guided_period"], nq["period"])
+            self.assertEqual([upcoming["low"], upcoming["high"]], nq["adjusted"])
+            self.assertEqual(upcoming["currency_eps"], nq["currency"])
+        this_q = next((r for r in s["quarterly_guidance"] if r["guided_period"] == s["periods"][-1]), None)
+        if this_q is not None:
+            self.assertEqual(this_q["actual_eps"], c["adjusted_diluted_eps_usd"])
+
+    def test_the_rounding_the_page_uses_is_the_companys(self) -> None:
+        c = self.c
+        growth = (c["net_revenues_usd_m"] / c["prior_year_net_revenues_usd_m"] - 1) * 100
+        self.assertEqual(f"{growth:.1f}", f"{c['net_revenues_growth_pct_printed']:.1f}")
+        self.assertEqual(sum(c["segment_net_revenues_usd_m"].values()), c["net_revenues_usd_m"])
+        # the release's own note: "Sums might not foot to total due to rounding" (Q1 2026: 6,906 vs 6,905)
+        self.assertAlmostEqual(sum(c["segment_gross_profit_usd_m"].values()), c["gross_profit_usd_m"], delta=1)
+        self.assertEqual(round(c["adjusted_operating_income_usd_m"] / c["net_revenues_usd_m"] * 100, 1),
+                         c["adjusted_oi_margin_pct"])
+        self.assertEqual(sum(c["bridge_pmi"].values()), c["net_revenues_usd_m"] - c["prior_year_net_revenues_usd_m"])
+
+    def test_the_page_prints_the_checked_figures(self) -> None:
+        c = self.c
+        headline = self.payload["headline"]
+        self.assertIn(f"净收入 US${c['net_revenues_usd_m']:,.0f}M、同比 +{c['net_revenues_growth_pct_printed']:.1f}%",
+                      headline)
+        self.assertIn(f"调整后摊薄每股收益 US${c['adjusted_diluted_eps_usd']:.2f}", headline)
+        self.assertIn(f"报告口径每股收益 US${c['reported_diluted_eps_usd']:.2f}", headline)
+        self.assertIn(f"美国分部调整后毛利率 {c['adjusted_gross_margin_pct']['us']:.1f}%、"
+                      f"同比 {c['adjusted_gross_margin_change_pp']['us']:+.1f}pp", headline)
+        bridge = self.exhibits["EX_BRIDGE"]
+        self.assertIn(f"US${c['net_revenues_usd_m'] - c['prior_year_net_revenues_usd_m']:,.0f}M", bridge["title"])
+        rows = {row[0]: row for row in self.payload["guidance"]["rows"]}
+        fy = c["guidance_full_year"]
+        year = released_record(self.s)["year"]
+        self.assertEqual(rows[f"{year} 全年报告口径摊薄 EPS"][1], f"${fy['reported'][0]:.2f} – ${fy['reported'][1]:.2f}")
+        self.assertEqual(rows[f"{year} 全年调整后摊薄 EPS"][1], f"${fy['adjusted'][0]:.2f} – ${fy['adjusted'][1]:.2f}")
+        thresholds = next(t for t in self.payload["tables"] if "下季阈值" in t["title"])
+        organic = next(r for r in thresholds["rows"] if r[0] == "集团有机收入增速")
+        self.assertEqual(organic[3], f"{c['organic_revenue_growth_pct']:.1f}%")
+        for number in re.findall(r"\d+(?:\.\d+)?%", c["zyn_shipments_words"]):
+            self.assertIn(number, self.s["zyn"]["shipment_words"][-1])
 
 
 if __name__ == "__main__":

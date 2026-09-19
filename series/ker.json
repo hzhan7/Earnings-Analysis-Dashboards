@@ -7,6 +7,41 @@
   "analysis_date": "2026-09-17",
   "audit_status": "limited_review"
  },
+ "_checks": {
+  "period": "Q2 2026",
+  "half": "H1 2026",
+  "period_end": "2026-06-30",
+  "release_date": "2026-07-28",
+  "q_revenue_eur_m": 3652,
+  "q_prior_year_revenue_eur_m": 3626,
+  "q_comparable_pct": 2,
+  "q_fashion_leather_goods_eur_m": 2948,
+  "q_gucci_revenue_eur_m": 1410,
+  "q_gucci_comparable_pct": -2,
+  "q_jewelry_eur_m": 252,
+  "q_jewelry_comparable_pct": 18,
+  "q_eyewear_eur_m": 476,
+  "q_eyewear_comparable_pct": 8,
+  "h_revenue_eur_m": 7220,
+  "h_gross_margin_eur_m": 5170,
+  "h_recurring_operating_income_eur_m": 921,
+  "h_recurring_operating_margin_pct": 12.8,
+  "h_prior_revenue_eur_m": 7439,
+  "h_prior_recurring_operating_income_eur_m": 920,
+  "h_prior_recurring_operating_margin_pct": 12.4,
+  "h_margin_change_pts": 0.4,
+  "h_gucci_revenue_eur_m": 2757,
+  "h_gucci_recurring_operating_income_eur_m": 468,
+  "h_gucci_recurring_operating_margin_pct": 17.0,
+  "net_debt_eur_m": 3324,
+  "net_debt_compare_date": "2025-12-31",
+  "net_debt_compare_eur_m": 8039,
+  "net_debt_eur_bn_printed": 3.3,
+  "net_debt_change_eur_bn_printed": 4.7,
+  "outlook_quote": "its objective remains to return to growth and improve profitability",
+  "source": "Kering「2026 First-Half Results」新闻稿（2026-07-28，kering.com，KER_H1_2026_results_release）：首页要点「Q2 revenue at €3,652 million, +2% on a comparable basis」「recurring operating margin at 12.8% of revenue; €921 million」「Net debt: €3.3 billion reduced by €4.7 billion」；第 2 页 FINANCIAL INDICATORS 表（Revenue 7 220 / 7 439，Recurring operating income 921 / 920，% of revenue 12.8% / 12.4% / +0.4pts）；第 3 页 Revenue 表 Q2 2026 / Q2 2025（Kering Fashion & Leather Goods 2,948 / 2,986 +0%，of which Gucci 1,410 / 1,456 −2%，Kering Jewelry 252 / 219 +18%，Kering Eyewear 476 / 445 +8%，KERING 3,652 / 3,626 +2%；H1 Gucci 2,757）与 Recurring operating income 表（of which Gucci 468）；Gucci 段「Its recurring operating margin was 17.0%」；OUTLOOK 段原话；附录合并损益表 Gross margin 5,170。净负债精确值取自 2026 First Half Report 第 2.3 节「NET DEBT AS OF JUNE 30 3,324」「Net debt as of January 1 8,039」。",
+  "checked_on": "2026-09-19"
+ },
  "long_quarters": [
   "2016Q1",
   "2016Q2",
@@ -716,6 +751,23 @@
    0,
    2
   ]
+ },
+ "reprint_exceptions": [
+  {
+   "line": "saint_laurent",
+   "period": "2021Q3",
+   "first_published": 652.9,
+   "reprinted": 652,
+   "first_doc": "KER_2021Q3_revenue_release",
+   "doc": "KER_2022Q3_revenue_release",
+   "explained": false
+  }
+ ],
+ "corpus_audit": {
+  "period": "Q2 2026",
+  "_what": "「本页读过的全部文件」这类普查句的范围：到本季为止的全部来源都经过双人盲读（double_read），三条品牌线的每一次重印都与首次公布对过（reprint_census），例外列在 reprint_exceptions。换季时读完新一季的文件再改戳；没有重新普查就删掉整块，相关句子不出。",
+  "double_read": true,
+  "reprint_census": true
  },
  "other_houses_perimeter_2016_2018": [
   {
@@ -1455,6 +1507,27 @@
    ]
   }
  },
+ "half_bridge": {
+  "period": "H1 2026",
+  "_what": "本半年与上年同期的损益表（公司在同一份新闻稿里并排印出），供利润率三腿桥用。current 必须等于 half_group 末格；换到下一个半年时按新一期新闻稿重录并改戳，拿不到同口径的两期就删掉整块（桥图与相关句子整段不出）。",
+  "compare": "H1 2025",
+  "prior_restated": "Kering Beauté",
+  "doc": "KER_H1_2026_results_release",
+  "current": {
+   "revenue": 7220,
+   "gross_margin": 5170,
+   "personnel_expenses": -1315,
+   "other_recurring_operating_income_expenses": -2934,
+   "recurring_operating_income": 921
+  },
+  "prior": {
+   "revenue": 7439,
+   "gross_margin": 5409,
+   "personnel_expenses": -1420,
+   "other_recurring_operating_income_expenses": -3069,
+   "recurring_operating_income": 920
+  }
+ },
  "balance_dates": [
   "2016-06-30",
   "2016-12-31",
@@ -1524,21 +1597,12 @@
   "KER_H1_2026_financial_report",
   "KER_H1_2026_financial_report"
  ],
- "h1_income_statement": {
-  "H1 2025 restated": {
-   "revenue": 7439,
-   "gross_margin": 5409,
-   "personnel_expenses": -1420,
-   "other_recurring_operating_income_expenses": -3069,
-   "recurring_operating_income": 920
-  },
-  "H1 2026": {
-   "revenue": 7220,
-   "gross_margin": 5170,
-   "personnel_expenses": -1315,
-   "other_recurring_operating_income_expenses": -2934,
-   "recurring_operating_income": 921
-  }
+ "net_debt_story": {
+  "period": "H1 2026",
+  "_what": "本半年净负债变动里公司自己点名的一次性来源。换到下一个半年时按新一期重写或删掉整块。",
+  "doc": "KER_H1_2026_results_release",
+  "headline": "降幅里有 €4.0B 是出售 Kering Beauté 的现金",
+  "note": "公司在半年报里写明现金中包含 2026-03-31 完成出售 Kering Beauté 收到的 €4.0 billion。所以这一段下降主要是卖资产，不是经营现金流。"
  },
  "annual_house": {
   "gucci": {
@@ -1981,68 +2045,78 @@
   ],
   "footnote": "(1) The detailed presentation of the Capital Markets Day during which this ambition was presented is available on the Kering website",
   "eyewear_fy2025": {
+   "year": "FY2025",
    "revenue_eur_m": 1592,
    "roi_eur_m": 252,
    "doc": "KER_FY_2025_results_release"
   },
   "eyewear_fy2022_prose": "Kering Eyewear’s 2022 revenue broke through the billion-euro mark (up 58% as reported and up 27% on a comparable basis) to €1.1 billion"
  },
+ "outlook": {
+  "period": "Q2 2026",
+  "_what": "本季业绩公告的展望段落：有没有数字、原话。下一季换成那一季公告的展望段；公告没有展望段就删掉整块。",
+  "doc": "KER_H1_2026_results_release",
+  "has_figures": false,
+  "quote": "its objective remains to return to growth and improve profitability"
+ },
  "next_kpi": {
+  "period": "Q2 2026",
+  "_note": "下季阈值是本地研究设定，不是公司指引。当前值由页面按 measure 从序列现算：可比增速读最新一季，半年毛利率与经常性营业利润率读最新半年（利润率取公司印出的一位小数，毛利率公司不印、取自算值），净负债读最新期末。换季时按新一季的本地分析改阈值与理由并改戳。",
   "entries": [
    {
     "metric": "集团季度可比增速",
+    "measure": "group_comparable",
     "direction": "up",
     "threshold": 1,
     "unit": "pct",
-    "current": 2,
     "why": "本季是 2023 年二季度之后第一次为正；跌回 +1% 以下就回到持平附近，转正不成立。"
    },
    {
     "metric": "Gucci 季度可比增速",
+    "measure": "gucci_comparable",
     "direction": "up",
     "threshold": -5,
     "unit": "pct",
-    "current": -2,
     "why": "连续为负但在收窄；重新跌破 −5% 意味着收窄趋势中断。"
    },
    {
     "metric": "珠宝季度可比增速",
+    "measure": "jewelry_comparable",
     "direction": "up",
     "threshold": 10,
     "unit": "pct",
-    "current": 18,
     "why": "珠宝是集团转正的主要来源之一；低于两位数说明这条腿在降温。"
    },
    {
     "metric": "眼镜季度可比增速",
+    "measure": "eyewear_comparable",
     "direction": "up",
     "threshold": 5,
     "unit": "pct",
-    "current": 8,
     "why": "眼镜以批发为主、节奏与时装不同；低于 +5% 时它不再能对冲 Gucci。"
    },
    {
     "metric": "半年毛利率（对上年同期重述值）",
+    "measure": "half_gross_margin",
     "direction": "up",
     "threshold": 72.71,
     "unit": "pct",
-    "current": 71.61,
     "why": "上半年利润率的改善全部来自费用率；毛利率回到上年同期以上，才说明产品与渠道本身在修复。"
    },
    {
     "metric": "半年经常性营业利润率（对上年同期重述值）",
+    "measure": "half_recurring_margin",
     "direction": "up",
-    "threshold": 12.37,
+    "threshold": 12.4,
     "unit": "pct",
-    "current": 12.76,
     "why": "费用压缩能撑多久是下一个半年的问题；跌回上年同期以下说明费用红利已经用完。"
    },
    {
     "metric": "期末净负债",
+    "measure": "net_debt",
     "direction": "down",
     "threshold": 4000,
     "unit": "eur_m",
-    "current": 3324,
     "why": "出售 Kering Beauté 之后降到 €3.3B；重新高于 €4B 说明经营现金流没有接上资产出售。"
    }
   ]

@@ -251,7 +251,7 @@
     "capitalised_development_eur_m": [
       119.0,
       124.0,
-      null,
+      110.0,
       110.0,
       106.0,
       95.0,
@@ -262,7 +262,7 @@
       587.0,
       494.0,
       847.0,
-      429.0,
+      395.0,
       557.0,
       519.0,
       863.0,
@@ -272,7 +272,7 @@
       364.0,
       221.0,
       620.0,
-      232.0,
+      198.0,
       365.0,
       321.0,
       653.0,
@@ -1305,9 +1305,9 @@
       173.0,
       145.0,
       253.0,
-      189.0,
-      134.0,
-      167.0,
+      174.0,
+      133.0,
+      158.0,
       244.0,
       151.0,
       166.0,
@@ -1369,7 +1369,7 @@
       124.0,
       119.0,
       124.0,
-      null,
+      110.0,
       110.0,
       106.0,
       95.0,
@@ -1414,7 +1414,7 @@
       587.0,
       494.0,
       847.0,
-      429.0,
+      395.0,
       557.0,
       519.0,
       863.0,
@@ -1458,7 +1458,7 @@
       364.0,
       221.0,
       620.0,
-      232.0,
+      198.0,
       365.0,
       321.0,
       653.0,
@@ -1596,6 +1596,138 @@
       39.0693,
       38.9577
     ],
+    "ebit_margin_printed_pct": [
+      18.0,
+      19.3,
+      22.0,
+      21.9,
+      21.6,
+      21.9,
+      24.2,
+      23.1,
+      25.3,
+      23.9,
+      24.2,
+      23.1,
+      24.7,
+      24.3,
+      24.8,
+      23.7,
+      23.6,
+      4.0,
+      25.0,
+      23.5,
+      26.3,
+      26.5,
+      25.7,
+      22.6,
+      25.9,
+      25.0,
+      23.9,
+      21.8,
+      26.9,
+      29.7,
+      27.4,
+      24.4,
+      27.9,
+      29.9,
+      28.4,
+      27.0,
+      30.3,
+      30.9,
+      28.4,
+      28.5,
+      29.7,
+      31.2
+    ],
+    "ebitda_margin_printed_pct": [
+      26.3,
+      26.9,
+      30.0,
+      30.0,
+      29.5,
+      29.4,
+      31.8,
+      30.7,
+      32.8,
+      31.9,
+      33.2,
+      32.4,
+      33.1,
+      32.0,
+      33.9,
+      36.0,
+      34.0,
+      21.9,
+      37.2,
+      34.7,
+      37.2,
+      37.4,
+      35.2,
+      33.9,
+      35.6,
+      34.6,
+      34.8,
+      34.3,
+      37.6,
+      40.0,
+      38.6,
+      36.7,
+      38.2,
+      39.1,
+      38.8,
+      37.0,
+      38.7,
+      39.7,
+      37.9,
+      38.8,
+      39.1,
+      39.0
+    ],
+    "margin_printed_basis": [
+      "adjusted",
+      "adjusted",
+      "adjusted",
+      "adjusted",
+      "adjusted",
+      "adjusted",
+      "adjusted",
+      "adjusted",
+      "adjusted",
+      "adjusted",
+      "adjusted",
+      "adjusted",
+      "adjusted",
+      "adjusted",
+      "adjusted",
+      "adjusted",
+      "adjusted",
+      "adjusted",
+      "reported",
+      "reported",
+      "reported",
+      "reported",
+      "reported",
+      "reported",
+      "reported",
+      "reported",
+      "reported",
+      "reported",
+      "reported",
+      "reported",
+      "reported",
+      "reported",
+      "reported",
+      "reported",
+      "reported",
+      "reported",
+      "reported",
+      "reported",
+      "reported",
+      "reported",
+      "reported",
+      "reported"
+    ],
     "cars_revenue_per_unit_eur_k": [
       255.5792,
       266.0343,
@@ -1651,6 +1783,7 @@
         "industrial_fcf_eur_m": 280.0,
         "adj_ebitda_eur_m": 880.0,
         "adj_ebit_eur_m": 632.0,
+        "diluted_eps_eur": 2.11,
         "adj_diluted_eps_eur": null
       },
       "2017": {
@@ -1663,6 +1796,7 @@
         "industrial_fcf_eur_m": 328.0,
         "adj_ebitda_eur_m": 1036.0,
         "adj_ebit_eur_m": 775.0,
+        "diluted_eps_eur": 2.82,
         "adj_diluted_eps_eur": null
       },
       "2018": {
@@ -1675,6 +1809,7 @@
         "industrial_fcf_eur_m": 405.0,
         "adj_ebitda_eur_m": 1114.0,
         "adj_ebit_eur_m": 825.0,
+        "diluted_eps_eur": 4.14,
         "adj_diluted_eps_eur": 3.4
       },
       "2019": {
@@ -1687,6 +1822,7 @@
         "industrial_fcf_eur_m": 675.0,
         "adj_ebitda_eur_m": 1269.0,
         "adj_ebit_eur_m": 917.0,
+        "diluted_eps_eur": 3.71,
         "adj_diluted_eps_eur": 3.71
       },
       "2020": {
@@ -1699,6 +1835,7 @@
         "industrial_fcf_eur_m": 172.0,
         "adj_ebitda_eur_m": 1143.0,
         "adj_ebit_eur_m": 716.0,
+        "diluted_eps_eur": 3.28,
         "adj_diluted_eps_eur": 2.88
       },
       "2021": {
@@ -1711,6 +1848,7 @@
         "industrial_fcf_eur_m": 642.0,
         "adj_ebitda_eur_m": 1531.0,
         "adj_ebit_eur_m": 1075.0,
+        "diluted_eps_eur": 4.5,
         "adj_diluted_eps_eur": 4.5
       },
       "2022": {
@@ -1723,6 +1861,7 @@
         "industrial_fcf_eur_m": 758.0,
         "adj_ebitda_eur_m": 1773.0,
         "adj_ebit_eur_m": 1227.0,
+        "diluted_eps_eur": 5.09,
         "adj_diluted_eps_eur": 5.09
       },
       "2023": {
@@ -1735,6 +1874,7 @@
         "industrial_fcf_eur_m": 932.0,
         "adj_ebitda_eur_m": 2279.0,
         "adj_ebit_eur_m": 1617.0,
+        "diluted_eps_eur": 6.9,
         "adj_diluted_eps_eur": 6.9
       },
       "2024": {
@@ -1747,6 +1887,7 @@
         "industrial_fcf_eur_m": 1027.0,
         "adj_ebitda_eur_m": 2555.0,
         "adj_ebit_eur_m": 1888.0,
+        "diluted_eps_eur": 8.46,
         "adj_diluted_eps_eur": 8.46
       },
       "2025": {
@@ -1759,6 +1900,7 @@
         "industrial_fcf_eur_m": 1538.0,
         "adj_ebitda_eur_m": 2772.0,
         "adj_ebit_eur_m": 2110.0,
+        "diluted_eps_eur": 8.96,
         "adj_diluted_eps_eur": 8.96
       }
     },
@@ -1930,6 +2072,39 @@
       "Q4 2025",
       "Q1 2026",
       "Q2 2026"
+    ],
+    "layout": [
+      "before_growth",
+      "before_growth",
+      "last",
+      "text",
+      "last",
+      "last",
+      "last",
+      "last",
+      "last",
+      "last",
+      "last",
+      "last",
+      "last",
+      "last",
+      "last",
+      "last",
+      "last",
+      "last",
+      "last",
+      "last",
+      "last",
+      "last",
+      "last",
+      "last",
+      "before_growth",
+      "before_growth",
+      "before_growth",
+      "last",
+      "last",
+      "first",
+      "first"
     ],
     "items": {
       "revenue": {
@@ -2605,38 +2780,110 @@
     }
   },
   "next_kpi": {
+    "period": "Q2 2026",
     "quantified": [
       {
         "metric": "EBIT 利润率",
         "direction": "up",
         "threshold": 28.0,
-        "current": 31.22,
-        "unit": "pct"
+        "measure": "ebit_margin",
+        "unit": "pct",
+        "why": "红线是本地研究设定的撤回线，取 2025 年第三季的实际读数附近 —— 低于它就不能再把下半年的降档只解释成折旧节奏。"
       },
       {
         "metric": "单季 D&A",
         "direction": "up",
         "threshold": 188.0,
-        "current": 150.0,
+        "measure": "da",
         "unit": "eur_m"
       },
       {
         "metric": "美洲出货同比",
         "direction": "up",
         "threshold": -15.0,
-        "current": -20.75,
+        "measure": "americas_yoy",
         "unit": "pct"
       },
       {
         "metric": "工业自由现金流对全年下限的完成度",
         "direction": "up",
         "threshold": 50.0,
-        "current": 59.94,
+        "measure": "ifcf_ytd_vs_floor",
         "unit": "pct"
       }
     ],
-    "excluded": "另有两条本地跟踪指标本页不接入，因为公司结构性不披露：个性化收入占 Cars and spare parts 的比例（只在电话会上以「>20%」这类口径出现，从未进入新闻稿或申报），以及订单簿覆盖到哪一年（只有 CEO 的一句话，没有数字）。2027 年汇率对冲覆盖率同样只有「far less covered」的定性说法。车型级出货量与单车 ASP 公司已明确表示永不披露。"
+    "not_tracked": [
+      {
+        "name": "个性化收入占 Cars and spare parts 的比例",
+        "why": "只在电话会上以「>20%」这类口径出现，从未进入新闻稿或申报"
+      },
+      {
+        "name": "订单簿覆盖到哪一年",
+        "why": "新闻稿里只以 CEO 引语出现，本季是覆盖整个 2027 年，没有可逐季比较的数字"
+      }
+    ],
+    "also": "2027 年汇率对冲覆盖率同样只有「far less covered」的定性说法。车型级出货量与单车 ASP 公司已明确表示永不披露。"
   },
+  "quarter_story": {
+    "period": "Q2 2026",
+    "da_guidance": {
+      "full_year_floor_eur_m": 700.0,
+      "said_on": "本季电话会",
+      "first_time": true
+    },
+    "americas": "公司把本季美洲的下滑解释为换代排产与「近市场先供」。这条线不能证伪那个解释，但它能把它变成可检验的：如果是排产，随后的季度应当回补；如果同比降幅继续深于红线，就要按区域结构性再配置来建模。",
+    "regions": "公司对此的口径是按订单先后交付、不按地域调配额。",
+    "other_revenue": {
+      "leg": "other_revenues_eur_m",
+      "text": "主因是向其他一级方程式车队出租引擎 —— 也就是被并进来的那块业务本身。"
+    }
+  },
+  "printed_yoy_pct": {
+    "period": "Q2 2026",
+    "net_revenues_eur_m": 8,
+    "cars_and_spare_parts_eur_m": 8,
+    "sponsorship_commercial_brand_eur_m": 2,
+    "other_revenues_eur_m": 31
+  },
+  "reprints": [
+    {
+      "quarter": "Q2 2025",
+      "key": "industrial_fcf_eur_m",
+      "first_print": 232.0,
+      "reprint": 198.0,
+      "reprinted_in": "Q2 2026",
+      "offset_pending": true,
+      "note": "剔除的主要是之后几季才缴付的预扣税（公司自 2026 年第二季起的工业自由现金流不含预扣税），缴付那几季的重列值要等之后的新闻稿"
+    },
+    {
+      "quarter": "Q2 2025",
+      "key": "cash_from_operations_eur_m",
+      "first_print": 429.0,
+      "reprint": 395.0,
+      "reprinted_in": "Q2 2026"
+    },
+    {
+      "quarter": "Q1 2020",
+      "key": "capex_eur_m",
+      "first_print": 189.0,
+      "reprint": 174.0,
+      "reprinted_in": "Q1 2021"
+    },
+    {
+      "quarter": "Q2 2020",
+      "key": "capex_eur_m",
+      "first_print": 134.0,
+      "reprint": 133.0,
+      "reprinted_in": "Q2 2021"
+    },
+    {
+      "quarter": "Q3 2020",
+      "key": "capex_eur_m",
+      "first_print": 167.0,
+      "reprint": 158.0,
+      "reprinted_in": "Q3 2021"
+    }
+  ],
   "sources": [
     {
       "label": "Ferrari Q2 2026 业绩新闻稿（6-K EX-99.1，2026-07-30）",
@@ -2654,5 +2901,79 @@
       "label": "Ferrari N.V. 在 SEC EDGAR 的全部申报（CIK 1648416）",
       "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001648416&type=6-K&dateb=&owner=include&count=40"
     }
-  ]
+  ],
+  "_checks": {
+    "period": "Q2 2026",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-30",
+    "net_revenues_eur_m": 1938,
+    "prior_year_net_revenues_eur_m": 1787,
+    "net_revenues_yoy_pct_printed": 8,
+    "revenue_lines_eur_m": {
+      "cars_and_spare_parts": 1629,
+      "sponsorship_commercial_brand": 209,
+      "other": 100
+    },
+    "revenue_lines_yoy_pct_printed": {
+      "cars_and_spare_parts": 8,
+      "sponsorship_commercial_brand": 2,
+      "other": 31
+    },
+    "ebit_eur_m": 605,
+    "ebit_margin_pct_printed": 31.2,
+    "prior_quarter_ebit_margin_pct_printed": 29.7,
+    "ebitda_eur_m": 755,
+    "ebitda_margin_pct_printed": 39.0,
+    "prior_quarter_ebitda_margin_pct_printed": 39.1,
+    "da_eur_m": 150,
+    "six_month_da_eur_m": 324,
+    "net_profit_eur_m": 463,
+    "diluted_eps_eur": 2.62,
+    "industrial_fcf_eur_m": 276,
+    "prior_year_industrial_fcf_eur_m_reprinted": 198,
+    "six_month_industrial_fcf_eur_m": 929,
+    "cash_from_operations_eur_m": 437,
+    "prior_year_cash_from_operations_eur_m_reprinted": 395,
+    "capex_eur_m": 236,
+    "capitalised_development_eur_m": 122,
+    "shipments_units": 3366,
+    "shipments_by_region": {
+      "emea": 1856,
+      "americas": 787,
+      "china_hk_taiwan": 185,
+      "rest_of_apac": 538
+    },
+    "prior_year_shipments_by_region": {
+      "emea": 1646,
+      "americas": 993,
+      "china_hk_taiwan": 274,
+      "rest_of_apac": 581
+    },
+    "net_industrial_debt_eur_m": -131,
+    "guidance": {
+      "revenue": [
+        "point",
+        7.6
+      ],
+      "adj_ebitda": [
+        "floor",
+        2.97
+      ],
+      "adj_ebit": [
+        "floor",
+        2.26
+      ],
+      "adj_eps": [
+        "floor",
+        9.68
+      ],
+      "ifcf": [
+        "floor",
+        1.55
+      ]
+    },
+    "guidance_layout": "first",
+    "source": "Ferrari N.V. 6-K（0001648416-26-000106）EX-99.1「PERSONALIZATIONS AND MIX CONTINUE TO DRIVE STRONG RESULTS AND 2026 GUIDANCE RAISE」，正文日期行「Maranello (Italy), July 30, 2026」：首页摘要表（Net revenues 1,938 / 1,787；Operating profit (EBIT) 605、margin 31.2%；Net profit 463；Diluted EPS 2.62；EBITDA 755、margin 39.0%；Free Cash Flow from Industrial Activities 276 / 198 (2)、六个月 929）；脚注 2 与 16（Q2 2025 工业自由现金流剔除 €34M 预扣税后重列）；Total net revenues 表（1,629 / 1,507、8%；209 / 205、2%；100 / 75、31%；合计 8%）；Shipments 表（EMEA 1,856 / 1,646，Americas 787 / 993，Mainland China, Hong Kong and Taiwan 185 / 274，Rest of APAC 538 / 581，Total 3,366）；EBITDA 还原表（Amortization and depreciation 150、六个月 324）；Capex and R&D 表（236；of which capitalized development costs 122）；现金流表（Cash flow from operating activities 437 / 395）；Net Industrial (Debt)/Cash 表（Jun. 30, 2026 (131)）；展望表「UPWARD REVISED 2026 GUIDANCE | PREVIOUS 2026 GUIDANCE | 2025」（~7.60、≥2.97、≥2.26、≥9.68、≥1.55，指引列在最左）。上一季利润率取 2026-05-05 的 Q1 2026 新闻稿（0001648416-26-000062）摘要表：Operating profit (EBIT) margin 29.7%，EBITDA margin 39.1%。",
+    "checked_on": "2026-09-19"
+  }
 }

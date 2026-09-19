@@ -1413,8 +1413,6 @@ UNDERIVABLE_QUARTER_COUNTS = {
     "cme Ex14":  ([37], "锚是同句里用中文写的「五十四个季度里」，数字形式的锚不存在"),
     "cme Ex21":  ([34], "税改前 7 季 / 之后 34 季的分段均值，两段都短于窗口"),
     "ibkr Ex9":  ([34], "已由 len(reported) 算出：该行有披露的季度数，非窗口长度"),
-    "ker Ex9":   ([12], "Gucci 可比增速自 2023Q3 起连续为负的季度数，是一段区间的长度；"
-                        "builder 用 trailing_streak 从 series 现算，test_ker_dashboard 另算一遍断言"),
     "meta Ex9":  ([13], "价格腿同比为负的季度数，是条件计数"),
     "axp Ex16":  ([16], "两条口径同时被印出来的季度数（16 季），是重叠区间的长度，"
                         "不是该图 42 季的窗口 —— 图注拿它论证两条线不能接成一条"),
@@ -1503,6 +1501,89 @@ class ProseQuarterCountTest(unittest.TestCase):
         self.assertEqual([m.group(1) for m in self.COUNT.finditer("42 季里 39 季为正")],
                          ["42", "39"])
 
+
+
+def _ker_run_counts() -> dict:
+    """Kering's two run lengths, pinned where the census above would see them.
+
+    The Gucci chart counts the quarters of comparable decline since the last
+    non-negative one (twelve at 2026Q2, one more each quarter it stays negative;
+    once it turns, the title names the run that just ended), and the group chart
+    counts the run its latest reading ends or extends. Both are lengths of a
+    stretch, not of any window, so the census cannot derive them -- unless a
+    stretch happens to be as long as some chart's axis, which is why a pin is kept
+    only where the census's own rule (`_derivable`, applied page-wide, and the
+    anchor) leaves the count loose. The page is rolled by editing
+    `series/ker.json` alone, so each count is computed from the series and each
+    chart number is read from the page, where it moves when a chart before it
+    comes or goes."""
+    series = json.loads((ROOT / "series" / "ker.json").read_text(encoding="utf-8"))
+    comp = series["quarterly_comparable_pct"]
+
+    def trailing(values: list, test) -> int:
+        n = 0
+        for value in reversed(values):
+            if value is None or not test(value):
+                break
+            n += 1
+        return n
+
+    gucci = comp["gucci"]
+    gucci_run = trailing(gucci, lambda v: v < 0) or trailing(gucci[:-1], lambda v: v < 0)
+    group = comp["group_first_published"]
+    positives = [i for i in range(len(group) - 1) if group[i] > 0]
+    if group[-1] > 0 and positives and positives[-1] < len(group) - 2:
+        # printed as 「经历了 N 个非正季度」, which COUNT does not read as a count
+        group_run = 0
+    elif group[-1] > 0:
+        group_run = trailing(group, lambda v: v > 0)
+    else:
+        group_run = trailing(group, lambda v: v <= 0)
+    runs = {"Gucci 本季收入": (gucci_run, "Gucci 可比增速连续为负的季度数，是一段区间的长度，按 series 现算"),
+            "集团可比增速本季": (group_run, "集团可比增速这一段（非正或为正）的季度数，是一段区间的长度，按 series 现算")}
+
+    return _pin_runs("ker", runs)
+
+
+def _pin_runs(slug: str, runs: dict) -> dict:
+    """Pin each run length on the chart whose title starts with its key, where the
+    census would see it: counts under twelve are not policed, a count some chart
+    on the page can derive is not loose, and an exhibit with a derivable anchor
+    is skipped whole."""
+    page = js_payload(ROOT / "data" / f"{slug}.js", "window.DASH")
+    charts = [ex for section in page["sections"] for ex in section["exhibits"]]
+    derivable = set().union(*(ProseQuarterCountTest._derivable(ex)[1] for ex in charts))
+    pins = {}
+    for ex in charts:
+        for prefix, (count, reason) in runs.items():
+            if not ex["title"].startswith(prefix) or count < 12 or count in derivable:
+                continue
+            prose = " ".join(ex.get(field) or "" for field in ("title", "note", "subtitle"))
+            if {int(m.group(1)) for m in ProseQuarterCountTest.ANCHOR.finditer(prose)} & derivable:
+                continue
+            pins[f"{slug} Ex{ex['n']}"] = ([count], reason)
+    return pins
+
+
+def _cfr_run_counts() -> dict:
+    """Richemont's business-area chart counts the jewellery Maisons' run of
+    double-digit constant-rate quarters (seven at 2026Q2) and, in the same title,
+    how many of those quarters the watchmakers were negative. The run is a stretch,
+    not a window; it is computed from `series/cfr.json` and pinned only when it is
+    long enough for the census to police."""
+    series = json.loads((ROOT / "series" / "cfr.json").read_text(encoding="utf-8"))
+    streak = 0
+    for value in reversed(series["quarterly_cer_pct"]["jewellery_maisons"]):
+        if value is None or value < 10:
+            break
+        streak += 1
+    return _pin_runs("cfr", {"三块业务的恒定汇率增速": (
+        streak if streak >= 2 else 0,
+        "珠宝恒定汇率增速连续两位数的季度数，是一段区间的长度，按 series 现算")})
+
+
+UNDERIVABLE_QUARTER_COUNTS.update(_ker_run_counts())
+UNDERIVABLE_QUARTER_COUNTS.update(_cfr_run_counts())
 
 if __name__ == "__main__":
     unittest.main()
