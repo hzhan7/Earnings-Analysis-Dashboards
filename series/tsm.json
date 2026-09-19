@@ -61,7 +61,11 @@
       56,
       58
     ],
-    "source": "TSMC 2Q26 业绩新闻稿（6-K EX-99.1 a2q26e_withguidancexfinal.htm，Jul. 16, 2026）：首段「second quarter ended June 30, 2026」、合并收入 NT$1,270.38B、净利 NT$706.56B、稀释 EPS NT$27.25；「In US dollars, second quarter revenue was $40.20 billion, which increased 33.7% year-over-year and increased 12.0%」；「Gross margin … 67.7%, operating margin was 60.3%」；制程 2nm 3% / 3nm 30% / 5nm 33% / 7nm 11%、Advanced 77%；Q3 指引（US$44.6–45.8B、1 US dollar to 32 NT dollars、毛利率 65–67%、营业利润率 56–58%）。2Q26 Quarterly Management Report（July 16, 2026）：Summary 表（Wafer Shipment 4,336、QoQ 3.9%、Average Exchange Rate 31.60）、I 节平台（HPC 66%、Smartphone 22%）、II-3 节 VIS 收益 NT$63.20B、III-2 节（Days of Receivable 29、Days of Inventory 87）、IV-1 节（Net Operating Sources 783.36、Capital Expenditures (496.00)、Cash Dividends (155.59)）、IV-2 节 Free Cash Flow 287.36、V 节 Capital Expenditures US$15.70B。",
+    "declared_dividend_quarter": "Q2 2026",
+    "declared_dividend_board_date": "2026-08-11",
+    "declared_dividend_per_share_ntd": 7.0,
+    "shares_outstanding_thousands": 25932370,
+    "source": "TSMC 2Q26 业绩新闻稿（6-K EX-99.1 a2q26e_withguidancexfinal.htm，Jul. 16, 2026）：首段「second quarter ended June 30, 2026」、合并收入 NT$1,270.38B、净利 NT$706.56B、稀释 EPS NT$27.25；「In US dollars, second quarter revenue was $40.20 billion, which increased 33.7% year-over-year and increased 12.0%」；「Gross margin … 67.7%, operating margin was 60.3%」；制程 2nm 3% / 3nm 30% / 5nm 33% / 7nm 11%、Advanced 77%；Q3 指引（US$44.6–45.8B、1 US dollar to 32 NT dollars、毛利率 65–67%、营业利润率 56–58%）。2Q26 Quarterly Management Report（July 16, 2026）：Summary 表（Wafer Shipment 4,336、QoQ 3.9%、Average Exchange Rate 31.60）、I 节平台（HPC 66%、Smartphone 22%）、II-3 节 VIS 收益 NT$63.20B、III-2 节（Days of Receivable 29、Days of Inventory 87）、IV-1 节（Net Operating Sources 783.36、Capital Expenditures (496.00)、Cash Dividends (155.59)）、IV-2 节 Free Cash Flow 287.36、V 节 Capital Expenditures US$15.70B。股利：6-K（2026-08-11）TSMC Board of Directors Meeting Resolutions 第 2 项「Approved the distribution of a NT$7.0 per share cash dividend for the second quarter of 2026」；股数：6-K（2026-08-14）EX-99.1 2Q26 合并财报附注 19 a「Issued and paid shares (in thousands) 25,932,370」（June 30, 2026），合并权益变动表无库藏股栏。",
     "checked_on": "2026-09-19"
   },
   "periods": [
@@ -383,6 +387,28 @@
       87,
       80,
       76
+    ]
+  },
+  "declared_dividend": {
+    "period": "Q2 2026",
+    "_note": "页面「股息年化」的口径（所有者 2026-09-19 定）：最近一次董事会决议宣告的每股季度现金股利 × 4 × 流通股数。此前按现金流量表本季实付股利 × 4（2Q26 为 155.59 × 4 ≈ 622），实付的是两季以前宣告的那一笔。period 是页面这一季；dividend_quarter 是这笔股利所属的季度 —— 董事会在业绩发布之后才宣告当季股利，换季时填本页发布时已宣告的最新一笔，两者可以不同。shares_outstanding_thousands 取最近一期合并财报附注的已发行股数：合并权益变动表没有库藏股栏，已发行即流通。links 随本块列进页面来源。",
+    "dividend_quarter": "Q2 2026",
+    "board_date": "2026-08-11",
+    "per_share_ntd": 7.0,
+    "wording": "Approved the distribution of a NT$7.0 per share cash dividend for the second quarter of 2026",
+    "source": "TSMC Board of Directors Meeting Resolutions（6-K，2026-08-11，tsm-boardx20260811.htm）第 2 项原文。",
+    "shares_outstanding_thousands": 25932370,
+    "shares_as_of": "2026-06-30",
+    "shares_source": "2Q26 合并财报（6-K 2026-08-14 EX-99.1 a2026q2consolidatedreport-.htm）附注 19 a「Issued and paid shares (in thousands) 25,932,370」（June 30, 2026）。交叉核对：6-K（2026-09-01，Adjustment to Cash Dividend Per Share）「NT$181,526,590,469 as cash dividend (NT$7.0 per common share) for the first quarter of 2026」，181,526,590,469 ÷ 7.0 = 25,932,370,067 股。",
+    "links": [
+      {
+        "label": "TSMC Board of Directors Meeting Resolutions（6-K，2026-08-11）",
+        "url": "https://www.sec.gov/Archives/edgar/data/1046179/000104617926000536/tsm-boardx20260811.htm"
+      },
+      {
+        "label": "TSMC 2Q26 consolidated financial statements（6-K EX-99.1，2026-08-14）",
+        "url": "https://www.sec.gov/Archives/edgar/data/1046179/000104617926000541/a2026q2consolidatedreport-.htm"
+      }
     ]
   },
   "guidance": {

@@ -24,7 +24,12 @@ Two facts drive the whole layout:
    guides, does it hit, and does hitting it explain anything.
 
 Everything in the payload is a Samsung-disclosed figure, a DART-disclosed
-figure, or arithmetic reproducible from the audit tables and marked D.
+figure, or arithmetic reproducible from the audit tables and marked D. The
+one outside input is the Bank of Korea's quarterly average won/dollar rate,
+used only in the note that explains why nothing is converted, and linked to
+the ECOS query it was read from. No sell-side or market-expectation figure is
+published: the site allows a dated, unattributed 市场预期 point only when it
+has a checkable source, and the one this page used to carry had none.
 Currency is Korean won throughout; nothing is converted to dollars, because
 Samsung publishes no dollar figures and a conversion would put a number on the
 page that no filing contains -- and would fold the won's own move against the
@@ -33,7 +38,7 @@ dollar into every growth rate the page is trying to read.
 Rolling a quarter is a data edit (see CLAUDE.md §9): every period label, count
 and figure in the prose below is computed from ``series/samsung.json``; what
 belongs to one quarter only -- call quotes, the bonus accrual, the accrual-basis
-capex, the currency effect, the sell-side assumption behind a threshold -- sits
+capex, the currency effect and the exchange rates behind it -- sits
 in blocks stamped with that quarter and read through ``board.stamped_block``,
 and every "only / first / all / never" sentence is printed only while the data
 still says so.
@@ -138,6 +143,30 @@ def shift_period(period: str, step: int) -> str:
     quarter, year = _quarter_year(period)
     index = year * 4 + quarter - 1 + step
     return f"Q{index % 4 + 1} {index // 4}"
+
+
+def won_move(story: dict | None, period: str) -> dict | None:
+    """The won's year-on-year move against the dollar, from the Bank of Korea's
+    quarterly averages carried in ``quarter_story.krw_per_usd_average``.
+
+    Depreciation is measured on the won's own price in dollars, 1 − (year-ago
+    rate ÷ this quarter's rate), because the sentence it feeds is about the
+    won; the rise in won per dollar is the other, larger reading of the same
+    two numbers. A table that does not hold this quarter and the one a year
+    earlier is last quarter's and stops the build.
+    """
+    fx = (story or {}).get("krw_per_usd_average")
+    if fx is None:
+        return None
+    year_ago = shift_period(period, -4)
+    rates = dict(zip(fx["quarters"], fx["krw_per_usd"]))
+    if period not in rates or year_ago not in rates:
+        raise ValueError(f"series block `quarter_story.krw_per_usd_average` is stamped "
+                         f"{fx['quarters']!r}, but the page needs {year_ago!r} and {period!r}: "
+                         "update it or remove it")
+    return {"year_ago": year_ago, "then": rates[year_ago], "now": rates[period],
+            "depreciation_pct": (1 - rates[year_ago] / rates[period]) * 100,
+            "link": {"label": fx["source_label"], "url": fx["source_url"]}}
 
 
 def rounded(values: list[float | None], digits: int = 6) -> list[float | None]:
@@ -759,12 +788,7 @@ def tracking_charts(staging: dict, der: dict, labels: list[str], facts: dict,
 
     opm = der["operating_margin"]
     opm_line = by_metric["合并营业利润率"]["threshold"]
-    sellside = kpi.get("sellside_asp_assumption")
     next_quarter = shift_period(staging["periods"][-1], 1)
-    if sellside and sellside["quarter"] != next_quarter:
-        raise ValueError(f"series block `next_kpi.sellside_asp_assumption` is stamped "
-                         f"{sellside['quarter']!r}, but the next quarter is {next_quarter!r}: "
-                         "update it or remove it")
     asp_unguided = guidance is not None and not guidance["asp_guided"]
     trough = min(range(n), key=lambda i: opm[i])
     opm_chart = threshold_exhibit(
@@ -774,11 +798,7 @@ def tracking_charts(staging: dict, der: dict, labels: list[str], facts: dict,
         actual_name="合并营业利润率", threshold_name=f"阈值 {opm_line:.0f}%",
         note=(
             f"选 {opm_line:.0f}% 不是因为它是某个共识，而是因为它把「涨价减速」和「周期翻转」分开"
-            + (f"：卖方对 {deck_short(sellside['quarter'])} 存储混合 ASP 的假设落在 "
-               f"{sellside['low_pct']:+.0f}% 到 {sellside['high_pct']:+.0f}% 之间"
-               + ("，<b>没有一家假设转负</b>" if sellside["low_pct"] > 0 else "")
-               if sellside else "")
-            + (f"，而公司自己对 {quarter_only(next_quarter)} ASP 一个字都没给" if asp_unguided else "")
+            + (f"；公司对 {quarter_only(next_quarter)} ASP 一个字都没给" if asp_unguided else "")
             + f"。若真跌破 {opm_line:.0f}%，说明减速的假设本身错了。"
             + (f"{cn_count(n)}季里这条线从 {opm[trough]:.1f}% 的谷底走到 {opm[-1]:.1f}%"
                + ("，本季是窗口内最高。" if opm[-1] == max(opm) else "。")
@@ -1234,9 +1254,11 @@ def build_payload(staging: dict) -> dict:
     )
 
     fx_note = "全页以韩元列示，不折算美元。三星本身不发布美元财务数字，折算会在页面上制造一个任何申报里都不存在的数"
-    if story and story.get("krw_usd_average_yoy_depreciation_pct") is not None:
-        fx_note += (f"；而 {iso_period(periods[-1])} 韩元兑美元季度均价较去年同期贬值 "
-                    f"{story['krw_usd_average_yoy_depreciation_pct']:.1f}%，"
+    won = won_move(story, periods[-1])
+    if won:
+        fx_note += (f"；而按韩国银行公布的季度平均汇率，韩元从 {iso_period(won['year_ago'])} 的 "
+                    f"{won['then']:,.2f} 韩元/美元走到 {iso_period(periods[-1])} 的 {won['now']:,.2f}，"
+                    f"对美元贬值 {won['depreciation_pct']:.1f}% D，"
                     "折算还会把汇率腿混进本页真正想读的价格周期里")
     fx_note += "。"
     if story and story.get("fx_operating_profit_qoq_krw_tn") is not None:
@@ -1289,7 +1311,9 @@ def build_payload(staging: dict) -> dict:
             + f"本页图上画的是现金流量表口径，因为它{count}季齐全且定义一致。")
     notes += [
         "三星每季披露两次，且两次在 DART 上都标注为「잠정」（暂定），因为完整财报同样发布于外部审阅完成之前。本页 release_date 取月末完整财报日，不取季末速报日。",
-        "本页只发布公司披露值、可复算的简单派生值，以及明确标注为卖方估计的第三方数字；D 标记代表 Derived / 自算。市面上流传的 Foundry 亏损额、HBM 收入、DRAM 与 NAND 分别收入均为卖方估计，本页不予采用。",
+        "本页只发布公司披露值与可复算的简单派生值"
+        + ("，以及注明出处的韩国银行汇率" if won else "")
+        + "；D 标记代表 Derived / 自算。市面上流传的 Foundry 亏损额、HBM 收入、DRAM 与 NAND 分别收入均为卖方估计，本页不予采用。",
         f"本页已知未接入：HBM 的任何量化序列（公司不披露）、DRAM 与 NAND 的分别收入、智能手机出货量的完整{count}季序列（仅个别季度在电话会上给过绝对数）、地区与客户结构、股份回购的完整{count}季序列（现金流量表该行只在部分季度的简报中单列）、以及 {iso_period(periods[0])} 之前的历史。",
         "电话会文字稿仅链接公司官方 IR 托管版本，公开仓不复制原件或逐字全文；页面内引用的英文原话为逐字短句引用。",
     ]
@@ -1325,7 +1349,7 @@ def build_payload(staging: dict) -> dict:
             '三星不是 SEC 注册人，本页没有任何 EDGAR 来源。'
         ),
         "source_url": ir_page["url"],
-        "source_links": staging["sources"],
+        "source_links": staging["sources"] + ([won["link"]] if won else []),
         "summary": {"blocks": []},
         "guidance": None,
         "sections": [

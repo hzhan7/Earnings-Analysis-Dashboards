@@ -9,7 +9,7 @@
     "currency": "KRW"
   },
   "currency": "KRW",
-  "_provenance": "三星电子不是 SEC 注册人：EDGAR 上 CIK 0000879316 名下 251 份申报全部是 SC 13D/13G、SC 14D1/14D9、Form 3/4 这类持股与要约表格，最新一份停在 2015-01-20，没有 20-F、没有 6-K、没有 F-1。本页所有数字因此来自两条韩国披露链：(1) 公司每季自行发布的 Earnings Release 简报（IR 网站，英文，含合并损益表、分部表、资产负债表、现金流量表四页附录）；(2) DART 电子公告（dart.fss.or.kr）的「연결재무제표 기준 영업(잠정)실적(공정공시)」。两条链互为独立读数：八个季度的合并营业收入与营业利润在两边逐季吻合。合并损益按十亿韩元记录（DART 억원 换算），分部与现金流按公司披露的兆韩元（조원）原样记录，两套精度不同是因为公司本身就用两种精度发布，不做统一。",
+  "_provenance": "三星电子不是 SEC 注册人：EDGAR 上 CIK 0000879316 名下 251 份申报全部是 SC 13D/13G、SC 14D1/14D9、Form 3/4 这类持股与要约表格，最新一份停在 2015-01-20，没有 20-F、没有 6-K、没有 F-1。本页所有数字因此来自两条韩国披露链：(1) 公司每季自行发布的 Earnings Release 简报（IR 网站，英文，含合并损益表、分部表、资产负债表、现金流量表四页附录）；(2) DART 电子公告（dart.fss.or.kr）的「연결재무제표 기준 영업(잠정)실적(공정공시)」。两条链互为独立读数：八个季度的合并营业收入与营业利润在两边逐季吻合。合并损益按十亿韩元记录（DART 억원 换算），分部与现金流按公司披露的兆韩元（조원）原样记录，两套精度不同是因为公司本身就用两种精度发布，不做统一。另有一处外部数据：quarter_story 里的韩元兑美元季度平均汇率取自韩国银行 ECOS（表 731Y004 주요국 통화의 대원화환율 · 원/미국달러(매매기준율) · 평균자료），只用于说明本页为何不折算美元，不进任何图；链接随该块列在页面来源里。",
   "latest": {
     "period": "Q2 2026",
     "analysis_date": "2026-08-29",
@@ -44,7 +44,12 @@
     "total_assets_krw_bn": 759480.5,
     "inventories_krw_bn": 71389.1,
     "receivables_krw_bn": 96409.0,
-    "source": "Samsung 2Q 2026 Earnings Release（2026_2Q_conference_eng.pdf，IR 网站；电话会 2026-07-29 21:00 EDT 即 2026-07-30 韩国时间）：第 5 页 2Q 2026 Results（Revenue KRW 171.5T、Operating Profit KRW 89.5T、R&D KRW 16.0T QoQ +41%、EPS KRW10,849）；第 6 页分部表（DS 127.5T / 89.2T，DX 48.0T / −0.8T、−2%，SDC 7.5T / 0.7T，Harman 4.6T / 0.4T；OP Margin 52.2%）；Appendix 1 损益表（Gross profit 69.6%、Operating profit 52.2%、Profit attributable to owners 41.6%）；Appendix 2（Memory 120.8）；Appendix 3 资产负债表 30.Jun.26 栏（Total assets 759,480.5、Inventories 71,389.1、A/R 96,409.0）；Appendix 4 现金流量表 2Q 26 栏（Cash flows from operating activities 105.08、Depreciation 12.11、Purchase of PP&E (14.11)）与 Net Cash 30.Jun.26 栏 167.59。",
+    "krw_per_usd_average": {
+      "Q2 2025": 1404.04,
+      "Q2 2026": 1501.93
+    },
+    "krw_depreciation_yoy_pct": 6.5,
+    "source": "Samsung 2Q 2026 Earnings Release（2026_2Q_conference_eng.pdf，IR 网站；电话会 2026-07-29 21:00 EDT 即 2026-07-30 韩国时间）：第 5 页 2Q 2026 Results（Revenue KRW 171.5T、Operating Profit KRW 89.5T、R&D KRW 16.0T QoQ +41%、EPS KRW10,849）；第 6 页分部表（DS 127.5T / 89.2T，DX 48.0T / −0.8T、−2%，SDC 7.5T / 0.7T，Harman 4.6T / 0.4T；OP Margin 52.2%）；Appendix 1 损益表（Gross profit 69.6%、Operating profit 52.2%、Profit attributable to owners 41.6%）；Appendix 2（Memory 120.8）；Appendix 3 资产负债表 30.Jun.26 栏（Total assets 759,480.5、Inventories 71,389.1、A/R 96,409.0）；Appendix 4 现金流量表 2Q 26 栏（Cash flows from operating activities 105.08、Depreciation 12.11、Purchase of PP&E (14.11)）与 Net Cash 30.Jun.26 栏 167.59。汇率：韩国银行 ECOS 表 731Y004「원/미국달러(매매기준율)」「평균자료」分季，2025Q2 1404.04、2026Q2 1501.93（逐季单独查询）；韩元对美元同比贬值 = 1 − 1404.04 ÷ 1501.93 = 6.52%，页面印 6.5%。",
     "checked_on": "2026-09-19"
   },
   "periods": [
@@ -685,19 +690,25 @@
     "accrual_capex_reconciled": false,
     "fx_operating_profit_qoq_krw_tn": 3.1,
     "usd_move": "走强",
-    "krw_usd_average_yoy_depreciation_pct": 6.7,
-    "_fx_note": "3.1 出自电话会 CFO 原话（stronger U.S. dollar … positive quarter-on-quarter impact of around KRW 3.1 trillion on operating profit）；6.7% 的季度均价同比贬值不在三星 2Q26 简报或电话会里，原页面沿用下来，出处待补（不是三星口径）。",
+    "krw_per_usd_average": {
+      "_note": "韩国银行 ECOS 统计表 731Y004（3.1.2.1. 주요국 통화의 대원화환율）· 원/미국달러(매매기준율) · 평균자료 · 分季（Q），单位：韩元/美元，2026-09-19 取数。页面由这两格现算韩元对美元的同比贬值：按韩元的美元价格计，1 − 去年同季 ÷ 本季。换季时两格一起换成新一季与它的去年同季，source_url 的期间跟着改。",
+      "source_label": "韩国银行 ECOS — 원/미국달러(매매기준율) 季度平均，表 731Y004",
+      "source_url": "https://ecos.bok.or.kr/api/StatisticSearch/sample/json/kr/1/10/731Y004/Q/2025Q2/2026Q2/0000001/0000100",
+      "quarters": [
+        "Q2 2025",
+        "Q2 2026"
+      ],
+      "krw_per_usd": [
+        1404.04,
+        1501.93
+      ]
+    },
+    "_fx_note": "3.1 出自电话会 CFO 原话（stronger U.S. dollar … positive quarter-on-quarter impact of around KRW 3.1 trillion on operating profit）。季度均价同比贬值原先印的是 6.7%，三星 2Q26 简报与电话会里都没有，出处不明；2026-09-19 改为由 krw_per_usd_average 的韩国银行季度平均汇率现算：1 − 1,404.04 ÷ 1,501.93 = 6.52%（若按每美元韩元数的涨幅算则是 6.97%），两种口径都不是 6.7。",
     "rnd_quarterly_record_claimed": true,
     "supply_shortage_claimed": true
   },
   "next_kpi": {
     "period": "Q2 2026",
-    "sellside_asp_assumption": {
-      "quarter": "Q3 2026",
-      "low_pct": 12,
-      "high_pct": 20,
-      "source": "页面原有的研究口径：卖方对下季存储混合 ASP 环比的假设区间（非公司口径；公司对下季 ASP 不给指引）。2026-09-19 迁移时未能在本地 2Q26 分析稿里找到这组数的原文，出处待补。"
-    },
     "entries": [
       {
         "metric": "合并营业利润率",
@@ -705,7 +716,7 @@
         "threshold": 35.0,
         "unit": "pct",
         "current": 52.18,
-        "why": "存储价格环比涨幅正在收敛，卖方对 3Q26 的假设落在 +12%～+20%；跌破 35% 意味着周期已经翻转而不只是减速"
+        "why": "存储价格环比涨幅正在收敛，而公司对下季 ASP 不给指引；跌破 35% 意味着周期已经翻转而不只是减速"
       },
       {
         "metric": "Memory 占合并收入",
