@@ -52,8 +52,8 @@
       6283.0,
       6270.0,
       6866.0,
-      7358.0,
-      6802.0,
+      7361.0,
+      6807.0,
       6905.0,
       7659.0
     ],
@@ -72,8 +72,8 @@
       64.73,
       67.41,
       67.71,
-      67.85,
-      65.6437,
+      67.87,
+      65.69,
       68.06,
       68.43
     ],
@@ -280,8 +280,8 @@
       6283.0,
       6270.0,
       6866.0,
-      7358.0,
-      6802.0,
+      7361.0,
+      6807.0,
       6905.0,
       7659.0
     ],
@@ -368,8 +368,8 @@
       64.73,
       67.41,
       67.71,
-      67.85,
-      65.6437,
+      67.87,
+      65.69,
       68.06,
       68.43
     ],
@@ -448,7 +448,7 @@
       ],
       "why": "这不是备份，是**第二次独立读数**。主序列的 2016 四季来自 10-Q/10-K 的 XBRL R 表，第四季由全年减前九个月得到；这一份来自四份业绩发布的 Schedule 1，其中第四季是**直接印出来的单季列**，不需要相减。两条路径的取数方式不同、第四季的来源尤其不同，所以它们相等才构成证据。只对上年度合计是不够的：把某一季加 100、下一季减 100，年度合计一个数都不会变。"
     },
-    "q4_2025_basis_note": "**2025Q4 的毛利此前是 6,788，那是两套基相减出来的。已改为 6,802。**公司不出第四季 10-Q，该季只能「全年 − 前九个月」。问题出在前九个月那一项：PMI 自 2026-01-01 起把四个地理分部改成三个，并把外汇损益与 RSU/PSU 薪酬费用从 Cost of Sales 与 MA&R 里挪进新的「Corporate expenses and other」——原话「Certain prior year amounts have been reclassified to conform with the current year's presentation… These reclassifications did not impact PMI's consolidated financial position, results of operations or cash flows」。**净收入与营业利润不受影响，只有销货成本与毛利动。** 到 2026-08-31 为止，只有 2025Q1（6,261→6,270）与 2025Q2（6,861→6,866）被重述过，Q3 还没有（2026 年第三季 10-Q 尚未申报）。原来的算法把重述后的 Q1、Q2 与旧基的 Q3 相加得 20,494，再去减旧基的全年 27,282 —— 分子分母不同基，差额 14 全是那道重分类。现在两条腿都取旧基：全年 27,282（10-K，accession 0001628280-26-005939）减前九个月 20,480（10-Q，accession 0001628280-25-046179）= 6,802，两个数已从 XBRL 逐个核回原申报。**等 Q3 2025 也被重述之后，这四季要整体换到新基，不能只换其中一格。**"
+    "q4_2025_basis_note": "**2025 年四季的毛利现在是同一个基。**PMI 自 2026-01-01 起把四个地理分部改成三个，并把外汇损益与 RSU/PSU 薪酬费用从 Cost of Sales 与 MA&R 里挪进新的「Corporate expenses and other」；净收入与营业利润不受影响，只有销货成本与毛利动。2026 年的两份 10-Q 把 2025Q1（6,261→6,270）与 2025Q2（6,861→6,866）重述到新基；2026-03-13 的 8-K（0001628280-26-017497，EX-99.1「Recast Shipment Volume and Unaudited Financial Information 2025 vs. 2024」）把 2025 全部四季按新基印出：6,270 / 6,866 / 7,361 / 6,807，全年 27,304。本页 2025Q3、2025Q4 原来是旧基的 7,358 与 6,802（全年 27,282 − 前九个月 20,480），与已换基的 Q1、Q2 混在一年里，四季相加 27,296 两头都对不上；现在四季都取新基。2024 年及以前仍是旧基：同一份 8-K 的 EX-99.1 与 EX-99.2 也按新基重印了 2023–2024 各季（例如 2024Q1 5,598→5,604），本页尚未换，接缝在 2024Q4 / 2025Q1。"
   },
   "annual": {
     "years": [
@@ -1614,8 +1614,73 @@
       "2024": 6.57,
       "2025": 7.54
     },
-    "exclusion_clause_first": "2008-07-23",
-    "exclusion_clause_last": "2022-02-10"
+    "exclusion_clause_census": {
+      "releases": [
+        "2008-04-23",
+        "2008-07-23",
+        "2008-10-22",
+        "2009-02-04",
+        "2009-04-23",
+        "2009-07-23",
+        "2009-10-22",
+        "2010-02-11",
+        "2010-04-22",
+        "2010-07-22",
+        "2010-10-21",
+        "2011-02-10",
+        "2011-04-21",
+        "2011-07-21",
+        "2011-10-20",
+        "2012-02-09",
+        "2012-04-19",
+        "2012-07-19",
+        "2012-10-18",
+        "2013-02-07",
+        "2013-04-18",
+        "2013-07-18",
+        "2013-10-17",
+        "2014-02-06",
+        "2014-04-17",
+        "2014-07-17",
+        "2014-10-16",
+        "2015-02-05",
+        "2015-04-16",
+        "2015-07-16",
+        "2015-10-15",
+        "2016-02-04",
+        "2016-04-19",
+        "2016-07-19",
+        "2016-10-18",
+        "2017-02-02",
+        "2017-04-20",
+        "2017-07-20",
+        "2017-10-19",
+        "2018-02-08",
+        "2018-04-19",
+        "2018-07-19",
+        "2018-10-18",
+        "2019-02-07",
+        "2019-04-18",
+        "2019-07-18",
+        "2019-10-17",
+        "2020-02-06",
+        "2020-04-21",
+        "2020-07-21",
+        "2020-10-20",
+        "2021-02-04",
+        "2021-04-20",
+        "2021-07-20",
+        "2021-10-19",
+        "2022-02-10"
+      ],
+      "without_clause": [
+        "2008-04-23",
+        "2008-07-23",
+        "2008-10-22",
+        "2009-02-04"
+      ],
+      "read_on": "2026-09-19"
+    }
   },
   "quarterly_guidance": [
     {
@@ -1929,7 +1994,13 @@
       41.9,
       41.1,
       42.6
-    ]
+    ],
+    "recast_filing": {
+      "date": "2026-03-13",
+      "accession": "0001628280-26-017497",
+      "exhibits": "EX-99.1 与 EX-99.2",
+      "covers": "2023–2025"
+    }
   },
   "revenue_bridge": {
     "periods": [
@@ -2045,7 +2116,13 @@
       10.0,
       null
     ],
-    "offtake_latest_words": "大致持平至略增",
+    "offtake_words": [
+      null,
+      null,
+      null,
+      null,
+      "大致持平至略增"
+    ],
     "shipment_words": [
       "同比增长超过 40%，至 1.90 亿罐",
       "同比增长 37%，至 2.05 亿罐",
@@ -2055,51 +2132,122 @@
     ]
   },
   "next_kpi": {
+    "period": "Q2 2026",
     "quantified": [
       {
         "metric": "美国分部调整后毛利率",
         "direction": "up",
         "threshold": 63.0,
-        "unit": "pct",
-        "current": 65.4
+        "measure": "segment_gm_us",
+        "unit": "pct"
       },
       {
         "metric": "国际无烟分部调整后毛利率",
         "direction": "up",
         "threshold": 69.0,
-        "unit": "pct",
-        "current": 70.1
+        "measure": "segment_gm_isf",
+        "unit": "pct"
       },
       {
         "metric": "集团调整后经营利润率",
         "direction": "up",
         "threshold": 41.0,
-        "unit": "pct",
-        "current": 42.6
+        "measure": "adjusted_oi_margin",
+        "unit": "pct"
       },
       {
         "metric": "美国 ZYN 零售出货同比（Nielsen）",
         "direction": "up",
         "threshold": 8.0,
-        "unit": "pct",
-        "current": 10.0
+        "measure": "zyn_offtake",
+        "unit": "pct"
       },
       {
         "metric": "集团有机收入增速",
         "direction": "up",
         "threshold": 5.0,
+        "measure": "organic_growth",
         "unit": "pct",
-        "current": 7.6
+        "company_basis": "公司全年有机收入指引区间的下限"
       },
       {
         "metric": "国际无烟分部有机收入增速",
         "direction": "up",
         "threshold": 10.0,
-        "unit": "pct",
-        "current": 11.8
+        "measure": "isf_organic_growth",
+        "unit": "pct"
       }
     ],
-    "excluded": "另有四条本页<b>不接入</b>，原因各不相同：（1）<b>ZYN 美国零售价值份额</b> —— 本季约 57% 这个数只出现在业绩电话会上，业绩新闻稿里没有，本站不发布只在网络直播里出现、无法与第二个来源核对的数字。（2）<b>净债务 / 调整后 EBITDA</b> —— 调整后 EBITDA 是公司自定义口径，公司只按年披露、季度申报里没有，比率无法从申报复算；公司自己给的目标（2026 年底接近 2.0×）写在指引假设里，本页把它留在文字里而不画成线。（3）<b>ZYN Ultra 的净增量与自我蚕食</b> —— 公司明确以「只有两周数据、竞争敏感」为由不量化。（4）<b>本季自由现金流</b> —— 第二季 10-Q 于新闻稿发布两天后才提交，本页现金流序列因此只到年度层面。"
+    "not_tracked": [
+      {
+        "name": "ZYN 美国零售价值份额",
+        "why": "本季约 57% 这个数只出现在业绩电话会上，业绩新闻稿里没有，本站不发布只在网络直播里出现、无法与第二个来源核对的数字。",
+        "note": "ZYN 美国零售价值份额（只在电话会上给出）"
+      },
+      {
+        "name": "净债务 / 调整后 EBITDA",
+        "why": "公司每季在业绩 8-K 的 EX-99.2（Schedule 16）按滚动十二个月印出这个比率，本季 2.35×（2025 年末 2.53×）；公司自己给的目标（2026 年底接近 2.0×）写在指引假设里。本页暂不把它画成线，只记在这里。",
+        "note": "净债务 / 调整后 EBITDA（公司在业绩 8-K 的 EX-99.2 里按滚动十二个月印出，本页暂未画成线）"
+      },
+      {
+        "name": "ZYN Ultra 的净增量与自我蚕食",
+        "why": "公司明确以「只有两周数据、竞争敏感」为由不量化。",
+        "note": "ZYN Ultra 的净增量与自我蚕食（公司明确拒绝量化）"
+      },
+      {
+        "name": "本季自由现金流",
+        "why": "第二季 10-Q 于新闻稿发布两天后才提交，本页现金流序列因此只到年度层面。",
+        "note": "季度自由现金流（第二季 10-Q 在新闻稿两天后才提交，本页现金流序列只到年度层面）"
+      }
+    ]
+  },
+  "quarter_printed": {
+    "period": "Q2 2026",
+    "organic_revenue_growth_pct": 7.6,
+    "isf_organic_revenue_growth_pct": 11.8
+  },
+  "guidance_other": {
+    "period": "Q2 2026",
+    "headline_quote": "仅因汇率更新全年调整后 EPS 预测",
+    "rows": [
+      [
+        "全年有机收入增速",
+        "+5% ~ +7%",
+        "+5% ~ +7%",
+        "重申"
+      ],
+      [
+        "全年有机经营利润增速",
+        "+7% ~ +9%",
+        "+7% ~ +9%",
+        "重申"
+      ],
+      [
+        "全年卷烟出货量",
+        "−2% ~ −3%",
+        "约 −3%",
+        "上调"
+      ],
+      [
+        "全年经营现金流 / 资本开支",
+        "约 $13.5B / $1.4 – $1.6B",
+        "同上",
+        "重申"
+      ],
+      [
+        "资本回报",
+        "无回购；目标年底杠杆接近 2.0×",
+        "同上",
+        "重申"
+      ]
+    ],
+    "capex_low_usd_m": 1400.0,
+    "capex_high_usd_m": 1600.0
+  },
+  "quarter_story": {
+    "period": "Q2 2026",
+    "us_gross_margin_reason": "公司给的原因是产能扩张带来的更高制造成本、雪茄业务下滑，以及 Wellness 的确认节奏。",
+    "us_investment": "本季管理层说要在美国「加大投入」"
   },
   "sources": [
     {
@@ -2120,7 +2268,88 @@
     },
     {
       "label": "SEC EDGAR：PMI 全部申报（CIK 1413329）",
-      "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001413329&type=8-K"
+      "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001413329&type=8-K&dateb=&owner=include&count=40"
     }
-  ]
+  ],
+  "_checks": {
+    "period": "Q2 2026",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-22",
+    "net_revenues_usd_m": 11192,
+    "prior_year_net_revenues_usd_m": 10140,
+    "net_revenues_growth_pct_printed": 10.4,
+    "organic_revenue_growth_pct": 7.6,
+    "isf_organic_revenue_growth_pct": 11.8,
+    "gross_profit_usd_m": 7659,
+    "prior_year_gross_profit_usd_m": 6866,
+    "operating_income_usd_m": 4530,
+    "prior_year_operating_income_usd_m": 3712,
+    "reported_diluted_eps_usd": 1.8,
+    "prior_year_reported_diluted_eps_usd": 1.95,
+    "adjusted_diluted_eps_usd": 2.2,
+    "prior_year_adjusted_diluted_eps_usd": 1.91,
+    "segment_net_revenues_usd_m": {
+      "international_smoke_free": 3877,
+      "international_combustibles": 6459,
+      "us": 856
+    },
+    "prior_year_segment_net_revenues_usd_m": {
+      "international_smoke_free": 3395,
+      "international_combustibles": 5883,
+      "us": 862
+    },
+    "segment_gross_profit_usd_m": {
+      "international_smoke_free": 2716,
+      "international_combustibles": 4388,
+      "us": 555
+    },
+    "adjusted_gross_margin_pct": {
+      "pmi": 68.5,
+      "international_smoke_free": 70.1,
+      "international_combustibles": 67.9,
+      "us": 65.4
+    },
+    "adjusted_gross_margin_change_pp": {
+      "pmi": 0.7,
+      "international_smoke_free": 1.8,
+      "international_combustibles": 1.0,
+      "us": -6.0
+    },
+    "adjusted_operating_income_usd_m": 4773,
+    "adjusted_oi_margin_pct": 42.6,
+    "prior_year_adjusted_oi_margin_pct": 41.9,
+    "bridge_pmi": {
+      "price": 689,
+      "volume_mix_other": 81,
+      "acq_div": -17,
+      "currency": 299
+    },
+    "guidance_full_year": {
+      "reported": [
+        7.19,
+        7.34
+      ],
+      "adjusted": [
+        8.26,
+        8.41
+      ],
+      "excluding_currency": [
+        8.11,
+        8.26
+      ],
+      "currency": 0.15
+    },
+    "guidance_next_quarter": {
+      "period": "2026Q3",
+      "adjusted": [
+        2.2,
+        2.25
+      ],
+      "currency": -0.08
+    },
+    "zyn_shipments_words": "increased by 1.8% to 2.9 billion pouches",
+    "zyn_offtake_words": "flat to slightly growing versus the prior year",
+    "source": "PMI 8-K（0001628280-26-049107）EX-99.1，标题「Philip Morris International Reports 2026 Second-Quarter & First Six-Months Results and Updates 2026 Full-Year Adjusted Diluted EPS Forecast for Currency Only」、日期行「STAMFORD, CT, July 22, 2026」：Results Highlights（Net revenues increased by 10.4% (7.6% organically)；international smoke-free net revenue growth of 14.2% (11.8% organically)）；U.S. Segment 段（ZYN offtake volumes were flat to slightly growing versus the prior year；ZYN shipments increased by 1.8% to 2.9 billion pouches）；EPS 调节表（Reported 1.80 / 1.95，Adjusted 2.20 / 1.91）；2026 Full-Year Forecast 表（7.19–7.34、8.26–8.41、Less: Currency 0.15、8.11–8.26）与假设段（Third quarter adjusted diluted EPS of $2.20 to $2.25, including an estimated unfavorable currency impact of 8 cents）；Second-Quarter 2026 Operating Review 的 Net Revenues 表（10,140 → 11,192：Price 689、Volume/Mix/Other 81、Acquisitions & Divestitures (17)、Currency 299；分部 3,877 / 6,459 / 856）、Gross Profit 表（2,716 / 4,388 / 555；Adj. Gross Profit Margin 68.5% / 70.1% / 67.9% / 65.4%，vs. Q2 2025 0.7 / 1.8 / 1.0 / (6.0)pp）与 PMI 表（Gross Profit 7,659 / 6,866；Operating Income 4,530 / 3,712；Adj. Operating Income 4,773；Adj. OI Margin 42.6% / 41.9%）。",
+    "checked_on": "2026-09-19"
+  }
 }

@@ -4,28 +4,39 @@ PMI is the first company on this site that guides **the same earnings number at
 two horizons and on two definitions**, and the four records that fall out of
 that disagree with each other. Every quarterly earnings 8-K since the 2008
 spin-off carries a full-year EPS forecast, revised each quarter -- seventy-one
-vintages across eighteen years, the longest guidance record here by a wide
-margin. From the 2020 second quarter it also carries a *next-quarter* forecast,
-and in 2022-2023 the guided quarterly metric moved from reported diluted EPS to
-adjusted diluted EPS.
+vintages across eighteen years when this page was built at Q2 2026, the longest
+guidance record here by a wide margin. From the 2020 second quarter it also
+carries a *next-quarter* forecast, and in 2022-2023 the guided quarterly metric
+moved from reported diluted EPS to adjusted diluted EPS.
 
-Read on the reported basis, the record is the only two-sided one on this site:
-the year landed **below its own final range in five of sixteen** years, above in
-seven and inside in four. Read on the adjusted basis -- same company, same
-release, same horizon -- the next-quarter number has cleared the top of its
-range in **twelve of twelve** finished quarters and the full year has missed
-once in six.
+Read on the reported basis, the record is two-sided: the year landed below its
+own final range in five of sixteen years, above in seven and inside in four (at
+Q2 2026). Read on the adjusted basis -- same company, same release, same
+horizon -- the next-quarter number has cleared the top of its range in every
+finished quarter.
 
 The reason is written into the guidance itself rather than inferred. From the
-2008 spin-off through the February 2022 release, every full-year forecast
-carried the same clause: it excludes future acquisitions, unanticipated asset
-impairment and exit-cost charges, and any unusual events. So the number labelled
-GAAP was never a forecast of GAAP -- it was a GAAP number conditional on nothing
-unusual happening, and each of the five misses is a year in which something
-unusual happened. FY2024 is the clean case: reported EPS came in at US$4.52
-against a final guidance of US$6.20-6.26, entirely because of a US$1.49 non-cash
+April 2009 release through the February 2022 release, every full-year forecast
+carried the same clause: it excludes future acquisitions, asset impairment and
+exit-cost charges, and any unusual events (the four releases before April 2009
+name acquisitions at most). So the number labelled GAAP was never a
+forecast of GAAP -- it was a GAAP number conditional on nothing unusual
+happening. FY2024 is the clean case: reported EPS came in at US$4.52 against a
+final guidance of US$6.20-6.26, entirely because of a US$1.49 non-cash
 impairment of the deconsolidated Canadian affiliate recognised after the
 guidance was published. The adjusted line for the same year cleared its range.
+
+Rolling the page is a data edit (CLAUDE.md §9). Every count, period label, date,
+tally and comparison below is computed from ``series/pm.json``; the sentences
+that claim something about the whole record ("the only", "every", "all above",
+"usually", "often") print only while the record says so. What one release says
+sits in blocks stamped with the quarter and read through ``board.stamped_block``:
+``next_kpi`` (thresholds and what is not tracked), ``quarter_printed`` (organic
+growth rates the release printed), ``guidance_other`` (the non-EPS forecast rows)
+and ``quarter_story`` (the company's explanations). The ZYN and revenue-bridge
+blocks must end on the page's quarter. What stays here is fixed history: the
+2008 pro forma forecast, the 2020 withdrawal, the 2021Q2 Saudi customs charge,
+the FY2022 pro forma rows, the excise-label trap, the ASU 2017-07 hole.
 
 Published numbers are company-reported or transparent arithmetic. No rating, no
 target price and no broker-attributed estimate appears here.
@@ -33,6 +44,8 @@ target price and no broker-attributed estimate appears here.
 
 from __future__ import annotations
 
+import collections
+import datetime
 import json
 import statistics
 import sys
@@ -43,11 +56,14 @@ sys.path.insert(0, str(ROOT))
 
 from build.board import (  # noqa: E402
     ai_capex_cycle_table,
+    cn_count,
     delivery_band,
     headroom,
     headroom_exhibit,
     latest_block,
+    minus_sign,
     number_exhibits,
+    stamped_block,
     threshold_exhibit,
     threshold_table,
 )
@@ -58,7 +74,7 @@ from build.payload_guard import write_dash  # noqa: E402
 STAGING_PATH = ROOT / "series" / "pm.json"
 DATA_DIR = ROOT / "data"
 
-# One tick per year keeps the thirty-eight-quarter axes readable.
+# One tick per year keeps the long quarterly axes readable.
 LONG_STEP = 4
 
 SEG_KEYS = ("international_smoke_free", "international_combustibles", "us")
@@ -66,11 +82,27 @@ SEG_NAMES = {"international_smoke_free": "国际无烟", "international_combusti
              "us": "美国"}
 SEG_COLORS = {"international_smoke_free": "NAVY", "international_combustibles": "BLUE",
               "us": "GOLD"}
+CN_Q = {1: "一", 2: "二", 3: "三", 4: "四"}
+EN_Q = {1: "First", 2: "Second", 3: "Third", 4: "Fourth"}
+BRIDGE_PARTS = {"price": "价格", "volume_mix_other": "量与结构", "acq_div": "收购与处置", "currency": "汇率"}
+AUDIT_WORDS = {"unaudited": "未审计", "audited": "已审计"}
 
 # FY2019 and the FY2020 opening were published as a floor with no upper bound
 # ("forecast to be at least $4.73"), so those years have no band to clear and
 # sit outside the band chart rather than being drawn as a zero-width range.
 FLOOR_YEARS = (2019,)
+
+# PMI's three reportable segments start with the 2026 first quarter; the 2025
+# quarters on this page are the prior-year columns of the 2026 releases.
+NEW_SEGMENTS_FROM = "2026Q1"
+
+# Fixed history, printed only while the record still says what they describe.
+# The four releases before the exclusion clause, read 2026-09-19: 2008-04-23 and
+# 2008-07-23 exclude future acquisitions "and a number of other factors",
+# 2009-02-04 excludes acquisitions only, 2008-10-22 states no exclusion.
+PRE_CLAUSE = ("2008-04-23", "2008-07-23", "2008-10-22", "2009-02-04")
+Q2_2021_STORY = ("那一季沙特海关评估与退出成本压低了 GAAP 每股收益，而当季<b>调整后</b>每股收益是 "
+                 "US$1.57，仍在指引区间之上")
 
 
 def rounded(values, digits: int = 6):
@@ -87,6 +119,25 @@ def signed(value: float, digits: int = 1, suffix: str = "%") -> str:
 
 def mid(low: float, high: float) -> float:
     return (low + high) / 2
+
+
+def yq(label: str) -> tuple[int, int]:
+    """``'2026Q2'`` or ``'Q2 2026'`` → ``(2026, 2)``."""
+    text = label.strip()
+    if text.startswith("Q"):
+        number, year = text.split()
+        return int(year), int(number[1])
+    return int(text[:4]), int(text[-1])
+
+
+def cn_quarter(label: str, word: str = "季度") -> str:
+    year, number = yq(label)
+    return f"{year} 年第{CN_Q[number]}{word}"
+
+
+def display(label: str) -> str:
+    year, number = yq(label)
+    return f"Q{number} {year}"
 
 
 def resolve_exhibit_refs(exhibits: list[dict]) -> list[dict]:
@@ -124,6 +175,32 @@ def tally(rows: list[tuple[float | None, float, float]]) -> tuple[int, int, int,
     return (len(done), done.count("above"), done.count("inside"), done.count("below"))
 
 
+def page_period(staging: dict) -> str:
+    return staging["period_labels"][-1]
+
+
+# ── the quarter's blocks ─────────────────────────────────────────────────────
+def block(staging: dict, key: str) -> dict:
+    return stamped_block(staging, key, page_period(staging)) or {}
+
+
+def ending_on_page_quarter(staging: dict, key: str, periods: list[str]) -> None:
+    """A per-quarter block whose last column is another quarter is last quarter's story."""
+    if yq(periods[-1]) != yq(staging["periods"][-1]):
+        raise ValueError(f"series block `{key}` ends at {periods[-1]!r}, but the series ends at "
+                         f"{staging['periods'][-1]!r}: it is stamped for another quarter -- add the quarter")
+
+
+def next_quarter_guidance(staging: dict) -> dict | None:
+    """The one quarterly forecast not yet settled: the quarter after the page's."""
+    rows = [r for r in staging["quarterly_guidance"] if r["actual_eps"] is None]
+    late = [r["guided_period"] for r in rows if yq(r["guided_period"]) <= yq(staging["periods"][-1])]
+    if late:
+        raise ValueError(f"quarterly_guidance {late} has no actual although the series "
+                         f"reaches {staging['periods'][-1]}")
+    return rows[-1] if rows else None
+
+
 # ── section one: the guidance record ────────────────────────────────────────
 
 
@@ -141,6 +218,33 @@ def annual_records(staging: dict):
     return banded, floors
 
 
+def clause_sentence(staging: dict) -> tuple[str, str]:
+    """The exclusion clause, counted release by release from the stored census."""
+    census = staging["annual_guidance"]["exclusion_clause_census"]
+    releases, without = census["releases"], census["without_clause"]
+    unknown = sorted(set(without) - set(releases))
+    if unknown:
+        raise ValueError(f"exclusion_clause_census lists {unknown} outside its own releases")
+    first_with = min(r for r in releases if r not in without)
+    # A release that withdrew the full-year forecast still carries the clause, on
+    # the forecasts it gave instead; it is counted, and said.
+    withdrawn = sorted(d for r in staging["annual_guidance"]["records"] for d in r["withdrawn"]
+                       if d in releases and d not in without)
+    span = (f"{int(releases[0][:4])} 年 {int(releases[0][5:7])} 月到 "
+            f"{int(releases[-1][:4])} 年 {int(releases[-1][5:7])} 月的 {len(releases)} 份新闻稿里")
+    counted = f"有 {len(releases) - len(without)} 份写明该预测不含未来并购、资产减值与退出成本、以及任何异常事件"
+    if without and all(r < first_with for r in without):
+        detail = f"（{int(first_with[:4])} 年 {int(first_with[5:7])} 月起每一份都有"
+        if withdrawn:
+            detail += (f"，其中 {'、'.join(withdrawn)} {'那份' if len(withdrawn) == 1 else '那几份'}"
+                       "撤回了全年预测，这句话跟着它改给的季度预测")
+        detail += f"；此前的 {len(without)} 份 —— {'、'.join(without)} —— "
+        detail += ("点名排除的最多只有并购）" if tuple(without) == PRE_CLAUSE else "没有这句话）")
+    else:
+        detail = f"（例外是 {'、'.join(without)}）" if without else ""
+    return span, counted + detail
+
+
 def annual_reported_band(staging: dict) -> dict:
     banded, floors = annual_records(staging)
     labels = [f"FY{r['year']}" for r in banded]
@@ -148,9 +252,18 @@ def annual_reported_band(staging: dict) -> dict:
     high = [r["last_guided"]["high"] for r in banded]
     actual = [r["actual_reported_eps"] for r in banded]
     years = [r["year"] for r in banded]
-    # The axis jumps 2018 -> 2020 because 2019 was guided as a floor; the marker
-    # says so rather than letting the gap read as a missing year.
-    break_at = years.index(2020) if 2020 in years else None
+    # The axis jumps across the floor years; the marker says so rather than
+    # letting the gap read as a missing year.
+    floor_years = [r["year"] for r in floors]
+    after = [y for y in years if floor_years and y > floor_years[-1]]
+    before = [y for y in years if floor_years and y < floor_years[0]]
+    break_at = years.index(after[0]) if after else None
+    months = collections.Counter(int(r["last_guided"]["release_date"][5:7]) for r in banded
+                                 if r["actual_reported_eps"] is not None)
+    usual, count = months.most_common(1)[0]
+    timing = (f"画的是<b>当年最后一次</b>指引，通常发布于 {usual} 月，此时全年已过去四分之三。"
+              if count * 2 > sum(months.values()) and usual == 10 else "画的是<b>当年最后一次</b>指引。")
+    span, counted = clause_sentence(staging)
     return delivery_band(
         "EX_FY_BAND", "全年报告口径摊薄每股收益", labels, low, high, actual,
         fmt="usd2", ylab="US$/股", unit="US$/股",
@@ -158,16 +271,16 @@ def annual_reported_band(staging: dict) -> dict:
         timing="该年<b>当年内</b>",
         scope="（当年最后一次指引）",
         break_at=break_at,
-        break_label="2019 年只给下限，不在本图",
+        break_label="、".join(f"{y} 年" for y in floor_years) + "只给下限，不在本图",
         extra_note=(
-            "画的是<b>当年最后一次</b>指引，通常发布于 10 月，此时全年已过去四分之三。"
-            "横轴从 FY2018 跳到 FY2020，是因为 "
-            + "、".join("FY%d" % r["year"] for r in floors) + " "
-            "的指引是「至少 US$X」这样只有下限的形式，没有上限可以穿出，画成零宽区间会造出"
-            "一个公司没说过的上界；这些年份的记录见核对抽屉。"
-            "<b>更要紧的是这条指引长期带着一句排除条款</b>：2008 年 4 月到 2022 年 2 月的 56 份"
-            "新闻稿里有 54 份写明该预测不含未来并购、未预料到的资产减值与退出成本、"
-            "以及任何异常事件（两个例外是 2008-10-22，以及 2020-04-21 那份根本没给全年预测的）。所以这个挂着 GAAP 名字的数并不是对 GAAP 的预测，"
+            timing
+            + (f"横轴从 FY{before[-1]} 跳到 FY{after[0]}，是因为 "
+               + "、".join("FY%d" % y for y in floor_years) + " "
+               "的指引是「至少 US$X」这样只有下限的形式，没有上限可以穿出，画成零宽区间会造出"
+               "一个公司没说过的上界；这些年份的记录见核对抽屉。" if before and after else "")
+            + "<b>更要紧的是这条指引长期带着一句排除条款</b>："
+            + span + counted + "。"
+            "所以这个挂着 GAAP 名字的数并不是对 GAAP 的预测，"
             f"而是「不出异常事件时的 GAAP」。同一记录换成公司自定义的调整后口径见 Exhibit {{EX_ADJ_BAND}}。"),
         src_extra=("指引取自各年最后一份季度业绩 8-K EX-99.1 的全年预测段；"
                    "实际值取自 XBRL companyfacts 的年度 EarningsPerShareDiluted。"),
@@ -211,8 +324,7 @@ def annual_deviation(staging: dict) -> dict:
     }
 
 
-def annual_adjusted_band(staging: dict) -> dict:
-    """The same years on the company's own adjusted definition."""
+def adjusted_rows(staging: dict) -> list[tuple[int, float, float, float | None]]:
     hist = staging["annual_guidance"]
     actuals = hist["annual_adjusted_eps_actual"]
     rows = []
@@ -221,9 +333,17 @@ def annual_adjusted_band(staging: dict) -> dict:
         if not vintages:
             continue
         last = vintages[-1]
-        rows.append((record["year"], last["adj_low"], last["adj_high"],
-                     actuals.get(str(record["year"]))))
+        rows.append((record["year"], last["adj_low"], last["adj_high"], actuals.get(str(record["year"]))))
+    return rows
+
+
+def annual_adjusted_band(staging: dict) -> dict:
+    """The same years on the company's own adjusted definition."""
+    rows = adjusted_rows(staging)
     labels = [f"FY{y}" for y, _, _, _ in rows]
+    banded, _ = annual_records(staging)
+    reported = tally([(r["actual_reported_eps"], r["last_guided"]["low"], r["last_guided"]["high"])
+                      for r in banded])
     return delivery_band(
         "EX_ADJ_BAND", "全年调整后摊薄每股收益", labels,
         [lo for _, lo, _, _ in rows], [hi for _, _, hi, _ in rows],
@@ -235,11 +355,22 @@ def annual_adjusted_band(staging: dict) -> dict:
         extra_note=(
             "<b>这张图和上面那张是同一家公司、同一批年份、同一份新闻稿里的同一张表</b>，"
             "唯一的差别是把公司自己点名并逐项计价的调整加回去。"
-            "报告口径那条自 2009 年起有 16 个完整年度，调整后这条自 2020 年公司开始在预测表里"
+            f"报告口径那条自 {banded[0]['year']} 年起有 {reported[0]} 个完整年度，调整后这条自 {rows[0][0]} "
+            "年公司开始在预测表里"
             "并列两行才有，所以窗口短得多 —— 这是披露的限制，不是本页的取舍。"),
         src_extra=("指引取自各年最后一份业绩 8-K EX-99.1 全年预测表的 Adjusted Diluted EPS 行；"
                    "实际值取自次年第四季新闻稿标题与预测表的上年对照列，两处逐年一致。"),
     )
+
+
+def quarter_timing(staging: dict) -> tuple[int, int]:
+    starts = {1: (1, 1), 2: (4, 1), 3: (7, 1), 4: (10, 1)}
+    days = []
+    for row in staging["quarterly_guidance"]:
+        year, number = yq(row["guided_period"])
+        start = datetime.date(year, *starts[number])
+        days.append((datetime.date.fromisoformat(row["release_date"]) - start).days)
+    return min(days), max(days)
 
 
 def quarter_band(staging: dict) -> dict:
@@ -249,20 +380,49 @@ def quarter_band(staging: dict) -> dict:
     high = [r["high"] for r in rows]
     actual = [r["actual_eps"] for r in rows]
     first_adjusted = next(i for i, r in enumerate(rows) if r["basis"] != "reported")
+    fastest, slowest = quarter_timing(staging)
+    guided = {r["guided_period"] for r in rows}
+    fourths = sorted(p for p in guided if yq(p)[1] == 4)
+    points = [r for r in rows if r["point"]]
+    pro_forma = [r for r in rows if r["basis"] == "pro_forma_adjusted"]
+    q4_note = ""
+    if len(fourths) == 1:
+        exception = next(r for r in rows if r["guided_period"] == fourths[0])
+        last_year = yq(rows[-1]["guided_period"])[0]
+        silent = [y for y in range(yq(fourths[0])[0] + 1, last_year) if f"{y}Q4" not in guided]
+        if silent:
+            q4_note = (f"<b>横轴上没有 {silent[0]} 到 {silent[-1]} 的任何第四季，这不是缺数据</b>："
+                       "PMI 只指引第一、二、三季，从不指引第四季 —— 唯一的例外是 "
+                       f"{cn_quarter(fourths[0], '季')}"
+                       + (f"，那一次还是个单点（「约 US${exception['low']:.2f}」）而不是区间。"
+                          if exception["point"] else "。"))
+    exceptions = []
+    if pro_forma:
+        years = sorted({yq(r["guided_period"])[0] for r in pro_forma})
+        numbers = "、".join(CN_Q[yq(r["guided_period"])[1]] for r in pro_forma)
+        if len(years) == 1:
+            exceptions.append(f"{years[0]} 年第{numbers}季那{cn_count(len(pro_forma))}格还是剔除俄罗斯与乌克兰的 "
+                              "pro forma 口径")
+    # 2023Q1 was guided on reported EPS again, between the pro forma quarters and
+    # the switch to adjusted, so the right-hand segment is not all adjusted.
+    back = [r for r in rows[first_adjusted:] if r["basis"] == "reported"]
+    if back:
+        exceptions.append("、".join(cn_quarter(r["guided_period"], "季") for r in back)
+                          + f"那{cn_count(len(back))}格又回到报告口径")
+    pro_forma_note = "，".join(exceptions) + " —— " if exceptions else ""
     band = delivery_band(
         "EX_Q_BAND", "下季每股收益", labels, low, high, actual,
         fmt="usd2", ylab="US$/股", unit="US$/股",
         venue="业绩新闻稿",
-        timing="该季<b>开始后 19–40 天</b>",
+        timing=f"该季<b>开始后 {fastest}–{slowest} 天</b>",
         break_at=first_adjusted,
         break_label="指引口径改为调整后",
         extra_note=(
-            "<b>横轴上没有 2021 到 2025 的任何第四季，这不是缺数据</b>：PMI 只指引第一、二、"
-            "三季，从不指引第四季 —— 唯一的例外是 2020 年第四季，那一次还是个单点（「约 "
-            "US$1.16」）而不是区间。窗口内被指引的 20 个季度里有 2 个是单点，图上因此有两格"
-            "没有宽度。左段的指引口径是<b>报告</b>每股收益，右段是<b>调整后</b>每股收益，"
-            "2022 年第二、三季那两格还是剔除俄罗斯与乌克兰的 pro forma 口径 —— 实际值一律"
-            "按各自当期的口径取，不跨口径比较。"),
+            q4_note
+            + f"窗口内被指引的 {len(rows)} 个季度里有 {len(points)} 个是单点，图上因此有"
+            + f"{cn_count(len(points))}格没有宽度。左段的指引口径是<b>报告</b>每股收益，右段是<b>调整后</b>每股收益，"
+            + pro_forma_note
+            + "实际值一律按各自当期的口径取，不跨口径比较。"),
         src_extra=("指引取自各季业绩 8-K EX-99.1 全年预测假设段的最后一条；实际值中报告口径"
                    "取自 companyfacts，调整后与 pro forma 口径取自随后那份新闻稿的标题与"
                    "EPS 调节表。"),
@@ -283,6 +443,22 @@ def quarter_deviation(staging: dict) -> dict:
     rep, adj = leg(True), leg(False)
     rep_vals = [v for v in rep if v is not None]
     adj_vals = [v for v in adj if v is not None]
+    rep_rows = [r for r in rows if r["basis"] == "reported"]
+    adj_rows = [r for r in rows if r["basis"] != "reported"]
+    misses = [r for r in rep_rows if r["actual_eps"] < r["low"]]
+    note = "同一家公司、同一段时间、同一份新闻稿里的同一句话，换个口径就换个分布。"
+    note += f"报告口径那 {len(rep_rows)} 个季度里" + ("有正有负，" if min(rep_vals) < 0 < max(rep_vals) else "")
+    if len(misses) == 1 and misses[0]["guided_period"] == "2021Q2":
+        note += f"唯一一次跌破下限是 {cn_quarter('2021Q2', '季')} —— {Q2_2021_STORY}。"
+    elif misses:
+        note += "跌破下限的有 " + "、".join(r["period_label"] for r in misses) + "。"
+    else:
+        note += "没有一次跌破下限。"
+    n, above, inside, below = tally([(r["actual_eps"], r["low"], r["high"]) for r in adj_rows])
+    if above == n:
+        note += f"调整后口径那 {n} 个季度<b>没有一次落在区间之内</b>，全部高于上限。"
+    else:
+        note += f"调整后口径那 {n} 个季度里 {above} 季高于上限、{inside} 季落在区间内、{below} 季跌破下限。"
     return {
         "ref": "EX_Q_DEV",
         "kind": "grouped_bars",
@@ -298,18 +474,12 @@ def quarter_deviation(staging: dict) -> dict:
         "bar_labels": False,
         "fmt": "pct1", "label_fmt": "pct1",
         "ylab": "% vs 指引中值",
-        "note": (
-            "同一家公司、同一段时间、同一份新闻稿里的同一句话，换个口径就换个分布。"
-            "报告口径那 7 个季度里有正有负，唯一一次跌破下限是 2021 年第二季 —— 那一季"
-            "沙特海关评估与退出成本压低了 GAAP 每股收益，而当季<b>调整后</b>每股收益是 "
-            "US$1.57，仍在指引区间之上。调整后口径那 12 个季度<b>没有一次落在区间之内</b>，"
-            "全部高于上限。"),
+        "note": note,
         "src_extra": "偏离 = 实际 ÷ 指引中值 − 1；单点指引的中值即该点。",
     }
 
 
-def currency_path(staging: dict) -> dict:
-    """How far the dollar guidance moved in a year against the ex-currency one."""
+def currency_moves(staging: dict) -> list[tuple[int, float, float, list[dict]]]:
     rows = []
     for record in staging["annual_guidance"]["records"]:
         vs = [v for v in record["vintages"]
@@ -325,8 +495,47 @@ def currency_path(staging: dict) -> dict:
             record["year"],
             mid(vs[-1]["adj_low"], vs[-1]["adj_high"]) - mid(vs[0]["adj_low"], vs[0]["adj_high"]),
             mid(vs[-1]["xfx_low"], vs[-1]["xfx_high"]) - mid(vs[0]["xfx_low"], vs[0]["xfx_high"]),
+            vs,
         ))
-    labels = [f"FY{y}" for y, _, _ in rows]
+    return rows
+
+
+def currency_path(staging: dict) -> dict:
+    """How far the dollar guidance moved in a year against the ex-currency one."""
+    rows = currency_moves(staging)
+    labels = [f"FY{y}" for y, _, _, _ in rows]
+    opposite = [(y, d, x) for y, d, x, _ in rows if d * x < 0]
+    same = [y for y, d, x, _ in rows if d * x > 0]
+    listed = "、".join(f"FY{y}（美元口径 {minus_sign(f'{d:+.2f}')}、剔除汇率 {minus_sign(f'{x:+.2f}')}）"
+                       for y, d, x in opposite)
+    note = ("两条腿都是公司自己在同一张预测表里印出来的行：Adjusted Diluted EPS 与 "
+            "Adjusted Diluted EPS, excluding currency，中间隔着一行 Less Currency。")
+    mostly_opposite = len(opposite) * 2 > len(rows)
+    if mostly_opposite:
+        note += (f"<b>它们经常朝相反方向走</b>：{cn_count(len(rows))}年里有{cn_count(len(opposite))}年方向相反 —— "
+                 f"{listed}。")
+    elif opposite:
+        note += (f"<b>它们走得常常不一样</b>：{cn_count(len(rows))}年里方向相反的只有 {listed}"
+                 + ("，更常见的是同向而幅度不同 —— " if len(same) * 2 > len(rows) else "。"))
+    else:
+        note += "<b>它们的方向一致，幅度不同</b>："
+    example = next(((d, x) for y, d, x, _ in rows if y == 2024), None)
+    if example and example[1] > example[0] > 0 and not mostly_opposite:
+        note += (f"FY2024 剔除汇率的指引一年抬了 US${example[1]:.2f}，美元口径只抬了 "
+                 f"US${example[0]:.2f}，差额被汇率吃掉；")
+    year, dollar, _, vintages = rows[-1]
+    bands = {(v["xfx_low"], v["xfx_high"]) for v in vintages}
+    open_year = not any(r["year"] == year and r["actual_reported_eps"] is not None
+                        for r in staging["annual_guidance"]["records"])
+    if open_year and len(bands) == 1:
+        low, high = next(iter(bands))
+        note += (f"FY{year} 到目前为止剔除汇率的区间{cn_count(len(vintages))}次发布<b>逐字未动</b>"
+                 f"（US${low:.2f}–{high:.2f}），而美元口径的中值{'降' if dollar < 0 else '升'}了 "
+                 f"US${abs(dollar):.2f}。")
+    note += ("这解释了 PMI 新闻稿标题里反复出现的那句「仅因汇率调整全年预测」—— "
+             "它不是修辞，是这张表里可以逐分核对的算术。"
+             "FY2022 不在图上：那三期的美元行是集团口径而剔除汇率行是剔除俄乌的 pro forma 口径，"
+             "相减等于把两家公司相减。")
     return {
         "ref": "EX_FX",
         "kind": "grouped_bars",
@@ -336,23 +545,14 @@ def currency_path(staging: dict) -> dict:
         "xlabels": labels,
         "groups": [
             {"name": "调整后 EPS 指引中值移动（美元口径）", "color": "BLUE",
-             "values": rounded([d for _, d, _ in rows], 3)},
+             "values": rounded([d for _, d, _, _ in rows], 3)},
             {"name": "同一指引剔除汇率后的移动", "color": "NAVY",
-             "values": rounded([x for _, _, x in rows], 3)},
+             "values": rounded([x for _, _, x, _ in rows], 3)},
         ],
         "bar_labels": True,
         "fmt": "usd2", "label_fmt": "usd2",
         "ylab": "US$/股（年末指引中值 − 年初指引中值）",
-        "note": (
-            "两条腿都是公司自己在同一张预测表里印出来的行：Adjusted Diluted EPS 与 "
-            "Adjusted Diluted EPS, excluding currency，中间隔着一行 Less Currency。"
-            "<b>它们经常朝相反方向走</b>：FY2024 剔除汇率的指引一年抬了 US$0.39，美元口径只抬了 "
-            "US$0.10，差额被汇率吃掉；FY2026 到目前为止剔除汇率的区间三次发布<b>逐字未动</b>"
-            "（US$8.11–8.26），而美元口径的中值降了 US$0.12。"
-            "这解释了 PMI 新闻稿标题里反复出现的那句「仅因汇率调整全年预测」—— "
-            "它不是修辞，是这张表里可以逐分核对的算术。"
-            "FY2022 不在图上：那三期的美元行是集团口径而剔除汇率行是剔除俄乌的 pro forma 口径，"
-            "相减等于把两家公司相减。"),
+        "note": note,
         "src_extra": "各年第一次与最后一次业绩 8-K EX-99.1 全年预测表的两行中值之差。",
     }
 
@@ -360,14 +560,63 @@ def currency_path(staging: dict) -> dict:
 # ── section two: what moved this quarter ───────────────────────────────────
 
 
-def revenue_bridge(staging: dict) -> dict:
+def bridge_blocks(staging: dict) -> tuple[dict, dict | None, str]:
     bridge = staging["revenue_bridge"]
-    latest = bridge["2026Q2"]
+    periods = bridge["periods"]
+    ending_on_page_quarter(staging, "revenue_bridge", periods)
+    previous = bridge[periods[-2]] if len(periods) > 1 else None
+    return bridge[periods[-1]], previous, periods[-1]
+
+
+def segment_shape(name: str, parts: dict, index: int, first: bool = False) -> str:
+    """What one segment's revenue change was made of, in the company's own bridge."""
+    moves = {key: parts[key][index] for key in ("price", "volume_mix_other", "currency")}
+    total = parts["end"][index] - parts["base"][index]
+    positive = sorted(((v, k) for k, v in moves.items() if v > 0), reverse=True)
+    negative = [k for k in ("price", "volume_mix_other") if moves[k] < 0]
+    if total > 0 and positive:
+        value, key = positive[0]
+        text = (f"{name}{'的增量' if first else ''}{'几乎全部' if value >= 0.9 * total else '主要'}"
+                f"来自{BRIDGE_PARTS[key]}")
+        if len(negative) == 2:
+            text += "而价格和量与结构都是负的"
+        elif negative:
+            text += f"而{BRIDGE_PARTS[negative[0]]}是负的"
+        return text
+    lifted = [k for k, v in moves.items() if v > 0]
+    text = f"{name}净减少 US${abs(total):,.0f}M"
+    if negative:
+        text += "：" + "、".join(f"{BRIDGE_PARTS[k]}是负的（−US${abs(moves[k]):,.0f}M）" for k in negative)
+    if lifted:
+        text += (f"，{'和'.join(BRIDGE_PARTS[k] for k in lifted)}只托回 "
+                 f"US${sum(moves[k] for k in lifted):,.0f}M")
+    return text
+
+
+def revenue_bridge(staging: dict) -> dict:
+    latest, previous, label = bridge_blocks(staging)
+    year, number = yq(label)
     columns = ["PMI 合计", "国际无烟", "国际组合烟草", "美国"]
+    walks = [abs(latest["base"][i] + latest["price"][i] + latest["volume_mix_other"][i]
+                 + latest["acq_div"][i] + latest["currency"][i] - latest["end"][i]) for i in range(4)]
+    total = latest["end"][0] - latest["base"][0]
+    note = ("这是公司自己印的分解，四段相加等于本季与去年同期的差额，误差不超过四舍五入的 US$1M。"
+            if max(walks) <= 1.0 else
+            f"这是公司自己印的分解，四段相加与本季和去年同期的差额最多差 US${max(walks):,.0f}M。")
+    shapes = [segment_shape(n, latest, i, first=(i == 1))
+              for i, n in ((1, "国际无烟"), (2, "国际组合烟草"), (3, "美国"))]
+    note += "<b>三个分部的形状完全不同</b>：" + "，".join(shapes) + "。"
+    if latest["price"][0] + latest["currency"][0] >= 0.8 * total > 0:
+        note += "把集团那一列单独读，会把「涨价 + 汇率」读成「增长」。"
+    if previous is not None:
+        before, now = previous["volume_mix_other"][0], latest["volume_mix_other"][0]
+        turn = "本季转正" if before < 0 < now else "本季转负" if before > 0 > now else "本季仍然同号"
+        note += (f"上一季（{display(staging['revenue_bridge']['periods'][-2])}）同一张表里量与结构对集团是 "
+                 f"US${before:,.0f}M，{turn}。")
     return {
         "ref": "EX_BRIDGE",
         "kind": "grouped_bars",
-        "title": (f"本季净收入增量 US${latest['end'][0] - latest['base'][0]:,.0f}M 的来源："
+        "title": (f"本季净收入增量 US${total:,.0f}M 的来源："
                   f"价格 US${latest['price'][0]:,.0f}M、汇率 US${latest['currency'][0]:,.0f}M、"
                   f"量与结构 US${latest['volume_mix_other'][0]:,.0f}M"),
         "xlabels": columns,
@@ -379,27 +628,62 @@ def revenue_bridge(staging: dict) -> dict:
         ],
         "bar_labels": True,
         "fmt": "f0c", "label_fmt": "f0c",
-        "ylab": "US$M（vs Q2 2025）",
-        "note": (
-            "这是公司自己印的分解，四段相加等于本季与去年同期的差额，误差不超过四舍五入的 "
-            "US$1M。<b>三个分部的形状完全不同</b>：国际无烟的增量主要来自量与结构，"
-            "国际组合烟草几乎全部来自价格而量与结构是负的，美国两项都是负的、只靠一点点价格"
-            "和汇率托住。把集团那一列单独读，会把「涨价 + 汇率」读成「增长」。"
-            f"上一季（Q1 2026）同一张表里量与结构对集团是 "
-            f"US${bridge['2026Q1']['volume_mix_other'][0]:,.0f}M，本季转正。"),
-        "src_extra": "2026 年第二季度业绩 8-K EX-99.1「Second-Quarter 2026 Operating Review」净收入表。",
+        "ylab": f"US$M（vs {display(f'{year - 1}Q{number}')}）",
+        "note": note,
+        "src_extra": (f"{cn_quarter(label)}业绩 8-K EX-99.1「{EN_Q[number]}-Quarter {year} Operating Review」"
+                      "净收入表。"),
     }
+
+
+def quarter_years(labels: list[str]) -> str:
+    """``'2026'`` or ``'2025–2026'``: whose quarterly releases a series was read from
+    (a release is named for its quarter, so Q4 2026's February 8-K is a 2026 one)."""
+    years = sorted({yq(p)[0] for p in labels})
+    return f"{years[0]}" if len(years) == 1 else f"{years[0]}–{years[-1]}"
+
+
+def segment_releases(staging: dict) -> str:
+    """The releases the segment table was read from: each new-basis quarter's own
+    release, which also printed the year-ago column. ``'2026 年第一、二季度业绩 8-K
+    EX-99.1 的经营回顾表与同期 10-Q 分部附注'``."""
+    own = [p for p in staging["segments"]["periods"] if yq(p) >= yq(NEW_SEGMENTS_FROM)]
+    years = sorted({yq(p)[0] for p in own})
+    if len(years) == 1:
+        span = f"{years[0]} 年第" + "、".join(CN_Q[yq(p)[1]] for p in own) + "季度"
+    else:
+        span = f"{cn_quarter(own[0])}至{cn_quarter(own[-1])}各季"
+    report = "10-Q / 10-K" if any(yq(p)[1] == 4 for p in own) else "10-Q"
+    return f"{span}业绩 8-K EX-99.1 的经营回顾表与同期 {report} 分部附注"
+
+
+def year_ago_index(labels: list[str], index: int) -> int | None:
+    year, number = yq(labels[index])
+    target = (year - 1, number)
+    return next((i for i, label in enumerate(labels) if yq(label) == target), None)
 
 
 def segment_revenue(staging: dict) -> dict:
     seg = staging["segments"]
+    ending_on_page_quarter(staging, "segments", seg["periods"])
     rev = seg["net_revenues_usd_m"]
+    ago = year_ago_index(seg["periods"], len(seg["periods"]) - 1)
+    largest = max(SEG_KEYS, key=lambda k: rev[k][-1])
+    falling = [k for k in SEG_KEYS if ago is not None and rev[k][-1] < rev[k][ago]]
+    title = (f"三个报告分部的净收入：{SEG_NAMES[largest]}仍是最大一块（本季 "
+             f"US${rev[largest][-1]:,.0f}M）")
+    if len(falling) == 1:
+        title += f"，{SEG_NAMES[falling[0]]}是唯一同比下降的（US${rev[falling[0]][-1]:,.0f}M）"
+    elif falling:
+        title += "，同比下降的有" + "、".join(SEG_NAMES[k] for k in falling)
+    long = staging["long"]
+    total = dict(zip(long["periods"], long["net_revenues_usd_m"]))
+    gaps = [abs(sum(rev[k][i] for k in SEG_KEYS) - total[p]) for i, p in enumerate(seg["periods"])]
+    recast = seg.get("recast_filing")
+    n = len(seg["periods"])
     return {
         "ref": "EX_SEG_REV",
         "kind": "grouped_bars",
-        "title": (f"三个报告分部的净收入：国际组合烟草仍是最大一块（本季 "
-                  f"US${rev['international_combustibles'][-1]:,.0f}M），"
-                  f"美国是唯一同比下降的（US${rev['us'][-1]:,.0f}M）"),
+        "title": title,
         "xlabels": seg["period_labels"],
         "groups": [{"name": SEG_NAMES[k], "color": SEG_COLORS[k], "values": rounded(rev[k])}
                    for k in SEG_KEYS],
@@ -407,25 +691,57 @@ def segment_revenue(staging: dict) -> dict:
         "fmt": "f0c", "label_fmt": "f0c",
         "ylab": "US$M",
         "note": (
-            "<b>只有四个季度，而且不会再多。</b>PMI 自 2026 年第一季度起把六个地理分部改成"
-            "这三个，历史没有按新口径重述到申报里；图上的两个 2025 季度是 2026 年那两份新闻稿"
-            "各自印出的上年对照列，除此之外没有第三个可用的季度。本页因此不把这条线接到它"
-            "取代的六个地理分部上 —— 那会是把两套口径画成一条。三个分部相加等于合并净收入，"
-            "四个季度逐季核对无差。"),
-        "src_extra": "2026 年第一、二季度业绩 8-K EX-99.1 的经营回顾表与同期 10-Q 分部附注。",
+            f"<b>现行三个分部本页只画了{cn_count(n)}个季度。</b>PMI 自 2026 年第一季度起把四个地理分部改成"
+            "这三个；图上的 2025 季度是 2026 年各份新闻稿印出的上年对照列。"
+            + (f"公司另在 {recast['date']} 的 8-K（{recast['accession']}，{recast['exhibits']}）按新分部重印了 "
+               f"{recast['covers']} 各季，属未经审计的补充信息，本页尚未接入。" if recast else "")
+            + "本页不把这条线接到它取代的四个地理分部上 —— 那会是把两套口径画成一条。"
+            + (f"三个分部相加等于合并净收入，{cn_count(n)}个季度逐季核对无差。" if max(gaps) < 0.5 else
+               f"三个分部相加与合并净收入最多差 US${max(gaps):,.0f}M。")),
+        "src_extra": f"{segment_releases(staging)}。",
     }
 
 
 def segment_margin(staging: dict) -> dict:
     seg = staging["segments"]
     gm = seg["adjusted_gross_margin_pct"]
-    us_gap = gm["us"][-1] - gm["us"][1]
+    labels = seg["period_labels"]
+    last = len(labels) - 1
+    ago = year_ago_index(seg["periods"], last)
+    us_gap = gm["us"][-1] - gm["us"][ago]
+    pairs = [(i, year_ago_index(seg["periods"], i)) for i in range(len(labels))]
+    pairs = [(i, j) for i, j in pairs if j is not None]
+    rising = {k: gm[k][-1] > gm[k][ago] for k in ("pmi",) + SEG_KEYS}
+    story = block(staging, "quarter_story")
+    history = "，".join(
+        f"{labels[i]} 同比 " + (signed(gm['us'][i] - gm['us'][j], 1, 'pp') if i == last
+                              else minus_sign(signed(gm['us'][i] - gm['us'][j], 1, 'pp')))
+        for i, j in pairs)
+    if rising["pmi"] and rising["international_smoke_free"] and rising["international_combustibles"] \
+            and not rising["us"]:
+        tension = ("<b>这是本季真正的张力，也是集团数字看不出来的那一层。</b>"
+                   "集团调整后毛利率同比还在抬，国际无烟与国际组合烟草两条都在抬，"
+                   f"只有美国一条在塌：{history}。"
+                   + story.get("us_gross_margin_reason", "")
+                   + "所以「毛利率在改善」和「美国单位经济性在恶化」这两句话同时为真，"
+                   "而后者是估值的边际变量。")
+    else:
+        tension = f"美国分部调整后毛利率的同比变化：{history}。" + story.get("us_gross_margin_reason", "")
+    i, j = pairs[0]
+    # Only the quarters before the new segments are back-computed; once a year-ago
+    # column is a quarter the page read on its own, "the year-ago figures" no
+    # longer describes them.
+    derived = [p for p in seg["periods"] if yq(p) < yq(NEW_SEGMENTS_FROM)]
+    if all(yq(seg["periods"][b]) < yq(NEW_SEGMENTS_FROM) for _, b in pairs):
+        derived_words = "上年同期"
+    else:
+        derived_words = "、".join(f"{y} 年" for y in sorted({yq(p)[0] for p in derived})) + "各季"
     return {
         "ref": "EX_SEG_GM",
         "kind": "lines",
         "title": (f"分部调整后毛利率：国际无烟 {gm['international_smoke_free'][-1]:.1f}%，"
                   f"美国 {gm['us'][-1]:.1f}%，同比 {us_gap:+.1f}pp"),
-        "xlabels": seg["period_labels"],
+        "xlabels": labels,
         "series": (
             [{"name": "PMI 合计", "values": rounded(gm["pmi"]), "color": "GRAY"}]
             + [{"name": SEG_NAMES[k], "values": rounded(gm[k]), "color": SEG_COLORS[k]}
@@ -433,37 +749,51 @@ def segment_margin(staging: dict) -> dict:
         "fmt": "pct1", "yfmt": "pct1", "label_fmt": "pct1", "end_label": True,
         "ylab": "调整后毛利率 %",
         "note": (
-            "<b>这是本季真正的张力，也是集团数字看不出来的那一层。</b>"
-            "集团调整后毛利率同比还在抬，国际无烟与国际组合烟草两条都在抬，"
-            f"只有美国一条在塌：Q1 2026 同比 −14.7pp，Q2 2026 同比 {us_gap:+.1f}pp。"
-            "公司给的原因是产能扩张带来的制造成本、品牌与渠道投入，以及 Wellness 的确认节奏。"
-            "所以「毛利率在改善」和「美国单位经济性在恶化」这两句话同时为真，"
-            "而后者是估值的边际变量。"
-            "上年同期的百分比是当期表里印出的百分点变化倒推的（68.1 − 0.6 = 67.5），"
+            tension
+            + f"{derived_words}的百分比是当期表里印出的百分点变化倒推的"
+            f"（{gm['pmi'][i]:.1f} − {gm['pmi'][i] - gm['pmi'][j]:.1f} = {gm['pmi'][j]:.1f}），"
             "是公司自己的算术，不是本页的估计。"),
-        "src_extra": "2026 年第一、二季度业绩 8-K EX-99.1 经营回顾的毛利表；上年同期由同表印出的 pp 变化倒推。",
+        "src_extra": (f"{segment_releases(staging).split('业绩 8-K')[0]}业绩 8-K EX-99.1 经营回顾的毛利表；"
+                      f"{derived_words}由同表印出的 pp 变化倒推。"),
     }
 
 
-def zyn_offtake(staging: dict) -> dict:
+def zyn_view(staging: dict) -> dict:
     zyn = staging["zyn"]
-    values = zyn["offtake_yoy_pct"]
-    known = [v for v in values if v is not None]
-    return {
+    ending_on_page_quarter(staging, "zyn", zyn["periods"])
+    values, words = zyn["offtake_yoy_pct"], zyn["offtake_words"]
+    if not len(values) == len(words) == len(zyn["shipment_words"]) == len(zyn["periods"]):
+        raise ValueError("series `zyn`: offtake_yoy_pct, offtake_words and shipment_words need one entry per quarter")
+    for value, word, label in zip(values, words, zyn["period_labels"]):
+        if value is None and not word:
+            raise ValueError(f"series `zyn` {label}: no offtake figure and no offtake words")
+    known = [(v, label) for v, label in zip(values, zyn["period_labels"]) if v is not None]
+    return {"zyn": zyn, "values": values, "known": known, "words_only": values[-1] is None,
+            "words": words[-1]}
+
+
+def zyn_offtake(staging: dict) -> dict:
+    view = zyn_view(staging)
+    zyn, values, known = view["zyn"], view["values"], view["known"]
+    peak = max(v for v, _ in known)
+    latest = known[-1][0]
+    title = "美国 ZYN 零售出货同比（公司引用的 Nielsen 口径）："
+    title += (f"从 {peak:.0f}% 降到 {latest:.0f}%" if latest < peak else f"本季 {latest:.0f}%")
+    if view["words_only"]:
+        title += "，最后一格公司只给了措辞"
+    chart = {
         "ref": "EX_ZYN",
         "kind": "bars_labeled",
-        "title": (f"美国 ZYN 零售出货同比（公司引用的 Nielsen 口径）：从 {known[1]:.0f}% "
-                  f"降到 {known[-1]:.0f}%，最后一格公司只给了措辞"),
+        "title": title,
         "xlabels": zyn["period_labels"],
         "values": rounded(values),
         "fmt": "pct1", "label_fmt": "pct1",
         "ylab": "同比 %",
-        "annot": f"Q2 2026：公司口径为「{zyn['offtake_latest_words']}」，无数字",
         "note": (
-            "<b>最后一格是空的，不是零。</b>公司在本季新闻稿里把美国 ZYN 的零售出货描述为"
-            f"「{zyn['offtake_latest_words']}」，没有给百分比，所以这里留空而不是填 0 —— "
-            "填 0 会把一句措辞变成一个可以进模型的数。"
-            "出货量（发给渠道）与零售出货（卖给消费者）在这段时间里差得很远，"
+            ("<b>最后一格是空的，不是零。</b>公司在本季新闻稿里把美国 ZYN 的零售出货描述为"
+             f"「{view['words']}」，没有给百分比，所以这里留空而不是填 0 —— "
+             "填 0 会把一句措辞变成一个可以进模型的数。" if view["words_only"] else "")
+            + "出货量（发给渠道）与零售出货（卖给消费者）在这段时间里差得很远，"
             "因为渠道库存先补后去。公司披露的出货口径依次是："
             + "；".join(f"{label} {words}"
                           for label, words in zip(zyn["period_labels"],
@@ -471,6 +801,126 @@ def zyn_offtake(staging: dict) -> dict:
             "两条口径里，判断需求要看后者。"),
         "src_extra": "各季业绩 8-K EX-99.1 正文；Nielsen 为公司引用的第三方零售监测口径。",
     }
+    if view["words_only"]:
+        chart["annot"] = f"{zyn['period_labels'][-1]}：公司口径为「{view['words']}」，无数字"
+    return chart
+
+
+# ── section three: thresholds ────────────────────────────────────────────────
+
+
+def kpi_entries(staging: dict) -> tuple[dict, list[dict]]:
+    kpi = stamped_block(staging, "next_kpi", page_period(staging))
+    if kpi is None:
+        raise ValueError("series `next_kpi` is missing: every quarter carries its thresholds")
+    seg = staging["segments"]
+    printed = block(staging, "quarter_printed")
+    view = zyn_view(staging)
+
+    def printed_value(key: str) -> float:
+        if key not in printed:
+            raise ValueError(f"series `quarter_printed` has no {key!r} for {page_period(staging)}")
+        return printed[key]
+
+    measures = {
+        "segment_gm_us": lambda: seg["adjusted_gross_margin_pct"]["us"][-1],
+        "segment_gm_isf": lambda: seg["adjusted_gross_margin_pct"]["international_smoke_free"][-1],
+        "adjusted_oi_margin": lambda: seg["adjusted_oi_margin_pct"][-1],
+        "zyn_offtake": lambda: view["known"][-1][0],
+        "organic_growth": lambda: printed_value("organic_revenue_growth_pct"),
+        "isf_organic_growth": lambda: printed_value("isf_organic_revenue_growth_pct"),
+    }
+    entries = []
+    for entry in kpi["quantified"]:
+        if entry["measure"] not in measures:
+            raise ValueError(f"next_kpi entry {entry['metric']!r}: this page does not know how to "
+                             f"measure {entry['measure']!r}")
+        entries.append({**entry, "current": measures[entry["measure"]]()})
+    return kpi, entries
+
+
+SERIES_FOR = {
+    "segment_gm_us": lambda s: (s["segments"]["adjusted_gross_margin_pct"]["us"], s["segments"]["period_labels"]),
+    "segment_gm_isf": lambda s: (s["segments"]["adjusted_gross_margin_pct"]["international_smoke_free"],
+                                 s["segments"]["period_labels"]),
+    "adjusted_oi_margin": lambda s: (s["segments"]["adjusted_oi_margin_pct"], s["segments"]["period_labels"]),
+    "zyn_offtake": lambda s: (s["zyn"]["offtake_yoy_pct"], s["zyn"]["period_labels"]),
+}
+
+
+def values_labels(entry: dict, staging: dict, own: list[str]) -> list[str]:
+    """The quarters whose releases a threshold line was read from."""
+    if entry["measure"] == "zyn_offtake":
+        return staging["zyn"]["periods"]
+    return own
+
+
+def not_tracked_text(kpi: dict) -> str:
+    items = kpi.get("not_tracked", [])
+    if not items:
+        return ""
+    return (f"另有{cn_count(len(items))}条本页<b>不接入</b>，原因各不相同："
+            + "".join(f"（{i}）<b>{x['name']}</b> —— {x['why']}" for i, x in enumerate(items, 1)))
+
+
+def next_section(staging: dict, kpi: dict, entries: list[dict]) -> list[dict]:
+    upcoming = next_quarter_guidance(staging)
+    company = [e for e in entries if e.get("company_basis")]
+    note = "正值表示仍在安全侧。阈值多为本地研究设定，<b>不是公司指引</b> —— "
+    if upcoming is not None:
+        basis = {"reported": "报告口径摊薄每股收益", "adjusted": "调整后摊薄每股收益",
+                 "pro_forma_adjusted": "调整后（剔除俄乌）摊薄每股收益"}[upcoming["basis"]]
+        note += (f"公司自己的下季指引只有一条，就是{basis} US${upcoming['low']:.2f}–{upcoming['high']:.2f}，"
+                 f"已经画在第一节的 Exhibit {{EX_Q_BAND}} 上。")
+    for entry in company:
+        note += (f"唯一的例外是「{entry['metric']}」那条：{entry['threshold']:.1f}% 取的是{entry['company_basis']}，"
+                 f"属于公司披露值，其余{cn_count(len(entries) - len(company))}条都是本地设定。"
+                 if len(company) == 1 else "")
+    zyn_label = zyn_view(staging)["known"][-1][1]
+    exhibits = [headroom_exhibit(
+        f"下季 {len(entries)} 条阈值：当前值离阈值的余量",
+        entries, "current",
+        note + not_tracked_text(kpi),
+        f"当前值为 {cn_quarter(page_period(staging))}披露值"
+        + (f"（ZYN 零售出货为 {cn_quarter(zyn_label)}，见下）"
+           if any(e["measure"] == "zyn_offtake" for e in entries) and yq(zyn_label) != yq(page_period(staging))
+           else "")
+        + "；阈值为本地研究设定。")]
+    seg_measures = [e for e in entries if e["measure"] in SERIES_FOR and e["measure"] != "zyn_offtake"]
+    charted = [e for e in entries if e["measure"] in SERIES_FOR]
+    lines = ("本节前" if charted[:len(seg_measures)] == seg_measures else "本节分部口径的") \
+        + f"{cn_count(len(seg_measures))}条线"
+    n_seg = len(staging["segments"]["periods"])
+    own = [p for p in staging["segments"]["periods"] if yq(p) >= yq(NEW_SEGMENTS_FROM)]
+    for entry in entries:
+        if entry["measure"] not in SERIES_FOR:
+            continue
+        values, xlab = SERIES_FOR[entry["measure"]](staging)
+        exhibit = threshold_exhibit(
+            f"{entry['metric']}：当前 {entry['current']:.1f}%，阈值 {entry['threshold']:.1f}%",
+            xlab, rounded(values), entry["threshold"],
+            fmt="pct1", ylab="%",
+            actual_name=entry["metric"], threshold_name="本地阈值",
+            note=("红线是本地研究设定的阈值，不是公司指引，也不是公司披露的目标。"
+                  "序列从公司按现行口径开始披露该指标的那一季起画 —— "
+                  f"现行分部口径 {cn_quarter(NEW_SEGMENTS_FROM)}才启用，本页只接了新闻稿印出的季度，"
+                  f"{lines}因此只有{cn_count(n_seg)}个季度。"),
+            src_extra=(f"{quarter_years(values_labels(entry, staging, own))} 年各季业绩 8-K EX-99.1；"
+                       "阈值为本地研究设定。"))
+        if entry["measure"] == "zyn_offtake":
+            view = zyn_view(staging)
+            exhibit["note"] = "红线是本地研究设定的阈值，不是公司指引。"
+            if view["words_only"]:
+                value, label = view["known"][-1]
+                year, number = yq(view["zyn"]["periods"][-1])
+                before = (year - 1, 4) if number == 1 else (year, number - 1)
+                when = "上一季" if yq(label) == before else f" {label} "
+                exhibit["note"] += (
+                    "<b>最后一格没有点</b>：本季公司只用措辞描述这个指标，没有给数字，"
+                    f"所以当前值取的是{when}的 {value:.0f}%，而不是把措辞折算成一个数。"
+                    "一个分辨率高于披露的阈值不能被结清 —— 本站在万事达页上退役过一条同样的阈值。")
+        exhibits.append(exhibit)
+    return exhibits
 
 
 # ── section four: the long routine series ──────────────────────────────────
@@ -480,6 +930,18 @@ def smoke_free_transition(staging: dict) -> dict:
     annual = staging["annual"]
     years = annual["years"]
     share = annual["smoke_free_share_pct"]
+    gaps = [(y, c + s - r) for y, c, s, r in zip(years, annual["combustible_usd_m"],
+                                                  annual["smoke_free_usd_m"], annual["net_revenues_usd_m"])]
+    off = [(y, g) for y, g in gaps if g]
+    if not off:
+        sums = "两段相加等于合并净收入，逐年核对无差。"
+    elif all(abs(g) <= 1 for _, g in off):
+        sums = (f"两段相加等于合并净收入，{cn_count(len(years))}年里只有 "
+                + "、".join(f"{y} 年" for y, _ in off) + "差 US$1M，是各自四舍五入的结果。")
+    else:
+        sums = f"两段相加与合并净收入最多差 US${max(abs(g) for _, g in off):,.0f}M。"
+    combustible = annual["combustible_usd_m"]
+    flat = abs(combustible[-1] / combustible[0] - 1) < 0.10
     return {
         "ref": "EX_SF",
         "kind": "stacked_dual",
@@ -502,20 +964,47 @@ def smoke_free_transition(staging: dict) -> dict:
         "ylab": "US$M", "ylab2": "无烟占比",
         "note": (
             "<b>这条线是申报里的美元，不是新闻稿里的百分比。</b>PMI 在 10-K 的分部附注里"
-            "按产品类别披露净收入的美元金额，本图逐年读的是那张表；两段相加等于合并净收入，"
-            "十年里只有 2017 年差 US$1M，是各自四舍五入的结果。"
-            "两个口径细节写在这里而不是抹掉：该行的名称从「reduced-risk products」改成"
+            "按产品类别披露净收入的美元金额，本图逐年读的是那张表；" + sums
+            + "两个口径细节写在这里而不是抹掉：该行的名称从「reduced-risk products」改成"
             "「smoke-free products」，而 2020 与 2021 两年在 FY2022 的 10-K 里被重述过"
             "（Wellness and Healthcare 并入无烟口径），本图取较新的申报值。"
-            "组合烟草的绝对金额十年几乎没动，无烟从 US$733M 长到 "
-            f"US${annual['smoke_free_usd_m'][-1]:,.0f}M —— 转型是加出来的，不是替换出来的。"),
+            + (f"组合烟草的绝对金额{cn_count(len(years))}年几乎没动，" if flat else "")
+            + f"无烟从 US${annual['smoke_free_usd_m'][0]:,.0f}M 长到 "
+            f"US${annual['smoke_free_usd_m'][-1]:,.0f}M"
+            + (" —— 转型是加出来的，不是替换出来的。" if flat else "。")),
         "src_extra": "各年 Form 10-K 的 Segment Reporting 附注「Net revenues by product category」。",
     }
+
+
+def seasonality(staging: dict) -> str:
+    long = staging["long"]
+    by = dict(zip(long["periods"], long["net_revenues_usd_m"]))
+    years = [y for y in staging["annual"]["years"] if all(f"{y}Q{q}" in by for q in (1, 2, 3, 4))]
+    lowest = collections.Counter()
+    top = collections.Counter()
+    for y in years:
+        values = [by[f"{y}Q{q}"] for q in (1, 2, 3, 4)]
+        lowest[values.index(min(values)) + 1] += 1
+        top[tuple(sorted(sorted(range(4), key=lambda i: -values[i])[:2]))] += 1
+    low_q, low_n = lowest.most_common(1)[0]
+    pair, pair_n = top.most_common(1)[0]
+    exceptions = [y for y in years
+                  if [by[f"{y}Q{q}"] for q in (1, 2, 3, 4)].index(min(by[f"{y}Q{q}"] for q in (1, 2, 3, 4))) + 1 != low_q]
+    text = f"季节性明显：{cn_count(len(years))}年里有{cn_count(low_n)}年第{CN_Q[low_q]}季是低点"
+    if exceptions:
+        text += "（" + "、".join(f"{y} 年" for y in exceptions) + "例外）"
+    text += (f"，最高的两季{cn_count(pair_n)}年是第{CN_Q[pair[0] + 1]}、{CN_Q[pair[1] + 1]}季。")
+    return text
 
 
 def revenue_series(staging: dict) -> dict:
     long = staging["long"]
     rev = long["net_revenues_usd_m"]
+    by = dict(zip(long["periods"], rev))
+    annual = staging["annual"]
+    sums_ok = all(abs(sum(by[f"{y}Q{q}"] for q in (1, 2, 3, 4)) - total) < 0.5
+                  for y, total in zip(annual["years"], annual["net_revenues_usd_m"])
+                  if all(f"{y}Q{q}" in by for q in (1, 2, 3, 4)))
     return {
         "ref": "EX_REV",
         "kind": "bar_line",
@@ -538,9 +1027,10 @@ def revenue_series(staging: dict) -> dict:
             "us-gaap:SalesRevenueNet，它是<b>含</b>消费税的；扣除后的口径直到 2018 年的 10-Q "
             "才有自己的 XBRL 标签。本站按「含税收入 − 消费税」计算，得到的 FY2016 = 26,685 "
             "与 FY2018 10-K 逐字重印的 FY2016 净收入相同。"
-            "第四季没有 10-Q，其收入与毛利为全年减去前九个月，两条腿都是申报值；"
-            "四个季度相加等于全年，逐年核对无差。"
-            "季节性明显：每年第一季是低点，第二、三季是高点。"),
+            "第四季没有 10-Q，其收入与毛利为全年减去前九个月，两条腿都是申报值"
+            "（2025 年的毛利取公司 2026 年按新口径重印的四季数）；"
+            + ("净收入四个季度相加等于全年，逐年核对无差。" if sums_ok else "净收入四个季度相加与全年有出入。")
+            + seasonality(staging)),
         "src_extra": "XBRL companyfacts 的季度与年度收入、毛利；第四季为年度减前九个月。",
     }
 
@@ -550,13 +1040,14 @@ def margin_series(staging: dict) -> dict:
     gm, om = long["gross_margin_pct"], long["operating_margin_pct"]
     # Which quarters those troughs are is derived, not remembered: a first draft
     # of this caption named 2024Q4 from recall and it is not in the bottom four.
-    # The operating-margin line has four holes at the front -- 2016's quarters
-    # are on the pre-ASU-2017-07 basis and were never restated quarterly -- so
-    # the ranking has to skip them rather than sort None against float.
+    # The operating-margin line has holes at the front -- 2016's quarters are on
+    # the pre-ASU-2017-07 basis and were never restated quarterly -- so the
+    # ranking has to skip them rather than sort None against float.
     reported_om = [(value, label) for value, label
                    in zip(om, long["period_labels"]) if value is not None]
     deepest = sorted(reported_om)[:2]
-    om_from = long["period_labels"][len(om) - len(reported_om)]
+    holes = len(om) - len(reported_om)
+    om_from = long["period_labels"][holes]
     return {
         "ref": "EX_MARGIN",
         "kind": "lines",
@@ -570,16 +1061,17 @@ def margin_series(staging: dict) -> dict:
         "fmt": "pct1", "yfmt": "pct1", "label_fmt": "pct1", "end_label": True,
         "ylab": "%", "xstep": LONG_STEP,
         "note": (
-            "<b>两条线的缺口比任何一条自己的水平更有信息。</b>毛利率的趋势向上 —— "
-            f"窗口首季 {gm[0]:.1f}%、末季 {gm[-1]:.1f}%，是无烟产品占比上升的直接读数 —— "
-            "但它不是单调的，季节性与地域结构每年都会把它拉回去。"
-            "经营利润率则时不时被单季的减值、诉讼与重组砸出坑："
+            "<b>两条线的缺口比任何一条自己的水平更有信息。</b>"
+            + (f"毛利率的趋势向上 —— 窗口首季 {gm[0]:.1f}%、末季 {gm[-1]:.1f}%，是无烟产品占比上升的直接读数 —— "
+               "但它不是单调的，季节性与地域结构每年都会把它拉回去。" if gm[-1] > gm[0] else
+               f"毛利率窗口首季 {gm[0]:.1f}%、末季 {gm[-1]:.1f}%。")
+            + "经营利润率则时不时被单季的减值、诉讼与重组砸出坑："
             f"窗口内最深的两个是 {deepest[0][1]} 的 {deepest[0][0]:.1f}% 与 "
             f"{deepest[1][1]} 的 {deepest[1][0]:.1f}%。"
             "这正是第一节里那条 GAAP 指引会踩空的地方：坑本身是真的，"
             "只是公司的全年预测从一开始就写明不含它们。"
             "经营利润率是报告口径，不是调整后口径。"
-            f"<b>这条线的左端比毛利率短四格，那是洞不是缺数据。</b>"
+            f"<b>这条线的左端比毛利率短{cn_count(holes)}格，那是洞不是缺数据。</b>"
             f"它从 {om_from} 起画。2016 四个季度的营业利润都读到了"
             "（2,473 / 2,753 / 2,977 / 2,612，两条独立路径逐格相同，"
             "四季加总 10,815 与年报恒等），但它们在 ASU 2017-07 之前的口径上："
@@ -593,12 +1085,40 @@ def margin_series(staging: dict) -> dict:
     }
 
 
+def hyperscaler_growth() -> tuple[int, float] | None:
+    """The four clouds' combined cash capex across the cross-page table's rows."""
+    table = ai_capex_cycle_table(0)
+    totals = []
+    for row in table["rows"]:
+        if "—" in row[1:5]:
+            continue
+        totals.append(float(row[5].split("$", 1)[1].split("M", 1)[0].replace(",", "")))
+    if len(totals) < 2:
+        return None
+    return len(totals), totals[-1] / totals[0]
+
+
 def cash_series(staging: dict) -> dict:
     annual = staging["annual"]
     years = annual["years"]
     ocf = annual["operating_cash_flow_usd_m"]
     capex = annual["capex_usd_m"]
     intensity = [round(c / o * 100, 2) for c, o in zip(capex, ocf)]
+    story = block(staging, "quarter_story")
+    other = block(staging, "guidance_other")
+    growth = hyperscaler_growth()
+    note = "<b>把这一页放在本站其他公司旁边，这张图是最大的反差。</b>"
+    if growth:
+        note += (f"核对抽屉里那张跨页对照表追的是四家云厂的现金资本开支，"
+                 f"{cn_count(growth[0])}个季度里它们合计增长到 {growth[1]:.1f} 倍；")
+    note += (f"PMI {cn_count(len(years))}年里资本开支从没超过经营现金流的 {max(intensity):.1f}%，"
+             f"本年是 {intensity[-1]:.1f}%。")
+    if story.get("us_investment") and "capex_low_usd_m" in other:
+        low, high = other["capex_low_usd_m"], other["capex_high_usd_m"]
+        note += (f"{story['us_investment']}，而全年资本开支指引是 US${low / 100:.0f}–{high / 100:.0f} 亿、"
+                 f"相对上年 US${capex[-1]:,.0f}M 是 {minus_sign(signed(pct_change(low, capex[-1])))} 到 "
+                 f"{minus_sign(signed(pct_change(high, capex[-1])))} —— 也就是说这笔投入进的是销售与市场费用，"
+                 "不是资产负债表。这条判断下一季可以用同一张表证伪。")
     return {
         "ref": "EX_CASH",
         "kind": "bar_line_dual",
@@ -610,15 +1130,7 @@ def cash_series(staging: dict) -> dict:
                  "color": "RED", "yfmt": "pct1"},
         "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
         "ylab": "US$M", "ylab2": "资本开支占经营现金流 %",
-        "note": (
-            "<b>把这一页放在本站其他公司旁边，这张图是最大的反差。</b>"
-            "核对抽屉里那张跨页对照表追的是四家云厂的现金资本开支，"
-            "八个季度里它们合计增长了 2.8 倍；"
-            f"PMI 十年里资本开支从没超过经营现金流的 {max(intensity):.1f}%，"
-            f"本年是 {intensity[-1]:.1f}%。"
-            "本季管理层说要在美国「加大投入」，而全年资本开支指引是 US$14–16 亿、"
-            "相对上年 US$1,569M 是 −10.8% 到 +2.0% —— 也就是说这笔投入进的是销售与市场费用，"
-            "不是资产负债表。这条判断下一季可以用同一张表证伪。"),
+        "note": note,
         "src_extra": "XBRL companyfacts 的年度经营现金流与购置不动产、厂房及设备支出。",
     }
 
@@ -634,12 +1146,99 @@ def headline_metrics(staging: dict) -> list[str]:
             f"Adj EPS ${fin['adjusted_diluted_eps_usd'][-1]:.2f}"]
 
 
+def release_source(staging: dict) -> tuple[str, str, str]:
+    """This quarter's release and periodic report in `sources`: link text, URL, report words."""
+    period = page_period(staging)
+    year, number = yq(period)
+    key = f"PMI {year} 年第{CN_Q[number]}季度" + ("及全年" if number == 4 else "") + "业绩新闻稿"
+    entry = next((s for s in staging["sources"] if s["label"].startswith(key)), None)
+    if entry is None:
+        raise ValueError(f"series `sources` has no {key!r}: add this quarter's release")
+    report = (f"与 {year} 年度 Form 10-K" if number == 4
+              else f"与截至 {staging['period_ends'][-1]} 的 Form 10-Q")
+    return f"{key}（8-K EX-99.1）", entry["url"], report
+
+
+def guidance_table(staging: dict) -> dict:
+    other = block(staging, "guidance_other")
+    released = staging["latest"]["release_date"]
+    record = next((r for r in staging["annual_guidance"]["records"]
+                   if r["vintages"] and r["vintages"][-1]["release_date"] == released), None)
+    if record is None:
+        raise ValueError(f"annual_guidance has no vintage released {released}: add this release's "
+                         "full-year forecast")
+    now_v = record["vintages"][-1]
+    before_v = record["vintages"][-2] if len(record["vintages"]) > 1 else None
+    upcoming = next_quarter_guidance(staging)
+    previous_q = next((r for r in staging["quarterly_guidance"]
+                       if before_v and r["release_date"] == before_v["release_date"]), None)
+    rows = []
+    if upcoming is not None:
+        year, number = yq(upcoming["guided_period"])
+        fx = upcoming.get("currency_eps")
+        rows.append([
+            f"{year} 年第{CN_Q[number]}季度调整后摊薄 EPS", f"${upcoming['low']:.2f} – ${upcoming['high']:.2f}",
+            (f"—（上一期只给第{CN_Q[yq(previous_q['guided_period'])[1]]}季 "
+             f"${previous_q['low']:.2f} – ${previous_q['high']:.2f}）" if previous_q else "—"),
+            "新季度对象" + (f"，含约 {abs(fx) * 100:.0f} 美分{'不利' if fx < 0 else '有利'}汇率" if fx else "")])
+
+    def band(v, lo, hi):
+        return f"${v[lo]:.2f} – ${v[hi]:.2f}"
+
+    def change(key):
+        if before_v is None:
+            return "—"
+        delta = mid(now_v[f"{key}low"], now_v[f"{key}high"]) - mid(before_v[f"{key}low"], before_v[f"{key}high"])
+        if (now_v[f"{key}low"], now_v[f"{key}high"]) == (before_v[f"{key}low"], before_v[f"{key}high"]):
+            return "逐字未变"
+        return f"{'上调' if delta > 0 else '下调'} ${abs(delta):.2f}"
+
+    y = record["year"]
+    for label, key in ((f"{y} 全年报告口径摊薄 EPS", ""), (f"{y} 全年调整后摊薄 EPS", "adj_"),
+                       (f"{y} 全年调整后摊薄 EPS（剔除汇率）", "xfx_")):
+        rows.append([label, band(now_v, f"{key}low", f"{key}high"),
+                     band(before_v, f"{key}low", f"{key}high") if before_v else "—", change(key)])
+    rows.extend(other.get("rows", []))
+    reported_move = change("")
+    adjusted_move = change("adj_")
+    unchanged = (before_v is not None
+                 and all((v["xfx_low"], v["xfx_high"]) == (now_v["xfx_low"], now_v["xfx_high"])
+                         for v in record["vintages"]))
+    note = "公司在同一张预测表里并列报告口径与调整后口径，中间逐项列出调整。"
+    if before_v is not None:
+        note += (f"本期报告口径{reported_move}、调整后{adjusted_move}"
+                 + (f"，而「剔除汇率的区间{cn_count(len(record['vintages']))}次发布逐字未变」"
+                    f"（${now_v['xfx_low']:.2f}–{now_v['xfx_high']:.2f}）" if unchanged else "")
+                 + (f"—— 公司自己的标题就写「{other['headline_quote']}」。" if other.get("headline_quote") else "。"))
+    guided = {r["guided_period"] for r in staging["quarterly_guidance"]}
+    fourths = sorted(p for p in guided if yq(p)[1] == 4)
+    if upcoming is not None:
+        note += f"下季指引只覆盖第{CN_Q[yq(upcoming['guided_period'])[1]]}季"
+        if len(fourths) == 1 and yq(upcoming["guided_period"])[1] == 3:
+            exception = next(r for r in staging["quarterly_guidance"] if r["guided_period"] == fourths[0])
+            note += (f"：PMI 从不指引第四季，{cn_quarter(fourths[0], '季')}那次"
+                     f"{'单点' if exception['point'] else '区间'}是唯一例外。")
+        else:
+            note += "。"
+    title_date = now_v["release_date"]
+    return {
+        "title": f"公司指引（{title_date} 业绩新闻稿全年预测表与假设段，公司披露值）",
+        "headers": ["指标", "本期指引",
+                    f"上一期指引（{before_v['release_date']}）" if before_v else "上一期指引", "变动"],
+        "rows": rows,
+        "note": note,
+    }
+
+
 def build_payload(staging: dict) -> dict:
     fin = staging["financials"]
     labels = staging["period_labels"]
     long = staging["long"]
     seg = staging["segments"]
-    annual = staging["annual"]
+    period = page_period(staging)
+    if yq(long["periods"][-1]) != yq(staging["periods"][-1]):
+        raise ValueError(f"long ends at {long['periods'][-1]!r} but `periods` ends at "
+                         f"{staging['periods'][-1]!r}: append the quarter to both")
 
     rev = fin["net_revenues_usd_m"]
     adj_eps = fin["adjusted_diluted_eps_usd"]
@@ -652,9 +1251,9 @@ def build_payload(staging: dict) -> dict:
 
     q_rows = staging["quarterly_guidance"]
     q_adj = [(r["actual_eps"], r["low"], r["high"]) for r in q_rows if r["basis"] != "reported"]
-    q_rep = [(r["actual_eps"], r["low"], r["high"]) for r in q_rows if r["basis"] == "reported"]
     qa_n, qa_above, qa_inside, qa_below = tally(q_adj)
-    qr_n, qr_above, qr_inside, qr_below = tally(q_rep)
+
+    kpi, entries = kpi_entries(staging)
 
     settled = [
         annual_reported_band(staging),
@@ -670,49 +1269,7 @@ def build_payload(staging: dict) -> dict:
         segment_margin(staging),
         zyn_offtake(staging),
     ]
-
-    kpi = staging["next_kpi"]["quantified"]
-    next_block = [headroom_exhibit(
-        f"下季 {len(kpi)} 条阈值：当前值离阈值的余量",
-        kpi, "current",
-        ("正值表示仍在安全侧。阈值多为本地研究设定，<b>不是公司指引</b> —— "
-         "公司自己的下季指引只有一条，就是调整后摊薄每股收益 US$2.20–2.25，"
-         f"已经画在第一节的 Exhibit {{EX_Q_BAND}} 上。"
-         "唯一的例外是「集团有机收入增速」那条：5.0% 取的是公司全年有机收入指引"
-         "区间的下限，属于公司披露值，其余五条都是本地设定。"
-         + staging["next_kpi"]["excluded"]),
-        "当前值为 2026 年第二季度披露值（ZYN 零售出货为 2026 年第一季度，见下）；阈值为本地研究设定。")]
-
-    seg_gm = seg["adjusted_gross_margin_pct"]
-    series_for = {
-        "美国分部调整后毛利率": (seg_gm["us"], seg["period_labels"], "pct1", "%"),
-        "国际无烟分部调整后毛利率": (seg_gm["international_smoke_free"], seg["period_labels"],
-                                     "pct1", "%"),
-        "集团调整后经营利润率": (seg["adjusted_oi_margin_pct"], seg["period_labels"], "pct1", "%"),
-        "美国 ZYN 零售出货同比（Nielsen）": (staging["zyn"]["offtake_yoy_pct"],
-                                             staging["zyn"]["period_labels"], "pct1", "%"),
-    }
-    for entry in kpi:
-        if entry["metric"] not in series_for:
-            continue
-        values, xlab, fmt, unit = series_for[entry["metric"]]
-        exhibit = threshold_exhibit(
-            f"{entry['metric']}：当前 {entry['current']:.1f}{unit}，阈值 {entry['threshold']:.1f}{unit}",
-            xlab, rounded(values), entry["threshold"],
-            fmt=fmt, ylab=unit,
-            actual_name=entry["metric"], threshold_name="本地阈值",
-            note=("红线是本地研究设定的阈值，不是公司指引，也不是公司披露的目标。"
-                  "序列从公司按现行口径开始披露该指标的那一季起画，不向前回补 —— "
-                  "现行分部口径 2026 年第一季度才启用，本节前三条线因此只有四个季度。"),
-            src_extra="2026 年各季业绩 8-K EX-99.1；阈值为本地研究设定。")
-        if entry["metric"].startswith("美国 ZYN"):
-            exhibit["note"] = (
-                "红线是本地研究设定的阈值，不是公司指引。"
-                "<b>最后一格没有点</b>：本季公司只用措辞描述这个指标，没有给数字，"
-                "所以当前值取的是上一季的 10%，而不是把措辞折算成一个数。"
-                "一个分辨率高于披露的阈值不能被结清 —— 本站在万事达页上退役过一条同样的阈值。")
-        next_block.append(exhibit)
-
+    next_block = next_section(staging, kpi, entries)
     routine = [
         smoke_free_transition(staging),
         revenue_series(staging),
@@ -792,7 +1349,7 @@ def build_payload(staging: dict) -> dict:
     })
     tables.append({
         "n": first_table + 3,
-        "title": "近八季合并损益与每股收益（公司披露值）",
+        "title": f"近{cn_count(len(labels))}季合并损益与每股收益（公司披露值）",
         "headers": ["期间", "净收入", "毛利", "经营利润", "毛利率", "经营利润率",
                     "报告口径摊薄 EPS", "调整后摊薄 EPS"],
         "rows": [[
@@ -803,10 +1360,81 @@ def build_payload(staging: dict) -> dict:
         ] for i in range(len(labels))],
     })
     tables.append(threshold_table(first_table + 4, "下季阈值与当前值（原始单位）",
-                                  kpi, "current", "当前值"))
+                                  entries, "current", "当前值"))
     tables.append(ai_capex_cycle_table(first_table + 5))
 
+    # the quarter in one sentence
+    seg_labels = seg["periods"]
+    seg_gm = seg["adjusted_gross_margin_pct"]
+    us_ago = year_ago_index(seg_labels, len(seg_labels) - 1)
     us_gm = seg_gm["us"]
+    this_q = next((r for r in q_rows if yq(r["guided_period"]) == yq(staging["periods"][-1])), None)
+    headline = f"净收入 US${rev[-1]:,.0f}M、同比 {signed(pct_change(rev[-1], rev[-5]))}，"
+    if this_q is not None and this_q["basis"] == "adjusted":
+        verdict = verdict_of(adj_eps[-1], this_q["low"], this_q["high"])
+        headline += (f"调整后摊薄每股收益 US${adj_eps[-1]:.2f} "
+                     + {"above": "高于", "below": "低于", "inside": "落在"}[verdict]
+                     + f"公司自己给的 US${this_q['low']:.2f}–{this_q['high']:.2f}"
+                     + ("之内" if verdict == "inside" else ""))
+    else:
+        headline += f"调整后摊薄每股收益 US${adj_eps[-1]:.2f}"
+    rep_down = rep_eps[-1] < rep_eps[-5]
+    headline += (f"；{'但' if rep_down else ''}报告口径每股收益 US${rep_eps[-1]:.2f} "
+                 f"同比{'下降' if rep_down else '上升' if rep_eps[-1] > rep_eps[-5] else '持平'}，"
+                 f"美国分部调整后毛利率 {us_gm[-1]:.1f}%、同比 {us_gm[-1] - us_gm[us_ago]:+.1f}pp")
+    if rep_down and this_q is not None and adj_eps[-1] > this_q["high"]:
+        headline += " —— 同一份新闻稿里，公司定义的那个数在兑现，GAAP 那个数在被一次性项目拿走。"
+    else:
+        headline += "。"
+
+    latest_bridge, previous_bridge, _ = bridge_blocks(staging)
+    vmo_now = latest_bridge["volume_mix_other"][0]
+    if previous_bridge is not None and previous_bridge["volume_mix_other"][0] < 0 < vmo_now:
+        before = previous_bridge["volume_mix_other"][0]
+        bridge_card = ('<article><span>亮点</span><b>增量从「价格＋汇率」变成「价格＋正的量与结构」</b>'
+                       f'<p>本季净收入增量里价格 US${latest_bridge["price"][0]:,.0f}M、'
+                       f'汇率 US${latest_bridge["currency"][0]:,.0f}M，量与结构 US${vmo_now:,.0f}M —— '
+                       f'上一季这一项是 −US${abs(before):,.0f}M。</p></article>')
+    else:
+        bridge_card = ('<article><span>亮点</span><b>本季净收入增量的来源</b>'
+                       f'<p>价格 US${latest_bridge["price"][0]:,.0f}M、汇率 US${latest_bridge["currency"][0]:,.0f}M、'
+                       f'量与结构 US${vmo_now:,.0f}M。</p></article>')
+    view = zyn_view(staging)
+    peak_value, peak_label = max(view["known"])
+    after_peak = [v for v, label in view["known"] if yq(label) > yq(peak_label)]
+    zyn_words = ""
+    if after_peak and all(a > b for a, b in zip([peak_value] + after_peak, after_peak)) and view["words_only"]:
+        zyn_words = f"ZYN 零售出货从 {peak_value:.0f}% 一路降到公司只肯用措辞描述。"
+    us_card = ('<article><span>代价</span><b>美国分部的单位经济性还在恶化</b>'
+               if us_gm[-1] < us_gm[us_ago] else '<article><span>美国</span><b>美国分部的调整后毛利率</b>')
+    us_card += (f'<p>调整后毛利率 {us_gm[-1]:.1f}%，同比 {us_gm[-1] - us_gm[us_ago]:+.1f}pp'
+                + (f'；{zyn_words}' if zyn_words else '。') + '</p></article>')
+    all_above = qa_above == qa_n and qa_n > 0
+    brief = (
+        '<h4>本季三条主线</h4><div class="takeaway-grid">'
+        '<article><span>记录</span><b>同一年被指引两次，两条记录不一样</b>'
+        f'<p>报告口径的全年指引，{fy_n} 个完整年度里 {fy_above} 年高于上限、{fy_inside} 年'
+        f'落在区间内、{fy_below} 年跌破下限；换成公司自定义的调整后口径，下季指引 '
+        + (f'{qa_n} 季<b>全部</b>高于上限。' if all_above
+           else f'{qa_n} 季里 {qa_above} 季高于上限、{qa_inside} 季落在区间内、{qa_below} 季跌破下限。')
+        + '</p></article>'
+        + bridge_card + us_card + '</div>')
+
+    name, url, report = release_source(staging)
+    audit = AUDIT_WORDS.get(staging["latest"]["audit_status"])
+    if audit is None:
+        raise ValueError(f"latest.audit_status {staging['latest']['audit_status']!r} is not one this page prints")
+    records = staging["annual_guidance"]["records"]
+    withdrawn = [(r["year"], d) for r in records for d in r["withdrawn"]]
+    published = sum(1 for r in records for v in r["vintages"] if v["release_date"] not in r["withdrawn"])
+    span, counted = clause_sentence(staging)
+    census = staging["annual_guidance"]["exclusion_clause_census"]
+    first_q = q_rows[0]["guided_period"]
+    reported_q = [r for r in q_rows if r["basis"] == "reported"]
+    pro_forma = [r for r in q_rows if r["basis"] == "pro_forma_adjusted"]
+    first_adj = next(r for r in q_rows if r["basis"] == "adjusted" and yq(r["guided_period"]) > yq(reported_q[-1]["guided_period"]))
+    pf_years = sorted({yq(r["guided_period"])[0] for r in pro_forma})
+    kpi_items = kpi.get("not_tracked", [])
     return {
         "schema_version": "quarterly-dashboard/pm-v1",
         "page": {"slug": "pm", "language": "zh-CN"},
@@ -821,56 +1449,16 @@ def build_payload(staging: dict) -> dict:
             period=staging["period_labels"][-1],
             period_end=staging["period_ends"][-1]),
         "tracker": "Watchlist Quarterly Tracker · PM",
-        "title": "Philip Morris International (PM)：Q2 2026 季报仪表盘",
-        "subtitle": ("截至 2026-06-30 · 发布 2026-07-22 · US GAAP · 未审计 · "
-                     "自然年财年，季度标注与财年一致"),
-        "headline": (
-            f"净收入 US${rev[-1]:,.0f}M、同比 {signed(pct_change(rev[-1], rev[-5]))}，"
-            f"调整后摊薄每股收益 US${adj_eps[-1]:.2f} 高于公司自己给的 US$2.02–2.07；"
-            f"但报告口径每股收益 US${rep_eps[-1]:.2f} 同比下降，"
-            f"美国分部调整后毛利率 {us_gm[-1]:.1f}%、同比 {us_gm[-1] - us_gm[1]:+.1f}pp —— "
-            "同一份新闻稿里，公司定义的那个数在兑现，GAAP 那个数在被一次性项目拿走。"),
-        "brief": (
-            '<h4>本季三条主线</h4><div class="takeaway-grid">'
-            '<article><span>记录</span><b>同一年被指引两次，两条记录不一样</b>'
-            f'<p>报告口径的全年指引，{fy_n} 个完整年度里 {fy_above} 年高于上限、{fy_inside} 年'
-            f'落在区间内、{fy_below} 年跌破下限；换成公司自定义的调整后口径，下季指引 '
-            f'{qa_n} 季<b>全部</b>高于上限。</p></article>'
-            '<article><span>亮点</span><b>增量从「价格＋汇率」变成「价格＋正的量与结构」</b>'
-            f'<p>本季净收入增量里价格 US$689M、汇率 US$299M，量与结构 US$81M —— '
-            f'上一季这一项是 −US$206M。</p></article>'
-            '<article><span>代价</span><b>美国分部的单位经济性还在恶化</b>'
-            f'<p>调整后毛利率 {us_gm[-1]:.1f}%，同比 {us_gm[-1] - us_gm[1]:+.1f}pp；'
-            f'ZYN 零售出货从 39% 一路降到公司只肯用措辞描述。</p></article>'
-            '</div>'),
-        "source": ('Source: <a href="https://www.sec.gov/Archives/edgar/data/1413329/'
-                   '000162828026049107/earningsreleasepm-ex991xq2.htm" rel="noopener">'
-                   'PMI 2026 年第二季度业绩新闻稿（8-K EX-99.1）</a>'
-                   '与截至 2026-06-30 的 Form 10-Q。'),
-        "source_url": ("https://www.sec.gov/Archives/edgar/data/1413329/"
-                       "000162828026049107/earningsreleasepm-ex991xq2.htm"),
+        "title": f"Philip Morris International (PM)：{period} 季报仪表盘",
+        "subtitle": (f"截至 {staging['period_ends'][-1]} · 发布 {staging['latest']['release_date']} · US GAAP · "
+                     f"{audit} · 自然年财年，季度标注与财年一致"),
+        "headline": headline,
+        "brief": brief,
+        "source": (f'Source: <a href="{url}" rel="noopener">{name}</a>{report}。'),
+        "source_url": url,
         "source_links": staging["sources"],
         "summary": {"blocks": []},
-        "guidance": {
-            "title": "公司指引（2026-07-22 业绩新闻稿全年预测表与假设段，公司披露值）",
-            "headers": ["指标", "本期指引", "上一期指引（2026-04-22）", "变动"],
-            "rows": [
-                ["2026 年第三季度调整后摊薄 EPS", "$2.20 – $2.25",
-                 "—（上一期只给第二季 $2.02 – $2.07）", "新季度对象，含约 8 美分不利汇率"],
-                ["2026 全年报告口径摊薄 EPS", "$7.19 – $7.34", "$7.56 – $7.71", "下调 $0.37"],
-                ["2026 全年调整后摊薄 EPS", "$8.26 – $8.41", "$8.36 – $8.51", "下调 $0.10"],
-                ["2026 全年调整后摊薄 EPS（剔除汇率）", "$8.11 – $8.26", "$8.11 – $8.26", "逐字未变"],
-                ["全年有机收入增速", "+5% ~ +7%", "+5% ~ +7%", "重申"],
-                ["全年有机经营利润增速", "+7% ~ +9%", "+7% ~ +9%", "重申"],
-                ["全年卷烟出货量", "−2% ~ −3%", "约 −3%", "上调"],
-                ["全年经营现金流 / 资本开支", "约 $13.5B / $1.4 – $1.6B", "同上", "重申"],
-                ["资本回报", "无回购；持续提高股息；目标年底杠杆接近 2.0×", "同上", "重申"],
-            ],
-            "note": ("公司在同一张预测表里并列报告口径与调整后口径，中间逐项列出调整。"
-                     "本期报告口径下调 $0.37、调整后下调 $0.10，而「剔除汇率的区间三次发布逐字未变」"
-                     "（$8.11–8.26）—— 公司自己的标题就写「仅因汇率更新全年调整后 EPS 预测」。"
-                     "下季指引只覆盖第三季：PMI 从不指引第四季，2020 年第四季那次单点是唯一例外。"),
-        },
+        "guidance": guidance_table(staging),
         "sections": [
             {"id": "settled", "title": "一、公司自己的指引兑现了吗",
              "description": (
@@ -883,10 +1471,12 @@ def build_payload(staging: dict) -> dict:
                              "决定估值边际的线。"),
              "exhibits": highlight_ex},
             {"id": "next_quarter", "title": "三、下季要跟踪什么",
-             "description": "当前值离下季阈值还有多远，统一用「距阈值余量」口径；不接入的四条也写在这里。",
+             "description": ("当前值离下季阈值还有多远，统一用「距阈值余量」口径；"
+                             f"不接入的{cn_count(len(kpi_items))}条也写在这里。"),
              "exhibits": next_ex},
             {"id": "routine", "title": "四、长期常规跟踪",
-             "description": ("PMI 专属的常规序列：十年无烟转型的美元金额、38 个季度的收入与"
+             "description": (f"PMI 专属的常规序列：{cn_count(len(staging['annual']['years']))}年无烟转型的美元金额、"
+                             f"{len(long['periods'])} 个季度的收入与"
                              "两条利润率，以及一家现金强、资本轻的公司的现金结构。"),
              "exhibits": routine_ex},
         ],
@@ -895,31 +1485,37 @@ def build_payload(staging: dict) -> dict:
             "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
             "PMI 财年即自然年，本页季度标注与公司自己的口径一致，无需换算。",
             "第一节结清的是「两个层级、两种口径」的指引记录，这是本站唯一一家同时具备的公司。"
-            "全年指引自 2008 年分拆起在每一份季度业绩新闻稿里发布并逐季修订，本页收录 2009–2026 共 "
-            f"{len(staging['annual_guidance']['records'])} 个年度、70 次发布；下季指引自 2020 年第二季度"
-            "起发布，共 20 次。",
+            "全年指引自 2008 年分拆起在每一份季度业绩新闻稿里发布并逐季修订"
+            + (f"（{'、'.join(d for _, d in withdrawn)} 那{cn_count(len(withdrawn))}份撤回除外）" if withdrawn else "")
+            + f"，本页收录 {records[0]['year']}–{records[-1]['year']} 共 "
+            f"{len(records)} 个年度、{published} 次发布；下季指引自 {cn_quarter(first_q)}"
+            f"起发布，共 {len(q_rows)} 次。",
             "FY2008 不在记录内：公司 2008 年 3 月才分拆，当年的预测是按 pro forma「调整后」口径"
             "对 2007 年 pro forma 基数给出的（新闻稿原文如此），拿它对报告口径的实际值结清是口径错误"
             "而不是一次落空。",
             "FY2019 与 FY2020 年初的指引是「至少 US$X」这样「只有下限」的形式，没有上限可以穿出，"
             "所以不进区间图，只进核对表。2020 年 4 月 21 日公司因新冠「撤回」全年指引并改为按季度"
-            "指引，同年 7 月恢复全年指引 —— 这是记录里唯一一次撤回。",
-            "2008 年 4 月到 2022 年 2 月的 56 份新闻稿里，有 54 份给全年预测时附同一句排除条款："
-            "不含未来并购、未预料到的资产减值与退出成本、以及任何异常事件（例外是 2008-10-22 "
-            "和 2020-04-21 那份撤回全年指引的）。2022 年第二季起公司改用「报告口径 + 逐项"
+            "指引，同年 7 月恢复全年指引"
+            + (" —— 这是记录里唯一一次撤回。" if len(withdrawn) == 1 else "。"),
+            span + counted + "。"
+            "2022 年第二季起公司改用「报告口径 + 逐项"
             "列名的调整 + 调整后口径」的预测表，排除项因此从一句概括变成了逐项计价。本页把两个时期"
             "画在同一张图上，但在图注里说明这条差别 —— 它正是报告口径那条记录会踩空的原因。",
-            "下季指引的口径在记录中期发生变化：2020 年第二季至 2023 年第一季为「报告」每股收益，"
-            "2023 年第二季起为「调整后」每股收益，2022 年第二、三季两格另为剔除俄罗斯与乌克兰的 "
-            "pro forma 调整后口径。实际值一律按指引当期的同一口径取，不跨口径比较；图上有结构断点标记。",
+            f"下季指引的口径在记录中期发生变化：{cn_quarter(first_q, '季')}至 {cn_quarter(reported_q[-1]['guided_period'], '季')}为「报告」每股收益，"
+            f"{cn_quarter(first_adj['guided_period'], '季')}起为「调整后」每股收益，"
+            + (f"{pf_years[0]} 年第" + "、".join(CN_Q[yq(r['guided_period'])[1]] for r in pro_forma)
+               + f"季{cn_count(len(pro_forma))}格另为剔除俄罗斯与乌克兰的 pro forma 调整后口径。" if len(pf_years) == 1 else "")
+            + "实际值一律按指引当期的同一口径取，不跨口径比较；图上有结构断点标记。",
             "第四季度没有 10-Q，所以本页季度序列里的第四季收入、毛利与经营利润为全年申报值减去前九个月"
             "申报值，两条腿都是申报数字；每股收益不可加总，第四季读自当期新闻稿的 EPS 调节表。"
-            "四季相加等于全年，2024 与 2025 两年逐项核对无差。",
-            "长期季度序列自 2017 年第一季度起，不向前回补：PMI 在 2016 年之前按含消费税的口径报收入，"
-            "2016 年起改为净收入口径，两段不是一条线。",
-            "分部序列只有四个季度，也不会更长：公司自 2026 年第一季度起把六个地理分部改为国际无烟、"
-            "国际组合烟草与美国三个报告分部，历史未按新口径重述进申报。图上那两个 2025 季度是 2026 年"
-            "两份新闻稿各自印出的上年对照列。",
+            "四季相加等于全年，2024 与 2025 两年逐项核对无差；2025 年的毛利取公司按 2026 年新口径重印的"
+            "四季数（2026-03-13 的 8-K），2024 年及以前仍是原口径。",
+            f"长期季度序列自 {cn_quarter(long['periods'][0])}起：PMI 的损益表一直同时印含消费税与扣除消费税两行收入，"
+            "本页取扣除后的净收入；2016/2017 申报里标着「Net revenues」的那一行其实含消费税，见收入那一张的图注。",
+            "分部序列只画了新闻稿印出的季度：公司自 2026 年第一季度起把四个地理分部改为国际无烟、"
+            "国际组合烟草与美国三个报告分部；图上的 2025 季度是 2026 年各份新闻稿印出的上年对照列。"
+            + (f"公司另在 {seg['recast_filing']['date']} 的 8-K 按新分部重印了 {seg['recast_filing']['covers']} "
+               "各季（未经审计的补充信息），本页尚未接入。" if seg.get("recast_filing") else ""),
             "无烟产品收入占比取自各年 10-K 分部附注里按产品类别的「美元」金额，不是新闻稿里的整数"
             "百分比。该行的名称在 2019 年前后从 reduced-risk products 改为 smoke-free products，"
             "2020 与 2021 两年在 FY2022 的 10-K 里被重述（Wellness and Healthcare 并入无烟口径），"
@@ -929,10 +1525,11 @@ def build_payload(staging: dict) -> dict:
             "核对抽屉最后那张「AI capex 循环」是全站共用的跨页对照块，在每一页都逐字节相同，不是对 PM 的判断。"
             "它追的是四家云厂现金资本开支 → NVDA 数据中心收入 → TSM 晶圆这条链，PMI 不在这条链的任何一环上。"
             "把它放在这里是为了让读者在任意一页都能查到同一份上下游对照。它在折叠的抽屉里，不参与本页的论证。",
-            "本页已知未接入：ZYN 美国零售价值份额与净债务 / 调整后 EBITDA（前者只在电话会上给出、"
-            "后者的分母是公司只按年披露的自定义口径）、ZYN Ultra 的净增量与自我蚕食（公司明确拒绝量化）、"
-            "季度自由现金流（第二季 10-Q 在新闻稿两天后才提交，本页现金流序列只到年度层面），"
-            "以及 2026 年 7 月 22 日申报之后的任何数据。",
+            # what is not tracked is this quarter's list (`next_kpi`), not a remembered one
+            "本页已知未接入：" + "".join(f"{x.get('note', x['name'])}" + ("，" if i == len(kpi_items) - 1 else "、")
+                                       for i, x in enumerate(kpi_items))
+            + f"以及 {int(staging['latest']['release_date'][:4])} 年 {int(staging['latest']['release_date'][5:7])} 月 "
+            f"{int(staging['latest']['release_date'][8:10])} 日申报之后的任何数据。",
             "业绩电话会文字稿仅链接官方 IR 与 SEC 托管版本，公开仓不复制原件或逐字内容。",
         ],
         "footer": "PM quarterly results · 数据来自 PMI 公开披露与透明自算 · 仅供研究，不构成投资建议",
