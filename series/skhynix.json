@@ -19,6 +19,30 @@
   "audit_status": "provisional",
   "analysis_date": "2026-08-29"
  },
+ "_checks": {
+  "period": "Q2 2026",
+  "period_end": "2026-06-30",
+  "release_date": "2026-07-29",
+  "revenue_krw_bn": 79318.7,
+  "operating_profit_krw_bn": 60542.6,
+  "net_income_krw_bn": 93922.6,
+  "operating_margin_pct_printed": 76,
+  "net_margin_pct_printed": 118,
+  "revenue_qoq_pct_printed": 51,
+  "revenue_yoy_pct_printed": 257,
+  "operating_profit_yoy_pct_printed": 557,
+  "prior_quarter_operating_margin_pct_printed": 72,
+  "prior_year_revenue_krw_bn": 22232,
+  "prior_year_operating_profit_krw_bn": 9212.9,
+  "prior_year_net_income_krw_bn": 6996.2,
+  "profit_before_tax_krw_tn_spoken": 122.7,
+  "non_operating_net_krw_tn_spoken": 62.2,
+  "cash_and_equivalents_krw_tn": 88.0,
+  "interest_bearing_debt_krw_tn": 18.6,
+  "net_cash_krw_tn": 69.4,
+  "source": "SK hynix Newsroom「SK hynix Announces 2Q26 Financial Results」（July 29, 2026）首段：营收 79.3187 万亿韩元、营业利润 60.5426 万亿（营业利润率 76%）、净利 93.9226 万亿（净利率 118%），营收与营业利润同比 +257% / +557%；财务段：现金及现金等价物 88 万亿，总借款减少 0.7 万亿至 18.6 万亿，净现金 69.4 万亿；■ 2Q26 Financial Results (K-IFRS, Billion KRW) 表：Revenue 79,318.7 / 52,576.3（QoQ 51%）/ 22,232（YoY 257%），Operating Profit 60,542.6 / 37,610.3 / 9,212.9，Operating Margin 76% / 72% / 41%，Net Income 93,922.6 / 40,345.9 / 6,996.2。税前利润与营业外净额的独立读数来自 2Q26 业绩电话会 CFO 发言（口头给出营业外净收益 ₩62.2T、税前利润 ₩122.7T；按本页规矩转述、不录原话），与 series 里 6-K Preliminary Results 表的 122,708.4 在电话会精度上一致；6-K 原件本机没有，未另行重读。",
+  "checked_on": "2026-09-19"
+ },
  "periods": [
   "2016Q1",
   "2016Q2",
@@ -367,6 +391,10 @@
  },
  "restatement_census": {
   "_what": "Every quarter in 2016Q1-2022Q4 whose figures differ between its own release and a later release's comparative column. Built 2026-08-31 from the Korean-domain releases (news.skhynix.co.kr), which embed the comparison table as HTML text rather than as an image.",
+  "scope": [
+   "2016Q1",
+   "2022Q4"
+  ],
   "_pattern": "The revision never appears in the NEXT quarter's prior-quarter column -- that one repeats the original figure every time. It appears only in the year-ago column about four quarters later, i.e. after the external audit the releases' own disclaimer warns about ('prepared before the external auditor's review was completed'). No release ever uses the words restated / reclassified / corrected.",
   "_revenue": "Revenue was never revised in 2016Q1-2020Q4. The only quarter whose revenue moved is 2022Q4, and that is also the largest revision of the five.",
   "quarters": [
@@ -677,7 +705,8 @@
    1977
   ]
  },
- "q2_2026_below_operating_profit_krw_bn": {
+ "below_operating_profit_krw_bn": {
+  "period": "Q2 2026",
   "_source": "Form 6-K filed 2026-07-29. The quarter's newsroom release stops at net income.",
   "periods": [
    "2026Q1",
@@ -695,7 +724,72 @@
    40345.9,
    93922.6
   ],
-  "_derived_note": "Income tax and the non-operating total are differences between two printed lines: tax is pre-tax profit less profit for the period, and the non-operating total is pre-tax profit less operating profit. Nothing below operating profit is broken out into components by SK hynix in any document read for this page, so no component is published here."
+  "_derived_note": "Income tax and the non-operating total are differences between two printed lines: tax is pre-tax profit less profit for the period, and the non-operating total is pre-tax profit less operating profit. Nothing below operating profit is broken out into components in any written SK hynix release or filing read for this page; the CFO named two components orally on the 2Q26 call (see quarter_story._call_breakdown_note). No component is published here."
+ },
+ "quarter_story": {
+  "period": "Q2 2026",
+  "_note": "只属于这一季的披露事实与口径：季度业绩发布印到哪一行为止、税前利润印在哪份文件里、营业外收益的构成有没有书面拆分、公司是否自称纪录。换季时换成新一季的内容，没有这件事的字段就删掉；整块缺席时页面对应句子整句不出。",
+  "source": "2Q26 Newsroom 业绩发布（2026-07-29）、Form 6-K（2026-07-29）Preliminary Results 表、2Q26 业绩电话会",
+  "release_stops_at_net_income": true,
+  "pretax_printed_only_in": "向 SEC 报送的 6-K",
+  "non_operating_breakdown_in_writing": false,
+  "non_operating_breakdown_spoken": true,
+  "_call_breakdown_note": "电话会 CFO 口头给过营业外净收益 ₩62.2T 里的两项：汇率相关净收益约 ₩1.1T、投资资产出售与估值收益约 ₩63.3T（转述，不录原话）。页面按既定口径不发布构成（tests 里有一条专门守着），这里只记下它在哪里说过，供 brief 那句按事实措辞。",
+  "record_margin_claimed": true
+ },
+ "next_kpi": {
+  "period": "Q2 2026",
+  "_note": "下季阈值是本地研究设定，不是公司指引（公司不发布任何财务指引）。当前值由页面从各自的序列现算：quarterly 的读最新一季，annual 的读最近一个审计年度。换季时按新一季的本地分析改阈值并改戳。",
+  "entries": [
+   {
+    "metric": "营业利润率",
+    "short": "营业利润率",
+    "direction": "up",
+    "threshold": 55.0,
+    "unit": "pct",
+    "basis": "quarterly"
+   },
+   {
+    "metric": "资本开支占收入",
+    "short": "资本强度",
+    "direction": "down",
+    "threshold": 35.0,
+    "unit": "pct",
+    "basis": "annual"
+   },
+   {
+    "metric": "单一最大客户占收入",
+    "short": "客户集中度",
+    "direction": "down",
+    "threshold": 30.0,
+    "unit": "pct",
+    "basis": "annual"
+   },
+   {
+    "metric": "DRAM 占收入",
+    "short": "DRAM 占比",
+    "direction": "down",
+    "threshold": 85.0,
+    "unit": "pct",
+    "basis": "annual"
+   },
+   {
+    "metric": "营业外净收益占税前利润",
+    "short": "营业外占比",
+    "direction": "down",
+    "threshold": 10.0,
+    "unit": "pct",
+    "basis": "quarterly"
+   },
+   {
+    "metric": "净现金",
+    "short": "净现金",
+    "direction": "up",
+    "threshold": 20.0,
+    "unit": "krw_tn",
+    "basis": "quarterly"
+   }
+  ]
  },
  "balance_sheet_krw_bn": {
   "_source": "quarterly newsroom releases; only the quarters that print it",

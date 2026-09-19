@@ -124,6 +124,39 @@ def js_payload(path: Path, assignment: str) -> dict:
     return json.loads(text.split(f"{assignment} = ", 1)[1].rsplit(";", 1)[0])
 
 
+def _tsm_page() -> dict:
+    return js_payload(ROOT / "data" / "tsm.js", "window.DASH")
+
+
+def _tsm_story_reach() -> int:
+    """TSM's section one carries a 2016-reaching chart only in a quarter whose
+    follow-up closure falsified a call with a long series behind it (2026Q2:
+    the inventory-days call). It comes and goes with the data -- the page is
+    rolled by editing `series/tsm.json` alone -- so the pin below counts the
+    permanent charts and adds this one only while it is published."""
+    return sum(1 for section in _tsm_page()["sections"] for ex in section["exhibits"]
+               if ex["title"].startswith("上季判断"))
+
+
+def _tsm_advanced_count() -> dict:
+    """The process-mix note counts the quarters since 2021Q1 in which the page's
+    summed 7nm-and-below line equals TSMC's own aggregate. The count grows by
+    one each roll, so the pinned value is the series' own count of quarters
+    from 2021Q1 -- read from `series/tsm.json`, not from the note it checks --
+    while the chart's number is read from the page, because it moves when a
+    one-quarter chart before it comes or goes. A quarter in which the two
+    aggregates stop agreeing prints no count, and then there is no pin."""
+    series = json.loads((ROOT / "series" / "tsm.json").read_text(encoding="utf-8"))
+    quarters = series["long_history"]["quarters"]
+    for section in _tsm_page()["sections"]:
+        for ex in section["exhibits"]:
+            if "制程迁移" in ex["title"] and "个季度逐季相等" in ex.get("note", ""):
+                return {f"tsm Ex{ex['n']}": ([len(quarters) - quarters.index("2021Q1")],
+                                             "自 2021Q1 起两口径逐季相等的季度数，起点晚于窗口左端；"
+                                             "每换一季加一，按 series 现算")}
+    return {}
+
+
 # ── the ratchet ──────────────────────────────────────────────────────────────
 # Time-axis exhibits per page whose earliest label is 2016 or earlier. Raise a
 # number when you convert a page; the assertion below refuses to let it drift in
@@ -133,7 +166,7 @@ REACH_2016 = {
     "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 16, "mc": 3, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
-    "spgi": 11, "tjx": 8, "tsm": 18, "v": 14,
+    "spgi": 11, "tjx": 8, "tsm": 17 + _tsm_story_reach(), "v": 14,
 }
 
 # Exemption keys are matched on the *shape* of a title, not on its digits: in the
@@ -1390,7 +1423,7 @@ UNDERIVABLE_QUARTER_COUNTS = {
     "axp Ex17":  ([16], "同上，同一句重叠区间长度出现在另一张信用图的图注里"),
     "skhynix Ex7": ([22], "这一页此前的窗口长度。图注解释的正是「从 22 季拉到 42 季」"
                           "改变了什么，所以那个 22 指的是旧窗口，不是本图的任何一段"),
-    "tsm Ex26":  ([22], "自 2021Q1 起两口径逐季相等的季度数，起点晚于窗口左端"),
+    **_tsm_advanced_count(),
 }
 
 

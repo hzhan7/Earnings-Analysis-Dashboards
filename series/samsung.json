@@ -15,6 +15,38 @@
     "analysis_date": "2026-08-29",
     "audit_status": "unaudited"
   },
+  "_checks": {
+    "period": "Q2 2026",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-30",
+    "revenue_krw_tn": 171.5,
+    "operating_profit_krw_tn": 89.5,
+    "gross_margin_pct": 69.6,
+    "operating_margin_pct": 52.2,
+    "owners_margin_pct": 41.6,
+    "eps_krw": 10849,
+    "rnd_krw_tn": 16.0,
+    "rnd_qoq_pct": 41,
+    "ds_revenue_krw_tn": 127.5,
+    "memory_revenue_krw_tn": 120.8,
+    "ds_operating_profit_krw_tn": 89.2,
+    "dx_revenue_krw_tn": 48.0,
+    "dx_operating_profit_krw_tn": -0.8,
+    "dx_operating_margin_pct": -2,
+    "sdc_revenue_krw_tn": 7.5,
+    "sdc_operating_profit_krw_tn": 0.7,
+    "harman_revenue_krw_tn": 4.6,
+    "harman_operating_profit_krw_tn": 0.4,
+    "operating_cash_flow_krw_tn": 105.08,
+    "purchase_of_ppe_krw_tn": 14.11,
+    "depreciation_krw_tn": 12.11,
+    "net_cash_krw_tn": 167.59,
+    "total_assets_krw_bn": 759480.5,
+    "inventories_krw_bn": 71389.1,
+    "receivables_krw_bn": 96409.0,
+    "source": "Samsung 2Q 2026 Earnings Release（2026_2Q_conference_eng.pdf，IR 网站；电话会 2026-07-29 21:00 EDT 即 2026-07-30 韩国时间）：第 5 页 2Q 2026 Results（Revenue KRW 171.5T、Operating Profit KRW 89.5T、R&D KRW 16.0T QoQ +41%、EPS KRW10,849）；第 6 页分部表（DS 127.5T / 89.2T，DX 48.0T / −0.8T、−2%，SDC 7.5T / 0.7T，Harman 4.6T / 0.4T；OP Margin 52.2%）；Appendix 1 损益表（Gross profit 69.6%、Operating profit 52.2%、Profit attributable to owners 41.6%）；Appendix 2（Memory 120.8）；Appendix 3 资产负债表 30.Jun.26 栏（Total assets 759,480.5、Inventories 71,389.1、A/R 96,409.0）；Appendix 4 现金流量表 2Q 26 栏（Cash flows from operating activities 105.08、Depreciation 12.11、Purchase of PP&E (14.11)）与 Net Cash 30.Jun.26 栏 167.59。",
+    "checked_on": "2026-09-19"
+  },
   "periods": [
     "Q3 2024",
     "Q4 2024",
@@ -431,7 +463,7 @@
     ]
   },
   "memory_bit_and_price": {
-    "_note": "公司对存储只给一件事的前瞻：下一季 DRAM 与 NAND 的出货 bit 环比增速，而且是定性措辞而非数字。价格（ASP）只在事后回顾时给，从不指引。下表的数值区间是本页对公司措辞的读数（D），公司本身没有给过数字。",
+    "_note": "公司对存储只给一件事的前瞻：下一季 DRAM 与 NAND 的出货 bit 环比增速，而且是定性措辞而非数字。价格（ASP）只在事后回顾时给，从不指引。下表的数值区间是本页对公司措辞的读数（D），公司本身没有给过数字。*_vs_guide 是公司自己对该季是否达到上一季指引的说法（met / exceeded / missed），*_vs_guide_quote 是页面引用的那一句原话；*_asp_qoq_phrase 是 *_asp_qoq_wording 里被数值化的那个短语，数值化规则与柱高一致：about X% 取 X，low X0% 取 X1，mid-X0% 取 X5，high X0% 取 X8。",
     "band_mapping": {
       "low single digit": [
         1,
@@ -484,6 +516,16 @@
       2.5,
       11.5
     ],
+    "dram_bit_vs_guide": [
+      "met",
+      "met",
+      "exceeded"
+    ],
+    "dram_bit_vs_guide_quote": [
+      "consistent with our bit growth guidance from the previous quarter",
+      "we met our bit growth guidance for DRAM",
+      "exceeding our guidance"
+    ],
     "nand_bit_guide_wording": [
       null,
       "the shipment to increase by mid-single-digit percentages",
@@ -509,10 +551,20 @@
       8.5,
       2.5
     ],
+    "nand_bit_vs_guide": [
+      "met",
+      "exceeded",
+      "met"
+    ],
     "dram_asp_qoq_wording": [
       "DRAM ASP increased by about 40% quarter-on-quarter",
       "blended ASP rose by low 90% range Q-on-Q for DRAM",
       "our ASP in the second quarter rose by mid-40% for DRAM"
+    ],
+    "dram_asp_qoq_phrase": [
+      "about 40%",
+      "low 90% range",
+      "mid-40%"
     ],
     "dram_asp_qoq_pct": [
       40.0,
@@ -524,10 +576,15 @@
       "high 80% Q-on-Q for NAND",
       "high 60% for NAND"
     ],
+    "nand_asp_qoq_phrase": [
+      "mid-20%",
+      "high 80%",
+      "high 60%"
+    ],
     "nand_asp_qoq_pct": [
       25.0,
       88.0,
-      65.0
+      68.0
     ],
     "next_quarter_guide": {
       "quarter": "Q3 2026",
@@ -539,8 +596,11 @@
     }
   },
   "guidance": {
-    "_note": "三星不提供收入、毛利率或营业利润的数字指引，也没有任何 non-GAAP 调节表。下表是 2Q26 电话会上对 3Q26 与全年给出的全部前瞻，逐条为原话。",
+    "period": "Q2 2026",
+    "_note": "三星不提供收入、毛利率或营业利润的数字指引，也没有任何 non-GAAP 调节表。下表是 2Q26 电话会上对 3Q26 与全年给出的全部前瞻，逐条为原话。period 是给出这些前瞻的那场电话会所报告的季度，quarter 是被指引的下一季；guides_financials / asp_guided 记这一场有没有给财务数字指引、有没有给价格指引，页面上「三星不提供……数字指引」「对 ASP 一个字都不给」两类说法由它们守着。",
     "quarter": "Q3 2026",
+    "guides_financials": false,
+    "asp_guided": false,
     "items": [
       {
         "metric": "DRAM 出货 bit（环比）",
@@ -604,8 +664,40 @@
       }
     ]
   },
+  "quarter_story": {
+    "period": "Q2 2026",
+    "_note": "只属于这一季的叙述：业绩简报与电话会里的原话和口径（电话会口径不是申报值）。换季时换成新一季的内容，没有这件事的字段就删掉，整块都没有就删掉整块 —— 页面对应段落整段不出，而不是沿用上一季的。",
+    "source": "Samsung 2Q 2026 Earnings Release（2026-07-30）第 6 页 Key Updates；2Q 2026 电话会英文逐字稿（2026-07-30，CFO 与 IR 发言、MX 答问）",
+    "dx_reason_quote": "Operating results declined due to rising component costs",
+    "dx_outlook_quote": "we expect that soft burden to continue",
+    "dx_outlook_words": "管理层预期压力延续至下半年",
+    "handset_outlook_words": "并预期全年手机出货下降",
+    "special_bonus": {
+      "basis": "上半年累计营业利润",
+      "pct": 10.5,
+      "prior_quarter": "Q1 2026",
+      "prior_quarter_accrual": "零计提",
+      "capitalized_split_disclosed": false,
+      "released_from": "Q3 2026"
+    },
+    "accrual_capex_krw_tn": 16.8,
+    "accrual_capex_qoq_krw_tn": 5.5,
+    "accrual_capex_reconciled": false,
+    "fx_operating_profit_qoq_krw_tn": 3.1,
+    "usd_move": "走强",
+    "krw_usd_average_yoy_depreciation_pct": 6.7,
+    "_fx_note": "3.1 出自电话会 CFO 原话（stronger U.S. dollar … positive quarter-on-quarter impact of around KRW 3.1 trillion on operating profit）；6.7% 的季度均价同比贬值不在三星 2Q26 简报或电话会里，原页面沿用下来，出处待补（不是三星口径）。",
+    "rnd_quarterly_record_claimed": true,
+    "supply_shortage_claimed": true
+  },
   "next_kpi": {
-    "as_of": "Q2 2026",
+    "period": "Q2 2026",
+    "sellside_asp_assumption": {
+      "quarter": "Q3 2026",
+      "low_pct": 12,
+      "high_pct": 20,
+      "source": "页面原有的研究口径：卖方对下季存储混合 ASP 环比的假设区间（非公司口径；公司对下季 ASP 不给指引）。2026-09-19 迁移时未能在本地 2Q26 分析稿里找到这组数的原文，出处待补。"
+    },
     "entries": [
       {
         "metric": "合并营业利润率",
