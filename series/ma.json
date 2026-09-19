@@ -15,6 +15,130 @@
     "analysis_date": "2026-07-31",
     "audit_status": "unaudited"
   },
+  "_checks": {
+    "period": "Q2 2026",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-30",
+    "net_revenue_usd_m": 9277,
+    "operating_expenses_usd_m": 3690,
+    "provision_for_litigation_usd_m": 82,
+    "operating_income_usd_m": 5587,
+    "net_income_usd_m": 4388,
+    "diluted_eps_usd": 4.97,
+    "diluted_shares_m": 883,
+    "adjusted_diluted_eps_usd": 5.04,
+    "adjusted_operating_margin_pct": 61.1,
+    "growth_printed_pct": {
+      "net_revenue": [
+        14,
+        12
+      ],
+      "payment_network_net_revenue": [
+        10,
+        8
+      ],
+      "value_added_services_net_revenue": [
+        20,
+        18
+      ],
+      "rebates": [
+        22,
+        20
+      ],
+      "rebates_ytd": [
+        22,
+        19
+      ],
+      "net_income": [
+        19,
+        16
+      ],
+      "diluted_eps": [
+        22,
+        19
+      ]
+    },
+    "payment_network_net_revenue_usd_m": 5451,
+    "value_added_services_net_revenue_usd_m": 3826,
+    "assessments_usd_m": {
+      "domestic_assessments": 3154,
+      "cross_border_assessments": 3460,
+      "transaction_processing_assessments": 4508,
+      "other_network_assessments": 326
+    },
+    "assessments_growth_printed_pct": {
+      "domestic_assessments": [
+        13,
+        10
+      ],
+      "cross_border_assessments": [
+        21,
+        20
+      ],
+      "transaction_processing_assessments": [
+        14,
+        12
+      ],
+      "other_network_assessments": [
+        25,
+        23
+      ]
+    },
+    "rebates_usd_m": {
+      "quarter": 5997,
+      "ytd": 11636
+    },
+    "key_drivers_pct": {
+      "gdv": 8,
+      "cross_border": 12,
+      "switched": 9
+    },
+    "cash_flow_ytd_usd_m": {
+      "months": 6,
+      "operating": 6772,
+      "operating_prior": 6983,
+      "net_income": 8270,
+      "net_income_prior": 6981,
+      "prepaid_expenses": -3835,
+      "prepaid_expenses_prior": -2238,
+      "amortization_of_customer_incentives": 1310,
+      "amortization_of_customer_incentives_prior": 993,
+      "purchases_of_property_and_equipment": -445,
+      "capitalized_software": -368,
+      "purchases_of_treasury_stock": -8933,
+      "dividends_paid": -1548
+    },
+    "shares_repurchased_m": 9.8,
+    "balance_sheet_usd_m": {
+      "short_term_debt": 2459,
+      "long_term_debt": 22184,
+      "total_equity": 5606,
+      "cash_and_equivalents": 11291
+    },
+    "remaining_repurchase_authorization_usd_m": 8500,
+    "prior_year": {
+      "period": "Q2 2025",
+      "net_revenue_usd_m": 8133,
+      "payment_network_net_revenue_usd_m": 4945,
+      "value_added_services_net_revenue_usd_m": 3188,
+      "assessments_usd_m": {
+        "domestic_assessments": 2789,
+        "cross_border_assessments": 2848,
+        "transaction_processing_assessments": 3971,
+        "other_network_assessments": 260
+      },
+      "rebates_usd_m": 4923,
+      "diluted_eps_usd": 4.07,
+      "net_income_usd_m": 3701,
+      "key_drivers_pct_as_reprinted": {
+        "gdv": 9,
+        "cross_border": 15,
+        "switched": 10
+      }
+    },
+    "source": "Mastercard Q2 2026 业绩发布 8-K EX-99.1（2026-07-30，acc 0001141391-26-000081）：首页要点（净收入 $9.3B、+14% / 固定汇率 +12%）、Quarterly Results 表（净利润 +19%、摊薄 EPS $4.97 / +22%）、Key Non-GAAP 表（调整后经营利润率 61.1%、调整后 EPS $5.04）、正文（支付网络净收入 +10% / +8%，返点与激励 +22% / +20%，年初至今 +22% / +19%；增值服务 +20% / +18%）、合并利润表三个月栏（净收入 9,277 / 8,133、营业费用 3,690、诉讼计提 82、营业利润 5,587、净利润 4,388、摊薄股数 883）、资产负债表（短期债务 2,459、长期债务 22,184、总权益 5,606、现金 11,291）、六个月现金流量表（经营 6,772 / 6,983、净利润 8,270 / 6,981、客户激励摊销 1,310 / 993、预付费用 (3,835) / (2,238)、购置设备 (445)、资本化软件 (368)、回购 (8,933)、分红 (1,548)）、Return of Capital 段（本季回购 9.8 百万股）；截至 2026-06-30 的 10-Q（acc 0001141391-26-000083）：Key Metrics related to the Payment Network 表（境内 3,154 / 2,789 / 13% / 10%、跨境 3,460 / 2,848 / 21% / 20%、交易处理 4,508 / 3,971 / 14% / 12%、其他 326 / 260 / 25% / 23%）、MD&A 正文（本季返点与激励 $5,997 million、六个月 $11,636 million）、收入附注（支付网络 5,451 / 4,945、增值服务 3,826 / 3,188）、关键驱动表（GDV 8% / 去年同季 9%、跨境量 12% / 15%、换手笔数 9% / 10%）、股东权益附注（2026-06-30 剩余回购授权 $8.5 billion）。",
+    "checked_on": "2026-09-19"
+  },
   "periods": [
     "Q1 2016",
     "Q2 2016",
@@ -1834,6 +1958,7 @@
     ]
   },
   "current_snapshot": {
+    "period": "Q2 2026",
     "net_revenue_usd_m": [
       9277,
       8398,
@@ -1905,6 +2030,12 @@
       "shares_m": 1.3,
       "cost_usd_m": 700,
       "remaining_authorization_usd_m": 7800
+    },
+    "rebates_printed": {
+      "quarter_usd_m": 5997,
+      "ytd_usd_m": 11636,
+      "quarter_growth_pct": 22,
+      "ytd_growth_pct": 22
     }
   },
   "adjusted_margin_crosscheck": {
@@ -1933,7 +2064,147 @@
   "guidance_disclosure": {
     "files_numeric_guidance": false,
     "statement": "Mastercard 的业绩发布 8-K（EX-99.1）里没有 Outlook 段落，也没有任何前瞻数字：全文没有出现 outlook、guidance 或 we expect。指引只在电话会上以定性措辞给出。",
-    "latest_wording": [
+    "why_no_record": "本站凡是在申报文件里给出季度指引区间的公司页，都可以逐季结算「指引 vs 实际」。Mastercard 不能：区间不存在，且「low double-digit」这类措辞没有下限也没有上限。本页因此不做指引兑现记录，改为记录一条公司每季必须披露、且可以逐季结算的量——返点占毛计费的比例。"
+  },
+  "market_expectation": {
+    "period": "Q2 2026",
+    "label": "市场预期（财报前一致预期，来源不具名）",
+    "as_of": "2026-07-30",
+    "net_revenue_usd_bn": 9.06,
+    "adjusted_diluted_eps_usd": 4.78,
+    "post_earnings_price_change_pct": 2.49
+  },
+  "followup_closure": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "labels": [
+      "已验证",
+      "部分验证",
+      "被证伪"
+    ],
+    "counts": [
+      0,
+      3,
+      2
+    ],
+    "keys": {
+      "已验证": "verified",
+      "部分验证": "partial",
+      "被证伪": "refuted"
+    },
+    "note": "{partial_cn}条「部分验证」的共同点是公司答了时点、没答经济性：中东影响的恢复轨迹兑现了但管理层把下半年假设改成「维持本季末水平」，增值服务守住了增速但拒绝更新子线口径，收购按预告在下季交割但连续三季不给单位经济。{refuted_cn}条被证伪的都指向资本与成本：回购节奏与运营杠杆的方向都与上季判断相反。"
+  },
+  "prior_kpi_settlement": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "quantified": [
+      {
+        "metric": "跨境 travel 量增速（本季）",
+        "direction": "up",
+        "threshold": 5.0,
+        "actual": 6.0,
+        "unit": "pct",
+        "note_item": 1,
+        "source": "Q2 2026 业绩演示文稿第 9 页的月度跨境细项（XB Travel，本地货币）；不进任何申报文件"
+      },
+      {
+        "metric": "跨境 travel 量增速（6 月单月）",
+        "direction": "up",
+        "threshold": 6.0,
+        "actual": 7.0,
+        "unit": "pct",
+        "note_item": 1,
+        "source": "Q2 2026 业绩演示文稿第 9 页的月度跨境细项（XB Travel，本地货币）；不进任何申报文件"
+      },
+      {
+        "metric": "增值服务净收入固定汇率同比",
+        "direction": "up",
+        "threshold": 16.0,
+        "actual": 18.0,
+        "unit": "pct",
+        "note_item": 2,
+        "source": "Q2 2026 业绩发布 8-K EX-99.1：Value-added services and solutions net revenue increased 20%, or 18% on a currency-neutral basis"
+      },
+      {
+        "metric": "单季回购金额",
+        "direction": "up",
+        "threshold": 4500.0,
+        "unit": "usd_m",
+        "reads": "quarterly_usd_m.stock_repurchases",
+        "note_item": 3
+      }
+    ],
+    "unsettleable": [
+      {
+        "note_item": 4,
+        "name": "全年净收入固定汇率增速（下修到 +11–12% 即减仓）",
+        "why": "公司的全年指引只有电话会上「high end of low double-digit」这类措辞，没有一个数字可以拿来对照 +11–12% 的阈值；本季公布的 +12% 是本季的固定汇率增速，不是全年指引"
+      }
+    ],
+    "retired": [
+      {
+        "note_item": 5,
+        "name": "CCCA / 利率上限议题热度",
+        "why": "连续两季零信号，且不是任何申报文件里的量，已降级为观察项"
+      },
+      {
+        "note_item": 3,
+        "name": "回购那条的合取条件",
+        "why": "回购那条只按金额结算：原文还要求「且董事会扩大授权」，而剩余授权从上季末的 {auth_prev} 降到本季末的 {auth_now}，董事会本季没有新增授权，所以合取条件不成立；真正发生的信号 —— 回购隐含均价从上季的 {price_prev} 降到 {price_now} —— 两个阈值都没覆盖，下季改挂在均价上。"
+      }
+    ]
+  },
+  "next_kpi": {
+    "period": "Q2 2026",
+    "for_period": "Q3 2026",
+    "quantified": [
+      {
+        "metric": "返点占毛计费比率",
+        "direction": "down",
+        "threshold": 54.0,
+        "unit": "pct",
+        "reads": "rebate_ratio"
+      },
+      {
+        "metric": "净支付网络收入固定汇率同比",
+        "direction": "up",
+        "threshold": 6.0,
+        "current": 8.0,
+        "unit": "pct",
+        "source": "Q2 2026 业绩发布 8-K EX-99.1：Payment network net revenue increased 10%, or 8% on a currency-neutral basis"
+      },
+      {
+        "metric": "单季回购金额",
+        "direction": "up",
+        "threshold": 2000.0,
+        "unit": "usd_m",
+        "reads": "quarterly_usd_m.stock_repurchases"
+      },
+      {
+        "metric": "回购隐含均价",
+        "direction": "up",
+        "threshold": 560.0,
+        "unit": "usd_eps",
+        "reads": "repurchase_price"
+      },
+      {
+        "metric": "年初至今经营现金流 / 净利润",
+        "direction": "up",
+        "threshold": 85.0,
+        "unit": "pct",
+        "reads": "ytd_conversion"
+      }
+    ],
+    "disclosure_gated": [
+      "月度跨境细项（XB CNP ex travel、Intra-Europe）：只出现在季度业绩演示文稿里，不进任何申报文件，本站不建序列",
+      "增值服务的子线增速：占净收入 {vas_share}，但公司连续两季拒绝拆分，无法判断内部结构",
+      "BVNK 的 volume × bps 经济性：连续三季未披露，按零贡献处理",
+      "新任 CFO（2026-08-03 就任）首季的指引措辞与披露粒度是否延续"
+    ]
+  },
+  "call_guidance": {
+    "period": "Q2 2026",
+    "wording": [
       [
         "下季（Q3 2026）净收入固定汇率增速",
         "high end of low double-digit（剔除并购）"
@@ -1958,113 +2229,24 @@
         "非 GAAP 税率",
         "20%–21%"
       ]
-    ],
-    "why_no_record": "本站其他六家公司在申报文件里给出季度指引区间，因此可以逐季结算「指引 vs 实际」。Mastercard 不能：区间不存在，且「low double-digit」这类措辞没有下限也没有上限。本页因此不做指引兑现记录，改为记录一条公司每季必须披露、且可以逐季结算的量——返点占毛计费的比例。"
-  },
-  "market_expectation": {
-    "label": "市场预期（财报前一致预期，来源不具名）",
-    "as_of": "2026-07-30",
-    "net_revenue_usd_bn": 9.06,
-    "adjusted_diluted_eps_usd": 4.78,
-    "post_earnings_price_change_pct": 2.49
-  },
-  "followup_closure": {
-    "labels": [
-      "已验证",
-      "部分验证",
-      "被证伪"
-    ],
-    "counts": [
-      0,
-      3,
-      2
-    ],
-    "set_in": "Q1 2026"
-  },
-  "prior_kpi_settlement": {
-    "set_in": "Q1 2026",
-    "quantified": [
-      {
-        "metric": "跨境 travel 量增速（本季）",
-        "direction": "up",
-        "threshold": 5.0,
-        "actual": 6.0,
-        "unit": "pct"
-      },
-      {
-        "metric": "跨境 travel 量增速（6 月单月）",
-        "direction": "up",
-        "threshold": 6.0,
-        "actual": 7.0,
-        "unit": "pct"
-      },
-      {
-        "metric": "增值服务净收入固定汇率同比",
-        "direction": "up",
-        "threshold": 16.0,
-        "actual": 18.0,
-        "unit": "pct"
-      },
-      {
-        "metric": "单季回购金额",
-        "direction": "up",
-        "threshold": 4500.0,
-        "actual": 4898.0,
-        "unit": "usd_m"
-      }
-    ],
-    "unsettleable": [
-      "「全年净收入固定汇率增速下修到 +11–12% 即减仓」无法结算：公司只把固定汇率增速披露到整数百分点，本季公布的就是 +12%，正好落在阈值区间的端点上，同一个数既可以读成触发也可以读成未触发。这条阈值的分辨率高于公司的披露精度，已退役。"
-    ],
-    "retired": [
-      "「单季回购 ≥ $4.5B 且董事会扩大授权」按合取条件不成立：金额达标（$4,898M），但剩余授权从 3 月 31 日的 $13.4B 降到 6 月 30 日的 $8.5B，董事会本季没有新增授权。真正发生的信号——回购隐含均价从上季的 $517 降到 $500——两个阈值都没覆盖，本季改挂在均价上。",
-      "「CCCA / 利率上限议题热度」连续两季零信号，且不是任何申报文件里的量，已从阈值降级为观察项。"
     ]
   },
-  "next_kpi": {
-    "for_period": "Q3 2026",
-    "quantified": [
-      {
-        "metric": "返点占毛计费比率",
-        "direction": "down",
-        "threshold": 54.0,
-        "current": 52.38,
-        "unit": "pct"
-      },
-      {
-        "metric": "净支付网络收入固定汇率同比",
-        "direction": "up",
-        "threshold": 6.0,
-        "current": 8.0,
-        "unit": "pct"
-      },
-      {
-        "metric": "单季回购金额",
-        "direction": "up",
-        "threshold": 2000.0,
-        "current": 4898.0,
-        "unit": "usd_m"
-      },
-      {
-        "metric": "回购隐含均价",
-        "direction": "up",
-        "threshold": 560.0,
-        "current": 499.8,
-        "unit": "usd_eps"
-      },
-      {
-        "metric": "年初至今经营现金流 / 净利润",
-        "direction": "up",
-        "threshold": 85.0,
-        "current": 81.89,
-        "unit": "pct"
-      }
-    ],
-    "disclosure_gated": [
-      "月度跨境细项（XB CNP ex travel、Intra-Europe）：只出现在季度业绩演示文稿里，不进任何申报文件，本站不建序列",
-      "增值服务的子线增速：占净收入 41.2%，但公司连续两季拒绝拆分，无法判断内部结构",
-      "BVNK 的 volume × bps 经济性：连续三季未披露，按零贡献处理",
-      "新任 CFO（2026-08-03 就任）首季的指引措辞与披露粒度是否延续"
+  "quarter_story": {
+    "period": "Q2 2026",
+    "settled_title_tail": "而本季真正变化的两件事，它们一条都没覆盖",
+    "settled_note_lead": "但本季移动的是另外两处：",
+    "settled_note_tail": "<b>上季{items_cn}条阈值没有一条看经营现金流</b>，所以它们全部守住并不说明这一季没有问题。",
+    "settled_src_extra": "跨境 travel 的两条只出现在公司季度业绩演示文稿，不进任何申报文件——本站因此不为它建历史序列，只结算本季读数。",
+    "drivers_lead": "上季那条阈值挂在跨境量里的 travel 一条上，而 travel 与 CNP 的拆分只在演示文稿里，",
+    "drivers_src_tail": "本季 10-Q 的脚注写明这几条指标自 2026 年起含委内瑞拉的跨境活动（业绩发布写的是自 Q2 2026 起），没有量化其贡献。",
+    "drivers_note": "2026 年起公司把委内瑞拉的跨境活动并入 GDV、跨境量与换手笔数（本季 10-Q 的脚注写「Effective 2026」，业绩发布的经营数据表写「effective Q2 2026」），没有量化其贡献，也没有重述前期：10-Q 里 {prior_period} 的三条增速（GDV {gdv_prior}、跨境量 {cross_prior}、换手笔数 {switched_prior}）仍是当年首次印出的数；本页因此不把跨境计费的价差全部读成提价。",
+    "ratio_call": "管理层在电话会上已经预告下季这个比例会环比再升。",
+    "ratio_next": "但管理层已经预告下季会环比再升",
+    "vas_organic": "，而且业绩发布写明其中收购与处置的贡献是<b>轻微负值</b>（10-Q 的增长归因表把这一栏印作「—」），即增速全部是内生的。",
+    "other_expense_call": "公司同时预告下季其他收入（费用）会因 6 月发债走高到约 −$125M。",
+    "deck_only_note": "其中跨境 travel 的两条只出现在公司季度业绩演示文稿，不进任何申报文件，本站不为其建历史序列。",
+    "not_wired": [
+      "尚未交割的收购对收入与费用的单位经济"
     ]
   },
   "sources": [
@@ -2119,11 +2301,11 @@
   ],
   "provenance": {
     "window": "毛计费四条线与「支付网络 / 增值服务」的拆分，是公司在 2023 年第一季度换用的新口径，当季 10-Q 同时重述了 2022 年的可比季度，所以本页的逐季记录从 2022Q1 起，不再往前接。更早的年度数在 FY2022 10-K 里被追溯到 2020 年，但没有任何文件给出 2021 年及之前的新口径季度数——旧口径的「Gross revenue」把增值服务也算在分母里，两条线不是一条线。",
-    "rebates": "返点与激励在新口径下不是印在表里的一行，而是「四条计费线合计 − 支付网络净收入」这个减法；两个被减数都是申报数。公司自己在业绩发布里说本季返点同比 +22%，本页的减法给出 +21.8%，六个月口径公司说 +22%、减法给出 +22.5%，四舍五入后一致。",
+    "rebates": "返点与激励在新口径下不是印在表里的一行，而是「四条计费线合计 − 支付网络净收入」这个减法；两个被减数都是申报数。10-Q 的管理层讨论与分析在正文里用一句话写出返点金额（Q2 2026：本季 $5,997 million、六个月 $11,636 million），减法与它一分不差；业绩发布给出增速（本季 +22%、年初至今 +22%），减法给出 +21.82% 与 +22.46%。",
     "fourth_quarter": "第四季没有单独的 10-Q，所以每个第四季都是「全年 − 前九个月」，两端都是申报数。第四季的摊薄股数与摊薄每股收益取自当季业绩发布 8-K 的三个月列，因为按年度减九个月得到的每股收益不是第四季的每股收益。",
     "currency_neutral": "公司只在当季的 10-Q 里给出该季各条计费线的固定汇率增速，第四季只有全年数，2022 年的季度又在旧口径下，所以固定汇率的价差图有三个第四季的缺口，本页留空而不是插值。",
     "buyback_price": "回购隐含均价 = 当季回购现金 ÷ 当季回购股数。股数按 0.1 百万股披露，两个累计值相减后误差可达 ±0.1 百万股，本季对应 ±$5 的区间（$495–$505）。",
-    "drivers": "GDV、跨境量与换手笔数只有增速、没有金额；第四季的增速取自当季业绩发布 8-K 的「Key Business Drivers」表。2026 年起公司把委内瑞拉的跨境活动并入这几条驱动指标，并追溯重述了前期，10-Q 有脚注说明，但没有量化其贡献。"
+    "drivers": "跨境量与换手笔数只有增速、没有金额；GDV 另有金额（业绩发布的 Operating Performance 表按地区印出）。第四季的增速取自当季业绩发布 8-K 的「Key Business Drivers」表。2026 年起公司把委内瑞拉的跨境活动并入这几条驱动指标（Q2 2026 的 10-Q 脚注），没有量化其贡献，10-Q 里去年同季的增速仍是当年首次印出的数。"
   },
   "window_note": "季度序列从 18 季（2022Q1 起）拉到 42 季（2016Q1 起）。新的 24 季由两条互相独立的路径各取一遍：10-Q/10-K 的 XBRL R 表，与各季业绩 8-K 的 EX-99.1。两条都有值的 572 格里只有 2 格不同 —— 2018Q4 的 G&A 与 A&M（1,490/213 对 1,401/302），两者相加同为 1,703，是公司在 2017Q4–2018Q3 之间做过的一次费用重分类。回购授权余额那一条两条路径系统性不同：业绩发布印的是**季末之后**又回购一部分之后的余额，10-Q 印的是季末余额，本站取 10-Q。",
   "not_backfilled": {
