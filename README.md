@@ -194,9 +194,9 @@ Charts are ordered the way the note is actually used:
    revenue and segment structure the IHS Markit merger rewrote, the six filed
    revenue types, the index assets its asset-linked fees are charged on, and
    the buyback that ran at 4.6x operating cash flow in the year the merger
-   closed; TJX gets ten years of pretax margin against capital
+   closed; TJX gets its full annual record of pretax margin against capital
    intensity, the store count and square footage that are its whole growth
-   engine, ten years of buybacks against the share count, and the three-bar
+   engine, its full record of buybacks against the share count, and the three-bar
    cash structure that shows what is left for shareholders after the stores
    are built; Philip Morris gets ten years of the smoke-free transition in
    filed dollars, quarterly revenue since 2016 against the two margins
@@ -331,9 +331,11 @@ disclosure stops rather than being padded:
   company's own release — 519 is also what the filed year minus the three
   reported quarters gives, while 522 overshoots the year by 3. Corrected, with a
   test pinning the reconciliation.
-- Cadence's long series start at 2018Q1 rather than being padded backwards:
-  ASC 606 replaced ASC 605 for the quarter beginning 2018-01-01 and the earlier
-  years were never restated, so the two segments are not one line. Its
+- Cadence's long series start at 2016Q1 and cross the ASC 605 → 606 change at
+  2018Q1, which the level charts mark rather than smooth: ASC 606 was adopted on
+  a modified-retrospective basis, the earlier years were never restated, and
+  2018Q1 was disclosed under both standards (US$525.5M under 605 against
+  US$517.3M under 606), so the height of the step is measured, not assumed. Its
   guidance/actual pairs are unaffected — each pair sits inside a single basis —
   and only the level charts carry the break.
 - Cadence discloses product-category mix (`Core EDA` / `Semiconductor IP` /
@@ -458,15 +460,16 @@ company, and shows why the answer depends on the profit line — a headline EPS
 beat of +12.2% is +2.2% once the quarter's one-off disposal gain comes out.
 
 NVIDIA guides revenue ±2%, both gross margins ±50bp and both operating expense
-lines, so its record runs 24 finished quarters back to 2020, read from the 25
-quarterly earnings 8-Ks. Its shape is the opposite of TSMC's, and the contrast
-is why the page is worth the build-out: **revenue cleared the top of its band in
-21 of 24 quarters, but gross margin sat inside its band in 16 of 24 and broke
-the bottom three times** — by 21.3pp, 8.9pp and 10.0pp. So the revenue guidance
+lines, so its record runs back to 2016, read quarter by quarter from the
+earnings 8-Ks (the page states the current count). Its shape is the opposite of
+TSMC's, and the contrast is why the page is worth the build-out: **revenue
+cleared the top of its band in most quarters, but gross margin mostly sat inside
+its band and broke the bottom only a handful of times** — and in every one of
+those quarters the company's own CFO commentary named a specific charge. So the revenue guidance
 behaves like a floor and the margin guidance like a genuine forecast, and the
 page has to say both things at once rather than settling on one verdict.
 Operating expenses are the third answer again: guided as a single number with no
-range at all, and landing above it 12 times and below it 12 — as close to
+range at all, and landing above it about as often as below it — as close to
 unbiased as this record gets.
 
 Each of the three gets the same pair, level chart then deviation chart, grouped
@@ -478,22 +481,25 @@ width and pretending otherwise would invent one; its title says "above" and
 The decomposition chart is what makes that readable. Guiding revenue, margin and
 opex together implies an operating income NVIDIA never prints, and the distance
 from what it reported splits exactly three ways — revenue leg, margin leg, opex
-leg — with no estimate anywhere. All three quarters that fell short of that
+leg — with no estimate anywhere. Most of the quarters that fell short of that
 implied bar were the *margin* leg collapsing (gaming inventory write-downs in
-2022, the US$4.5B H20 charge in 2025); in the worst of them the revenue leg was
-still positive. The company's operating disappointments have come from cost and
-write-downs, never from demand.
+2022, the US$4.5B H20 charge in 2025), each with a charge the company named in
+the same quarter. Not all of them, though: in the quarter ended January 2019 the
+revenue leg was the deeper one, and revenue itself broke its lower bound in
+three quarters of the record — so the page does not claim that the misses were
+never about demand.
 
 Two hazards had to be handled rather than smoothed over. NVIDIA's dollar band
-chart is drawn over eight quarters, not 24, because the guided number grew from
-US$4.4B to US$108B and a ±2% band collapses to a few pixels at the left edge of a linear
+chart is drawn over the most recent quarters rather than the whole record, because the
+guided number has grown by well over an order of magnitude since 2016 and a ±2%
+band collapses to a few pixels at the left edge of a linear
 axis; the full record is carried by the scale-free deviation chart instead, and
 the page says so on the chart. And NVIDIA changed its non-GAAP definition in
 FY2027 Q1 to include stock-based compensation, restating history — so the long
 series run on GAAP, whose definition never moved, while every guidance/actual
 pair is compared within the single basis that applied at the time. That change
 is visible in exactly one place, the opex *level* chart, where it steps the line
-up by about US$1.9B; it carries a structural-break marker at that quarter rather
+up by about US$2.3B; it carries a structural-break marker at that quarter rather
 than being drawn as one continuous series. Its deviation twin needs no marker,
 because dividing actual by guided cancels the change out — both legs moved
 together.
@@ -560,30 +566,30 @@ only two-sided answer on this site. The "Financial Targets" table in every
 earnings 8-K EX-99.1 guides **every input of earnings per share** — revenue,
 GAAP and non-GAAP expenses, non-GAAP other income, the non-GAAP tax rate and the
 fully diluted share count — and then guides GAAP and non-GAAP EPS themselves.
-Twenty-four quarters of it run back to Q4 2020.
+The record now runs back to 2016; the page states the current count.
 
 Because the sixth number is implied by the other five, the table can be checked
 against itself: running the five midpoints through
 `(revenue − expenses + other) × (1 − tax) ÷ shares` reproduces the company's own
-printed EPS midpoint to within US$0.02 in 15 of the 24 quarters and within
-US$0.06 in all of them, the residual being the rounding of the published
-endpoints. That is what licenses the page to treat "guided revenue minus guided
+printed EPS midpoint to within a few cents in every quarter of the record, the
+residual being the rounding of the published endpoints. That is what licenses the page to treat "guided revenue minus guided
 expenses" as an operating income Synopsys stands behind but never prints, and to
 split each beat into a revenue leg and an expense leg with no estimate anywhere.
-The legs say the beats are a demand story, not a cost story: the revenue leg
-dominates almost every quarter.
+The legs say the beats are mostly a demand story, not a cost story: the revenue
+leg dominates in most quarters.
 
-The two-sided part is the finding. In 23 finished quarters **revenue landed
-*inside* the guided range 13 times** — Synopsys forecasts its own top line about
-as well as a backlog-driven model should let it — while **non-GAAP EPS landed
-*above* the top of its range 20 times**. Same press release, same quarter, same
+The two-sided part is the finding. **Revenue lands *inside* the guided range
+more often than not** — Synopsys forecasts its own top line about as well as a
+backlog-driven model should let it — while **non-GAAP EPS lands *above* the top
+of its range in the large majority of quarters** (the page states the current
+counts). Same press release, same quarter, same
 twelve-week horizon: the revenue number behaves like a forecast and the earnings
 number like a floor. No other page here has one company saying both things at
 once, and it is only visible because the two records sit side by side.
 
-It also guides its own share count, which nothing else here does, and that line
-is where the acquisition shows up: flat at 156 million for years, then a step to
-187 million when Ansys closed in July 2025. The one quarter that broke *above*
+It also guides its own share count, and that line is where the acquisition
+shows up: flat at 156 million for years, then a step to 188 million when Ansys
+closed in July 2025. The one quarter that broke *above*
 the guided share range is the closing quarter itself.
 
 Both revenue misses in the record are marked rather than smoothed. One is not a
@@ -599,7 +605,8 @@ to Design IP underperforming — the line that has just turned back up.
 
 One number the page refuses to publish is the one the local note leans on hardest.
 "EDA excluding Ansys" cannot be recomputed from any filing: Synopsys has never
-disclosed Ansys' actual quarterly revenue, only an *expected* figure in the
+disclosed Ansys' actual quarterly revenue as an amount (the 10-Q gives only a
+product-group share, and only for the quarters since closing), only an *expected* figure in the
 footnote to its full-year revenue target. So the page plots what that footnote
 does support — the four FY2026 revenue targets split into the acquired half and
 the rest, which shows the US$105M of raises breaking down into US$80M of Ansys
@@ -1048,21 +1055,24 @@ and declines to splice them onto the segments they replaced. The company did
 reprint 2023–2025 on the new segments, as unaudited supplementary information
 in an 8-K of 2026-03-13; the page has not taken that series in yet.
 
-TJX files the longest *quarterly* record on this site and the most one-sided,
+TJX files one of the longest *quarterly* records on this site and the most one-sided,
 and it is the first page here whose company sells nothing to a data centre. Every quarterly
 earnings 8-K EX-99.1 ends with an Outlook paragraph, and from Q1 FY2013 onward
-that paragraph guides next-quarter diluted EPS in the same sentence structure —
-**52 guided quarters, 49 of them finished**. Pretax profit margin joins the
-paragraph in 2022 and consolidated comparable sales in 2023, so the three
-records are 52, 17 and 15 quarters long and each chart is drawn over its own
-rather than over the shortest one they share.
+that paragraph guides next-quarter diluted EPS in the same sentence structure.
+Pretax profit margin joins the paragraph in 2022 and consolidated comparable
+sales in 2023, so the three records differ in length and each chart is drawn
+over its own rather than over the shortest one they share (the page states the
+current counts).
 
 Unlike Synopsys, the three answers do not disagree. **Reported EPS cleared the
-top of its guided range 38 times in 49, landed inside it 8 times and broke the
-bottom 3 times; pretax margin cleared the top 15 times in 16; consolidated comp
-never once landed below its floor.** The three misses are not one phenomenon:
-Q1 2014 missed by half a cent after the split conversion, Q1 2020 was the
-quarter the stores shut, and Q1 2022 was the 2022 cost shock. The single margin
+top of its guided range in the large majority of finished quarters and broke the
+bottom only a handful of times; pretax margin cleared the top in all but one
+quarter; consolidated comp has not landed below its floor.** The misses are not
+one phenomenon: Q1 2014 missed by half a cent after the split conversion, Q1
+2020 was the quarter the stores shut (guidance for it had been withdrawn in an
+8-K of 2020-03-19), and Q1 2022 was an impairment of TJX's
+investment in Familia — US$0.19 a share, without which adjusted EPS of US$0.68
+cleared the range. The single margin
 miss is the most useful entry in the record, because the company names its own
 cause in the same release — "below the Company's plan due to an unplanned shrink
 charge", against guidance that had assumed shrink would be a 0.5-point
@@ -1071,10 +1081,10 @@ charge", against guidance that had assumed shrink would be a 0.5-point
 Two things stop that from being a tautology, and the page puts both on the
 charts rather than in a footnote. TJX publishes each quarter's outlook with the
 *previous* quarter's results, and it reports about three weeks after a quarter
-ends, so the Outlook paragraph lands **9 to 24 days into the quarter it guides**
-— a tenth to a quarter of the period already banked. And the company withdrew
+ends, so the Outlook paragraph lands **16 to 24 days into the quarter it guides**
+— a sixth to a quarter of the period already banked. And the company withdrew
 guidance outright for **seven consecutive quarters** in 2020–2021, writing "is
-not providing guidance at this time" in five straight releases; the axis jumps
+not providing guidance at this time" in seven releases; the axis jumps
 from Q1 2020 to Q1 2022 with a break marker, because a record that silently
 deletes the quarters a company refused to guide is measuring its own filter.
 
@@ -1089,7 +1099,9 @@ week in the fiscal fourth, and that quarter's guidance was itself given on the
 And two quarters carry an adjusting item that did not exist when the range was
 set — the FY2026 Q4 litigation settlement and the FY2027 Q2 tariff refunds — so
 those two are scored on the company's own adjusted figures, which is also the
-basis the company used to call them "well above the Company's plan".
+basis the company used to call them "well above the Company's plan". The Familia
+impairment in Q1 2022 fits the same rule but is still scored on the reported
+figure; the page says so rather than hiding the inconsistency.
 
 One number the page refuses to publish is the one the local note leans on
 hardest. The company's adjusted EPS of US$1.22 still contains a tariff cost
@@ -1584,10 +1596,11 @@ quarter is not one any filing prints:
   full year and the third quarter and never the fourth, but the fourth is what
   the other two imply: the full-year non-GAAP operating income at the guidance
   midpoint, less the first half as reported, less the third quarter's guided
-  midpoint, over the revenue the same subtraction leaves. It comes to 42.84%,
-  level with the quarter that carried a US$128.5M legal charge, in a year whose
-  revenue guidance was just raised — which is the tension the whole page is
-  about, and it is four filed numbers and no estimate.
+  midpoint, over the revenue the same subtraction leaves. On the Q2 2026
+  guidance it came to 42.9%, within a tenth of a point of the quarter that
+  carried a US$128.5M legal charge, in a year whose revenue guidance had just
+  been raised — which is the tension the whole page is about. It is four filed
+  numbers and no estimate, and the page recomputes it from each new guidance.
 - Microsoft's **free cash flow adjusted for unpaid capex**. Reported free cash
   flow counts only capex that was paid; the 10-K discloses how much was still
   sitting in accounts payable, so subtracting that year's increase gives the
