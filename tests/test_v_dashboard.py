@@ -525,9 +525,70 @@ class VDashboardTest(unittest.TestCase):
 
     def test_the_notes_name_what_the_page_does_not_wire(self) -> None:
         notes = " ".join(self.payload["notes"])
-        for term in ("跨境交易额的绝对金额", "分季名义支付额（10-Q 印着金额，本页尚未接入）",
+        for term in ("跨境交易额的绝对金额",
                      "增值服务（VAS）收入（10-Q 按季印着金额，本页尚未接入）", "non-GAAP 营业费用"):
             self.assertIn(term, notes)
+        # the quarterly nominal payments volume is wired now: the not-wired
+        # list must not keep claiming otherwise
+        self.assertNotIn("分季名义支付额（10-Q 印着金额，本页尚未接入）", notes)
+        self.assertNotIn("本页尚未接入，详见", own_text(self.payload))
+
+    def test_every_payments_volume_cell_names_the_filing_it_was_read_from(self) -> None:
+        """Per-cell provenance, and the printed figures in it are the cells.
+
+        Three quarters a year are printed by one 10-Q (its MD&A carries the
+        PRIOR quarter's three-month column); April-June is printed by nothing
+        and is the 10-K's twelve months to June less the June 10-Q's nine
+        months to March, so those cells must show that subtraction.
+        """
+        volumes = self.source["operating_volumes"]
+        source = volumes["nominal_payments_volume_source"]
+        self.assertEqual(list(source), volumes["payments_volume_quarters"])
+        month = {"Q1": "March 31", "Q2": "June 30", "Q3": "September 30", "Q4": "December 31"}
+        for quarter, value in zip(volumes["payments_volume_quarters"],
+                                  volumes["nominal_payments_volume_usd_b"]):
+            text = source[quarter]
+            amounts = [int(a.replace(",", "")) for a in re.findall(r"US\$([\d,]+)B", text)]
+            with self.subTest(quarter=quarter):
+                self.assertRegex(text, r"acc \d{10}-\d{2}-\d{6}")
+                if quarter.startswith("Q2"):
+                    self.assertIn(f"Twelve Months Ended June 30, {quarter[-4:]}", text)
+                    self.assertIn(f"Nine Months Ended March 31, {quarter[-4:]}", text)
+                    self.assertEqual(amounts[0] - amounts[1], value)
+                    self.assertEqual(amounts[2], value)
+                    self.assertIn(" D", text)
+                else:
+                    self.assertIn(f"Three Months Ended {month[quarter[:2]]}, {quarter[-4:]}", text)
+                    self.assertTrue(text.startswith("10-Q"))
+                    self.assertEqual(amounts, [value])
+
+    def test_payments_volume_splits_into_its_two_regions(self) -> None:
+        volumes = self.source["operating_volumes"]
+        for quarter, total, us, intl in zip(volumes["payments_volume_quarters"],
+                                            volumes["nominal_payments_volume_usd_b"],
+                                            volumes["us_usd_b"], volumes["international_usd_b"]):
+            # a printed column rounds once; an April-June cell is a difference of
+            # two rounded columns on each of its three rows
+            with self.subTest(quarter=quarter):
+                self.assertLessEqual(abs(us + intl - total), 2 if quarter.startswith("Q2") else 1)
+
+    def test_the_service_yield_is_service_over_the_prior_quarter_s_volume(self) -> None:
+        """Worked out here from the two filed series, not from the builder."""
+        chart = next(ex for ex in self.exhibits if ex["title"].startswith("Service revenue ÷ 上一季名义支付额"))
+        volumes = self.source["operating_volumes"]
+        volume = dict(zip(volumes["payments_volume_quarters"], volumes["nominal_payments_volume_usd_b"]))
+        lines = self.source["revenue_lines_usd_m"]
+        quarters = lines["quarters"][lines["quarters"].index("Q1 2016"):]
+        self.assertEqual(chart["xlabels"], [compact_period(q) for q in quarters])
+        order = {q: i for i, q in enumerate(lines["quarters"])}
+        for q, drawn in zip(quarters, chart["values"]):
+            prior = lines["quarters"][order[q] - 1] if order[q] else None
+            expected = lines["service"][order[q]] / volume[prior] * 10
+            with self.subTest(quarter=q):
+                self.assertAlmostEqual(drawn, expected, places=5)
+        self.assertEqual(chart["kind"], "gs_line")
+        self.assertIn(f"本季 {chart['values'][-1]:.2f} 个基点", chart["title"])
+        self.assertIn(f"{len(quarters)} 个季度", chart["title"])
 
     def test_the_notes_state_the_service_revenue_lag(self) -> None:
         """The lag is why the page refuses a revenue-versus-volume comparison.
@@ -867,6 +928,16 @@ class VChecksTest(unittest.TestCase):
         volume = c["nominal_payments_volume_prior_quarter_usd_b"]
         self.assertIn(f"本季 10-Q 印的是 {volume['period']} 那一季的 US${volume['value']:,.0f}B",
                       " ".join(self.payload["notes"]))
+
+    def test_the_service_yield_is_the_checked_figures_divided(self) -> None:
+        c = self.checks
+        volume = c["nominal_payments_volume_prior_quarter_usd_b"]
+        bps = c["revenue_usd_m"]["service"] / volume["value"] * 10
+        chart = next(ex for ex in self.exhibits if ex["title"].startswith("Service revenue ÷ 上一季名义支付额"))
+        self.assertIn(f"本季 {bps:.2f} 个基点", chart["title"])
+        self.assertAlmostEqual(chart["values"][-1], bps, places=5)
+        self.assertIn(f"acc {self.staging['_checks']['source'].split('10-Q（acc ')[1][:20]}",
+                      self.staging["operating_volumes"]["nominal_payments_volume_source"][volume["period"]])
 
     def test_the_source_line_links_this_quarter_s_release(self) -> None:
         accession = re.search(r"acc (\d{10})-(\d{2})-(\d{6})", self.checks["source"]).groups()
@@ -1262,6 +1333,45 @@ class VFindingsTest(unittest.TestCase):
 
         forced = self.page(misaligned)
         self.assertNotIn("那一季的 US$", forced)
+
+    def test_the_service_yield_words_follow_the_record(self) -> None:
+        """「42 个季度里最高」「已高过并入前」 are claims about the whole line."""
+        self.assertIn("本季 13.20 个基点，42 个季度里最高", self.clean)
+        self.assertIn("比率从 13.05 掉到 9.67", self.clean)
+        self.assertIn("此后回升到本季的 13.20，已高过并入前", self.clean)
+
+        def volume_rose(s):
+            volumes = s["operating_volumes"]
+            volumes["nominal_payments_volume_usd_b"][-1] = round(volumes["nominal_payments_volume_usd_b"][-1] * 1.08)
+
+        fell = self.page(volume_rose)
+        self.assertNotIn("个季度里最高", fell)
+        self.assertRegex(fell, r"本季 12\.\d\d 个基点（42 个季度区间 9\.67–13\.05）")
+        self.assertIn("仍低于并入前", fell)
+        self.assertNotIn("已高过并入前", fell)
+
+    def test_the_yield_chart_stops_where_the_volume_does(self) -> None:
+        """A fiscal fourth quarter is released weeks before the 10-K that
+        carries April-June volume: the chart then ends a quarter early and
+        says which quarter it is, instead of calling it this quarter."""
+
+        def no_volume_yet(s):
+            volumes = s["operating_volumes"]
+            for key in ("payments_volume_quarters", "nominal_payments_volume_usd_b", "us_usd_b",
+                        "international_usd_b"):
+                volumes[key] = volumes[key][:-1]
+
+        text = self.page(no_volume_yet)
+        self.assertIn("Service revenue ÷ 上一季名义支付额：Q1 2026 12.88 个基点", text)
+
+        def hole(s):
+            volumes = s["operating_volumes"]
+            i = volumes["payments_volume_quarters"].index("Q2 2020")
+            for key in ("payments_volume_quarters", "nominal_payments_volume_usd_b"):
+                del volumes[key][i]
+
+        with self.assertRaisesRegex(ValueError, "hole"):
+            self.page(hole)
 
     def test_the_closure_note_counts_its_own_items(self) -> None:
         self.assertIn("仍未披露的四条里有三条是公司从未在申报文件里给过的拆分", self.clean)

@@ -1339,12 +1339,16 @@ where the obvious arithmetic gives the wrong answer:
   `Key Business Drivers` table prints the *current* quarter's volume. Lining the
   two up is off by exactly one quarter, every quarter. The pair that does line
   up is in the 10-Q: its MD&A prints the previous quarter's nominal payments
-  volume in dollars, the base service revenue is recognised on, but the page has
-  not taken that series in yet. Cross-border volume, which international
-  transaction revenue rides on, is disclosed only as a year-over-year
-  **percentage**, so that take-rate cannot be recomputed from the filings at
-  all. The page therefore publishes **no** revenue-versus-volume comparison and
-  says why, rather than reproducing a misaligned one.
+  volume in dollars, the base service revenue is recognised on, and the page
+  divides the one by the other — service revenue over the prior quarter's
+  volume, in basis points. The one quarter a year that no filing prints on its
+  own, April–June, is the 10-K's twelve months to June less the June 10-Q's nine
+  months to March, and every cell names the filing it was read from.
+  Cross-border volume, which international transaction revenue rides on, is
+  disclosed only as a year-over-year **percentage**, so that take-rate cannot be
+  recomputed from the filings at all. The page therefore publishes that one
+  aligned ratio and **no** revenue-growth-versus-current-volume comparison,
+  rather than reproducing a misaligned one.
 - **The litigation escrow is measured against the accrual it actually funds.**
   The U.S. Retrospective Responsibility Plan escrow pays U.S. covered litigation
   and nothing else; the balance sheet's `Accrued litigation` line is larger

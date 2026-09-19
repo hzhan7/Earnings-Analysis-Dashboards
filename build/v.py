@@ -407,6 +407,65 @@ def incentive_rate_long(staging: dict) -> dict:
     }
 
 
+def previous_quarter(period: str) -> str:
+    """``'Q1 2016'`` → ``'Q4 2015'``."""
+    quarter, year = int(period[1]), int(period[-4:])
+    return f"Q4 {year - 1}" if quarter == 1 else f"Q{quarter - 1} {year}"
+
+
+def service_yield_long(staging: dict) -> dict:
+    """Service revenue over the payments volume it is recognised on -- the prior quarter's.
+
+    The 10-Q's MD&A prints the prior quarter's nominal payments volume in
+    dollars, the base the company says service revenue is assessed on, so this
+    is the one revenue-to-volume pair the filings line up. The ratio is in basis
+    points of volume. Visa Europe (acquired June 2016) joins the denominator
+    with its April-June 2016 volume; that step is named, not counted back from
+    the end.
+    """
+    lines = staging["revenue_lines_usd_m"]
+    volumes = staging["operating_volumes"]
+    volume = dict(zip(volumes["payments_volume_quarters"], volumes["nominal_payments_volume_usd_b"]))
+    window = lines["quarters"][lines["quarters"].index("Q1 2016"):]
+    quarters = [q for q in window if previous_quarter(q) in volume]
+    if not quarters or quarters != window[:len(quarters)]:
+        raise ValueError("operating_volumes has a hole in the 2016 window: each quarter's service "
+                         "revenue needs the prior quarter's nominal payments volume")
+    bps = [lines["service"][lines["quarters"].index(q)] / volume[previous_quarter(q)] * 10
+           for q in quarters]
+    now = "本季" if quarters[-1] == lines["quarters"][-1] else quarters[-1]
+    step = quarters.index("Q3 2016") if "Q3 2016" in quarters[1:] else None
+    return {
+        "ref": "EX_SVC_YIELD",
+        "kind": "gs_line",
+        "title": (
+            f"Service revenue ÷ 上一季名义支付额：{now} {bps[-1]:.2f} 个基点"
+            + (f"，{len(bps)} 个季度里最高" if bps[-1] >= max(bps) else
+               f"，{len(bps)} 个季度里最低" if bps[-1] <= min(bps) else
+               f"（{len(bps)} 个季度区间 {min(bps):.2f}–{max(bps):.2f}）")
+        ),
+        "xlabels": [compact_period(q) for q in quarters],
+        "xstep": LONG_STEP,
+        "values": rounded(bps),
+        "legend": "Service revenue / 上一季名义支付额",
+        "fmt": "f2",
+        "yfmt": "f2",
+        "label_fmt": "f2",
+        "ylab": "基点（0.01%）",
+        "note": (
+            "分子是当季 Service revenue，分母是公司据以确认它的上一季名义支付额"
+            "（10-Q 的 MD&A 按季印着美元金额；4–6 月那一季没有单独一栏，取 10-K 十二个月栏减 6 月 10-Q 九个月栏），"
+            "比率是两者相除的自算值 D。"
+            + (f"{quarters[step]} 起分母并入 2016 年 6 月收购的 Visa Europe，比率从 {bps[step - 1]:.2f} 掉到 "
+               f"{bps[step]:.2f}（这一格与下一格的分母还含 2016 年底起不再计入的欧洲 co-badged 支付额），"
+               + (f"此后回升到{now}的 {bps[-1]:.2f}，已高过并入前。" if bps[-1] > bps[step - 1] else
+                  f"{now}是 {bps[-1]:.2f}，仍低于并入前。")
+               if step is not None else "")
+        ),
+        "src_extra": "分子：各季 10-Q / 10-K 收入分解附注；分母：各季 10-Q MD&A 名义支付额表，逐格出处在 series 里。",
+    }
+
+
 def revenue_mix_long(staging: dict) -> dict:
     lines = staging["revenue_lines_usd_m"]
     labels = [compact_period(period) for period in lines["quarters"]]
@@ -741,7 +800,7 @@ def quarter_revenue_lines(staging: dict) -> dict:
             "Service revenue 对上一季的名义支付额 —— 10-Q 的 MD&A 按季印着美元金额"
             + (f"（本季对的是 {aligned} 那一季的 US${payments['nominal_payments_volume_usd_b'][-1]:,.0f}B）"
                if aligned == prior_quarter and not lines["fiscal_labels"][-1].endswith("Q4") else "")
-            + "，本页尚未接入，详见「口径与方法说明」里的不接入清单。"
+            + "，本页把这一组画在「Service revenue ÷ 上一季名义支付额」那张图里。"
             + "".join(f"标题里的增速是新闻稿印的整数；图上的线是本页拿取整到百万美元的申报值相除（D），"
                       f"{name} 本季算出来是 {computed:+.1f}%，公司按未取整的数印的是 {official:+d}%。"
                       for name, computed, official in apart)
@@ -1232,6 +1291,7 @@ def build_payload(staging: dict) -> dict:
     # ── section four ────────────────────────────────────────────────────────
     routine_ex = [
         incentive_rate_long(staging),
+        service_yield_long(staging),
         margin_long(staging),
         revenue_mix_long(staging),
         geography_long(staging),
@@ -1473,7 +1533,7 @@ def build_payload(staging: dict) -> dict:
                 "title": "四、长期常规跟踪",
                 "description": plain_text(
                     f"V 专属的常规序列：{cn_count((len(lines['quarters']) - 1) // 4)}年的客户激励率、"
-                    "毛收入与净收入的两条增速、四条毛收入线的结构迁移、"
+                    "Service revenue 对上一季名义支付额的比率、毛收入与净收入的两条增速、四条毛收入线的结构迁移、"
                     "美国以外的收入占比，以及股东回报与自由现金流的关系。"
                 ),
                 "exhibits": routine_ex,
@@ -1516,11 +1576,12 @@ def build_payload(staging: dict) -> dict:
             "公司在每份业绩新闻稿里都写明：Service revenue 按<b>上一季度</b>的支付额确认，"
             "其余收入线按<b>当季</b>活动确认；而新闻稿开头的「Key Business Drivers」表印的是<b>当季</b>支付额。"
             "把两者对齐来看会整整错开一个季度。"
-            "能对齐的那一组数据其实在申报文件里：10-Q 的 MD&A 按季印着上一季的<b>名义支付额</b>美元金额"
+            "能对齐的那一组数据在申报文件里：10-Q 的 MD&A 按季印着上一季的<b>名义支付额</b>美元金额"
             + (f"（本季 10-Q 印的是 {aligned} 那一季的 "
                f"US${staging['operating_volumes']['nominal_payments_volume_usd_b'][-1]:,.0f}B）"
                if aligned == lines["quarters"][-2] and not fiscal_now.endswith("Q4") else "")
-            + "，所以「Service revenue ÷ 上一季支付额」可以复算，本页尚未接入；"
+            + "，本页据此画了「Service revenue ÷ 上一季名义支付额」那张图"
+            "（4–6 月那一季没有单独一栏，取 10-K 十二个月栏减 6 月 10-Q 九个月栏）；"
             "跨境交易额则只印<b>同比百分比</b>、不印金额，所以国际交易收入的单位变现率在申报文件里无法复算。",
             "诉讼托管账户与计提额的对照口径：美国追溯责任计划下的托管账户只为偿付 "
             "<b>U.S. covered litigation</b> 而存在，资产负债表上的「Accrued litigation」合计还包含 "
@@ -1539,7 +1600,6 @@ def build_payload(staging: dict) -> dict:
             "本页只发布公司披露值、可复算的简单派生值，以及明确标注的市场预期；D 标记代表 Derived / 自算。",
             "市场预期一律标注为「市场预期」并给出取数时点，不写卖方机构名，也不发布评级、目标价或估值。",
             "本页已知未接入：跨境交易额的<b>绝对金额</b>（公司只给同比百分比）、"
-            "分季名义支付额（10-Q 印着金额，本页尚未接入）、"
             "单位交易变现率、商业支付（CMS）的分部收入绝对额（公司不在申报文件里拆分）、"
             "增值服务（VAS）收入（10-Q 按季印着金额，本页尚未接入）、"
             "消费支付的单独收入口径、公司口径 non-GAAP 营业费用与利润率的逐季序列（每季剔除项由公司当季决定）、"
