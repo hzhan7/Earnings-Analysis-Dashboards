@@ -129,14 +129,16 @@ class PmDashboardTest(unittest.TestCase):
     def test_the_four_quarters_of_a_year_sum_to_the_filed_year(self) -> None:
         """Q4 here is the filed year minus the filed nine months, so this is the
         identity that has to hold for the derivation to be worth publishing.
-        Gross profit is on one basis per year: 2024 on the old one (10-K,
-        24,549), 2025 on the one PMI adopted in 2026 (the recast 8-K of
-        2026-03-13, 27,304) -- 2025Q3 and Q4 used to be the old basis while Q1
-        and Q2 were the new one."""
+        Gross profit is on one basis per year, the one PMI adopted in 2026, for
+        every year the recast 8-K of 2026-03-13 reprinted: 2023 22,298, 2024
+        24,568 (the 10-K's old basis was 24,549), 2025 27,304. 2025Q3 and Q4
+        were once the old basis while Q1 and Q2 were the new one, and 2023-2024
+        stayed on the old one until the recast was taken in."""
         long = self.staging["long"]
         by = {key: dict(zip(long["periods"], long[key]))
               for key in ("net_revenues_usd_m", "operating_income_usd_m", "gross_profit_usd_m")}
-        filed = {2024: (37878.0, 13402.0, 24549.0), 2025: (40648.0, 14892.0, 27304.0)}
+        filed = {2023: (35174.0, 11556.0, 22298.0), 2024: (37878.0, 13402.0, 24568.0),
+                 2025: (40648.0, 14892.0, 27304.0)}
         for year, totals in filed.items():
             quarters = [f"{year}Q{q}" for q in (1, 2, 3, 4)]
             for key, total in zip(("net_revenues_usd_m", "operating_income_usd_m", "gross_profit_usd_m"), totals):
@@ -148,6 +150,38 @@ class PmDashboardTest(unittest.TestCase):
             self.assertAlmostEqual(sum(by["net_revenues_usd_m"][q] for q in quarters), revenue,
                                    delta=0.5, msg=str(year))
         self.assertIn("净收入四个季度相加等于全年，逐年核对无差", self.exhibits["EX_REV"]["note"])
+        note = next(n for n in self.payload["notes"] if "四季相加逐项与" in n)
+        self.assertIn(f"{min(filed)}–{max(filed)} 年的净收入、毛利、经营利润四季相加逐项与", note)
+        # the series' own record of the printed years is the same three rows
+        self.assertEqual({int(y): tuple(row[k] for k in ("net_revenues_usd_m", "operating_income_usd_m",
+                                                          "gross_profit_usd_m"))
+                          for y, row in long["filed_year_totals"]["years"].items()}, filed)
+
+    def test_a_year_that_does_not_tie_is_named_not_smoothed(self) -> None:
+        st = copy.deepcopy(self.staging)
+        long = st["long"]
+        long["gross_profit_usd_m"][long["periods"].index("2024Q2")] += 5
+        note = next(n for n in pm.build_payload(st)["notes"] if "四季相加" in n)
+        self.assertIn("2024 年的四季相加与", note)
+        self.assertIn("有出入", note)
+        self.assertIn("2023 年、2025 年的净收入", note)
+
+    def test_the_gross_profit_seam_is_where_the_recast_begins(self) -> None:
+        """The recast 8-K reprinted consolidated gross profit on the 2026 basis for
+        each quarter it covers; before it the page is on the old basis."""
+        long = self.staging["long"]
+        recast = self.staging["segments"]["recast_filing"]
+        first = pm.yq(recast["first"])[0]
+        profit = dict(zip(long["periods"], long["gross_profit_usd_m"]))
+        # four quarters the recast moved, against the old-basis values they replaced
+        for quarter, old, new in (("2023Q1", 4981.0, 4987.0), ("2024Q1", 5598.0, 5604.0),
+                                  ("2024Q4", 6283.0, 6288.0), ("2025Q3", 7358.0, 7361.0)):
+            self.assertEqual(profit[quarter], new, quarter)
+            self.assertNotEqual(profit[quarter], old, quarter)
+        words = f"{first}–{pm.yq(recast['last'])[0]} 年的毛利取公司 {recast['date']} 按 2026 年新口径重印的各季数，" \
+                f"{first - 1} 年及以前仍是原口径"
+        self.assertIn(words, self.exhibits["EX_REV"]["note"])
+        self.assertIn(words, " ".join(self.payload["notes"]))
 
     def test_a_fourth_quarter_eps_is_not_a_subtraction(self) -> None:
         """EPS is not additive, so a Q4 derived by subtraction would be wrong in
@@ -419,21 +453,57 @@ class PmDashboardTest(unittest.TestCase):
                                    profit[period], delta=1.0, msg=period)
 
     def test_the_segment_series_says_what_exists_and_what_it_took_in(self) -> None:
-        """PMI reorganised its reportable segments in 2026Q1. The page said the
+        """PMI reorganised its reportable segments in 2026Q1. The page once said the
         history was never restated into a filing and "there will be no more";
-        the 8-K of 2026-03-13 recasts 2023-2025 on the new segments. And the
-        segments it replaced were four geographic ones, not six."""
+        the 8-K of 2026-03-13 recasts 2023-2025 on the new segments, and the page
+        now draws them. And the segments it replaced were four geographic ones,
+        not six."""
         seg = self.staging["segments"]
-        self.assertEqual(seg["periods"][0], "2025Q1")
+        recast = seg["recast_filing"]
+        self.assertEqual(seg["periods"][0], recast["first"])
         self.assertEqual(seg["periods"][-1], self.staging["periods"][-1])
+        for earlier, later in zip(seg["periods"], seg["periods"][1:]):
+            self.assertEqual(next_quarter(earlier), later)
         chart = self.exhibits["EX_SEG_REV"]
         notes = " ".join(self.payload["notes"])
+        self.assertEqual(len(chart["xlabels"]), len(seg["periods"]))
         self.assertNotIn("不会再多", chart["note"])
+        self.assertNotIn("尚未接入", chart["note"] + notes)
+        self.assertNotIn("只画了", chart["note"] + notes)
         self.assertNotIn("六个地理分部", chart["note"] + notes)
-        self.assertIn(seg["recast_filing"]["date"], chart["note"])
-        self.assertIn(seg["recast_filing"]["accession"], chart["note"])
-        self.assertIn(f"只画了{cn_count(len(seg['periods']))}个季度", chart["note"])
+        self.assertIn(recast["date"], chart["note"])
+        self.assertIn(recast["accession"], chart["src_extra"])
+        self.assertIn(recast["accession"], notes)
+        self.assertIn(f"{cn_count(len(seg['periods']))}个季度", chart["note"])
         self.assertIn(pm.segment_releases(self.staging), chart["src_extra"])
+        # a label on each of 3 x 14 bars is a hairbrush
+        self.assertFalse(chart["bar_labels"])
+
+    def test_every_recast_cell_is_sourced_and_the_three_segments_foot(self) -> None:
+        """Each quarter taken from the recast names its accession, exhibit and the
+        tables each figure was read from; the new-basis quarters name their release."""
+        seg = self.staging["segments"]
+        recast = seg["recast_filing"]
+        for period in seg["periods"]:
+            with self.subTest(period=period):
+                cell = seg["cell_sources"][period]
+                if pm.yq(recast["first"]) <= pm.yq(period) <= pm.yq(recast["last"]):
+                    self.assertEqual(cell["accession"], recast["accession"])
+                    self.assertEqual(cell["exhibit"], "EX-99.1" if period.startswith("2025") else "EX-99.2")
+                    for key in ("net_revenues_usd_m", "gross_profit_usd_m", "adjusted_gross_margin_pct"):
+                        self.assertIn("Schedule", cell[key])
+                else:
+                    self.assertIn("EX-99.1", cell["source"])
+        # four figures read straight from the recast, independently of the series
+        gm = seg["adjusted_gross_margin_pct"]
+        at = {p: i for i, p in enumerate(seg["periods"])}
+        self.assertEqual(seg["net_revenues_usd_m"]["us"][at["2023Q1"]], 509)
+        self.assertEqual(seg["gross_profit_usd_m"]["international_smoke_free"][at["2024Q4"]], 2058)
+        self.assertEqual(gm["us"][at["2025Q3"]], 63.7)
+        self.assertEqual(gm["pmi"][at["2023Q4"]], 61.9)
+        # the adjusted OI line is not in the recast: holes, not zeros
+        self.assertIsNone(seg["adjusted_oi_margin_pct"][at["2024Q4"]])
+        self.assertIn("adjusted_oi_margin", recast["not_printed"])
 
     def test_the_us_margin_card_follows_the_year_ago_comparison(self) -> None:
         seg = self.staging["segments"]
@@ -602,17 +672,27 @@ class PmDashboardTest(unittest.TestCase):
 
     def test_threshold_source_lines_name_the_releases_the_lines_came_from(self) -> None:
         """The ZYN line runs from Q2 2025, whose figures are in 2025 releases;
-        its source line said "2026 releases"."""
+        its source line said "2026 releases". A segment margin line now starts in
+        the recast 8-K, and says so before it names the releases."""
         _, entries = pm.kpi_entries(self.staging)
         charts = self.payload["sections"][2]["exhibits"][1:]
         charted = [e for e in entries if e["measure"] in pm.SERIES_FOR]
         self.assertEqual(len(charts), len(charted))
         own = [p for p in self.staging["segments"]["periods"] if pm.yq(p) >= pm.yq(pm.NEW_SEGMENTS_FROM)]
+        recast = self.staging["segments"]["recast_filing"]
         for entry, chart in zip(charted, charts):
             labels = self.staging["zyn"]["periods"] if entry["measure"] == "zyn_offtake" else own
             years = sorted({pm.yq(p)[0] for p in labels})
             span = str(years[0]) if len(years) == 1 else f"{years[0]}–{years[-1]}"
-            self.assertTrue(chart["src_extra"].startswith(f"{span} 年各季业绩 8-K"), chart["title"])
+            recast_years = f"{pm.yq(recast['first'])[0]}–{pm.yq(recast['last'])[0]}"
+            if entry["measure"] in ("segment_gm_us", "segment_gm_isf"):
+                self.assertTrue(chart["src_extra"].startswith(f"{recast_years} 年各季取自 {recast['date']}"),
+                                chart["title"])
+                self.assertIn(recast["accession"], chart["src_extra"])
+                self.assertIn(f"；{span} 年各季业绩 8-K", chart["src_extra"])
+            else:
+                self.assertTrue(chart["src_extra"].startswith(f"{span} 年各季业绩 8-K"), chart["title"])
+                self.assertNotIn(recast["accession"], chart["src_extra"])
 
     def test_what_the_page_refuses_to_plot_is_named(self) -> None:
         kpi = self.staging["next_kpi"]
@@ -1249,16 +1329,31 @@ class PmRollTest(unittest.TestCase):
             with self.subTest(word=word):
                 self.assertIn(f"报告口径每股收益 US${eps[-1]:.2f} 同比{word}", pm.build_payload(st)["headline"])
 
-    def test_the_segment_lines_are_called_first_only_while_they_are(self) -> None:
+    def test_each_threshold_line_names_its_own_window(self) -> None:
+        """The three segment-block lines used to share one sentence -- "本节前三条线
+        因此只有四个季度" -- which the recast made false for two of them and true
+        for the third. Each line now states its own window, and the adjusted
+        operating margin, which the recast does not print, is drawn only over
+        the quarters that have it rather than as a line of holes."""
+        charts = {ex["title"].split("：")[0]: ex for ex in self.payload["sections"][2]["exhibits"][1:]}
+        seg = self.full["segments"]
+        us = charts["美国分部调整后毛利率"]
+        self.assertEqual(len(us["xlabels"]), len(seg["periods"]))
+        self.assertIn(f"最早一季（{seg['period_labels'][0]}）起画", us["note"])
+        oi = charts["集团调整后经营利润率"]
+        held = [v for v in seg["adjusted_oi_margin_pct"] if v is not None]
+        self.assertEqual(len(oi["xlabels"]), len(held))
+        self.assertNotIn(None, oi["series"][0]["values"])
+        self.assertIn(f"这条线只有{cn_count(len(held))}个季度", oi["note"])
+        self.assertIn(seg["recast_filing"]["not_printed"]["adjusted_oi_margin"], oi["note"])
+        for chart in charts.values():
+            self.assertNotIn("本节前", chart["note"])
+        # once the recast is gone the segment lines fall back to the releases' window
         st = copy.deepcopy(self.full)
-        quantified = st["next_kpi"]["quantified"]
-        zyn = next(e for e in quantified if e["measure"] == "zyn_offtake")
-        quantified.remove(zyn)
-        quantified.insert(0, zyn)
-        notes = " ".join(ex["note"] for ex in pm.build_payload(st)["sections"][2]["exhibits"][1:])
-        self.assertIn("本节前三条线", " ".join(ex["note"] for ex in self.payload["sections"][2]["exhibits"][1:]))
-        self.assertNotIn("本节前三条线", notes)
-        self.assertIn("本节分部口径的三条线", notes)
+        st["segments"].pop("recast_filing")
+        rebuilt = {ex["title"].split("：")[0]: ex for ex in pm.build_payload(st)["sections"][2]["exhibits"][1:]}
+        self.assertNotIn("最早一季", rebuilt["美国分部调整后毛利率"]["note"])
+        self.assertIn(f"这条线只有{cn_count(len(seg['periods']))}个季度", rebuilt["美国分部调整后毛利率"]["note"])
 
     def test_the_fourth_quarter_remark_follows_a_third_quarter_guidance(self) -> None:
         """"Only Q3 is guided: PMI never guides Q4" reads as a reason only when
@@ -1306,19 +1401,41 @@ class PmRollTest(unittest.TestCase):
         self.assertNotIn("annot", exhibits["EX_ZYN"])
         self.assertNotIn("最后一格是空的", exhibits["EX_ZYN"]["note"])
 
-    def test_the_back_computed_year_ago_margins_are_named_once_they_are_not_all(self) -> None:
-        """The 2025 segment margins are back-computed from the printed pp change;
-        from 2027Q1 the year-ago column is a 2026 quarter the page read on its
-        own, and "the year-ago figures are back-computed" stops being true."""
-        note = exhibits_of(self.payload)["EX_SEG_GM"]["note"]
-        self.assertIn("上年同期的百分比是当期表里印出的百分点变化倒推的", note)
+    def test_no_segment_margin_is_back_computed_once_the_recast_prints_them(self) -> None:
+        """The 2025 segment margins used to be back-computed from the pp change the
+        2026 releases printed. The recast 8-K prints every 2023-2025 quarter's
+        margin itself (and agrees with the back-computation to the digit), so the
+        caption no longer says any figure was derived -- including after a roll."""
+        gm = exhibits_of(self.payload)["EX_SEG_GM"]
+        self.assertNotIn("倒推", gm["note"] + gm["src_extra"])
+        self.assertIn(self.full["segments"]["recast_filing"]["tables"]["adjusted_gross_margin"], gm["src_extra"])
         st = self.full
         while pm.yq(st["periods"][-1]) < (2027, 1):
             st = roll_forward(st)
         rolled = exhibits_of(pm.build_payload(st))["EX_SEG_GM"]
-        self.assertNotIn("上年同期的百分比", rolled["note"])
-        self.assertIn("2025 年各季的百分比是当期表里印出的百分点变化倒推的", rolled["note"])
-        self.assertIn("2025 年各季由同表印出的 pp 变化倒推", rolled["src_extra"])
+        self.assertNotIn("倒推", rolled["note"] + rolled["src_extra"])
+
+    def test_the_us_margin_run_is_the_one_that_ends_this_quarter(self) -> None:
+        """The caption lists the run of same-direction year-on-year moves that ends
+        at the page's quarter, not the whole record; one more falling quarter
+        lengthens it, a rising one cuts it to one."""
+        seg = self.full["segments"]
+        us, periods = seg["adjusted_gross_margin_pct"]["us"], seg["periods"]
+        moves = [us[i] - us[j] for i in range(len(periods))
+                 for j in [pm.year_ago_index(periods, i)] if j is not None]
+        run = 1
+        while run < len(moves) and (moves[-run - 1] < 0) == (moves[-1] < 0):
+            run += 1
+        note = exhibits_of(self.payload)["EX_SEG_GM"]["note"]
+        word = "下降" if moves[-1] < 0 else "上升"
+        self.assertIn(f"已连续{cn_count(run)}个季度同比{word}", note)
+        rolled = roll_forward(self.full)
+        rseg = rolled["segments"]
+        ago = pm.year_ago_index(rseg["periods"], len(rseg["periods"]) - 1)
+        rseg["adjusted_gross_margin_pct"]["us"][-1] = rseg["adjusted_gross_margin_pct"]["us"][ago] + 2
+        rnote = exhibits_of(pm.build_payload(rolled))["EX_SEG_GM"]["note"]
+        self.assertNotIn("已连续", rnote)
+        self.assertIn(f"{rseg['period_labels'][-1]} 同比 +2.0pp", rnote)
 
     def test_a_fourth_quarter_settles_the_year_and_opens_the_next(self) -> None:
         st = self.full

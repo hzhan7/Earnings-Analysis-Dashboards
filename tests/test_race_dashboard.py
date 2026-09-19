@@ -213,13 +213,69 @@ class RaceDashboardTest(unittest.TestCase):
 
     # ── series that start or stop where disclosure does ─────────────────────
     def test_engines_is_a_hole_after_the_presentation_change_not_a_zero(self) -> None:
-        """Filling it with zero would draw a reporting change as a business exit."""
+        """Filling it with zero would draw a reporting change as a business exit.
+
+        The fold into Other came with the 2024 releases, which restated 2023 in
+        their prior-year columns (footnote 9); the series holds the restated
+        2023, so the gap opens at 2023Q1, a year before the fold."""
         long = self.long
         engines = long["engines_eur_m"]
         first_gap = engines.index(None)
-        self.assertEqual(long["quarters"][first_gap], "Q1 2024")
+        self.assertEqual(long["quarters"][first_gap], "Q1 2023")
         self.assertTrue(all(value is None for value in engines[first_gap:]))
         self.assertTrue(all(value is not None for value in engines[:first_gap]))
+        folded = {r["quarter"]: r for r in self.staging["reprints"] if r["key"] == "engines_eur_m"}
+        other = {r["quarter"]: r for r in self.staging["reprints"] if r["key"] == "other_revenues_eur_m"}
+        self.assertEqual(sorted(folded), [f"Q{n} 2023" for n in range(1, 5)])
+        for quarter, r in folded.items():
+            self.assertIsNone(r["reprint"])
+            self.assertEqual(race.qparts(r["reprinted_in"])[0], 2024)
+            # what moved is exactly the Engines line: restated Other = first-print Other + Engines
+            self.assertEqual(other[quarter]["reprint"], other[quarter]["first_print"] + r["first_print"])
+        fold = race.engines_break(self.staging)
+        mix = exhibits_of(self.payload)["EX_L_MIX"]
+        self.assertEqual(mix["break_at"], first_gap)
+        self.assertIn("公司自 2024 年起", mix["note"])
+        self.assertIn(f"空档从 {race.compact(fold['quarter'])} 开始", mix["note"])
+        self.assertIn(f"在 {race.compact(fold['quarter'])} 断开", " ".join(self.payload["notes"]))
+        # without the restatement on record the page falls back to the first prints' story
+        st = copy.deepcopy(self.staging)
+        st["reprints"] = [r for r in st["reprints"] if r["key"] != "engines_eur_m"]
+        again = exhibits_of(race.build_payload(st))["EX_L_MIX"]
+        self.assertNotIn("取重述值", again["note"] + again["title"])
+
+    def test_the_four_reprints_left_out_last_round_are_taken(self) -> None:
+        """Four reprints the migration listed and did not adopt, now held as the
+        series value with the first print in `reprints` (independent reads of
+        the reprinting releases: Q1-Q4 2019, Q1-Q4 2023, Q1-Q4 2024)."""
+        long = self.long
+        at = {q: i for i, q in enumerate(long["quarters"])}
+        fcf = [long["industrial_fcf_eur_m"][at[f"Q{n} 2018"]] for n in range(1, 5)]
+        self.assertEqual(fcf, [91.0, 78.0, 95.0, 111.0])
+        self.assertEqual(long["full_year_actuals"]["2018"]["industrial_fcf_eur_m"], 375.0)
+        self.assertEqual(long["cash_from_operations_eur_m"][at["Q3 2018"]], 233.0)
+        cars = [long["cars_and_spare_parts_eur_m"][at[f"Q{n} 2022"]] for n in range(1, 5)]
+        spons = [long["sponsorship_commercial_brand_eur_m"][at[f"Q{n} 2022"]] for n in range(1, 5)]
+        self.assertEqual(sum(cars), 4321.0)      # FY2023 release, 2022 column
+        self.assertEqual(sum(spons), 499.0)
+        self.assertEqual([long["other_revenues_eur_m"][at[f"Q{n} 2023"]] for n in range(1, 5)],
+                         [58.0, 68.0, 69.0, 84.0])
+        for r in self.staging["reprints"]:
+            if "source" in r:
+                self.assertRegex(r["source"], r"^6-K \d{10}-\d{2}-\d{6} EX-99\.1 ", r["quarter"])
+        with_source = {(r["quarter"], r["key"]) for r in self.staging["reprints"] if "source" in r}
+        self.assertEqual(len(with_source), 21)
+        # captions say which quarters are reprints, computed from the record
+        cash = exhibits_of(self.payload)["EX_L_CASH"]
+        self.assertIn("2018 年四季取 2019 年各季新闻稿上年同期栏的重印值（四季合计 €375M，原印 €405M）",
+                      cash["src_extra"])
+        mix = exhibits_of(self.payload)["EX_L_MIX"]
+        self.assertIn("2022 年四季的 Cars and spare parts 与 Sponsorship, commercial and brand 取 2023 年",
+                      mix["src_extra"])
+        self.assertIn("€20M 的重分类", mix["src_extra"])
+        # none of the four touches the year-sum census: FY2018 adds up on the reprint too
+        note = next(n for n in self.payload["notes"] if "四个季度相加等于公司印出的全年" in n)
+        self.assertIn("共 70 项里 69 项逐项相等", note)
 
     def test_net_industrial_debt_is_the_level_not_the_change(self) -> None:
         """Q2 2016 was published as +19 for a while. It is -763.
