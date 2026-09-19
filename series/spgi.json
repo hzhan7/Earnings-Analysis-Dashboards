@@ -1,5 +1,5 @@
 {
-  "_provenance": "所有公司披露值逐季读自 SEC EDGAR 上 S&P Global Inc.（CIK 64040）的申报文件：2016Q1–2026Q2 共 42 个季度的 10-Q / 10-K，以及 FY2019–FY2026 历次季度业绩 8-K 的 EX-99.1。季度损益表数字优先取申报的三个月栏；会计第四季无 10-Q，其损益与现金流各行为全年数减去九个月数，两端都是申报值。现金流量表在 10-Q 里只有年初至今栏，因此除第一季外每季均为相邻两次申报值之差。全年指引记录逐条取自各季业绩 8-K 的 EX-99.1 展望表或展望段落，不含任何来自电话会或投资者演示材料而未进入申报文件的数字。",
+  "_provenance": "所有公司披露值逐季读自 SEC EDGAR 上 S&P Global Inc.（CIK 64040）的申报文件：2016Q1–2026Q2 共 42 个季度的 10-Q / 10-K，以及 FY2016–FY2026 历次季度业绩 8-K 的 EX-99.1。季度损益表数字优先取申报的三个月栏；会计第四季无 10-Q，其损益与现金流各行为全年数减去九个月数，两端都是申报值。现金流量表在 10-Q 里只有年初至今栏，因此除第一季外每季均为相邻两次申报值之差。全年指引记录逐条取自各季业绩 8-K 的 EX-99.1 展望表或展望段落，不含任何来自电话会或投资者演示材料而未进入申报文件的数字。",
   "periods": [
     "Q3 2023",
     "Q4 2023",
@@ -516,7 +516,9 @@
       "养老金列报口径",
       "IHS Markit 并表"
     ],
-    "basis_break_2016_2017": "2016 与 2017 之间有一道**口径**断点，不是经营变化。公司在 2018 年第一季度 10-Q 里把非服务性养老金成本从营业利润之上挪到之下（与 ASU 2017-07 一致），并在随后三份季报里按新口径重述了上年同期 —— 本仓存的 2017 三个季度正是那批**重述后**的数字（营业利润较原始申报低 9.0，总费用高 9.0，逐季精确为 9.0）。**2016 的四个季度只有原始申报口径**：公司按季重述过 2017，从未按季重述 2016，所以这四格与右侧不同基。（**更正**：本仓此前在这里写的是「2016 从未被任何申报按新口径重述过」，那句话说过了头。FY2018 10-K 的 Selected Financial Data 把 **2016 全年**营业利润从原始申报的 3,369 重述为 **3,341**，同一份文件写明「Other income, net for 2018, 2017 and 2016 was $25 million, $27 million and $28 million」—— 28 正是那 3,369−3,341 的差额。所以被重述的是**年度**数，没有被重述的是**季度**拆分，而本页画的是季度线。顺带，这个年度落差 28／年 ≈ 7／季，与 2017 逐季实测的 9.0 属同一量级，算是对那个量的一次独立印证。）落差对营业利润率的影响 0.6–1.8pp —— 本页此前因此把序列截在 2017Q1，现在改为画出来并标注：断点的大小是量出来的，不再只是一个理由。",
+    "basis_break_2016_2017": "2016 与 2017 之间有一道**口径**断点，不是经营变化。公司在 2018 年第一季度 10-Q 里把非服务性养老金成本从营业利润之上挪到之下（与 ASU 2017-07 一致），并在随后三份季报里按新口径重述了上年同期 —— 本仓存的 2017 三个季度正是那批**重述后**的数字（营业利润较原始申报低 9.0，总费用高 9.0，逐季精确为 9.0）。**2016 的四个季度只有原始申报口径**：公司按季重述过 2017，从未按季重述 2016，所以这四格与右侧不同基。（**更正**：本仓此前在这里写的是「2016 从未被任何申报按新口径重述过」，那句话说过了头。FY2018 10-K 的 Selected Financial Data 把 **2016 全年**营业利润从原始申报的 3,369 重述为 **3,341**，同一份文件写明「Other income, net for 2018, 2017 and 2016 was $25 million, $27 million and $28 million」—— 28 正是那 3,369−3,341 的差额。所以被重述的是**年度**数，没有被重述的是**季度**拆分，而本页画的是季度线。顺带，这个年度落差 28／年 ≈ 7／季，与 2017 逐季实测的 9.0 属同一量级，算是对那个量的一次独立印证。）落差对营业利润率的影响 0.6–0.7pp（9.0 除以 2016 四季各自的收入） —— 本页此前因此把序列截在 2017Q1，现在改为画出来并标注：断点的大小是量出来的，不再只是一个理由。",
+    "pension_unrestated_year": 2016,
+    "pension_restatement_per_quarter_usd_m": 9.0,
     "q4_gain_note": "每个财政第四季度的处置损益都是空的，2016 也不例外：公司不出第四季 10-Q，该季只能用「全年 − 前九个月」相减得到，而相减出来的数不是申报值。Q4 2016 按此法算出的是 379（全年 1,101 − 前九月 722），记在这里而不写进序列，与 2017–2025 九个第四季一致。收入、总费用、营业利润三项同样是相减所得，但它们逐季连续可比、且三者满足「收入 − 费用 + 处置损益 = 营业利润」的恒等式（Q4 2016 逐项核对成立），所以照常入列。"
   },
   "capital_allocation_usd_m": {
@@ -1734,10 +1736,12 @@
     "basis_break_at": 42,
     "basis_break_label": "Mobility 剥离，口径重设",
     "merger_break_at": 24,
-    "mobility_addback_adjusted_eps_usd": 1.98,
     "mobility_addback_gaap_eps_usd": 0.92,
     "mobility_addback_revenue_usd_m": 1747.0,
-    "fy2025_proforma_adjusted_eps_usd": 15.85,
+    "proforma_base_adjusted_eps_usd": 15.85,
+    "proforma_base_filed": "2026-07-06",
+    "proforma_base_form": "8-K/A",
+    "proforma_base_source": "S&P Global 2026-07-06 8-K/A（acc 0001104659-26-080571）EX-99.1「S&P Global Provides Pro Forma and Recast Financial Results and Updated Segment Information」：Pro forma non-GAAP adjusted diluted earnings per share from continuing operations，FY2025 为 15.85。报告口径 FY2025 调整后 EPS 17.83 在 annual_actuals；两者之差 1.98 由本页现算，不另存。",
     "suspension": {
       "announced": "2022-06-01",
       "reinstated": "2022-08-02",
@@ -1801,7 +1805,17 @@
       20.3,
       21.8,
       22.3
-    ]
+    ],
+    "nci_distributions_usd_m": [
+      null,
+      null,
+      null,
+      null,
+      280.0,
+      287.0,
+      321.0
+    ],
+    "nci_distributions_note": "付给非控股股东的分派，公司自己的自由现金流定义（经营现金流 − 资本开支 − 该项）比本页自算口径多减的就是它。取自 FY2025 10-K（acc 0000064040-26-000013）「Reconciliation of Non-GAAP Financial Information」表：Distributions to noncontrolling interest holders (321) / (287) / (280)，对应 2025 / 2024 / 2023。更早年份本仓未取，留空。"
   },
   "ratings_revenue_split_usd_m": {
     "quarters": [
@@ -3215,7 +3229,55 @@
     "analysis_date": "2026-08-29",
     "audit_status": "unaudited"
   },
+  "_checks": {
+    "period": "Q2 2026",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-28",
+    "revenue_usd_m": 4146.0,
+    "expenses_usd_m": 2345.0,
+    "gain_on_dispositions_usd_m": 11.0,
+    "operating_profit_usd_m": 1812.0,
+    "net_income_usd_m": 1217.0,
+    "diluted_eps_usd": 4.12,
+    "diluted_shares_m": 295.5,
+    "pro_forma_adjusted_diluted_eps_usd": 4.83,
+    "segment_revenue_usd_m": {
+      "ratings": 1339.0,
+      "indices": 534.0,
+      "energy": 568.0,
+      "market_intelligence": 1290.0,
+      "mobility": 468.0
+    },
+    "intersegment_elimination_usd_m": -53.0,
+    "ratings_transaction_usd_m": 746.0,
+    "ratings_non_transaction_usd_m": 593.0,
+    "ratings_transaction_growth_pct": 25,
+    "ratings_non_transaction_growth_pct": 8,
+    "revenue_by_type_usd_m": {
+      "subscription": 2064.0,
+      "non_subscription_transaction": 895.0,
+      "asset_linked_fees": 348.0,
+      "sales_usage_royalties": 126.0,
+      "recurring_variable": 173.0,
+      "non_transaction_net": 540.0
+    },
+    "guidance_adjusted_eps_usd": [
+      17.5,
+      17.75
+    ],
+    "guidance_gaap_eps_usd": [
+      16.35,
+      16.6
+    ],
+    "guidance_revenue_growth_pct": [
+      5.9,
+      7.9
+    ],
+    "source": "S&P Global 2026 年第二季度业绩新闻稿（8-K EX-99.1，acc 0000064040-26-000040，电头「New York, NY, July 28, 2026」）：Exhibit 1 损益表（Revenue 4,146、Expenses 2,345、Gain on dispositions (11)、Operating profit 1,812、归母净利 1,217、Diluted 4.12、稀释股数 295.5）；Exhibit 4 分部收入（Ratings 1,339 / Indices 534 / Energy 568 / Market Intelligence 1,290 / Mobility 468 / Intersegment Elimination (53)）；Exhibit 7 Revenue by Type（Ratings Non-subscription / Transaction 746 / +25%、Non-transaction 593 / +8%；合计 Subscription 2,064、Transaction 895、Non-transaction 540、Asset-linked fees 348、Sales usage-based royalties 126、Recurring variable 173）；Pro Forma Diluted EPS 表 Adjusted $4.83；Full-Year 2026 Outlook 表（Diluted EPS GAAP $16.35 to $16.60、Adjusted $17.50 to $17.75，Revenue growth 5.9% to 7.9%）。",
+    "checked_on": "2026-09-19"
+  },
   "prior_kpi_settlement": {
+    "period": "Q2 2026",
     "set_in": "Q1 2026 笔记",
     "quantified": [
       {
@@ -3223,42 +3285,42 @@
         "direction": "up",
         "threshold": 15.0,
         "unit": "pct",
-        "actual": 24.96
+        "reads": "yoy:ratings_revenue_split_usd_m.transaction"
       },
       {
         "metric": "Ratings 非交易性收入同比",
         "direction": "up",
         "threshold": 5.0,
         "unit": "pct",
-        "actual": 7.62
+        "reads": "yoy:ratings_revenue_split_usd_m.non_transaction"
       },
       {
         "metric": "营业利润率（剔除处置损益与联营收益 D）",
         "direction": "up",
         "threshold": 41.0,
         "unit": "pct",
-        "actual": 43.44
+        "reads": "margin_ex_credits"
       },
       {
         "metric": "订阅型收入占毛收入比重",
         "direction": "up",
         "threshold": 47.0,
         "unit": "pct",
-        "actual": 49.15
+        "reads": "subscription_share"
       },
       {
         "metric": "单季自由现金流 D",
         "direction": "up",
         "threshold": 1000.0,
         "unit": "usd_m",
-        "actual": 1401.0
+        "reads": "free_cash_flow"
       },
       {
         "metric": "计费发行量",
         "direction": "up",
         "threshold": 1000.0,
         "unit": "usd_bn",
-        "actual": 1268.0
+        "reads": "billed_issuance_usd_bn.total"
       }
     ],
     "retired": [
@@ -3267,6 +3329,7 @@
     "note": "本节阈值是上一份笔记留下的研究设定，不是公司指引，也不是评级。"
   },
   "next_kpi": {
+    "period": "Q2 2026",
     "for_period": "Q3 2026",
     "quantified": [
       {
@@ -3274,52 +3337,74 @@
         "direction": "up",
         "threshold": 10.0,
         "unit": "pct",
-        "current": 24.96
+        "reads": "yoy:ratings_revenue_split_usd_m.transaction"
       },
       {
         "metric": "交易性收入占 Ratings 比重",
         "direction": "down",
         "threshold": 58.0,
         "unit": "pct",
-        "current": 55.71
+        "reads": "transaction_share"
       },
       {
         "metric": "营业利润率（剔除处置损益与联营收益 D）",
         "direction": "up",
         "threshold": 42.0,
         "unit": "pct",
-        "current": 43.44
+        "reads": "margin_ex_credits"
       },
       {
         "metric": "订阅型收入占毛收入比重",
         "direction": "up",
         "threshold": 48.0,
         "unit": "pct",
-        "current": 49.15
+        "reads": "subscription_share"
       },
       {
         "metric": "单季自由现金流 D",
         "direction": "up",
         "threshold": 1100.0,
         "unit": "usd_m",
-        "current": 1401.0
+        "reads": "free_cash_flow"
       },
       {
         "metric": "单季股东回报 / 自由现金流 D",
         "direction": "down",
         "threshold": 130.0,
         "unit": "pct",
-        "current": 56.17
+        "reads": "payout_to_fcf"
       },
       {
         "metric": "计费发行量",
         "direction": "up",
         "threshold": 1050.0,
         "unit": "usd_bn",
-        "current": 1268.0
+        "reads": "billed_issuance_usd_bn.total"
       }
     ],
     "excluded": "另有五条本页<b>不接入</b>，原因写在这里而不是省略掉：（1）<b>季度指引兑现记录</b> —— 公司从不发布季度指引，只发布全年指引并逐季修订，这是取数限制不是编辑取舍，本页第一节改用全年指引的年内修订路径来做同构的记录；（2）<b>Mobility 剥离后的重述历史</b> —— 公司称自 2026 年第三季度起把 Mobility 按终止经营重述<b>所有</b>期间，但到本页取数时点为止没有任何一份已申报的报表是重述后的，本页因此全部按已申报口径（含 Mobility）发布，并在图上标出这个断点；（3）<b>分部营业利润率的长序列</b> —— 分部营业利润是 GAAP 口径且含处置损益，Market Intelligence 在 2022Q1 因 13 亿美元处置收益出现 205% 的分部利润率，把它画成一条线会把一次剥离读成经营能力；（4）<b>按地区拆分的发行量</b> —— 公司披露的计费发行量只按评级类别（投资级 / 高收益 / 其他）拆分，从未按地区给过金额；2024 年之前那张按地区的表是口径不同的「市场发行量」，且只给同比百分比、不给金额，两者不可拼接；（5）<b>交易所衍生品成交量与共同基金 AUM</b> —— 只在投资者关系网站按月披露，未进入任何申报文件。"
+  },
+  "quarter_figures": {
+    "period": "Q2 2026",
+    "basis": "不含 Mobility",
+    "pro_forma_revenue_usd_m": 3678.0,
+    "pro_forma_operating_profit_usd_m": 1757.0,
+    "adjusted_operating_profit_usd_m": 1998.0,
+    "source": "2026-07-28 业绩新闻稿 Exhibit 5（Unaudited Pro Forma Condensed Consolidated Statements of Income：Revenue 3,678、Operating profit 1,757）与首段「adjusted operating profit increased 15% to $1.998 billion」。",
+    "src_extra": "pro forma 与 adjusted 口径取自同日业绩 8-K EX-99.1 的 Exhibit 5 与 Exhibit 6。"
+  },
+  "quarter_story": {
+    "period": "Q2 2026",
+    "headline_rebase": "本季那根看起来像 −US${drop} 的指引下调也不是下调 —— Mobility 于 2026-07-01 分拆，指引换了口径，按同口径看是上调。",
+    "brief_rebase": "<article><span>本季</span><b>指引掉了 ${drop}，公司也小了一块</b><p>Mobility 于 2026-07-01 分拆，FY2026 调整后 EPS 指引从 ${prior_mid} 中值挪到 ${new_mid}。公司同时给了重述后的 FY2025 基数，按同口径算这次是上调。</p></article>",
+    "section2_tail": "以及一次被普遍读成下调、其实是换口径的指引修订",
+    "segment_note": "<b>Mobility 这一根是最后一次出现在这张图上</b>：公司于 2026-07-01 完成分拆，自 2026 年第三季度起它将按终止经营列报，并重述<b>所有</b>期间；截至本页取数时点，没有任何一份已申报报表是重述后的。",
+    "margin_note": "<b>公司新闻稿的头条margin是第{nth}根，不是第一根。</b>新闻稿里那句「operating profit margin increased 410 basis points to 47.8%」说的是 pro forma 口径 —— 分母是剔除 Mobility 后的 US${pro_forma_revenue}M，而不是申报的 US${revenue}M。按申报口径算是 {gaap_margin}%。",
+    "consolidated_note": "<b>Mobility 在本页的所有报表数字里仍然是继续经营的一个分部。</b>分拆于 2026-07-01 生效，比本页报告的季末晚一天，因此截至 2026-06-30 的 10-Q 里没有终止经营行、没有持有待售的 Mobility 资产，分部附注里它是完整的五个分部之一（本季收入 US${mobility}M）。公司在同一份 10-Q 里说明，自 2026 年第三季度起将把 Mobility 按终止经营重述<b>所有</b>期间。本页实测核对过：2025Q2 的合并收入在 2025 年的 10-Q 与 2026 年的 10-Q 里都是 US$3,755M，分毫未动 —— 也就是说重述尚未发生在任何一份已申报的报表里。等第三季度 10-Q 落地，本页的长序列需要整体重建。",
+    "revenue_restatement": "另一件将要发生的事已经确定但还没进任何一张申报报表：Mobility 于 2026-07-01 分拆，公司称自 2026 年第三季度起按终止经营重述<b>所有</b>期间，届时这条线的整段都会向下移约一成。",
+    "fcf_open_year": "另外这条线在 FY2026 直接消失了 —— 2026 年的三档展望里，初次与 Q1 只写「grow mid-single digits」这类文字，Q2 连这句也没有，所以本图右端不是空白待填，而是公司停止给这个数字。",
+    "payout_target": "公司自己给的是年度目标：{prior_release} 那份业绩新闻稿写的是 2026 年「return 100% or more of adjusted Free Cash Flow」，{release} 这份改为全年回购「more than $7 billion」，",
+    "source": "S&P Global 2026-07-28 业绩新闻稿（acc 0000064040-26-000040）：首段 pro forma 收入 $3.678 billion、营业利润 $1.757 billion，「reported operating profit margin increased by 410 basis points to 47.8%」；Full-Year 2026 Outlook 表只有收入增速、利润率、EPS 等行，没有自由现金流；「Prior to this release, the Company had not previously provided GAAP guidance for 2026」。截至 2026-06-30 的 10-Q（acc 0000064040-26-000045）分部附注：Mobility 仍为五个报告分部之一。回报目标：2026-04-28 业绩新闻稿（acc 0000064040-26-000019）要点段「now expects to return 100% or more of adjusted Free Cash Flow through dividends and share repurchases in 2026」；2026-07-28 业绩新闻稿要点段「The Company now expects to repurchase more than $7 billion in shares in total in 2026」。"
   },
   "followup_closure": {
     "labels": [
@@ -3372,7 +3457,7 @@
     },
     {
       "label": "2022-06-01 撤回全年指引的 8-K（Item 7.01）",
-      "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000064040&type=8-K&dateb=&owner=include&count=40"
+      "url": "https://www.sec.gov/Archives/edgar/data/64040/000006404022000133/spgi-20220601.htm"
     },
     {
       "label": "S&P Global 投资者关系 · 季度业绩",
