@@ -33,6 +33,7 @@ not add one; a KRW magnitude key belongs to whichever page lands it first.
 
 from __future__ import annotations
 
+import copy
 import json
 import re
 import sys
@@ -43,7 +44,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import samsung  # noqa: E402
-from build.board import UNIT_FORMATS, headroom  # noqa: E402
+from build.board import UNIT_FORMATS, cn_count, headroom  # noqa: E402
 
 
 def js_payload(path: Path, marker: str) -> dict:
@@ -95,8 +96,22 @@ class SamsungDashboardTest(unittest.TestCase):
 
     # ── the source series ────────────────────────────────────────────────────
     def test_every_series_has_one_value_per_quarter(self) -> None:
-        n = len(self.staging["periods"])
-        self.assertEqual(n, 8)
+        """One value per quarter, on an axis of consecutive calendar quarters.
+
+        The window used to be pinned at eight here. A roll appends a quarter,
+        so the pin would have failed every roll with nothing wrong on the page;
+        what has to hold instead is that the axis is unbroken and that every
+        aligned array has exactly one cell per quarter on it.
+        """
+        periods = self.staging["periods"]
+        n = len(periods)
+        for before, after in zip(periods, periods[1:]):
+            self.assertEqual(samsung.shift_period(before, 1), after)
+        quarter_end = {1: "03-31", 2: "06-30", 3: "09-30", 4: "12-31"}
+        self.assertEqual(len(self.staging["period_ends"]), n)
+        for period, end in zip(periods, self.staging["period_ends"]):
+            quarter, year = period.split()
+            self.assertEqual(end, f"{year}-{quarter_end[int(quarter[1])]}")
         for block in ("financials_krw_bn", "segment_revenue_krw_tn",
                       "segment_operating_profit_krw_tn", "cash_flow_krw_tn",
                       "balance_sheet_krw_bn"):
@@ -167,8 +182,12 @@ class SamsungDashboardTest(unittest.TestCase):
                 # The strict claim is the line above -- segment revenue must
                 # exceed consolidated, because it includes intersegment sales
                 # and Samsung publishes no elimination line. This is the loose
-                # sanity check around it, and it is now sized to the record.
-                self.assertTrue(8.0 <= der["elimination_share"][i] <= 10.0,
+                # sanity check around it. The comment above said it had been
+                # sized to the record while the assertion still read 8.0-10.0
+                # (the widening went out with the reverted 14-quarter trial) --
+                # a pin that a roll would trip with nothing wrong on the page.
+                # It is now sized to the record the comment cites, with room.
+                self.assertTrue(7.0 <= der["elimination_share"][i] <= 11.0,
                                 f"{period}: {der['elimination_share'][i]}")
 
     def test_segment_operating_profit_adds_up_to_consolidated(self) -> None:
@@ -363,10 +382,25 @@ class SamsungDashboardTest(unittest.TestCase):
 
     def test_guidance_slot_is_empty_because_the_company_guides_no_financials(self) -> None:
         """Samsung gives no revenue, margin or profit guidance at all. The page
-        must not manufacture one out of the qualitative bit-shipment phrase."""
+        must not manufacture one out of the qualitative bit-shipment phrase.
+
+        The quarter's own guidance block says so in two flags, and a block that
+        says otherwise stops the build: every section of this page is written
+        on that premise, so a quarter that breaks it needs a rebuilt first
+        section rather than a changed sentence.
+        """
         self.assertIsNone(self.payload["guidance"])
-        wordings = " ".join(item["wording"] for item in self.staging["guidance"]["items"])
-        self.assertIn("公司对 3Q ASP 不给任何指引", wordings)
+        guidance = self.staging["guidance"]
+        self.assertFalse(guidance["guides_financials"])
+        self.assertFalse(guidance["asp_guided"])
+        asp = next(item for item in guidance["items"] if "ASP" in item["metric"])
+        self.assertEqual(asp["quantified"], "未披露")
+        for flag in ("guides_financials", "asp_guided"):
+            broken = copy.deepcopy(self.staging)
+            broken["guidance"][flag] = True
+            with self.subTest(flag=flag):
+                with self.assertRaisesRegex(ValueError, "guiding neither"):
+                    samsung.build_payload(broken)
 
     # ── the threshold block ──────────────────────────────────────────────────
     def test_thresholds_use_only_units_the_shared_formatter_carries(self) -> None:
@@ -406,13 +440,30 @@ class SamsungDashboardTest(unittest.TestCase):
             [round(headroom(e["direction"], e["threshold"], e["current"]), 1)
              for e in entries])
 
-    def test_the_dx_division_is_the_breached_line_this_quarter(self) -> None:
-        """The quarter's whole point: the group is on both sides of the price
-        move, and the handset side is the one that broke."""
+    def test_the_dx_sentences_follow_the_dx_line(self) -> None:
+        """The handset loss is written up only while the data has one.
+
+        This used to assert the loss itself (DX negative, exactly once, DS above
+        60%) -- facts about one quarter, which a roll into a quarter where DX
+        is back in profit would have turned red with nothing wrong on the page.
+        What must hold every quarter is that the page's DX sentences agree with
+        the DX line, so both directions are checked here.
+        """
         der = samsung.derived(self.staging)
-        self.assertLess(der["dx_margin"][-1], 0)
-        self.assertEqual(sum(1 for v in der["dx_margin"] if v < 0), 1)
-        self.assertGreater(der["ds_margin"][-1], 60)
+        blob = json.dumps(self.payload, ensure_ascii=False)
+        losses = sum(1 for v in der["dx_margin"] if v < 0)
+        quarters = cn_count(len(self.staging["periods"]))
+        claims = (f"{quarters}季首次为负", f"{quarters}季首次营业亏损", "唯一的负值",
+                  "唯一一次分部亏损", "DX 那根负柱")
+        if der["dx_margin"][-1] < 0 and losses == 1:
+            for claim in claims:
+                self.assertIn(claim, blob)
+        recovered = copy.deepcopy(self.staging)
+        recovered["segment_operating_profit_krw_tn"]["dx"][-1] = 1.2
+        after = json.dumps(samsung.build_payload(recovered), ensure_ascii=False)
+        for claim in claims:
+            with self.subTest(claim=claim):
+                self.assertNotIn(claim, after)
 
     # ── the numeric-band readings the page makes from company wording ────────
     def test_bit_bands_are_ordered_and_the_actual_sits_inside_its_own_band(self) -> None:
@@ -436,17 +487,75 @@ class SamsungDashboardTest(unittest.TestCase):
             self.assertTrue(bits["dram_bit_actual_wording"][i].strip())
             self.assertTrue(bits["dram_asp_qoq_wording"][i].strip())
 
-    def test_price_beat_volume_in_every_quarter_on_record(self) -> None:
-        """The claim the first section is built on, asserted rather than argued:
-        the variable the company guides moved single digits while the variable
-        it never guides moved tens of per cent."""
+    def test_price_beat_volume_only_while_the_record_says_so(self) -> None:
+        """The claim the first section is built on -- the variable the company
+        guides moved single digits while the one it never guides moved tens of
+        per cent -- is printed only while every quarter on record bears it out.
+
+        It used to be asserted as a fact about the record (every ASP above 20%,
+        every bit move below 20%), which a quarter of falling prices would have
+        turned red with the page itself still right. Now the data decides the
+        sentence, and one quarter of small price moves must take it off the page.
+        """
         bits = self.staging["memory_bit_and_price"]
-        for i, quarter in enumerate(bits["quarters"]):
-            with self.subTest(quarter=quarter):
-                self.assertGreater(bits["dram_asp_qoq_pct"][i], 20)
-                self.assertGreater(bits["nand_asp_qoq_pct"][i], 20)
-                if bits["dram_bit_actual"][i] is not None:
-                    self.assertLess(bits["dram_bit_actual"][i], 20)
+        claims = ("本轮业绩不是由被指引的那个变量决定的", "决定业绩的是价")
+        dominant = all(
+            min(abs(bits["dram_asp_qoq_pct"][i]), abs(bits["nand_asp_qoq_pct"][i]))
+            > max([abs(v) for v in (bits["dram_bit_actual"][i], bits["nand_bit_actual"][i])
+                   if v is not None], default=0)
+            for i in range(len(bits["quarters"])))
+        blob = json.dumps(self.payload, ensure_ascii=False)
+        for claim in claims:
+            self.assertEqual(claim in blob, dominant, claim)
+        flat = copy.deepcopy(self.staging)
+        flat["memory_bit_and_price"]["nand_asp_qoq_pct"][-1] = 1.0
+        after = json.dumps(samsung.build_payload(flat), ensure_ascii=False)
+        for claim in claims:
+            with self.subTest(claim=claim):
+                self.assertNotIn(claim, after)
+
+    def test_every_numeric_reading_follows_the_pages_own_rule(self) -> None:
+        """「about X%」取 X、low X0% 取 X1、mid-X0% 取 X5、high X0% 取 X8.
+
+        The note prints each phrase beside the number the bar is drawn at, and
+        it used to print 「high 80%」取 88 and 「high 60%」取 65 in the same
+        sentence -- the second is the rule's mid reading. Each bar is checked
+        against its own phrase, and each phrase against the wording it quotes.
+        """
+        bits = self.staging["memory_bit_and_price"]
+        offset = {"low": 1, "mid": 5, "high": 8}
+        for name in ("dram", "nand"):
+            for i, quarter in enumerate(bits["quarters"]):
+                phrase = bits[f"{name}_asp_qoq_phrase"][i]
+                with self.subTest(product=name, quarter=quarter):
+                    self.assertIn(phrase, bits[f"{name}_asp_qoq_wording"][i])
+                    match = re.match(r"^(?:about (\d+)%|(low|mid|high)[ -](\d)0% ?(?:range)?)$", phrase)
+                    self.assertIsNotNone(match, phrase)
+                    expected = (float(match.group(1)) if match.group(1) else
+                                float(match.group(3)) * 10 + offset[match.group(2)])
+                    self.assertEqual(bits[f"{name}_asp_qoq_pct"][i], expected)
+                    self.assertIn(f"「{phrase}」取 {expected:.0f}",
+                                  next(ex for ex in exhibits(self.payload)
+                                       if ex["title"].startswith("同期公司自述的环比 ASP"))["note"])
+
+    def test_the_company_verdicts_agree_with_the_numeric_bands(self) -> None:
+        """met / exceeded / missed is the company's own word for each quarter;
+        where the page also holds the guided band and the actual, the two
+        readings have to agree, or the "全部达标或超标" sentence rests on one of
+        them being wrong."""
+        bits = self.staging["memory_bit_and_price"]
+        for name in ("dram", "nand"):
+            for i, quarter in enumerate(bits["quarters"]):
+                low, high = bits[f"{name}_bit_guide_low"][i], bits[f"{name}_bit_guide_high"][i]
+                actual = bits[f"{name}_bit_actual"][i]
+                verdict = bits[f"{name}_bit_vs_guide"][i]
+                with self.subTest(product=name, quarter=quarter):
+                    self.assertIn(verdict, ("met", "exceeded", "missed"))
+                    if low is None or actual is None:
+                        continue
+                    expected = ("exceeded" if actual > high else
+                                "missed" if actual < low else "met")
+                    self.assertEqual(verdict, expected)
 
     # ── audit tables ─────────────────────────────────────────────────────────
     def test_tables_are_numbered_from_one_and_carry_the_shared_capex_table(self) -> None:
@@ -463,10 +572,15 @@ class SamsungDashboardTest(unittest.TestCase):
         # on the supply side of the AI capex cycle, not among the four buyers.
         self.assertNotIn("Samsung", " ".join(cross_page[0]["headers"]))
 
-    def test_the_eight_quarter_tables_have_eight_rows(self) -> None:
-        for table in self.payload["tables"]:
-            if table["title"].startswith("八季"):
-                self.assertEqual(len(table["rows"]), 8, table["title"])
+    def test_the_window_tables_have_one_row_per_quarter(self) -> None:
+        """The four window tables name the window's length in their titles, and
+        that length is the series' own, not a typed 「八季」."""
+        n = len(self.staging["periods"])
+        window = [t for t in self.payload["tables"] if t["title"].startswith(f"{cn_count(n)}季")]
+        self.assertEqual(len(window), 4)
+        for table in window:
+            self.assertEqual(len(table["rows"]), n, table["title"])
+            self.assertEqual([row[0] for row in table["rows"]], self.staging["periods"])
 
     # ── published artefacts ──────────────────────────────────────────────────
     def test_published_payload_and_shell(self) -> None:
@@ -487,6 +601,226 @@ class SamsungDashboardTest(unittest.TestCase):
         self.assertIn(entry["group"], {g["key"] for g in roster["groups"]})
         # The README paragraph matches company names by two-way containment.
         self.assertIn("Samsung", entry["aliases"])
+
+
+class SamsungRollTest(unittest.TestCase):
+    """What a quarter roll has to change in `series/samsung.json`, and what the
+    page does when it does not.
+
+    Everything that belongs to one quarter -- the call quotes and the bonus
+    accrual (`quarter_story`), the forward statements (`guidance`), the
+    thresholds and the sell-side assumption behind one of them (`next_kpi`),
+    the bit and price record, the flash-versus-final record, the next
+    quarter's bit guide -- carries the quarter it describes. A block stamped
+    with another quarter is last quarter's story and stops the build; a block
+    that is absent means this quarter has no such story, and the page leaves
+    that part out rather than borrowing it.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads(samsung.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = samsung.build_payload(cls.source)
+        cls.blob = json.dumps(cls.payload, ensure_ascii=False)
+
+    def build(self, staging: dict) -> str:
+        return json.dumps(samsung.build_payload(staging), ensure_ascii=False)
+
+    def test_a_block_stamped_with_another_quarter_stops_the_build(self) -> None:
+        tamper = {
+            "quarter_story": lambda d: d["quarter_story"].__setitem__("period", "Q1 1999"),
+            "guidance": lambda d: d["guidance"].__setitem__("period", "Q1 1999"),
+            "guidance.quarter": lambda d: d["guidance"].__setitem__("quarter", "Q1 1999"),
+            "next_kpi": lambda d: d["next_kpi"].__setitem__("period", "Q1 1999"),
+            "sellside": lambda d: d["next_kpi"]["sellside_asp_assumption"].__setitem__("quarter", "Q1 1999"),
+            "bits": lambda d: d["memory_bit_and_price"]["quarters"].__setitem__(-1, "Q1 1999"),
+            "next_bit_guide": lambda d: d["memory_bit_and_price"]["next_quarter_guide"].__setitem__("quarter", "Q1 1999"),
+            "flash": lambda d: d["provisional_vs_final"]["quarters"].__setitem__(-1, "Q1 1999"),
+        }
+        for name, change in tamper.items():
+            stale = copy.deepcopy(self.source)
+            change(stale)
+            with self.subTest(block=name):
+                with self.assertRaisesRegex(ValueError, "stamped|guides"):
+                    samsung.build_payload(stale)
+        stale = copy.deepcopy(self.source)
+        release = f"Samsung {samsung.deck_period(self.source['periods'][-1])} Earnings Release"
+        stale["sources"] = [item for item in stale["sources"] if not item["label"].startswith(release)]
+        self.assertLess(len(stale["sources"]), len(self.source["sources"]))
+        with self.assertRaisesRegex(ValueError, "sources"):
+            samsung.build_payload(stale)
+
+    def test_a_quarter_without_a_story_leaves_it_out(self) -> None:
+        story = self.source["quarter_story"]
+        bonus = story["special_bonus"]
+        present = (f"{bonus['basis']}的 {bonus['pct']:.1f}%", f"{story['accrual_capex_krw_tn']:.1f} 兆韩元",
+                   f"约 {story['fx_operating_profit_qoq_krw_tn']:.1f} 兆韩元",
+                   story["dx_outlook_quote"], story["dx_reason_quote"], "季度历史新高",
+                   "公司自称缺货", "随销售结转")
+        for text in present:
+            self.assertIn(text, self.blob)
+        bare = copy.deepcopy(self.source)
+        del bare["quarter_story"]
+        after = self.build(bare)
+        for text in present:
+            with self.subTest(text=text):
+                self.assertNotIn(text, after)
+
+        unguided = copy.deepcopy(self.source)
+        del unguided["guidance"]
+        payload = samsung.build_payload(unguided)
+        self.assertEqual(len(payload["tables"]), len(self.payload["tables"]) - 1)
+        self.assertEqual([t["n"] for t in payload["tables"]],
+                         list(range(1, len(payload["tables"]) + 1)))
+        after = json.dumps(payload, ensure_ascii=False)
+        for text in ("公司对价格从不给指引", "一个字都没给", "对 ASP 一个字都不给"):
+            with self.subTest(text=text):
+                self.assertIn(text, self.blob)
+                self.assertNotIn(text, after)
+
+    def test_the_record_sentences_are_computed_not_remembered(self) -> None:
+        """Break each "all / first / only / highest" claim in the data once; the
+        sentence that made it must go. A sentence that survived its counter-
+        example would be a remembered claim, not a computed one."""
+        cases = {
+            "flash revised down once": (
+                lambda d: d["provisional_vs_final"]["final_operating_profit_krw_tn"].__setitem__(
+                    0, d["provisional_vs_final"]["flash_operating_profit_krw_tn"][0] - 0.05),
+                ("全部为正", "都没有下修", "全部为正上修")),
+            "a bit guide missed": (
+                lambda d: d["memory_bit_and_price"]["nand_bit_vs_guide"].__setitem__(-1, "missed"),
+                ("全部达标或超标",)),
+            "margin below its peak": (
+                lambda d: d["financials_krw_bn"]["operating_profit"].__setitem__(
+                    -1, d["financials_krw_bn"]["operating_profit"][-2]
+                    / d["financials_krw_bn"]["revenue"][-2] * d["financials_krw_bn"]["revenue"][-1] * 0.9),
+                ("本季是窗口内最高",)),
+            "R&D below an earlier quarter": (
+                lambda d: d["financials_krw_bn"]["rnd_expenses"].__setitem__(
+                    -1, min(d["financials_krw_bn"]["rnd_expenses"]) - 1),
+                ("创季度新高", "季度历史新高")),
+            "non-memory DS grew": (
+                lambda d: d["segment_revenue_krw_tn"]["ds"].__setitem__(
+                    -1, d["segment_revenue_krw_tn"]["memory"][-1] + 9.0),
+                ("没有增长", "全部增量都是存储")),
+            "flash revenue no longer drawn from the same weeks": (
+                lambda d: d["provisional_vs_final"]["flash_date"].__setitem__(-1, "2026-07-28"),
+                ("季末后 1–2 周",)),
+        }
+        for name, (change, claims) in cases.items():
+            broken = copy.deepcopy(self.source)
+            change(broken)
+            after = self.build(broken)
+            for claim in claims:
+                with self.subTest(case=name, claim=claim):
+                    self.assertIn(claim, self.blob)
+                    self.assertNotIn(claim, after)
+
+    def test_the_days_title_says_which_way_each_line_moved(self) -> None:
+        """It said 「两条同时在涨」 while receivable days had fallen from 55 to 51."""
+        der = samsung.derived(self.source)
+        chart = next(ex for ex in exhibits(self.payload) if ex["title"].startswith("库存天数"))
+        inventory_up = der["inventory_days"][-1] > der["inventory_days"][-2]
+        receivable_up = der["receivable_days"][-1] > der["receivable_days"][-2]
+        expected = {(True, True): "两条同时在涨", (False, False): "两条同时在降",
+                    (True, False): "库存在涨、应收在降", (False, True): "库存在降、应收在涨"}
+        self.assertTrue(chart["title"].endswith(expected[(inventory_up, receivable_up)]),
+                        chart["title"])
+        both_up = copy.deepcopy(self.source)
+        both_up["balance_sheet_krw_bn"]["receivables"][-1] *= 1.2
+        payload = samsung.build_payload(both_up)
+        title = next(ex for ex in exhibits(payload) if ex["title"].startswith("库存天数"))["title"]
+        self.assertTrue(title.endswith("两条同时在涨"), title)
+
+    def test_the_window_start_is_named_by_its_label(self) -> None:
+        """The first point of the window was called 「八季前」 while it is seven
+        quarters before the last; the eight-quarters-ago figure is a different
+        number (Q2 2024's operating margin was 14.1%, the chart's first point is
+        Q3 2024's 11.6%). Each comparison with the window start names it."""
+        der = samsung.derived(self.source)
+        first = samsung.compact_period(self.source["periods"][0])
+        top = next(ex for ex in exhibits(self.payload) if ex["title"].startswith("合并收入"))
+        self.assertIn(f"（{first} 为 {der['operating_margin'][0]:.1f}%）", top["title"])
+        self.assertNotIn("八季前", self.blob)
+        self.assertNotIn(f"{cn_count(len(self.source['periods']))}季前", self.blob)
+
+
+class SamsungChecksTest(unittest.TestCase):
+    """The page's quarter against a record keyed separately from the release.
+
+    `_checks` is typed once per quarter from Samsung's own Earnings Release
+    deck (the trillions and percentages it prints), with the page it was read
+    from; the series carries the DART-based billions and the deck's two-decimal
+    cash-flow lines. The builder never reads `_checks` (asserted in
+    `test_data_only_roll`). A roll that misaligns a column, drops the new
+    quarter or keeps last quarter's sentence fails here. Where the page prints
+    a ratio it computes and the deck prints the same ratio, they must round to
+    the same figure: the page uses the company's number when they differ.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(samsung.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.checks = cls.staging["_checks"]
+        cls.payload = samsung.build_payload(cls.staging)
+        cls.der = samsung.derived(cls.staging)
+        cls.exhibits = exhibits(cls.payload)
+
+    def test_the_page_names_the_checked_quarter(self) -> None:
+        self.assertIn(self.checks["period"], self.payload["title"])
+        self.assertIn(f"截至 {self.checks['period_end']}", self.payload["subtitle"])
+        self.assertIn(f"发布 {self.checks['release_date']}", self.payload["subtitle"])
+        self.assertIn(samsung.deck_period(self.checks["period"]), self.payload["source"])
+
+    def test_the_series_ends_on_the_deck_figures(self) -> None:
+        c, fin = self.checks, self.staging["financials_krw_bn"]
+        seg_rev = self.staging["segment_revenue_krw_tn"]
+        seg_op = self.staging["segment_operating_profit_krw_tn"]
+        cash = self.staging["cash_flow_krw_tn"]
+        bs = self.staging["balance_sheet_krw_bn"]
+        # DART's billions, rounded the way the deck prints trillions: the two
+        # chains agreeing on the new quarter is what the sourcing line claims.
+        self.assertEqual(round(fin["revenue"][-1] / 1000, 1), c["revenue_krw_tn"])
+        self.assertEqual(round(fin["operating_profit"][-1] / 1000, 1), c["operating_profit_krw_tn"])
+        self.assertEqual(round(fin["rnd_expenses"][-1] / 1000, 1), c["rnd_krw_tn"])
+        self.assertEqual(fin["eps_krw"][-1], c["eps_krw"])
+        for key in ("ds", "memory", "dx", "sdc", "harman"):
+            self.assertEqual(seg_rev[key][-1], c[f"{key}_revenue_krw_tn"], key)
+        for key in ("ds", "dx", "sdc", "harman"):
+            self.assertEqual(seg_op[key][-1], c[f"{key}_operating_profit_krw_tn"], key)
+        self.assertEqual(cash["operating"][-1], c["operating_cash_flow_krw_tn"])
+        self.assertEqual(cash["capex_ppe"][-1], c["purchase_of_ppe_krw_tn"])
+        self.assertEqual(cash["depreciation"][-1], c["depreciation_krw_tn"])
+        self.assertEqual(self.staging["net_cash_krw_tn"][-1], c["net_cash_krw_tn"])
+        self.assertEqual(bs["total_assets"][-1], c["total_assets_krw_bn"])
+        self.assertEqual(bs["inventories"][-1], c["inventories_krw_bn"])
+        self.assertEqual(bs["receivables"][-1], c["receivables_krw_bn"])
+
+    def test_the_ratios_the_page_computes_round_to_the_ones_the_deck_prints(self) -> None:
+        c, der, fin = self.checks, self.der, self.staging["financials_krw_bn"]
+        self.assertEqual(round(der["gross_margin"][-1], 1), c["gross_margin_pct"])
+        self.assertEqual(round(der["operating_margin"][-1], 1), c["operating_margin_pct"])
+        self.assertEqual(round(der["net_margin"][-1], 1), c["owners_margin_pct"])
+        self.assertEqual(round(der["dx_margin"][-1]), c["dx_operating_margin_pct"])
+        self.assertEqual(round(pct_change := (fin["rnd_expenses"][-1] / fin["rnd_expenses"][-2] - 1) * 100),
+                         c["rnd_qoq_pct"], pct_change)
+
+    def test_the_page_prints_the_checked_figures(self) -> None:
+        c = self.checks
+        headline = self.payload["headline"]
+        self.assertIn(f"合并收入 {c['revenue_krw_tn']:.1f} 兆韩元", headline)
+        self.assertIn(f"营业利润 {c['operating_profit_krw_tn']:.1f} 兆韩元", headline)
+        self.assertIn(f"营业利润率 {c['operating_margin_pct']:.1f}%", headline)
+        margins = next(ex for ex in self.exhibits if ex["title"].startswith("三条利润率"))
+        self.assertIn(f"毛利率 {c['gross_margin_pct']:.1f}%", margins["title"])
+        self.assertIn(f"归母净利率 {c['owners_margin_pct']:.1f}%", margins["title"])
+        cash = next(ex for ex in self.exhibits if ex["title"].startswith("经营现金流"))
+        self.assertIn(f"经营现金流 {c['operating_cash_flow_krw_tn']:.1f} 兆韩元", cash["title"])
+        net_cash = next(ex for ex in self.exhibits if ex["title"].startswith("净现金"))
+        self.assertIn(f"净现金 {c['net_cash_krw_tn']:.1f} 兆韩元", net_cash["title"])
+        rnd = next(ex for ex in self.exhibits if ex["title"].startswith("研发支出"))
+        self.assertIn(f"研发支出 {c['rnd_krw_tn']:.1f} 兆韩元", rnd["title"])
+        self.assertIn(f"环比 +{c['rnd_qoq_pct']}%", rnd["note"])
 
 
 if __name__ == "__main__":
