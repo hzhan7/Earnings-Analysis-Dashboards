@@ -22,6 +22,15 @@ range the same seven years look nothing like it. A test that only counted
 "cleared its guidance" would not notice if the two were ever conflated, so this
 one pins both tallies separately, and pins that they disagree.
 
+A roll edits `series/mco.json` and nothing else (CLAUDE.md §9). Tallies,
+extremes and years named on the page are recounted here from the series rather
+than pinned; what stays pinned is history that a roll cannot move (FY2018's four
+vintages, FY2022's cut, the FY2016-17 holes). What the quarter's release printed
+is asserted from `_checks` (`McoChecksTest`); `McoRollTest` rolls the series a
+quarter back and a quarter forward and tampers each stamped block; and
+`McoFindingsTest` forces each judgement true and then false and checks that the
+words follow.
+
 One more thing is pinned because it was a live trap rather than a hypothesis:
 the segment columns in the earnings releases swapped order in April 2023 (MIS
 first, then MA first). The series is read by segment name rather than by column
@@ -32,9 +41,11 @@ exceeds its share of revenue in every quarter -- which is false under a swap.
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import re
+import statistics
 import sys
 import unittest
 from pathlib import Path
@@ -43,6 +54,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build.all import ENTRIES, GROUPS, build_all, roster_payload  # noqa: E402
+from build import mco  # noqa: E402
+from build.board import cn_count, cn_fraction  # noqa: E402
 from build.mco import STAGING_PATH, build_payload, plain_text  # noqa: E402
 
 
@@ -64,23 +77,24 @@ class McoDashboardTest(unittest.TestCase):
         Five items, one of them negative (the divestiture gain), and the sum has
         to land on the company's own printed endpoints rather than near them.
         """
-        eps = self.source["bridges_2026"]["eps"]
+        eps = self.source["guidance_bridges"]["eps"]
         addbacks = sum(delta for _, delta in eps["addbacks"])
         for i in (0, 1):
             self.assertAlmostEqual(eps["gaap"][i] + addbacks, eps["adjusted"][i], places=2)
-        self.assertEqual(eps["adjusted"], [16.50, 17.00])
-        # The negative add-back is what makes FY2026 unlike the earlier years.
-        self.assertTrue(any(delta < 0 for _, delta in eps["addbacks"]))
+        checks = self.source["_checks"]
+        self.assertEqual(eps["adjusted"], checks["guidance_current"]["adj_diluted_eps_usd"])
+        self.assertEqual(eps["gaap"], checks["guidance_current"]["gaap_diluted_eps_usd"])
+        self.assertEqual([delta for _, delta in eps["addbacks"]], checks["eps_bridge_usd"])
 
     def test_the_margin_bridge_closes_to_a_tenth_of_a_point(self) -> None:
-        margin = self.source["bridges_2026"]["margin"]
+        margin = self.source["guidance_bridges"]["margin"]
         addbacks = sum(delta for _, delta in margin["addbacks"])
         for i in (0, 1):
             self.assertAlmostEqual(margin["gaap"][i] + addbacks, margin["adjusted"][i], places=1)
-        self.assertEqual(margin["adjusted"], [52.0, 53.0])
+        self.assertEqual(margin["adjusted"], self.source["_checks"]["guidance_current"]["adj_operating_margin_pct"])
 
     def test_the_cash_flow_bridge_closes(self) -> None:
-        fcf = self.source["bridges_2026"]["fcf"]
+        fcf = self.source["guidance_bridges"]["fcf"]
         for i in (0, 1):
             self.assertAlmostEqual(fcf["ocf"][i] - fcf["capex"], fcf["fcf"][i], places=2)
 
@@ -115,26 +129,35 @@ class McoDashboardTest(unittest.TestCase):
         the point of this test now.
         """
         above, inside, below = self._tally("Oct")
-        self.assertEqual((above, inside, below), (4, 3, 1))
-        self.assertEqual(above + inside + below, 8, "eight finished years")
+        finished = sum(1 for v in self.source["annual_guidance_history"]["actual_adj_eps_usd"]
+                       if v is not None)
+        self.assertEqual(above + inside + below, finished)
         years = self.source["annual_guidance_history"]["fiscal_years"]
         actual = self.source["annual_guidance_history"]["actual_adj_eps_usd"]
         low = self.source["annual_guidance_history"]["adj_eps_lo"]["Oct"]
         misses = [year for year, value, floor in zip(years, actual, low)
                   if value is not None and floor is not None and value < floor]
-        self.assertEqual(misses, [2018])
+        # FY2018 is history: whatever later years do, it stays a miss.
+        self.assertIn(2018, misses)
+        self.assertEqual(len(misses), below)
+        headline = self.payload["headline"]
+        self.assertIn(f"{finished} 个已完结年度里，实际值相对末次（10 月）指引"
+                      f"高于上限 {above} 次、落在区间内 {inside} 次、跌破下限 {below} 次", headline)
 
-    def test_the_initial_guidance_was_never_once_right(self) -> None:
-        """Not a rounding of the same fact: the February range never contained it."""
+    def test_the_initial_guidance_claim_follows_its_tally(self) -> None:
+        """「一次都没落在区间内」 is a finding about the record, so it stays on the
+        page exactly as long as the February range has never contained a year."""
         above, inside, below = self._tally("Feb")
-        self.assertEqual((above, inside, below), (6, 0, 2))
-        self.assertEqual(inside, 0, "the February band has never contained the year")
+        headline = self.payload["headline"]
+        self.assertIn(f"相对初始（2 月）指引却是高于 {above} 次、跌破 {below} 次", headline)
+        self.assertEqual("一次都没落在区间内" in headline, inside == 0)
+        self.assertEqual("初始指引一次都没对过" in self.payload["brief"], inside == 0)
 
     def test_the_two_horizons_disagree(self) -> None:
         """The page's first section exists only because these two differ."""
         self.assertNotEqual(self._tally("Oct"), self._tally("Feb"))
 
-    def test_fy2022_is_the_one_miss_and_it_was_cut_by_a_third(self) -> None:
+    def test_fy2022_was_cut_by_a_third(self) -> None:
         g = self.source["annual_guidance_history"]
         i = g["fiscal_years"].index(2022)
         feb = (g["adj_eps_lo"]["Feb"][i] + g["adj_eps_hi"]["Feb"][i]) / 2
@@ -176,6 +199,38 @@ class McoDashboardTest(unittest.TestCase):
                           history["adj_eps_hi"]["Oct"][index]), (7.50, 7.65))
         self.assertEqual(history["actual_adj_eps_usd"][index], 7.39)
         self.assertIn("那句话是错的", history["fy2018_note"])
+        # The note that still said FY2018 was outside the record shipped beside
+        # the one saying it was inside, until 2026-09-19.
+        self.assertFalse(any("FY2018 不在第一节的记录里" in note for note in self.payload["notes"]))
+
+    def test_the_cadence_words_match_the_record(self) -> None:
+        """「4/7/10 月各改一次」 and 「后三期各修订一次」 read as though every
+        release moved the range; FY2018's April and July, FY2019's April,
+        FY2023's October and FY2026's April repeated the one before (NC)."""
+        g = self.source["annual_guidance_history"]
+        repeats = 0
+        for i in range(len(g["fiscal_years"])):
+            for before, after in (("Feb", "Apr"), ("Apr", "Jul"), ("Jul", "Oct")):
+                lo, hi = g["adj_eps_lo"], g["adj_eps_hi"]
+                if lo[after][i] is not None and (lo[after][i], hi[after][i]) == (lo[before][i], hi[before][i]):
+                    repeats += 1
+        blob = json.dumps(self.payload, ensure_ascii=False)
+        if repeats:
+            self.assertNotIn("各改一次", blob)
+            self.assertNotIn("各修订一次", blob)
+
+    def test_the_denominator_overstatement_is_measured(self) -> None:
+        """The note said external revenue overstates MIS's margin by 「2–3pp」;
+        across the window it runs past 3.6pp. The range is measured, not typed."""
+        seg = self.source["segment_quarterly"]
+        over = [income / external * 100 - income / total * 100
+                for income, external, total in zip(seg["mis_adj_operating_income_usd_m"],
+                                                   seg["mis_revenue_usd_m"], seg["mis_total_revenue_usd_m"])]
+        words = f"高估 {min(over):.1f}–{max(over):.1f}pp"
+        margin = next(ex for s in self.payload["sections"] for ex in s["exhibits"]
+                      if ex["title"].startswith("两条分部调整后营业利润率"))
+        self.assertIn(words, margin["note"])
+        self.assertTrue(any(words in note for note in self.payload["notes"]))
 
     def test_every_finished_year_has_all_four_vintages(self) -> None:
         g = self.source["annual_guidance_history"]
@@ -208,11 +263,11 @@ class McoDashboardTest(unittest.TestCase):
         """The denominator is total segment revenue, not the external revenue plotted.
 
         Dividing adjusted operating income by the external revenue this page
-        charts overstates MIS's margin by roughly 2-3pp, because MIS bills MA
-        around US$50M a quarter internally. Against total revenue the identity
-        closes to within 0.05pp in all 21 quarters -- that residual is the
-        rounding of the published percentage, nothing else. Pinned tightly on
-        purpose: a loose tolerance here would accept the wrong denominator.
+        charts overstates MIS's margin by 2-4pp, because MIS bills MA tens of
+        millions a quarter internally. Against total revenue the identity closes
+        to within 0.05pp in every quarter -- that residual is the rounding of the
+        published percentage, nothing else. Pinned tightly on purpose: a loose
+        tolerance here would accept the wrong denominator.
         """
         seg = self.source["segment_quarterly"]
         for i, period in enumerate(seg["periods"]):
@@ -412,7 +467,439 @@ class McoDashboardTest(unittest.TestCase):
         headline = self.payload["headline"]
         self.assertIn("末次", headline)
         self.assertIn("初始", headline)
-        self.assertIn("一次都没落在区间内", headline)
+
+    def test_the_page_prints_no_markdown(self) -> None:
+        """Exhibit notes are innerHTML: `**` reaches the reader as two asterisks.
+        Two notes shipped that way until 2026-09-19."""
+        blob = json.dumps(self.payload, ensure_ascii=False)
+        self.assertNotIn("**", blob)
+
+    def test_the_sources_open_the_documents_they_name(self) -> None:
+        """The 10-Q and 10-K entries used to open EDGAR's filing list, not the
+        filing; a label that names one document links to that document."""
+        for source in self.payload["source_links"]:
+            if "10-Q" in source["label"] or "10-K" in source["label"]:
+                self.assertIn("/Archives/edgar/data/1059556/", source["url"], source["label"])
+
+    def test_the_record_extremes_are_the_series_extremes(self) -> None:
+        """「柱子从 −32.3% 到 +17.0%，中位数约 +4%」 and 「平均绝对偏离从 13.3%」 were
+        typed before FY2018 joined the record; the series says +17.4%, +6% and
+        12.2%. Recounted here along a second route."""
+        g = self.source["annual_guidance_history"]
+        feb, oct_ = [], []
+        for i, actual in enumerate(g["actual_adj_eps_usd"]):
+            if actual is None:
+                continue
+            feb.append((actual / ((g["adj_eps_lo"]["Feb"][i] + g["adj_eps_hi"]["Feb"][i]) / 2) - 1) * 100)
+            oct_.append((actual / ((g["adj_eps_lo"]["Oct"][i] + g["adj_eps_hi"]["Oct"][i]) / 2) - 1) * 100)
+        exhibits = [ex for s in self.payload["sections"] for ex in s["exhibits"]]
+        feb_chart = next(ex for ex in exhibits if ex["title"].startswith("调整后摊薄 EPS（2 月那版）"))
+        self.assertIn(f"到 {max(feb):+.1f}%，中位数约 {statistics.median(feb):+.0f}%", feb_chart["note"])
+        oct_chart = next(ex for ex in exhibits if ex["title"].startswith("调整后摊薄 EPS（10 月那版）"))
+        feb_mean = statistics.fmean(abs(v) for v in feb)
+        oct_mean = statistics.fmean(abs(v) for v in oct_)
+        self.assertIn(f"平均绝对偏离就从 {feb_mean:.1f}% 收到 {oct_mean:.1f}%", oct_chart["note"])
+        self.assertIn(f"约{cn_fraction(oct_mean / feb_mean)}", oct_chart["note"])
+        self.assertIn(f"平均绝对偏离 {feb_mean:.1f}%", feb_chart["title"])
+
+    def test_the_annual_window_is_named_by_its_length(self) -> None:
+        """「八年」 survived the window's extension to FY2016 in four titles and a
+        section description, and so did 「FY2022 是低点」 on a chart whose low is
+        FY2017."""
+        ann = self.source["annual_actuals"]
+        n = cn_count(len(ann["fiscal_years"]))
+        routine = next(s for s in self.payload["sections"] if s["id"] == "routine")
+        self.assertIn(f"{n}年营业利润率", routine["description"])
+        for ex in routine["exhibits"][:3]:
+            self.assertTrue(ex["title"].startswith(f"{n}年"), ex["title"])
+        fcf = ann["free_cash_flow_usd_m"]
+        low = ann["fiscal_years"][fcf.index(min(fcf))]
+        self.assertIn(f"FY{low} 的 US${min(fcf) / 1000:.2f}B 是低点", routine["exhibits"][2]["title"])
+        margin = ann["operating_margin_pct"]
+        self.assertIn(f"低点是 FY{ann['fiscal_years'][margin.index(min(margin))]} 的 {min(margin):.1f}%",
+                      routine["exhibits"][0]["note"])
+        tables = {t["title"] for t in self.payload["tables"]}
+        self.assertIn(f"FY{ann['fiscal_years'][0]}–FY{ann['fiscal_years'][-1]} 年度实际", tables)
+        g = self.source["annual_guidance_history"]["fiscal_years"]
+        self.assertIn(f"FY{g[0]}–FY{g[-1]} 全年调整后摊薄 EPS 指引的四个版本与实际（US$/股）", tables)
+
+    def test_the_negative_addback_sentence_counts_the_record(self) -> None:
+        """「FY2026 是八年里第一次出现负的加回项」 was false: FY2018, FY2021, FY2022,
+        FY2024 and FY2025 all carried one. The sentence now counts them."""
+        ann = self.source["annual_actuals"]
+        negatives = ann["negative_adjustments_usd"]
+        eps = next(ex for s in self.payload["sections"] for ex in s["exhibits"]
+                   if ex["title"].endswith("两条线之间的缺口就是每年被加回的那些项"))
+        self.assertNotIn("第一次出现负的加回项", eps["note"])
+        adjusted_years = sum(1 for v in ann["adjusted_diluted_eps_usd"] if v is not None)
+        self.assertIn(f"{cn_count(adjusted_years)}个有调整后口径的年度里有{cn_count(len(negatives))}年", eps["note"])
+        gaps = [a - g for a, g in zip(ann["adjusted_diluted_eps_usd"], ann["diluted_eps_usd"]) if a is not None]
+        self.assertIn(f"缺口在 US${min(gaps):.2f}–{max(gaps):.2f} 之间", eps["note"])
+
+
+def exhibits_of(payload: dict) -> list[dict]:
+    return [ex for section in payload["sections"] for ex in section["exhibits"]]
+
+
+def own_text(payload: dict) -> str:
+    """Everything the page says, less the cross-page table every page carries."""
+    own = dict(payload, tables=[t for t in payload["tables"] if "AI capex" not in t["title"]])
+    return json.dumps(own, ensure_ascii=False)
+
+
+QUARTER_BLOCKS = ("quarter_figures", "current_guidance", "guidance_bridges", "quarter_story")
+PLACEHOLDER = r"\{[a-z_]+\}"
+
+
+class McoChecksTest(unittest.TestCase):
+    """The page's quarter against a record keyed separately from the release.
+
+    `_checks` is typed once per quarter from the earnings release itself, with
+    the place in the document each figure was read from; the builder never reads
+    it (asserted in `test_data_only_roll`). The release prints growth as whole
+    percentages, so the page's one-decimal growth is compared at that precision.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(STAGING_PATH.read_text(encoding="utf-8"))
+        cls.checks = cls.staging["_checks"]
+        cls.seg = cls.staging["segment_quarterly"]
+        cls.payload = build_payload(cls.staging)
+
+    def test_the_page_names_the_checked_quarter(self) -> None:
+        self.assertIn(self.checks["period"], self.payload["title"])
+        self.assertIn(f"截至 {self.checks['period_end']}", self.payload["subtitle"])
+        self.assertIn(f"发布 {self.checks['release_date']}", self.payload["subtitle"])
+
+    def test_the_series_ends_on_the_checked_figures(self) -> None:
+        for key in ("revenue_usd_m", "mis_revenue_usd_m", "ma_revenue_usd_m", "mis_total_revenue_usd_m",
+                    "ma_total_revenue_usd_m", "mis_adj_operating_income_usd_m", "ma_adj_operating_income_usd_m",
+                    "adj_operating_income_usd_m", "adj_operating_margin_pct", "mis_adj_operating_margin_pct",
+                    "ma_adj_operating_margin_pct"):
+            with self.subTest(key=key):
+                self.assertEqual(self.seg[key][-1], self.checks[key])
+        figures = self.staging["quarter_figures"]
+        self.assertEqual(figures["diluted_eps_usd"], self.checks["diluted_eps_usd"])
+        self.assertEqual(figures["adj_diluted_eps_usd"], self.checks["adj_diluted_eps_usd"])
+
+    def test_computed_growth_rounds_to_the_printed_growth(self) -> None:
+        for key, printed in (("revenue_usd_m", "revenue_growth_pct"), ("mis_revenue_usd_m", "mis_growth_pct"),
+                             ("ma_revenue_usd_m", "ma_growth_pct")):
+            values = self.seg[key]
+            with self.subTest(key=key):
+                self.assertEqual(round((values[-1] / values[-5] - 1) * 100), self.checks[printed])
+
+    def test_the_open_year_ends_on_the_checked_guidance(self) -> None:
+        guidance = self.staging["current_guidance"]
+        for key, value in self.checks["guidance_current"].items():
+            with self.subTest(key=key):
+                self.assertEqual(guidance[key], value)
+        g = self.staging["annual_guidance_history"]
+        year = str(guidance["fiscal_year"])
+        vintage = next(v for v in ("Oct", "Jul", "Apr", "Feb") if g["release_dates"][year][v] == guidance["as_of"])
+        i = g["fiscal_years"].index(guidance["fiscal_year"])
+        self.assertEqual([g["adj_eps_lo"][vintage][i], g["adj_eps_hi"][vintage][i]],
+                         self.checks["guidance_current"]["adj_diluted_eps_usd"])
+        self.assertEqual([g["gaap_eps_lo"][vintage][i], g["gaap_eps_hi"][vintage][i]],
+                         self.checks["guidance_current"]["gaap_diluted_eps_usd"])
+        before = ("Feb", "Apr", "Jul", "Oct")[("Feb", "Apr", "Jul", "Oct").index(vintage) - 1]
+        self.assertEqual([g["adj_eps_lo"][before][i], g["adj_eps_hi"][before][i]],
+                         self.checks["guidance_prior"]["adj_diluted_eps_usd"])
+        self.assertEqual(self.staging["latest"]["release_date"], guidance["as_of"])
+
+    def test_the_page_prints_the_checked_figures(self) -> None:
+        c = self.checks
+        headline = self.payload["headline"]
+        self.assertIn(f"收入 US${c['revenue_usd_m']:,.0f}M", headline)
+        self.assertIn(f"调整后营业利润率 {c['adj_operating_margin_pct']:.1f}%", headline)
+        self.assertIn(f"US${c['guidance_current']['adj_diluted_eps_usd'][0]:.2f}–"
+                      f"{c['guidance_current']['adj_diluted_eps_usd'][1]:.2f}", self.payload["brief"])
+        self.assertEqual(mco.headline_metrics(self.staging)[2], f"调整后 EPS ${c['adj_diluted_eps_usd']:.2f}")
+        share = next(ex for ex in exhibits_of(self.payload) if ex["title"].startswith("评级业务占收入"))
+        self.assertIn(f"本季 MIS {c['mis_adj_operating_margin_pct']:.1f}% 对 MA {c['ma_adj_operating_margin_pct']:.1f}%",
+                      share["note"])
+        bridge = next(ex for ex in exhibits_of(self.payload) if ex["title"].startswith("指引表自己就能对平"))
+        self.assertIn(f"US${c['guidance_current']['adj_diluted_eps_usd'][0]:.2f}", bridge["title"])
+
+
+def rolled_back(staging: dict) -> dict:
+    """The series one quarter earlier: the segment arrays lose their last cell,
+    the open year loses its latest vintage, and the quarter's own blocks go."""
+    s = copy.deepcopy(staging)
+    seg = s["segment_quarterly"]
+    for key, values in seg.items():
+        if isinstance(values, list) and len(values) == len(staging["segment_quarterly"]["periods"]):
+            seg[key] = values[:-1]
+    g = s["annual_guidance_history"]
+    year = max(g["fiscal_years"])
+    i = g["fiscal_years"].index(year)
+    dates = g["release_dates"][str(year)]
+    vintage = next(v for v in ("Oct", "Jul", "Apr", "Feb") if dates[v] is not None)
+    dates[vintage] = None
+    for key in list(g):
+        if isinstance(g[key], dict) and vintage in g[key] and isinstance(g[key][vintage], list):
+            g[key][vintage][i] = None
+    previous = next(v for v in ("Oct", "Jul", "Apr", "Feb") if dates[v] is not None)
+    for key in ("_checks",) + QUARTER_BLOCKS:
+        s.pop(key, None)
+    s["latest"] = dict(s["latest"], period_label=seg["periods"][-1], period_end=seg["period_ends"][-1],
+                       release_date=dates[previous])
+    s["sources"] = ([{"label": f"Moody’s {seg['periods'][-1]} 业绩新闻稿（8-K EX-99.1）",
+                      "url": "https://www.sec.gov/Archives/edgar/data/1059556/000162828026026383/previous.htm"}]
+                    + [src for src in s["sources"] if "业绩新闻稿" not in src["label"] and "10-Q" not in src["label"]])
+    return s
+
+
+def rolled_forward(staging: dict) -> dict:
+    """The series one quarter later with made-up figures; a fourth quarter's
+    release settles the year and opens the next with a February range."""
+    s = copy.deepcopy(staging)
+    seg = s["segment_quarterly"]
+    last = seg["periods"][-1]
+    quarter, year = int(last[1]), int(last[-4:])
+    quarter, year = (1, year + 1) if quarter == 4 else (quarter + 1, year)
+    label = f"Q{quarter} {year}"
+    ends = {1: "03-31", 2: "06-30", 3: "09-30", 4: "12-31"}
+    n = len(seg["periods"])
+    for key, values in seg.items():
+        if not isinstance(values, list) or len(values) != n:
+            continue
+        if key == "periods":
+            values.append(label)
+        elif key == "period_ends":
+            values.append(f"{year}-{ends[quarter]}")
+        else:
+            values.append(values[-1] * 1.01)
+    g = s["annual_guidance_history"]
+    open_year = max(g["fiscal_years"])
+    i = g["fiscal_years"].index(open_year)
+    dates = g["release_dates"][str(open_year)]
+    release = {1: f"{year}-04-25", 2: f"{year}-07-25", 3: f"{year}-10-25", 4: f"{year + 1}-02-15"}[quarter]
+    missing = next((v for v in ("Feb", "Apr", "Jul", "Oct") if dates[v] is None), None)
+    if missing:
+        before = ("Feb", "Apr", "Jul", "Oct")[("Feb", "Apr", "Jul", "Oct").index(missing) - 1]
+        dates[missing] = release
+        for key in list(g):
+            if isinstance(g[key], dict) and missing in g[key] and isinstance(g[key][missing], list):
+                g[key][missing][i] = g[key][before][i]
+    if quarter == 4:
+        g["actual_adj_eps_usd"][i] = (g["adj_eps_lo"]["Oct"][i] + g["adj_eps_hi"]["Oct"][i]) / 2
+        g["fiscal_years"].append(open_year + 1)
+        g["actual_adj_eps_usd"].append(None)
+        g["release_dates"][str(open_year + 1)] = {"Feb": release, "Apr": None, "Jul": None, "Oct": None}
+        for key in list(g):
+            if isinstance(g[key], dict) and "Feb" in g[key] and isinstance(g[key]["Feb"], list):
+                for v in ("Feb", "Apr", "Jul", "Oct"):
+                    g[key][v].append(g[key]["Oct"][i] if v == "Feb" else None)
+        ann = s["annual_actuals"]
+        for key, values in ann.items():
+            if isinstance(values, list):
+                values.append(open_year if key == "fiscal_years" else values[-1] * 1.05)
+        ann["adjusted_diluted_eps_usd"][-1] = g["actual_adj_eps_usd"][i]
+        ann["free_cash_flow_usd_m"][-1] = ann["operating_cash_flow_usd_m"][-1] - ann["capex_usd_m"][-1]
+    for key in ("_checks",) + QUARTER_BLOCKS:
+        s.pop(key, None)
+    s["latest"] = dict(s["latest"], period_label=label, period_end=f"{year}-{ends[quarter]}", release_date=release)
+    s["sources"] = [{"label": f"Moody’s {label} 业绩新闻稿（8-K EX-99.1）",
+                     "url": "https://www.sec.gov/Archives/edgar/data/1059556/next.htm"}] + s["sources"]
+    return s
+
+
+class McoRollTest(unittest.TestCase):
+    """What a roll can change without touching the builder."""
+
+    STORY_ONLY = ("被两笔业务处置压住的 MA 收入增速", "见口径说明", "Learning Solutions",
+                  "“high-single-digit percent range”")
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.s = json.loads(STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = build_payload(cls.s)
+        cls.text = own_text(cls.payload)
+
+    def test_a_block_stamped_for_another_quarter_stops_the_build(self) -> None:
+        for key in QUARTER_BLOCKS:
+            stale = copy.deepcopy(self.s)
+            stale[key]["period"] = "Q1 1999"
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "stamped"):
+                    build_payload(stale)
+        stale = copy.deepcopy(self.s)
+        stale["quarter_figures"]["period"] = "Q1 1999"
+        with self.assertRaisesRegex(ValueError, "stamped"):
+            mco.headline_metrics(stale)
+
+    def test_the_quarters_own_release_must_be_in_the_sources(self) -> None:
+        bare = copy.deepcopy(self.s)
+        prefix = f"Moody’s {self.s['segment_quarterly']['periods'][-1]} 业绩新闻稿"
+        bare["sources"] = [src for src in bare["sources"] if not src["label"].startswith(prefix)]
+        self.assertLess(len(bare["sources"]), len(self.s["sources"]))
+        with self.assertRaisesRegex(ValueError, "sources"):
+            build_payload(bare)
+
+    def test_a_quarter_without_its_blocks_leaves_them_out(self) -> None:
+        bare = copy.deepcopy(self.s)
+        for key in QUARTER_BLOCKS:
+            del bare[key]
+        payload = build_payload(bare)
+        text = own_text(payload)
+        for phrase in self.STORY_ONLY:
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, self.text)
+                self.assertNotIn(phrase, text)
+        section = next(s for s in payload["sections"] if s["id"] == "next_quarter")
+        self.assertEqual(section["exhibits"], [])
+        numbers = [ex["n"] for ex in exhibits_of(payload)]
+        self.assertEqual(numbers, list(range(1, len(numbers) + 1)))
+        self.assertEqual([t["n"] for t in payload["tables"]],
+                         list(range(numbers[-1] + 1, numbers[-1] + 1 + len(payload["tables"]))))
+        self.assertNotRegex(text, PLACEHOLDER)
+        self.assertNotRegex(text, r"\{EX_[A-Z_]+\}")
+        self.assertTrue(mco.headline_metrics(bare)[2].startswith("MA adj OpM"))
+
+    def test_the_quarter_before_builds_from_the_series_alone(self) -> None:
+        rolled = rolled_back(self.s)
+        payload = build_payload(rolled)
+        label = rolled["segment_quarterly"]["periods"][-1]
+        self.assertEqual(payload["latest"]["disclosed_period_label"], label)
+        self.assertIn(f"{label} 季报仪表盘", payload["title"])
+        self.assertNotIn(self.s["segment_quarterly"]["periods"][-1], own_text(payload))
+        final_band = exhibits_of(payload)[0]
+        year = max(rolled["annual_guidance_history"]["fiscal_years"])
+        self.assertIn(f"FY{year} 尚无 10 月期，图上用 4 月那期", final_band["src_extra"])
+
+    def test_the_quarters_after_build_from_the_series_alone(self) -> None:
+        s = self.s
+        for _ in range(2):
+            s = rolled_forward(s)
+            payload = build_payload(s)
+            self.assertIn(f"{s['segment_quarterly']['periods'][-1]} 季报仪表盘", payload["title"])
+            self.assertNotRegex(own_text(payload), PLACEHOLDER)
+        g = s["annual_guidance_history"]
+        closed = max(g["fiscal_years"]) - 1
+        final_band = exhibits_of(payload)[0]
+        self.assertEqual(final_band["xlabels"][-2], f"FY{closed}")
+        self.assertIn(f"FY{closed + 1} 尚无 10 月期，图上用 2 月那期", final_band["src_extra"])
+        finished = sum(1 for v in g["actual_adj_eps_usd"] if v is not None)
+        self.assertIn(f"{finished} 个已完结年度里", payload["headline"])
+
+
+class McoFindingsTest(unittest.TestCase):
+    """Every judgement on the page says what the series says, both ways.
+
+    Each case forces the series into a state where a finding is true, then into
+    one where it is false, and checks that the words follow. Forcing rather than
+    flipping today's data keeps these valid after a roll.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.s = json.loads(STAGING_PATH.read_text(encoding="utf-8"))
+
+    def page(self, *edits) -> str:
+        staged = copy.deepcopy(self.s)
+        for edit in edits:
+            edit(staged)
+        return own_text(build_payload(staged))
+
+    def test_the_ma_revenue_claims(self) -> None:
+        def rising(s):
+            ma = s["segment_quarterly"]["ma_revenue_usd_m"]
+            for i in range(1, len(ma)):
+                ma[i] = max(ma[i], ma[i - 1] + 1)
+
+        def one_down_year(s):
+            rising(s)
+            ma = s["segment_quarterly"]["ma_revenue_usd_m"]
+            ma[10] = ma[6] - 1
+
+        up = self.page(rising)
+        self.assertIn("之间来回，MA 只是一路往上", up)
+        self.assertIn("有同比基数的季度里没有一个季度同比为负", up)
+        down = self.page(one_down_year)
+        self.assertIn("MA 有一季同比为负", down)
+        self.assertNotIn("没有一个季度同比为负", down)
+        self.assertIn("MA 同比从未为负", self.page())
+
+    def test_the_ma_margin_claims(self) -> None:
+        def steady(s):
+            m = s["segment_quarterly"]["ma_adj_operating_margin_pct"]
+            for i in range(len(m)):
+                m[i] = 20.0 + 0.3 * i
+
+        climbing = self.page(steady)
+        self.assertIn("MA 稳步抬升", climbing)
+        self.assertIn("一格一格抬上去的", climbing)
+        bumpy = self.page()
+        self.assertNotIn("稳步抬升", bumpy)
+        self.assertIn("但不是一格一格抬上去的", bumpy)
+
+    def test_the_final_guidance_claims(self) -> None:
+        def never_below(s):
+            g = s["annual_guidance_history"]
+            for i, actual in enumerate(g["actual_adj_eps_usd"]):
+                if actual is not None:
+                    g["actual_adj_eps_usd"][i] = max(actual, g["adj_eps_lo"]["Oct"][i])
+
+        clean = self.page(never_below)
+        self.assertIn("末次指引从没跌破过", clean)
+        self.assertIn("年里一次都没有跌破过末次指引的下限", clean)
+        self.assertNotIn("被排除的那一年，恰好是唯一一年推翻这句话的", clean)
+        self.assertNotIn("唯一跌破末次指引下限的一年", clean)
+        current = self.page()
+        self.assertIn("被排除的那一年，恰好是唯一一年推翻这句话的", current)
+
+    def test_the_initial_guidance_claims(self) -> None:
+        def one_inside(s):
+            g = s["annual_guidance_history"]
+            i = next(i for i, v in enumerate(g["actual_adj_eps_usd"]) if v is not None)
+            g["actual_adj_eps_usd"][i] = (g["adj_eps_lo"]["Feb"][i] + g["adj_eps_hi"]["Feb"][i]) / 2
+
+        once = self.page(one_inside)
+        self.assertIn("初始指引对过一次", once)
+        self.assertNotIn("一次都没落在区间内", once)
+        self.assertNotIn("2 月画的那条带子从来没对过", once)
+
+    def test_the_revision_extremes(self) -> None:
+        def deeper_cut(s):
+            g = s["annual_guidance_history"]
+            i = g["fiscal_years"].index(2019)
+            g["adj_eps_lo"]["Oct"][i], g["adj_eps_hi"]["Oct"][i] = 4.0, 4.2
+
+        text = self.page(deeper_cut)
+        self.assertIn("FY2019 砍了", text)
+        self.assertIn("FY2019 指引中值从 2 月的", text)
+        self.assertNotIn("FY2019 当年发行量随利率崩掉", text)
+
+    def test_the_annual_lows(self) -> None:
+        def no_settlement(s):
+            ann = s["annual_actuals"]
+            ann["operating_margin_pct"][0] = 50.0
+            ann["free_cash_flow_usd_m"][1] = 3000.0
+
+        text = self.page(no_settlement)
+        self.assertIn("低点是 FY2022 的 34.4%，正是发行量崩掉那年；", text)
+        self.assertIn("穆迪的现金问题从来不在资本开支上，而在发行量上", text)
+        current = self.page()
+        self.assertIn("FY2017 那个低点是那笔 DOJ 和解款实际付出去的一年", current)
+
+    def test_the_capex_share_claim(self) -> None:
+        def light(s):
+            ann = s["annual_actuals"]
+            ann["capex_usd_m"] = [r * 0.03 for r in ann["revenue_usd_m"]]
+
+        self.assertIn("仍不到收入的 5%", self.page(light))
+        self.assertIn("最高也只占收入的", self.page())
+
+    def test_the_bridge_claims(self) -> None:
+        def broken(s):
+            s["guidance_bridges"]["eps"]["addbacks"][0][1] += 0.05
+
+        text = self.page(broken)
+        self.assertNotIn("指引表自己就能对平", text)
+        self.assertIn("指引表三条桥没有全部对平", text)
+        self.assertIn("对不上", text)
 
 
 if __name__ == "__main__":

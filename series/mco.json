@@ -1037,7 +1037,40 @@
       43.42
     ],
     "window_note": "FY2016 与 FY2017 由 XBRL 的年度事实补入（Revenues / OperatingIncomeLoss / NetIncomeLoss / NetCashProvidedByUsedInOperatingActivities / PaymentsToAcquirePropertyPlantAndEquipment / EarningsPerShareDiluted，各取该财年 10-K 首次申报的值）；自由现金流与营业利润率按同样两条腿现算。**FY2016 那一格不是异常值，是那一年真的长这样**：营业利润 638.7 对收入 3,604.2，营业利润率 17.7%，净利润 266.6、摊薄 EPS 1.36 —— 当年计提了与 DOJ 和解相关的一次性费用，而 FY2017 的经营现金流 747.5 是那笔钱实际付出去的一年。八年的窗口从 FY2018 起，看不到这一段。",
-    "adjusted_eps_hole_note": "FY2016 与 FY2017 的**调整后**摊薄 EPS 留空。公司的调整后口径逐年定义不同，而本站接入的季度调整后序列从 2017Q1 起、年度调整后 EPS 从 FY2018 起；拿 GAAP 那条去顶替，或者拿四个季度的调整后 EPS 相加（EPS 不可加），都会造出一个公司没说过的数。"
+    "adjusted_eps_hole_note": "FY2016 与 FY2017 的**调整后**摊薄 EPS 留空。公司的调整后口径逐年定义不同，而本站接入的季度调整后序列从 2017Q1 起、年度调整后 EPS 从 FY2018 起；拿 GAAP 那条去顶替，或者拿四个季度的调整后 EPS 相加（EPS 不可加），都会造出一个公司没说过的数。",
+    "negative_adjustments_usd": {
+      "2018": [
+        [
+          "美国税改影响",
+          -0.3
+        ]
+      ],
+      "2021": [
+        [
+          "BitSight 少数股权投资的非现金收益",
+          -0.14
+        ]
+      ],
+      "2022": [
+        [
+          "债务清偿收益",
+          -0.29
+        ]
+      ],
+      "2024": [
+        [
+          "权益法投资的重估收益",
+          -0.03
+        ]
+      ],
+      "2025": [
+        [
+          "业务处置收益",
+          -0.1
+        ]
+      ]
+    },
+    "negative_adjustments_note": "各年调整后摊薄 EPS 调节表里带负号的加回项（税后、每股）：FY2018 读自 2019-02-15 业绩新闻稿 Table 12（Net impact of U.S. tax reform (0.30)）；FY2019–FY2020 读自 2021-02-12 那份（两年都没有负项）；FY2021–FY2022 读自 2023-01-31 那份（Net non-cash gain relating to minority investment in BitSight (0.14)、Net gain on extinguishment of debt (0.29)）；FY2023–FY2024 读自 2025-02-13 那份（FY2024 Net gain on previously held equity method investments (0.03)，FY2023 无）；FY2025 读自 2026-02-18 那份（Net gain on divestiture of business and related costs (0.10)）。FY2016–FY2017 不在调整后记录里，不列。"
   },
   "segment_quarterly": {
     "periods": [
@@ -1712,20 +1745,85 @@
     "period_end": "2026-06-30",
     "release_date": "2026-07-22",
     "period_label": "Q2 2026",
-    "revenue_usd_m": 2185.0,
-    "adj_operating_margin_pct": 55.3,
-    "mis_revenue_usd_m": 1260.0,
-    "ma_revenue_usd_m": 925.0,
-    "mis_adj_operating_margin_pct": 68.3,
-    "ma_adj_operating_margin_pct": 33.6,
-    "diluted_eps_usd": 5.03,
-    "adj_diluted_eps_usd": 4.68,
-    "mis_transactional_revenue_usd_m": 891.0,
-    "ma_arr_usd_m": 3661.0,
     "analysis_date": "2026-08-29",
     "audit_status": "unaudited"
   },
+  "_checks": {
+    "period": "Q2 2026",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-22",
+    "revenue_usd_m": 2185.0,
+    "revenue_growth_pct": 15,
+    "mis_revenue_usd_m": 1260.0,
+    "mis_growth_pct": 25,
+    "ma_revenue_usd_m": 925.0,
+    "ma_growth_pct": 4,
+    "mis_total_revenue_usd_m": 1312.0,
+    "ma_total_revenue_usd_m": 928.0,
+    "mis_adj_operating_income_usd_m": 896.0,
+    "ma_adj_operating_income_usd_m": 312.0,
+    "adj_operating_income_usd_m": 1208.0,
+    "adj_operating_margin_pct": 55.3,
+    "mis_adj_operating_margin_pct": 68.3,
+    "ma_adj_operating_margin_pct": 33.6,
+    "operating_margin_pct": 47.9,
+    "diluted_eps_usd": 5.03,
+    "adj_diluted_eps_usd": 4.68,
+    "guidance_current": {
+      "adj_diluted_eps_usd": [
+        16.5,
+        17.0
+      ],
+      "gaap_diluted_eps_usd": [
+        16.0,
+        16.5
+      ],
+      "adj_operating_margin_pct": [
+        52.0,
+        53.0
+      ],
+      "operating_margin_pct": [
+        44.0,
+        45.0
+      ],
+      "operating_cash_flow_usd_b": [
+        3.15,
+        3.35
+      ],
+      "free_cash_flow_usd_b": [
+        2.7,
+        2.9
+      ],
+      "capex_usd_m": 450.0
+    },
+    "guidance_prior": {
+      "adj_diluted_eps_usd": [
+        16.4,
+        17.0
+      ],
+      "gaap_diluted_eps_usd": [
+        16.0,
+        16.6
+      ]
+    },
+    "eps_bridge_usd": [
+      0.9,
+      0.5,
+      0.25,
+      0.1,
+      -1.25
+    ],
+    "source": "Moody's Q2 2026 业绩新闻稿（8-K EX-99.1，acc 0001628280-26-049104，电头「NEW YORK, NY - July 22, 2026」）：首页摘要表（MCO Revenue 2,185 / 15%、Operating Margin 47.9、Adjusted Operating Margin 55.3、Diluted EPS 5.03、Adjusted Diluted EPS 4.68、MA Revenue 925 / 4%、MIS Revenue 1,260 / 25%、MA / MIS Adjusted Operating Margin 33.6 / 68.3）；Table 5 Financial Information by Segment（Total revenue 928 / 1,312，Adjusted Operating Income 312 / 896 / 1,208）；Full Year 2026 Guidance 表 Current 与 Last Publicly Disclosed 两栏（Adjusted Diluted EPS $16.50 to $17.00 / $16.40 to $17.00，Diluted EPS $16.00 to $16.50 / $16.00 to $16.60，Adjusted Operating Margin 52% to 53%，Operating Margin 44% to 45%，Operating Cash Flow $3.15 to $3.35 billion，Free Cash Flow $2.7 to $2.9 billion）与其下三张调节表（EPS 加回 0.90 / 0.50 / 0.25 / 0.10 / (1.25)，资本开支 Approximately $450 million）。",
+    "checked_on": "2026-09-19"
+  },
+  "quarter_figures": {
+    "period": "Q2 2026",
+    "diluted_eps_usd": 5.03,
+    "adj_diluted_eps_usd": 4.68,
+    "source": "Moody's Q2 2026 业绩新闻稿首页摘要表：MCO Diluted EPS 5.03、MCO Adjusted Diluted EPS 4.68（季度值；series 不存季度 EPS 序列）。"
+  },
   "current_guidance": {
+    "period": "Q2 2026",
     "as_of": "2026-07-22",
     "fiscal_year": 2026,
     "adj_diluted_eps_usd": [
@@ -1765,7 +1863,8 @@
     },
     "note": "收入类各行公司只给文字口径（“high-single-digit percent range”），不是数字区间，本页因此不画成带子。"
   },
-  "bridges_2026": {
+  "guidance_bridges": {
+    "period": "Q2 2026",
     "eps": {
       "gaap": [
         16.0,
@@ -1834,6 +1933,14 @@
       ]
     }
   },
+  "quarter_story": {
+    "period": "Q2 2026",
+    "section_tail": "以及被两笔业务处置压住的 MA 收入增速",
+    "ma_note": "MA 这一季只有 {ma_yoy}，是因为口径里少了两块被卖掉的业务，见口径说明。",
+    "divestitures": "MA 本季收入同比只有 {ma_yoy}，口径上受两笔业务处置影响：Learning Solutions，以及本季完成的 MA Regulatory Solutions。公司在指引脚注里把处置收益单列为约 US${gain}/股 的负向加回项。",
+    "verbal_quote": "“high-single-digit percent range”",
+    "source": "Moody's Q2 2026 业绩新闻稿（acc 0001628280-26-049104）：MA「Revenue increased 4% … Revenue increased by 8% on an organic constant currency basis」、「Transactional revenue declined 72% … Learning Solutions divestiture」；指引表脚注 (2)「pre-tax gain on the divestiture of the MA Regulatory Solutions business recorded in the second quarter of 2026」、(7)「divestitures of MA's Learning and Regulatory Solutions businesses」；EPS 调节表 Gain on business divestitures Approximately ($1.25)。"
+  },
   "sources": [
     {
       "label": "Moody’s Q2 2026 业绩新闻稿（8-K EX-99.1，2026-07-22）",
@@ -1841,11 +1948,11 @@
     },
     {
       "label": "Moody’s 截至 2026-06-30 的 10-Q",
-      "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001059556&type=10-Q"
+      "url": "https://www.sec.gov/Archives/edgar/data/1059556/000162828026049398/mco-20260630.htm"
     },
     {
       "label": "Moody’s FY2025 年报 10-K（2026-02-18）",
-      "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001059556&type=10-K"
+      "url": "https://www.sec.gov/Archives/edgar/data/1059556/000162828026009136/mco-20251231.htm"
     },
     {
       "label": "SEC EDGAR：Moody’s Corporation 全部申报",
