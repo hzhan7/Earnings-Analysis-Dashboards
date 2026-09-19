@@ -714,6 +714,15 @@ CONVERTED = {
                   "2020 releases; before that its only forward figure was the "
                   "full-year range.",
         "下季指引的偏离，按口径分开": "the deviation view of the same next-quarter record.",
+        # The three segments start 2026Q1. The 8-K of 2026-03-13 (0001628280-26-017497)
+        # recast them back to 2023Q1 -- EX-99.1 covers 2025 vs 2024, EX-99.2 2024 vs
+        # 2023 -- and says so in its Item 7.01 text. None of PMI's later 2026 filings
+        # (the two 10-Qs, the Item 7.01 8-Ks through 2026-09-18) goes further back,
+        # and the page will not splice the four geographic segments on.
+        "三个报告分部的净收入": "segments recast only as far back as 2023Q1 (8-K of 2026-03-13).",
+        "分部调整后毛利率：国际无烟": "same recast floor, adjusted gross margin by segment.",
+        "美国分部调整后毛利率：当前": "threshold line over the same recast segment record.",
+        "国际无烟分部调整后毛利率：当前": "threshold line over the same recast segment record.",
     },
     "race": {
         # Ferrari guided only shipments, revenue, adjusted EBITDA and net debt
@@ -989,6 +998,10 @@ FLOOR_KIND = {
     'pm': {
         '下季每股收益': 'disclosure',
         '下季指引的偏离，按口径分开': 'disclosure',
+        '三个报告分部的净收入': 'disclosure',
+        '分部调整后毛利率：国际无烟': 'disclosure',
+        '美国分部调整后毛利率：当前': 'disclosure',
+        '国际无烟分部调整后毛利率：当前': 'disclosure',
     },
     'race': {
         '调整后 EBITDA': 'disclosure',
@@ -1162,7 +1175,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 122)
+        self.assertEqual(settled.count("disclosure"), 126)
         self.assertEqual(settled.count("design"), 34)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
@@ -1198,7 +1211,7 @@ class ChartWindowTest(unittest.TestCase):
         combined = {slug: SHORT_BY_DESIGN.get(slug, 0) + UNEXPLAINED_LONG.get(slug, 0)
                     for slug in set(SHORT_BY_DESIGN) | set(UNEXPLAINED_LONG)}
         self.assertEqual(by_page, combined)
-        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 64)
+        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 60)
         # Zero, as of the SK hynix backfill. This number is not load-bearing on
         # its own -- an empty dict sums to zero for free -- but `by_length ==
         # UNEXPLAINED_LONG` two lines down is, and that one is what turns red if
@@ -1371,7 +1384,7 @@ SHORT_BY_DESIGN = {
     'bc': 7,
     'mc': 10,
     'nvda': 11,
-    'pm': 9,
+    'pm': 5,
     'rms': 7,
     'samsung': 15,
     'skhynix': 5,

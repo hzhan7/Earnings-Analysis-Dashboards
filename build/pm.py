@@ -656,6 +656,26 @@ def segment_releases(staging: dict) -> str:
     return f"{span}业绩 8-K EX-99.1 的经营回顾表与同期 {report} 分部附注"
 
 
+def recast_block(staging: dict) -> dict | None:
+    """The filing that reprinted earlier quarters on the current segments, with the
+    segment quarters this page took from it (``taken``)."""
+    recast = staging["segments"].get("recast_filing")
+    if not recast:
+        return None
+    first, last = yq(recast["first"]), yq(recast["last"])
+    taken = [p for p in staging["segments"]["periods"] if first <= yq(p) <= last]
+    return {**recast, "taken": taken}
+
+
+def recast_source(staging: dict, tables: str) -> str:
+    """``'2023–2025 年各季取自 2026-03-13 按新分部重印的 8-K（…）；'`` -- empty when none was taken."""
+    recast = recast_block(staging)
+    if recast is None or not recast["taken"]:
+        return ""
+    return (f"{quarter_years(recast['taken'])} 年各季取自 {recast['date']} 按新分部重印的 8-K"
+            f"（{recast['accession']}，{tables}，未经审计补充信息）；")
+
+
 def year_ago_index(labels: list[str], index: int) -> int | None:
     year, number = yq(labels[index])
     target = (year - 1, number)
@@ -678,7 +698,7 @@ def segment_revenue(staging: dict) -> dict:
     long = staging["long"]
     total = dict(zip(long["periods"], long["net_revenues_usd_m"]))
     gaps = [abs(sum(rev[k][i] for k in SEG_KEYS) - total[p]) for i, p in enumerate(seg["periods"])]
-    recast = seg.get("recast_filing")
+    recast = recast_block(staging)
     n = len(seg["periods"])
     return {
         "ref": "EX_SEG_REV",
@@ -687,18 +707,19 @@ def segment_revenue(staging: dict) -> dict:
         "xlabels": seg["period_labels"],
         "groups": [{"name": SEG_NAMES[k], "color": SEG_COLORS[k], "values": rounded(rev[k])}
                    for k in SEG_KEYS],
-        "bar_labels": True,
+        # a label on every bar reads at a few quarters, not at three bars times a dozen
+        "bar_labels": n <= 8,
         "fmt": "f0c", "label_fmt": "f0c",
         "ylab": "US$M",
         "note": (
-            f"<b>现行三个分部本页只画了{cn_count(n)}个季度。</b>PMI 自 2026 年第一季度起把四个地理分部改成"
-            "这三个；图上的 2025 季度是 2026 年各份新闻稿印出的上年对照列。"
-            + (f"公司另在 {recast['date']} 的 8-K（{recast['accession']}，{recast['exhibits']}）按新分部重印了 "
-               f"{recast['covers']} 各季，属未经审计的补充信息，本页尚未接入。" if recast else "")
-            + "本页不把这条线接到它取代的四个地理分部上 —— 那会是把两套口径画成一条。"
+            f"现行三个分部自 {cn_quarter(NEW_SEGMENTS_FROM)}起启用，"
+            + (f"{cn_quarter(recast['taken'][0])}至 {cn_quarter(recast['taken'][-1])}取自公司 {recast['date']} "
+               "按新分部的未经审计重印，" if recast and recast["taken"] else "")
+            + "本页不把这条线往前接到它取代的四个地理分部上 —— 那会是把两套口径画成一条。"
             + (f"三个分部相加等于合并净收入，{cn_count(n)}个季度逐季核对无差。" if max(gaps) < 0.5 else
-               f"三个分部相加与合并净收入最多差 US${max(gaps):,.0f}M。")),
-        "src_extra": f"{segment_releases(staging)}。",
+               f"三个分部相加与合并净收入在{cn_count(n)}个季度里最多差 US${max(gaps):,.0f}M。")),
+        "src_extra": (recast_source(staging, recast["tables"]["net_revenues"] if recast else "")
+                      + f"{segment_releases(staging)}。"),
     }
 
 
@@ -713,29 +734,31 @@ def segment_margin(staging: dict) -> dict:
     pairs = [(i, j) for i, j in pairs if j is not None]
     rising = {k: gm[k][-1] > gm[k][ago] for k in ("pmi",) + SEG_KEYS}
     story = block(staging, "quarter_story")
+    # The run of same-direction year-on-year moves that ends at the page's quarter:
+    # the whole record would be a dozen clauses, and the run is the part in play.
+    moves = [(i, gm["us"][i] - gm["us"][j]) for i, j in pairs]
+    run = [moves[-1]]
+    for i, move in reversed(moves[:-1]):
+        if (move > 0) - (move < 0) != (run[0][1] > 0) - (run[0][1] < 0):
+            break
+        run.insert(0, (i, move))
     history = "，".join(
-        f"{labels[i]} 同比 " + (signed(gm['us'][i] - gm['us'][j], 1, 'pp') if i == last
-                              else minus_sign(signed(gm['us'][i] - gm['us'][j], 1, 'pp')))
-        for i, j in pairs)
+        f"{labels[i]} 同比 " + (signed(move, 1, 'pp') if i == last else minus_sign(signed(move, 1, 'pp')))
+        for i, move in run)
+    direction = "下降" if run[-1][1] < 0 else "上升" if run[-1][1] > 0 else "持平"
+    history = (f"已连续{cn_count(len(run))}个季度同比{direction}：{history}" if len(run) > 1
+               else history)
     if rising["pmi"] and rising["international_smoke_free"] and rising["international_combustibles"] \
             and not rising["us"]:
         tension = ("<b>这是本季真正的张力，也是集团数字看不出来的那一层。</b>"
                    "集团调整后毛利率同比还在抬，国际无烟与国际组合烟草两条都在抬，"
-                   f"只有美国一条在塌：{history}。"
+                   f"只有美国一条在塌，{history}。"
                    + story.get("us_gross_margin_reason", "")
                    + "所以「毛利率在改善」和「美国单位经济性在恶化」这两句话同时为真，"
                    "而后者是估值的边际变量。")
     else:
-        tension = f"美国分部调整后毛利率的同比变化：{history}。" + story.get("us_gross_margin_reason", "")
-    i, j = pairs[0]
-    # Only the quarters before the new segments are back-computed; once a year-ago
-    # column is a quarter the page read on its own, "the year-ago figures" no
-    # longer describes them.
-    derived = [p for p in seg["periods"] if yq(p) < yq(NEW_SEGMENTS_FROM)]
-    if all(yq(seg["periods"][b]) < yq(NEW_SEGMENTS_FROM) for _, b in pairs):
-        derived_words = "上年同期"
-    else:
-        derived_words = "、".join(f"{y} 年" for y in sorted({yq(p)[0] for p in derived})) + "各季"
+        tension = f"美国分部调整后毛利率{history}。" + story.get("us_gross_margin_reason", "")
+    recast = recast_block(staging)
     return {
         "ref": "EX_SEG_GM",
         "kind": "lines",
@@ -748,13 +771,9 @@ def segment_margin(staging: dict) -> dict:
                for k in SEG_KEYS]),
         "fmt": "pct1", "yfmt": "pct1", "label_fmt": "pct1", "end_label": True,
         "ylab": "调整后毛利率 %",
-        "note": (
-            tension
-            + f"{derived_words}的百分比是当期表里印出的百分点变化倒推的"
-            f"（{gm['pmi'][i]:.1f} − {gm['pmi'][i] - gm['pmi'][j]:.1f} = {gm['pmi'][j]:.1f}），"
-            "是公司自己的算术，不是本页的估计。"),
-        "src_extra": (f"{segment_releases(staging).split('业绩 8-K')[0]}业绩 8-K EX-99.1 经营回顾的毛利表；"
-                      f"{derived_words}由同表印出的 pp 变化倒推。"),
+        "note": tension,
+        "src_extra": (recast_source(staging, recast["tables"]["adjusted_gross_margin"] if recast else "")
+                      + f"{segment_releases(staging).split('业绩 8-K')[0]}业绩 8-K EX-99.1 经营回顾的毛利表。"),
     }
 
 
@@ -848,11 +867,11 @@ SERIES_FOR = {
 }
 
 
-def values_labels(entry: dict, staging: dict, own: list[str]) -> list[str]:
-    """The quarters whose releases a threshold line was read from."""
+def values_labels(entry: dict, staging: dict, periods: list[str]) -> list[str]:
+    """The quarters a threshold line's values belong to."""
     if entry["measure"] == "zyn_offtake":
         return staging["zyn"]["periods"]
-    return own
+    return periods
 
 
 def not_tracked_text(kpi: dict) -> str:
@@ -886,26 +905,39 @@ def next_section(staging: dict, kpi: dict, entries: list[dict]) -> list[dict]:
            if any(e["measure"] == "zyn_offtake" for e in entries) and yq(zyn_label) != yq(page_period(staging))
            else "")
         + "；阈值为本地研究设定。")]
-    seg_measures = [e for e in entries if e["measure"] in SERIES_FOR and e["measure"] != "zyn_offtake"]
-    charted = [e for e in entries if e["measure"] in SERIES_FOR]
-    lines = ("本节前" if charted[:len(seg_measures)] == seg_measures else "本节分部口径的") \
-        + f"{cn_count(len(seg_measures))}条线"
-    n_seg = len(staging["segments"]["periods"])
-    own = [p for p in staging["segments"]["periods"] if yq(p) >= yq(NEW_SEGMENTS_FROM)]
+    recast = recast_block(staging)
     for entry in entries:
         if entry["measure"] not in SERIES_FOR:
             continue
         values, xlab = SERIES_FOR[entry["measure"]](staging)
+        periods = values_labels(entry, staging, staging["segments"]["periods"])
+        from_recast = []
+        if entry["measure"] != "zyn_offtake":
+            # a segment-block line is drawn over the quarters it has a figure for
+            kept = [k for k, v in enumerate(values) if v is not None]
+            values, xlab, periods = ([values[k] for k in kept], [xlab[k] for k in kept],
+                                     [periods[k] for k in kept])
+            missing = recast.get("not_printed", {}).get(entry["measure"]) if recast else None
+            from_recast = [] if missing else [p for p in periods if recast and p in recast["taken"]]
+        else:
+            missing = None
+        # the release quarters: a segment line's pre-2026 values are the year-ago
+        # columns of the 2026 releases; ZYN's are each quarter's own release
+        releases = (periods if entry["measure"] == "zyn_offtake"
+                    else [p for p in periods if yq(p) >= yq(NEW_SEGMENTS_FROM)])
+        window = (f"序列从现行分部口径印出的最早一季（{xlab[0]}）起画，"
+                  f"{quarter_years(from_recast)} 年取自 {recast['date']} 按新分部的未经审计重印。"
+                  if from_recast else
+                  f"这条线只有{cn_count(len(values))}个季度：本页只接了新闻稿印出的季度与它们的上年对照列"
+                  + (f"，{recast['date']} 那份{missing}" if missing else "") + "。")
         exhibit = threshold_exhibit(
             f"{entry['metric']}：当前 {entry['current']:.1f}%，阈值 {entry['threshold']:.1f}%",
             xlab, rounded(values), entry["threshold"],
             fmt="pct1", ylab="%",
             actual_name=entry["metric"], threshold_name="本地阈值",
-            note=("红线是本地研究设定的阈值，不是公司指引，也不是公司披露的目标。"
-                  "序列从公司按现行口径开始披露该指标的那一季起画 —— "
-                  f"现行分部口径 {cn_quarter(NEW_SEGMENTS_FROM)}才启用，本页只接了新闻稿印出的季度，"
-                  f"{lines}因此只有{cn_count(n_seg)}个季度。"),
-            src_extra=(f"{quarter_years(values_labels(entry, staging, own))} 年各季业绩 8-K EX-99.1；"
+            note="红线是本地研究设定的阈值，不是公司指引，也不是公司披露的目标。" + window,
+            src_extra=((recast_source(staging, recast["tables"]["adjusted_gross_margin"]) if from_recast else "")
+                       + f"{quarter_years(releases)} 年各季业绩 8-K EX-99.1；"
                        "阈值为本地研究设定。"))
         if entry["measure"] == "zyn_offtake":
             view = zyn_view(staging)
@@ -997,6 +1029,60 @@ def seasonality(staging: dict) -> str:
     return text
 
 
+def gross_profit_basis(staging: dict) -> str:
+    """Which years' gross profit is on the basis PMI adopted in 2026, and from which filing."""
+    recast = staging["segments"].get("recast_filing")
+    if not recast:
+        return f"{yq(NEW_SEGMENTS_FROM)[0]} 年起的毛利在公司 2026 年启用的新口径上"
+    first, last = yq(recast["first"])[0], yq(recast["last"])[0]
+    return (f"{first}–{last} 年的毛利取公司 {recast['date']} 按 2026 年新口径重印的各季数，"
+            f"{first - 1} 年及以前仍是原口径")
+
+
+YEAR_SUM_KEYS = {"net_revenues_usd_m": "净收入", "gross_profit_usd_m": "毛利", "operating_income_usd_m": "经营利润"}
+
+
+def year_sum_sentence(staging: dict) -> str:
+    """The years whose four quarters were checked against a printed full year,
+    and the ones that did not tie, named rather than smoothed."""
+    long = staging["long"]
+    filed = long.get("filed_year_totals")
+    if not filed:
+        return ""
+    by = {key: dict(zip(long["periods"], long[key])) for key in YEAR_SUM_KEYS}
+    tied, off = [], []
+    for year, row in sorted(filed["years"].items()):
+        quarters = [f"{year}Q{q}" for q in (1, 2, 3, 4)]
+        if not all(q in by["net_revenues_usd_m"] for q in quarters):
+            continue
+        ok = all(abs(sum(by[key][q] for q in quarters) - total) < 0.5 for key, total in row.items())
+        (tied if ok else off).append(int(year))
+    recast = staging["segments"].get("recast_filing")
+    where = f" {recast['date']} 那份重印 8-K " if recast else "申报"
+    items = "、".join(YEAR_SUM_KEYS.values())
+    text = ""
+    if tied:
+        span = (f"{tied[0]}–{tied[-1]} 年" if len(tied) > 1 and tied == list(range(tied[0], tied[-1] + 1))
+                else "、".join(f"{y} 年" for y in tied))
+        text += f"{span}的{items}四季相加逐项与{where}印出的全年核对无差；"
+    if off:
+        text += "、".join(f"{y} 年" for y in off) + f"的四季相加与{where}印出的全年有出入；"
+    return text + f"{gross_profit_basis(staging)}。"
+
+
+def segment_basis_sentence(staging: dict) -> str:
+    seg = staging["segments"]
+    recast = recast_block(staging)
+    own = [p for p in seg["periods"] if yq(p) >= yq(NEW_SEGMENTS_FROM)]
+    text = (f"分部序列自 {cn_quarter(seg['periods'][0])}起：公司自 {cn_quarter(NEW_SEGMENTS_FROM)}起把四个地理分部"
+            "改为国际无烟、国际组合烟草与美国三个报告分部")
+    if recast and recast["taken"]:
+        text += (f"，{recast['date']} 的 8-K（{recast['accession']}，{recast['exhibits']}）以未经审计补充信息的形式"
+                 f"按新分部重印了 {quarter_years([recast['first'], recast['last']])} 各季；本页"
+                 f" {quarter_years(recast['taken'])} 年取自那份重印，{quarter_years(own)} 年取自各季新闻稿")
+    return text + "。本页不把这条线接到它取代的四个地理分部上。"
+
+
 def revenue_series(staging: dict) -> dict:
     long = staging["long"]
     rev = long["net_revenues_usd_m"]
@@ -1028,7 +1114,7 @@ def revenue_series(staging: dict) -> dict:
             "才有自己的 XBRL 标签。本站按「含税收入 − 消费税」计算，得到的 FY2016 = 26,685 "
             "与 FY2018 10-K 逐字重印的 FY2016 净收入相同。"
             "第四季没有 10-Q，其收入与毛利为全年减去前九个月，两条腿都是申报值"
-            "（2025 年的毛利取公司 2026 年按新口径重印的四季数）；"
+            f"（{gross_profit_basis(staging)}）；"
             + ("净收入四个季度相加等于全年，逐年核对无差。" if sums_ok else "净收入四个季度相加与全年有出入。")
             + seasonality(staging)),
         "src_extra": "XBRL companyfacts 的季度与年度收入、毛利；第四季为年度减前九个月。",
@@ -1508,14 +1594,10 @@ def build_payload(staging: dict) -> dict:
             + "实际值一律按指引当期的同一口径取，不跨口径比较；图上有结构断点标记。",
             "第四季度没有 10-Q，所以本页季度序列里的第四季收入、毛利与经营利润为全年申报值减去前九个月"
             "申报值，两条腿都是申报数字；每股收益不可加总，第四季读自当期新闻稿的 EPS 调节表。"
-            "四季相加等于全年，2024 与 2025 两年逐项核对无差；2025 年的毛利取公司按 2026 年新口径重印的"
-            "四季数（2026-03-13 的 8-K），2024 年及以前仍是原口径。",
+            + year_sum_sentence(staging),
             f"长期季度序列自 {cn_quarter(long['periods'][0])}起：PMI 的损益表一直同时印含消费税与扣除消费税两行收入，"
             "本页取扣除后的净收入；2016/2017 申报里标着「Net revenues」的那一行其实含消费税，见收入那一张的图注。",
-            "分部序列只画了新闻稿印出的季度：公司自 2026 年第一季度起把四个地理分部改为国际无烟、"
-            "国际组合烟草与美国三个报告分部；图上的 2025 季度是 2026 年各份新闻稿印出的上年对照列。"
-            + (f"公司另在 {seg['recast_filing']['date']} 的 8-K 按新分部重印了 {seg['recast_filing']['covers']} "
-               "各季（未经审计的补充信息），本页尚未接入。" if seg.get("recast_filing") else ""),
+            segment_basis_sentence(staging),
             "无烟产品收入占比取自各年 10-K 分部附注里按产品类别的「美元」金额，不是新闻稿里的整数"
             "百分比。该行的名称在 2019 年前后从 reduced-risk products 改为 smoke-free products，"
             "2020 与 2021 两年在 FY2022 的 10-K 里被重述（Wellness and Healthcare 并入无烟口径），"

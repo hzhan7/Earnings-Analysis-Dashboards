@@ -1,5 +1,5 @@
 {
-  "_provenance": "公司披露值逐项读自 SEC EDGAR 上 Philip Morris International Inc.（CIK 1413329）的申报文件：74 份季度业绩 8-K 的 EX-99.1 新闻稿（2008 年第一季度至 2026 年第二季度，全年与下季 EPS 指引、分部收入桥、经营指标）、10-K 与 10-Q 的 Segment Reporting 附注（按产品类别的净收入，2016–2025 年度值与 2025–2026 季度值），以及 XBRL companyfacts （合并损益、经营现金流、资本开支、每股股息）。财季第四季无 10-Q，故其收入、毛利与经营利润为全年减去前九个月；每股收益不可加总，第四季读自当期新闻稿的 EPS 调节表。",
+  "_provenance": "公司披露值逐项读自 SEC EDGAR 上 Philip Morris International Inc.（CIK 1413329）的申报文件：74 份季度业绩 8-K 的 EX-99.1 新闻稿（2008 年第一季度至 2026 年第二季度，全年与下季 EPS 指引、分部收入桥、经营指标）、10-K 与 10-Q 的 Segment Reporting 附注（按产品类别的净收入，2016–2025 年度值与 2025–2026 季度值），2026-03-13 按新分部重印 2023–2025 各季的 8-K（0001628280-26-017497，EX-99.1 与 EX-99.2，未经审计补充信息；分部净收入、毛利、调整后毛利率与 2023–2025 的合并毛利），以及 XBRL companyfacts （合并损益、经营现金流、资本开支、每股股息）。财季第四季无 10-Q，故其收入、毛利与经营利润为全年减去前九个月；每股收益不可加总，第四季读自当期新闻稿的 EPS 调节表。",
   "latest": {
     "period": "Q2 2026",
     "release_date": "2026-07-22",
@@ -48,8 +48,8 @@
       11192.0
     ],
     "gross_profit_usd_m": [
-      6545.0,
-      6283.0,
+      6549.0,
+      6288.0,
       6270.0,
       6866.0,
       7361.0,
@@ -68,8 +68,8 @@
       4530.0
     ],
     "gross_margin_pct": [
-      66.04,
-      64.73,
+      66.08,
+      64.78,
       67.41,
       67.71,
       67.87,
@@ -270,14 +270,14 @@
       5184.0,
       5097.0,
       4941.0,
-      4981.0,
-      5739.0,
-      5976.0,
-      5585.0,
-      5598.0,
-      6123.0,
-      6545.0,
-      6283.0,
+      4987.0,
+      5744.0,
+      5981.0,
+      5586.0,
+      5604.0,
+      6127.0,
+      6549.0,
+      6288.0,
       6270.0,
       6866.0,
       7361.0,
@@ -358,14 +358,14 @@
       66.19,
       63.46,
       60.61,
-      62.11,
-      64.0,
-      65.38,
-      61.73,
-      63.66,
-      64.67,
-      66.04,
-      64.73,
+      62.19,
+      64.06,
+      65.43,
+      61.74,
+      63.73,
+      64.71,
+      66.08,
+      64.78,
       67.41,
       67.71,
       67.87,
@@ -448,7 +448,27 @@
       ],
       "why": "这不是备份，是**第二次独立读数**。主序列的 2016 四季来自 10-Q/10-K 的 XBRL R 表，第四季由全年减前九个月得到；这一份来自四份业绩发布的 Schedule 1，其中第四季是**直接印出来的单季列**，不需要相减。两条路径的取数方式不同、第四季的来源尤其不同，所以它们相等才构成证据。只对上年度合计是不够的：把某一季加 100、下一季减 100，年度合计一个数都不会变。"
     },
-    "q4_2025_basis_note": "**2025 年四季的毛利现在是同一个基。**PMI 自 2026-01-01 起把四个地理分部改成三个，并把外汇损益与 RSU/PSU 薪酬费用从 Cost of Sales 与 MA&R 里挪进新的「Corporate expenses and other」；净收入与营业利润不受影响，只有销货成本与毛利动。2026 年的两份 10-Q 把 2025Q1（6,261→6,270）与 2025Q2（6,861→6,866）重述到新基；2026-03-13 的 8-K（0001628280-26-017497，EX-99.1「Recast Shipment Volume and Unaudited Financial Information 2025 vs. 2024」）把 2025 全部四季按新基印出：6,270 / 6,866 / 7,361 / 6,807，全年 27,304。本页 2025Q3、2025Q4 原来是旧基的 7,358 与 6,802（全年 27,282 − 前九个月 20,480），与已换基的 Q1、Q2 混在一年里，四季相加 27,296 两头都对不上；现在四季都取新基。2024 年及以前仍是旧基：同一份 8-K 的 EX-99.1 与 EX-99.2 也按新基重印了 2023–2024 各季（例如 2024Q1 5,598→5,604），本页尚未换，接缝在 2024Q4 / 2025Q1。"
+    "gross_profit_basis_note": "**2023 年起的毛利在同一个基上。**PMI 自 2026-01-01 起把四个地理分部改成三个，并把外汇损益与 RSU/PSU 薪酬费用从 Cost of Sales 与 MA&R 里挪进新的「Corporate expenses and other」；净收入与营业利润不受影响，只有销货成本与毛利动。2026-03-13 的 8-K（0001628280-26-017497）以未经审计补充信息的形式按新基重印了 2023–2025 各季：EX-99.1「Recast Shipment Volume and Unaudited Financial Information 2025 vs. 2024」与 EX-99.2「… 2024 vs. 2023」的 Schedule 12 / 13「Reconciliation of Operating Companies Income to Operating Income」逐季印出 Net Revenues、Gross profit 与 Operating Income。本页 2023Q1–2025Q4 的毛利取这份重印（2023：4,987 / 5,744 / 5,981 / 5,586，全年 22,298；2024：5,604 / 6,127 / 6,549 / 6,288，全年 24,568；2025：6,270 / 6,866 / 7,361 / 6,807，全年 27,304），2024 年的两个 exhibit 逐格相同；原基值为 2023：4,981 / 5,739 / 5,976 / 5,585，2024：5,598 / 6,123 / 6,545 / 6,283。同一份重印的净收入与营业利润和本页原值逐季相同。这份重印只回溯到 2023 年，2022 年及以前仍是原基，接缝在 2022Q4 / 2023Q1。",
+    "filed_year_totals": {
+      "source": "2026-03-13 8-K（0001628280-26-017497）EX-99.2 Schedule 13 与 EX-99.1 Schedule 12「Reconciliation of Operating Companies Income to Operating Income」的「Years Ended December 31」栏：Net Revenues、Gross profit、Operating Income（2024 年两份 exhibit 逐格相同）",
+      "years": {
+        "2023": {
+          "net_revenues_usd_m": 35174.0,
+          "gross_profit_usd_m": 22298.0,
+          "operating_income_usd_m": 11556.0
+        },
+        "2024": {
+          "net_revenues_usd_m": 37878.0,
+          "gross_profit_usd_m": 24568.0,
+          "operating_income_usd_m": 13402.0
+        },
+        "2025": {
+          "net_revenues_usd_m": 40648.0,
+          "gross_profit_usd_m": 27304.0,
+          "operating_income_usd_m": 14892.0
+        }
+      }
+    }
   },
   "annual": {
     "years": [
@@ -1906,92 +1926,232 @@
   ],
   "segments": {
     "periods": [
+      "2023Q1",
+      "2023Q2",
+      "2023Q3",
+      "2023Q4",
+      "2024Q1",
+      "2024Q2",
+      "2024Q3",
+      "2024Q4",
       "2025Q1",
       "2025Q2",
+      "2025Q3",
+      "2025Q4",
       "2026Q1",
       "2026Q2"
     ],
     "period_labels": [
+      "Q1 2023",
+      "Q2 2023",
+      "Q3 2023",
+      "Q4 2023",
+      "Q1 2024",
+      "Q2 2024",
+      "Q3 2024",
+      "Q4 2024",
       "Q1 2025",
       "Q2 2025",
+      "Q3 2025",
+      "Q4 2025",
       "Q1 2026",
       "Q2 2026"
     ],
     "net_revenues_usd_m": {
       "international_smoke_free": [
+        2423,
+        2756,
+        2865,
+        3057,
+        2850,
+        3015,
+        3101,
+        3159,
         3076,
         3395,
+        3839,
+        3686,
         3836,
         3877
       ],
       "international_combustibles": [
+        5087,
+        5641,
+        5784,
+        5391,
+        5299,
+        5748,
+        6041,
+        5720,
         5326,
         5883,
+        6316,
+        5911,
         5688,
         6459
       ],
       "us": [
+        509,
+        570,
+        492,
+        599,
+        644,
+        705,
+        769,
+        827,
         899,
         862,
+        689,
+        765,
         622,
         856
       ]
     },
     "gross_profit_usd_m": {
       "international_smoke_free": [
+        1396,
+        1760,
+        1930,
+        1935,
+        1768,
+        1916,
+        2088,
+        2058,
         2087,
         2319,
+        2683,
+        2488,
         2684,
         2716
       ],
       "international_combustibles": [
+        3339,
+        3659,
+        3705,
+        3270,
+        3407,
+        3731,
+        3919,
+        3629,
         3499,
         3936,
+        4244,
+        3844,
         3842,
         4388
       ],
       "us": [
+        252,
+        326,
+        346,
+        382,
+        429,
+        479,
+        541,
+        601,
         685,
         611,
+        434,
+        476,
         380,
         555
       ]
     },
     "adjusted_gross_margin_pct": {
       "pmi": [
+        63.1,
+        64.3,
+        65.5,
+        61.9,
+        63.9,
+        64.9,
+        66.2,
+        64.8,
         67.5,
         67.8,
+        67.9,
+        65.7,
         68.1,
         68.5
       ],
       "international_smoke_free": [
+        57.7,
+        63.9,
+        67.4,
+        63.3,
+        62.1,
+        63.6,
+        67.4,
+        65.2,
         67.9,
         68.3,
+        69.9,
+        67.5,
         70.0,
         70.1
       ],
       "international_combustibles": [
+        66.2,
+        64.9,
+        64.2,
+        60.7,
+        64.3,
+        64.9,
+        64.9,
+        63.5,
         65.7,
         66.9,
+        67.2,
+        65.0,
         67.5,
         67.9
       ],
       "us": [
+        57.2,
+        60.9,
+        70.0,
+        66.2,
+        69.1,
+        70.1,
+        72.2,
+        73.2,
         76.6,
         71.4,
+        63.7,
+        62.9,
         61.9,
         65.4
       ]
     },
     "adjusted_operating_income_usd_m": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       3790,
       4246,
+      null,
+      null,
       4168,
       4773
     ],
     "adjusted_oi_margin_pct": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       40.7,
       41.9,
+      null,
+      null,
       41.1,
       42.6
     ],
@@ -1999,7 +2159,130 @@
       "date": "2026-03-13",
       "accession": "0001628280-26-017497",
       "exhibits": "EX-99.1 与 EX-99.2",
-      "covers": "2023–2025"
+      "first": "2023Q1",
+      "last": "2025Q4",
+      "tables": {
+        "net_revenues": "EX-99.1 与 EX-99.2 的 Schedule 3「Net Revenues by Product Category …」",
+        "adjusted_gross_margin": "EX-99.1 Schedule 6 与 EX-99.2 Schedule 7「Reconciliation of Adjusted Gross Profit Margin …」",
+        "consolidated": "EX-99.1 Schedule 12 与 EX-99.2 Schedule 13「Reconciliation of Operating Companies Income to Operating Income」"
+      },
+      "not_printed": {
+        "adjusted_oi_margin": "重印印的是扣除公司费用前的调整后经营公司利润（OCI）利润率，不是这条线的口径"
+      }
+    },
+    "cell_sources": {
+      "2023Q1": {
+        "accession": "0001628280-26-017497",
+        "exhibit": "EX-99.2",
+        "column": "2023 年列（上年对照）",
+        "net_revenues_usd_m": "Schedule 3 (1/5)「Net Revenues by Product Category and Adjustments of Net Revenues for the Impact of Currency and Acquisitions/Divestitures」PMI 段",
+        "gross_profit_usd_m": "Schedule 5「Adjustments of Gross Profit for the Impact of Currency and Acquisitions/Divestitures」",
+        "adjusted_gross_margin_pct": "Schedule 7「Reconciliation of Adjusted Gross Profit Margin, excluding Currency and Acquisitions/Divestitures」"
+      },
+      "2023Q2": {
+        "accession": "0001628280-26-017497",
+        "exhibit": "EX-99.2",
+        "column": "2023 年列（上年对照）",
+        "net_revenues_usd_m": "Schedule 3 (2/5)「Net Revenues by Product Category and Adjustments of Net Revenues for the Impact of Currency and Acquisitions/Divestitures」PMI 段",
+        "gross_profit_usd_m": "Schedule 5「Adjustments of Gross Profit for the Impact of Currency and Acquisitions/Divestitures」",
+        "adjusted_gross_margin_pct": "Schedule 7「Reconciliation of Adjusted Gross Profit Margin, excluding Currency and Acquisitions/Divestitures」"
+      },
+      "2023Q3": {
+        "accession": "0001628280-26-017497",
+        "exhibit": "EX-99.2",
+        "column": "2023 年列（上年对照）",
+        "net_revenues_usd_m": "Schedule 3 (3/5)「Net Revenues by Product Category and Adjustments of Net Revenues for the Impact of Currency and Acquisitions/Divestitures」PMI 段",
+        "gross_profit_usd_m": "Schedule 5「Adjustments of Gross Profit for the Impact of Currency and Acquisitions/Divestitures」",
+        "adjusted_gross_margin_pct": "Schedule 7「Reconciliation of Adjusted Gross Profit Margin, excluding Currency and Acquisitions/Divestitures」"
+      },
+      "2023Q4": {
+        "accession": "0001628280-26-017497",
+        "exhibit": "EX-99.2",
+        "column": "2023 年列（上年对照）",
+        "net_revenues_usd_m": "Schedule 3 (4/5)「Net Revenues by Product Category and Adjustments of Net Revenues for the Impact of Currency and Acquisitions/Divestitures」PMI 段",
+        "gross_profit_usd_m": "Schedule 5「Adjustments of Gross Profit for the Impact of Currency and Acquisitions/Divestitures」",
+        "adjusted_gross_margin_pct": "Schedule 7「Reconciliation of Adjusted Gross Profit Margin, excluding Currency and Acquisitions/Divestitures」"
+      },
+      "2024Q1": {
+        "accession": "0001628280-26-017497",
+        "exhibit": "EX-99.2",
+        "column": "2024 年列（本年）",
+        "net_revenues_usd_m": "Schedule 3 (1/5)「Net Revenues by Product Category and Adjustments of Net Revenues for the Impact of Currency and Acquisitions/Divestitures」PMI 段",
+        "gross_profit_usd_m": "Schedule 5「Adjustments of Gross Profit for the Impact of Currency and Acquisitions/Divestitures」",
+        "adjusted_gross_margin_pct": "Schedule 7「Reconciliation of Adjusted Gross Profit Margin, excluding Currency and Acquisitions/Divestitures」",
+        "cross_check": "EX-99.1 同表 2024 年上年对照列逐格相同（48 格）"
+      },
+      "2024Q2": {
+        "accession": "0001628280-26-017497",
+        "exhibit": "EX-99.2",
+        "column": "2024 年列（本年）",
+        "net_revenues_usd_m": "Schedule 3 (2/5)「Net Revenues by Product Category and Adjustments of Net Revenues for the Impact of Currency and Acquisitions/Divestitures」PMI 段",
+        "gross_profit_usd_m": "Schedule 5「Adjustments of Gross Profit for the Impact of Currency and Acquisitions/Divestitures」",
+        "adjusted_gross_margin_pct": "Schedule 7「Reconciliation of Adjusted Gross Profit Margin, excluding Currency and Acquisitions/Divestitures」",
+        "cross_check": "EX-99.1 同表 2024 年上年对照列逐格相同（48 格）"
+      },
+      "2024Q3": {
+        "accession": "0001628280-26-017497",
+        "exhibit": "EX-99.2",
+        "column": "2024 年列（本年）",
+        "net_revenues_usd_m": "Schedule 3 (3/5)「Net Revenues by Product Category and Adjustments of Net Revenues for the Impact of Currency and Acquisitions/Divestitures」PMI 段",
+        "gross_profit_usd_m": "Schedule 5「Adjustments of Gross Profit for the Impact of Currency and Acquisitions/Divestitures」",
+        "adjusted_gross_margin_pct": "Schedule 7「Reconciliation of Adjusted Gross Profit Margin, excluding Currency and Acquisitions/Divestitures」",
+        "cross_check": "EX-99.1 同表 2024 年上年对照列逐格相同（48 格）"
+      },
+      "2024Q4": {
+        "accession": "0001628280-26-017497",
+        "exhibit": "EX-99.2",
+        "column": "2024 年列（本年）",
+        "net_revenues_usd_m": "Schedule 3 (4/5)「Net Revenues by Product Category and Adjustments of Net Revenues for the Impact of Currency and Acquisitions/Divestitures」PMI 段",
+        "gross_profit_usd_m": "Schedule 5「Adjustments of Gross Profit for the Impact of Currency and Acquisitions/Divestitures」",
+        "adjusted_gross_margin_pct": "Schedule 7「Reconciliation of Adjusted Gross Profit Margin, excluding Currency and Acquisitions/Divestitures」",
+        "cross_check": "EX-99.1 同表 2024 年上年对照列逐格相同（48 格）"
+      },
+      "2025Q1": {
+        "accession": "0001628280-26-017497",
+        "exhibit": "EX-99.1",
+        "column": "2025 年列（本年）",
+        "net_revenues_usd_m": "Schedule 3 (1/5)「Net Revenues by Product Category and Adjustments of Net Revenues for the Impact of Currency and Acquisitions/Divestitures」PMI 段",
+        "gross_profit_usd_m": "Schedule 4「Adjustments of Gross Profit for the Impact of Currency and Acquisitions/Divestitures」",
+        "adjusted_gross_margin_pct": "Schedule 6「Reconciliation of Adjusted Gross Profit Margin, excluding Currency and Acquisitions/Divestitures」",
+        "cross_check": "与本页原先从 2026 年同季业绩 8-K EX-99.1 经营回顾表上年对照列读出的值逐格相同（原先的调整后毛利率由印出的 pp 变化倒推）"
+      },
+      "2025Q2": {
+        "accession": "0001628280-26-017497",
+        "exhibit": "EX-99.1",
+        "column": "2025 年列（本年）",
+        "net_revenues_usd_m": "Schedule 3 (2/5)「Net Revenues by Product Category and Adjustments of Net Revenues for the Impact of Currency and Acquisitions/Divestitures」PMI 段",
+        "gross_profit_usd_m": "Schedule 4「Adjustments of Gross Profit for the Impact of Currency and Acquisitions/Divestitures」",
+        "adjusted_gross_margin_pct": "Schedule 6「Reconciliation of Adjusted Gross Profit Margin, excluding Currency and Acquisitions/Divestitures」",
+        "cross_check": "与本页原先从 2026 年同季业绩 8-K EX-99.1 经营回顾表上年对照列读出的值逐格相同（原先的调整后毛利率由印出的 pp 变化倒推）"
+      },
+      "2025Q3": {
+        "accession": "0001628280-26-017497",
+        "exhibit": "EX-99.1",
+        "column": "2025 年列（本年）",
+        "net_revenues_usd_m": "Schedule 3 (3/5)「Net Revenues by Product Category and Adjustments of Net Revenues for the Impact of Currency and Acquisitions/Divestitures」PMI 段",
+        "gross_profit_usd_m": "Schedule 4「Adjustments of Gross Profit for the Impact of Currency and Acquisitions/Divestitures」",
+        "adjusted_gross_margin_pct": "Schedule 6「Reconciliation of Adjusted Gross Profit Margin, excluding Currency and Acquisitions/Divestitures」"
+      },
+      "2025Q4": {
+        "accession": "0001628280-26-017497",
+        "exhibit": "EX-99.1",
+        "column": "2025 年列（本年）",
+        "net_revenues_usd_m": "Schedule 3 (4/5)「Net Revenues by Product Category and Adjustments of Net Revenues for the Impact of Currency and Acquisitions/Divestitures」PMI 段",
+        "gross_profit_usd_m": "Schedule 4「Adjustments of Gross Profit for the Impact of Currency and Acquisitions/Divestitures」",
+        "adjusted_gross_margin_pct": "Schedule 6「Reconciliation of Adjusted Gross Profit Margin, excluding Currency and Acquisitions/Divestitures」"
+      },
+      "2026Q1": {
+        "accession": "0001628280-26-026385",
+        "exhibit": "EX-99.1",
+        "source": "2026-04-22 业绩 8-K EX-99.1「Operating Review」的 Net Revenues 与 Gross Profit 表；同期 10-Q（0001628280-26-027019）分部附注"
+      },
+      "2026Q2": {
+        "accession": "0001628280-26-049107",
+        "exhibit": "EX-99.1",
+        "source": "2026-07-22 业绩 8-K EX-99.1「Operating Review」的 Net Revenues 与 Gross Profit 表；同期 10-Q（0001628280-26-049493）分部附注"
+      }
     }
   },
   "revenue_bridge": {
@@ -2261,6 +2544,14 @@
     {
       "label": "PMI 截至 2026-06-30 的 Form 10-Q（分部与按产品类别的净收入附注）",
       "url": "https://www.sec.gov/Archives/edgar/data/1413329/000162828026049493/pm-20260630.htm"
+    },
+    {
+      "label": "PMI 2026-03-13 8-K EX-99.1：按新分部重印的 2025 与 2024 各季（Recast Shipment Volume and Unaudited Financial Information 2025 vs. 2024）",
+      "url": "https://www.sec.gov/Archives/edgar/data/1413329/000162828026017497/ex991recastschedules_2025v.htm"
+    },
+    {
+      "label": "PMI 2026-03-13 8-K EX-99.2：按新分部重印的 2024 与 2023 各季（Recast Shipment Volume and Unaudited Financial Information 2024 vs. 2023）",
+      "url": "https://www.sec.gov/Archives/edgar/data/1413329/000162828026017497/ex992recastschedules_2024v.htm"
     },
     {
       "label": "PMI 2025 年度 Form 10-K（按产品类别的净收入，2023–2025）",

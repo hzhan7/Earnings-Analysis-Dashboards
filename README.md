@@ -1050,13 +1050,18 @@ rather than a zero: the company described the latest quarter as "flat to
 slightly growing" and gave no percentage, and filling in a zero would turn a
 phrase into a number a model could use.
 
-The segment charts on that page are short, and could be longer. PMI replaced
-four geographic segments with three (International Smoke-Free, International
-Combustibles, U.S.) effective 2026Q1. The page so far draws only the quarters
-the 2026 releases print, current and restated prior-year columns side by side,
-and declines to splice them onto the segments they replaced. The company did
-reprint 2023–2025 on the new segments, as unaudited supplementary information
-in an 8-K of 2026-03-13; the page has not taken that series in yet.
+PMI replaced four geographic segments with three (International Smoke-Free,
+International Combustibles, U.S.) effective 2026Q1, and in an 8-K of 2026-03-13
+reprinted 2023–2025 on the new segments as unaudited supplementary information.
+The page's segment charts start where that reprint starts and take the later
+quarters from each release; they decline to splice the new segments onto the
+ones they replaced. The same reprint moved consolidated gross profit onto the
+2026 basis (foreign-exchange results and share-unit compensation left cost of
+sales for a new corporate line), so the page's gross-profit series changes basis
+once, where the reprint begins, and the years before it stay on the old one.
+The adjusted operating margin line is the exception: the reprint prints margins
+before corporate costs, not that line's basis, so it is drawn only over the
+quarters the releases print.
 
 TJX files one of the longest *quarterly* records on this site and the most one-sided,
 and it is the first page here whose company sells nothing to a data centre. Every quarterly
