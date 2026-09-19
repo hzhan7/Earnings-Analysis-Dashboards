@@ -33,6 +33,7 @@ has plotted yet, on any machine.
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import re
@@ -175,12 +176,20 @@ class SkHynixDashboardTest(unittest.TestCase):
         component ever appears in the payload, this is the assertion that should
         have stopped it.
         """
-        below = self.staging["q2_2026_below_operating_profit_krw_bn"]
-        pre_tax, net = below["profit_before_tax"][1], below["net_income"][1]
-        operating = below["operating_profit"][1]
-        self.assertAlmostEqual(pre_tax - net, 28785.8, delta=0.5)
-        self.assertAlmostEqual(pre_tax - operating, 62165.8, delta=0.5)
-        self.assertAlmostEqual((pre_tax - net) / pre_tax * 100, 23.46, delta=0.05)
+        below = self.staging["below_operating_profit_krw_bn"]
+        pre_tax, net = below["profit_before_tax"][-1], below["net_income"][-1]
+        operating = below["operating_profit"][-1]
+        # The block's last column is the page's quarter, and its operating
+        # profit and net income are the series' own -- the two printed rows the
+        # derived lines are differences of. The quarter's pre-tax figure is
+        # checked against a separate reading in SkHynixChecksTest.
+        self.assertEqual(below["periods"][-1], self.staging["periods"][-1])
+        self.assertEqual(operating, self.fin["operating_profit"][-1])
+        self.assertEqual(net, self.fin["net_income"][-1])
+        chart = next(e for e in self.exhibits() if e.get("title", "").startswith("营业利润、税前利润、净利润"))
+        self.assertIn(f"₩{(pre_tax - operating) / 1000:.2f}T 的营业外净收益", chart["note"])
+        self.assertIn(f"₩{(pre_tax - net) / 1000:.2f}T 的所得税", chart["note"])
+        self.assertIn(f"有效税率 {(pre_tax - net) / pre_tax * 100:.1f}%", chart["note"])
         blob = json.dumps(self.payload, ensure_ascii=False)
         for absent in ("63.3", "45.4", "Kioxia", "铠侠"):
             self.assertNotIn(absent, blob,
@@ -201,7 +210,10 @@ class SkHynixDashboardTest(unittest.TestCase):
         self.assertAlmostEqual(ratios[0], 25.4, delta=0.1)
         self.assertAlmostEqual(ratios[1], 24.1, delta=0.1)
         self.assertAlmostEqual(ratios[2], 28.3, delta=0.1)
-        self.assertLess(max(ratios) - min(ratios), 5.0,
+        # The three audited years of the prospectus are history and stay pinned;
+        # whether a later year keeps the band is the data's to say, and the
+        # caption says 「大体持平」 only while it does (asserted in the roll tests).
+        self.assertLess(max(ratios[:3]) - min(ratios[:3]), 5.0,
                         "three years inside a five-point band is the finding; a "
                         "halving would be a different page")
         self.assertEqual(self.ann["capital_expenditures"][2], 27519)
@@ -255,7 +267,11 @@ class SkHynixDashboardTest(unittest.TestCase):
             sum(self.kpi[key]["one_sided"])
             for key in ("dram_bit_shipment", "dram_asp",
                         "nand_bit_shipment", "nand_asp"))
-        self.assertEqual(one_sided, 4)
+        over = sum(1 for key in ("dram_bit_shipment", "dram_asp",
+                                 "nand_bit_shipment", "nand_asp")
+                   for phrase in self.kpi[key]["phrases"] if phrase.startswith("Over "))
+        self.assertEqual(one_sided, over)
+        self.assertGreater(one_sided, 0)
         for phrase, entry in self.kpi["phrase_vocabulary"].items():
             if phrase.startswith("Over "):
                 self.assertTrue(entry["one_sided"], phrase)
@@ -272,7 +288,7 @@ class SkHynixDashboardTest(unittest.TestCase):
                               "nand_bit_shipment", "nand_asp")
                   for l, h in zip(self.kpi[key]["low_pct"],
                                   self.kpi[key]["high_pct"])]
-        self.assertEqual(len(widths), 52)
+        self.assertEqual(len(widths), 4 * len(self.kpi["quarters"]))
         self.assertGreater(sum(widths) / len(widths), 2.5)
         self.assertGreaterEqual(max(widths), 10.0)
 
@@ -446,24 +462,26 @@ class SkHynixDashboardTest(unittest.TestCase):
         it further. The band contains it comfortably, and the chart's note said
         it did not. The note was wrong and this assertion is what caught it.
 
-        So the pair is pinned instead: the actual must fall inside, and the band
-        must stay wide enough that falling inside carries almost no information.
-        If the band ever narrows to where containment is a real test, the note
-        explaining why it is not one has to be rewritten, and this fails first.
+        So the pair was pinned instead: the actual had to fall inside, and the
+        band had to stay wide enough that falling inside carries almost no
+        information. Since the data-only migration the note itself is decided by
+        those two facts -- it says "inside, but no test" only while the actual is
+        inside and the band this wide, and says something else otherwise -- so
+        what is pinned now is that the note and the chart agree, in both
+        directions (the other direction is forced in the roll tests below).
         """
         chart = next(e for e in self.exhibits() if "连乘" in e["title"])
         low = dict(zip(chart["xlabels"], chart["groups"][0]["values"]))
         high = dict(zip(chart["xlabels"], chart["groups"][1]["values"]))
         actual = dict(zip(chart["xlabels"], chart["groups"][2]["values"]))
-        for product in ("DRAM", "NAND"):
-            self.assertLessEqual(low[product], actual[product], product)
-            self.assertLessEqual(actual[product], high[product], product)
-            self.assertGreater(high[product] - low[product], 40.0,
-                               f"{product}: a band this wide is the finding; a "
-                               f"narrow one would make containment meaningful "
-                               f"and the note would then be misleading")
-        self.assertIn("并不构成一次验证", chart["note"].replace("不构成一次验证",
-                                                            "并不构成一次验证"))
+        contained = all(low[p] <= actual[p] <= high[p] for p in ("DRAM", "NAND"))
+        # The sentence follows the data: it says "inside, but no test" only while
+        # the actual is inside, and "nearly a tautology" only while the band is
+        # this wide. Both directions are checked in the roll tests.
+        self.assertEqual("不构成一次验证" in chart["note"], contained)
+        self.assertEqual("接近同义反复" in chart["note"],
+                         contained and high["DRAM"] - low["DRAM"] >= 40)
+        self.assertIn(f"区间宽 {high['DRAM'] - low['DRAM']:.0f} 个百分点", chart["note"])
 
     def test_the_won_formatter_is_the_one_this_page_registered(self) -> None:
         self.assertIn("krw_tn", UNIT_FORMATS)
@@ -554,6 +572,230 @@ class SkHynixDashboardTest(unittest.TestCase):
         notes = "\n".join(self.payload["notes"])
         for required in ("不发布任何财务指引", "HBM", "汇率", "单一报告分部"):
             self.assertIn(required, notes)
+
+
+class SkHynixRollTest(unittest.TestCase):
+    """What a quarter roll has to change in `series/skhynix.json`, and what the
+    page does when it does not.
+
+    Three blocks describe one quarter and carry it: the lines below operating
+    profit (`below_operating_profit_krw_bn`), what the quarter's own documents
+    did and did not print (`quarter_story`), and the thresholds (`next_kpi`).
+    A block stamped with another quarter stops the build; an absent optional
+    one takes its sentences and its chart with it.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads(skhynix.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = skhynix.build_payload(cls.source)
+        cls.blob = json.dumps(cls.payload, ensure_ascii=False)
+
+    def text(self, staging: dict) -> str:
+        return json.dumps(skhynix.build_payload(staging), ensure_ascii=False)
+
+    def test_a_block_stamped_with_another_quarter_stops_the_build(self) -> None:
+        for key in ("below_operating_profit_krw_bn", "quarter_story", "next_kpi"):
+            stale = copy.deepcopy(self.source)
+            stale[key]["period"] = "Q1 1999"
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "stamped"):
+                    skhynix.build_payload(stale)
+        stale = copy.deepcopy(self.source)
+        stale["below_operating_profit_krw_bn"]["periods"][-1] = "1999Q1"
+        with self.assertRaisesRegex(ValueError, "must carry it"):
+            skhynix.build_payload(stale)
+        stale = copy.deepcopy(self.source)
+        stale["next_kpi"]["entries"][0]["metric"] = "不存在的指标"
+        with self.assertRaisesRegex(ValueError, "does not know how to measure"):
+            skhynix.build_payload(stale)
+        stale = copy.deepcopy(self.source)
+        stale["sources"] = [item for item in stale["sources"] if " 6-K（" not in item["label"]]
+        self.assertLess(len(stale["sources"]), len(self.source["sources"]))
+        with self.assertRaisesRegex(ValueError, "sources"):
+            skhynix.build_payload(stale)
+
+    def test_a_quarter_without_a_story_leaves_it_out(self) -> None:
+        cases = {
+            "quarter_story": ("而季度发布里对此一个字都没有", "只出现在向 SEC 报送的 6-K 里",
+                              "口头提过", " 为历史最高", "对这笔钱没有任何拆分"),
+            "below_operating_profit_krw_bn": ("营业利润、税前利润、净利润", "净利率越过 100% 的来源",
+                                              "不是经营突破", "营业外收益的构成，"),
+        }
+        for key, texts in cases.items():
+            bare = copy.deepcopy(self.source)
+            del bare[key]
+            after = self.text(bare)
+            for text in texts:
+                with self.subTest(block=key, text=text):
+                    self.assertIn(text, self.blob)
+                    self.assertNotIn(text, after)
+        bare = copy.deepcopy(self.source)
+        del bare["below_operating_profit_krw_bn"]
+        payload = skhynix.build_payload(bare)
+        numbers = [ex["n"] for section in payload["sections"] for ex in section["exhibits"]]
+        self.assertEqual(numbers, list(range(2, 2 + len(numbers))))
+        self.assertNotIn("{EX_", json.dumps(payload, ensure_ascii=False))
+
+    def test_the_record_sentences_are_computed_not_remembered(self) -> None:
+        """Break each "all / only / highest / flat / inside" claim once in the
+        data; the sentence that made it must go."""
+        def margin_below_peak(d):
+            fin = d["financials_krw_bn"]
+            fin["operating_profit"][-1] = fin["revenue"][-1] * 0.5
+
+        def volume_swings(d):
+            kpi = d["kpi_phrases"]
+            for key in ("dram_bit_shipment", "nand_bit_shipment"):
+                block = kpi[key]
+                for i in range(len(block["midpoint_pct"])):
+                    block["midpoint_pct"][i] = 30.0
+
+        def intensity_jumps(d):
+            ann = d["annual_audited_krw_bn"]
+            ann["capital_expenditures"][-1] = ann["revenue"][-1] * 0.6
+
+        def chained_answer_outside(d):
+            prod = d["revenue_by_product_krw_bn"]
+            prod["dram"][prod["labels"].index("2026Q1")] *= 2
+
+        def earlier_revision_as_large(d):
+            d["restatement_census"]["lines_moved"]["2019Q4"]["operating_profit"][1] = 236.0 + 150.0
+
+        def nand_price_turns_with_dram(d):
+            kpi = d["kpi_phrases"]
+            kpi["nand_asp"]["midpoint_pct"] = list(kpi["dram_asp"]["midpoint_pct"])
+
+        cases = {
+            "margin below its peak": (margin_below_peak, (" 为历史最高", "顶是本季的")),
+            "volume moving tens of points": (volume_swings, ("多数季度在正负十个点以内",)),
+            "capital intensity no longer flat": (intensity_jumps, ("大体持平",)),
+            "chained answer outside the band": (chained_answer_outside,
+                                                ("不构成一次验证", "接近同义反复")),
+            "an earlier revision as large": (earlier_revision_as_large, ("金额大一个量级以上",)),
+            "price turns in step": (nand_price_turns_with_dram, ("价格拐点不同步",)),
+        }
+        for name, (change, claims) in cases.items():
+            broken = copy.deepcopy(self.source)
+            change(broken)
+            after = self.text(broken)
+            for claim in claims:
+                with self.subTest(case=name, claim=claim):
+                    self.assertIn(claim, self.blob)
+                    self.assertNotIn(claim, after)
+
+    def test_the_revision_range_is_the_censuss_own(self) -> None:
+        """Both places that describe the four earlier revisions used to type
+        「0.1%–3%」; 2019Q4 net income went from −118.2 to −125.6, a 6.3% move.
+        The range is now read off the census, and so is the order-of-magnitude
+        claim about 2022Q4, which holds for the amounts (₩211bn against at most
+        ₩7.4bn) and not for the percentages."""
+        census = self.source["restatement_census"]
+        moved = census["lines_moved"]
+        earlier = [q for q in census["quarters"] if "revenue" not in moved[q]]
+        moves = [abs(b / a - 1) * 100 for q in earlier for a, b in moved[q].values()]
+        amounts = [abs(b - a) for q in earlier for a, b in moved[q].values()]
+        span = f"{min(moves):.1f}%–{max(moves):.1f}%"
+        chart = next(ex for section in self.payload["sections"] for ex in section["exhibits"]
+                     if ex.get("title", "").endswith("bn") and "事后被改过" in ex["title"])
+        note = next(n for n in self.payload["notes"] if "对照列之间不一致" in n)
+        self.assertIn(f"幅度在 {span} 之间", chart["note"])
+        self.assertIn(f"幅度 {span}", note)
+        delta = abs(self.source["restatement_2022q4"]["delta"]["operating_profit"])
+        self.assertEqual("金额大一个量级以上" in chart["note"], delta >= 10 * max(amounts))
+        first, last = census["scope"]
+        quarters = self.source["periods"]
+        self.assertIn(f"{first}–{last} 的 {quarters.index(last) - quarters.index(first) + 1} 季里",
+                      chart["note"])
+
+    def test_each_phrase_chart_counts_its_own_series(self) -> None:
+        """The NAND price chart's title said 4 one-sided readings and quoted
+        "Over 70% Increase": 4 is the count across all four series and "Over 70%"
+        is a NAND bit-shipment phrase. Each count and quote now comes from the
+        series the chart draws; the four-series count stays in the note."""
+        kpi = self.source["kpi_phrases"]
+        chart = next(ex for section in self.payload["sections"] for ex in section["exhibits"]
+                     if ex["title"].startswith("NAND 平均售价的环比"))
+        open_asp = [p for p, flag in zip(kpi["nand_asp"]["phrases"], kpi["nand_asp"]["one_sided"]) if flag]
+        self.assertIn(f"{len(open_asp)} 次读数是单边的", chart["title"])
+        self.assertIn(f"“{open_asp[0]}” 没有上限", chart["title"])
+        nand = next(ex for section in self.payload["sections"] for ex in section["exhibits"]
+                    if ex["title"].startswith("NAND 的量与价"))
+        for key in ("nand_bit_shipment", "nand_asp"):
+            for phrase, flag in zip(kpi[key]["phrases"], kpi[key]["one_sided"]):
+                if flag:
+                    self.assertIn(f"“{phrase}”", nand["note"])
+
+
+class SkHynixChecksTest(unittest.TestCase):
+    """The page's quarter against a record keyed separately from the series.
+
+    `_checks` is typed from the quarter's newsroom release (its prose and its
+    results table), with the pre-tax and non-operating totals read off the
+    earnings call at the precision spoken there; the builder never reads it
+    (asserted in `test_data_only_roll`). Where the company prints a rounded
+    figure -- the integer operating margin, the net margin, the growth rates --
+    the page's own arithmetic has to round to it.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(skhynix.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.checks = cls.staging["_checks"]
+        cls.payload = skhynix.build_payload(cls.staging)
+        cls.fin = cls.staging["financials_krw_bn"]
+
+    def test_the_page_names_the_checked_quarter(self) -> None:
+        c = self.checks
+        self.assertIn(c["period"], self.payload["title"])
+        self.assertIn(f"截至 {c['period_end']}", self.payload["subtitle"])
+        self.assertIn(f"发布 {c['release_date']}", self.payload["subtitle"])
+
+    def test_the_series_ends_on_the_checked_figures(self) -> None:
+        c, fin = self.checks, self.fin
+        self.assertEqual(fin["revenue"][-1], c["revenue_krw_bn"])
+        self.assertEqual(fin["operating_profit"][-1], c["operating_profit_krw_bn"])
+        self.assertEqual(fin["net_income"][-1], c["net_income_krw_bn"])
+        self.assertEqual(fin["operating_margin_pct_disclosed"][-1], c["operating_margin_pct_printed"])
+        self.assertEqual(fin["operating_margin_pct_disclosed"][-2], c["prior_quarter_operating_margin_pct_printed"])
+        self.assertEqual(fin["revenue"][-5], c["prior_year_revenue_krw_bn"])
+        self.assertEqual(fin["operating_profit"][-5], c["prior_year_operating_profit_krw_bn"])
+        self.assertEqual(fin["net_income"][-5], c["prior_year_net_income_krw_bn"])
+        below = self.staging["below_operating_profit_krw_bn"]
+        self.assertEqual(round(below["profit_before_tax"][-1] / 1000, 1), c["profit_before_tax_krw_tn_spoken"])
+        self.assertEqual(round((below["profit_before_tax"][-1] - below["operating_profit"][-1]) / 1000, 1),
+                         c["non_operating_net_krw_tn_spoken"])
+        sheet = self.staging["balance_sheet_krw_bn"]
+        self.assertEqual(sheet["periods"][-1], self.staging["periods"][-1])
+        self.assertEqual(sheet["cash_and_equivalents"][-1] / 1000, c["cash_and_equivalents_krw_tn"])
+        self.assertEqual(sheet["interest_bearing_debt"][-1] / 1000, c["interest_bearing_debt_krw_tn"])
+        self.assertEqual(sheet["net_cash"][-1] / 1000, c["net_cash_krw_tn"])
+
+    def test_the_rounding_the_page_uses_is_the_companys(self) -> None:
+        c, fin = self.checks, self.fin
+        margin = fin["operating_profit"][-1] / fin["revenue"][-1] * 100
+        self.assertEqual(round(margin), c["operating_margin_pct_printed"])
+        self.assertEqual(round(fin["net_income"][-1] / fin["revenue"][-1] * 100), c["net_margin_pct_printed"])
+        self.assertEqual(round((fin["revenue"][-1] / fin["revenue"][-2] - 1) * 100), c["revenue_qoq_pct_printed"])
+        self.assertEqual(round((fin["revenue"][-1] / fin["revenue"][-5] - 1) * 100), c["revenue_yoy_pct_printed"])
+        self.assertEqual(round((fin["operating_profit"][-1] / fin["operating_profit"][-5] - 1) * 100),
+                         c["operating_profit_yoy_pct_printed"])
+
+    def test_the_page_prints_the_checked_figures(self) -> None:
+        c = self.checks
+        headline = self.payload["headline"]
+        self.assertIn(f"营收 ₩{c['revenue_krw_bn'] / 1000:.1f}T、同比 +{c['revenue_yoy_pct_printed']}%", headline)
+        self.assertIn(f"净利率 {c['net_margin_pct_printed']}%", headline)
+        self.assertIn(f"税前比营业利润多出 ₩{c['non_operating_net_krw_tn_spoken']:.1f}T", headline)
+        self.assertIn(f"净利率 {c['net_margin_pct_printed']}% 不是经营突破", self.payload["brief"])
+        rev = next(ex for section in self.payload["sections"] for ex in section["exhibits"]
+                   if ex.get("title", "").endswith("%") and "季营收与营业利润率" in ex["title"])
+        self.assertIn(f"本季营收 ₩{c['revenue_krw_bn'] / 1000:.1f}T", rev["title"])
+        table = self.payload["tables"][0]
+        self.assertEqual(table["rows"][-1][5], f"{c['operating_margin_pct_printed']}%")
+        watch = next(t for t in self.payload["tables"] if t["title"].startswith("下季阈值"))
+        net_cash = next(row for row in watch["rows"] if row[0] == "净现金")
+        self.assertEqual(net_cash[3], f"₩{c['net_cash_krw_tn']:.1f}T")
 
 
 if __name__ == "__main__":
