@@ -6,6 +6,172 @@
     "analysis_date": "2026-08-29",
     "audit_status": "unaudited"
   },
+  "_checks": {
+    "period": "Q2 2026",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-22",
+    "_pairs": "两个数的列表是 [本季, 去年同季]；三个数的列表是 [本季, 上季, 去年同季]。都读自同一份新闻稿。",
+    "income_statement_usd_m": {
+      "clearing_fees": [
+        1352.5,
+        1388.0
+      ],
+      "market_data": [
+        238.1,
+        198.1
+      ],
+      "other_revenue": [
+        115.6,
+        105.9
+      ],
+      "total_revenues": [
+        1706.2,
+        1692.0
+      ],
+      "total_expenses": [
+        599.1,
+        562.7
+      ],
+      "operating_income": [
+        1107.1,
+        1129.3
+      ],
+      "licensing_expense": [
+        109.1,
+        96.2
+      ],
+      "investment_income": [
+        1429.7,
+        1518.4
+      ],
+      "other_nonop": [
+        -1263.2,
+        -1372.4
+      ],
+      "pretax_income": [
+        1327.7,
+        1330.3
+      ],
+      "tax_provision": [
+        285.9,
+        305.2
+      ],
+      "net_income": [
+        1041.8,
+        1025.1
+      ],
+      "diluted_eps": [
+        2.88,
+        2.81
+      ],
+      "diluted_shares_k": [
+        361282,
+        360355
+      ]
+    },
+    "adjusted_usd_m": {
+      "adj_total_expenses": [
+        521.2,
+        491.2
+      ],
+      "adj_operating_income": [
+        1185.0,
+        1200.8
+      ],
+      "adj_net_income": [
+        1081.7,
+        1079.4
+      ],
+      "adj_diluted_eps": [
+        2.99,
+        2.96
+      ]
+    },
+    "adv_k": {
+      "total": [
+        29843,
+        36231,
+        30217
+      ],
+      "rates": [
+        14532,
+        18674,
+        15472
+      ],
+      "equity": [
+        8633,
+        8655,
+        7661
+      ],
+      "fx": [
+        989,
+        1193,
+        1096
+      ],
+      "energy": [
+        2667,
+        3985,
+        3082
+      ],
+      "ags": [
+        2080,
+        2042,
+        1964
+      ],
+      "metals": [
+        941,
+        1682,
+        943
+      ]
+    },
+    "rpc": {
+      "total": [
+        0.678,
+        0.652,
+        0.69
+      ],
+      "rates": [
+        0.48,
+        0.457,
+        0.481
+      ],
+      "equity": [
+        0.605,
+        0.597,
+        0.635
+      ],
+      "fx": [
+        0.813,
+        0.78,
+        0.772
+      ],
+      "energy": [
+        1.131,
+        1.084,
+        1.138
+      ],
+      "ags": [
+        1.426,
+        1.344,
+        1.435
+      ],
+      "metals": [
+        1.315,
+        1.153,
+        1.456
+      ]
+    },
+    "trading_days": [
+      62,
+      61,
+      62
+    ],
+    "performance_bonds_usd_m": 158110.7,
+    "adv_rank_printed": 3,
+    "market_data_record_printed": true,
+    "source": "CME Group 2Q26 业绩新闻稿（8-K EX-99.1，2026-07-22，acc 0001156375-26-000042）：电头「CHICAGO, July 22, 2026」；正文「the third highest quarterly ADV reaching 29.8 million contracts」「Market data revenue totaled a record $238 million」；Consolidated Statements of Income 本季与去年同季两栏（Clearing and transaction fees 1,352.5 / 1,388.0 … Diluted 2.88 / 2.81，摊薄股数 361,282 / 360,355）；Reconciliation of Adjusted Operating Income （Adjusted Total Expenses 521.2 / 491.2，Adjusted Operating Income 1,185.0 / 1,200.8）；Reconciliation of Adjusted Net Income（1,081.7 / 1,079.4，Adjusted diluted 2.99 / 2.96）；Quarterly Operating Statistics 五季表（2Q 2026 / 1Q 2026 / 2Q 2025 三列的分品种 ADV、RPC 与交易日 62 / 61 / 62）；资产负债表 Performance bonds and guaranty fund contributions 158,110.7。",
+    "checked_on": "2026-09-19"
+  },
   "periods": [
     "2024Q3",
     "2024Q4",
@@ -3064,51 +3230,81 @@
     158110.7
   ],
   "next_kpi": {
+    "period": "Q2 2026",
     "quantified": [
       {
         "metric": "调整后营业利润率",
         "direction": "up",
         "threshold": 67.5,
         "unit": "pct",
-        "current": 69.452585
+        "current": 69.452585,
+        "from": "statement"
       },
       {
         "metric": "季度平均日成交量 ADV",
         "direction": "up",
         "threshold": 28000.0,
         "unit": "contracts_k",
-        "current": 29843.0
+        "current": 29843.0,
+        "from": "adv_table"
       },
       {
         "metric": "平均每手费率 RPC",
         "direction": "up",
         "threshold": 0.67,
         "unit": "usd_rpc",
-        "current": 0.678
+        "current": 0.678,
+        "from": "adv_table",
+        "note": "<b>所以真正有信息量的组合是「量回来了而费率没掉」</b>：若下季 ADV 回到 32,000 千手以上而费率仍不低于 $0.675，才说明存在与成交量无关的费率改善；若量价同时落到阈值以下，则说明连分级费率的缓冲也没兜住。"
       },
       {
         "metric": "调整后营业费用（除许可费）",
         "direction": "down",
         "threshold": 450.0,
         "unit": "usd_m",
-        "current": 412.1
+        "current": 412.1,
+        "from": "statement"
       },
       {
         "metric": "利率类 ADV（对去年同期）",
         "direction": "up",
         "threshold": 15472.0,
         "unit": "contracts_k",
-        "current": 14532.0
+        "current": 14532.0,
+        "from": "adv_table",
+        "short": "利率类 ADV 的同比"
       },
       {
         "metric": "行情数据收入（对上季）",
         "direction": "up",
         "threshold": 224.1,
         "unit": "usd_m",
-        "current": 238.1
+        "current": 238.1,
+        "from": "statement"
       }
     ],
-    "excluded": "另有六条本页<b>不接入</b>，原因各不相同：（1）<b>全年调整后营业费用（除许可费）指引</b> —— 这是市场唯一拿来建模 CME 成本的数，但它只出现在业绩电话会上，2025 年 6 月以来的两份 10-Q、一份 10-K 与四份业绩新闻稿里逐字搜过，一次都没有；本页只接申报文件里的指引，所以第一节结清的是资本开支而不是它。（2）<b>市场一致预期</b> —— 没有带日期、可核对的公开来源，本站不发布凭印象填的数。（3）<b>日均保证金效率</b>（本季公司称超过 950 亿美元）—— 只在电话会与新闻稿正文里以「超过」的形式出现，没有逐季序列，也没有定义。（4）<b>未平仓合约 OI</b> —— 公司只在电话会上给同比百分比，申报文件里没有逐季绝对值。（5）<b>事件合约与预测市场的成交与收入</b> —— 累计张数只在电话会上给，且两季的口径（「3 月中以来」与「自上线累计」）不同基数，不能连成一条序列。（6）<b>成交场所拆分</b>（Globex／公开喊价／私下议价）—— CME 在 2013 年第三季度换过一次场所口径，同一个季度按不同新闻稿读出 275 千手或 691 千手，本页不拼接两套基准。"
+    "excluded": "另有六条本页<b>不接入</b>，原因各不相同：（1）<b>全年调整后营业费用（除许可费）指引</b> —— 这是市场唯一拿来建模 CME 成本的数，但它只出现在业绩电话会上，{searched}里逐字搜过，一次都没有；本页只接申报文件里的指引，所以第一节结清的是资本开支而不是它。（2）<b>市场一致预期</b> —— 没有带日期、可核对的公开来源，本站不发布凭印象填的数。（3）<b>日均保证金效率</b>（本季公司称超过 950 亿美元）—— 只在电话会与新闻稿正文里以「超过」的形式出现，没有逐季序列，也没有定义。（4）<b>未平仓合约 OI</b> —— 公司只在电话会上给同比百分比，申报文件里没有逐季绝对值。（5）<b>事件合约与预测市场的成交与收入</b> —— 累计张数只在电话会上给，且两季的口径（「3 月中以来」与「自上线累计」）不同基数，不能连成一条序列。（6）<b>成交场所拆分</b>（Globex／公开喊价／私下议价）—— CME 在 2013 年第三季度换过一次场所口径，同一个季度按不同新闻稿读出 275 千手或 691 千手，本页不拼接两套基准。"
+  },
+  "quarter_context": {
+    "period": "Q2 2026",
+    "call_expense_guidance": {
+      "fiscal_year": 2026,
+      "adj_opex_ex_license_usd_m": 1695.0,
+      "venue": "2026 年 2 月 FY2025 业绩电话会给出、此后各季电话会沿用；不在任何申报文件里"
+    },
+    "searched": "2025 年 6 月以来的四份 10-Q、FY2025 的 10-K 与最近四份业绩新闻稿",
+    "searched_list": [
+      "10-Q 0001156375-25-000182（2025-07-25）",
+      "10-Q 0001156375-25-000206（2025-10-24）",
+      "10-Q 0001156375-26-000020（2026-04-24）",
+      "10-Q 0001156375-26-000047（2026-07-24）",
+      "10-K 0001156375-26-000009（FY2025）",
+      "8-K EX-99.1 0001156375-25-000204（3Q25）",
+      "8-K EX-99.1 0001156375-26-000006（4Q25）",
+      "8-K EX-99.1 0001156375-26-000016（1Q26）",
+      "8-K EX-99.1 0001156375-26-000042（2Q26）"
+    ],
+    "filings_through": "2026-07-24"
   },
   "sources": [
     {
@@ -3125,7 +3321,7 @@
     },
     {
       "label": "CME Group 2026 年第一季度业绩新闻稿（8-K EX-99.1）",
-      "url": "https://www.sec.gov/Archives/edgar/data/1156375/000115637526000020/exhibit9913312026.htm"
+      "url": "https://www.sec.gov/Archives/edgar/data/1156375/000115637526000016/exhibit9913312026.htm"
     },
     {
       "label": "CME Group 投资者关系（各季业绩新闻稿与电话会存档）",
