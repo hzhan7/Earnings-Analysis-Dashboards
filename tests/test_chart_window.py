@@ -538,8 +538,17 @@ CONVERTED = {
         "GAAP 收入增速相对指引中值的偏离": "revenue-growth guidance began later than the EPS "
                             "guidance on the same table; this follows its own "
                             "metric's floor.",
-        "调整后自由现金流相对指引中值的偏离": "adjusted free cash flow was not guided before "
-                             "FY2023.",
+        # Was "not guided before FY2023" -- a fetch gap: FY2018-FY2022 were in
+        # the releases all along and are now in the record.
+        "调整后自由现金流相对指引中值的偏离": "each bar settles a year on its final (Q3) "
+                             "vintage, and FY2021 is the first year whose Q3 release "
+                             "restates the cash outlook. Read against the filings: the "
+                             "eight FY2016-FY2017 earnings releases give no free cash "
+                             "flow guidance at all; FY2018-FY2020 give it in the "
+                             "opening February release only (acc 0000064040-18-000055, "
+                             "-19-000054, -20-000052) and the nine Q1-Q3 releases of "
+                             "those years do not restate it. Those three opening cells "
+                             "are drawn on the same metric's band chart.",
         "Ratings 的两条腿": "a deliberately recent view; the same two legs run the full 42 "
                        "quarters in the long-record section of this page.",
         "交易性收入占 Ratings 比重": "same pair, drawn recent by design.",

@@ -13,11 +13,11 @@ pinned here rather than narrated:
   the same table has, repeatedly. The counts are recounted here from the series
   and held to what the page prints, so a bad parse cannot quietly soften either
   half and a roll cannot leave a stale count behind;
-* an actual may only be placed where that metric actually carries a band. The
-  series carries adjusted free cash flow guidance only from FY2023's first
-  revision (earlier years' "free cash flow excluding certain items" outlook is
-  not in the record), and dropping an earlier year's reported figure onto a
-  cell with no range would invent a settlement;
+* an actual may only be placed where that metric actually carries a band.
+  Free cash flow guidance starts with the FY2018 opening release, but FY2018-
+  FY2020 give it in that release only -- their final vintage has no cash range
+  -- and dropping those years' reported figures onto it would invent a
+  settlement;
 * `delivery_band` and `midpoint_deviation` both default to counting quarters.
   This page counts fiscal years, so the titles are checked for it -- a chart
   reading "10 季里" for a ten-year record is wrong in a way no arithmetic test
@@ -304,9 +304,9 @@ class SpgiDashboardTest(unittest.TestCase):
                     self.assertEqual(index, last[record["fiscal_years"][index]])
 
     def test_no_actual_sits_on_a_vintage_that_has_no_band(self) -> None:
-        """The record carries adjusted free cash flow guidance from FY2023's
-        first revision only. Landing an earlier year's reported figure on a cell
-        with no range would invent a settlement that never happened."""
+        """FY2018-FY2020 guided free cash flow in the opening release only, so
+        their final vintage has no cash range. Landing those years' reported
+        figures on it would invent a settlement that never happened."""
         record = self.record
         for slot, guide in (("adjusted_eps", "guide_adjusted_eps_lo"),
                             ("gaap_eps", "guide_gaap_eps_lo"),
@@ -431,6 +431,31 @@ class SpgiDashboardTest(unittest.TestCase):
                 self.assertIn(f"{year} 差 {spgi.minus(value)}", converge["note"])
         self.assertNotIn("唯一低于开局指引的是 FY2018", converge["note"])
         self.assertNotIn("跌到整段记录的最低点", converge["note"])
+
+    def test_every_backfilled_cash_cell_names_its_filing(self) -> None:
+        """The FY2018-FY2022 cash cells were typed from the releases one by
+        one; each keeps its release's accession and the sentence itself, and the
+        sentence has to print the cell's own endpoints. The two settled cells
+        name where their result was read."""
+        record = self.record
+        sources = record["guide_adjusted_fcf_sources"]
+        for index, label in enumerate(record["vintages"]):
+            if record["guide_adjusted_fcf_lo_usd_m"][index] is None or record["fiscal_years"][index] >= 2023:
+                continue
+            with self.subTest(vintage=label):
+                self.assertIn(label, sources)
+        for label, entry in sources.items():
+            index = record["vintages"].index(label)
+            with self.subTest(vintage=label):
+                self.assertRegex(entry["accession"], r"^\d{10}-\d{2}-\d{6}$")
+                printed = {round(float(x), 3) for x in re.findall(r"\$(\d+(?:\.\d+)?) billion", entry["quote"])}
+                self.assertIn(round(record["guide_adjusted_fcf_lo_usd_m"][index] / 1000, 3), printed)
+                self.assertIn(round(record["guide_adjusted_fcf_hi_usd_m"][index] / 1000, 3), printed)
+                if record["filed_in_8k"][index]:
+                    self.assertEqual(entry["filed"], record["filed"][index])
+                actual = record["actual_adjusted_fcf_usd_m"][index]
+                if actual is not None:
+                    self.assertIn(f"${actual:,.0f}", entry["actual_source"])
 
     def test_a_point_guidance_is_never_recorded_as_a_range(self) -> None:
         """Adjusted free cash flow is written "approximately $5.2 billion" in
@@ -1521,6 +1546,29 @@ class SpgiFindingsTest(unittest.TestCase):
 
         self.assertIn("这是记录里唯一一条经常做不到的指引", self.page(gaap_clean))
         self.assertIn("这是记录里除 GAAP EPS 之外唯一一条经常做不到的指引", self.page())
+
+    def test_the_unsettled_cash_years_claims(self) -> None:
+        """FY2018-FY2020 guided cash in the opening release only, so the band
+        has no final cell to settle them on. The sentence names exactly those
+        years and goes when the state it describes goes."""
+        def restated(year):
+            def edit(s):
+                g = s["annual_guidance_history"]
+                opening = g["vintages"].index(f"FY{str(year)[2:]} 初")
+                for i in range(opening + 1, opening + 4):
+                    for key in ("guide_adjusted_fcf_lo_usd_m", "guide_adjusted_fcf_hi_usd_m",
+                                "guide_adjusted_fcf_form"):
+                        g[key][i] = g[key][opening]
+                g["actual_adjusted_fcf_usd_m"][opening + 3] = g["guide_adjusted_fcf_hi_usd_m"][opening]
+            return edit
+
+        self.assertIn("FY2018–FY2020 的现金指引只在年初那一档给过", self.page())
+        one = self.page(restated(2019))
+        self.assertIn("FY2018、FY2020 的现金指引只在年初那一档给过", one)
+        self.assertIn("所以图上这几年只有年初一格", one)
+        none = self.page(restated(2018), restated(2019), restated(2020))
+        self.assertNotIn("的现金指引只在年初那一档给过", none)
+        self.assertNotIn("没有末次那一格可结算", none)
 
 
 if __name__ == "__main__":

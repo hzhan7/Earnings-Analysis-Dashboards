@@ -634,8 +634,9 @@ same table, same twelve-month horizon; the gap between them is entirely the
 items the company itself excludes - deal amortization, disposition gains and
 losses, impairments. The number that never misses is the one the company
 defines. A third metric completes the picture rather than muddying it: adjusted
-free cash flow, guided only since FY2023, has already come in **below** its floor
-more than once. The earnings guidance behaves like a floor and the cash guidance
+free cash flow, guided since FY2018 (for FY2018-FY2020 only in the February
+release, so those three years have no final vintage to settle against), has
+already come in **below** its floor more than once. The earnings guidance behaves like a floor and the cash guidance
 like a forecast.
 
 Two things about that record needed handling rather than smoothing. The timing
