@@ -10,6 +10,7 @@ built from three separate disclosures that have to keep reconciling.
 
 from __future__ import annotations
 
+import copy
 import json
 import math
 import sys
@@ -20,7 +21,7 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from build.board import headroom  # noqa: E402
+from build.board import cn_count, headroom  # noqa: E402
 from build.msft import build_payload  # noqa: E402
 
 WINDOW = 8
@@ -62,12 +63,13 @@ class MsftDashboardTest(unittest.TestCase):
         self.assertEqual(len(self.source["azure_growth_cc_pct"]), WINDOW)
 
     def test_periods_are_calendar_quarters_not_fiscal_ones(self) -> None:
-        """Q2 2026 has to mean the quarter ended 2026-06-30 on this page, the
-        same three months every other company page calls Q2 2026."""
-        self.assertEqual(self.payload["latest"]["disclosed_period_label"], "Q2 2026")
-        self.assertEqual(self.payload["latest"]["period_end"], "2026-06-30")
-        self.assertIn("FY2026 Q4", self.payload["latest"]["full_financial_period_label"])
-        self.assertIn("FY2026 Q4", self.payload["subtitle"])
+        """The page's quarter has to mean the same three months every other
+        company page calls by that name; the fiscal name rides alongside."""
+        checks = self.source["_checks"]
+        self.assertEqual(self.payload["latest"]["disclosed_period_label"], checks["period"])
+        self.assertEqual(self.payload["latest"]["period_end"], checks["period_end"])
+        self.assertIn(checks["fiscal_period"], self.payload["latest"]["full_financial_period_label"])
+        self.assertIn(checks["fiscal_period"], self.payload["subtitle"])
         self.assertTrue(
             any("自然年季度" in note for note in self.payload["notes"]),
             "the labelling convention must be stated on the page, not only in the source",
@@ -106,12 +108,24 @@ class MsftDashboardTest(unittest.TestCase):
             "dividends_paid": "dividends_paid",
             "depreciation": "depreciation",
         }
-        years = {"FY2025": slice(4, 8), "FY2026": slice(8, 12)}
+        # A fiscal year ending in June is the calendar Q3 and Q4 of the year
+        # before and Q1 and Q2 of its own year -- read off the labels, not off
+        # fixed positions, so the check survives a roll.
+        def quarters_of(label: str) -> list[str]:
+            year = int(label[2:])
+            return [f"Q3 {year - 1}", f"Q4 {year - 1}", f"Q1 {year}", f"Q2 {year}"]
+        years = {}
+        for label in self.fy["labels"]:
+            wanted = quarters_of(label)
+            if all(p in self.source["periods"] for p in wanted):
+                at = [self.source["periods"].index(p) for p in wanted]
+                years[label] = slice(at[0], at[-1] + 1)
+        self.assertTrue(years)
         for quarterly_key, annual_key in pairs.items():
-            for position, (label, window) in enumerate(years.items()):
+            for label, window in years.items():
                 self.assertEqual(
                     sum(self.q[quarterly_key][window]),
-                    self.fy[annual_key][position],
+                    self.fy[annual_key][self.fy["labels"].index(label)],
                     f"{label} {quarterly_key}",
                 )
 
@@ -125,20 +139,31 @@ class MsftDashboardTest(unittest.TestCase):
                 self.fy["operating_cash_flow"], self.fy["cash_paid_for_property_and_equipment"]
             )
         ]
-        self.assertEqual(reported, [71611, 66987])
+        checks = self.source["_checks"]["fiscal_year"]
+        self.assertEqual(self.fy["labels"][-1], checks["label"])
+        self.assertEqual(reported[-1], checks["operating_cash_flow_usd_m"]
+                         - checks["additions_to_property_and_equipment_usd_m"])
         unpaid = [self.fy["unpaid_capex_in_payables_prior"]] + self.fy["unpaid_capex_in_payables"]
+        self.assertEqual(unpaid[-2:], [checks["unpaid_capex_in_payables_prior_usd_m"],
+                                       checks["unpaid_capex_in_payables_usd_m"]])
         adjusted = [
             value - (unpaid[index + 1] - unpaid[index]) for index, value in enumerate(reported)
         ]
-        self.assertEqual(adjusted, [69011, 47187])
+        # Shareholder returns are the company's own measure: programme buybacks
+        # plus dividends. The cash-flow repurchase line also carries shares
+        # withheld for employees' taxes; counting them put the FY2026 coverage
+        # at 103.2% where the company's own "over $43 billion" gives 91.5%.
         returns = [
             repurchase + dividend
-            for repurchase, dividend in zip(self.fy["stock_repurchases"], self.fy["dividends_paid"])
+            for repurchase, dividend in zip(self.fy["share_repurchase_program"], self.fy["dividends_paid"])
         ]
-        self.assertEqual(returns, [42502, 48716])
+        self.assertEqual(self.fy["share_repurchase_program"][-1], checks["share_repurchase_program_usd_m"])
+        self.assertEqual(self.fy["stock_repurchases"][-1], checks["common_stock_repurchased_usd_m"])
+        self.assertTrue(43000 < returns[-1] < 44000, "the company says it returned over $43 billion")
+        self.assertTrue(all(program <= cash for program, cash in
+                            zip(self.fy["share_repurchase_program"], self.fy["stock_repurchases"])))
         coverage = [value / base * 100 for value, base in zip(returns, adjusted)]
-        self.assertAlmostEqual(coverage[0], 61.6, places=1)
-        self.assertAlmostEqual(coverage[1], 103.2, places=1)
+        self.assertIn(f"股东回报已占到调整后自由现金流的 {coverage[-1]:.1f}%", self.payload["headline"])
 
         exhibit = next(ex for ex in self.exhibits if ex["kind"] == "grouped_bars")
         self.assertEqual(exhibit["xlabels"], self.fy["labels"])
@@ -155,9 +180,16 @@ class MsftDashboardTest(unittest.TestCase):
             )
         ]
         self.assertEqual(chart["values"], expected)
-        # The whole point of the exhibit: five consecutive falls, then one rise.
-        self.assertTrue(all(b < a for a, b in zip(expected[:-2], expected[1:-1])))
+        # The whole point of the exhibit: a run of falls, then one rise -- and
+        # the title counts the run. It said five while the record showed six.
         self.assertGreater(expected[-1], expected[-2])
+        falls = 0
+        for a, b in zip(reversed(expected[:-2]), reversed(expected[1:-1])):
+            if b < a:
+                falls += 1
+            else:
+                break
+        self.assertIn(f"连降{cn_count(falls)}季后首次回升", chart["title"])
 
     def test_page_is_chart_led(self) -> None:
         self.assertEqual(self.payload["summary"]["blocks"], [])
@@ -171,9 +203,13 @@ class MsftDashboardTest(unittest.TestCase):
             self.assertTrue(exhibit.get("src_extra"), f"exhibit {exhibit['n']} has no source line")
 
     def test_section_order_matches_how_the_note_is_used(self) -> None:
+        prior = [e for e in self.source["prior_kpi_settlement"]["quantified"]
+                 if e["metric"] in ("Azure 固定汇率增速", "经营费用同比")]
+        nxt = [e for e in self.source["next_kpi"]["quantified"] if not e.get("annual")]
         self.assertEqual(
             [(section["id"], len(section["exhibits"])) for section in self.payload["sections"]],
-            [("settled", 4), ("quarter_highlights", 6), ("next_quarter", 5), ("routine", 4)],
+            [("settled", 2 + len(prior)), ("quarter_highlights", 6),
+             ("next_quarter", 1 + len(nxt)), ("routine", 4)],
         )
 
     def test_headroom_bars_reproduce_the_thresholds(self) -> None:
@@ -199,16 +235,18 @@ class MsftDashboardTest(unittest.TestCase):
             )
             if value < 0
         }
-        self.assertEqual(breached, {"股东回报 / 调整后自由现金流"})
+        title = self.by_section["next_quarter"][0]["title"]
+        if not breached:
+            self.assertIn("当前值全部在安全侧", title)
+        else:
+            self.assertNotIn("全部在安全侧", title.replace("经营类全部在安全侧", ""))
 
     def test_every_tracked_metric_with_a_series_gets_its_own_chart(self) -> None:
         charted = {ex["title"].split("：")[0] for ex in self.by_section["next_quarter"][1:]}
         tracked = {entry["metric"] for entry in self.source["next_kpi"]["quantified"]}
-        # The last two are annual ratios built from the 10-K, not quarterly series.
-        self.assertEqual(
-            tracked - charted,
-            {"股东回报 / 调整后自由现金流", "已签约未起租租约 / 年收入"},
-        )
+        # The annual ratios built from the 10-K are not quarterly series.
+        annual = {entry["metric"] for entry in self.source["next_kpi"]["quantified"] if entry.get("annual")}
+        self.assertEqual(tracked - charted, annual)
         # Two windows now, and which one a metric gets is decided by what is
         # filed rather than by preference: Azure publishes a growth rate and no
         # revenue, and Intelligent Cloud's segment cost of revenue -- the
@@ -228,7 +266,7 @@ class MsftDashboardTest(unittest.TestCase):
         # does not have to guess whether the page just failed to fetch.
         for exhibit in self.by_section["next_quarter"][1:]:
             if exhibit["title"].split("：")[0] in SHORT_BY_DISCLOSURE:
-                self.assertIn("只有八季", exhibit["note"], exhibit["title"])
+                self.assertIn(f"只有{cn_count(WINDOW)}季", exhibit["note"], exhibit["title"])
 
     def test_long_history_agrees_with_the_reviewed_quarters(self) -> None:
         """The ten-year series and the reviewed twelve must not disagree.
@@ -335,7 +373,7 @@ class MsftDashboardTest(unittest.TestCase):
         self.assertIn("市场预期", text)
         for broker in ["FactSet", "Bloomberg", "Seeking Alpha", "consensus", "Anthropic"]:
             self.assertNotIn(broker.lower(), text.lower())
-        self.assertEqual(self.source["market_expectation"]["as_of"], "2026-07-29")
+        self.assertEqual(self.source["market_expectation"]["as_of"], self.source["latest"]["release_date"])
         # Two public sources disagree by $1.75B, so only the direction is published.
         self.assertIn("不发布超预期幅度", text)
 
@@ -377,6 +415,212 @@ class MsftDashboardTest(unittest.TestCase):
         self.assertNotIn(":nan", compact)
         self.assertNotIn(":infinity", compact)
         self.assertNotIn(":-infinity", compact)
+
+
+STAMPED = ("outlook", "market_expectation", "followup_closure", "prior_kpi_settlement", "next_kpi")
+
+
+def published_text(payload: dict) -> str:
+    return json.dumps(payload, ensure_ascii=False)
+
+
+class MsftChecksTest(unittest.TestCase):
+    """The page's quarter against a record keyed separately from the filing.
+
+    `_checks` is typed once per quarter from the earnings release (and the 10-K
+    and the call for the few items the release does not print), with the place
+    each figure was read from. It is not copied from the arrays and the builder
+    never reads it (`test_data_only_roll`).
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads((ROOT / "series" / "msft.json").read_text(encoding="utf-8"))
+        cls.checks = cls.source["_checks"]
+        cls.payload = build_payload(cls.source)
+        cls.exhibits = [ex for section in cls.payload["sections"] for ex in section["exhibits"]]
+        cls.q = cls.source["quarterly_usd_m"]
+
+    def test_the_page_names_the_checked_quarter(self) -> None:
+        self.assertIn(self.checks["period"], self.payload["title"])
+        self.assertIn(f"截至 {self.checks['period_end']}（微软 {self.checks['fiscal_period']}）",
+                      self.payload["subtitle"])
+        self.assertIn(f"发布 {self.checks['release_date']}", self.payload["subtitle"])
+
+    def test_the_series_ends_on_the_checked_figures(self) -> None:
+        c, q = self.checks, self.q
+        for key, check in (("revenue_total", "revenue_usd_m"), ("gross_profit", "gross_margin_usd_m"),
+                           ("operating_income", "operating_income_usd_m"),
+                           ("operating_expenses", "operating_expenses_usd_m"),
+                           ("other_income_expense_net", "other_income_expense_net_usd_m"),
+                           ("operating_cash_flow", "operating_cash_flow_usd_m"),
+                           ("cash_paid_for_property_and_equipment", "additions_to_property_and_equipment_usd_m"),
+                           ("stock_repurchases", "common_stock_repurchased_usd_m"),
+                           ("dividends_paid", "dividends_paid_usd_m")):
+            with self.subTest(line=key):
+                self.assertEqual(q[key][-1], c[check])
+        self.assertEqual(q["revenue_total"][-5], c["revenue_year_ago_usd_m"])
+        segments = self.source["segments_usd_m"]
+        for key, value in c["segments_usd_m"].items():
+            with self.subTest(segment=key):
+                self.assertEqual(segments[key][-1], value)
+        self.assertEqual(self.source["azure_growth_cc_pct"][-1], c["azure_growth_printed_pct"])
+        fy, cfy = self.source["fiscal_year_usd_m"], c["fiscal_year"]
+        self.assertEqual(fy["labels"][-1], cfy["label"])
+        for key, check in (("revenue", "revenue_usd_m"), ("operating_income", "operating_income_usd_m"),
+                           ("operating_cash_flow", "operating_cash_flow_usd_m"),
+                           ("cash_paid_for_property_and_equipment", "additions_to_property_and_equipment_usd_m"),
+                           ("stock_repurchases", "common_stock_repurchased_usd_m"),
+                           ("share_repurchase_program", "share_repurchase_program_usd_m"),
+                           ("dividends_paid", "dividends_paid_usd_m"),
+                           ("unpaid_capex_in_payables", "unpaid_capex_in_payables_usd_m"),
+                           ("depreciation", "depreciation_usd_m"),
+                           ("contracted_not_yet_commenced_leases", "contracted_not_yet_commenced_leases_usd_m")):
+            with self.subTest(fiscal=key):
+                self.assertEqual(fy[key][-1], cfy[check])
+        outlook = self.source["outlook"]
+        for key, value in c["next_quarter"].items():
+            with self.subTest(guide=key):
+                self.assertEqual(outlook[key], value)
+
+    def test_computed_figures_round_to_what_the_release_prints(self) -> None:
+        c, q = self.checks, self.q
+        self.assertEqual(round((q["revenue_total"][-1] / q["revenue_total"][-5] - 1) * 100),
+                         c["revenue_growth_printed_pct"])
+        # "returned $10.2 billion to shareholders ... in the fourth quarter" is
+        # programme buybacks plus dividends; the quarter's programme buyback is
+        # the 10-K's fourth-quarter row.
+        fy = self.source["fiscal_year_usd_m"]
+        returns = fy["share_repurchase_program"][-1] + fy["dividends_paid"][-1]
+        self.assertIn("43", c["fiscal_year"]["returned_to_shareholders_words"])
+        self.assertEqual(int(returns // 1000), 43)
+
+    def test_the_page_prints_the_checked_figures(self) -> None:
+        c = self.checks
+        revenue_chart = next(ex for ex in self.exhibits if ex["title"].startswith("收入 $"))
+        self.assertIn(f"收入 ${c['revenue_usd_m']:,}M", revenue_chart["title"])
+        grouped = next(ex for ex in self.exhibits if ex["kind"] == "grouped_bars")
+        cfy = c["fiscal_year"]
+        self.assertEqual(grouped["groups"][2]["values"][-1],
+                         cfy["share_repurchase_program_usd_m"] + cfy["dividends_paid_usd_m"])
+        self.assertIn(f"+{c['azure_growth_printed_pct']}%", self.payload["brief"])
+
+    def test_every_threshold_value_matches_the_series(self) -> None:
+        """The coverage threshold's `current` was typed as 103.2 -- the cash-flow
+        repurchase line over adjusted free cash flow -- and flipped the chart's
+        verdict; on the company's own measure it is 91.5."""
+        fy = self.source["fiscal_year_usd_m"]
+        reported = fy["operating_cash_flow"][-1] - fy["cash_paid_for_property_and_equipment"][-1]
+        adjusted = reported - (fy["unpaid_capex_in_payables"][-1] - fy["unpaid_capex_in_payables"][-2])
+        returns = fy["share_repurchase_program"][-1] + fy["dividends_paid"][-1]
+        segments = self.source["segments_usd_m"]
+        q = self.q
+        expected = {
+            "Azure 固定汇率增速": self.source["azure_growth_cc_pct"][-1],
+            "Intelligent Cloud 分部毛利率": (segments["intelligent_cloud_revenue"][-1]
+                                        - segments["intelligent_cloud_cost_of_revenue"][-1])
+                                       / segments["intelligent_cloud_revenue"][-1] * 100,
+            "单季回购金额": q["stock_repurchases"][-1],
+            "单季自由现金流（报告口径）": q["operating_cash_flow"][-1] - q["cash_paid_for_property_and_equipment"][-1],
+            "股东回报 / 调整后自由现金流": returns / adjusted * 100,
+            "已签约未起租租约 / 年收入": fy["contracted_not_yet_commenced_leases"][-1] / fy["revenue"][-1] * 100,
+            "经营费用同比": (q["operating_expenses"][-1] / q["operating_expenses"][-5] - 1) * 100,
+        }
+        for entry in self.source["next_kpi"]["quantified"]:
+            with self.subTest(metric=entry["metric"]):
+                self.assertAlmostEqual(entry["current"], expected[entry["metric"]], places=1)
+        for entry in self.source["prior_kpi_settlement"]["quantified"]:
+            if entry["metric"] in expected:
+                with self.subTest(prior=entry["metric"]):
+                    self.assertAlmostEqual(entry["actual"], expected[entry["metric"]], places=1)
+
+
+class MsftRollTest(unittest.TestCase):
+    """What a quarter roll can and cannot get past."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads((ROOT / "series" / "msft.json").read_text(encoding="utf-8"))
+        cls.payload = build_payload(cls.source)
+
+    def test_a_block_stamped_with_another_quarter_stops_the_build(self) -> None:
+        for key in STAMPED:
+            stale = copy.deepcopy(self.source)
+            stale[key]["period"] = "Q1 1999"
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "stamped"):
+                    build_payload(stale)
+
+    def test_a_missing_quarter_block_leaves_its_part_out(self) -> None:
+        bare = copy.deepcopy(self.source)
+        for key in STAMPED:
+            del bare[key]
+        payload = build_payload(bare)
+        self.assertEqual([s["id"] for s in payload["sections"]], ["quarter_highlights", "routine"])
+        text = published_text(payload)
+        for gone in ("财报当日股价", "下季与 FY", "市场预期区间", "待验证问题", "超自身指引"):
+            with self.subTest(gone=gone):
+                self.assertNotIn(gone, text)
+
+    def test_the_quarter_release_must_be_in_the_sources(self) -> None:
+        missing = copy.deepcopy(self.source)
+        fiscal = missing["latest"]["fiscal_period"]
+        missing["sources"] = [s for s in missing["sources"] if not s["label"].startswith(fiscal)]
+        with self.assertRaisesRegex(ValueError, "sources"):
+            build_payload(missing)
+
+    def test_the_record_sentences_are_computed_not_remembered(self) -> None:
+        before = published_text(self.payload)
+        cases = []
+
+        led_before = copy.deepcopy(self.source)
+        led_before["segments_usd_m"]["intelligent_cloud_revenue"][0] = 40000
+        cases.append(("IC led PBP earlier", led_before,
+                      ["本季首次超过 Productivity", "收入首次超过 Productivity", "首次成为最大分部"]))
+
+        one_rise = copy.deepcopy(self.source)
+        costs = one_rise["segments_usd_m"]["intelligent_cloud_cost_of_revenue"]
+        costs[3] = 9000   # 2025Q2's margin now above 2025Q1's: the run of falls is broken
+        cases.append(("the run of falls is shorter", one_rise, ["连降六季", "六季来首次回升"]))
+
+        over = copy.deepcopy(self.source)
+        over["fiscal_year_usd_m"]["share_repurchase_program"][-1] = 22271
+        for entry in over["next_kpi"]["quantified"]:
+            if entry["metric"].startswith("股东回报"):
+                entry["current"] = 103.2
+        cases.append(("returns over free cash flow", over, ["回报逼近真实自由现金流"]))
+
+        under = copy.deepcopy(self.source)
+        under["fiscal_year_usd_m"]["share_repurchase_program"][-1] = 1000
+        cases.append(("returns well under free cash flow", under, ["回报逼近真实自由现金流"]))
+
+        not_top = copy.deepcopy(self.source)
+        not_top["long_history"]["capital_expenditures_usd_m"][5] = 20000.0
+        cases.append(("an earlier capex-intensity peak", not_top, ["拉长看才知道当前这一档没有先例"]))
+
+        loss_year = copy.deepcopy(self.source)
+        long = loss_year["long_history"]
+        at = long["quarters"].index("2025Q2")
+        long["other_income_expense_net_usd_m"][at] = 9000.0
+        cases.append(("last fiscal year's other income positive", loss_year, ["上一财年产生的是净损失"]))
+
+        for name, series, claims in cases:
+            after = published_text(build_payload(series))
+            for claim in claims:
+                with self.subTest(case=name, claim=claim):
+                    self.assertIn(claim, before)
+                    self.assertNotIn(claim, after)
+
+        over_text = published_text(build_payload(over))
+        self.assertIn("回报已超过真实自由现金流", over_text)
+        self.assertIn("被击穿的是现金分配那条", over_text)
+
+    def test_the_counted_sentences_follow_the_record(self) -> None:
+        text = published_text(self.payload)
+        self.assertIn("七次环比里五次下降", text)
+        self.assertNotIn("单向下滑", text)
+        self.assertIn("上季时隔五季再次给出", text)
+        self.assertNotIn("上季首次给出", text)
 
 
 if __name__ == "__main__":

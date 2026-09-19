@@ -8,12 +8,77 @@
   },
   "latest": {
     "period": "Q2 2026",
-    "previous_period": "Q1 2026",
-    "prior_year_period": "Q2 2025",
     "period_end": "2026-06-30",
     "release_date": "2026-07-29",
     "analysis_date": "2026-07-30",
     "audit_status": "unaudited"
+  },
+  "_checks": {
+    "period": "Q2 2026",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-29",
+    "revenue_usd_m": 60801,
+    "revenue_year_ago_usd_m": 47516,
+    "revenue_growth_printed_pct": 28,
+    "costs_and_expenses_usd_m": 42026,
+    "operating_income_usd_m": 18775,
+    "operating_income_year_ago_usd_m": 20441,
+    "operating_margin_printed_pct": 31,
+    "diluted_eps_usd": 6.18,
+    "advertising_revenue_usd_m": 59363,
+    "advertising_revenue_year_ago_usd_m": 46563,
+    "advertising_growth_printed_pct": 27,
+    "foa_other_revenue_usd_m": 1007,
+    "reality_labs_revenue_usd_m": 431,
+    "family_of_apps_operating_income_usd_m": 23394,
+    "reality_labs_operating_loss_usd_m": -4619,
+    "ad_impressions_yoy_pct": 14,
+    "price_per_ad_yoy_pct": 12,
+    "family_daily_active_people_bn": 3.6,
+    "legal_proceedings_charge_usd_m": 2400,
+    "severance_charge_usd_m": 1180,
+    "operating_cash_flow_usd_m": 31862,
+    "purchases_of_property_and_equipment_usd_m": 30116,
+    "finance_lease_principal_usd_m": 962,
+    "capital_expenditures_incl_finance_leases_usd_m": 31078,
+    "free_cash_flow_usd_m": 784,
+    "depreciation_and_amortization_usd_m": 6356,
+    "share_based_compensation_usd_m": 7658,
+    "repurchases_usd_m": 0,
+    "net_long_term_debt_issuance_usd_m": 24910,
+    "headcount": 75472,
+    "next_quarter_revenue_guide_usd_bn": [
+      61,
+      64
+    ],
+    "full_year_expense_guide_usd_bn": [
+      165,
+      169
+    ],
+    "full_year_capex_guide_usd_bn": [
+      130,
+      145
+    ],
+    "full_year_capex_guide_prior_usd_bn": [
+      125,
+      145
+    ],
+    "tax_rate_guide_pct": [
+      15,
+      17
+    ],
+    "tax_rate_guide_prior_pct": [
+      13,
+      16
+    ],
+    "user_geography_yoy_pct": {
+      "美国与加拿大": 32,
+      "欧洲": 24,
+      "亚太": 19,
+      "其他地区": 36
+    },
+    "source": "Meta Q2 2026 业绩新闻稿（8-K EX-99.1，acc 0001628280-26-050596，2026-07-29）逐项读取：首段「quarter ended June 30, 2026」与发布日 July 29, 2026；Financial Highlights 表（Revenue 60,801 / 47,516、28%；Costs and expenses 42,026；Income from operations 18,775 / 20,441；Operating margin 31%；Diluted EPS 6.18）；Operational Highlights（DAP 3.60 billion；Ad impressions +14%；Average price per ad +12%；$2.40 billion legal proceedings 与 $1.18 billion severance；Headcount 75,472）；CFO Outlook Commentary（third quarter $61-64 billion；expenses $165-169 billion；capital expenditures $130-145 billion, narrowed from $125-145 billion；tax rate 15-17%, from 13-16%）；现金流量表（operating activities 31,862；Purchases of property and equipment (30,116)；Principal payments on finance leases (962)；Depreciation and amortization 6,356；Share-based compensation 7,658；Repurchases —；Proceeds from issuance of long-term debt, net 24,910）；分部表（Advertising 59,363 / 46,563；Other revenue 1,007；Reality Labs 431；FoA 23,394；RL (4,619)）；Reconciliation 表（advertising +27%；Free cash flow 784）。区域同比取同季 10-Q（acc 0001628280-26-050705）MD&A「revenue increased by 32% in United States & Canada, 24% in Europe, 19% in Asia-Pacific, and 36% in Rest of World」。",
+    "checked_on": "2026-09-19"
   },
   "periods": [
     "Q3 2023",
@@ -34,12 +99,12 @@
       34146,
       40111,
       36455,
-      39072,
+      39071,
       40589,
       48385,
       42314,
       47516,
-      51243,
+      51242,
       59893,
       56311,
       60801
@@ -76,12 +141,12 @@
       20398,
       23727,
       22637,
-      24225,
-      23238,
+      24224,
+      23239,
       25021,
       24759,
       27075,
-      30709,
+      30707,
       35148,
       33439,
       42026
@@ -91,11 +156,11 @@
       16384,
       13818,
       14847,
-      17351,
+      17350,
       23364,
       17555,
       20441,
-      20534,
+      20535,
       24745,
       22872,
       18775
@@ -230,27 +295,38 @@
     ],
     "denominator_note": "impressions 与 price per ad 均为公司披露的同比百分比；Family DAP 为季末月的日均口径"
   },
-  "quarter_geography_usd_m": {
+  "quarter_geography": {
+    "period": "Q2 2026",
     "regions": [
       "美国与加拿大",
       "欧洲",
       "亚太",
       "其他地区"
     ],
-    "current": [
+    "user_geography_yoy_pct": [
+      32,
+      24,
+      19,
+      36
+    ],
+    "user_geography_source": "Q2 2026 10-Q MD&A「Revenue by user geography」一段：「revenue increased by 32% in United States & Canada, 24% in Europe, 19% in Asia-Pacific, and 36% in Rest of World」——公司按广告曝光与商品交付的用户所在地估计的口径。",
+    "customer_address_current": [
       23863,
       14009,
       16073,
       6856
     ],
-    "prior_year": [
+    "customer_address_prior_year": [
       18454,
       11128,
       12858,
       5076
-    ]
+    ],
+    "customer_address_source": "Q2 2026 10-Q 收入分解附注「Revenue disaggregated by geography, based on the addresses of our customers」，本季与去年同期两列。",
+    "management_remark": "管理层同时表示新增曝光更多来自「变现能力较低的版面与地区」，这正是价格被结构稀释的来源。"
   },
   "quarter_expense_lines_usd_m": {
+    "period": "Q2 2026",
     "lines": [
       "收入成本",
       "研发",
@@ -270,27 +346,14 @@
       2663
     ]
   },
-  "current_snapshot": {
-    "revenue_usd_m": [
-      60801,
-      56311,
-      47516
+  "quarter_snapshot": {
+    "period": "Q2 2026",
+    "columns": [
+      "Q2 2026",
+      "Q1 2026",
+      "Q2 2025"
     ],
-    "advertising_revenue_usd_m": [
-      59363,
-      55024,
-      46563
-    ],
-    "foa_other_revenue_usd_m": [
-      1007,
-      885,
-      583
-    ],
-    "reality_labs_revenue_usd_m": [
-      431,
-      402,
-      370
-    ],
+    "why": "当季经营质量表里 series 没有的几行，按 columns 的顺序（本季、上季、去年同季；null = 该季未取）存申报原值；其余行由 builder 从 quarterly_usd_m 现算。",
     "family_of_apps_operating_income_usd_m": [
       23394,
       26900,
@@ -301,45 +364,10 @@
       -4028,
       -4530
     ],
-    "operating_income_usd_m": [
-      18775,
-      22872,
-      20441
-    ],
     "diluted_eps_usd": [
       6.18,
       10.44,
       7.14
-    ],
-    "diluted_shares_m": [
-      2566,
-      2565,
-      2570
-    ],
-    "operating_cash_flow_usd_m": [
-      31862,
-      32226,
-      25561
-    ],
-    "capex_incl_finance_leases_usd_m": [
-      31078,
-      19840,
-      17012
-    ],
-    "free_cash_flow_usd_m": [
-      784,
-      12386,
-      8549
-    ],
-    "cash_and_marketable_securities_usd_m": [
-      90260,
-      81180,
-      null
-    ],
-    "long_term_debt_usd_m": [
-      83664,
-      58750,
-      null
     ],
     "unpaid_capex_in_payables_usd_m": [
       19502,
@@ -351,88 +379,40 @@
       null,
       1662
     ],
+    "restricted_cash_remark": "公司未解释性质",
     "headcount": [
       75472,
       77986,
       75945
     ],
-    "legal_proceedings_charge_usd_m": 2400,
-    "severance_charge_usd_m": 1180,
+    "one_off_items": [
+      {
+        "name": "法律计提",
+        "usd_m": 2400
+      },
+      {
+        "name": "遣散费",
+        "usd_m": 1180
+      }
+    ],
     "workforce_reduction_positions": 8000,
-    "adjusted_operating_income_usd_m": 22355
+    "net_debt_issuance_usd_m": 24910,
+    "sources": "Q2 2026 EX-99.1（分部表、每股收益、要点行的 headcount 与「approximately 8,000 employees」、费用行的 $2.40B 与 $1.18B、现金流量表「Proceeds from issuance of long-term debt, net」24,910）；Q2 2026 10-Q（「Property and equipment in accounts payable ...」19,502 / 10,618；受限现金 13,107 / 1,662）；Q1 2026 EX-99.1（分部经营利润 26,900 / (4,028)、稀释 EPS 10.44、headcount 77,986）。"
   },
-  "operating_income_bridge": {
-    "labels": [
-      "Q1 2026 经营利润",
-      "Q2 2026 GAAP",
-      "Q2 2026 调整后 D"
-    ],
-    "values_usd_m": [
-      22872,
-      18775,
-      22355
-    ],
-    "addbacks": {
-      "法律计提": 2400,
-      "遣散费": 1180
-    }
+  "annual_actuals_usd_m": {
+    "2025": {
+      "revenue": 200966,
+      "operating_income": 83276,
+      "depreciation_and_amortization": 18616,
+      "share_based_compensation": 20427,
+      "purchases_of_property_and_equipment": 69691,
+      "finance_lease_principal": 2524
+    },
+    "why": "各年 10-K 的全年申报值（官方值）。第四季由全年减前三季得到时，四季相加与这里可能差 $1M 的舍入；页面凡需要「全年」的地方用这里的申报值。"
   },
-  "fy2025_actuals_usd_m": {
-    "revenue": 200966,
-    "operating_income": 83276,
-    "depreciation_and_amortization": 18616,
-    "share_based_compensation": 20427,
-    "purchases_of_property_and_equipment": 69691,
-    "finance_lease_principal": 2524
-  },
-  "capex_guidance_history": {
-    "calls": [
-      "Q4 2025 call",
-      "Q1 2026 call",
-      "Q2 2026 call"
-    ],
-    "dates": [
-      "2026-01-28",
-      "2026-04-29",
-      "2026-07-29"
-    ],
-    "low_usd_bn": [
-      115,
-      125,
-      130
-    ],
-    "high_usd_bn": [
-      135,
-      145,
-      145
-    ],
-    "positioning": [
-      "首次量化区间",
-      "上下限各抬 $10B",
-      "下限再抬 $5B，上限不变"
-    ]
-  },
-  "guidance": {
-    "q3_revenue_usd_m": [
-      61000,
-      64000
-    ],
-    "fy2026_expenses_usd_bn": [
-      165,
-      169
-    ],
-    "fy2026_expenses_prior_usd_bn": [
-      162,
-      169
-    ],
-    "fy2026_capex_usd_bn": [
-      130,
-      145
-    ],
-    "fy2026_capex_prior_usd_bn": [
-      125,
-      145
-    ],
+  "outlook": {
+    "period": "Q2 2026",
+    "why": "当季新闻稿 CFO Outlook Commentary 里、指引记录（quarterly_guidance_history）之外的几条：税率区间、经营利润承诺的措辞、FY2027 CapEx 的回应。收入、费用、资本开支三条指引从指引记录现取，不在这里重抄。",
     "tax_rate_pct": [
       15,
       17
@@ -441,12 +421,15 @@
       13,
       16
     ],
-    "fy2026_operating_income_commitment": "高于 2025 年绝对值",
+    "operating_income_commitment": "高于 2025 年绝对值",
+    "operating_income_commitment_prior": "高于 2025 年绝对值",
     "fy2027_capex": "明确不提供",
-    "h1_2026_capex_usd_m": 50918,
-    "h1_2026_operating_income_usd_m": 41647
+    "fy2027_capex_prior": "拒绝提供",
+    "fy2027_capex_remark": "连续两季拒绝，可建模性为零",
+    "expense_change_reason": "以吸收本季法律计提"
   },
   "market_expectation": {
+    "period": "Q2 2026",
     "label": "市场预期（财报前一致预期，来源不具名）",
     "as_of": "2026-07-29",
     "revenue_usd_m": 60200,
@@ -460,6 +443,8 @@
     "source_conflict_note": "各公开来源对财报后跌幅报价不一致（约 7%–11%），本页只发布区间"
   },
   "followup_closure": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
     "labels": [
       "已验证",
       "部分验证",
@@ -472,45 +457,53 @@
       1,
       1
     ],
-    "set_in": "Q1 2026"
+    "note": "被证伪的是「裁员会带来费用指引下调」——裁员约 {positions} 人、遣散费 {severance}，全年费用指引反而把下限抬高了 {expense_low_raise}；{partial}条部分验证全部因为公司换掉了原来的披露口径。"
   },
   "prior_kpi_settlement": {
+    "period": "Q2 2026",
     "set_in": "Q1 2026",
+    "lead": "广告价格以 {price_margin} 的余量「达标」，但同一季广告收入减速 {ad_slowdown}——这条阈值本身已被证明会给出方向相反的信号，本季退役。",
     "quantified": [
       {
         "metric": "FY2026 CapEx 指引中点",
         "direction": "down",
         "threshold": 145.0,
         "actual": 137.5,
-        "unit": "usd_bn"
+        "unit": "usd_bn",
+        "area": "资本开支"
       },
       {
         "metric": "平均每条广告价格 YoY",
         "direction": "up",
         "threshold": 8.0,
         "actual": 12.0,
-        "unit": "pct"
+        "unit": "pct",
+        "area": "广告价格"
       },
       {
         "metric": "Reality Labs 单季收入",
         "direction": "up",
         "threshold": 500.0,
         "actual": 431.0,
-        "unit": "usd_m"
+        "unit": "usd_m",
+        "area": "新硬件"
       },
       {
         "metric": "FoA Other 收入 YoY",
         "direction": "up",
         "threshold": 60.0,
         "actual": 72.7,
-        "unit": "pct"
+        "unit": "pct",
+        "area": "非广告收入"
       },
       {
         "metric": "经营利润率（调整后）",
         "direction": "up",
         "threshold": 37.0,
         "actual": 36.77,
-        "unit": "pct"
+        "unit": "pct",
+        "area": "利润率",
+        "basis": "adjusted"
       }
     ],
     "retired": [
@@ -519,14 +512,20 @@
     ]
   },
   "next_kpi": {
+    "period": "Q2 2026",
     "for_period": "Q3 2026",
+    "theme_words": {
+      "incremental_profit": "增量资本有没有产出增量利润"
+    },
     "quantified": [
       {
         "metric": "同比增量经营利润率",
         "direction": "up",
         "threshold": 25.0,
         "current": 14.4,
-        "unit": "pct"
+        "unit": "pct",
+        "theme": "incremental_profit",
+        "basis": "adjusted"
       },
       {
         "metric": "广告量价乘积（隐含收入增速）",
@@ -547,7 +546,8 @@
         "direction": "up",
         "threshold": 20819.0,
         "current": 18775.0,
-        "unit": "usd_m"
+        "unit": "usd_m",
+        "theme": "incremental_profit"
       },
       {
         "metric": "FY2026 CapEx 指引中点",
@@ -558,10 +558,22 @@
       }
     ],
     "disclosure_gated": [
-      "Q2 2026 10-Q 中数据中心合资结构的合并判定、残值担保与租赁承诺披露",
-      "FY2027 CapEx 首次指引：连续两季被明确拒绝，≥US$180B 即重估",
-      "企业级（API / business agents / 直售算力）是否首次给出绝对收入或年化 run rate",
-      "$13,107M 受限现金的性质：公司未解释，直接影响现金可动用性"
+      {
+        "short": "数据中心合资结构的合并判定与担保",
+        "text": "Q2 2026 10-Q 中数据中心合资结构的合并判定、残值担保与租赁承诺披露"
+      },
+      {
+        "short": "FY2027 CapEx 首次指引",
+        "text": "FY2027 CapEx 首次指引：连续两季被明确拒绝，≥US$180B 即重估"
+      },
+      {
+        "short": "企业级业务的绝对收入",
+        "text": "企业级（API / business agents / 直售算力）是否首次给出绝对收入或年化 run rate"
+      },
+      {
+        "short": "受限现金性质",
+        "text": "$13,107M 受限现金的性质：公司未解释，直接影响现金可动用性"
+      }
     ]
   },
   "sources": [
@@ -681,12 +693,12 @@
       34146,
       40111,
       36455,
-      39072,
+      39071,
       40589,
       48385,
       42314,
       47516,
-      51243,
+      51242,
       59893,
       56311,
       60801
@@ -814,11 +826,11 @@
       16384,
       13818,
       14847,
-      17351,
+      17350,
       23364,
       17555,
       20441,
-      20534,
+      20535,
       24745,
       22872,
       18775
@@ -1256,12 +1268,12 @@
       34.146,
       40.111,
       36.455,
-      39.072,
+      39.071,
       40.589,
       48.385,
       42.314,
       47.516,
-      51.243,
+      51.242,
       59.893,
       56.311,
       60.801,
