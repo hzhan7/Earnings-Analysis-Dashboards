@@ -166,6 +166,70 @@ def plateau_run(values: list[float | None]) -> int:
     return run
 
 
+GDV_REGIONS = (("美国", "united_states", "NAVY"), ("欧洲", "europe", "MBLUE"),
+               ("APMEA", "apmea", "BLUE"), ("拉美", "latin_america", "GOLD"),
+               ("加拿大", "canada", "GRAY"))
+
+
+def regional_gdv_exhibit(staging: dict) -> dict:
+    """GDV in dollars by region, stacked, with Europe's share on the right axis.
+
+    Every earnings release's Operating Performance table prints each region's
+    GDV in US$ billions (converted at the quarter's average rates) beside its
+    USD and local-currency growth. The page stacks the five regions and quotes
+    the growth rates the company printed, not ones recomputed from amounts the
+    next year's release revises.
+    """
+    periods = staging["periods"]
+    gdv = staging["gdv_by_region"]
+    for key, values in gdv.items():
+        if isinstance(values, list) and len(values) != len(periods):
+            raise ValueError(f"gdv_by_region.{key} is not one value per quarter")
+    world = gdv["worldwide_usd_b"]
+    europe, us = gdv["europe_usd_b"], gdv["united_states_usd_b"]
+    share = [e / w * 100 for e, w in zip(europe, world)]
+    ahead = trailing_run([e - u for e, u in zip(europe, us)], lambda gap: gap > 0)
+    gap = max(abs(sum(gdv[f"{code}_usd_b"][i] for _, code, _ in GDV_REGIONS) - world[i])
+              for i in range(len(periods)))
+    by_local = sorted(GDV_REGIONS, key=lambda region: gdv[f"{region[1]}_growth_local_pct"][-1],
+                      reverse=True)
+    return {
+        "ref": "EX_GDV_REGION",
+        "kind": "stacked_dual",
+        "title": (
+            f"分地区 GDV：本季 ${world[-1]:,}B，欧洲 ${europe[-1]:,}B 占 {share[-1]:.1f}%"
+            + (f"，已连续 {ahead} 季高于美国的 ${us[-1]:,}B" if ahead >= 2 else
+               f"，本季高于美国的 ${us[-1]:,}B" if ahead == 1 else
+               f"，美国 ${us[-1]:,}B")
+        ),
+        "xlabels": [compact_period(period) for period in periods],
+        "xrot": 90,
+        "xstep": 4,
+        "stacks": [{"name": name, "color": color, "values": gdv[f"{code}_usd_b"]}
+                   for name, code, color in GDV_REGIONS],
+        "line": {"name": "欧洲占全球 GDV (RHS) D", "color": "GREEN", "values": rounded(share),
+                 "yfmt": "pct1", "ymax": 60},
+        "fmt": "f0c",
+        "yfmt": "f0c",
+        "label_fmt": "f0c",
+        "ylab": "$B",
+        "ylab2": "%",
+        "note": (
+            "金额是业绩发布 Operating Performance 表按当季平均汇率折成的美元"
+            f"（每季取当季发布首次印出的数，五个地区相加与 Worldwide 一栏最多差 ${gap}B，是舍入），"
+            "所以欧洲占比里有汇率："
+            f"本季欧洲本地货币增速 {signed(gdv['europe_growth_local_pct'][-1])}、"
+            f"美元口径 {signed(gdv['europe_growth_usd_pct'][-1])}。"
+            "本季各地区的本地货币增速（公司印的数）："
+            + "、".join(f"{name} {signed(gdv[f'{code}_growth_local_pct'][-1])}"
+                       for name, code, _ in by_local) + "。"
+        ),
+        "src_extra": ("各季业绩发布 8-K EX-99.1 的 Operating Performance 表"
+                      "（All Mastercard Credit, Charge and Debit Programs 一段），逐季出处在 series 里；"
+                      "欧洲占比为两栏相除的自算值。"),
+    }
+
+
 def release_source(staging: dict) -> dict:
     """This quarter's own earnings release in `sources`, found by its label."""
     label = f"{staging['periods'][-1]} 业绩发布 8-K EX-99.1"
@@ -651,7 +715,7 @@ def build_payload(staging: dict) -> dict:
     settled_charts.append({
         "kind": "lines",
         "title": (
-            "申报文件能给的三条量："
+            "Key Business Drivers 的三条量："
             + (f"跨境量增速已连续{cn_count(cross_fall)}季走低到 {drivers['cross_border'][latest]}%，"
                if cross_fall >= 2 else f"跨境量增速本季 {drivers['cross_border'][latest]}%，")
             + f"GDV 与换手笔数六个季度都在 {band_low}–{band_high}% "
@@ -672,7 +736,7 @@ def build_payload(staging: dict) -> dict:
         "ylab": "同比增速",
         "note": (
             story.get("drivers_lead", "")
-            + "<b>申报文件只给这三条</b>。"
+            + "<b>申报文件里没有这个拆分</b>。"
             + (("三条都指向同一件事：量的贡献在变薄——"
                 f"跨境量连续{cn_count(cross_fall)}季走低（"
                 + " → ".join(f"{value}%" for value in drivers["cross_border"][-cross_fall - 1:])
@@ -684,7 +748,7 @@ def build_payload(staging: dict) -> dict:
         "src_extra": (
             "三条驱动指标的季度增速取自各期 10-Q 的「Key Metrics」表；第四季没有 10-Q，"
             "取自当季 earnings release 的 Key Business Drivers 表。"
-            "跨境量与换手笔数只披露增速；GDV 另有金额（业绩发布的 Operating Performance 表按地区印出）。"
+            "跨境量与换手笔数只披露增速；GDV 另有分地区金额（业绩发布的 Operating Performance 表），见「分地区 GDV」那张图。"
             + fill_story(story.get("drivers_src_tail", ""), figures)
         ),
     })
@@ -1364,6 +1428,7 @@ def build_payload(staging: dict) -> dict:
             "src_extra": source_filings,
         },
     ]
+    routine.append(regional_gdv_exhibit(staging))
 
     exhibits = number_exhibits(settled_charts + highlights + next_charts + routine)
     first_table = len(exhibits) + 2
@@ -1433,8 +1498,7 @@ def build_payload(staging: dict) -> dict:
             f"{crosscheck['company_published_pct'][index]:.1f}%",
         ])
 
-    not_wired = ["跨境量里 travel 与电商的月度拆分", "增值服务的子线增速",
-                 "分地区的 GDV 金额（业绩发布的 Operating Performance 表按地区印着金额，本页尚未接入）"]
+    not_wired = ["跨境量里 travel 与电商的月度拆分", "增值服务的子线增速"]
     not_wired += story.get("not_wired", [])
     tables = []
     if prior_entries:
@@ -1570,7 +1634,7 @@ def build_payload(staging: dict) -> dict:
                 "description": (
                     "先结算上季留下的问题与阈值，再看本季数据——本季的关键正在于阈值没有覆盖的地方。"
                     if settled_headroom else
-                    "上季没有留下可结算的问题与阈值，这一节只放申报文件能给的三条量。"
+                    "上季没有留下可结算的问题与阈值，这一节只放 Key Business Drivers 的三条量。"
                 ),
                 "exhibits": exhibits[: len(settled_charts)],
             },
@@ -1598,7 +1662,7 @@ def build_payload(staging: dict) -> dict:
             {
                 "id": "routine",
                 "title": "四、长期常规跟踪",
-                "description": "MA 专属的常规序列：两条业务腿、利润率的同口径对照、资本结构、回购价格与四条计费线。",
+                "description": "MA 专属的常规序列：两条业务腿、利润率的同口径对照、资本结构、回购价格、四条计费线与分地区 GDV。",
                 "exhibits": exhibits[-len(routine):],
             },
         ],
