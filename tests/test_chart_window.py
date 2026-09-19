@@ -558,7 +558,8 @@ CONVERTED = {
         # and comp guidance in the CFO's prepared remarks on the call, which is
         # not a filed document and this site does not read. The four ten-year
         # charts run on fiscal years, not quarters, and ten years of them is the
-        # whole of `long_history`.
+        # whole of `long_history`. Their keys name the year count as `#`: the
+        # record grows by a year with each 10-K, and the title counts it.
         "摊薄每股收益（近 16 季）": "not fetched yet, not absent: TJX's 2019-05-21 EX-99.1 gives "
                           "a second-quarter EPS outlook and the comp-sales growth it "
                           "rests on, in the filed exhibit. FY2023 is where the "
@@ -569,10 +570,10 @@ CONVERTED = {
         "税前利润率相对指引中值": "the deviation view of the same record.",
         "合并同店销售：": "same guidance record.",
         "合并同店销售相对指引中值": "the deviation view of the same record.",
-        "十年税前利润率与资本强度": "an annual chart -- ten fiscal years, not quarters.",
-        "十年门店数与总面积": "annual.",
-        "十年回购与股数": "annual.",
-        "十年经营现金流、资本开支与股东回报": "annual.",
+        "#年税前利润率与资本强度": "an annual chart -- ten fiscal years, not quarters.",
+        "#年门店数与总面积": "annual.",
+        "#年回购与股数": "annual.",
+        "#年经营现金流、资本开支与股东回报": "annual.",
     },
     "cdns": {
         # Three families. The guidance *bands* are drawn on the recent twenty by
@@ -1042,10 +1043,10 @@ FLOOR_KIND = {
         '税前利润率相对指引中值': 'coverage',
         '合并同店销售：': 'coverage',
         '合并同店销售相对指引中值': 'coverage',
-        '十年税前利润率与资本强度': 'design',
-        '十年门店数与总面积': 'design',
-        '十年回购与股数': 'design',
-        '十年经营现金流、资本开支与股东回报': 'design',
+        '#年税前利润率与资本强度': 'design',
+        '#年门店数与总面积': 'design',
+        '#年回购与股数': 'design',
+        '#年经营现金流、资本开支与股东回报': 'design',
     },
     'tsm': {
         '收入（本图仅近': 'design',

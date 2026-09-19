@@ -14,6 +14,78 @@
     "analysis_date": "2026-08-29",
     "audit_status": "unaudited"
   },
+  "_checks": {
+    "period": "Q2 2026",
+    "fiscal_label": "FY2027 Q2",
+    "period_end": "2026-08-01",
+    "release_date": "2026-08-19",
+    "weeks": 13,
+    "net_sales_usd_m": 15180,
+    "prior_year_net_sales_usd_m": 14401,
+    "net_sales_growth_pct_printed": 5,
+    "comparable_sales_pct": {
+      "consolidated": 4,
+      "marmaxx": 1,
+      "homegoods": 7,
+      "canada": 6,
+      "international": 7
+    },
+    "prior_year_comparable_sales_pct": {
+      "consolidated": 4,
+      "marmaxx": 3,
+      "homegoods": 5,
+      "canada": 9,
+      "international": 5
+    },
+    "gross_margin_pct": 33.4,
+    "adjusted_gross_margin_pct": 31.4,
+    "sga_pct": 20.3,
+    "pretax_margin_pct": 13.3,
+    "adjusted_pretax_margin_pct": 11.9,
+    "diluted_eps_usd": 1.36,
+    "adjusted_diluted_eps_usd": 1.22,
+    "adjusting_item_net_eps_usd": 0.14,
+    "ytd_adjusted_eps_usd": 2.41,
+    "ytd_adjusted_eps_growth_pct_printed": 19,
+    "prior_ytd_adjusted_eps_usd": 2.02,
+    "segment_sales_usd_m": {
+      "marmaxx": 9109,
+      "homegoods": 2507,
+      "canada": 1470,
+      "international": 2094
+    },
+    "general_corporate_expense_usd_m": 242,
+    "prior_year_general_corporate_expense_usd_m": 182,
+    "merchandise_inventories_usd_m": 7862,
+    "store_count": 5285,
+    "ytd_operating_cash_flow_usd_m": 3345,
+    "ytd_property_additions_usd_m": 1159,
+    "ytd_net_sales_usd_m": 29503,
+    "prior_ytd_net_sales_usd_m": 27512,
+    "ytd_general_corporate_expense_usd_m": 385,
+    "prior_ytd_general_corporate_expense_usd_m": 397,
+    "next_quarter_outlook": {
+      "comp_pct": [
+        2,
+        3
+      ],
+      "pretax_margin_pct": [
+        12.8,
+        12.9
+      ],
+      "diluted_eps_usd": [
+        1.36,
+        1.38
+      ]
+    },
+    "full_year_adjusted_eps_outlook_usd": [
+      5.15,
+      5.2
+    ],
+    "long_term_store_target": 7500,
+    "source": "TJX FY2027 Q2 业绩新闻稿（8-K EX-99.1，2026-08-19，acc 0000109198-26-000045）逐项读取：首段「second quarter ended August 1, 2026」「Net sales ... were $15.2 billion, an increase of 5%」；Comparable Sales by Division 表（Marmaxx +1%/+3%、HomeGoods +7%/+5%、TJX Canada +6%/+9%、TJX International +7%/+5%、TJX +4%/+4%）；Margins 段（pretax 13.3%、adjusted 11.9%；gross 33.4%、adjusted 31.4%；SG&A 20.3%）；IEEPA 表（Diluted EPS $1.36、net benefit ($.14)、Adjusted $1.22；First Half $2.41，正文 up 19%，上年上半年 $2.02）；Financial Summary 十三周栏（Net sales 15,180 / 14,401）；分部表（9,109 / 2,507 / 1,470 / 2,094；General corporate expense 242 / 182）；资产负债表 Merchandise inventories 7,862；二十六周现金流量表（经营 3,345、Property additions (1,159)）与分部表二十六周栏（Net sales 29,503 / 27,512；General corporate expense 385 / 397）；Stores by Concept 期末 5,285；Outlook 段（Q3 comp 2%–3%、pretax 12.8%–12.9%、EPS $1.36–$1.38；全年 adjusted EPS $5.15–$5.20；long-term global store target 7,500）。",
+    "checked_on": "2026-09-19"
+  },
   "periods": [
     "Q1 2016",
     "Q2 2016",
@@ -2160,8 +2232,9 @@
       "adjusted": 7.3
     }
   },
-  "half_year_usd_m": {
-    "_note": "上半年累计值取自现金流量表与分部表，两年可比；单季分部→合并的桥因公司费用摆动而失真，跨季须用半年口径。",
+  "ytd_usd_m": {
+    "period": "Q2 2026",
+    "_note": "年初至今的现金流列，取自本季业绩 8-K 的现金流量表（第一季是该季本身，会计 Q4 是全年）；[去年同期, 今年]。净销售额与公司费用的累计数由 builder 从季度序列相加，不在这里另存。",
     "periods": [
       "H1 FY2026",
       "H1 FY2027"
@@ -2182,13 +2255,13 @@
       898,
       1005
     ],
-    "net_sales": [
-      27512,
-      29503
+    "receivables_and_other_assets_change": [
+      -25,
+      324
     ],
-    "general_corporate_expense": [
-      397,
-      385
+    "inventories_change": [
+      -845,
+      -603
     ]
   },
   "quarterly_guidance_history": {
@@ -2354,6 +2427,25 @@
       "2026-05-20",
       "2026-08-19"
     ],
+    "early_quarter_ends": {
+      "Q4 2011": "2012-01-28",
+      "Q1 2012": "2012-04-28",
+      "Q2 2012": "2012-07-28",
+      "Q3 2012": "2012-10-27",
+      "Q4 2012": "2013-02-02",
+      "Q1 2013": "2013-05-04",
+      "Q2 2013": "2013-08-03",
+      "Q3 2013": "2013-11-02",
+      "Q4 2013": "2014-02-01",
+      "Q1 2014": "2014-05-03",
+      "Q2 2014": "2014-08-02",
+      "Q3 2014": "2014-11-01",
+      "Q4 2014": "2015-01-31",
+      "Q1 2015": "2015-05-02",
+      "Q2 2015": "2015-08-01",
+      "Q3 2015": "2015-10-31",
+      "Q4 2015": "2016-01-30"
+    },
     "guide_eps_lo_usd": [
       0.225,
       0.235,
@@ -2850,11 +2942,44 @@
       "Q3 2021",
       "Q4 2021"
     ],
-    "publication_lag_days": {
-      "min": 9,
-      "max": 24,
-      "mean": 18.3
-    }
+    "withheld_releases": [
+      "2020-05-21",
+      "2020-08-19",
+      "2020-11-18",
+      "2021-02-24",
+      "2021-05-19",
+      "2021-08-18",
+      "2021-11-17"
+    ],
+    "scored_on_adjusted": {
+      "Q4 2025": {
+        "event": "诉讼和解",
+        "company_verdict": "well above the Company's plan"
+      },
+      "Q2 2026": {
+        "event": "IEEPA 关税退款",
+        "company_verdict": "well above the Company's plan"
+      }
+    },
+    "scored_on_reported_despite_adjusted": {
+      "Q1 2022": {
+        "reported": 0.49,
+        "adjusted": 0.68,
+        "item": " Familia 少数股权投资减值",
+        "company_words": "公司称高于计划"
+      }
+    },
+    "miss_notes": {
+      "eps": {
+        "Q1 2014": " 差 US${shortfall}（拆股调整后）",
+        "Q1 2020": " 是门店大面积关闭的疫情季",
+        "Q1 2022": " 的报表数里有一笔 Familia 少数股权投资减值（每股 US$0.19），剔除它之后公司报的调整后每股收益是 US${adjusted}、在区间上限之上"
+      },
+      "pretax_margin": {
+        "Q4 2022": "公司在同一份新闻稿里自己写了原因：below the Company's plan due to an unplanned shrink charge，并说指引原本假设存货损耗会带来 0.5 个百分点的<b>顺风</b>，实际是 0.6 个百分点的逆风。这是本站少见的一次「公司自报没做到并给出科目」。"
+      }
+    },
+    "_record_sources": "每个被指引季度的第一天 = 上一季季末 + 1 天：2016 年起的季末取 period_ends，更早的取 early_quarter_ends（读自各份业绩稿首段「quarter ended …」）。withheld_releases：七份业绩稿写明 not providing（financial）guidance / outlook at this time。Q1 2022：2022-05-18 EX-99.1「Q1 FY23 adjusted diluted earnings per share of $.68, which excludes a $.19 charge related to a write-down of the Company's minority investment in Familia, was above the Company's plans」。另：Q1 2020 的指引（2020-02-26）已于 2020-03-19 的 8-K（Item 7.01）撤回，本记录仍按原区间计分。"
   },
   "long_history": {
     "fiscal_years": [
@@ -3039,6 +3164,7 @@
     ]
   },
   "guidance": {
+    "period": "Q2 2026",
     "title": "公司指引（2026-08-19 业绩新闻稿 Outlook 段，公司披露值）",
     "headers": [
       "指标",
@@ -3059,7 +3185,7 @@
         "税前利润率",
         "12.8% ~ 12.9%",
         "12.3% ~ 12.4%",
-        "—",
+        "11.9% ~ 12.0%",
         "上调"
       ],
       [
@@ -3105,7 +3231,47 @@
         "上修 500 家"
       ]
     ],
-    "note": "公司在同一段里同时给出报表口径与剔除关税退款的调整后口径。全年调整后每股收益中值从 $5.115 上调到 $5.175，上调幅度 $0.05–0.07 恰好等于本季超出指引中值的幅度；把两版指引各自减去已实现的上半年，下半年隐含值都是 $2.765，即上调没有落在下半年。公司明示退款的「金额、时点与可能性均不确定」，并假设会计季 Q4 的退款为零。"
+    "note": "公司在同一段里同时给出报表口径与剔除关税退款的调整后口径。全年调整后每股收益中值从 {old_mid} 上调到 {new_mid}，上调幅度 {raise} 恰好等于本季超出指引中值的幅度；把两版指引各自减去已实现的{ytd}，{rest}隐含值都是 {rest_now}，即上调没有落在{rest}。公司明示退款的「金额、时点与可能性均不确定」，并假设会计季 Q4 的退款为零。"
+  },
+  "full_year_outlook": {
+    "period": "Q2 2026",
+    "basis": "调整后",
+    "ytd_eps_usd": 2.41,
+    "prior_ytd_eps_usd": 2.02,
+    "prior_fy_eps_usd": 4.73,
+    "fy_guide_usd": [
+      5.15,
+      5.2
+    ],
+    "prior_fy_guide_usd": [
+      5.08,
+      5.15
+    ],
+    "source": "FY2027 Q2 EX-99.1：First Half adjusted diluted EPS $2.41、上年上半年 $2.02、全年 adjusted EPS outlook $5.15–$5.20；FY2027 Q1 EX-99.1（2026-05-20）全年 EPS outlook $5.08–$5.15；FY2026 Q4 EX-99.1（2026-02-25）FY26 adjusted diluted EPS $4.73。"
+  },
+  "one_off_usd_m": {
+    "period": "Q2 2026",
+    "item": "关税退款",
+    "gross_usd_m": 331,
+    "related_expense": "相关增量薪酬计提",
+    "related_expense_usd_m": 112,
+    "net_pretax_usd_m": 219,
+    "eps_impact_usd": 0.14,
+    "gross_margin_effect_pp": 2.0,
+    "gross_margin_item": "计入销货成本的关税退款",
+    "cash_note": "退款在收到时直接计入销货成本（10-Q 写明季末没有为后续可能的退款记应收），在净利润里而不在应收项里",
+    "src_extra": "退款金额、薪酬计提与每股影响均为本季 8-K 的披露值。",
+    "source": "FY2027 Q2 EX-99.1 的 IEEPA Tariff Refunds 段与附注 1（$331 million、$112 million、$219 million、($.14)、gross margin (2.0%)）；截至 2026-08-01 的 10-Q「has not recorded a receivable for any additional potential refunds」。"
+  },
+  "store_plan": {
+    "period": "Q2 2026",
+    "announced": "2026-08-19",
+    "target": 7500,
+    "previous_target": 7000,
+    "growth_from_fy": 2028,
+    "growth_pct": 4.0,
+    "previous_growth_pct": 3.0,
+    "source": "7,500 与 FY2028 起 4%：FY2027 Q2 EX-99.1 Outlook 段；7,000：FY2026 10-K 的门店潜力表（TJX Total 7,000）。原先的 3% 开店增速不在申报文件里（FY2027 的 10-K 开店计划合计约 146 家、约为年初 5,214 家的 2.8%），取自 2026-08-19 电话会。"
   },
   "market_expectation": {
     "as_of": "2026-08-19",
@@ -3131,128 +3297,180 @@
       }
     ]
   },
-  "followup_closure": [
-    {
-      "question": "Q2 comp 与每股收益相对指引的超额幅度是否延续上季的模式？（comp ≥4% 且调整后每股收益超中值 ≥5%）",
-      "evidence": "comp +4%（指引 +2~3%）、调整后每股收益 $1.22（指引 $1.15–1.17，超中值 5.2%）；但超额幅度从上季的 21% 收窄到 5%，且全部由 Marmaxx 以外的三个分部贡献",
-      "verdict": "已验证（压线，构成恶化）"
+  "followup_closure": {
+    "period": "Q2 2026",
+    "items": [
+      {
+        "question": "Q2 comp 与每股收益相对指引的超额幅度是否延续上季的模式？（comp ≥4% 且调整后每股收益超中值 ≥5%）",
+        "evidence": "comp +4%（指引 +2~3%）、调整后每股收益 $1.22（指引 $1.15–1.17，超中值 5.2%）；但超额幅度从上季的 21% 收窄到 5%，且全部由 Marmaxx 以外的三个分部贡献",
+        "verdict": "已验证（压线，构成恶化）"
+      },
+      {
+        "question": "Q2 毛利率能否守住 30.9–31.0%？管理层是否首次量化上季的对冲收益？",
+        "evidence": "调整后毛利率 31.4%，高出指引上限约 0.4pp；但 CFO 把商品毛利率改善归因为「mostly due to tariff favorability」，对上季对冲收益的金额仍拒绝量化",
+        "verdict": "部分验证（阈值触发、归因换轨）"
+      },
+      {
+        "question": "Marmaxx 与同业同期 comp 差距是否收敛？交易笔数是否维持正增长？",
+        "evidence": "Marmaxx +1%，交易笔数转负（公司原文 a small decrease in customer transactions）；同业同期 comp 见其各自 8-K，差距连续第二季在 8pp 以上",
+        "verdict": "已验证（负面，触发上季设的立场撤销条件）"
+      },
+      {
+        "question": "上季 $143M 的一般公司费用低点是否在本季回归？",
+        "evidence": "本季 $242M vs 去年同期 $182M；但上半年累计 $385M 低于去年的 $397M，单季摆动幅度约 ±$60–70M",
+        "verdict": "已验证（该费用线转为噪音项，退役此问题）"
+      },
+      {
+        "question": "门店总目标上调何时落地？伴随的资本开支是否超出原区间？",
+        "evidence": "本季落地：长期目标 7,000 → 7,500 家，FY2028 起开店增速 3% → 4%；但资本开支指引未更新，公司未量化",
+        "verdict": "部分验证（目标已落地，资本账未落地）"
+      }
+    ]
+  },
+  "prior_kpi": {
+    "period": "Q2 2026",
+    "_note": "上季（Q1 2026）本地研究设的阈值，本季结清；当前值由 builder 按 measure 从序列现算，不在这里手填。",
+    "quantified": [
+      {
+        "metric": "合并同店销售",
+        "direction": "up",
+        "threshold": 4.0,
+        "unit": "pct",
+        "measure": "comp_consolidated",
+        "meaning": "指引折价的模式延续"
+      },
+      {
+        "metric": "Marmaxx 同店销售",
+        "direction": "up",
+        "threshold": 2.0,
+        "unit": "pct",
+        "measure": "comp_marmaxx",
+        "threshold_name": "管理层承诺的 Q4 下沿 2%",
+        "line_note": "红线是管理层自己给的修复目标（会计季 Q4 回到 2–3%）的下沿。"
+      },
+      {
+        "metric": "调整后毛利率",
+        "direction": "up",
+        "threshold": 31.2,
+        "unit": "pct",
+        "measure": "gross_margin_adjusted"
+      },
+      {
+        "metric": "每店存货同比 D",
+        "direction": "down",
+        "threshold": 5.0,
+        "unit": "pct",
+        "measure": "inventory_per_store_yoy"
+      },
+      {
+        "metric": "半年资本开支 / 销售额 D",
+        "direction": "down",
+        "threshold": 3.8,
+        "unit": "pct",
+        "measure": "ytd_capex_intensity"
+      }
+    ],
+    "inventory_warning": {
+      "comp_below_pct": 3.0,
+      "inventory_yoy_above_pct": 5.0
     },
-    {
-      "question": "Q2 毛利率能否守住 30.9–31.0%？管理层是否首次量化上季的对冲收益？",
-      "evidence": "调整后毛利率 31.4%，高出指引上限约 0.4pp；但 CFO 把商品毛利率改善归因为「mostly due to tariff favorability」，对上季对冲收益的金额仍拒绝量化",
-      "verdict": "部分验证（阈值触发、归因换轨）"
-    },
-    {
-      "question": "Marmaxx 与同业同期 comp 差距是否收敛？交易笔数是否维持正增长？",
-      "evidence": "Marmaxx +1%，交易笔数转负（公司原文 a small decrease in customer transactions）；同业同期 comp 见其各自 8-K，差距连续第二季在 8pp 以上",
-      "verdict": "已验证（负面，触发上季设的立场撤销条件）"
-    },
-    {
-      "question": "上季 $143M 的一般公司费用低点是否在本季回归？",
-      "evidence": "本季 $242M vs 去年同期 $182M；但上半年累计 $385M 低于去年的 $397M，单季摆动幅度约 ±$60–70M",
-      "verdict": "已验证（该费用线转为噪音项，退役此问题）"
-    },
-    {
-      "question": "门店总目标上调何时落地？伴随的资本开支是否超出原区间？",
-      "evidence": "本季落地：长期目标 7,000 → 7,500 家，FY2028 起开店增速 3% → 4%；但资本开支指引未更新，公司未量化",
-      "verdict": "部分验证（目标已落地，资本账未落地）"
-    }
-  ],
-  "prior_kpi_settlement": [
-    {
-      "metric": "合并同店销售",
-      "direction": "up",
-      "threshold": 4.0,
-      "unit": "pct",
-      "actual": 4.0
-    },
-    {
-      "metric": "Marmaxx 同店销售",
-      "direction": "up",
-      "threshold": 2.0,
-      "unit": "pct",
-      "actual": 1.0
-    },
-    {
-      "metric": "调整后毛利率",
-      "direction": "up",
-      "threshold": 31.2,
-      "unit": "pct",
-      "actual": 31.4
-    },
-    {
-      "metric": "每店存货同比 D",
-      "direction": "down",
-      "threshold": 5.0,
-      "unit": "pct",
-      "actual": 3.5998
-    },
-    {
-      "metric": "半年资本开支 / 销售额 D",
-      "direction": "down",
-      "threshold": 3.8,
-      "unit": "pct",
-      "actual": 3.9284
-    }
-  ],
-  "next_kpi": [
-    {
-      "metric": "Marmaxx 同店销售",
-      "direction": "up",
-      "threshold": 2.0,
-      "unit": "pct",
-      "current": 1.0,
-      "action": "≥+2% 且交易笔数转正 = 执行修复兑现；≤+1% 或交易笔数连续第二季为负 = 份额流失假说增强"
-    },
-    {
-      "metric": "HomeGoods 调整后分部利润率",
-      "direction": "up",
-      "threshold": 11.5,
-      "unit": "pct",
-      "current": 12.4,
-      "action": "跌破 11.5% = 本季 +2.4pp 的改善主要来自关税；守在 12.0% 以上 = 含真实的非关税成分"
-    },
-    {
-      "metric": "调整后税前利润率 vs 下季指引下限",
-      "direction": "up",
-      "threshold": 12.3,
-      "unit": "pct",
-      "current": 11.9,
-      "action": "下季实际低于 12.3% 即跌破公司自己给的下沿，撤回「下半年指引已充分保守」的判断"
-    },
-    {
-      "metric": "每店存货同比 D",
-      "direction": "down",
-      "threshold": 5.0,
-      "unit": "pct",
-      "current": 3.5998,
-      "action": "comp 低于 3% 且每店存货同比超过 +5% = 折扣压力警示"
-    },
-    {
-      "metric": "半年资本开支 / 销售额 D",
-      "direction": "down",
-      "threshold": 3.8,
-      "unit": "pct",
-      "current": 3.9284,
-      "action": "全年超过 4.2% = 开店提速的资本强度超预期，资本配置框架需重估"
-    }
-  ],
+    "not_plotted": [
+      {
+        "metric": "Marmaxx 与同业同期 comp 差距连续两季 ≥8pp",
+        "kind": "peer_gap",
+        "threshold_pp": 8.0,
+        "peer_comp_pct": [
+          17.0,
+          10.0
+        ],
+        "peer_source": "同业取 Ross Stores：2026-05-21 的 8-K EX-99.1「comparable store sales up a very robust 17%」（13 周截至 2026-05-02）与 2026-08-20 的 8-K EX-99.1「comparable store sales up a very strong 10%」（13 周截至 2026-08-01）；Marmaxx 同期 +6% 与 +1%，差距 11pp 与 9pp。"
+      }
+    ],
+    "note": "<b>越线的{breached}条指向同一件事：</b>占销售额{marmaxx_share_tenths}的 Marmaxx，comp 只有 {marmaxx_comp}，低于上季设的 {marmaxx_comp_threshold} 门槛；而{ytd}资本开支占销售额 {ytd_capex_intensity}，高于 {ytd_capex_threshold} 的纪律线 —— 单店增长是 {marmaxx_low_since} 以来最弱的一季，资本强度却比去年同期高出 {ytd_capex_delta} 个百分点。"
+  },
+  "next_kpi": {
+    "period": "Q2 2026",
+    "_note": "本季本地研究为下季设的阈值；当前值由 builder 按 measure 从序列现算。",
+    "quantified": [
+      {
+        "metric": "Marmaxx 同店销售",
+        "direction": "up",
+        "threshold": 2.0,
+        "unit": "pct",
+        "action": "≥+2% 且交易笔数转正 = 执行修复兑现；≤+1% 或交易笔数连续第二季为负 = 份额流失假说增强",
+        "measure": "comp_marmaxx"
+      },
+      {
+        "metric": "HomeGoods 调整后分部利润率",
+        "direction": "up",
+        "threshold": 11.5,
+        "unit": "pct",
+        "action": "跌破 11.5% = 本季 +2.4pp 的改善主要来自关税；守在 12.0% 以上 = 含真实的非关税成分",
+        "measure": "homegoods_margin_adjusted",
+        "hold_above": 12.0,
+        "reading": "阈值问的是关税顺风退去以后这条线停在哪里：跌破 {threshold} 说明本季的改善主要是关税，守在 {hold_above} 以上才说明里面有真实的非关税成分。"
+      },
+      {
+        "metric": "调整后税前利润率 vs 下季指引下限",
+        "direction": "up",
+        "threshold": 12.3,
+        "unit": "pct",
+        "action": "下季实际低于 12.3% 即跌破公司自己给的下沿，撤回「下半年指引已充分保守」的判断",
+        "measure": "pretax_margin_adjusted"
+      },
+      {
+        "metric": "每店存货同比 D",
+        "direction": "down",
+        "threshold": 5.0,
+        "unit": "pct",
+        "action": "comp 低于 3% 且每店存货同比超过 +5% = 折扣压力警示",
+        "measure": "inventory_per_store_yoy"
+      },
+      {
+        "metric": "半年资本开支 / 销售额 D",
+        "direction": "down",
+        "threshold": 3.8,
+        "unit": "pct",
+        "action": "全年超过 4.2% = 开店提速的资本强度超预期，资本配置框架需重估",
+        "measure": "ytd_capex_intensity"
+      }
+    ],
+    "not_plotted": [
+      {
+        "metric": "Q3 关税退款实际净贡献 vs 指引的每股 $0.06",
+        "why": "目前只有指引没有实际，还没有序列"
+      },
+      {
+        "metric": "全年指引上调幅度 vs 当季超额幅度",
+        "why": "是两个差值的比较，本季两者都等于 {raise}、落在同一个数上，画成柱子只会得到一根零柱"
+      }
+    ],
+    "note": "<b>已经在触发侧的{breached}条讲的是同一个故事的{breached}端：</b>Marmaxx 的 comp 还在门槛之下，本季调整后税前利润率低于公司自己给下一季的下沿，而资本开支强度已经越过纪律线。"
+  },
   "sources": [
     {
       "label": "TJX FY2027 Q2 业绩新闻稿（8-K EX-99.1，2026-08-19）",
       "url": "https://www.sec.gov/Archives/edgar/data/109198/000010919826000045/tjxq2fy27earningspressrele.htm"
     },
     {
+      "label": "TJX FY2027 Q2 Form 10-Q（截至 2026-08-01，2026-08-28）",
+      "url": "https://www.sec.gov/Archives/edgar/data/109198/000010919826000048/tjx-20260801.htm"
+    },
+    {
       "label": "TJX FY2027 Q1 业绩新闻稿（8-K EX-99.1，2026-05-20）",
       "url": "https://www.sec.gov/Archives/edgar/data/109198/000010919826000023/tjxq1fy27earningspressrele.htm"
     },
     {
-      "label": "TJX FY2026 Q4 与全年业绩 8-K（2026-02-25）",
-      "url": "https://www.sec.gov/Archives/edgar/data/109198/000010919826000004/0000109198-26-000004-index.html"
+      "label": "TJX FY2026 Q4 与全年业绩新闻稿（8-K EX-99.1，2026-02-25）",
+      "url": "https://www.sec.gov/Archives/edgar/data/109198/000010919826000004/tjxq4fy26earningspressrele.htm"
     },
     {
       "label": "TJX FY2026 Q3 业绩新闻稿（8-K EX-99.1，2025-11-19）",
       "url": "https://www.sec.gov/Archives/edgar/data/109198/000010919825000058/tjxq3fy26earningspressrele.htm"
+    },
+    {
+      "label": "TJX FY2023 Q1 业绩新闻稿（8-K EX-99.1，2022-05-18）—— Familia 减值与调整后每股收益",
+      "url": "https://www.sec.gov/Archives/edgar/data/109198/000115752322000655/a52722861ex991.htm"
     },
     {
       "label": "TJX FY2023 Q4 业绩新闻稿（8-K EX-99.1，2023-02-22）—— 记录里唯一一次税前利润率跌破指引",
@@ -3267,6 +3485,35 @@
       "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000109198&type=8-K&dateb=&owner=include&count=40"
     }
   ],
+  "quarter_story": {
+    "period": "Q2 2026",
+    "source": "FY2027 Q2 EX-99.1（2026-08-19）、截至 2026-08-01 的 10-Q（分部 comp 的驱动：Marmaxx「driven by a higher average basket, partially offset by a decrease in customer transactions」，其余三个分部交易笔数均增长）与同日业绩电话会；只在电话会上的话标明是电话会。",
+    "headline_events": "全年指引与长期门店目标同时上调",
+    "marmaxx_headline_tail": " 且交易笔数转负",
+    "marmaxx_brief_tail": "是唯一交易笔数为负的分部",
+    "marmaxx_title_tail": "，且是唯一交易笔数为负的分部",
+    "marmaxx_words": "公司在新闻稿里把它写成 sales were below our expectations，10-Q 里说这一分部本季的 comp driven by a higher average basket, partially offset by a decrease in customer transactions —— 即客单价扛住了、来客数掉了。",
+    "gross_margin_words": "<b>阈值过线了，但归因换了轨：</b>CFO 在电话会上把商品毛利率的改善主因说成 mostly due to tariff favorability，不是干净的商品力。",
+    "adjustment_name": "关税退款",
+    "adjustment_short": "退款",
+    "abroad_reason": "计提了相关薪酬费用而没有退款",
+    "eps_second_layer": "<b>第二层本页拒绝画：</b>公司说调整后毛利率的改善 mostly due to tariff favorability，即 {adjusted_eps} 里仍然含着一段关税成本顺风 —— 但公司只给了 mostly 这个词，没有给过任何金额或百分点。把它换算成一个数需要自己挑一个比例，那是假设不是算术，本页不发布这种数（同 SNPS 页对 Ansys 季度收入的处理）。它被写在最后一节「本页不接入」里。",
+    "outlook_verdict": "<b>{gap} 个百分点的落差是本季最硬的一条。</b>",
+    "inventory_title_tail": "，与 comp 的张力解除",
+    "company_inventory_per_store_pct": {
+      "reported": 2,
+      "constant_currency": 3
+    },
+    "store_brief_title": "单店增长转弱的同一季，开店提速",
+    "store_chart_tail": "这张图是上一张资本强度线的分母侧：门店目标与开店增速同时上调，资本开支的台阶就不是一次性的。",
+    "not_published_note": "本页不发布剔除关税成本顺风之后的每股收益或利润率。公司把本季调整后毛利率的改善归因为 mostly due to tariff favorability，但从未给出金额或百分点；把这个词换算成一个数需要自选一个比例，那是假设不是算术。同理，各分部「持续性关税顺风」的分摊也不发布。",
+    "not_ingested": [
+      "各分部的交易笔数与客单价的数值拆分（公司只在 10-Q 与电话会上定性描述）",
+      "Marmaxx 失手的具体品类（公司在问答中四次拒绝披露）",
+      "剩余可收回的 IEEPA 退款金额（公司称金额、时点与可能性均不确定）",
+      "新店回报率与 7,500 家目标对应的资本开支（公司未量化）"
+    ]
+  },
   "short_series_notes": {
     "dividend_declared_per_share_usd": "本次抽取未覆盖；该数在各季新闻稿的现金流/股东回报段，未取。",
     "adjusted_diluted_eps_usd": "公司只在少数季度给调整后 EPS，且每次剔除的项不同，不构成连续序列。",
