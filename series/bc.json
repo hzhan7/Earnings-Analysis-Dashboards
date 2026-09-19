@@ -15,6 +15,43 @@
     "analysis_date": "2026-08-30",
     "audit_status": "unaudited"
   },
+  "_checks": {
+    "period": "H1 2026",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-30",
+    "revenue_eur_k": 749411,
+    "revenue_prior_year_eur_k": 684135,
+    "revenue_growth_cfx_pct": 13.3,
+    "revenue_growth_reported_pct": 9.5,
+    "retail_eur_k": 499765,
+    "retail_prior_year_eur_k": 435837,
+    "wholesale_eur_k": 249646,
+    "wholesale_prior_year_eur_k": 248298,
+    "retail_share_pct": 66.7,
+    "wholesale_share_pct": 33.3,
+    "retail_growth_cfx_pct": 19.3,
+    "europe_eur_k": 255582,
+    "americas_eur_k": 278671,
+    "asia_eur_k": 215158,
+    "ebit_eur_k": 128199,
+    "ebit_prior_year_eur_k": 113837,
+    "ebit_growth_pct": 12.6,
+    "ebit_margin_pct": 17.1,
+    "ebit_margin_prior_year_pct": 16.6,
+    "net_profit_eur_k": 78169,
+    "net_profit_prior_year_eur_k": 76650,
+    "net_profit_growth_pct": 2.0,
+    "depreciation_amortisation_eur_k": 98343,
+    "investments_pct_of_revenue": 7.6,
+    "core_net_financial_debt_eur_m": 225.1,
+    "core_net_financial_debt_prior_year_eur_m": 197.2,
+    "core_net_financial_debt_prior_year_end_eur_m": 198.4,
+    "guidance_year": 2026,
+    "guidance_cfx_low_pct": 10.0,
+    "guidance_cfx_high_pct": 11.0,
+    "source": "Brunello Cucinelli 2026 年半年报新闻稿（「the Board of Directors approved the 2026 Half-Year Financial Report」，正文落款 Solomeo, 30 July 2026）：首页要点（Revenues as at 30 June 2026 €749.4 million, +13.3% constant / +9.5% current；Retail +19.3% constant；Ebit €128.2 million +12.6%, margin 17.1% vs 16.6%；Net profit €78.2 million +2.0%；Investments €57.2 million, incidence 7.6%；Net financial debt for the core business €225.1 million vs €197.2 million；2026 growth at constant exchange rates between +10% and +11%）、第 5–6 页 Revenues by Geographical Area 与 by Distribution Channel 两表（255,582 / 278,671 / 215,158；Retail 499,765 = 66.7%、Wholesale 249,646 = 33.3%，上年同期 435,837 / 248,298）、第 12 页合并损益表（Operating Income 128,199 / 113,837；Net profit 78,169 / 76,650）与现金流量表（Depreciation and amortization 98,343）。上年末核心净负债取自 2025 年年报新闻稿（Solomeo, 18 February 2026：net financial debt for the core business of €198.4 million as at 31 December 2025）。",
+    "checked_on": "2026-09-19"
+  },
   "disclosure_regime": {
     "printed_periods": [
       "Q1",
@@ -197,6 +234,9 @@
       "2024Q3": 300.0,
       "2025Q3": 335.0
     },
+    "narrative_q3_approximate": [
+      "2024Q3"
+    ],
     "backfill_note": "2019Q3–2021Q4 为部分回补。BC 只印**累计**数，所以四季里有三季是相减出来的。2019/2020 的 Q3、Q4 取自 **2021 年前九个月发布里那张追溯精确的累计表**；2021 全四季取自 **2022 年第一季发布的对比列** —— 本文件原有的注解说「2021Q1 无法还原」，那句话对 2021Q1 **自己那份发布**成立，却漏了次年那份里的对比列。**2016–2018 仍然无法还原**：那三年的 Q1 与前九个月发布通篇是文字、精确到 €0.1M，任何文件（当期的或追溯的）里都没有千元级的表。"
   },
   "half": {
@@ -627,7 +667,13 @@
       988414,
       1045855
     ],
-    "post_2026_basis": "derived"
+    "post_ifrs16_derived_years": [
+      2026
+    ]
+  },
+  "net_debt_year_end_eur_k": {
+    "2024": 103600,
+    "2025": 198400
   },
   "guidance_basis_census": {
     "quantified_rows": 120,
@@ -635,6 +681,8 @@
     "fx_basis_unstated": 110,
     "first_stated_date": "2025-12-10",
     "calls_covered": 18,
+    "lease_basis_stated": 0,
+    "perimeter_basis_stated": 0,
     "note": "Counted across every quantified forward statement in the eighteen results calls. Every row whose FX basis is stated is dated 2025-12-10 or later; no statement before that date names a basis."
   },
   "annual_revenue_guidance": {
@@ -765,20 +813,25 @@
     ]
   },
   "next_kpi": {
+    "period": "H1 2026",
     "quantified": [
       {
         "metric": "H2 零售渠道 cFX 增速",
         "direction": "up",
         "threshold": 12.0,
         "unit": "pct",
-        "current": 19.3
+        "current": 19.3,
+        "source": "local",
+        "cadence": "quarter"
       },
       {
         "metric": "批发渠道占收入比重",
         "direction": "down",
         "threshold": 34.0,
         "unit": "pct",
-        "current": 33.3
+        "current": 33.3,
+        "source": "local",
+        "cadence": "quarter"
       },
       {
         "metric": "核心净金融负债/收入（年末指引 11-12%）",
@@ -786,28 +839,39 @@
         "threshold": 12.0,
         "unit": "pct",
         "current": 14.5,
-        "basis_note": "225,100 / (2025 年营收 × 1.105)，用公司自己的 2026 年增长指引中值年化"
+        "basis_note": "225,100 / (2025 年营收 × 1.105)，用公司自己的 2026 年增长指引中值年化",
+        "source": "company",
+        "target_words": "年末净负债占收入 11–12%",
+        "cadence": "half"
       },
       {
         "metric": "资本开支占收入比重（指引约 6%）",
         "direction": "down",
         "threshold": 6.0,
         "unit": "pct",
-        "current": 7.6
+        "current": 7.6,
+        "source": "company",
+        "target_words": "资本开支约 6%",
+        "cadence": "half"
       },
       {
         "metric": "EBIT 利润率（指引约 17%）",
         "direction": "up",
         "threshold": 17.0,
         "unit": "pct",
-        "current": 17.11
+        "current": 17.11,
+        "source": "company",
+        "target_words": "EBIT 利润率约 17%",
+        "cadence": "half"
       },
       {
         "metric": "报告口径半年营收增速",
         "direction": "up",
         "threshold": 10.0,
         "unit": "pct",
-        "current": 9.5
+        "current": 9.5,
+        "source": "local",
+        "cadence": "quarter"
       }
     ],
     "excluded": [
@@ -816,7 +880,20 @@
       "零售面积（平方米）与批发单品牌门店数 —— 2025 年起不再出现在营收更新里",
       "分产品线收入 —— 只在完整半年报与年报里披露，2026 年的半年新闻稿没有"
     ],
-    "threshold_note": "第三节的六条阈值是本地研究设定，不是公司指引；其中四条的数值取自公司给出的年度目标，两条是本页自设的观察线。"
+    "breach_note": "资本开支上半年跑到 7.6%，隐含下半年要压到 4% 出头才够得着全年约 6%；净负债则同时高于上年末与上年同期；报告口径的半年收入增速也低于 10% 这条线。",
+    "unconnected": "同店销售（like-for-like）与新增零售面积的贡献 —— 公司从未披露，两家券商在 2026 年 7 月 30 日的业绩会上先后追问均未获得数字，因此零售增长中「开店」与「同店」两部分无法拆分；零售面积与批发单品牌门店数（2025 年起不再出现在营收更新中）；分产品线收入（只在完整半年报与年报中披露，2026 年的半年新闻稿没有）；恒定汇率口径的分区域完整历史（公司自 2025 年第三季度起才逐区给出）；"
+  },
+  "company_targets": {
+    "year": 2026,
+    "ebit_margin_pct": 17.0,
+    "ebit_margin_words": "约 17%",
+    "net_debt_pct_of_revenue_low": 11.0,
+    "net_debt_pct_of_revenue_high": 12.0,
+    "_note": "公司为 2026 年给的三个经营目标（EBIT 利润率约 17%、资本开支约占收入 6%、年末核心净负债占收入 11–12%），本页原先写在 builder 里，迁入时照搬、未另行回原文重核；只在它描述的那一年发布。"
+  },
+  "half_story": {
+    "period": "H1 2026",
+    "mix_story": "本期跳升不是零售突然加速，是批发停住之后分母只剩一条腿在动。"
   },
   "sources": [
     {

@@ -22,10 +22,18 @@ The third one worth naming is `test_the_geography_rows_sum_to_the_printed_total`
 The issuer changed its regional presentation in H1 2025 -- four rows became
 three, Italy folded into Europe, the prior year re-presented -- and said so
 nowhere in words. The only evidence is arithmetic, so the arithmetic is the test.
+
+**A roll edits `series/bc.json` and nothing else** (CLAUDE.md §9). So the
+period's own figures are checked against `_checks` (typed from the release,
+never read by the builder), the counts are recomputed rather than pinned, every
+finding the page states is made false on a copy of the series to prove its words
+go with it, and the page is built once more from the series as it stood before
+this half -- a full-year page -- without touching the builder.
 """
 
 from __future__ import annotations
 
+import copy
 import json
 import re
 import sys
@@ -36,7 +44,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import bc  # noqa: E402
-from build.board import headroom  # noqa: E402
+from build.board import cn_count, headroom  # noqa: E402
 
 MARKUP = re.compile(r"</?[a-z][a-z0-9]*>", re.I)
 
@@ -90,12 +98,13 @@ class BcDashboardTest(unittest.TestCase):
         """The only external check on the subtraction that exists."""
         q = self.s["quarterly"]
         quoted = q["narrative_q3_crosscheck_eur_m"]
-        self.assertEqual(len(quoted), 3)
+        rough = set(q.get("narrative_q3_approximate", []))
+        self.assertGreaterEqual(len(quoted), 3)
         for period, stated in quoted.items():
             derived = q["revenue_eur_k"][q["periods"].index(period)] / 1000
-            # 2024 is quoted only to the nearest hundred million; the other two
-            # are quoted to 0.1, so the tolerance is the printed precision.
-            tolerance = 50.0 if stated == round(stated, -2) and stated == 300.0 else 0.05
+            # 2024 is quoted only as "about 300"; the others to 0.1, so the
+            # tolerance is the printed precision.
+            tolerance = 50.0 if period in rough else 0.05
             self.assertLessEqual(abs(derived - stated), tolerance,
                                  f"{period}: derived {derived:.1f} vs quoted {stated}")
 
@@ -107,7 +116,9 @@ class BcDashboardTest(unittest.TestCase):
         """
         c = self.s["cumulative_revenue_eur_k"]
         q = self.s["quarterly"]
-        for year in (2022, 2023, 2024, 2025):
+        years = [y for y in c["years"] if all(f"{y}Q{n}" in q["periods"] for n in (1, 2, 3, 4))]
+        self.assertGreaterEqual(len(years), 4)
+        for year in years:
             total = sum(q["revenue_eur_k"][q["periods"].index(f"{year}Q{n}")] for n in (1, 2, 3, 4))
             self.assertEqual(total, c["fy"][c["years"].index(year)])
         self.assertIn("不构成验证", " ".join(self.payload["notes"]))
@@ -117,11 +128,17 @@ class BcDashboardTest(unittest.TestCase):
         self.assertEqual(len(h["periods"]), len(h["printed"]))
         for period, printed in zip(h["periods"], h["printed"]):
             self.assertEqual(printed, period.endswith("H1"), period)
-        # 21 halves now, 2016H1-2026H1: every H1 is company-printed, every H2 is
-        # the year minus the first half. Both counts are pinned so an H2 that
-        # ever arrives printed cannot slip in as though it were derived.
-        self.assertEqual(sum(h["printed"]), 11)
-        self.assertEqual(len(h["periods"]) - sum(h["printed"]), 10)
+        # Every H1 is company-printed, every H2 is the year minus the first half;
+        # the per-period assertion above already stops an H2 that ever arrives
+        # printed from slipping in as though it were derived. The counts the
+        # page prints are these two, recounted: the note used to say 18 quarters
+        # and 11 halves long after the series reached 26 and 21.
+        firsts = sum(1 for period in h["periods"] if period.endswith("H1"))
+        self.assertEqual(sum(h["printed"]), firsts)
+        note = next(n for n in self.payload["notes"] if n.startswith("披露节奏"))
+        self.assertIn(f"{len(h['periods'])} 个半年里只有 {firsts} 个是公司印出的", note)
+        q = self.s["quarterly"]
+        self.assertIn(f"{len(q['periods'])} 个季度里只有 {q['basis'].count('printed')} 个是公司印出的", note)
 
     def test_second_halves_are_the_year_minus_the_first_half(self) -> None:
         h, a = self.s["half"], self.s["annual"]
@@ -151,9 +168,9 @@ class BcDashboardTest(unittest.TestCase):
             checked += 1
         self.assertGreaterEqual(checked, 6)
 
-    def test_the_derived_2026_ebitda_uses_that_definition(self) -> None:
+    def test_the_derived_latest_ebitda_uses_that_definition(self) -> None:
         h = self.s["half"]
-        i = h["periods"].index("2026H1")
+        i = max(k for k, period in enumerate(h["periods"]) if period.endswith("H1"))
         self.assertEqual(h["ebitda_eur_k"][i], h["ebit_eur_k"][i] + h["da_eur_k"][i])
 
     # ── the silent re-presentation ──────────────────────────────────────────
@@ -210,15 +227,16 @@ class BcDashboardTest(unittest.TestCase):
         self.assertGreaterEqual(g["actual_cfx_pct"][i], g["cfx_leg_low"][i])
         self.assertLessEqual(g["actual_cfx_pct"][i], g["cfx_leg_high"][i])
 
-    def test_the_two_bases_straddle_the_current_guidance(self) -> None:
-        """The headline claim: above on one basis, below on the other."""
-        g = self.s["annual_revenue_guidance"]
-        gr = self.s["growth_h1_pct"]
-        i = g["target_years"].index(2026)
-        low, high = g["final_low"][i], g["final_high"][i]
-        self.assertEqual(g["final_basis"][i], "cfx")
-        self.assertGreater(gr["cfx"][-1], high)
-        self.assertLess(gr["reported"][-1], low)
+    def test_the_straddle_is_claimed_only_when_the_bases_straddle(self) -> None:
+        """The headline claim -- above on one basis, below on the other -- is
+        printed from the arithmetic, not remembered."""
+        view = bc.period_view(self.s)
+        guide = bc.guidance_for(self.s, view["year"])
+        straddle = view["cfx"] > guide["high"] and view["reported"] < guide["low"]
+        chart = next(ex for ex in exhibits(self.payload) if ex.get("ref") == "EX_STRADDLE")
+        self.assertEqual(straddle, "唯一要回答的问题" in chart["note"])
+        self.assertEqual(straddle, f"前者高于全年指引上限 {guide['high']:g}%，后者低于下限 {guide['low']:g}%"
+                         in self.payload["headline"])
 
     def test_the_strict_judgeable_count_is_smaller_than_the_met_count(self) -> None:
         st = self.s["annual_revenue_guidance"]["strict_judgeability"]
@@ -230,12 +248,16 @@ class BcDashboardTest(unittest.TestCase):
     # ── the withdrawn disclosure ────────────────────────────────────────────
     def test_the_lease_adjusted_line_stops_where_disclosure_stopped(self) -> None:
         dec = self.s["ifrs16_disclosure_decay"]
+        both, bridge = dec["both_bases_printed"], dec["bridge_printed"]
+        # once withdrawn, never back: each flag is a run of True then a run of False
+        for flags in (both, bridge):
+            self.assertEqual(flags, sorted(flags, reverse=True))
+        self.assertLessEqual(sum(bridge), sum(both), "the bridge went before the line did")
         self.assertEqual(dec["ebitda_token_count"][-1], 0)
-        self.assertEqual(dec["both_bases_printed"], [True, True, True, True, False, False])
-        self.assertEqual(dec["bridge_printed"], [True, True, True, False, False, False])
         h = self.s["half"]
-        for year in (2025, 2026):
-            self.assertIsNone(h["ebitda_ex_ifrs16_eur_k"][h["periods"].index(f"{year}H1")])
+        for period, printed in zip(dec["periods"], both):
+            value = h["ebitda_ex_ifrs16_eur_k"][h["periods"].index(period.split()[1] + period.split()[0])]
+            self.assertEqual(value is not None, printed, period)
 
     def test_the_page_says_the_gap_was_narrowing_when_it_was_withdrawn(self) -> None:
         """Refusing the easy story is the point; the numbers have to back it."""
@@ -322,9 +344,15 @@ class BcDashboardTest(unittest.TestCase):
                 value, round(headroom(entry["direction"], entry["threshold"], entry["current"]), 1),
                 places=6, msg=entry["metric"])
         breached = sum(1 for v in chart["values"] if v < 0)
-        self.assertEqual(breached, 3, "three thresholds are currently breached")
-        # and the prose must agree with the count rather than be written by hand
-        self.assertIn("三条已经越线", chart["note"])
+        # the prose must agree with the count rather than be written by hand
+        self.assertIn(f"{cn_count(breached)}条已经越线", chart["note"])
+        # and the split between company targets and local lines is counted from
+        # the entries: the wholesale line sits at 34%, not at the company's 30%.
+        company = [e for e in entries if e["source"] == "company"]
+        self.assertIn(f"其中{cn_count(len(company))}条的阈值取自公司自己给出的年度目标", chart["note"])
+        for entry in entries:
+            if entry["source"] == "company":
+                self.assertIn(entry["target_words"], chart["note"])
 
     # ── counts printed in prose, which nothing else guards ─────────────────
     def test_every_count_quoted_in_prose_is_recomputed_from_the_data(self) -> None:
@@ -365,19 +393,29 @@ class BcDashboardTest(unittest.TestCase):
         trough = nd["pre_ifrs16"].index(min(nd["pre_ifrs16"]))
         self.assertIn(f"{nd['years'][-1] - nd['years'][trough]} 年", by_ref["EX_DEBT"]["title"])
 
-        # EX_MIX: the plateau band
+        # EX_MIX: the plateau band -- the years it names sit inside it, the year
+        # before them and the latest year do not
         ch = self.s["channel_h1_eur_k"]
-        share = [r / (r + w) * 100 for r, w in zip(ch["retail"], ch["wholesale"])]
+        share = [round(r / (r + w) * 100, 1) for r, w in zip(ch["retail"], ch["wholesale"])]
         mix = by_ref["EX_MIX"]["title"]
-        self.assertIn(f"{min(share[2:5]):.1f}%–{max(share[2:5]):.1f}%", mix)
         self.assertIn(f"{share[-1]:.1f}%", mix)
+        match = re.search(r"连续(\S+?)年停在 ([\d.]+)%–([\d.]+)%", mix)
+        if match:
+            count, low, high = match.group(1), float(match.group(2)), float(match.group(3))
+            n = next(k for k in range(2, len(share)) if cn_count(k) == count)
+            band = share[-1 - n:-1]
+            self.assertEqual((min(band), max(band)), (low, high))
+            self.assertLessEqual(high - low, 0.5)
+            self.assertFalse(low <= share[-1] <= high)
+            self.assertGreater(max(band + [share[-2 - n]]) - min(band + [share[-2 - n]]), 0.5)
 
     def test_year_on_year_wording_compares_like_named_halves(self) -> None:
         """On the H1-only series a neighbouring index IS a year; on the
         half-by-half series it is six months. Anything the page calls a
         year-on-year change must come from two same-named halves."""
         h = self.s["half"]
-        i26, i25 = h["periods"].index("2026H1"), h["periods"].index("2025H1")
+        i26 = max(k for k, period in enumerate(h["periods"]) if period.endswith("H1"))
+        i25 = h["periods"].index(f"{int(h['periods'][i26][:4]) - 1}H1")
         self.assertEqual(i26 - i25, 2, "H1 to H1 is two indices on this axis")
         ebit = (h["ebit_eur_k"][i26] / h["ebit_eur_k"][i25] - 1) * 100
         net = (h["net_profit_eur_k"][i26] / h["net_profit_eur_k"][i25] - 1) * 100
@@ -433,6 +471,27 @@ class BcDashboardTest(unittest.TestCase):
         self.assertIn("12g3-2(b)", joined)
         self.assertNotIn("10-Q", self.payload["subtitle"])
 
+    def test_the_record_spread_is_the_widest_and_narrowest_the_page_holds(self) -> None:
+        """The note said 0.5pp to 5.9pp; FY2024 is 0.2pp (12.2% against 12.4%) and
+        nothing on the page reaches 5.9pp. The range is now read off the record."""
+        a, gr = self.s["annual"], self.s["growth_h1_pct"]
+        spreads = [abs(r - c) for r, c in zip(a["revenue_yoy_reported_pct"], a["revenue_yoy_cfx_pct"])
+                   if r is not None and c is not None]
+        spreads += [abs(r - c) for r, c in zip(gr["reported"], gr["cfx"])]
+        note = next(n for n in self.payload["notes"] if n.startswith("口径的取舍"))
+        self.assertIn(f"介于 {min(spreads):.1f}pp 与 {max(spreads):.1f}pp 之间", note)
+
+    def test_the_constant_currency_years_the_page_names_are_the_ones_it_has(self) -> None:
+        """「恒定汇率口径公司自 2022 年起才逐年给出」 outlived the 2016 backfill,
+        which brought in FY2017-FY2019 constant-currency growth."""
+        a = self.s["annual"]
+        conv = next(ex for ex in exhibits(self.payload) if ex.get("ref") == "EX_CONV")
+        missing = [y for y, v in zip(a["years"], a["revenue_yoy_cfx_pct"])
+                   if v is None and min(y2 for y2, v2 in zip(a["years"], a["revenue_yoy_cfx_pct"]) if v2 is not None) < y]
+        for year in missing:
+            self.assertIn(str(year), conv["src_extra"])
+        self.assertNotIn("起才逐年给出", conv["src_extra"])
+
     def test_the_undisclosed_items_are_listed_rather_than_estimated(self) -> None:
         excluded = self.s["next_kpi"]["excluded"]
         self.assertGreaterEqual(len(excluded), 4)
@@ -465,6 +524,238 @@ class BcDashboardTest(unittest.TestCase):
         published = (ROOT / "data" / "bc.js").read_text(encoding="utf-8")
         body = published.split(" = ", 1)[1].rstrip().rstrip(";\n")
         self.assertEqual(json.loads(body), self.payload)
+
+
+class BcChecksTest(unittest.TestCase):
+    """The page's half against a record keyed separately from the release.
+
+    `_checks` is typed once per roll from the results release itself, with the
+    page and table each figure was read from; the builder never reads it
+    (`test_data_only_roll`). Each assertion compares what the builder computed
+    from the arrays with that separate reading.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.s = json.loads(bc.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.checks = cls.s["_checks"]
+        cls.payload = bc.build_payload(cls.s)
+        cls.by_ref = {ex["ref"]: ex for ex in exhibits(cls.payload) if "ref" in ex}
+
+    def test_the_page_names_the_checked_half(self) -> None:
+        checks = self.checks
+        half, year = checks["period"].split()
+        self.assertIn(f"{year} 年{'上半年' if half == 'H1' else '全年'}业绩仪表盘", self.payload["title"])
+        self.assertIn(f"截至 {checks['period_end']}", self.payload["subtitle"])
+        self.assertIn(f"发布 {checks['release_date']}", self.payload["subtitle"])
+
+    def test_the_series_ends_on_the_checked_figures(self) -> None:
+        checks, s = self.checks, self.s
+        h = s["half"]
+        year = int(checks["period"].split()[1])
+        now, prior = h["periods"].index(f"{year}H1"), h["periods"].index(f"{year - 1}H1")
+        self.assertEqual(now, len(h["periods"]) - 1)
+        self.assertEqual(h["revenue_eur_k"][now], checks["revenue_eur_k"])
+        self.assertEqual(h["revenue_eur_k"][prior], checks["revenue_prior_year_eur_k"])
+        self.assertEqual(h["ebit_eur_k"][now], checks["ebit_eur_k"])
+        self.assertEqual(h["ebit_eur_k"][prior], checks["ebit_prior_year_eur_k"])
+        self.assertEqual(h["net_profit_eur_k"][now], checks["net_profit_eur_k"])
+        self.assertEqual(h["net_profit_eur_k"][prior], checks["net_profit_prior_year_eur_k"])
+        self.assertEqual(h["da_eur_k"][now], checks["depreciation_amortisation_eur_k"])
+        # the release prints each rate to one decimal; the recomputation must round to it
+        self.assertEqual(round(h["ebit_eur_k"][now] / h["revenue_eur_k"][now] * 100, 1), checks["ebit_margin_pct"])
+        self.assertEqual(round(h["ebit_eur_k"][prior] / h["revenue_eur_k"][prior] * 100, 1),
+                         checks["ebit_margin_prior_year_pct"])
+        self.assertEqual(round(bc.pct(h["ebit_eur_k"][now], h["ebit_eur_k"][prior]), 1), checks["ebit_growth_pct"])
+        self.assertEqual(round(bc.pct(h["net_profit_eur_k"][now], h["net_profit_eur_k"][prior]), 1),
+                         checks["net_profit_growth_pct"])
+        gr = s["growth_h1_pct"]
+        self.assertEqual(gr["years"][-1], year)
+        self.assertEqual(gr["cfx"][-1], checks["revenue_growth_cfx_pct"])
+        self.assertEqual(gr["reported"][-1], checks["revenue_growth_reported_pct"])
+        ch, geo = s["channel_h1_eur_k"], s["geography_h1_eur_k"]
+        self.assertEqual((ch["retail"][-1], ch["wholesale"][-1]), (checks["retail_eur_k"], checks["wholesale_eur_k"]))
+        self.assertEqual((ch["retail"][-2], ch["wholesale"][-2]),
+                         (checks["retail_prior_year_eur_k"], checks["wholesale_prior_year_eur_k"]))
+        self.assertEqual((geo["europe_total"][-1], geo["americas"][-1], geo["asia"][-1]),
+                         (checks["europe_eur_k"], checks["americas_eur_k"], checks["asia_eur_k"]))
+        nd = s["net_debt_h1_eur_k"]
+        self.assertEqual(round(nd["pre_ifrs16"][-1] / 1000, 1), checks["core_net_financial_debt_eur_m"])
+        self.assertEqual(round(nd["pre_ifrs16"][-2] / 1000, 1), checks["core_net_financial_debt_prior_year_eur_m"])
+        self.assertEqual(round(s["net_debt_year_end_eur_k"][str(year - 1)] / 1000, 1),
+                         checks["core_net_financial_debt_prior_year_end_eur_m"])
+        guide = bc.guidance_for(s, checks["guidance_year"])
+        self.assertEqual((guide["low"], guide["high"], guide["basis"]),
+                         (checks["guidance_cfx_low_pct"], checks["guidance_cfx_high_pct"], "cfx"))
+
+    def test_the_thresholds_carry_the_printed_rates(self) -> None:
+        """Where the release prints the rate a threshold tracks, the table uses it."""
+        current = {e["metric"]: e["current"] for e in self.s["next_kpi"]["quantified"]}
+        self.assertEqual(current["H2 零售渠道 cFX 增速"], self.checks["retail_growth_cfx_pct"])
+        self.assertEqual(current["批发渠道占收入比重"], self.checks["wholesale_share_pct"])
+        self.assertEqual(current["资本开支占收入比重（指引约 6%）"], self.checks["investments_pct_of_revenue"])
+        self.assertEqual(round(current["EBIT 利润率（指引约 17%）"], 1), self.checks["ebit_margin_pct"])
+        self.assertEqual(current["报告口径半年营收增速"], self.checks["revenue_growth_reported_pct"])
+
+    def test_the_headline_and_card_print_the_checked_figures(self) -> None:
+        checks = self.checks
+        head = self.payload["headline"]
+        self.assertIn(f"收入 €{checks['revenue_eur_k']:,} 千", head)
+        self.assertIn(f"恒定汇率 {checks['revenue_growth_cfx_pct']:+.1f}%", head)
+        self.assertIn(f"报告口径 {checks['revenue_growth_reported_pct']:+.1f}%", head)
+        self.assertIn(f"EBIT 增 {checks['ebit_growth_pct']:+.1f}%", head)
+        self.assertIn(f"{checks['net_profit_growth_pct']:+.1f}%", head)
+        card = bc.headline_metrics(self.s)
+        self.assertEqual(card, [f"Revenues €{checks['revenue_eur_k'] / 1000:.1f}M",
+                                f"恒定汇率 {checks['revenue_growth_cfx_pct']:+.1f}%",
+                                f"EBIT 利润率 {checks['ebit_margin_pct']:.1f}%"])
+
+
+def roll_back_to_full_year(staging: dict) -> dict:
+    """The series as it stood on the full-year release before this half.
+
+    Everything this half added comes off: the half, its H1-only rows, the
+    quarters of its year, the cumulative figures for its year, the year's
+    guidance record. The one-half blocks go too (there is no earlier original
+    in git: the page was built on this half), and the release list names the
+    full-year release the page would then be built on.
+    """
+    s = copy.deepcopy(staging)
+    year = int(s["half"]["periods"][-1][:4])
+    q = s["quarterly"]
+    keep = [i for i, period in enumerate(q["periods"]) if int(period[:4]) < year]
+    for key in ("periods", "revenue_eur_k", "basis"):
+        q[key] = [q[key][i] for i in keep]
+    c = s["cumulative_revenue_eur_k"]
+    j = c["years"].index(year)
+    for key in ("years", "q1", "h1", "nine_m", "fy"):
+        del c[key][j]
+    h = s["half"]
+    for key in [k for k, v in h.items() if isinstance(v, list)]:
+        h[key] = h[key][:-1]
+    for block in ("geography_h1_eur_k", "channel_h1_eur_k", "growth_h1_pct", "net_debt_h1_eur_k"):
+        width = len(s[block]["years"])
+        for key, value in s[block].items():
+            if isinstance(value, list) and len(value) == width:
+                s[block][key] = value[:-1]
+    s["net_debt_h1_eur_k"]["post_ifrs16_derived_years"] = []
+    dec = s["ifrs16_disclosure_decay"]
+    for key in [k for k, v in dec.items() if isinstance(v, list)]:
+        dec[key] = dec[key][:-1]
+    g = s["annual_revenue_guidance"]
+    j = g["target_years"].index(year)
+    for key in [k for k, v in g.items() if isinstance(v, list)]:
+        del g[key][j]
+    for key in ("next_kpi", "half_story", "company_targets", "_checks"):
+        s.pop(key, None)
+    s["latest"] = {"period": f"H2 {year - 1}", "period_end": f"{year - 1}-12-31",
+                   "release_date": f"{year}-02-18", "analysis_date": f"{year}-03-01",
+                   "audit_status": "audited"}
+    s["sources"] = [src for src in s["sources"] if not src["label"].startswith(f"{year} 年")]
+    s["sources"].append({"label": f"{year - 1} 年全年业绩新闻稿（{year}-02-18）",
+                         "url": "https://investor.brunellocucinelli.com/en/services/archive/investor/press-releases"})
+    return s
+
+
+class BcRollTest(unittest.TestCase):
+    """What a roll can change without touching the builder."""
+
+    STORY_ONLY = ("本期跳升不是零售突然加速", "隐含下半年要压到", "两家券商",
+                  "年指引：约", "而公司给的年末目标是收入的")
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.s = json.loads(bc.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = bc.build_payload(cls.s)
+        cls.text = json.dumps(cls.payload, ensure_ascii=False)
+
+    def test_a_block_stamped_for_another_half_stops_the_build(self) -> None:
+        for key in ("next_kpi", "half_story"):
+            stale = copy.deepcopy(self.s)
+            stale[key]["period"] = "H1 1999"
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "stamped"):
+                    bc.build_payload(stale)
+
+    def test_the_halfs_own_release_must_be_in_the_sources(self) -> None:
+        bare = copy.deepcopy(self.s)
+        bare["sources"] = [src for src in bare["sources"] if "上半年业绩" not in src["label"]]
+        self.assertLess(len(bare["sources"]), len(self.s["sources"]))
+        with self.assertRaisesRegex(ValueError, "sources"):
+            bc.build_payload(bare)
+
+    def test_targets_are_published_only_in_their_own_year(self) -> None:
+        other = copy.deepcopy(self.s)
+        other["company_targets"]["year"] -= 1
+        text = json.dumps(bc.build_payload(other), ensure_ascii=False)
+        self.assertIn("而公司给的年末目标是收入的", self.text)
+        self.assertNotIn("而公司给的年末目标是收入的", text)
+        self.assertNotIn("年指引：约", text)
+
+    def test_a_half_without_its_story_leaves_it_out(self) -> None:
+        bare = copy.deepcopy(self.s)
+        for key in ("next_kpi", "half_story", "company_targets"):
+            del bare[key]
+        payload = bc.build_payload(bare)
+        text = json.dumps(payload, ensure_ascii=False)
+        for phrase in self.STORY_ONLY:
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, self.text)
+                self.assertNotIn(phrase, text)
+        for index, section in enumerate(payload["sections"], start=1):
+            self.assertTrue(section["title"].startswith(f"{bc.cn_ordinal(index)}、"))
+        first = payload["tables"][0]["n"]
+        self.assertEqual([t["n"] for t in payload["tables"]], list(range(first, first + len(payload["tables"]))))
+
+    def test_the_full_year_before_this_half_builds_from_the_series_alone(self) -> None:
+        rolled = roll_back_to_full_year(self.s)
+        payload = bc.build_payload(rolled)
+        year = int(self.s["half"]["periods"][-1][:4]) - 1
+        self.assertIn(f"{year} 年全年业绩仪表盘", payload["title"])
+        self.assertEqual(payload["latest"]["disclosed_period_label"], f"H2 {year}")
+        self.assertTrue(payload["headline"].startswith("全年收入"))
+        text = json.dumps(payload, ensure_ascii=False)
+        self.assertNotIn(f"{year + 1} 年上半年", text)
+
+    def test_the_record_sentences_are_computed_not_remembered(self) -> None:
+        """Make each finding false on a copy of the series: its words must go."""
+        cases = []
+        s = copy.deepcopy(self.s)
+        s["channel_h1_eur_k"]["wholesale"][-1] = round(s["channel_h1_eur_k"]["wholesale"][-2] * 1.05)
+        cases += [(s, "批发在连续增长四年之后停住"), (s, "批发停住，增长只剩一条腿")]
+        s = copy.deepcopy(self.s)
+        s["channel_h1_eur_k"]["wholesale"][2] = s["channel_h1_eur_k"]["wholesale"][1] - 1
+        cases.append((s, "在此之前它连续四年每年都增长"))
+        s = copy.deepcopy(self.s)
+        s["channel_h1_eur_k"]["retail"][-3] = round(s["channel_h1_eur_k"]["retail"][-3] * 0.9)
+        cases.append((s, "零售占比连续三年停在"))
+        s = copy.deepcopy(self.s)
+        s["growth_h1_pct"]["cfx"][-1] = 10.5
+        cases += [(s, "唯一要回答的问题"), (s, "前者高于全年指引上限")]
+        s = copy.deepcopy(self.s)
+        g = s["annual_revenue_guidance"]
+        g["actual_reported_pct"][g["target_years"].index(2025)] = 9.0
+        cases.append((s, "两条实际线都稳稳高于指引"))
+        s = copy.deepcopy(self.s)
+        s["half"]["net_profit_eur_k"][-1] = round(s["half"]["net_profit_eur_k"][-3] * 1.2)
+        cases += [(s, "真正的断层在 EBIT 之下"), (s, "断层在 EBIT 以下，不在收入")]
+        s = copy.deepcopy(self.s)
+        s["annual_revenue_guidance"]["strict_judgeability"]["met"] -= 1
+        cases += [(s, "全部达成"), (s, "条条达成")]
+        s = copy.deepcopy(self.s)
+        s["guidance_basis_census"]["lease_basis_stated"] = 1
+        cases.append((s, "一次都没有</b>被说明过"))
+        for staging, phrase in cases:
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, self.text)
+                self.assertNotIn(phrase, json.dumps(bc.build_payload(staging), ensure_ascii=False))
+        # The debt chart's own sentence (the thresholds' story says it too, in
+        # words written for this half, so the chart is where the arithmetic is).
+        s = copy.deepcopy(self.s)
+        s["net_debt_year_end_eur_k"][str(int(s["half"]["periods"][-1][:4]) - 1)] = 999999
+        debt = next(ex for ex in exhibits(bc.build_payload(s)) if ex.get("ref") == "EX_DEBT")
+        self.assertIn("同时高于上年末", next(ex for ex in exhibits(self.payload) if ex.get("ref") == "EX_DEBT")["note"])
+        self.assertNotIn("同时高于上年末", debt["note"])
 
 
 if __name__ == "__main__":

@@ -15,6 +15,66 @@
     "analysis_date": "2026-08-30",
     "audit_status": "limited_review"
   },
+  "_checks": {
+    "period": "Q2 2026",
+    "half": "H1 2026",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-29",
+    "quarter_revenue_eur_m": 4094,
+    "quarter_prior_year_eur_m": 3905,
+    "quarter_published_pct": 4.8,
+    "quarter_cc_pct": 6.7,
+    "quarter_sector_cc_pct": {
+      "leather_goods_saddlery": 10.2,
+      "ready_to_wear_accessories": 3.6,
+      "silk_textiles": 12.2,
+      "other_hermes_sectors": 4.0,
+      "perfume_beauty": -9.5,
+      "watches": 4.4,
+      "other_products": 1.9
+    },
+    "quarter_region_published_pct": {
+      "france": 6.2,
+      "europe_ex_france": 6.6,
+      "japan": -0.2,
+      "asia_pacific_ex_japan": 3.0,
+      "americas": 11.3,
+      "other_middle_east": -4.1
+    },
+    "quarter_region_cc_pct": {
+      "france": 6.2,
+      "europe_ex_france": 8.3,
+      "japan": 12.3,
+      "asia_pacific_ex_japan": 2.5,
+      "americas": 13.7,
+      "other_middle_east": -2.4
+    },
+    "half_revenue_eur_m": 8163,
+    "half_prior_year_eur_m": 8034,
+    "half_published_pct": 1.6,
+    "half_cc_pct": 6.1,
+    "recurring_operating_income_eur_m": 3351,
+    "recurring_operating_income_prior_year_eur_m": 3327,
+    "recurring_operating_margin_pct": 41.0,
+    "recurring_operating_margin_prior_year_pct": 41.4,
+    "prior_full_year_recurring_operating_margin_pct": 41.0,
+    "net_profit_group_eur_m": 2238,
+    "operating_cash_flows_eur_m": 2694,
+    "operating_investments_eur_m": 344,
+    "operating_investments_prior_year_eur_m": 316,
+    "operating_investments_prior_full_year_eur_m": 1161,
+    "adjusted_fcf_eur_m": 2182,
+    "diluted_eps_eur": 21.32,
+    "diluted_eps_prior_year_eur": 21.39,
+    "cost_of_sales_eur_m": -2356,
+    "gross_margin_eur_m": 5807,
+    "sga_eur_m": -1899,
+    "other_income_expenses_eur_m": -558,
+    "next_quarter_release": "2026-10-22",
+    "full_year_release": "2027-02-11",
+    "source": "Hermès 2026 年半年报新闻稿（hermes_20260729_pr_firsthalfresults_va.pdf，落款 Paris, 29 July 2026，Half-year information report as at the end of June 2026）：第 1 页要点（+7% in the second quarter at constant exchange rates；Recurring operating profitability reached 41.0% of sales）、第 3 页（41.0%, compared to 41.4% at the end of June 2025）、第 4 页 Upcoming events（22 October 2026: Q3 2026 revenue；11 February 2027: 2026 full-year results）、第 5 页 First half 2026 key figures（Revenue 8,163 / 16,002 / 8,034，1.6% / 6.1%；Recurring operating income 3,351 / 6,569 / 3,327，41.0% / 41.0% / 41.4%；Net profit 2,238；Operating cash flows 2,694；Operating investments 344 / 1,161 / 316；Adjusted free cash flows 2,182）、第 6–7 页 2nd quarter 分地区与分板块两表（4,094 / 3,905，4.8% / 6.7%，各行 published 与 constant）、第 9 页合并损益表（(2,356)、5,807、(1,899)、(558)，Diluted EPS 21.32 / 21.39）。",
+    "checked_on": "2026-09-19"
+  },
   "periods": [
     "Q3 2024",
     "Q4 2024",
@@ -663,7 +723,8 @@
       ]
     }
   },
-  "first_half_2026": {
+  "first_half": {
+    "period": "H1 2026",
     "_source": "2026 半年度业绩新闻稿的 At the end of June 分板块与分地区表",
     "group": {
       "revenue_eur_m": 8163,
@@ -808,7 +869,9 @@
       "operating_cash_flows_eur_m": 2733,
       "operating_investments_eur_m": 316,
       "adjusted_fcf_eur_m": 1847,
-      "roi_margin_pct": 41.4115
+      "roi_margin_pct": 41.4115,
+      "roi_margin_printed_pct": 41.4,
+      "_roi_margin_printed_source": "2026-07-29 半年度业绩新闻稿第 3 页与第 5 页 key figures 表：H1 2025「41.4%」；3,327 ÷ 8,034 = 41.41%，一位小数一致。"
     },
     {
       "label": "H2 2025",
@@ -858,10 +921,13 @@
       "net_profit_group_eur_m": 4524,
       "operating_cash_flows_eur_m": 5607,
       "operating_investments_eur_m": 1161,
-      "adjusted_fcf_eur_m": 3880
+      "adjusted_fcf_eur_m": 3880,
+      "roi_margin_printed_pct": 41.0,
+      "_roi_margin_printed_source": "2026-07-29 半年度业绩新闻稿第 5 页 key figures 表 2025 列：「41.0%」；6,569 ÷ 16,002 = 41.05%，一位小数是 41.1% —— 与 H1 2026 同一种不一致，本页的季度期不印这一格；利润期是全年时 headline 印的就是这个公司值。"
     }
   },
   "h1_income": {
+    "period": "H1 2026",
     "_source": "2026 半年度财务报告 §3.1 合并损益表与附注 4.4",
     "lines": [
       [
@@ -956,78 +1022,82 @@
       ]
     ]
   },
-  "h1_segments": [
-    {
-      "key": "france",
-      "label": "法国",
-      "roi_2026": 273,
-      "roi_2025": 271,
-      "revenue_2026": 753,
-      "revenue_2025": 740,
-      "capex_2026": 138,
-      "capex_2025": 147
-    },
-    {
-      "key": "europe_ex_france",
-      "label": "欧洲（除法国）",
-      "roi_2026": 374,
-      "roi_2025": 353,
-      "revenue_2026": 1165,
-      "revenue_2025": 1088,
-      "capex_2026": 58,
-      "capex_2025": 50
-    },
-    {
-      "key": "japan",
-      "label": "日本",
-      "roi_2026": 333,
-      "roi_2025": 328,
-      "revenue_2026": 798,
-      "revenue_2025": 815,
-      "capex_2026": 33,
-      "capex_2025": 13
-    },
-    {
-      "key": "asia_pacific_ex_japan",
-      "label": "亚太（除日本）",
-      "roi_2026": 1653,
-      "roi_2025": 1724,
-      "revenue_2026": 3533,
-      "revenue_2025": 3574,
-      "capex_2026": 53,
-      "capex_2025": 44
-    },
-    {
-      "key": "americas",
-      "label": "美洲",
-      "roi_2026": 581,
-      "roi_2025": 527,
-      "revenue_2026": 1585,
-      "revenue_2025": 1455,
-      "capex_2026": 46,
-      "capex_2025": 36
-    },
-    {
-      "key": "other_middle_east",
-      "label": "其他（中东）",
-      "roi_2026": 128,
-      "roi_2025": 149,
-      "revenue_2026": 330,
-      "revenue_2025": 362,
-      "capex_2026": 2,
-      "capex_2025": 11
-    },
-    {
-      "key": "unallocated",
-      "label": "未分配",
-      "roi_2026": 9,
-      "roi_2025": -25,
-      "revenue_2026": 0,
-      "revenue_2025": 0,
-      "capex_2026": 14,
-      "capex_2025": 14
-    }
-  ],
+  "h1_segments": {
+    "period": "H1 2026",
+    "_source": "2026 半年度财务报告附注 3（分部信息），上半年口径；now = H1 2026，prior = H1 2025。",
+    "rows": [
+      {
+        "key": "france",
+        "label": "法国",
+        "roi_now": 273,
+        "roi_prior": 271,
+        "revenue_now": 753,
+        "revenue_prior": 740,
+        "capex_now": 138,
+        "capex_prior": 147
+      },
+      {
+        "key": "europe_ex_france",
+        "label": "欧洲（除法国）",
+        "roi_now": 374,
+        "roi_prior": 353,
+        "revenue_now": 1165,
+        "revenue_prior": 1088,
+        "capex_now": 58,
+        "capex_prior": 50
+      },
+      {
+        "key": "japan",
+        "label": "日本",
+        "roi_now": 333,
+        "roi_prior": 328,
+        "revenue_now": 798,
+        "revenue_prior": 815,
+        "capex_now": 33,
+        "capex_prior": 13
+      },
+      {
+        "key": "asia_pacific_ex_japan",
+        "label": "亚太（除日本）",
+        "roi_now": 1653,
+        "roi_prior": 1724,
+        "revenue_now": 3533,
+        "revenue_prior": 3574,
+        "capex_now": 53,
+        "capex_prior": 44
+      },
+      {
+        "key": "americas",
+        "label": "美洲",
+        "roi_now": 581,
+        "roi_prior": 527,
+        "revenue_now": 1585,
+        "revenue_prior": 1455,
+        "capex_now": 46,
+        "capex_prior": 36
+      },
+      {
+        "key": "other_middle_east",
+        "label": "其他（中东）",
+        "roi_now": 128,
+        "roi_prior": 149,
+        "revenue_now": 330,
+        "revenue_prior": 362,
+        "capex_now": 2,
+        "capex_prior": 11
+      },
+      {
+        "key": "unallocated",
+        "label": "未分配",
+        "roi_now": 9,
+        "roi_prior": -25,
+        "revenue_now": 0,
+        "revenue_prior": 0,
+        "capex_now": 14,
+        "capex_prior": 14
+      }
+    ]
+  },
   "outlook": {
     "sentence": "In the medium-term, despite the economic, geopolitical and monetary uncertainties around the world, the group confirms an ambitious goal for revenue growth at constant exchange rates.",
     "translation": "中期而言，尽管全球存在经济、地缘政治与货币方面的不确定性，集团重申以固定汇率计的收入增长的雄心目标。",
@@ -1095,60 +1165,69 @@
     ],
     "numbers_in_sentence": 0
   },
-  "quasi_guidance": [
-    {
-      "item": "下半年毛利率的汇率影响",
-      "value": "−30bp",
-      "direction": "逆风",
-      "settles": "2027-02-11 全年业绩",
-      "note": "由分析师在提问中复述该数字，管理层答「你对毛利率上的汇率影响理解无误，我没有别的可补充」，等于确认；该轮发言人在纪要里标为未具名高管。"
-    },
-    {
-      "item": "换算效应（conversion effect）",
-      "value": "上半年 +0.5pp，按当时汇率全年趋近 0",
-      "direction": "逆风",
-      "settles": "2027-02-11 全年业绩",
-      "note": "若全年趋近 0 而上半年已实现 +0.5pp，下半年须回吐约 0.5pp；公司未给下半年单独口径。"
-    },
-    {
-      "item": "外汇对冲成本",
-      "value": "上半年约 €100m，全年约 €210m",
-      "direction": "中性",
-      "settles": "2027-02-11 全年业绩",
-      "note": "隐含下半年约 €110m，与上半年基本持平，增量约 €10m —— 是水平高，不是增量逆风。"
-    },
-    {
-      "item": "全年经营性投资",
-      "value": "€1,000m（上半年已花 €344m）",
-      "direction": "顺风",
-      "settles": "2027-02-11 全年业绩",
-      "note": "与新闻稿关键数据表 Operating investments 同一行的 2025 年实际 €1,161m 同口径，全年目标同比 −13.9%，下半年隐含 €656m 对 2025 年下半年 €845m 为 −22.4%。"
-    },
-    {
-      "item": "2027 年提价幅度",
-      "value": "低于 2026 年",
-      "direction": "定价口径转弱",
-      "settles": "2027 年首次提价落地",
-      "note": "系回答分析师提问时说出，不是主动披露；2026 年的提价幅度公司本身从未确认过数字，所以这句话没有可比的基数。"
-    },
-    {
-      "item": "法国大企业特别税",
-      "value": "全年约 €360m，上半年已确认 €270m",
-      "direction": "顺风",
-      "settles": "2027-02-11 全年业绩",
-      "note": "下半年仅剩约 €90m，比上半年轻约 €180m；上半年有效税率 35.37% 因中期一次性确认而虚高，半年度财务报告附注 1.2 给出的含特别税全年估计税率是 33%。"
-    }
-  ],
+  "quasi_guidance": {
+    "period": "Q2 2026",
+    "items": [
+      {
+        "item": "下半年毛利率的汇率影响",
+        "value": "−30bp",
+        "direction": "逆风",
+        "settles": "2027-02-11 全年业绩",
+        "note": "由分析师在提问中复述该数字，管理层答「你对毛利率上的汇率影响理解无误，我没有别的可补充」，等于确认；该轮发言人在纪要里标为未具名高管。"
+      },
+      {
+        "item": "换算效应（conversion effect）",
+        "value": "上半年 +0.5pp，按当时汇率全年趋近 0",
+        "direction": "逆风",
+        "settles": "2027-02-11 全年业绩",
+        "note": "若全年趋近 0 而上半年已实现 +0.5pp，下半年须回吐约 0.5pp；公司未给下半年单独口径。"
+      },
+      {
+        "item": "外汇对冲成本",
+        "value": "上半年约 €100m，全年约 €210m",
+        "direction": "中性",
+        "settles": "2027-02-11 全年业绩",
+        "note": "隐含下半年约 €110m，与上半年基本持平，增量约 €10m —— 是水平高，不是增量逆风。"
+      },
+      {
+        "item": "全年经营性投资",
+        "value": "€1,000m（上半年已花 €344m）",
+        "direction": "顺风",
+        "settles": "2027-02-11 全年业绩",
+        "note": "与新闻稿关键数据表 Operating investments 同一行的 2025 年实际 €1,161m 同口径，全年目标同比 −13.9%，下半年隐含 €656m 对 2025 年下半年 €845m 为 −22.4%。"
+      },
+      {
+        "item": "2027 年提价幅度",
+        "value": "低于 2026 年",
+        "direction": "定价口径转弱",
+        "settles": "2027 年首次提价落地",
+        "note": "系回答分析师提问时说出，不是主动披露；2026 年的提价幅度公司本身从未确认过数字，所以这句话没有可比的基数。"
+      },
+      {
+        "item": "法国大企业特别税",
+        "value": "全年约 €360m，上半年已确认 €270m",
+        "direction": "顺风",
+        "settles": "2027-02-11 全年业绩",
+        "note": "下半年仅剩约 €90m，比上半年轻约 €180m；上半年有效税率 35.37% 因中期一次性确认而虚高，半年度财务报告附注 1.2 给出的含特别税全年估计税率是 33%。"
+      }
+    ],
+    "provenance_note": "其中两条的发言人在纪要中标为未具名高管，两条是被分析师问出来的而非主动披露。"
+  },
   "next_kpi": {
-    "as_of": "Q2 2026",
+    "period": "Q2 2026",
     "settles_on": "2026-10-22",
+    "full_year_settles_on": "2027-02-11",
+    "threshold_charts": [
+      "亚太（除日本）cc 增速",
+      "皮具与马具 cc 增速"
+    ],
     "quantified": [
       {
         "metric": "集团收入 cc 增速",
         "direction": "up",
         "threshold": 5.6,
         "unit": "pct",
-        "current": 6.7,
+        "reads": "group_revenue.cc_pct",
         "why": "5.6% 是 2026 年第一季的水平。第二季加速到 6.7%，若第三季回到 5.6% 或更低，「经营动能在加速」这一读法就该被撤销 —— 加速只剩一个季度，属波动而非拐点。"
       },
       {
@@ -1156,15 +1235,16 @@
         "direction": "up",
         "threshold": 9.0,
         "unit": "pct",
-        "current": 10.2,
-        "why": "它是集团唯一的增长引擎：本季贡献了 69.3% 的固定汇率增量。跌破 9% 意味着承重柱本身在减速，而其余板块没有一个大到能接手。"
+        "reads": "by_sector.leather_goods_saddlery.cc_pct",
+        "why": "它是集团唯一的增长引擎：本季贡献了 69.3% 的固定汇率增量。跌破 9% 意味着承重柱本身在减速，而其余板块没有一个大到能接手。",
+        "chart_note": "<b>这条线和上一条是集团的两条承重柱，而它们指向相反。</b>皮具本季 {now:leather_goods_saddlery}，兑现了上一季管理层在电话会上给出的「皮具增速会逐月回升」这句可证伪的承诺；但它同时贡献了{share_words:leather_goods_saddlery}的集团增量，所以它自己的增速已经接近等同于集团增速，单看这条线的信息量在下降 —— 这也是 Exhibit {EX_SECTOR_MIX} 那条集中度腿必须和它一起看的原因。另外公司在本季明确否认了外部普遍使用的「6% 量 + 中个位数价」这套拆解，理由是量的本质是工时而不同产品的工时价值不同，而公司又不提供替代口径 —— 量价拆分与皮具占比都被拒答。"
       },
       {
         "metric": "皮具占集团 cc 增量比重",
         "direction": "down",
         "threshold": 60.0,
         "unit": "pct",
-        "current": 69.3,
+        "reads": "increment_share.leather_goods_saddlery",
         "why": "增速与集中度要一起看。皮具增速达标但集中度不降，说明增长仍是单点支撑；回落到 60% 以下才说明其余板块开始出力。"
       },
       {
@@ -1172,15 +1252,16 @@
         "direction": "up",
         "threshold": 5.0,
         "unit": "pct",
-        "current": 2.5,
-        "why": "该区占上半年收入 43.3%、占分部经常性经营利润 49.3%，是集团利润率的第一决定变量；它连续四个季度落在个位数低位，本季 2.5% 仍是六个地区里第二低。"
+        "reads": "by_region.asia_pacific_ex_japan.cc_pct",
+        "why": "该区占上半年收入 43.3%、占分部经常性经营利润 49.3%，是集团利润率的第一决定变量；它连续四个季度落在个位数低位，本季 2.5% 仍是六个地区里第二低。",
+        "chart_note": "阈值取 5% 的理由是可审计的：分析师在电话会上按亚太约 5% 的提价幅度提问，管理层没有否认这个量级，所以固定汇率增速回到 5% 以上大致对应销量不再下滑 —— 这是<b>推断</b>，公司从不披露量价拆分，也从不单独披露大中华区增速。"
       },
       {
         "metric": "美洲 cc 增速",
         "direction": "up",
         "threshold": 10.0,
         "unit": "pct",
-        "current": 13.7,
+        "reads": "by_region.americas.cc_pct",
         "why": "美洲占上半年收入 19.4% 却贡献了 45.3% 的固定汇率增量，是当前的实际支点，而它已从第一季的 17.2% 减速到 13.7%，是六个地区里减速最快的一个。"
       },
       {
@@ -1188,7 +1269,7 @@
         "direction": "up",
         "threshold": -1.0,
         "unit": "pct",
-        "current": -2.4,
+        "reads": "by_region.other_middle_east.cc_pct",
         "why": "连续两个季度为负但降幅在收窄（−5.9% → −2.4%）。回到 −1% 以上才算触底，再度走阔则说明这不是基数问题。"
       },
       {
@@ -1196,14 +1277,14 @@
         "direction": "up",
         "threshold": -5.0,
         "unit": "pct",
-        "current": -9.5,
+        "reads": "by_sector.perfume_beauty.cc_pct",
         "why": "本季 −9.5%，是七个板块里唯一负增长，也是环比最大的一次减速（−9.7pp），而公司在新闻稿与电话会上都没有解释原因。连续两季低于 −5% 就该按结构性问题处理。"
       }
     ],
     "full_year_only": [
       {
         "metric": "全年经常性经营利润率",
-        "current": "上半年 41.05%",
+        "current": "上半年 41.0%",
         "threshold": "≥ 40.5%",
         "why": "上半年 0.36pp 的降幅里有 91% 由减值一项解释；全年才能看出那是一次性集中计提还是常态。"
       },
@@ -1227,6 +1308,30 @@
       }
     ]
   },
+  "quarter_story": {
+    "period": "Q2 2026",
+    "wedge_reading": "本季收窄到 {wedge_now}pp 不是汇率转向，是<b>上年同期的基数已经被压低了</b> —— 去年{year_ago_quarter}那一格自己就带着 {wedge_year_ago}pp 的拖累。所以用「上半年汇率拖累 {half_wedge}pp」外推下半年会系统性高估逆风。",
+    "pace_story": "这是本季管理层叙述的支点，也是最容易被过度解读的一格。",
+    "base_quote": "公司自己在电话会上用的措辞是「有时候是去年太差，才让今年的百分比好看，但销量本身并没有那么好」",
+    "unexplained_drop": "而公司在新闻稿与电话会里都没有解释原因",
+    "region_moral": "集团的单点依赖没有消失，只是换了个地方。",
+    "unconnected": "大中华区的量化增速（公司从不单独披露，只在定性口径里出现）、皮具的量价拆分与经典款占比（公司在本季明确拒答）、零售与批发的拆分（上一季在电话会上给过一次，本季收回，只答方向）、门店数与单店效率、减值损失的地区与资产归属（两份文件均未披露）、"
+  },
+  "half_story": {
+    "period": "H1 2026",
+    "impairment_use": "半年度财务报告附注 6.2.2 对这笔减值的用途写的是「生产线上的个别资产与被认为盈利能力不足的门店」—— 在一份通篇讲需求强劲的报告里，这是管理层自己确认的一条反向证据。",
+    "share_price": "而该费用与公司股价挂钩，同期期间平均股价下跌 26.2%。",
+    "japan_fx": "日元贬值同时压低了它的欧元收入与欧元成本。",
+    "capex": {
+      "target_year": 2026,
+      "target_eur_m": 1000,
+      "said": "管理层口头说下半年会加速",
+      "reading": "<b>所以资本开支在下半年是自由现金流的顺风，不是逆风</b> —— 这一点与{season}普遍的读法相反，而它可以直接从新闻稿关键数据表核出来：",
+      "question": "值得追问的是反方向的问题：口头的「加速投资」与账上的同比下降约 {cut}% 之间，公司没有给出拆分，两种解释（上年含一次性项目 / 投资节奏确在收敛）都无法裁定。",
+      "source": "全年目标 €1,000m 出自业绩电话会，不是新闻稿里的书面指引。"
+    },
+    "tax_note": "上半年有效税率 {tax_rate} 因法国大企业特别税须按 IAS 34 在中期一次性全额确认而虚高；公司在半年度财务报告附注 1.2 给出的含特别税全年估计税率是 33%、剔除后是 28%。本页不据此调整任何披露值，只在此说明为什么半年税率不能年化。"
+  },
   "sources": [
     {
       "label": "Hermès Finance — 财务出版物（各期收入公告、半年度与全年业绩）",
@@ -1235,6 +1340,10 @@
     {
       "label": "Hermès Finance — 受监管信息",
       "url": "https://finance.hermes.com/en/regulated-information/"
+    },
+    {
+      "label": "2026 半年度业绩新闻稿（2026-07-29，含第二季度分板块与分地区表）",
+      "url": "https://assets-finance.hermes.com/s3fs-public/node/pdf_file/2026-07/1785260662/hermes_20260729_pr_firsthalfresults_va.pdf"
     },
     {
       "label": "2025 全年业绩新闻稿（2026-02-12，含第四季度分板块与分地区表）",
