@@ -6,6 +6,69 @@
     "analysis_date": "2026-08-29",
     "audit_status": "unaudited"
   },
+  "_checks": {
+    "period": "Q2 2026",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-24",
+    "revenue_usd_m": 19637,
+    "revenue_growth_printed_pct": 10,
+    "discount_revenue_usd_m": 10163,
+    "net_card_fees_usd_m": 2862,
+    "net_interest_income_usd_m": 4649,
+    "total_provisions_usd_m": 1084,
+    "total_expenses_usd_m": 14482,
+    "vce_usd_m": {
+      "rewards": 5051,
+      "business_development": 1755,
+      "card_member_services": 1949
+    },
+    "pretax_income_usd_m": 4071,
+    "pretax_growth_printed_pct": 15,
+    "net_income_usd_m": 3110,
+    "diluted_eps_usd": 4.53,
+    "diluted_eps_growth_printed_pct": 11,
+    "diluted_shares_m": 679,
+    "billed_business_usd_bn": 455.8,
+    "billed_business_growth_printed_pct": {
+      "reported": 9,
+      "fx_adjusted": 9
+    },
+    "ics_billed_business_growth_printed_pct": {
+      "reported": [
+        20,
+        13
+      ],
+      "fx_adjusted": [
+        13,
+        12
+      ]
+    },
+    "average_fee_per_card_usd": 131,
+    "proprietary_cards_in_force_m": 87.6,
+    "cet1_ratio_pct": 10.4,
+    "net_write_off_rate_principal_pct": 2.0,
+    "past_due_30_pct": 1.2,
+    "guidance": {
+      "fiscal_year": 2026,
+      "revenue_growth_pct": 10,
+      "eps_usd": [
+        17.3,
+        17.9
+      ]
+    },
+    "prior_year": {
+      "period": "Q2 2025",
+      "revenue_usd_m": 17856,
+      "total_expenses_usd_m": 12901,
+      "total_provisions_usd_m": 1405,
+      "pretax_income_usd_m": 3550,
+      "diluted_eps_usd": 4.08,
+      "net_card_fees_usd_m": 2480,
+      "billed_business_usd_bn": 416.3
+    },
+    "source": "American Express Q2 2026 业绩 8-K（2026-07-24，acc 0000004962-26-000318）：EX-99.1 首页表（Total Revenues Net of Interest Expense $19,637 / 10%，Pretax Income $4,071 / 15%，Net Income $3,110，Diluted EPS $4.53 / 11%，Average Diluted Common Shares 679，Billed Business $455.8 / 9% / FX-adjusted 9%）、CEO 引语（raising our full-year revenue growth guidance to 10 percent；continue to expect full-year EPS of $17.30 to $17.90）；EX-99.2 第 1 页 Consolidated Statements of Income（Discount revenue 10,163、Net card fees 2,862、Net interest income 4,649、Total provisions for credit losses 1,084、Card Member rewards 5,051、Business development 1,755、Card Member services 1,949、Total expenses 14,482）、第 3 页 Consolidated Capital（CET1 10.4%）、第 4 页 Selected Card Related Statistical Information（Proprietary cards-in-force 87.6、Average fee per card $131）、第 5 页 Network Volumes Related Growth（International Card Services Q2'26 / Q1'26：reported 13 / 20，FX-adjusted 12 / 13）、第 6 页 Card balances（Net write-off rate (principal only) 2.0%，30+ days past due 1.2%）。去年同季（prior_year）取 EX-99.1 首页表的 2025 列与 EX-99.2 第 1 页的 Q2'25 列。季末按 10-Q 封面 June 30, 2026（acc 0000004962-26-000322）。",
+    "checked_on": "2026-09-19"
+  },
   "periods": [
     "2016Q1",
     "2016Q2",
@@ -2237,9 +2300,9 @@
       "2025Q3",
       "2025Q4"
     ],
-    "basis_note": "2026 年第一季度公司把 Card Member loans 与 receivables 合并列示为 Card balances，同一份发布把前四个季度按新口径重述了一遍。这四个季度两种口径印出来的数字完全相同，本页因此把两段接成一条线，并把重叠的四季写在图上作为接线的依据。",
+    "basis_note": "2026 年第一季度公司把 Card Member loans 与 receivables 合并列示为 Card balances，同一份发布把前四个季度按新口径重述了一遍。这{overlap_n}个季度（{overlap}）两种口径印出来的数字完全相同，本页因此把两段接成一条线，并把重叠的{overlap_n}季写在图上作为接线的依据。",
     "combined_basis_first_quarter": "2022Q1",
-    "gap_note": "本页跟踪的两条信用指标是 Card Member loans and receivables 的口径 —— 贷款与应收账款合并，且按公司自己的脚注不含 corporate receivables。公司第一次印这个口径是 2023 年 4 月 20 日的 2023Q1 业绩发布，那一份并排印五个季度、最早到 2022Q1；在它之前的 25 份业绩统计表里没有一份印过它。所以 2017Q1–2021Q3 的空缺是披露边界，不是漏采：那几年公司披露的是下面这条仅贷款口径，那是另一个数。唯一能往前多接一格的是 30+ 天逾期率，因为它是时点数：FY2023 的 10-K 在三年对照表里按同一口径印出 2021 年的 0.7%，即 2021 年 12 月 31 日的值。同一张表的 2022、2023 两列与本页 2022Q4、2023Q4 的季度值相同，FY2024、FY2025 两份 10-K 又各多给一次年末核对，四次全部对上 —— 而且四次都与同季的仅贷款口径不同，所以这项核对能分辨两种口径，不是同一个数被数了四遍。净核销率是流量数，年度值是全年口径、与第四季对不上（FY2022 年度 0.9% 对季度 1.2%，FY2023 年度 1.8% 对季度 2.0%），它没有可接的一格，2021Q4 及以前一律留空；由分部件自算也做不到 —— 把贷款那半与应收账款那半的比率加权合起来，需要应收账款的本金口径净核销<b>金额</b>（统计表只印 principal and fees 的金额）和一个平均应收账款余额（统计表根本没有这一行，只有期末数），两个输入都不存在。",
+    "gap_note": "本页跟踪的两条信用指标是 Card Member loans and receivables 的口径 —— 贷款与应收账款合并，且按公司自己的脚注不含 corporate receivables。公司第一次印这个口径是 2023 年 4 月 20 日的 2023Q1 业绩发布，那一份并排印五个季度、最早到 2022Q1；在它之前的 25 份业绩统计表里没有一份印过它。所以 {gap_first}–{gap_last} 的空缺是披露边界，不是漏采：那几年公司披露的是下面这条仅贷款口径，那是另一个数。唯一能往前多接一格的是 30+ 天逾期率，因为它是时点数：FY2023 的 10-K 在三年对照表里按同一口径印出 2021 年的 0.7%，即 2021 年 12 月 31 日的值。同一张表的 2022、2023 两列与本页 2022Q4、2023Q4 的季度值相同，FY2024、FY2025 两份 10-K 又各多给一次年末核对，四次全部对上 —— 而且四次都与同季的仅贷款口径不同，所以这项核对能分辨两种口径，不是同一个数被数了四遍。净核销率是流量数，年度值是全年口径、与第四季对不上（FY2022 年度 0.9% 对季度 1.2%，FY2023 年度 1.8% 对季度 2.0%），它没有可接的一格，2021Q4 及以前一律留空；由分部件自算也做不到 —— 把贷款那半与应收账款那半的比率加权合起来，需要应收账款的本金口径净核销<b>金额</b>（统计表只印 principal and fees 的金额）和一个平均应收账款余额（统计表根本没有这一行，只有期末数），两个输入都不存在。",
     "loans_basis": {
       "label": "仅贷款口径（Worldwide Card Member loans）",
       "past_due_30_pct": [
@@ -2374,11 +2437,11 @@
         0,
         0
       ],
-      "note": "公司在每季业绩 8-K 的 EX-99.2 里另有一张 Worldwide Card Member loans 表，只含贷款、不含应收账款，从 2015Q4 一直印到 2025Q4；2026Q1 公司把两者合并成 Card balances 之后不再单独披露它。本页窗口内它覆盖 2017Q1–2025Q4 共 36 季，逐季读自印着它的每一份统计表（前 32 季各被读到 5 次，末尾几季随还剩几份发布递减到 1 次），24 份统计表印到了本页窗口里的季度（另有 2017-01-19 那一份只印到 2016 年），它们之间没有一处不一致，也没有一次重述。另取 FY2017–FY2025 九份 10-K 里同一段的年末值做第二来源核对，2017–2025 九个年末逐年与本页第四季度的值相同 —— 这一半的取数来自 2017–2022 年那两代格式不同的统计表，列错一格不会让任何东西变红，所以它需要一个来自另一类文件的核对。 2026-08-31 又往前接了四季：2016Q1–2016Q4 逾期率 1.1/1.1/1.1/1.2、净核销率 1.5/1.5/1.7/1.6，取自同一张 Worldwide Card Member loans 表，两条互不派生的路径读到同一组数 —— 2017-01-19 那份 FY2016 统计表（一次印六季，2015Q3 到 2016Q4）与 2017-04-19 那份 2017Q1 统计表（回溯五季到 2016Q1）。这四季的 readings_per_quarter 因此是 2，而不是其后那 32 季的 5，差别记在这里而不是抹平。注意 2016–2017 那两代格式里这一行的标签是「30+ days past due **loans** as a % of total」，2022 年之后才变成「30+ days past due as a % of total」，同一行改过名。",
+      "note": "公司在每季业绩 8-K 的 EX-99.2 里另有一张 Worldwide Card Member loans 表，只含贷款、不含应收账款，从 2015Q4 一直印到 2025Q4；2026Q1 公司把两者合并成 Card balances 之后不再单独披露它。本页窗口内它覆盖 {covered_first}–{covered_last} 共 {covered_n} 季，逐季读自印着它的每一份统计表（{five_first}–{five_last} 这 {five_n} 季各被读到 5 次，其后几季随还剩几份发布递减到 {late_min} 次，最早的{early_n}季各读到 {early_reads} 次，见下文），从 2017-01-19 到 2026-01-30 共 37 份统计表，它们之间没有一处不一致，也没有一次重述。另取 FY2017–FY2025 九份 10-K 里同一段的年末值做第二来源核对，2017–2025 九个年末逐年与本页第四季度的值相同 —— 这一半的取数来自 2017–2022 年那两代格式不同的统计表，列错一格不会让任何东西变红，所以它需要一个来自另一类文件的核对。 2026-08-31 又往前接了四季：2016Q1–2016Q4 逾期率 1.1/1.1/1.1/1.2、净核销率 1.5/1.5/1.7/1.6，取自同一张 Worldwide Card Member loans 表，两条互不派生的路径读到同一组数 —— 2017-01-19 那份 FY2016 统计表（一次印六季，2015Q3 到 2016Q4）与 2017-04-19 那份 2017Q1 统计表（回溯五季到 2016Q1）。这四季的 readings_per_quarter 因此是 2，而不是其后那 32 季的 5，差别记在这里而不是抹平。注意 2016–2017 那两代格式里这一行的标签是「30+ days past due <b>loans</b> as a % of total」，2022 年之后才变成「30+ days past due as a % of total」，同一行改过名。",
       "covid_note": "2020Q2 到 2022Q1 的统计表在 30+ 天逾期率这一行挂了一条脚注：公司自 2020Q1 起提供 Customer Pandemic Relief，参加时的逾期状态被冻结，参加时未逾期的贷款在计划内不再继续账龄。公司同时写明到 2020 年 12 月 31 日计划内余额已可忽略，所以受影响的主要是 2020Q1–2020Q3 这三格。这是公司披露的计量口径提示，不是口径变更，本页照原样发布并在此说明。",
       "overlap_quarters": 16,
       "overlap_quarters_identical": 1,
-      "overlap_note": "两条口径在 2022Q1–2025Q4 有 16 季同时被印出来，16 季里只有 2022Q2 一季两者完全相同。差值还会换号：2022Q3 到 2023Q2 之间每一格非零差都是负的（仅贷款口径更低），2023Q3 以后每一格非零差都是正的，而 2022Q1 两个指标一正一负。最大差值逾期率 0.1pp、净核销率 0.3pp。所以这不是一个可以平移掉的固定偏移，本页不把两段接成一条线，而是各画一条 —— 与本页 EX_RATE 上「印出来的折扣率」与「自算的折扣率」两条线同一个理由。",
+      "overlap_note": "两条口径在 2022Q1–2025Q4 有 16 季同时被印出来，16 季里只有 2022Q2 一季两者完全相同。差值还会换号：2022Q3 到 2023Q2 之间每一格非零差都是负的（仅贷款口径更低），2023Q3 以后每一格非零差都是正的，而 2022Q1 两个指标一正一负。最大差值逾期率 0.1pp、净核销率 0.3pp。所以这不是一个可以平移掉的固定偏移，本页不把两段接成一条线，而是各画一条 —— 与本页 Exhibit {EX_RATE} 上「印出来的折扣率」与「自算的折扣率」两条线同一个理由。",
       "annual_past_due_30_pct": {
         "values": {
           "2017": 1.3,
@@ -2909,96 +2972,6 @@
       null,
       null
     ],
-    "actual_revenue_growth_pct": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      9.3823,
-      null,
-      null,
-      7.9776,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      24.7334,
-      null,
-      null,
-      14.4773,
-      null,
-      null,
-      null,
-      null,
-      8.9796,
-      null,
-      null,
-      null,
-      9.5225,
-      null,
-      null,
-      null
-    ],
-    "actual_diluted_eps_usd": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      7.99,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      9.85,
-      null,
-      null,
-      null,
-      11.21,
-      null,
-      null,
-      null,
-      null,
-      14.01,
-      null,
-      null,
-      null,
-      15.38,
-      null,
-      null,
-      null
-    ],
     "actual_by_year": {
       "2016": {
         "revenue_usd_m": 32119.0,
@@ -3071,169 +3044,160 @@
         "growth_exact_pct": 9.5225
       }
     },
-    "verdicts": {
-      "revenue": {
-        "2018": {
-          "settling_release": "2018-10-18",
-          "verdict": "inside",
-          "note": null
-        },
-        "2019": {
-          "settling_release": "2019-07-19",
-          "verdict": "inside_on_bound",
-          "note": "delivered_exactly_the_floor"
-        },
-        "2022": {
-          "settling_release": "2022-10-21",
-          "verdict": "inside",
-          "note": null
-        },
-        "2023": {
-          "settling_release": "2023-07-21",
-          "verdict": "below",
-          "note": "fx_adjusted_met_floor"
-        },
-        "2024": {
-          "settling_release": "2024-10-18",
-          "verdict": "equals_point",
-          "note": "final_vintage_is_a_point"
-        },
-        "2025": {
-          "settling_release": "2025-10-17",
-          "verdict": "inside",
-          "note": null
-        }
-      },
-      "eps": {
-        "2019": {
-          "settling_release": "2019-10-18",
-          "verdict": "inside",
-          "note": null
-        },
-        "2022": {
-          "settling_release": "2022-07-22",
-          "verdict": "above",
-          "note": "final_vintage_is_a_floor"
-        },
-        "2023": {
-          "settling_release": "2023-07-21",
-          "verdict": "inside",
-          "note": null
-        },
-        "2024": {
-          "settling_release": "2024-10-18",
-          "verdict": "inside",
-          "note": "includes_accertify_gain"
-        },
-        "2025": {
-          "settling_release": "2025-10-17",
-          "verdict": "inside",
-          "note": null
-        }
-      }
-    },
     "unsettleable": {
-      "revenue": {
-        "2016": "公司当年不指引收入",
-        "2017": "公司当年不指引收入",
-        "2020": "年初给过 8%–10%（汇率调整口径），2020-03-17 的另一份 8-K 撤回",
-        "2021": "全年从未给过收入指引",
-        "2026": "本年度尚未结束"
-      },
       "eps": {
-        "2016": "同一年印了两条区间：GAAP 与剔除重组费用的调整后口径",
-        "2017": "指引 $5.80–$5.90，当年 GAAP 摊薄 EPS 因税改一次性费用为 $2.97",
-        "2018": "年中把口径改成调整后 EPS，并写明无法提供 GAAP 对照",
-        "2020": "年初给过 $8.85–$9.25，2020-03-17 的另一份 8-K 撤回",
-        "2021": "全年从未给过 EPS 指引",
-        "2026": "本年度尚未结束"
-      }
+        "2016": {
+          "kind": "two_ranges",
+          "ledger": "同一年印了两条区间：GAAP 与剔除重组费用的调整后口径"
+        },
+        "2017": {
+          "kind": "basis",
+          "ledger": "指引 {band}，当年 GAAP 摊薄 EPS 因税改一次性费用为 {actual}",
+          "band": "指引 {band}，当年 GAAP 摊薄 EPS 因税改一次性费用只有 {actual}",
+          "note": "FY2017 当年 GAAP EPS 被税改一次性费用压到 {actual}"
+        },
+        "2018": {
+          "kind": "basis",
+          "ledger": "年中把口径改成调整后 EPS，并写明无法提供 GAAP 对照",
+          "band": "年中把口径改成调整后 EPS 并写明无法提供 GAAP 对照",
+          "note": "FY2018 年中改用调整后 EPS 且公司写明无法提供 GAAP 对照"
+        },
+        "2019": {
+          "kind": "two_ranges",
+          "ledger": "同一年印了两条区间：GAAP 与剔除诉讼费用的调整后口径",
+          "source": "2019-04-18 / 07-19 / 10-18 三份业绩新闻稿脚注：GAAP EPS 指引 $7.64–$8.14（含 Q1'19 诉讼费用），调整后 EPS 指引 $7.85–$8.35（剔除该费用）；本记录的 7.85–8.35 是调整后那一条，而实际值是 GAAP 的 $7.99"
+        }
+      },
+      "revenue": {}
     },
     "withdrawal": {
       "announced": "2020-03-17",
       "accession": "0000004962-20-000039",
       "note": "撤回不在业绩 8-K 里。公司在 2020-03-17 单独报了一份 Item 7.01 的 8-K，写明「American Express is not able to forecast its future financial results beyond the first quarter at this time」，随后三份业绩新闻稿的前瞻性声明段里「2020 年展望」这个对象整段消失。只读业绩 8-K 会把它读成「没给指引」，而不是「给过又撤回」。"
+    },
+    "unsettleable_note": "只记本页决定不结清的年份与理由。撤回、从未给出、当年不指引收入、本年度尚未结束这几类由记录本身推出（guide_eps_basis 的 withdrawn / never_issued、没有任何数字、actual_by_year 里没有这一年），不另存。",
+    "point_quotes": {
+      "FY24 Q3": "at around 9 percent",
+      "FY26 Q2": "10 percent"
     }
   },
   "settled_kpi": {
+    "period": "Q2 2026",
+    "set_in": "2026-04-24 AXP Q1 2026 笔记，第 8 节关键观察指标",
     "quantified": [
       {
         "metric": "ICS 消费同比（报告口径）",
         "direction": "up",
         "threshold": 15.0,
         "unit": "pct",
-        "actual": 13.0
+        "actual": 13.0,
+        "note_item": 3,
+        "source": "Q2 2026 EX-99.2 第 5 页 Network Volumes Related Growth，International Card Services Reported Q2'26 = 13"
       },
       {
         "metric": "拨备同比",
         "direction": "down",
         "threshold": 5.0,
         "unit": "pct",
-        "actual": -22.847
+        "reads": "yoy:financials.provisions_usd_m",
+        "note_item": 5
       },
       {
         "metric": "净核销率（本金口径）",
         "direction": "down",
         "threshold": 2.1,
         "unit": "pct",
-        "actual": 2.0
+        "reads": "credit_metrics.net_write_off_rate_principal_pct",
+        "note_item": 5
       }
     ],
-    "retired": "上季那份分析一共立了五条阈值，本页只结清得了其中三条，另外两条<b>无法判定</b>，原因不同：一条写在「Platinum 存量组合消费提速 600bp + 续卡留存率 ≥95%」上，而这两个数公司只在一次电话会里说过、并不按季披露；另一条写在「agentic 商户签约 ≥3 家」上，公司连续两季零量化披露。第三条「全年 EPS 指引上修 ≥3%」在申报文件里有对象（见第一节），但它衡量的是管理层的动作而不是公司的业绩，本页不把它当阈值结清。还有一条虽然结清了，却是<b>因为口径错了才触发</b>：它写在 ICS 的<b>报告口径</b>消费增速上，而报告口径这一季从 20% 掉到 13% 几乎全是汇率基数 —— 同一个季度的汇率调整口径只从 13% 到 12%。阈值按字面被跌破，基本面没有。"
+    "unsettled": [
+      {
+        "note_item": 2,
+        "kind": "unjudgeable",
+        "text": "写在「Platinum 存量组合消费提速 600bp + 续卡留存率 ≥95%」上，而这两个数公司只在一次电话会里说过、并不按季披露"
+      },
+      {
+        "note_item": 4,
+        "kind": "unjudgeable",
+        "text": "写在「agentic 商户签约 ≥3 家」上，公司连续两季零量化披露"
+      },
+      {
+        "note_item": 1,
+        "kind": "declined",
+        "text": "「全年 EPS 指引上修 ≥3%」在申报文件里有对象（见第一节），但它衡量的是管理层的动作而不是公司的业绩，本页不把它当阈值结清。"
+      }
+    ],
+    "figures": {
+      "ics_reported_prior": 20,
+      "ics_reported": 13,
+      "ics_fx_prior": 13,
+      "ics_fx": 12
+    },
+    "breach_story": "还有一条虽然结清了，却是<b>因为口径错了才触发</b>：它写在 ICS 的<b>报告口径</b>消费增速上，而报告口径这一季从 {ics_reported_prior}% 掉到 {ics_reported}% 几乎全是汇率基数 —— 同一个季度的汇率调整口径只从 {ics_fx_prior}% 到 {ics_fx}%。阈值按字面被跌破，基本面没有。"
   },
   "next_kpi": {
+    "period": "Q2 2026",
+    "set_in": "2026-07-24 AXP Q2 2026 笔记，第 8 节关键观察指标",
     "quantified": [
       {
         "metric": "净卡费（季度额）",
         "direction": "up",
         "threshold": 2960.0,
         "unit": "usd_m",
-        "current": 2862.0
+        "reads": "financials.net_card_fees_usd_m"
       },
       {
         "metric": "消费额同比（报告口径）",
         "direction": "up",
         "threshold": 8.8,
         "unit": "pct",
-        "current": 9.4883
+        "reads": "yoy:operating_metrics.billed_business_usd_bn"
       },
       {
         "metric": "30+ 天逾期率",
         "direction": "down",
         "threshold": 1.4,
         "unit": "pct",
-        "current": 1.2
+        "reads": "credit_metrics.past_due_30_pct"
       },
       {
         "metric": "净核销率（本金口径）",
         "direction": "down",
         "threshold": 2.2,
         "unit": "pct",
-        "current": 2.0
+        "reads": "credit_metrics.net_write_off_rate_principal_pct"
       },
       {
         "metric": "VCE 占收入比",
         "direction": "down",
         "threshold": 45.0,
         "unit": "pct",
-        "current": 44.5842
+        "reads": "vce_ratio"
       },
       {
         "metric": "jaws（收入增速 − 费用增速）",
         "direction": "up",
         "threshold": -1.0,
         "unit": "pp",
-        "current": -2.2806
+        "reads": "jaws"
       },
       {
         "metric": "CET1 比率",
         "direction": "up",
         "threshold": 10.2,
         "unit": "pct",
-        "current": 10.4
+        "reads": "operating_metrics.cet1_ratio_pct"
       }
     ],
-    "excluded": "另有三条本页<b>不接入</b>。（1）<b>汇率调整口径的消费增速</b>：上季那份分析把阈值写在 8.8% 上，而公司只把这个数披露到整数个百分点（本季印的是 9%），阈值的精度比披露还细，同一个数字可以同时读成达标和不达标 —— 本页改用两个印出来的美元金额相除得到的报告口径增速，它可以被结清，并在图上写明这不是同一个口径。（2）<b>市场一致预期</b>：没有可核对的、带日期的公开来源，站点规则允许发布带日期的对照点，但不允许凭印象填一个数。（3）<b>反洗钱执法行动的金额</b>：公司在 2026 年第二季度 10-Q 里新写了一句「预计将面临执法行动」，但没有任何金额，本页不为它编一个。"
+    "figures": {
+      "fx_adjusted_billed_growth_pct": 9
+    },
+    "excluded": [
+      "（1）<b>汇率调整口径的消费增速</b>：本季那份分析把阈值写在 {billed_threshold}% 上，而公司只把这个数披露到整数个百分点（本季印的是 {fx_adjusted_billed_growth_pct}%），阈值的精度比披露还细，同一个数字可以同时读成达标和不达标 —— 本页改用两个印出来的美元金额相除得到的报告口径增速，它可以被结清，并在图上写明这不是同一个口径。",
+      "（2）<b>市场一致预期</b>：没有可核对的、带日期的公开来源，站点规则允许发布带日期的对照点，但不允许凭印象填一个数。",
+      "（3）<b>反洗钱执法行动的金额</b>：公司在 {quarter} 10-Q 里新写了一句「预计将面临执法行动」，但没有任何金额，本页不为它编一个。"
+    ]
   },
   "sources": [
     {
@@ -3245,12 +3209,22 @@
       "url": "https://www.sec.gov/Archives/edgar/data/4962/000000496226000318/q226exhibit992.htm"
     },
     {
+      "label": "American Express 截至 2026-06-30 的 10-Q（反洗钱执法行动一句的出处）",
+      "url": "https://www.sec.gov/Archives/edgar/data/4962/000000496226000322/axp-20260630.htm"
+    },
+    {
       "label": "2020-03-17 撤回 2020 年全年指引的 8-K（Item 7.01）",
-      "url": "https://www.sec.gov/Archives/edgar/data/4962/000000496220000039/0000004962-20-000039-index.htm"
+      "url": "https://www.sec.gov/Archives/edgar/data/4962/000000496220000039/ex991pressreleaseid.htm"
     },
     {
       "label": "American Express 在 SEC EDGAR 的全部申报（CIK 4962）",
       "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000004962&type=8-K&dateb=&owner=include&count=40"
     }
-  ]
+  ],
+  "quarter_story": {
+    "period": "Q2 2026",
+    "not_wired": [
+      "反洗钱执法行动的任何金额（公司在 {quarter} 10-Q 里只写了「预计将面临执法行动」，没有金额）"
+    ]
+  }
 }
