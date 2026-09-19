@@ -177,6 +177,19 @@ class KerDashboardTest(unittest.TestCase):
         for i, half in enumerate(self.st["halves"]):
             self.assertEqual(flags[i], "D" if half.startswith("H2") else "printed", half)
 
+    def test_a_period_of_net_cash_is_drawn_below_zero(self) -> None:
+        """`bars_labeled` draws from a zero floor (Richemont's rollback drill put a
+        negative bar under the plot). Kering's net debt was €168M at the end of 2021;
+        a period of net cash switches the chart to the grouped form."""
+        cash = copy.deepcopy(self.st)
+        cash["net_debt_eur_m"][-1] = -500.0
+        chart = next(ex for section in ker.build_payload(cash)["sections"] for ex in section["exhibits"]
+                     if ex.get("ref") == "EX_NET_DEBT")
+        self.assertEqual(chart["kind"], "grouped_bars")
+        self.assertEqual(chart["groups"][0]["values"][-1], -500.0)
+        self.assertEqual(self.by_ref["EX_NET_DEBT"]["kind"],
+                         "bars_labeled" if min(self.st["net_debt_eur_m"]) >= 0 else "grouped_bars")
+
     def test_net_debt_is_the_exact_table_figure_not_the_rounded_prose(self) -> None:
         nd = self.st["net_debt_eur_m"]
         self.assertEqual(len(nd), len(self.st["balance_dates"]))

@@ -182,6 +182,11 @@ def flat_signed(value: float) -> str:
     return "0%" if text in ("+0%", "-0%") else text
 
 
+def euro_m(value: float) -> str:
+    """`€3,324M`; a negative amount (net cash, on a net-debt line) keeps its sign outside: `−€500M`."""
+    return f"{'−' if value < 0 else ''}€{abs(value):,.0f}M"
+
+
 def euro_delta(value: float) -> str:
     """`+€64M` / `−€38M`: the sign outside the currency symbol."""
     return f"{'−' if value < 0 else '+'}€{abs(value):,.0f}M"
@@ -984,13 +989,13 @@ def half_charts(st: dict, der: dict) -> list[dict]:
     # ── net debt
     story = stamped_block(st, "net_debt_story", halves[-1])
     if i_low < i_high < len(nd) - 1 and nd[-1] < nd[i_high]:
-        nd_title = (f"净负债 €{nd[-1]:,.0f}M：{dates[i_low][:7]} 的 €{nd[i_low]:,.0f}M 涨到 "
-                    f"{dates[i_high][:7]} 的 €{nd[i_high]:,.0f}M 再降回来")
+        nd_title = (f"净负债 {euro_m(nd[-1])}：{dates[i_low][:7]} 的 {euro_m(nd[i_low])} 涨到 "
+                    f"{dates[i_high][:7]} 的 {euro_m(nd[i_high])} 再降回来")
     elif i_low < i_high:
-        nd_title = f"净负债 €{nd[-1]:,.0f}M：从 {dates[i_low][:7]} 的 €{nd[i_low]:,.0f}M 涨到序列最高"
+        nd_title = f"净负债 {euro_m(nd[-1])}：从 {dates[i_low][:7]} 的 {euro_m(nd[i_low])} 涨到序列最高"
     else:
-        nd_title = (f"净负债 €{nd[-1]:,.0f}M：从 {dates[i_high][:7]} 的 €{nd[i_high]:,.0f}M "
-                    f"降到 {dates[i_low][:7]} 的 €{nd[i_low]:,.0f}M")
+        nd_title = (f"净负债 {euro_m(nd[-1])}：从 {dates[i_high][:7]} 的 {euro_m(nd[i_high])} "
+                    f"降到 {dates[i_low][:7]} 的 {euro_m(nd[i_low])}")
     climb = NET_DEBT_CLIMB[2] if (dates[i_low], dates[i_high]) == NET_DEBT_CLIMB[:2] else ""
     change = nd[-2] - nd[-1]
     exhibits.append({
@@ -1002,13 +1007,20 @@ def half_charts(st: dict, der: dict) -> list[dict]:
         "label_fmt": "f0c", "fmt": "f0c", "yfmt": "f0c",
         "ylab": "€M（期末）", "xstep": 2,
         "note": ("<b>净负债按公司定义不含租赁负债，整条序列口径没有变过。</b>"
-                 + (f"从 {dates[i_low]} 的 €{nd[i_low]:,.0f}M 涨到 {dates[i_high]} 的 €{nd[i_high]:,.0f}M，{climb}"
+                 + (f"从 {dates[i_low]} 的 {euro_m(nd[i_low])} 涨到 {dates[i_high]} 的 {euro_m(nd[i_high])}，{climb}"
                     if i_low < i_high else "")
-                 + f"本期末 €{nd[-1]:,.0f}M，比 {year_end_label(dates[-2])}{'少' if change >= 0 else '多'} "
-                 f"€{abs(change):,.0f}M"
+                 + f"本期末 {euro_m(nd[-1])}，比 {year_end_label(dates[-2])}{'少' if change >= 0 else '多'} "
+                 f"{euro_m(abs(change))}"
                  + (f"；{story['note']}" if story else "。")),
         "src_extra": "期末净负债取自各期半年度财务报告与全年业绩新闻稿的净负债表（精确值）。",
     })
+    if min(nd) < 0:
+        # `bars_labeled` draws from a zero floor; a period of net cash would be painted
+        # below the plot. The grouped form carries negatives with the same labels.
+        chart = exhibits[-1]
+        values = chart.pop("values")
+        chart.update(kind="grouped_bars", bar_labels=True,
+                     groups=[{"name": "期末净负债（负值为净现金）", "color": "NAVY", "values": values}])
     return exhibits
 
 
@@ -1333,7 +1345,7 @@ def build_payload(st: dict) -> dict:
             headline += f"，但毛利率低了 {-b['gross']:.2f}pp —— 改善来自费用率，不是来自毛利"
         else:
             headline += f"，毛利率{'高' if b['gross'] >= 0 else '低'}了 {abs(b['gross']):.2f}pp"
-    headline += (f"；净负债{'降到' if nd[-1] < nd[-2] else '升到'} €{nd[-1]:,.0f}M"
+    headline += (f"；净负债{'降到' if nd[-1] < nd[-2] else '升到'} {euro_m(nd[-1])}"
                  + (f"，{story['headline']}" if story else "") + "。")
 
     # ── brief
