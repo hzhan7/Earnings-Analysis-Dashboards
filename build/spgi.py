@@ -306,6 +306,47 @@ def final_deviations(record: dict, lo_key: str, hi_key: str, actual_key: str) ->
             for year, low, high, actual in final_rows(record, lo_key, hi_key, actual_key)]
 
 
+def year_span(years: list[int]) -> str:
+    """``[2018, 2019, 2020, 2023]`` → ``'FY2018–FY2020、FY2023'``."""
+    runs = [[years[0]]]
+    for year in years[1:]:
+        if year == runs[-1][-1] + 1:
+            runs[-1].append(year)
+        else:
+            runs.append([year])
+    return "、".join(f"FY{run[0]}" if len(run) == 1 else f"FY{run[0]}–FY{run[-1]}" for run in runs)
+
+
+def unsettled_fcf_words(record: dict) -> str:
+    """Finished years whose cash guidance never reached the vintage that settles them.
+
+    FY2018-FY2020 put free cash flow in the opening release only; the Q1-Q3
+    releases of those years do not restate it. The band settles a year on its
+    last vintage and draws a result only where a range stands, so those years
+    carry guidance and no diamond -- which reads as "not reported yet" unless
+    the chart says why. Said only while some year is in that state.
+    """
+    finished = {year for year, value in zip(record["fiscal_years"], record["actual_adjusted_eps"])
+                if value is not None}
+    years, opening_only = [], True
+    for year in sorted(finished):
+        cells = [(slot, low) for fy, slot, low in zip(record["fiscal_years"], record["vintage_slots"],
+                                                       record["guide_adjusted_fcf_lo_usd_m"])
+                 if fy == year]
+        guided = [slot for slot, low in cells if low is not None]
+        if not guided or cells[-1][1] is not None:
+            continue
+        years.append(year)
+        opening_only = opening_only and guided == ["initial"]
+    if not years:
+        return ""
+    these = "这一年" if len(years) == 1 else "这几年"
+    if opening_only:
+        return (f"{year_span(years)} 的现金指引只在年初那一档给过，其后几次修订的新闻稿都没有再提，"
+                f"没有末次那一格可结算，所以图上{these}只有年初一格、没有菱形。")
+    return f"{year_span(years)} 的末次修订没有现金指引，无从结算，所以图上{these}没有菱形。"
+
+
 def empty_gaap_words(record: dict) -> str:
     """「FY2016 四档、FY2021 前三档、…」: the vintages that carry an adjusted range and no GAAP one."""
     by_year = {}
@@ -530,12 +571,23 @@ def guidance_charts(staging: dict, fcf_story: str | None = None) -> tuple[list[d
             + ((f"唯一超额的 FY{fcf_above[0][0]} 是一次"
                 + ("大幅超额。" if pct_change(fcf_above[0][3], fcf_above[0][2]) > 5 else "超额。"))
                if len(fcf_above) == 1 else "")
+            + unsettled_fcf_words(record)
             + ("把它和上面两张 EPS 图并排看："
                "同一家公司，<b>调整后每股收益的指引几乎不失手，现金的指引经常失手</b>。"
                if often and adj_below <= 1 else "")
             + (fcf_story or "")
         ),
     )
+    if record["guide_adjusted_fcf_lo_usd_m"][-1] is None and "annot" in fcf_band:
+        # `delivery_band` closes on "the last cell has only its band, the result
+        # is pending" -- true of a metric still being guided, false of this one
+        # once the company stops giving it, and it would contradict the story
+        # sentence just before it.
+        pending = f"最后一格 {labels[-1]} 只有指引色块，实际值待披露。"
+        if pending not in fcf_band["note"]:
+            raise ValueError("delivery_band's pending sentence changed; update the FCF band")
+        fcf_band["note"] = fcf_band["note"].replace(pending, "")
+        del fcf_band["annot"]
     points = [row for row in fcf_rows if row[1] == row[2]]
     fcf_dev = deviation(
         "EX_FCF_DEV", "调整后自由现金流",
@@ -543,9 +595,9 @@ def guidance_charts(staging: dict, fcf_story: str | None = None) -> tuple[list[d
         "actual_adjusted_fcf_usd_m", mode="pct",
         extra_note=(
             "、".join(f"FY{row[0]}" for row in points)
-            + " 那一档的指引是单点值（「approximately "
-            + "、".join(f"${row[1] / 1000:g} billion" for row in points)
-            + "」）而不是区间，所以它的中值就是那个点本身。"
+            + (" 那一档的指引是单点值" if len(points) == 1 else " 的末次指引都是单点值")
+            + "（" + "".join(f"「approximately ${row[1] / 1000:g} billion」" for row in points)
+            + "）而不是区间，所以" + ("它的" if len(points) == 1 else "") + "中值就是那个点本身。"
             if points else "每一年的末次指引都是区间，中值取区间中点。"
         ),
     )
