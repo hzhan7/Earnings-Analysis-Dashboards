@@ -31,13 +31,22 @@ has to deal with:
   this test asserts the arithmetic really does fail to close, so that the note
   explaining it cannot outlive the fact.
 
-The threshold entries use only unit keys `board.UNIT_FORMATS` already carries.
-`eur_m` / `eur_bn` / `eur_eps` exist because Ferrari landed them; this page adds
-no formatter.
+The threshold entries use the unit keys `board.UNIT_FORMATS` carries, plus one
+page-local unit, `stores`: a store count formatted through the shared `million`
+key printed 1,832 stores as `1832M`. `eur_m` / `eur_bn` / `eur_eps` exist
+because Ferrari landed them.
+
+**A roll edits `series/mc.json` and nothing else** (CLAUDE.md §9). So nothing
+here asserts a quarter's figure as a literal: the quarter's own numbers are
+checked against `_checks` (typed from the release, never read by the builder),
+and every finding a chart states -- 「第一次不再下滑」「每一次都」「连续下降」 --
+is recomputed, and made false on a copy of the series to prove the sentence
+goes away with it.
 """
 
 from __future__ import annotations
 
+import copy
 import json
 import re
 import sys
@@ -159,16 +168,22 @@ class McDashboardTest(unittest.TestCase):
                     self.assertLessEqual(
                         abs(sum(data[d][i] for d in DIVS) + data["other"][i] - data["total"][i]), 1)
 
-    def test_the_one_euro_million_gap_the_bridge_carries_is_real(self) -> None:
+    def test_the_rounding_gap_the_bridge_carries_is_real(self) -> None:
         """H1 2026's five divisions plus other sum to 8,690 against a printed
         8,691. The page puts that euro in the bridge's last leg rather than into
-        a division; if the company ever reprints the table the gap goes away and
-        this test should go with it."""
+        a division, and says so only while the two really differ."""
         halves = self.staging["halves"]
-        i = halves.index("H1 2026")
         pro = self.staging["half_pro_eur_m"]
-        self.assertEqual(sum(pro[d][i] for d in DIVS) + pro["other"][i], 8690)
-        self.assertEqual(self.staging["half_pro_published_total_eur_m"]["H1 2026"], 8691)
+        bridge = next(ex for ex in self.exhibits if ex.get("ref") == "EX_BRIDGE_PRO")
+        for half, printed in self.staging["half_pro_published_total_eur_m"].items():
+            i = halves.index(half)
+            parts = sum(pro[d][i] for d in DIVS) + pro["other"][i]
+            with self.subTest(half=half):
+                self.assertLessEqual(abs(printed - parts), 1)
+                if half == halves[-1]:
+                    self.assertEqual(printed != parts, "取整差" in bridge["note"])
+                    self.assertEqual(printed != parts,
+                                     any(f"公司印的集团合计是 {printed:,}" in n for n in self.payload["notes"]))
 
     def test_recomputed_half_margins_match_the_percentages_the_company_printed(self) -> None:
         printed = self.staging["half_margin_company_printed_pct"]
@@ -207,13 +222,21 @@ class McDashboardTest(unittest.TestCase):
         self.assertEqual(len(self.der["reported_yoy"]), len(self.staging["quarters"]))
 
     # ── the findings the page states in its own titles ───────────────────────
-    def test_the_division_told_not_to_repeat_repeated_exactly(self) -> None:
-        organic = self.der["organic"]["wines_spirits"]
-        self.assertEqual(organic[-1], organic[-2],
-                         "the page's lead finding no longer holds")
-        record = {item["key"]: item for item in self.staging["call_record"]["items"]}
-        self.assertEqual(record["wines_spirits_q2"]["verdict"], "missed")
-        self.assertEqual(record["wines_spirits_q2"]["outcome_value"], organic[-1])
+    def test_the_lead_finding_says_what_the_series_says(self) -> None:
+        """The lead sentence is the quarter's story, written into `call_record`;
+        where it says the division repeated exactly, the series must agree."""
+        call = self.staging.get("call_record")
+        if call is None:
+            self.skipTest("no call record this quarter")
+        lead = call["lead"]
+        organic = self.der["organic"][lead["division"]]
+        record = {item["key"]: item for item in call["items"]}
+        text = lead["title"] + lead["note"]
+        if "一模一样" in text or "完全相同" in text:
+            self.assertEqual(organic[-1], organic[-2], "the lead finding no longer holds")
+        self.assertIn(record[lead["item"]]["verdict"], ("missed", "caveat_held", "met", "beat"))
+        if record[lead["item"]]["outcome_value"] is not None:
+            self.assertEqual(record[lead["item"]]["outcome_value"], organic[-1])
 
     def test_most_of_the_reported_improvement_is_not_demand(self) -> None:
         step = self.der["reported_yoy"][-1] - self.der["reported_yoy"][-2]
@@ -221,31 +244,51 @@ class McDashboardTest(unittest.TestCase):
         organic_step = self.der["organic"]["total"][-1] - self.der["organic"]["total"][-2]
         self.assertAlmostEqual(step, gap_step + organic_step, places=6,
                                msg="the decomposition does not close")
-        self.assertGreater(gap_step / step, 0.5,
-                           "the page claims most of the improvement came from the gap")
+        claimed = "来自汇率与并表而不是需求" in self.payload["headline"]
+        self.assertEqual(claimed, step > 0 and 0 < gap_step / step < 1,
+                         "the headline's share sentence must follow the arithmetic")
 
-    def test_every_complete_year_has_a_bigger_and_thinner_second_half(self) -> None:
+    def test_the_seasonal_title_claims_every_year_only_when_every_year_does(self) -> None:
         pairs = self.der["half_pairs"]
-        self.assertGreaterEqual(len(pairs), 3, "fewer complete years than the page claims")
-        self.assertEqual(self.der["h2_bigger"], len(pairs))
-        self.assertEqual(self.der["h2_thinner"], len(pairs))
+        self.assertGreaterEqual(len(pairs), 1)
+        season = next(ex for ex in self.exhibits if ex.get("ref") == "EX_SEASON")
+        every = self.der["h2_bigger"] == len(pairs) == self.der["h2_thinner"]
+        self.assertEqual(every, "每一次都" in season["title"])
+        self.assertIn(f"{self.der['h2_bigger']}", season["title"])
 
-    def test_fashion_and_leather_turned_positive_after_a_run_of_negatives(self) -> None:
-        organic = self.der["organic"]["fashion_leather"]
-        self.assertGreater(organic[-1], 0)
-        self.assertTrue(all(v <= 0 for v in organic[:-1]),
-                        "the page calls this the first positive quarter in the window")
+    def test_a_division_called_first_positive_really_is(self) -> None:
+        """「是 2024Q3 以来七个非正季度之后的第一个正数」 is recounted on the long series."""
+        exhibit = next(ex for ex in self.exhibits if ex.get("ref") == "EX_DIVORG")
+        match = re.search(r"<b>(\S+?)本季 [+-]\d+%，是 (\d{4}Q[1-4]) 以来(\S+?)个非正季度之后", exhibit["note"])
+        self.assertEqual(match is not None, "个非正季度之后" in exhibit["note"], "the pattern stopped matching")
+        if not match:
+            return
+        name, began, count = match.groups()
+        key = next(k for k, v in mc.DIV_NAMES.items() if v == name)
+        long_org = self.staging["organic_growth_pct"][key]
+        start = self.staging["organic_quarters"].index(began)
+        run = long_org[start:-1]
+        self.assertGreater(long_org[-1], 0)
+        self.assertTrue(all(v <= 0 for v in run))
+        self.assertGreater(long_org[start - 1], 0, "the run started earlier than the sentence says")
+        self.assertEqual(count, mc.cn_count(len(run)))
 
     def test_the_company_printed_components_are_not_treated_as_a_closing_identity(self) -> None:
         """LVMH prints +2 / -1 / -5 against a reported -3. The page must never
         add those three up; this asserts they really do not sum, so the note
         that explains the refusal cannot outlive the fact."""
         halves = self.staging["halves"]
-        i_now, i_prior = halves.index("H1 2026"), halves.index("H1 2025")
+        parts = self.staging["half_growth_components_pct"].get(halves[-1])
+        if parts is None:
+            self.skipTest("the company printed no split for this half")
+        i_now = len(halves) - 1
+        i_prior = halves.index(f"{halves[-1].split()[0]} {int(halves[-1].split()[1]) - 1}")
         revenue = self.staging["half_revenue_eur_m"]["total"]
         reported = mc.pct_change(revenue[i_now], revenue[i_prior])
-        self.assertNotAlmostEqual(2 - 1 - 5, reported, places=0)
-        self.assertAlmostEqual(reported, -3, places=0)
+        self.assertEqual(round(reported), parts["reported"])
+        legs = parts["organic"] + parts["perimeter"] + parts["currency"]
+        bridge = next(ex for ex in self.exhibits if ex.get("ref") == "EX_BRIDGE_REV")
+        self.assertEqual(legs != parts["reported"], "能闭合的等式来用" in bridge["note"])
 
     def test_the_store_chart_measures_the_span_its_sentence_claims(self) -> None:
         """The store series is semi-annual, so twelve months ago is index -3.
@@ -445,7 +488,9 @@ class McDashboardTest(unittest.TestCase):
     def test_every_recorded_statement_carries_a_verdict_and_a_verbatim_quote(self) -> None:
         allowed = {"met", "beat", "missed", "caveat_held", "unverifiable"}
         items = self.staging["call_record"]["items"]
-        self.assertEqual(len(items), 6)
+        self.assertGreaterEqual(len(items), 1)
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("上季电话会的"))
+        self.assertIn(f"的{mc.cn_count(len(items))}条前瞻陈述", table["title"])
         for item in items:
             with self.subTest(topic=item["topic"]):
                 self.assertIn(item["verdict"], allowed)
@@ -468,62 +513,72 @@ class McDashboardTest(unittest.TestCase):
         said = exhibit["groups"][0]["values"]
         actual = exhibit["groups"][1]["values"]
         self.assertEqual(len(said), len(actual))
-        self.assertEqual(len(said), 4)
         # Membership rule, tied to the record rather than to the count: a
         # statement is plotted when it was given a number AND that number can
         # be checked in the terms it was said. The DFS perimeter statement was
         # quantified (-2 points on Selective Retailing in Q2) but the company
         # publishes no quarterly divisional perimeter, so it is recorded and
         # tabulated, not charted.
-        plotted = [item for item in self.staging["call_record"]["items"]
-                   if item.get("quantified") is not None
-                   and item["verdict"] != "unverifiable"]
+        items = self.staging["call_record"]["items"]
+        plotted = [item for item in items
+                   if item.get("quantified") is not None and item["verdict"] != "unverifiable"]
         self.assertEqual(len(plotted), len(said))
-        self.assertEqual(
-            [item for item in self.staging["call_record"]["items"]
-             if item.get("quantified") is not None and item["verdict"] == "unverifiable"],
-            [item for item in self.staging["call_record"]["items"]
-             if item["key"] == "dfs_perimeter"])
+        self.assertEqual(sorted(i["key"] for i in plotted),
+                         sorted(self.staging["call_record"]["score_order"]))
+        self.assertTrue(exhibit["title"].startswith(f"{mc.cn_count(len(plotted))}条能落到数字上的陈述"))
+        for item in items:
+            if item.get("quantified") is not None and item["verdict"] == "unverifiable":
+                self.assertNotIn(item.get("chart_label", "\0"), exhibit["xlabels"])
+                self.assertIn(f"（{item['score_topic']}）", exhibit["note"])
 
     def test_the_forward_statements_are_the_ones_next_quarter_will_settle(self) -> None:
         forward = self.staging["forward_statements"]
         self.assertEqual(forward["made_on"], self.payload["latest"]["release_date"])
-        self.assertGreaterEqual(len(forward["items"]), 8)
+        self.assertGreaterEqual(len(forward["items"]), 1)
         for item in forward["items"]:
             self.assertTrue(item["said"].strip() and item["quantified"].strip())
 
     # ── thresholds ───────────────────────────────────────────────────────────
     def test_thresholds_use_only_units_the_shared_formatter_carries(self) -> None:
         for entry in self.staging["next_kpi"]["entries"]:
-            self.assertIn(entry["unit"], UNIT_FORMATS, entry["metric"])
+            self.assertIn(entry["unit"], set(UNIT_FORMATS) | {"stores"}, entry["metric"])
             self.assertIn(entry["direction"], ("up", "down"))
             self.assertTrue(entry["why"].strip())
+            self.assertNotIn("current", entry, "the current value is read from the series, not typed")
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("下季跟踪阈值"))
+        for row, entry in zip(table["rows"], self.staging["next_kpi"]["entries"]):
+            if entry["unit"] == "stores":
+                self.assertTrue(row[2].endswith(" 家") and row[3].endswith(" 家"), row)
 
     def test_threshold_current_values_match_the_series_they_are_read_from(self) -> None:
-        current = {e["metric"]: e["current"] for e in self.staging["next_kpi"]["entries"]}
-        organic = self.der["organic"]
-        self.assertEqual(current["时装与皮具季度有机增速"], organic["fashion_leather"][-1])
-        self.assertEqual(current["集团季度有机增速"], organic["total"][-1])
-        self.assertEqual(current["手表与珠宝季度有机增速"], organic["watches_jewelry"][-1])
-        self.assertAlmostEqual(current["半年集团经营利润率"], self.der["half_margin"][-1], places=2)
-        self.assertAlmostEqual(current["半年时装与皮具经营利润率"],
-                               self.der["div_half_margin"]["fashion_leather"][-1], places=2)
-        self.assertAlmostEqual(current["季度报告增速与有机增速之差"], self.der["gap"][-1], places=2)
-        self.assertEqual(current["亚洲（除日本）门店数"], self.staging["stores"]["asia_ex_japan"][-1])
+        """Each entry names the series value it tracks; the table prints that value."""
+        organic, stores = self.der["organic"], self.staging["stores"]
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("下季跟踪阈值"))
+        for row, entry in zip(table["rows"], mc.kpi_entries(self.staging, self.der,
+                                                             self.staging["next_kpi"])):
+            kind, _, key = entry["reads"].partition(".")
+            expected = {"organic": lambda: organic[key][-1],
+                        "half_margin": lambda: (self.der["half_margin"][-1] if key == "total"
+                                                else self.der["div_half_margin"][key][-1]),
+                        "gap": lambda: self.der["gap"][-1],
+                        "stores": lambda: stores[key][-1]}[kind]()
+            with self.subTest(metric=entry["metric"]):
+                self.assertEqual(entry["current"], expected)
+                self.assertEqual(row[3], mc.kpi_unit_text(entry["unit"], expected))
 
     def test_the_headroom_chart_agrees_with_the_audit_table(self) -> None:
         exhibit = next(ex for ex in self.exhibits if ex["kind"] == "diverging_bars")
-        entries = self.staging["next_kpi"]["entries"]
+        entries = mc.kpi_entries(self.staging, self.der, self.staging["next_kpi"])
         self.assertEqual(exhibit["xlabels"], [e["metric"] for e in entries])
         self.assertEqual(
             exhibit["values"],
             [round(headroom(e["direction"], e["threshold"], e["current"]), 1) for e in entries])
 
-    def test_exactly_one_threshold_is_breached_this_quarter(self) -> None:
+    def test_the_headroom_title_counts_the_safe_lines(self) -> None:
         exhibit = next(ex for ex in self.exhibits if ex["kind"] == "diverging_bars")
-        breached = [label for label, value in zip(exhibit["xlabels"], exhibit["values"])
-                    if value < 0]
-        self.assertEqual(breached, ["时装与皮具季度有机增速"])
+        safe = sum(1 for value in exhibit["values"] if value >= 0)
+        self.assertEqual(exhibit["title"],
+                         f"下季跟踪阈值：{mc.cn_count(len(exhibit['values']))}条线里{mc.cn_count(safe)}条仍在安全侧")
 
     # ── tables, payload, registry ────────────────────────────────────────────
     def test_tables_are_numbered_from_one_and_carry_the_shared_capex_table(self) -> None:
@@ -533,23 +588,78 @@ class McDashboardTest(unittest.TestCase):
         self.assertEqual(len(shared), 1, "the cross-page table must be published here too")
 
     def test_the_period_tables_have_one_row_per_period(self) -> None:
-        by_n = {t["n"]: t for t in self.payload["tables"]}
-        self.assertEqual(len(by_n[1]["rows"]), len(self.staging["quarters"]))
-        self.assertEqual(len(by_n[2]["rows"]), len(self.staging["quarters"]))
-        self.assertEqual(len(by_n[3]["rows"]), len(self.staging["halves"]))
-        self.assertEqual(len(by_n[4]["rows"]), len(self.staging["halves"]))
-        self.assertEqual(len(by_n[5]["rows"]), len(self.staging["cash_halves"]))
-        self.assertEqual(len(by_n[6]["rows"]), len(self.staging["store_dates"]))
-        self.assertEqual(len(by_n[7]["rows"]), len(self.staging["call_record"]["items"]))
+        def table(words: str) -> dict:
+            return next(t for t in self.payload["tables"] if words in t["title"])
+        self.assertEqual(len(table("季分部收入")["rows"]), len(self.staging["quarters"]))
+        self.assertEqual(len(table("季有机增速")["rows"]), len(self.staging["quarters"]))
+        self.assertEqual(len(table("分部经营利润（€M）")["rows"]), len(self.staging["halves"]))
+        self.assertEqual(len(table("分部经营利润率")["rows"]), len(self.staging["halves"]))
+        self.assertEqual(len(table("现金流、资本强度")["rows"]), len(self.staging["cash_halves"]))
+        self.assertEqual(len(table("时点的门店数")["rows"]), len(self.staging["store_dates"]))
+        self.assertEqual(len(table("前瞻陈述，逐条结算")["rows"]), len(self.staging["call_record"]["items"]))
         for table in self.payload["tables"]:
             for row in table["rows"]:
                 self.assertEqual(len(row), len(table["headers"]), table["title"])
 
     def test_the_quarter_the_page_reports_is_the_last_one_in_the_series(self) -> None:
-        self.assertEqual(self.staging["quarters"][-1], "2026Q2")
-        self.assertEqual(self.payload["latest"]["disclosed_period_label"], "Q2 2026")
-        self.assertEqual(self.payload["latest"]["full_financial_period_label"], "H1 2026")
-        self.assertEqual(self.staging["halves"][-1], "H1 2026")
+        checks = self.staging["_checks"]
+        self.assertEqual(mc.display_period(self.staging["quarters"][-1]), checks["period"])
+        self.assertEqual(self.payload["latest"]["disclosed_period_label"], checks["period"])
+        self.assertEqual(self.payload["latest"]["full_financial_period_label"], checks["half"])
+        self.assertEqual(self.staging["halves"][-1], checks["half"])
+
+    def test_sections_are_numbered_in_order_and_the_notes_say_how_many(self) -> None:
+        """The long record was inserted as a second 「四、」 and the notes kept
+        saying 「四段」; numbering and the count are now read off the sections."""
+        sections = self.payload["sections"]
+        for index, section in enumerate(sections, start=1):
+            self.assertTrue(section["title"].startswith(f"{mc.cn_ordinal(index)}、"), section["title"])
+        self.assertIn(f"」{mc.cn_count(len(sections))}段排列", self.payload["notes"][0])
+        routine = next(i for i, s in enumerate(sections, start=1) if s["id"] == "routine")
+        self.assertTrue(any(n.startswith(f"第{mc.cn_ordinal(routine)}节的阈值") for n in self.payload["notes"]))
+
+    def test_the_text_quotes_the_margin_the_company_printed(self) -> None:
+        """The charts draw recomputed margins; a sentence quoting one uses the
+        company's printed figure where the company printed one -- including the
+        change on a year ago (Wines & Spirits: printed 20.3% -> 22.4% is +2.1pp;
+        the recomputation 20.25% -> 22.40% would print +2.2pp)."""
+        printed = self.staging["half_margin_company_printed_pct"]
+        halves = self.staging["halves"]
+        half = halves[-1]
+        prior = halves[mc.year_ago_half(halves, half)]
+        exhibit = next(ex for ex in self.exhibits if ex.get("ref") == "EX_DIVMARGIN")
+        quoted = 0
+        for key, value in printed.get(half, {}).items():
+            if key == "total":
+                continue
+            name = mc.DIV_NAMES[key]
+            recomputed = self.der["div_half_margin"][key][-1]
+            with self.subTest(division=key):
+                if f"{recomputed:.1f}" != f"{value:.1f}":
+                    self.assertNotIn(f"{half} 是 {recomputed:.1f}%", exhibit["note"])
+                if f"{name} {value:.1f}%（" in exhibit["note"] and key in printed.get(prior, {}):
+                    change = value - printed[prior][key]
+                    self.assertRegex(exhibit["note"], re.escape(f"{name} {value:.1f}%（") + r"(同比 )?"
+                                     + re.escape(f"{change:+.1f}pp）"))
+                    quoted += 1
+        self.assertGreaterEqual(quoted, 1, "no printed margin is quoted with its change")
+
+    def test_the_mix_title_counts_the_distance_it_names(self) -> None:
+        """The first bar of an eight-quarter window is seven quarters back, not eight."""
+        exhibit = next(ex for ex in self.exhibits if ex.get("ref") == "EX_MIX")
+        n = len(self.staging["quarters"])
+        self.assertIn(f"{mc.cn_count(n - 1)}季前是 {self.der['flg_share'][0]:.1f}%", exhibit["title"])
+
+    def test_the_second_half_rhythm_is_claimed_division_by_division(self) -> None:
+        """「各分部利润率同时呈现下半年更薄」 was printed while Fashion & Leather
+        Goods' 2025 second half (35.2%) was thicker than its first (34.7%)."""
+        exhibit = next(ex for ex in self.exhibits if ex.get("ref") == "EX_DIVMARGIN")
+        margins, pairs = self.der["div_half_margin"], self.der["half_pairs"]
+        breaks = [(key, p["year"]) for key in DIVS for p in pairs
+                  if margins[key][p["h2"]] >= margins[key][p["h1"]]]
+        self.assertEqual(not breaks, "各分部利润率同时呈现下半年更薄" in exhibit["note"])
+        for key, year in breaks:
+            self.assertIn(f"{mc.DIV_NAMES[key]} {year} 年例外", exhibit["note"])
 
     def test_published_payload_and_shell(self) -> None:
         self.assertEqual(js_payload(ROOT / "data" / "mc.js", "window.DASH"), self.payload)
@@ -575,6 +685,251 @@ class McDashboardTest(unittest.TestCase):
         card = home.split('href="mc/"', 1)[1].split("</a>", 1)[0]
         self.assertIn(self.payload["latest"]["release_date"], card)
         self.assertIn("MC.PA", card)
+
+
+
+
+class McChecksTest(unittest.TestCase):
+    """The page's quarter and half against a record keyed separately from the release.
+
+    `_checks` in the series file is typed once per roll from the results release
+    itself, with the page and table each figure was read from; the builder never
+    reads it (asserted in `test_data_only_roll`). Each assertion compares what the
+    builder computed from the arrays with that separate reading, so a roll that
+    misaligns a column, drops the new quarter or keeps last quarter's sentence
+    fails here. Rolling re-keys `_checks`; this file does not change.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(mc.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.checks = cls.staging["_checks"]
+        cls.payload = mc.build_payload(cls.staging)
+        cls.der = mc.derived(cls.staging)
+        cls.exhibits = {ex.get("ref"): ex for section in cls.payload["sections"]
+                        for ex in section["exhibits"]}
+
+    def test_the_page_names_the_checked_quarter_and_half(self) -> None:
+        checks = self.checks
+        self.assertIn(checks["period"], self.payload["title"])
+        self.assertIn(checks["half"], self.payload["title"])
+        self.assertIn(f"截至 {checks['period_end']}", self.payload["subtitle"])
+        self.assertIn(f"发布 {checks['release_date']}", self.payload["subtitle"])
+
+    def test_the_quarterly_series_ends_on_the_checked_quarter(self) -> None:
+        checks, staging = self.checks, self.staging
+        revenue = staging["quarterly_revenue_eur_m"]["total"]
+        organic = staging["organic_growth_pct"]
+        self.assertEqual(staging["quarter_period_ends"][-1], checks["period_end"])
+        self.assertEqual(revenue[-1], checks["quarter_revenue_eur_m"])
+        self.assertEqual(revenue[-2], checks["prior_quarter_revenue_eur_m"])
+        self.assertEqual(organic["total"][-1], checks["quarter_organic_pct"])
+        self.assertEqual(organic["total"][-2], checks["prior_quarter_organic_pct"])
+        for key, value in checks["quarter_organic_by_division_pct"].items():
+            with self.subTest(division=key):
+                self.assertEqual(organic[key][-1], value)
+
+    def test_the_half_series_ends_on_the_checked_half(self) -> None:
+        checks, staging = self.checks, self.staging
+        halves = staging["halves"]
+        number, year = mc.half_parts(checks["half"])
+        prior = halves.index(f"H{number} {year - 1}")
+        revenue = staging["half_revenue_eur_m"]["total"]
+        profit = staging["half_pro_eur_m"]
+        self.assertEqual(halves[-1], checks["half"])
+        self.assertEqual(revenue[-1], checks["half_revenue_eur_m"])
+        self.assertEqual(revenue[prior], checks["half_revenue_prior_year_eur_m"])
+        self.assertEqual(round(mc.pct_change(revenue[-1], revenue[prior])), checks["half_reported_change_pct"])
+        self.assertEqual(staging["half_growth_components_pct"][checks["half"]],
+                         {"organic": checks["half_organic_pct"], "perimeter": checks["half_perimeter_pct"],
+                          "currency": checks["half_currency_pct"],
+                          "reported": checks["half_reported_change_pct"]})
+        self.assertEqual(staging["half_pro_published_total_eur_m"][checks["half"]],
+                         checks["profit_from_recurring_operations_eur_m"])
+        self.assertEqual(profit["total"][-1], checks["profit_from_recurring_operations_eur_m"])
+        self.assertEqual(profit["total"][prior], checks["profit_from_recurring_operations_prior_year_eur_m"])
+        for key, value in checks["division_profit_from_recurring_operations_eur_m"].items():
+            with self.subTest(division=key):
+                self.assertEqual(profit[key][-1], value)
+        # The release prints the margin to one decimal; the recomputation must
+        # round to it, and the page carries the printed one.
+        self.assertEqual(staging["half_margin_company_printed_pct"][checks["half"]]["total"],
+                         checks["operating_margin_pct"])
+        self.assertEqual(round(self.der["half_margin"][-1], 1), checks["operating_margin_pct"])
+        cash = staging["half_cash_eur_m"]
+        self.assertEqual(staging["cash_halves"][-1], checks["half"])
+        self.assertEqual(cash["ocf"][-1], checks["net_cash_from_operating_activities_eur_m"])
+        self.assertEqual(cash["capex"][-1], checks["operating_investments_eur_m"])
+        self.assertEqual(cash["lease_repaid"][-1], checks["repayment_of_lease_liabilities_eur_m"])
+        self.assertEqual(cash["ofcf"][-1], checks["operating_free_cash_flow_eur_m"])
+        self.assertEqual(staging["net_financial_debt_eur_m"][-1], checks["net_financial_debt_eur_m"])
+        self.assertEqual(staging["equity_eur_m"][-1], checks["equity_eur_m"])
+
+    def test_the_headline_charts_and_card_print_the_checked_figures(self) -> None:
+        checks = self.checks
+        headline = self.payload["headline"]
+        self.assertIn(f"半年收入 €{checks['half_revenue_eur_m'] / 1000:.1f}B", headline)
+        self.assertIn(f"报告口径 {checks['half_reported_change_pct']:+d}%", headline)
+        self.assertIn(f"有机 {checks['half_organic_pct']:+d}%", headline)
+        self.assertIn(f"经营利润 €{checks['profit_from_recurring_operations_eur_m']:,}M", headline)
+        self.assertIn(f"集团季度收入 €{checks['quarter_revenue_eur_m']:,}M", self.exhibits["EX_REV"]["title"])
+        self.assertIn(f"有机 {checks['quarter_organic_pct']:+d}%", self.exhibits["EX_REV"]["title"])
+        self.assertIn(f"半年经营自由现金流 €{checks['operating_free_cash_flow_eur_m']:,}M",
+                      self.exhibits["EX_CASH"]["title"])
+        self.assertIn(f"半年经营性投资 €{checks['operating_investments_eur_m']:,}M",
+                      self.exhibits["EX_CAPEX"]["title"])
+        card = mc.headline_metrics(self.staging)
+        self.assertIn(f"半年经营利润率 {checks['operating_margin_pct']:.1f}%", card)
+        self.assertIn(f"本季有机 {checks['quarter_organic_pct']:+d}%", card)
+
+
+def roll_forward(staging: dict) -> dict:
+    """The series as a Q3 roll would leave it: one revenue-only quarter appended.
+
+    Synthetic figures, the shape a real roll has: the quarter arrays gain a
+    column, the half-year arrays do not (LVMH prints no Q3 profit), the
+    quarter-stamped story blocks are gone because nobody has written them yet,
+    and the half's story stays because the latest half is still the same half.
+    """
+    rolled = copy.deepcopy(staging)
+    new = mc.quarter_before(rolled["quarters"][-1], -1)
+    year, number = mc.quarter_parts(new)
+    rolled["quarters"] = rolled["quarters"][1:] + [new]
+    rolled["quarter_period_ends"] = rolled["quarter_period_ends"][1:] + [f"{year}-09-30"]
+    rolled["long_quarters"].append(new)
+    rolled["organic_quarters"].append(new)
+    revenue = rolled["quarterly_revenue_eur_m"]
+    other = rolled["quarterly_revenue_other_published_eur_m"]
+    for key in DIVS:
+        revenue[key].append(round(revenue[key][-4] * 1.02))
+    other.append(other[-4])
+    revenue["total"].append(sum(revenue[key][-1] for key in DIVS) + other[-1])
+    split = rolled["quarterly_wines_split_eur_m"]
+    split["champagne_wines"].append(round(revenue["wines_spirits"][-1] * 0.55))
+    split["cognac_spirits"].append(revenue["wines_spirits"][-1] - split["champagne_wines"][-1])
+    for key in rolled["organic_growth_pct"]:
+        rolled["organic_growth_pct"][key].append(2)
+    rolled["quarter_release_dates"][new] = f"{year}-10-14"
+    rolled["latest"].update({"disclosed_period_label": mc.display_period(new),
+                             "period_end": f"{year}-09-30", "release_date": f"{year}-10-14",
+                             "audit_status": "unaudited"})
+    rolled["sources"].append({"label": f"Q{number} {year} 收入公告（{year}-10-14）",
+                              "url": "https://www.lvmh.com/en/investors/investors-and-analysts"})
+    for key in ("call_record", "forward_statements", "next_kpi", "quarter_story", "_checks"):
+        del rolled[key]
+    return rolled
+
+
+class McRollTest(unittest.TestCase):
+    """What a roll can change without touching the builder."""
+
+    STAMPED = ("call_record", "forward_statements", "next_kpi", "quarter_story", "half_story")
+    STORY_ONLY = ("predominantly volume growth", "Bvlgari", "entirely driven by currencies",
+                  "10% or more per year", "VSOP", "欧元对美元、日元与韩元", "DFS 大中华",
+                  "剔除中东本季")
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(mc.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = mc.build_payload(cls.staging)
+        cls.text = json.dumps(cls.payload, ensure_ascii=False)
+
+    def test_a_block_stamped_for_another_period_stops_the_build(self) -> None:
+        for key in self.STAMPED:
+            stale = copy.deepcopy(self.staging)
+            stale[key]["period"] = "H1 1999" if key == "half_story" else "Q1 1999"
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "stamped"):
+                    mc.build_payload(stale)
+
+    def test_the_quarters_own_release_must_be_in_the_sources(self) -> None:
+        prefix = mc.release_prefix(self.staging["quarters"][-1])
+        bare = copy.deepcopy(self.staging)
+        bare["sources"] = [s for s in bare["sources"] if not s["label"].startswith(f"{prefix} ")]
+        self.assertLess(len(bare["sources"]), len(self.staging["sources"]))
+        with self.assertRaisesRegex(ValueError, "sources"):
+            mc.build_payload(bare)
+
+    def test_a_period_without_its_story_leaves_it_out(self) -> None:
+        bare = copy.deepcopy(self.staging)
+        for key in self.STAMPED:
+            del bare[key]
+        payload = mc.build_payload(bare)
+        text = json.dumps(payload, ensure_ascii=False)
+        for phrase in self.STORY_ONLY:
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, self.text)
+                self.assertNotIn(phrase, text)
+        self.assertNotIn("settled", [s["id"] for s in payload["sections"]])
+        for index, section in enumerate(payload["sections"], start=1):
+            self.assertTrue(section["title"].startswith(f"{mc.cn_ordinal(index)}、"))
+        self.assertNotRegex(text, r"\{(TBL|EX)_[A-Z_]+\}")
+        self.assertEqual([t["n"] for t in payload["tables"]], list(range(1, len(payload["tables"]) + 1)))
+        cards = payload["brief"].count("<article>")
+        self.assertIn(f"本季{mc.cn_count(cards)}条主线", payload["brief"])
+
+    def test_a_revenue_only_quarter_builds_from_the_series_alone(self) -> None:
+        rolled = roll_forward(self.staging)
+        payload = mc.build_payload(rolled)
+        quarter, half = mc.display_period(rolled["quarters"][-1]), rolled["halves"][-1]
+        self.assertEqual(payload["title"], f"LVMH（MC.PA）：{quarter} 季报仪表盘（利润截至 {half}）")
+        self.assertEqual(payload["latest"]["disclosed_period_label"], quarter)
+        self.assertIn("未经审阅", payload["subtitle"])
+        self.assertIn(f"利润要等 {mc.half_of_quarter(rolled['quarters'][-1])}", payload["headline"])
+        text = json.dumps(payload, ensure_ascii=False)
+        # the half's own story still belongs to the latest half ...
+        self.assertIn("entirely driven by currencies", text)
+        # ... but the regional table, which the half-year appendix carries, is no
+        # longer "this quarter", and nothing quotes last quarter's call.
+        region = next(ex for s in payload["sections"] for ex in s["exhibits"] if ex.get("ref") == "EX_REGION")
+        self.assertNotIn("本季", region["note"])
+        self.assertNotIn("predominantly volume growth", text)
+
+    def test_the_record_sentences_are_computed_not_remembered(self) -> None:
+        """Make each claim false on a copy of the series: its words must go."""
+        cases = []
+        # an earlier quarter in the window that did not decline
+        s = copy.deepcopy(self.staging)
+        i = s["long_quarters"].index(s["quarters"][3])
+        total = s["quarterly_revenue_eur_m"]["total"]
+        bump = total[i - 4] * 1.05 - total[i]
+        total[i] += bump
+        s["quarterly_revenue_eur_m"]["selective_retailing"][i] += bump
+        cases.append((s, "季里第一次不再下滑"))
+        # one second half that was not thinner than its first half
+        s = copy.deepcopy(self.staging)
+        h2 = next(i for i, h in enumerate(s["halves"]) if h.startswith("H2"))
+        s["half_pro_eur_m"]["total"][h2] = round(s["half_revenue_eur_m"]["total"][h2] * 0.30)
+        cases += [(s, "下半年每一次都是"), (s, "方向没有例外")]
+        # capital intensity that rose once
+        s = copy.deepcopy(self.staging)
+        s["half_cash_eur_m"]["capex"][2] = s["half_cash_eur_m"]["capex"][1] * 1.5
+        cases.append((s, "连续下降"))
+        # a June below the December before it
+        s = copy.deepcopy(self.staging)
+        s["net_financial_debt_eur_m"][-1] = s["net_financial_debt_eur_m"][-2] - 1
+        cases.append((s, "每年 6 月都比前一个 12 月高"))
+        # a first half below the previous full year's line
+        s = copy.deepcopy(self.staging)
+        h1 = s["halves"].index(f"H1 {mc.half_parts(s['halves'][-1])[1] - 2}")
+        s["half_pro_eur_m"]["total"][h1] = round(s["half_revenue_eur_m"]["total"][h1] * 0.20)
+        cases.append((s, "上半年高于全年是这家公司的常态"))
+        # this half below the previous full year
+        s = copy.deepcopy(self.staging)
+        s["half_pro_eur_m"]["total"][-1] = round(s["half_revenue_eur_m"]["total"][-1] * 0.20)
+        cases.append((s, "以来第一次同时做到"))
+        # the division that "turned positive" had a positive quarter inside its run
+        s = copy.deepcopy(self.staging)
+        s["organic_growth_pct"]["fashion_leather"][-3] = 1
+        cases.append((s, "个非正季度之后的第一个正数"))
+        # the currency gap widened instead of snapping back
+        s = copy.deepcopy(self.staging)
+        s["organic_growth_pct"]["total"][-1] = 10
+        cases.append((s, "本季骤缩到"))
+        for staging, phrase in cases:
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, self.text)
+                self.assertNotIn(phrase, json.dumps(mc.build_payload(staging), ensure_ascii=False))
 
 
 if __name__ == "__main__":

@@ -682,3 +682,27 @@ def ai_capex_cycle_table(n: int) -> dict:
         ],
         "rows": rows,
     }
+
+
+_STORY_FIELD = re.compile(r"\{([a-z][a-z_]*(?::[a-z0-9_]+)?)\}")
+
+
+def fill_story(text: str, values: dict[str, str]) -> str:
+    """Put computed numbers into a sentence that lives in a series story block.
+
+    What only one quarter has -- a call quote, an attribution, the page's reading
+    of it -- is written into a period-stamped block of the series file, because a
+    roll rewrites it. A number the series arrays already carry must not be typed
+    into that sentence as well: the two would be free to disagree. So the sentence
+    names the number (``{now:wines_spirits}``) and the builder supplies it.
+
+    Only lower-case names are placeholders, so the ``{EX_…}`` / ``{TBL_…}``
+    references resolved after numbering pass through untouched. A name the builder
+    did not compute raises instead of printing the braces.
+    """
+    def swap(match: re.Match) -> str:
+        name = match.group(1)
+        if name not in values:
+            raise KeyError(f"story placeholder {{{name}}} has no computed value")
+        return values[name]
+    return _STORY_FIELD.sub(swap, text)
