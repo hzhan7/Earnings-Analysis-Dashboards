@@ -20,6 +20,7 @@ band is asserted rather than described.
 
 from __future__ import annotations
 
+import copy
 import json
 import re
 import sys
@@ -31,7 +32,7 @@ sys.path.insert(0, str(ROOT))
 
 from build import ndaq  # noqa: E402
 from build.all import ENTRIES, build_all, roster_payload  # noqa: E402
-from build.board import headroom  # noqa: E402
+from build.board import cn_count, cn_ordinal, headroom, stamped_block  # noqa: E402
 
 
 def js_payload(path: Path, marker: str) -> dict:
@@ -40,18 +41,36 @@ def js_payload(path: Path, marker: str) -> dict:
     return json.loads(body)
 
 
+def published_text(payload: dict) -> str:
+    return json.dumps({key: payload[key] for key in
+                       ("title", "subtitle", "headline", "brief", "sections", "notes", "tables")},
+                      ensure_ascii=False)
+
+
+def contiguous(quarters: list[str]) -> bool:
+    for earlier, later in zip(quarters, quarters[1:]):
+        y1, q1 = int(earlier[:4]), int(earlier[5])
+        y2, q2 = int(later[:4]), int(later[5])
+        if (y2, q2) != ((y1 + 1, 1) if q1 == 4 else (y1, q1 + 1)):
+            return False
+    return True
+
+
 class NdaqDashboardTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.staging = json.loads(ndaq.STAGING_PATH.read_text(encoding="utf-8"))
         cls.payload = ndaq.build_payload(cls.staging)
 
-    # ── the eight-quarter window ────────────────────────────────────────────
-    def test_the_window_is_eight_quarters_and_complete(self) -> None:
+    # ── the short window ────────────────────────────────────────────────────
+    def test_the_short_window_starts_in_2024q3_and_is_complete(self) -> None:
+        """It grows by one quarter a roll; what stays true is where it starts."""
         fin = self.staging["financials"]
-        self.assertEqual(len(self.staging["periods"]), 8)
+        periods = self.staging["periods"]
+        self.assertEqual(periods[0], "2024Q3")
+        self.assertTrue(contiguous(periods))
         for name, values in fin.items():
-            self.assertEqual(len(values), 8, name)
+            self.assertEqual(len(values), len(periods), name)
             self.assertTrue(all(v is not None for v in values), name)
 
     def test_quarters_are_contiguous_calendar_labels(self) -> None:
@@ -65,18 +84,18 @@ class NdaqDashboardTest(unittest.TestCase):
     def test_the_window_is_the_tail_of_the_long_series(self) -> None:
         """The two windows must not disagree about an overlapping quarter."""
         long = self.staging["long"]
-        self.assertEqual(long["quarters"][-8:], self.staging["periods"])
+        self.assertEqual(long["quarters"][-len(self.staging["periods"]):], self.staging["periods"])
         for offset, quarter in enumerate(self.staging["periods"]):
             index = long["quarters"].index(quarter)
             self.assertAlmostEqual(long["net_revenue"][index],
                                    self.staging["financials"]["net_revenue"][offset],
                                    places=3, msg=quarter)
 
-    def test_the_long_series_is_forty_six_contiguous_quarters(self) -> None:
+    def test_the_long_series_runs_from_2015q1_to_the_page_quarter_without_a_gap(self) -> None:
         quarters = self.staging["long"]["quarters"]
-        self.assertEqual(len(quarters), 46)
         self.assertEqual(quarters[0], "2015Q1")
-        self.assertEqual(quarters[-1], "2026Q2")
+        self.assertEqual(quarters[-1], self.staging["periods"][-1])
+        self.assertTrue(contiguous(quarters))
 
     # ── identities inside a quarter ─────────────────────────────────────────
     def test_net_revenue_is_total_revenue_less_the_two_expense_lines(self) -> None:
@@ -212,9 +231,11 @@ class NdaqDashboardTest(unittest.TestCase):
                                    delta=0.15, msg=quarter)
             self.assertGreaterEqual(residual, 3.0, quarter)
             self.assertLessEqual(residual, 16.0, quarter)
-        # and it is still narrow: only four of forty-two quarters clear the old
-        # ceiling, and all four sit in the 2020-2021 retail surge.
-        wide = [q for q, v in zip(s31["quarters"], s31["residual_usd_m"]) if v > 9.0]
+        # and it is still narrow: through 2026Q2 only four of forty-two quarters
+        # clear the old ceiling, and all four sit in the 2020-2021 retail surge.
+        # Pinned on the record up to that quarter, which a roll only appends to.
+        wide = [q for q, v in zip(s31["quarters"], s31["residual_usd_m"])
+                if v > 9.0 and q <= "2026Q2"]
         self.assertEqual(wide, ["2020Q1", "2020Q2", "2020Q4", "2021Q1"])
 
     def test_the_fee_never_exceeds_the_line_it_sits_inside(self) -> None:
@@ -243,8 +264,9 @@ class NdaqDashboardTest(unittest.TestCase):
 
     def test_finished_years_have_an_actual_and_the_open_year_does_not(self) -> None:
         for key, item in self.staging["annual_guidance_history"].items():
+            open_year = max(item["years"])
             for year, block in item["by_year"].items():
-                if int(year) == 2026:
+                if int(year) == open_year:
                     self.assertIsNone(block["actual"], f"{key} {year}")
                 elif key == "operating_expense" or int(year) >= 2019:
                     self.assertIsNotNone(block["actual"], f"{key} {year}")
@@ -252,24 +274,38 @@ class NdaqDashboardTest(unittest.TestCase):
     def test_the_tallies_the_page_publishes_are_the_ones_in_the_data(self) -> None:
         """The headline claim, in both directions.
 
-        Expense has never landed below its final range in eleven years; the tax
-        rate has never landed above its final range in seven. If the data stops
-        saying that, the page must not keep saying it either.
+        Through FY2025 expense never landed below its final range and the tax
+        rate never above its final range -- pinned on those years, which a roll
+        only appends to. What the page prints is recounted from the data, so if
+        a later year breaks the pattern the page must stop saying it.
         """
-        opex = self.staging["annual_guidance_history"]["operating_expense"]
-        self.assertEqual(ndaq.tally(opex, 1), {"inside": 7, "above": 4, "below": 0})
-        self.assertEqual(ndaq.tally(opex, 0), {"inside": 5, "above": 3, "below": 3})
-        tax = self.staging["annual_guidance_history"]["tax_rate"]
-        self.assertEqual(ndaq.tally(tax, 1), {"inside": 5, "above": 0, "below": 2})
-        self.assertEqual(ndaq.tally(tax, 0), {"inside": 4, "above": 0, "below": 3})
+        hist = self.staging["annual_guidance_history"]
 
-    def test_the_expense_record_covers_eleven_finished_years(self) -> None:
+        def through_2025(item: dict) -> dict:
+            kept = [y for y in item["years"] if y <= 2025]
+            return {**item, "years": kept}
+
+        opex, tax = hist["operating_expense"], hist["tax_rate"]
+        self.assertEqual(ndaq.tally(through_2025(opex), 1), {"inside": 7, "above": 4, "below": 0})
+        self.assertEqual(ndaq.tally(through_2025(opex), 0), {"inside": 5, "above": 3, "below": 3})
+        self.assertEqual(ndaq.tally(through_2025(tax), 1), {"inside": 5, "above": 0, "below": 2})
+        self.assertEqual(ndaq.tally(through_2025(tax), 0), {"inside": 4, "above": 0, "below": 3})
+        t_last, t_first = ndaq.tally(opex, 1), ndaq.tally(opex, 0)
+        brief = self.payload["brief"]
+        self.assertIn(f"{t_last['inside']} 次落在区间内、{t_last['above']} 次高于上限、"
+                      f"{t_last['below']} 次低于下限", brief)
+        self.assertIn(f"换成年初那次是 {t_first['inside']}/{t_first['above']}/{t_first['below']}", brief)
+
+    def test_the_expense_record_runs_from_fy2015_without_a_gap(self) -> None:
+        """Every year from FY2015 up to the open one is finished, and the page's
+        count of releases is the count in the record (43 through July 2026)."""
         opex = self.staging["annual_guidance_history"]["operating_expense"]
-        self.assertEqual(ndaq.finished_years(opex),
-                         list(range(2015, 2026)))
+        open_year = max(opex["years"])
+        self.assertEqual(ndaq.finished_years(opex), list(range(2015, open_year)))
         vintages = sum(len(block["guided"])
                        for block in opex["by_year"].values())
-        self.assertEqual(vintages, 43)
+        self.assertGreaterEqual(vintages, 43)
+        self.assertIn(f"共 {vintages} 次发布", " ".join(self.payload["notes"]))
 
     def test_the_two_years_with_only_two_vintages_are_the_ones_named(self) -> None:
         """2015 and 2016 published no guidance in their third and fourth quarters.
@@ -284,24 +320,26 @@ class NdaqDashboardTest(unittest.TestCase):
                   for year, block in opex["by_year"].items()}
         self.assertEqual(counts[2015], 2)
         self.assertEqual(counts[2016], 2)
-        for year in range(2017, 2026):
+        open_year = max(counts)
+        for year in range(2017, open_year):
             self.assertEqual(counts[year], 4, year)
-        self.assertEqual(counts[2026], 3)
+        self.assertLessEqual(counts[open_year], 4)
 
     def test_the_tax_record_starts_where_the_disclosure_does(self) -> None:
         """FY2018 was guided but its actual is not disclosed anywhere."""
         tax = self.staging["annual_guidance_history"]["tax_rate"]
         self.assertIn("2018", tax["by_year"])
         self.assertIsNone(tax["by_year"]["2018"]["actual"])
-        self.assertEqual(ndaq.finished_years(tax), list(range(2019, 2026)))
+        self.assertEqual(ndaq.finished_years(tax), list(range(2019, max(tax["years"]))))
 
     def test_the_open_year_is_excluded_from_every_settled_band(self) -> None:
-        """FY2026 is still running; a band drawn over it would settle nothing."""
+        """The open year is still running; a band drawn over it would settle nothing."""
+        open_year = max(self.staging["annual_guidance_history"]["operating_expense"]["years"])
         for exhibit in self.payload["sections"][0]["exhibits"]:
             if exhibit["kind"] != "range_band":
                 continue
             for label in exhibit.get("xlabels", []):
-                self.assertNotEqual(label, "FY2026")
+                self.assertNotEqual(label, f"FY{open_year}")
 
     # ── structural breaks are marked, not smoothed ──────────────────────────
     def test_the_charts_that_cross_a_reclassification_carry_a_break(self) -> None:
@@ -320,7 +358,8 @@ class NdaqDashboardTest(unittest.TestCase):
                   for ex in section["exhibits"]}
         exhibit = by_ref["EX_GROSSNET"]
         self.assertEqual(exhibit["xlabels"], self.staging["segments"]["period_labels"])
-        self.assertEqual(len(exhibit["xlabels"]), 15)
+        self.assertEqual(self.staging["segments"]["quarters"][0], "2022Q4")
+        self.assertTrue(contiguous(self.staging["segments"]["quarters"]))
         stacks = {stack["name"]: stack["values"] for stack in exhibit["stacks"]}
         self.assertEqual(len(stacks), 3)
         for index, quarter in enumerate(self.staging["segments"]["quarters"]):
@@ -330,7 +369,9 @@ class NdaqDashboardTest(unittest.TestCase):
 
     def test_series_that_start_late_are_holes_not_backfills(self) -> None:
         aum = self.staging["etp_aum"]
-        self.assertEqual(len(aum["quarters"]), 43)
+        self.assertEqual(aum["quarters"][0], "2015Q4")
+        self.assertEqual(aum["quarters"][-1], self.staging["periods"][-1])
+        self.assertTrue(contiguous(aum["quarters"]))
         self.assertTrue(all(v is not None for v in aum["period_end_usd_b"]))
         for name in ("average_usd_b", "index_revenue_usd_m"):
             values = aum[name]
@@ -377,10 +418,16 @@ class NdaqDashboardTest(unittest.TestCase):
                                    delta=0.011, msg=period)
 
     def test_the_headline_index_growth_carries_the_adjusted_figure(self) -> None:
-        """Reported +38% includes a one-time contract benefit; adjusted is +35%."""
+        """Q2 2026: reported +38% includes a one-time contract benefit; adjusted is +35%,
+        and the release prints the amount (US$6M) in its organic/adjusted table."""
+        context = stamped_block(self.staging, "quarter_context", self.staging["period_labels"][-1])
         by_ref = {ex.get("ref"): ex for section in self.payload["sections"]
                   for ex in section["exhibits"]}
-        self.assertIn("35%", by_ref["EX_INDEX"]["note"])
+        if context and "index_adjusted" in context:
+            adjusted = context["index_adjusted"]
+            self.assertIn(f"+{adjusted['adjusted_yoy_pct']:.0f}%", by_ref["EX_INDEX"]["note"])
+            self.assertIn(f"US${adjusted['one_time_usd_m']:,.0f}M", by_ref["EX_INDEX"]["note"])
+            self.assertNotIn("没有披露金额", by_ref["EX_INDEX"]["note"])
 
     # ── thresholds, exhibits, publication ───────────────────────────────────
     def test_every_quantified_threshold_has_a_headroom_bar(self) -> None:
@@ -489,6 +536,326 @@ class NdaqDashboardTest(unittest.TestCase):
         for name, _, digest in sources:
             expected = hashlib.sha256((ROOT / name).read_bytes()).hexdigest()[:8]
             self.assertEqual(digest, expected, name)
+
+
+
+class NdaqChecksTest(unittest.TestCase):
+    """The page's quarter against a record keyed separately from the filing.
+
+    `_checks` is typed once per quarter from the release (and the 10-Q for the
+    Section 31 fee), with the place in the document each figure was read from;
+    the builder never reads it (asserted in `test_data_only_roll`). Every pair
+    in it is [this quarter, the year-ago quarter as reprinted in this release].
+    Rolling a quarter re-keys `_checks`; this class does not change.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(ndaq.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.checks = cls.staging["_checks"]
+        cls.payload = ndaq.build_payload(cls.staging)
+        cls.by_ref = {ex.get("ref"): ex for section in cls.payload["sections"]
+                      for ex in section["exhibits"]}
+        period = cls.staging["period_labels"][-1]
+        cls.year_ago = ndaq.YearAgo(stamped_block(cls.staging, "year_ago_reprinted", period))
+
+    def test_the_page_names_the_checked_quarter(self) -> None:
+        checks = self.checks
+        self.assertIn(checks["period"], self.payload["title"])
+        self.assertIn(f"截至 {checks['period_end']}", self.payload["subtitle"])
+        self.assertIn(f"发布 {checks['release_date']}", self.payload["subtitle"])
+        quarter, year = checks["period"].split()
+        self.assertIn(f"Nasdaq {year} 年第{cn_ordinal(int(quarter[1]))}季度业绩新闻稿",
+                      self.payload["source"])
+
+    def test_the_series_ends_on_the_checked_figures(self) -> None:
+        fin, seg, arr = self.staging["financials"], self.staging["segments"], self.staging["arr"]
+        checks = self.checks
+        for line, (now, _ago) in checks["income_statement_usd_m"].items():
+            with self.subTest(line=line):
+                self.assertEqual(abs(fin[line][-1]), now)
+        for line, (now, _ago) in checks["non_gaap_usd_m"].items():
+            with self.subTest(line=line):
+                self.assertEqual(fin[line][-1], now)
+        self.assertEqual(fin["diluted_eps"][-1], checks["per_share"]["diluted_eps"][0])
+        self.assertEqual(fin["nongaap_eps"][-1], checks["per_share"]["nongaap_eps"][0])
+        self.assertEqual(fin["diluted_shares"][-1], checks["per_share"]["diluted_shares_m"][0])
+        for line, (now, _ago) in checks["revenue_detail_usd_m"].items():
+            with self.subTest(line=line):
+                self.assertEqual(seg[line][-1], now)
+        for line, pair in checks["arr_usd_m"].items():
+            if line == "total":
+                continue
+            with self.subTest(arr=line):
+                self.assertEqual(arr[line][-1], pair[0])
+        self.assertEqual(arr["arr_cap"][-1] + arr["arr_fin"][-1], checks["arr_usd_m"]["total"])
+        self.assertEqual(arr["cap_prior_year_same_release"][-1], checks["arr_usd_m"]["arr_cap"][1])
+        self.assertAlmostEqual(arr["fin_yoy_pct"][-1],
+                               (checks["arr_usd_m"]["arr_fin"][0] / checks["arr_usd_m"]["arr_fin"][1] - 1) * 100,
+                               places=1)
+        aum = self.staging["etp_aum"]
+        self.assertEqual(aum["period_end_usd_b"][-1], checks["etp_aum_usd_b"]["period_end"][0])
+        self.assertEqual(aum["average_usd_b"][-1], checks["etp_aum_usd_b"]["average"][0])
+        opex = self.staging["annual_guidance_history"]["operating_expense"]
+        latest_guide = opex["by_year"][str(max(opex["years"]))]["guided"][-1]
+        self.assertEqual(latest_guide, [*checks["guidance"]["opex_usd_m"], checks["release_date"]])
+        tax = self.staging["annual_guidance_history"]["tax_rate"]
+        self.assertEqual(tax["by_year"][str(max(tax["years"]))]["guided"][-1],
+                         [*checks["guidance"]["tax_rate_pct"], checks["release_date"]])
+        s31 = dict(zip(self.staging["section_31"]["quarters"], self.staging["section_31"]["fees_usd_m"]))
+        parts = checks["section_31_usd_m"].values()
+        self.assertEqual(s31[self.staging["periods"][-1]], sum(now for now, _ in parts))
+        self.assertEqual(s31[self.staging["periods"][-5]], sum(ago for _, ago in parts))
+
+    def test_the_thresholds_current_values_are_the_series(self) -> None:
+        """A typed 「当前值」 can flip a verdict; each one is read back here."""
+        kpi = stamped_block(self.staging, "next_kpi", self.staging["period_labels"][-1])
+        if not kpi:
+            return
+        fin, seg, arr = self.staging["financials"], self.staging["segments"], self.staging["arr"]
+        computed = {
+            "非 GAAP 经营利润率": round(fin["nongaap_margin_pct"][-1], 1),
+            "总 ARR 同比": round(arr["total_yoy_pct"][-1], 1),
+            "Financial Technology ARR 同比": round(arr["fin_yoy_pct"][-1], 1),
+            "期末 ETP AUM": self.staging["etp_aum"]["period_end_usd_b"][-1],
+            "Market Services 净收入同比": round(self.year_ago.growth("ms_net", seg["ms_net"]), 1),
+        }
+        for entry in kpi["quantified"]:
+            metric = entry["metric"]
+            with self.subTest(metric=metric):
+                if metric.startswith("非 GAAP 营业费用（季均"):
+                    self.assertEqual(entry["current"], fin["nongaap_opex"][-1])
+                    open_year = max(self.staging["annual_guidance_history"]["operating_expense"]["years"])
+                    spent, quarters = ndaq.spent_in_year(self.staging, open_year)
+                    high = self.checks["guidance"]["opex_usd_m"][1]
+                    self.assertAlmostEqual(entry["threshold"], (high - spent) / (4 - quarters), places=6)
+                else:
+                    self.assertEqual(entry["current"], computed[metric])
+
+    def test_every_year_on_year_rate_divides_by_the_reprinted_year_ago(self) -> None:
+        """Solovis left Capital Access and Market Services was regrossed: the
+        release's year-ago column is not the first print, and the page's
+        rates must divide by the column the release printed beside them."""
+        for block in ("income_statement_usd_m", "revenue_detail_usd_m"):
+            for line, (_now, ago) in self.checks[block].items():
+                series = (self.staging["financials"] if block == "income_statement_usd_m"
+                          else self.staging["segments"])[line]
+                with self.subTest(line=line):
+                    self.assertEqual(abs(self.year_ago.of(line, series)), ago)
+        cap_now, cap_ago = self.checks["revenue_detail_usd_m"]["cap"]
+        self.assertIn(f"本季三条腿同比分别为 {(cap_now / cap_ago - 1) * 100:+.1f}%",
+                      self.by_ref["EX_SEG"]["note"])
+        gross_now, gross_ago = self.checks["revenue_detail_usd_m"]["ms_gross"]
+        self.assertIn(f"毛收入同比 {(gross_now / gross_ago - 1) * 100:+.1f}%", self.payload["brief"])
+
+    def test_the_printed_rates_agree_with_the_page_at_printed_precision(self) -> None:
+        fin, seg, arr = self.staging["financials"], self.staging["segments"], self.staging["arr"]
+        printed = self.checks["growth_printed_pct"]
+        for key, series in (("net_revenue", fin["net_revenue"]), ("cap", seg["cap"]),
+                            ("fin", seg["fin"]), ("ms_net", seg["ms_net"]),
+                            ("cap_index", seg["cap_index"])):
+            with self.subTest(growth=key):
+                self.assertEqual(round(self.year_ago.growth(key, series)), printed[key])
+        self.assertEqual(round(arr["fin_yoy_pct"][-1]), printed["arr_fin"])
+        self.assertEqual(round(arr["cap_yoy_pct"][-1]), printed["arr_cap"])
+        self.assertEqual(round(arr["total_yoy_pct"][-1]), printed["arr_total_organic"])
+        margins = self.checks["margins_printed_pct"]
+        self.assertEqual(round(fin["gaap_margin_pct"][-1]), margins["gaap_margin_pct"][0])
+        self.assertEqual(round(fin["nongaap_margin_pct"][-1]), margins["nongaap_margin_pct"][0])
+
+    def test_the_quarter_context_is_what_the_release_printed(self) -> None:
+        context = stamped_block(self.staging, "quarter_context", self.staging["period_labels"][-1])
+        if not context:
+            return
+        adjusted = context["index_adjusted"]
+        printed = self.checks["growth_printed_pct"]
+        self.assertEqual(adjusted["adjusted_yoy_pct"], printed["cap_index_adjusted"])
+        self.assertEqual(adjusted["one_time_usd_m"], self.checks["index_one_time_usd_m"])
+        now, ago = self.checks["revenue_detail_usd_m"]["cap_index"]
+        self.assertEqual(round(((now - adjusted["one_time_usd_m"]) / ago - 1) * 100),
+                         adjusted["adjusted_yoy_pct"])
+        self.assertEqual(context["arr_printed"]["total_reported_pct"], printed["arr_total_reported"])
+        self.assertEqual(context["arr_printed"]["total_organic_pct"], printed["arr_total_organic"])
+        self.assertEqual(context["arr_printed"]["cap_pct"], printed["arr_cap"])
+        aum = self.checks["etp_aum_usd_b"]
+        self.assertEqual(context["aum_ttm_usd_b"]["net_inflows"], aum["ttm_net_inflows"])
+        self.assertEqual(context["aum_ttm_usd_b"]["net_appreciation"], aum["ttm_net_appreciation"])
+
+    def test_the_headline_prints_the_checked_figures(self) -> None:
+        now, ago = self.checks["income_statement_usd_m"]["net_revenue"]
+        self.assertIn(f"净收入 US${now:,.0f}M、同比 {(now / ago - 1) * 100:+.1f}%", self.payload["headline"])
+        now, ago = self.checks["revenue_detail_usd_m"]["cap_index"]
+        self.assertIn(f"Index 收入同比 {(now / ago - 1) * 100:+.1f}%", self.payload["headline"])
+
+
+class NdaqRollTest(unittest.TestCase):
+    """A roll edits the series and nothing else: the one-quarter blocks and the
+    sentences about the record are held to what the series says."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(ndaq.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = ndaq.build_payload(cls.staging)
+        cls.text = published_text(cls.payload)
+
+    def rebuilt(self, edit) -> dict:
+        changed = copy.deepcopy(self.staging)
+        edit(changed)
+        return ndaq.build_payload(changed)
+
+    def moves(self, claims, edit, present_before=True) -> None:
+        after = published_text(self.rebuilt(edit))
+        for claim in claims:
+            with self.subTest(claim=claim):
+                self.assertEqual(claim in self.text, present_before)
+                self.assertEqual(claim in after, not present_before)
+
+    def test_quarter_blocks_refuse_to_publish_under_another_quarter(self) -> None:
+        for key in ("next_kpi", "quarter_context", "year_ago_reprinted"):
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "stamped"):
+                    self.rebuilt(lambda s, key=key: s[key].__setitem__("period", "Q1 1999"))
+        quarter, year = self.staging["period_labels"][-1].split()
+        label = f"Nasdaq {year} 年第{cn_ordinal(int(quarter[1]))}季度业绩新闻稿"
+        with self.assertRaisesRegex(ValueError, "sources"):
+            self.rebuilt(lambda s: s.__setitem__(
+                "sources", [x for x in s["sources"] if not x["label"].startswith(label)]))
+
+    def test_a_quarter_without_its_blocks_leaves_them_out(self) -> None:
+        def strip(s):
+            for key in ("next_kpi", "quarter_context", "year_ago_reprinted"):
+                del s[key]
+        payload = self.rebuilt(strip)
+        sections = {sec["id"]: sec for sec in payload["sections"]}
+        self.assertEqual(sections["next_quarter"]["exhibits"], [])
+        self.assertEqual(len(payload["tables"]), len(self.payload["tables"]) - 1)
+        text = published_text(payload)
+        for gone in ("调整后口径", "Reconciliation of Organic and Adjusted Impacts",
+                     "由公司自行报送", "交叉销售运行率", "滚动十二个月数据里", "报告口径 11%"):
+            with self.subTest(gone=gone):
+                self.assertIn(gone, self.text)
+                self.assertNotIn(gone, text)
+
+    def test_the_record_sentences_are_computed_not_remembered(self) -> None:
+        # One finished year below its final expense range: the one-sided claims go.
+        def under(s):
+            block = s["annual_guidance_history"]["operating_expense"]["by_year"]["2021"]
+            block["actual"] = block["guided"][-1][0] - 10
+        self.moves(("没有一年低于指引下限", "费用指引的下限从来没有约束过这家公司",
+                    "只指引成本，而且是单边的", "这是另一条单边记录，而且方向相反"), under)
+
+        # The October range lands farther than January's in FY2022 and FY2023;
+        # put both actuals on their October midpoints and "always" comes back.
+        def october_closer(s):
+            by_year = s["annual_guidance_history"]["operating_expense"]["by_year"]
+            for year in ("2022", "2023"):
+                low, high, _ = by_year[year]["guided"][-1]
+                by_year[year]["actual"] = (low + high) / 2
+        self.moves(("FY2022、FY2023 相反",), october_closer)
+        self.moves(("年末那次总是更贴近实际",), october_closer, present_before=False)
+
+        # Another quarter already over US$1,000B: nothing is "the first" any more.
+        def not_first(s):
+            s["etp_aum"]["period_end_usd_b"][-3] = 1001.0
+        self.moves(("首次突破一万亿美元", "首次站上一万亿", "本季是这条序列首次站上一万亿美元"), not_first)
+
+        # FinTech's ARR and revenue growth slowed in Q2 2026; make them speed up.
+        def fintech_faster(s):
+            s["arr"]["fin_yoy_pct"][-2] = s["arr"]["fin_yoy_pct"][-1] - 1
+            s["segments"]["fin"][-2] = s["segments"]["fin"][-6] * 1.01
+        self.moves(("Index 在加速，FinTech 放缓", "放缓的是 Financial Technology"), fintech_faster)
+        self.moves(("Index 与 FinTech 是加速的两条腿", "Index 与 Financial Technology 是本季加速的来源"),
+                   fintech_faster, present_before=False)
+
+        # 17 of 45 quarter-on-quarter changes are falls; make the line monotone.
+        def monotone(s):
+            values = s["long"]["nongaap_margin_pct"]
+            s["long"]["nongaap_margin_pct"] = [values[0] + 0.25 * i for i in range(len(values))]
+        self.moves(("次回落",), monotone)
+        self.moves(("几乎单调向上",), monotone, present_before=False)
+
+        # The fee was zero for the three quarters before this one.
+        def fee_never_stopped(s):
+            s31 = s["section_31"]
+            for i in (-4, -3, -2):
+                s31["fees_usd_m"][i] = 100.0
+                s31["residual_usd_m"][i] = s31["bcef_usd_m"][i] - 100.0
+        self.moves(("连续三个季度为零", "前三个季度是 US$0M", "上一季是 US$0M"), fee_never_stopped)
+
+        # Past years rarely both raised the midpoint and narrowed the range.
+        def every_year_same_shape(s):
+            by_year = s["annual_guidance_history"]["operating_expense"]["by_year"]
+            for year, block in by_year.items():
+                guided = [g for g in block["guided"] if g]
+                if block["actual"] is None or len(guided) < 2:
+                    continue
+                low, high, date = guided[0]
+                guided[-1][:2] = [low + 20, high + 10]
+        self.moves(("和前十一年每一年的形状一样",), every_year_same_shape, present_before=False)
+        self.moves(("同样既抬中值又收区间的只有",), every_year_same_shape)
+
+    def test_the_counts_on_the_page_are_recounted_here(self) -> None:
+        s31 = self.staging["section_31"]
+        self.assertIn(f"{len(s31['quarters'])} 个季度全部落在 US${min(s31['residual_usd_m']):.0f}M 至 "
+                      f"US${max(s31['residual_usd_m']):.0f}M 之间", self.text)
+        self.assertNotIn("18 个季度", self.text)
+        values = self.staging["long"]["nongaap_margin_pct"]
+        falls = sum(1 for a, b in zip(values, values[1:]) if b < a)
+        self.assertIn(f"{len(values) - 1} 次环比里 {falls} 次回落", self.text)
+        open_year = max(self.staging["annual_guidance_history"]["operating_expense"]["years"])
+        guided = self.staging["annual_guidance_history"]["operating_expense"]["by_year"][str(open_year)]["guided"]
+        self.assertIn(f"FY{open_year} 费用指引的{cn_count(len(guided))}次发布", self.text)
+        basis = self.staging["ms_reclassification"]
+        self.assertIn(f"新口径 US${basis['new_usd_m']:,.0f}M", self.text)
+        self.assertNotIn("US$245M", self.text)
+        self.assertNotIn("几乎原地踏步", self.text)
+        self.assertNotIn("没有披露金额", self.text)
+
+    def test_the_open_year_arithmetic_follows_the_quarter(self) -> None:
+        """Q3 leaves one quarter of budget; after Q4 the open year is the next one."""
+        def third_quarter(s):
+            s["periods"].append("2026Q3")
+            s["period_labels"].append("Q3 2026")
+            s["period_ends"].append("2026-09-30")
+            for values in s["financials"].values():
+                values.append(values[-1])
+            s["latest"]["period"] = "Q3 2026"
+            for key in ("next_kpi", "quarter_context", "year_ago_reprinted"):
+                del s[key]
+            s["sources"].append({"label": "Nasdaq 2026 年第三季度业绩新闻稿（8-K EX-99.1）", "url": "https://x/"})
+            s["long"]["quarters"].append("2026Q3")
+            s["long"]["period_labels"].append("Q3 2026")
+            for key, values in s["long"].items():
+                if key not in ("quarters", "period_labels"):
+                    values.append(values[-1])
+            for block in ("segments", "section_31", "etp_aum"):
+                s[block]["quarters"].append("2026Q3")
+                s[block]["period_labels"].append("Q3 2026")
+                for key, values in s[block].items():
+                    if isinstance(values, list) and key not in ("quarters", "period_labels"):
+                        values.append(values[-1])
+            arr = s["arr"]
+            for key in ("quarters", "yoy_quarters"):
+                arr[key].append("2026Q3")
+            for key in ("period_labels", "yoy_period_labels"):
+                arr[key].append("Q3 2026")
+            for key, values in arr.items():
+                if isinstance(values, list) and key not in ("quarters", "yoy_quarters",
+                                                            "period_labels", "yoy_period_labels"):
+                    values.append(values[-1])
+            opex = s["annual_guidance_history"]["operating_expense"]["by_year"]["2026"]
+            opex["releases"].append("2026-10-22")
+            opex["guided"].append([2540, 2560, "2026-10-22"])
+            tax = s["annual_guidance_history"]["tax_rate"]["by_year"]["2026"]
+            tax["releases"].append("2026-10-22")
+            tax["guided"].append([22.5, 23.5, "2026-10-22"])
+        payload = self.rebuilt(third_quarter)
+        text = published_text(payload)
+        self.assertIn("Q3 2026", payload["title"])
+        self.assertIn("前三季已发生的非 GAAP 营业费用", text)
+        self.assertIn("第四季度还剩", text)
+        self.assertNotIn("上半年已发生", text)
+        self.assertIn("FY2026 费用指引的四次发布", text)
 
 
 if __name__ == "__main__":

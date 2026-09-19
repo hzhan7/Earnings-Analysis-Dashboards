@@ -930,6 +930,11 @@
       1500.0
     ]
   },
+  "ms_reclassification": {
+    "quarter": "2022Q3",
+    "new_usd_m": 239,
+    "source": "同一个 2022Q3 在重组后口径下的 Market Services 净收入：Nasdaq 3Q23 业绩新闻稿（8-K EX-99.1，2023-10-18，acc 0001193125-23-258050）Revenue Detail「Trading Services revenues, net」的 2022 年三个月栏 239（毛收入 906、返点 494、经纪清算与交易所费用 173）。旧口径 305 是 3Q22 新闻稿首次印出的值，即 long.ms_net 的 2022Q3 格；两者之差 66 是被移出的 Trade Management Services（它没有交易性支出，毛收入同样差 66：972 对 906）。"
+  },
   "section_31": {
     "quarters": [
       "2016Q1",
@@ -2231,6 +2236,7 @@
     }
   },
   "next_kpi": {
+    "period": "Q2 2026",
     "quantified": [
       {
         "metric": "非 GAAP 营业费用（季均，对 FY2026 指引上限）",
@@ -2265,7 +2271,8 @@
         "direction": "up",
         "threshold": 1000.0,
         "unit": "usd_bn",
-        "current": 1114.0
+        "current": 1114.0,
+        "why": "所以阈值设在整数关口上，问的是下一季会不会掉回去。"
       },
       {
         "metric": "Market Services 净收入同比",
@@ -2275,7 +2282,50 @@
         "current": 11.1
       }
     ],
-    "excluded": "另有六条本页<b>不接入</b>，原因各不相同：（1）<b>市场一致预期</b> —— 本页没有任何带日期、可核对的公开来源，站点规则允许发布带日期的对照点，但不允许凭印象填一个数；（2）<b>公司对收入、每股收益与利润率的指引</b> —— 不存在，纳斯达克只指引费用与税率；（3）<b>下季 Section 31 规费</b> —— 费率由 SEC 决定、公司不控制也不预告，本季 US$314M、上一季 US$0M 的落差不是可跟踪的经营变量；（4）<b>投资者日发布的中期分部有机增长目标</b> —— 不在任何申报文件里；（5）<b>「2027 年前交叉销售运行率收入超过 1 亿美元」</b> —— 2024 与 2025 年多期新闻稿提过，2026 年三期均未再提，公司也没有正式撤回，因此没有可结清的对象；（6）<b>ETP AUM 的净流入与净增值拆分</b> —— 公司披露的是滚动十二个月口径，与期末余额的年度变动在 24 个季度里有 9 个对不上，且缺口在 2021Q3–2022Q1、2024 全年分别恒为 −92 与 −16/−17，是跟踪资产基数发生过一次性调整的形状，申报文件没有解释，本页因此不画这个拆分。"
+    "excluded": "另有六条本页<b>不接入</b>，原因各不相同：（1）<b>市场一致预期</b> —— 本页没有任何带日期、可核对的公开来源，站点规则允许发布带日期的对照点，但不允许凭印象填一个数；（2）<b>公司对收入、每股收益与利润率的指引</b> —— 不存在，纳斯达克只指引费用与税率；（3）<b>下季 Section 31 规费</b> —— 费率由 SEC 决定、公司不控制也不预告，本季 {fee_now}、上一季 {fee_prior} 的落差不是可跟踪的经营变量；（4）<b>投资者日发布的中期分部有机增长目标</b> —— 不在任何申报文件里；（5）<b>「2027 年前交叉销售运行率收入超过 1 亿美元」</b> —— 2024 与 2025 年多期新闻稿提过，2026 年三期均未再提，公司也没有正式撤回，因此没有可结清的对象；（6）<b>ETP AUM 的净流入与净增值拆分</b> —— 公司披露的是滚动十二个月口径，与期末余额的年度变动在 24 个季度里有 9 个对不上，且缺口在 2021Q3–2022Q1、2024 全年分别恒为 −92 与 −16/−17，是跟踪资产基数发生过一次性调整的形状，申报文件没有解释，本页因此不画这个拆分。"
+  },
+  "quarter_context": {
+    "period": "Q2 2026",
+    "index_adjusted": {
+      "adjusted_yoy_pct": 35,
+      "one_time_usd_m": 6,
+      "cause": "一笔合同修改带来的一次性收入",
+      "source": "Nasdaq 2Q26 业绩新闻稿脚注 2（adjusted 口径剔除「a one-time revenue benefit in the second quarter of 2026 in our Index business due to a contract modification」）与 Reconciliation of Organic and Adjusted Impacts 表 Index 行（Total Variance $75 / 38%，Adjustment $6，Adjusted Variance $69 / 35%）"
+    },
+    "arr_printed": {
+      "total_reported_pct": 11,
+      "total_organic_pct": 12,
+      "cap_pct": 8,
+      "source": "Nasdaq 2Q26 业绩新闻稿 FINANCIAL REVIEW：「ARR ... growing 11% year-over-year on a reported basis, or 12% year-over-year on an organic basis」「Capital Access Platforms ARR growth was 8% on both a reported and organic basis」"
+    },
+    "aum_ttm_usd_b": {
+      "net_inflows": 109,
+      "net_appreciation": 260,
+      "source": "Nasdaq 2Q26 业绩新闻稿 Key Drivers Detail：TTM net inflows $109、TTM net appreciation $260（in billions）"
+    },
+    "release_note": "最新一期新闻稿（{release_date}）由公司自行报送，HTML 结构与此前 47 期由代理机构报送的版本不同，纯文本化后会丢失表格行列。本页的所有数值均直接解析 HTML 表格并按印出的期间表头对列，不依赖文本转换，也不按列的位置取值。该期「经纪、清算与交易所费用」印出的三个月为 {bcef_now}、六个月为 {bcef_ytd}，看似矛盾，实际正确：{prior_quarter}的 Section 31 规费为零，该季只剩约 {bcef_prior} 的经纪清算费用，两者相加正是 {bcef_ytd}。",
+    "cross_sell_note": "2024 至 2025 年提到而 2026 三期新闻稿均未再提的「2027 年前交叉销售运行率收入超过 1 亿美元」目标"
+  },
+  "year_ago_reprinted": {
+    "period": "Q2 2026",
+    "source": "Nasdaq 2Q26 业绩新闻稿（8-K EX-99.1，2026-07-23）Condensed Consolidated Statements of Income 与 Revenue Detail 的「Three Months Ended June 30, 2025」栏 —— 公司在本季这份里重印的去年同季。与 2Q25 新闻稿首次印出的数有两处不同：Solovis 自 Capital Access（Workflow and Insights）移入 Other（527 → 520，Other 9 → 16），Market Services 毛收入与交易返点同加 11（1,090 → 1,101，629 → 640），净收入不变。",
+    "usd_m": {
+      "total_revenues": 2101,
+      "rebates": 640,
+      "bcef": 155,
+      "net_revenue": 1306,
+      "cap": 520,
+      "cap_dls": 198,
+      "cap_index": 196,
+      "cap_wi": 126,
+      "fin": 464,
+      "fin_fcmt": 81,
+      "fin_reg": 104,
+      "fin_cmt": 279,
+      "ms_gross": 1101,
+      "ms_net": 306,
+      "other": 16
+    }
   },
   "sources": [
     {
@@ -2298,5 +2348,191 @@
       "label": "Nasdaq 投资者关系（季度业绩与电话会）",
       "url": "https://ir.nasdaq.com/quarterly-results"
     }
-  ]
+  ],
+  "_checks": {
+    "period": "Q2 2026",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-23",
+    "_pairs": "两个数的列表是 [本季, 去年同季]，都读自本季新闻稿同一张表的两栏 —— 去年同季是本季这份重印的数，不是去年那份首次印出的数。",
+    "income_statement_usd_m": {
+      "total_revenues": [
+        2532,
+        2101
+      ],
+      "rebates": [
+        712,
+        640
+      ],
+      "bcef": [
+        320,
+        155
+      ],
+      "net_revenue": [
+        1500,
+        1306
+      ],
+      "opex": [
+        788,
+        738
+      ],
+      "op_income": [
+        712,
+        568
+      ],
+      "net_income": [
+        507,
+        452
+      ]
+    },
+    "per_share": {
+      "diluted_eps": [
+        0.89,
+        0.78
+      ],
+      "nongaap_eps": [
+        1.07,
+        0.85
+      ],
+      "diluted_shares_m": [
+        567.8,
+        579.0
+      ]
+    },
+    "non_gaap_usd_m": {
+      "nongaap_opex": [
+        641,
+        585
+      ],
+      "nongaap_opinc": [
+        859,
+        721
+      ]
+    },
+    "margins_printed_pct": {
+      "gaap_margin_pct": [
+        47,
+        44
+      ],
+      "nongaap_margin_pct": [
+        57,
+        55
+      ]
+    },
+    "revenue_detail_usd_m": {
+      "cap": [
+        621,
+        520
+      ],
+      "cap_dls": [
+        217,
+        198
+      ],
+      "cap_index": [
+        271,
+        196
+      ],
+      "cap_wi": [
+        133,
+        126
+      ],
+      "fin": [
+        539,
+        464
+      ],
+      "fin_fcmt": [
+        98,
+        81
+      ],
+      "fin_reg": [
+        120,
+        104
+      ],
+      "fin_cmt": [
+        321,
+        279
+      ],
+      "ms_gross": [
+        1372,
+        1101
+      ],
+      "ms_net": [
+        340,
+        306
+      ],
+      "other": [
+        0,
+        16
+      ]
+    },
+    "growth_printed_pct": {
+      "net_revenue": 15,
+      "cap": 19,
+      "fin": 16,
+      "ms_net": 11,
+      "cap_index": 38,
+      "cap_index_adjusted": 35,
+      "arr_total_reported": 11,
+      "arr_total_organic": 12,
+      "arr_fin": 16,
+      "arr_cap": 8
+    },
+    "index_one_time_usd_m": 6,
+    "arr_usd_m": {
+      "arr_cap": [
+        1388,
+        1286
+      ],
+      "arr_fin": [
+        1870,
+        1616
+      ],
+      "arr_fcmt": [
+        359,
+        308
+      ],
+      "arr_reg": [
+        428,
+        376
+      ],
+      "arr_cmt": [
+        1083,
+        932
+      ],
+      "total": 3258
+    },
+    "etp_aum_usd_b": {
+      "period_end": [
+        1114,
+        745
+      ],
+      "average": [
+        1014,
+        663
+      ],
+      "ttm_net_inflows": 109,
+      "ttm_net_appreciation": 260
+    },
+    "guidance": {
+      "opex_usd_m": [
+        2530,
+        2570
+      ],
+      "tax_rate_pct": [
+        22.5,
+        24.5
+      ]
+    },
+    "section_31_usd_m": {
+      "equity_derivative": [
+        34,
+        15
+      ],
+      "cash_equity": [
+        280,
+        133
+      ]
+    },
+    "source": "Nasdaq 2Q26 业绩新闻稿（8-K EX-99.1，2026-07-23，acc 0001120193-26-000011，earningsrelease2q26ex-991.htm）：电头「NEW YORK, July 23, 2026」「financial results for the second quarter of 2026」；Condensed Consolidated Statements of Income 三个月两栏（Total revenues 2,532 / 2,101，Transaction rebates (712) / (640)，Brokerage, clearance and exchange fees (320) / (155)，Revenues less transaction-based expenses 1,500 / 1,306，Total operating expenses 788 / 738，Operating income 712 / 568，Net income attributable to Nasdaq 507 / 452，Diluted EPS 0.89 / 0.78，diluted shares 567.8 / 579.0）；Revenue Detail 两栏（CAP 217+271+133=621 / 198+196+126=520，FinTech 98+120+321=539 / 81+104+279=464，Market Services 1,372 / 1,101 → net 340 / 306，Other — / 16）；Non-GAAP 对账三张（Non-GAAP operating expenses 641 / 585，Non-GAAP operating income 859 / 721，margin 57% / 55%、GAAP 47% / 44%，Non-GAAP diluted EPS 1.07 / 0.85）；Reconciliation of Organic and Adjusted Impacts（Index 75 / 38%，Adjustment 6，Adjusted 69 / 35%；Total CAP 101 / 19%；FinTech 75 / 16%；Market Services net 34 / 11%；Revenues less TBE 194 / 15%）；FINANCIAL REVIEW 文字（ARR 11% reported / 12% organic，FinTech ARR 16%，CAP ARR 8%）；Key Drivers Detail（ARR CAP 1,388 / 1,286；FinTech 359 / 308、428 / 376、1,083 / 932、合计 1,870 / 1,616；ETP AUM period end $1,114 / $745，average $1,014 / $663，TTM net inflows $109，TTM net appreciation $260）；2026 EXPENSE AND TAX GUIDANCE UPDATE（$2.530 billion to $2.570 billion；22.5% to 24.5%）。Section 31 fees 取自同日 10-Q（acc 0001120193-26-000013，ndaq-20260630.htm）MD&A 两张表的三个月栏：U.S. Equity Derivative Trading 34 / 15，Cash Equity Trading 280 / 133。",
+    "checked_on": "2026-09-19"
+  }
 }
