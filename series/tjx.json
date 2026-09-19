@@ -2561,10 +2561,10 @@
       null,
       0.31,
       0.33,
-      0.43,
+      0.375,
       null,
       0.32,
-      0.365,
+      0.375,
       0.425,
       0.465,
       0.345,
@@ -2573,7 +2573,7 @@
       0.495,
       0.38,
       0.42,
-      0.415,
+      0.455,
       0.515,
       0.41,
       0.425,
@@ -2588,9 +2588,9 @@
       0.68,
       0.81,
       -0.74,
-      0.49,
+      0.68,
       0.69,
-      0.91,
+      0.86,
       0.89,
       0.76,
       0.85,
@@ -2771,39 +2771,39 @@
       null
     ],
     "guide_comp_lo_pct": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
+      2.0,
+      2.0,
+      2.0,
+      0.0,
+      0.0,
+      2.0,
+      2.0,
+      1.0,
+      1.0,
+      2.0,
+      1.0,
+      1.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      1.0,
+      0.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      1.0,
+      2.0,
+      2.0,
       null,
       null,
       null,
@@ -2825,39 +2825,39 @@
       2.0
     ],
     "guide_comp_hi_pct": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
+      4.0,
+      4.0,
+      4.0,
+      2.0,
+      2.0,
+      3.0,
+      3.0,
+      2.0,
+      2.0,
+      3.0,
+      2.0,
+      2.0,
+      3.0,
+      3.0,
+      3.0,
+      3.0,
+      3.0,
+      3.0,
+      3.0,
+      2.0,
+      1.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      3.0,
+      3.0,
+      3.0,
+      3.0,
+      2.0,
+      3.0,
+      3.0,
       null,
       null,
       null,
@@ -2879,38 +2879,38 @@
       3.0
     ],
     "actual_comp_pct": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
+      8,
+      7,
+      7,
+      4,
+      2,
+      4,
+      5,
+      3,
+      1,
+      3,
+      2,
+      4,
+      5,
+      6,
+      5,
+      6,
+      7,
+      4,
+      5,
+      3,
+      1,
+      3,
+      0,
+      4,
+      3,
+      6,
+      7,
+      6,
+      5,
+      2,
+      4,
+      6,
       null,
       null,
       null,
@@ -2933,6 +2933,15 @@
       null
     ],
     "split_adjusted_before": "Q3 2018",
+    "withdrawn_guidance": {
+      "Q1 2020": {
+        "published": "2020-02-26",
+        "withdrawn": "2020-03-19",
+        "accession": "0001157523-20-000399",
+        "item": "7.01",
+        "words": "the Company announced today that it is withdrawing its first quarter and full year Fiscal 2021 financial guidance given on its February 26, 2020 earnings conference call"
+      }
+    },
     "guidance_gap_quarters": [
       "Q2 2020",
       "Q3 2020",
@@ -2952,34 +2961,489 @@
       "2021-11-17"
     ],
     "scored_on_adjusted": {
+      "Q3 2013": {
+        "event": "税务准备金与估值备抵转回",
+        "company_verdict": "well above our original plan",
+        "reported": 0.43,
+        "adjusted": 0.375,
+        "metrics": [
+          "eps"
+        ],
+        "source": "2013-11-19 EX-99.1（acc 0001157523-13-005545）：「Excluding a previously announced third quarter tax benefit of $.11 per share due to reversals of state, federal, and foreign tax reserves and allowances, adjusted diluted earnings per share were $.75」「Our 21% increase in adjusted earnings per share … were both well above our original plan」。2013-08-20 的 Outlook 段（acc 0001157523-13-004181）与截至 2013-08-03 的 10-Q（2013-08-30，acc 0001193125-13-353659）都没有这一项；截至 2013-11-02 的 10-Q（acc 0001193125-13-460472）写明准备金在第三季因与州税务机关和解而减少。拆股前每股 $.86 / $.75，÷2。"
+      },
+      "Q2 2014": {
+        "event": "提前偿债损失",
+        "company_verdict": "exceeding our expectations",
+        "reported": 0.365,
+        "adjusted": 0.375,
+        "metrics": [
+          "eps"
+        ],
+        "source": "2014-08-19 EX-99.1（acc 0001157523-14-003515）：「Excluding a debt extinguishment charge of $.02 per share, adjusted diluted earnings per share were $.75」「adjusted earnings per share of $.75 … exceeding our expectations」。用来再融资的 2.750% 票据 2014-06-05 发行（8-K Item 8.01，acc 0001193125-14-226574），4.20% 票据 2014-07-08 赎回（截至 2014-08-02 的 10-Q，acc 0001193125-14-326553），都在 2014-05-20 的指引之后，该指引（acc 0001157523-14-002227）没有这一项。拆股前每股 $.73 / $.75，÷2。"
+      },
+      "Q3 2016": {
+        "event": "提前偿债损失与养老金结算费用",
+        "company_verdict": "significantly exceeded our expectations",
+        "reported": 0.415,
+        "adjusted": 0.455,
+        "metrics": [
+          "eps"
+        ],
+        "source": "2016-11-15 EX-99.1（acc 0001157523-16-007376）：「Adjusted diluted EPS of $.91, which excludes the negative impact of $.08 from a debt extinguishment charge and a pension settlement charge」「our earnings per share all significantly exceeded our expectations」。再融资票据 2016-09-12 发行（8-K Item 8.01，acc 0001193125-16-707413），6.95% 票据 2016-10-12 赎回（截至 2016-10-29 的 10-Q，acc 0001193125-16-780747）；养老金一次性领取要约在 2016-08-16 的 EX-99.1（acc 0001157523-16-006533）里已经预告，但原文写明「The potential impact of this pension payout offer is not included in the Company's third quarter or Fiscal 2017 outlook below」，结算在 2016-10-21 发生。拆股前每股 $.83 / $.91，÷2。"
+      },
+      "Q1 2022": {
+        "event": "Familia 少数股权投资减值",
+        "company_verdict": "above the Company's plans",
+        "reported": 0.49,
+        "adjusted": 0.68,
+        "metrics": [
+          "eps"
+        ],
+        "source": "2022-05-18 EX-99.1（acc 0001157523-22-000655）：「Excluding a charge of $.19 related to a write-down of the Company's minority investment in Familia (see below), adjusted diluted earnings per share were $.68」，标题行「… was above the Company's plans」。指引 2022-02-23 发布（acc 0001157523-22-000235），俄罗斯次日入侵乌克兰，公司 2022-03-03 的 8-K（Item 8.01，acc 0000109198-22-000004）宣布撤出 Familia。"
+      },
+      "Q3 2022": {
+        "event": "出售 Familia 的税收收益",
+        "company_verdict": "above plan",
+        "reported": 0.91,
+        "adjusted": 0.86,
+        "metrics": [
+          "eps"
+        ],
+        "source": "2022-11-16 EX-99.1（acc 0001157523-22-001633）：「Excluding a tax benefit of $.05 related to the divestiture of the Company's minority investment in Familia (see below), adjusted diluted earnings per share were $.86」「adjusted diluted earnings per share were above plan」「The Company's adjusted diluted earnings per share plan excludes … a third quarter Fiscal 2023 tax benefit related to the divestiture」。截至 2022-07-30 的 10-Q（2022-08-26，acc 0000109198-22-000041）写明该投资 as of July 30, 2022, did not have an associated tax benefit；出售在第三季内完成（截至 2022-10-29 的 10-Q，acc 0000109198-22-000044）；2022-08-17 的指引（acc 0001157523-22-001130）没有这一项。税项在税前利润之下，税前利润率不受影响。"
+      },
       "Q4 2025": {
         "event": "诉讼和解",
-        "company_verdict": "well above the Company's plan"
+        "company_verdict": "well above the Company's plan",
+        "reported": 1.58,
+        "adjusted": 1.43,
+        "metrics": [
+          "eps",
+          "pretax_margin"
+        ],
+        "source": "2026-02-25 EX-99.1（acc 0000109198-26-000004）：「Excluding a net benefit of $.15 from the litigation settlement and related expenses, adjusted diluted earnings per share for the fourth quarter were $1.43」「Q4 adjusted pretax profit margin of 12.2% … well above the Company's plan」。2025-11-19 的指引（acc 0000109198-25-000058）只在前瞻声明的风险清单里提到 litigation，没有这笔和解。"
       },
       "Q2 2026": {
         "event": "IEEPA 关税退款",
-        "company_verdict": "well above the Company's plan"
-      }
-    },
-    "scored_on_reported_despite_adjusted": {
-      "Q1 2022": {
-        "reported": 0.49,
-        "adjusted": 0.68,
-        "item": " Familia 少数股权投资减值",
-        "company_words": "公司称高于计划"
+        "company_verdict": "well above the Company's plan",
+        "reported": 1.36,
+        "adjusted": 1.22,
+        "metrics": [
+          "eps",
+          "pretax_margin"
+        ],
+        "source": "2026-08-19 EX-99.1（acc 0000109198-26-000045）：「Excluding a $.14 net benefit from tariff refunds, second quarter Fiscal 2027 adjusted diluted earnings per share were $1.22」「Q2 adjusted pretax profit margin of 11.9% … well above the Company's plan」。2026-05-20 的指引（acc 0000109198-26-000023）没有提到 IEEPA 退款。"
       }
     },
     "miss_notes": {
       "eps": {
-        "Q1 2014": " 差 US${shortfall}（拆股调整后）",
-        "Q1 2020": " 是门店大面积关闭的疫情季",
-        "Q1 2022": " 的报表数里有一笔 Familia 少数股权投资减值（每股 US$0.19），剔除它之后公司报的调整后每股收益是 US${adjusted}、在区间上限之上"
+        "Q1 2014": " 差 US${shortfall}（拆股调整后）"
       },
       "pretax_margin": {
         "Q4 2022": "公司在同一份新闻稿里自己写了原因：below the Company's plan due to an unplanned shrink charge，并说指引原本假设存货损耗会带来 0.5 个百分点的<b>顺风</b>，实际是 0.6 个百分点的逆风。这是本站少见的一次「公司自报没做到并给出科目」。"
+      },
+      "comp": {
+        "Q3 2017": "：公司在同一份新闻稿里给了两条原因 —— the hurricanes had a negative impact during the quarter，以及 warmer temperatures in the U.S. during the quarter dampened demand for apparel at our Marmaxx division"
       }
     },
-    "_record_sources": "每个被指引季度的第一天 = 上一季季末 + 1 天：2016 年起的季末取 period_ends，更早的取 early_quarter_ends（读自各份业绩稿首段「quarter ended …」）。withheld_releases：七份业绩稿写明 not providing（financial）guidance / outlook at this time。Q1 2022：2022-05-18 EX-99.1「Q1 FY23 adjusted diluted earnings per share of $.68, which excludes a $.19 charge related to a write-down of the Company's minority investment in Familia, was above the Company's plans」。另：Q1 2020 的指引（2020-02-26）已于 2020-03-19 的 8-K（Item 7.01）撤回，本记录仍按原区间计分。"
+    "_record_sources": "每个被指引季度的第一天 = 上一季季末 + 1 天：2016 年起的季末取 period_ends，更早的取 early_quarter_ends（读自各份业绩稿首段「quarter ended …」）。withheld_releases：七份业绩稿写明 not providing（financial）guidance / outlook at this time。withdrawn_guidance：Q1 2020 的区间（2020-02-26）由 2020-03-19 的 8-K（Item 7.01，acc 0001157523-20-000399）撤回；区间与报表值原样留在数组里，builder 按撤回处理 —— 不计分、不画柱，与其后不给指引的七季一起在图上打断点。scored_on_adjusted：调整项在指引发布之后才出现（或指引原文写明不含它）、且公司印了只剔除该项的调整后每股收益的季度，actual_eps_usd 存公司的调整后数（拆股前的季度 ÷2），每条的 source 写出处；metrics 列出受它影响、且该季有指引可对的指标。Q4 2017（2017 税改净收益、Sierra Trading Post 商誉减值）与 Q3 2018（养老金结算，公司原话 not contemplated in the Company's most recent guidance）也有指引之后才出现的项，但公司印的调整后数同时剔除了所录区间里已经含着的第 53 周或税改收益（2018-02-28 EX-99.1 acc 0001157523-18-000444：Q4 adjusted $1.19 对该口径指引 $1.14–1.16；2018-11-20 EX-99.1 acc 0001157523-18-002465：Q3 adjusted $.54 对该口径指引 $1.00–1.02 ÷2），没有与所录区间同口径的官方数，仍按报表值计；两季在报表口径与公司调整后口径下都高于上限，计分结果不因口径而变。合并 comp：2012–2020 的指引区间（每股收益指引句之后那句 This (EPS) outlook is based upon estimated consolidated comparable store sales growth of …）与 2012–2019 的实际值（下一季业绩稿 Comparable Store Sales 表的 TJX 行）逐格读自各季 EX-99.1，出处见 _comp_sources；2016–2019 的实际值与 comparable_sales_pct.consolidated 逐格相同，2012–2018 的每一格又与下一年同季表里的上年同期列相同。2022 年四季指引的是美国 comp，不是合并 comp，留空。",
+    "_comp_sources": {
+      "Q1 2012": {
+        "guide": {
+          "released": "2012-02-22",
+          "accession": "0001157523-12-000941",
+          "text": "For the first quarter of Fiscal 2013, on a GAAP basis, the Company expects fully diluted earnings per share to be in the range of $.45 to $.47 compared with $.34 last year. This outlook is based upon estimated consolidated comparable store sales growth of 2% to 4%."
+        },
+        "actual": {
+          "released": "2012-05-15",
+          "accession": "0001157523-12-002879",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the first quarter, were as follows）TJX 行：TJX | +8% | +2%（本年 | 上年同期；本年列为 FY2013）"
+        }
+      },
+      "Q2 2012": {
+        "guide": {
+          "released": "2012-05-15",
+          "accession": "0001157523-12-002879",
+          "text": "For the second quarter of Fiscal 2013, the Company expects diluted earnings per share to be in the range of $.47 to $.50, which represents a 4% to 11% increase over $.45 per share last year. Finally, this outlook is based upon estimated consolidated comparable store sales growth of 2% to 4%."
+        },
+        "actual": {
+          "released": "2012-08-14",
+          "accession": "0001157523-12-004510",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the second quarter, were as follows）TJX 行：TJX | +7% | +4%（本年 | 上年同期；本年列为 FY2013）"
+        }
+      },
+      "Q3 2012": {
+        "guide": {
+          "released": "2012-08-14",
+          "accession": "0001157523-12-004510",
+          "text": "For the third quarter of Fiscal 2013, the Company expects diluted earnings per share to be in the range of $.56 to $.59, which represents a 6% to 11% increase over $.53 per share last year. This outlook is based upon estimated consolidated comparable store sales growth of 2% to 4%."
+        },
+        "actual": {
+          "released": "2012-11-13",
+          "accession": "0001157523-12-005994",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the third quarter, were as follows）TJX 行：TJX | +7% | +3%（本年 | 上年同期；本年列为 FY2013）"
+        }
+      },
+      "Q4 2012": {
+        "guide": {
+          "released": "2012-11-13",
+          "accession": "0001157523-12-005994",
+          "text": "For the fourth quarter of Fiscal 2013, the Company expects diluted earnings per share to be in the range of $.72 to $.75, which would represent a 16% to 21% increase over $.62 per share last year. This outlook is based upon estimated consolidated comparable store sales growth of flat to 2%."
+        },
+        "actual": {
+          "released": "2013-02-27",
+          "accession": "0001157523-13-001070",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the fourth quarter, were as follows）TJX 行：TJX | +4% | +7%（本年 | 上年同期；本年列为 FY2013）"
+        }
+      },
+      "Q1 2013": {
+        "guide": {
+          "released": "2013-02-27",
+          "accession": "0001157523-13-001070",
+          "text": "For the first quarter of Fiscal 2014, the Company expects diluted earnings per share to be in the range of $.59 to $.62, which would represent a 7% to 13% increase over last year's $.55 per share. This outlook is based upon estimated consolidated comparable store sales growth of 0% to 2%."
+        },
+        "actual": {
+          "released": "2013-05-21",
+          "accession": "0001157523-13-002798",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the first quarter, were as follows）TJX 行：TJX | +2% | +8%（本年 | 上年同期；本年列为 FY2014）"
+        }
+      },
+      "Q2 2013": {
+        "guide": {
+          "released": "2013-05-21",
+          "accession": "0001157523-13-002798",
+          "text": "For the second quarter of Fiscal 2014, the Company expects diluted earnings per share to be in the range of $.61 to $.63, which would represent a 9% to 13% increase over last year's $.56 per share. This outlook is based upon estimated consolidated comparable store sales growth of 2% to 3%."
+        },
+        "actual": {
+          "released": "2013-08-20",
+          "accession": "0001157523-13-004181",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the second quarter, were as follows）TJX 行：TJX | +4% | +7%（本年 | 上年同期；本年列为 FY2014）"
+        }
+      },
+      "Q3 2013": {
+        "guide": {
+          "released": "2013-08-20",
+          "accession": "0001157523-13-004181",
+          "text": "For the third quarter of Fiscal 2014, the Company expects diluted earnings per share to be in the range of $.69 to $.72, which would represent an 11% to 16% increase over last year's $.62 per share. This outlook is based upon estimated consolidated comparable store sales growth of 2% to 3%."
+        },
+        "actual": {
+          "released": "2013-11-19",
+          "accession": "0001157523-13-005545",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the third quarter, were as follows）TJX 行：TJX | +5% | +7%（本年 | 上年同期；本年列为 FY2014）"
+        }
+      },
+      "Q4 2013": {
+        "guide": {
+          "released": "2013-11-19",
+          "accession": "0001157523-13-005545",
+          "text": "For the fourth quarter of Fiscal 2014, the Company is maintaining its guidance for diluted earnings per share to be in the range of $.77 to $.80, compared to $.82 per share last year, which included an approximately $.08 benefit from the extra week in the Company's Fiscal 2013 calendar. This outlook continues to be based upon estimated consolidated comparable store sales growth of 1% to 2%, which reflects six fewer days in the Christmas selling season compared with last year."
+        },
+        "actual": {
+          "released": "2014-02-26",
+          "accession": "0001157523-14-000807",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the fourth quarter, were as follows）TJX 行：TJX | +3% | +4%（本年 | 上年同期；本年列为 FY2014）"
+        }
+      },
+      "Q1 2014": {
+        "guide": {
+          "released": "2014-02-26",
+          "accession": "0001157523-14-000807",
+          "text": "For the first quarter of Fiscal 2015, the Company expects diluted earnings per share to be in the range of $.65 to $.66, which would represent a 5% to 6% increase over last year's $.62 per share. This outlook is based upon estimated consolidated comparable store sales growth of 1% to 2%."
+        },
+        "actual": {
+          "released": "2014-05-20",
+          "accession": "0001157523-14-002227",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the first quarter, were as follows）TJX 行：TJX | +1% | +2%（本年 | 上年同期；本年列为 FY2015）"
+        }
+      },
+      "Q2 2014": {
+        "guide": {
+          "released": "2014-05-20",
+          "accession": "0001157523-14-002227",
+          "text": "For the second quarter of Fiscal 2015, the Company expects diluted earnings per share to be in the range of $.70 to $.74 which would represent a 6% to 12% increase over last year's $.66 per share. This outlook is based upon estimated consolidated comparable store sales growth of 2% to 3%."
+        },
+        "actual": {
+          "released": "2014-08-19",
+          "accession": "0001157523-14-003515",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the second quarter, were as follows）TJX 行：TJX | +3% | +4%（本年 | 上年同期；本年列为 FY2015）"
+        }
+      },
+      "Q3 2014": {
+        "guide": {
+          "released": "2014-08-19",
+          "accession": "0001157523-14-003515",
+          "text": "For the third quarter of Fiscal 2015, the Company expects diluted earnings per share to be in the range of $.81 to $.85 compared to $.86 per share last year. This outlook is based upon estimated consolidated comparable store sales growth of 1% to 2%."
+        },
+        "actual": {
+          "released": "2014-11-18",
+          "accession": "0001157523-14-004591",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the third quarter, were as follows）TJX 行：TJX | +2% | +5%（本年 | 上年同期；本年列为 FY2015）"
+        }
+      },
+      "Q4 2014": {
+        "guide": {
+          "released": "2014-11-18",
+          "accession": "0001157523-14-004591",
+          "text": "For the fourth quarter of Fiscal 2015, the Company is updating its diluted earnings per share guidance to be in the range of $.86 to $.90, which would represent a 6% to 11% increase over last year's $.81 per share. The Company is maintaining its outlook for estimated consolidated comparable store sales growth to be 1% to 2% and merchandise margins to be up."
+        },
+        "actual": {
+          "released": "2015-02-25",
+          "accession": "0001157523-15-000697",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the fourth quarter, were as follows）TJX 行：TJX | +4% | +3%（本年 | 上年同期；本年列为 FY2015）"
+        }
+      },
+      "Q1 2015": {
+        "guide": {
+          "released": "2015-02-25",
+          "accession": "0001157523-15-000697",
+          "text": "For the first quarter of Fiscal 2016, the Company expects diluted earnings per share to be in the range of $.64 to $.66, which would represent a 0% to 3% increase over last year's $.64 per share. This outlook is based upon estimated consolidated comparable store sales growth of 2% to 3%."
+        },
+        "actual": {
+          "released": "2015-05-19",
+          "accession": "0001157523-15-001835",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the first quarter, were as follows）TJX 行：TJX | +5% | +1%（本年 | 上年同期；本年列为 FY2016）"
+        }
+      },
+      "Q2 2015": {
+        "guide": {
+          "released": "2015-05-19",
+          "accession": "0001157523-15-001835",
+          "text": "For the second quarter of Fiscal 2016, the Company expects diluted earnings per share to be in the range of $.72 to $.74 compared to $.73 last year. This EPS outlook is based upon estimated consolidated comparable store sales growth of 2% to 3%."
+        },
+        "actual": {
+          "released": "2015-08-18",
+          "accession": "0001157523-15-002942",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the second quarter, were as follows）TJX 行：TJX | +6% | +3%（本年 | 上年同期；本年列为 FY2016）"
+        }
+      },
+      "Q3 2015": {
+        "guide": {
+          "released": "2015-08-18",
+          "accession": "0001157523-15-002942",
+          "text": "For the third quarter of Fiscal 2016, the Company expects diluted earnings per share to be in the range of $.80 to $.82 compared to $.85 last year. This EPS outlook is based upon estimated consolidated comparable store sales growth of 2% to 3%."
+        },
+        "actual": {
+          "released": "2015-11-17",
+          "accession": "0001157523-15-003867",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the third quarter, were as follows）TJX 行：TJX | +5% | +2%（本年 | 上年同期；本年列为 FY2016）"
+        }
+      },
+      "Q4 2015": {
+        "guide": {
+          "released": "2015-11-17",
+          "accession": "0001157523-15-003867",
+          "text": "For the fourth quarter of Fiscal 2016, the Company expects diluted earnings per share to be in the range of $.91 to $.93 compared to $.93 last year. This EPS outlook is based upon estimated consolidated comparable store sales growth of 2% to 3%."
+        },
+        "actual": {
+          "released": "2016-02-24",
+          "accession": "0001157523-16-004715",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the fourth quarter, were as follows）TJX 行：TJX | +6% | +4%（本年 | 上年同期；本年列为 FY2016）"
+        }
+      },
+      "Q1 2016": {
+        "guide": {
+          "released": "2016-02-24",
+          "accession": "0001157523-16-004715",
+          "text": "For the first quarter of Fiscal 2017, the Company expects diluted earnings per share to be in the range of $.68 to $.70 compared to $.69 last year. This EPS outlook is based upon estimated consolidated comparable store sales growth of 2% to 3%."
+        },
+        "actual": {
+          "released": "2016-05-17",
+          "accession": "0001157523-16-005636",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the first quarter, were as follows）TJX 行：TJX | +7% | +5%（本年 | 上年同期；本年列为 FY2017）"
+        }
+      },
+      "Q2 2016": {
+        "guide": {
+          "released": "2016-05-17",
+          "accession": "0001157523-16-005636",
+          "text": "For the second quarter of Fiscal 2017, the Company expects diluted earnings per share to be in the range of $.77 to $.79 compared to $.80 last year. This EPS outlook is based upon estimated consolidated comparable store sales growth of 2% to 3%."
+        },
+        "actual": {
+          "released": "2016-08-16",
+          "accession": "0001157523-16-006533",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the second quarter, were as follows）TJX 行：TJX | +4% | +6%（本年 | 上年同期；本年列为 FY2017）"
+        }
+      },
+      "Q3 2016": {
+        "guide": {
+          "released": "2016-08-16",
+          "accession": "0001157523-16-006533",
+          "text": "For the third quarter of Fiscal 2017, the Company expects diluted earnings per share to be in the range of $.83 to $.85 compared to $.86 last year. This EPS outlook is based upon estimated consolidated comparable store sales growth of 2% to 3%."
+        },
+        "actual": {
+          "released": "2016-11-15",
+          "accession": "0001157523-16-007376",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the third quarter, were as follows）TJX 行：TJX | +5% | +5%（本年 | 上年同期；本年列为 FY2017）"
+        }
+      },
+      "Q4 2016": {
+        "guide": {
+          "released": "2016-11-15",
+          "accession": "0001157523-16-007376",
+          "text": "For the fourth quarter of Fiscal 2017, the Company expects diluted earnings per share to be in the range of $.96 to $.98 compared to $.99 last year. This EPS outlook is based upon estimated consolidated comparable store sales growth of 1% to 2% over last year's strong 6% increase."
+        },
+        "actual": {
+          "released": "2017-02-22",
+          "accession": "0001157523-17-000570",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the fourth quarter, were as follows）TJX 行：TJX | +3% | +6%（本年 | 上年同期；本年列为 FY2017）"
+        }
+      },
+      "Q1 2017": {
+        "guide": {
+          "released": "2017-02-22",
+          "accession": "0001157523-17-000570",
+          "text": "For the first quarter of Fiscal 2018, the Company expects diluted earnings per share to be in the range of $.76 to $.78, compared to $.76 last year. This EPS outlook is based upon estimated consolidated comparable store sales growth of 0% to 1% versus last year's 7% increase."
+        },
+        "actual": {
+          "released": "2017-05-16",
+          "accession": "0001157523-17-001577",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the first quarter, were as follows）TJX 行：TJX | +1% | +7%（本年 | 上年同期；本年列为 FY2018）"
+        }
+      },
+      "Q2 2017": {
+        "guide": {
+          "released": "2017-05-16",
+          "accession": "0001157523-17-001577",
+          "text": "For the second quarter of Fiscal 2018, the Company expects diluted earnings per share to be in the range of $.81 to $.83 compared to $.84 last year. This EPS outlook is based upon estimated consolidated comparable store sales growth of 1% to 2%."
+        },
+        "actual": {
+          "released": "2017-08-15",
+          "accession": "0001157523-17-002371",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the second quarter, were as follows）TJX 行：TJX | +3% | +4%（本年 | 上年同期；本年列为 FY2018）"
+        }
+      },
+      "Q3 2017": {
+        "guide": {
+          "released": "2017-08-15",
+          "accession": "0001157523-17-002371",
+          "text": "For the third quarter of Fiscal 2018, the Company expects diluted earnings per share to be in the range of $.98 to $1.00. This EPS outlook is based upon estimated consolidated comparable store sales growth of 1% to 2%."
+        },
+        "actual": {
+          "released": "2017-11-14",
+          "accession": "0001157523-17-003098",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the third quarter, were as follows）TJX 行：TJX | 0% | +5%（本年 | 上年同期；本年列为 FY2018）"
+        }
+      },
+      "Q4 2017": {
+        "guide": {
+          "released": "2017-11-14",
+          "accession": "0001157523-17-003098",
+          "text": "For the fourth quarter of Fiscal 2018, the Company expects diluted earnings per share to be in the range of $1.25 to $1.27, a 21% to 23% increase over the prior year's EPS of $1.03. This EPS outlook is based upon estimated consolidated comparable store sales growth of 1% to 2%."
+        },
+        "actual": {
+          "released": "2018-02-28",
+          "accession": "0001157523-18-000444",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division for the fourth quarter and full year were as follows）TJX 行：TJX | +4% | +3%（本年 | 上年同期；本年列为 FY2018）"
+        }
+      },
+      "Q1 2018": {
+        "guide": {
+          "released": "2018-02-28",
+          "accession": "0001157523-18-000444",
+          "text": "For the first quarter of Fiscal 2019, the Company expects diluted earnings per share to be in the range of $1.00 to $1.02, compared to $.82 last year. This EPS outlook is based upon estimated consolidated comparable store sales growth of 1% to 2%."
+        },
+        "actual": {
+          "released": "2018-05-22",
+          "accession": "0001157523-18-001165",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the first quarter, were as follows）TJX 行：TJX | +3% | +1%（本年 | 上年同期；本年列为 FY2019）"
+        }
+      },
+      "Q2 2018": {
+        "guide": {
+          "released": "2018-05-22",
+          "accession": "0001157523-18-001165",
+          "text": "For the second quarter of Fiscal 2019, the Company expects diluted earnings per share to be in the range of $1.02 to $1.04. This EPS outlook is based upon estimated consolidated comparable store sales growth of 1% to 2%."
+        },
+        "actual": {
+          "released": "2018-08-21",
+          "accession": "0001157523-18-001845",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the second quarter, were as follows）TJX 行：TJX | +6% | +3%（本年 | 上年同期；本年列为 FY2019）"
+        }
+      },
+      "Q3 2018": {
+        "guide": {
+          "released": "2018-08-21",
+          "accession": "0001157523-18-001845",
+          "text": "For the third quarter of Fiscal 2019, the Company expects diluted earnings per share to be in the range of $1.18 to $1.20. This EPS outlook is based upon estimated consolidated comparable store sales growth of 2% to 3% and Marmaxx comparable store sales growth of 3% to 4%."
+        },
+        "actual": {
+          "released": "2018-11-20",
+          "accession": "0001157523-18-002465",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the third quarter, were as follows）TJX 行：TJX | +7% | 0%（本年 | 上年同期；本年列为 FY2019）"
+        }
+      },
+      "Q4 2018": {
+        "guide": {
+          "released": "2018-11-20",
+          "accession": "0001157523-18-002465",
+          "text": "For the fourth quarter of Fiscal 2019, the Company expects diluted earnings per share to be in the range of $.66 to $.67 compared to earnings per share of $.69 last year. This EPS outlook is based upon estimated consolidated comparable store sales growth of 2% to 3%."
+        },
+        "actual": {
+          "released": "2019-02-27",
+          "accession": "0001157523-19-000465",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division for the fourth quarter and full year were as follows）TJX 行：TJX | +6% | +4%（本年 | 上年同期；本年列为 FY2019）"
+        }
+      },
+      "Q1 2019": {
+        "guide": {
+          "released": "2019-02-27",
+          "accession": "0001157523-19-000465",
+          "text": "For the first quarter of Fiscal 2020, the Company expects diluted earnings per share to be in the range of $.53 to $.54 compared to earnings per share of $.56 last year. This EPS outlook is based upon estimated comparable store sales growth of 2% to 3% on a consolidated basis and 3% to 4% at Marmaxx."
+        },
+        "actual": {
+          "released": "2019-05-21",
+          "accession": "0001157523-19-001267",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the first quarter, were as follows）TJX 行：TJX | +5% | +3%（本年 | 上年同期；本年列为 FY2020）"
+        }
+      },
+      "Q2 2019": {
+        "guide": {
+          "released": "2019-05-21",
+          "accession": "0001157523-19-001267",
+          "text": "For the second quarter of Fiscal 2020, the Company expects diluted earnings per share to be in the range of $.61 to $.62, a 5% to 7% increase over the prior year's $.58. This EPS outlook is based upon estimated comparable store sales growth of 2% to 3% on a consolidated basis and at Marmaxx."
+        },
+        "actual": {
+          "released": "2019-08-20",
+          "accession": "0001157523-19-001893",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the second quarter, were as follows）TJX 行：TJX | +2% | +6%（本年 | 上年同期；本年列为 FY2020）"
+        }
+      },
+      "Q3 2019": {
+        "guide": {
+          "released": "2019-08-20",
+          "accession": "0001157523-19-001893",
+          "text": "For the third quarter of Fiscal 2020, the Company expects diluted earnings per share to be in the range of $.63 to $.65 versus the prior year's EPS of $.61, and the prior year's adjusted EPS of $.63 which excluded a $.02 negative impact from a pension settlement charge. This EPS outlook is based upon estimated comparable store sales growth of 1% to 2% on a consolidated basis versus a 7% increase in the prior year."
+        },
+        "actual": {
+          "released": "2019-11-19",
+          "accession": "0001157523-19-002284",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the third quarter, were as follows）TJX 行：TJX | +4% | +7%（本年 | 上年同期；本年列为 FY2020）"
+        }
+      },
+      "Q4 2019": {
+        "guide": {
+          "released": "2019-11-19",
+          "accession": "0001157523-19-002284",
+          "text": "For the fourth quarter of Fiscal 2020, the Company expects diluted earnings per share to be in the range of $.74 to $.76 versus earnings per share of $.68 in the prior year. This EPS outlook is based upon estimated comparable store sales growth of 2% to 3% on a consolidated basis and at Marmaxx."
+        },
+        "actual": {
+          "released": "2020-02-26",
+          "accession": "0001157523-20-000267",
+          "text": "Comparable Store Sales 表（The Company's comparable store sales and net sales by division, in the fourth quarter and full year, were as follows）TJX 行：TJX | +6% | +6%（本年 | 上年同期；本年列为 FY2020）"
+        }
+      },
+      "Q1 2020": {
+        "guide": {
+          "released": "2020-02-26",
+          "accession": "0001157523-20-000267",
+          "text": "For the first quarter of Fiscal 2021, the Company expects diluted earnings per share to be in the range of $.59 to $.60 versus earnings per share of $.57 in the prior year. This EPS outlook is based upon estimated comparable store sales growth of 2% to 3% on both a consolidated basis and at Marmaxx."
+        },
+        "actual": {
+          "released": "2020-05-21",
+          "accession": "0001157523-20-000793",
+          "text": "该季新闻稿的分部表只印净销售额，没有 comp 列（门店自 2020-03-19 起关闭），实际值留空。"
+        }
+      }
+    }
   },
   "long_history": {
     "fiscal_years": [

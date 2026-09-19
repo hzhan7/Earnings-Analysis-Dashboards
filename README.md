@@ -1059,21 +1059,18 @@ in an 8-K of 2026-03-13; the page has not taken that series in yet.
 TJX files one of the longest *quarterly* records on this site and the most one-sided,
 and it is the first page here whose company sells nothing to a data centre. Every quarterly
 earnings 8-K EX-99.1 ends with an Outlook paragraph, and from Q1 FY2013 onward
-that paragraph guides next-quarter diluted EPS in the same sentence structure.
-Pretax profit margin joins the paragraph in 2022 and consolidated comparable
-sales in 2023, so the three records differ in length and each chart is drawn
-over its own rather than over the shortest one they share (the page states the
+that paragraph guides next-quarter diluted EPS in the same sentence structure,
+followed by the consolidated comparable-sales growth that EPS range rests on,
+so the EPS and comp records reach back equally far. Pretax profit margin joins
+the paragraph in 2022, so its record is shorter, and each chart is drawn over
+its own record rather than over the shortest one they share (the page states the
 current counts).
 
-Unlike Synopsys, the three answers do not disagree. **Reported EPS cleared the
-top of its guided range in the large majority of finished quarters and broke the
-bottom only a handful of times; pretax margin cleared the top in all but one
-quarter; consolidated comp has not landed below its floor.** The misses are not
-one phenomenon: Q1 2014 missed by half a cent after the split conversion, Q1
-2020 was the quarter the stores shut (guidance for it had been withdrawn in an
-8-K of 2020-03-19), and Q1 2022 was an impairment of TJX's
-investment in Familia — US$0.19 a share, without which adjusted EPS of US$0.68
-cleared the range. The single margin
+Unlike Synopsys, the three answers do not disagree. **EPS, pretax margin and
+consolidated comp each cleared the top of the guided range in the large majority
+of finished quarters and broke the bottom only rarely.** Every miss on the page
+carries the reason its own release gave, and the build stops if one does not.
+The single margin
 miss is the most useful entry in the record, because the company names its own
 cause in the same release — "below the Company's plan due to an unplanned shrink
 charge", against guidance that had assumed shrink would be a 0.5-point
@@ -1083,11 +1080,14 @@ Two things stop that from being a tautology, and the page puts both on the
 charts rather than in a footnote. TJX publishes each quarter's outlook with the
 *previous* quarter's results, and it reports about three weeks after a quarter
 ends, so the Outlook paragraph lands **16 to 24 days into the quarter it guides**
-— a sixth to a quarter of the period already banked. And the company withdrew
-guidance outright for **seven consecutive quarters** in 2020–2021, writing "is
-not providing guidance at this time" in seven releases; the axis jumps
-from Q1 2020 to Q1 2022 with a break marker, because a record that silently
-deletes the quarters a company refused to guide is measuring its own filter.
+— a sixth to a quarter of the period already banked. And the company pulled
+guidance entirely through the pandemic: an 8-K of 2020-03-19 withdrew the range
+it had already published for the quarter the stores shut, and the releases that
+followed wrote "is not providing guidance at this time" until late 2021. The
+withdrawn range is treated like the unguided quarters — not scored, not drawn —
+and the axis jumps across all of them with a break marker that names both,
+because a record that silently deletes the quarters a company refused to guide
+is measuring its own filter.
 
 Three basis hazards had to be handled rather than smoothed. TJX split two-for-one
 in November 2018, so every EPS figure stated before it is divided by two — an
@@ -1097,12 +1097,14 @@ converts to US$0.59–0.60 against US$0.61 and is a beat rather than the 49% mis
 the raw comparison shows. FY2018 and FY2024 were 53-week years with the extra
 week in the fiscal fourth, and that quarter's guidance was itself given on the
 14-week basis, so the page compares like with like and marks the week count.
-And two quarters carry an adjusting item that did not exist when the range was
-set — the FY2026 Q4 litigation settlement and the FY2027 Q2 tariff refunds — so
-those two are scored on the company's own adjusted figures, which is also the
-basis the company used to call them "well above the Company's plan". The Familia
-impairment in Q1 2022 fits the same rule but is still scored on the reported
-figure; the page says so rather than hiding the inconsistency.
+And some quarters carry an adjusting item that did not exist when the range was
+set, or that the range said it left out. One rule covers all of them: where the
+company printed an adjusted EPS that removes only that item, the quarter is
+scored on it — the basis the company itself judged the quarter against plan on —
+and the page lists which quarters those are. Where the company's adjusted figure
+also strips something the range already contained (the 53rd week, the 2017 tax
+reform), no official number sits on the range's basis, and the reported figure
+stands; the series file records why.
 
 One number the page refuses to publish is the one the local note leans on
 hardest. The company's adjusted EPS of US$1.22 still contains a tariff cost

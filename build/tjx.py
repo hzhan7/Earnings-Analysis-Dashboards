@@ -8,13 +8,14 @@ FY(N) Qk is this page's Qk (N−1).
 
 What TJX brings is a long guidance record.  Every quarterly earnings 8-K EX-99.1
 carries an Outlook paragraph, and from Q1 FY2013 onward that paragraph guides
-next-quarter diluted EPS in the same sentence structure.  Pretax profit margin
-joins the paragraph in 2022 and consolidated comparable sales enter this page's
-record in 2023, so the three records have three different lengths and each
-chart is drawn over its own.  Two things stop "almost never below the range"
-from being a tautology, and both are on the charts: the outlook goes out with
-the previous quarter's results, weeks into the quarter it guides, and the
-company withheld guidance for seven quarters in 2020-2021.
+next-quarter diluted EPS in the same sentence structure, followed by the
+consolidated comp growth the EPS range rests on.  Pretax profit margin joins the
+paragraph in 2022, so the records differ in length and each chart is drawn over
+its own.  Two things stop "almost never below the range" from being a
+tautology, and both are on the charts: the outlook goes out with the previous
+quarter's results, weeks into the quarter it guides, and the company withdrew
+one quarter's guidance and then withheld guidance for seven quarters in
+2020-2021.
 
 Rolling the page is a data edit (CLAUDE.md §9): every period label, date, count,
 tally, rank ("以来最低", "第一次") and comparison below is computed from
@@ -30,8 +31,7 @@ the build; an absent story block takes its sentences with it.  A new miss in the
 guidance record stops the build until ``miss_notes`` says why.
 
 What stays in code is fixed history: the 2018 two-for-one split, the 2022 U.S.
-comp basis, the e-commerce comp boundary, the pandemic fiscal year, the earlier
-consolidated-comp outlook example.
+comp basis, the e-commerce comp boundary, the pandemic fiscal year.
 
 Published numbers are company-reported or transparent arithmetic.  Market
 expectations are labelled as such, with no broker attribution.
@@ -94,11 +94,6 @@ PANDEMIC_YEAR = "FY2021"
 # Q1; the release footnote reads "Comparable sales for FY2026 include
 # e-commerce"), and the earlier quarters were never restated.
 ECOMMERCE_COMP_FROM = "Q1 2025"
-# The releases before 2022 printed the consolidated comp range each EPS outlook
-# rested on ("This EPS outlook is based upon estimated comparable store sales
-# growth of 2% to 3% on both a consolidated basis and at Marmaxx", 2020-02-26);
-# this page's comp record starts in 2023 because that is where it was read from.
-EARLIER_COMP_OUTLOOK = ("2020-02-26", "2% 到 3%")
 QUARTER_DAYS = 91
 
 
@@ -202,9 +197,9 @@ def resolve_exhibit_refs(exhibits: list[dict]) -> list[dict]:
 
 
 SOURCE_8K = (
-    "指引区间来自各季业绩 8-K 的 EX-99.1 新闻稿末尾那段 Outlook —— 公司在同一段里"
-    "用同一种句式给出下一季与全年的 comp、税前利润率与每股收益；"
-    "实际值来自随后一季 8-K 的 Financial Summary 合并损益表。"
+    "指引区间来自各季业绩 8-K 的 EX-99.1 新闻稿末尾那段 Outlook，下一季与全年的指引写在同一段里；"
+    "实际值来自随后一季的业绩 8-K —— 每股收益与税前利润率取 Financial Summary 合并损益表，"
+    "comp 取 Comparable Sales 分部表。"
 )
 
 
@@ -309,21 +304,87 @@ def lag_words(staging: dict) -> dict:
     }
 
 
+def withdrawn_guidance(record: dict) -> dict:
+    """Quarters whose published range the company withdrew before reporting them."""
+    return record.get("withdrawn_guidance", {})
+
+
+def scored_range(record: dict, lo_key: str, hi_key: str) -> tuple[list, list]:
+    """One guided metric's range as it is scored.
+
+    The endpoints a release printed stay in the series. A quarter whose range
+    the company then withdrew is treated like the quarters it declined to guide:
+    there is no bound left to clear, so it is neither a hit nor a miss, and the
+    charts leave it out rather than drawing a bar against a withdrawn number.
+    """
+    gone = withdrawn_guidance(record)
+    return ([None if q in gone else v for q, v in zip(record["quarters"], record[lo_key])],
+            [None if q in gone else v for q, v in zip(record["quarters"], record[hi_key])])
+
+
 def withheld_words(record: dict) -> dict:
     releases = record["withheld_releases"]
     gap = record["guidance_gap_quarters"]
     first, last = releases[0], releases[-1]
     quarters = record["quarters"]
+    gone = withdrawn_guidance(record)
     resumed = next(index for index in range(1, len(quarters))
                    if _ordinal(quarters[index]) - _ordinal(quarters[index - 1]) > 1)
+    # The last quarter before the gap that still has a range to score: a range
+    # withdrawn just before the gap joins it on the axis.
+    before = resumed - 1
+    while before > 0 and quarters[before] in gone:
+        before -= 1
+    withdrawn = [q for q in quarters[before + 1:resumed] if q in gone]
     return {
         "span": (f"{int(first[:4])} 年 {int(first[5:7])} 月", f"{int(last[:4])} 年 {int(last[5:7])} 月"),
         "releases": cn_count(len(releases)),
         "gap": len(gap),
-        "before": quarters[resumed - 1],
+        "before": quarters[before],
         "after": quarters[resumed],
         "resumed": resumed,
+        "withdrawn": withdrawn,
+        "label": ((f"{'、'.join(compact_period(q) for q in withdrawn)} 指引撤回、其后" if withdrawn else "")
+                  + f"指引中断 {len(gap)} 个季度（COVID-19）"),
     }
+
+
+def withdrawal_sentence(record: dict) -> str:
+    """What each withdrawn range was, and what the page does with it."""
+    return "".join(
+        f"{quarter} 的区间（{item['published']} 随上一季业绩发布）已由 {item['withdrawn']} 的 8-K"
+        f"（Item {item['item']}）撤回，本页按撤回处理：与不给指引的季度一样不计分、不画柱。"
+        for quarter, item in withdrawn_guidance(record).items())
+
+
+def break_positions(record: dict, indices: list[int]) -> list[int]:
+    """Where a chart drawn over these record indices skips quarters: the first index after each jump."""
+    quarters = record["quarters"]
+    return [k for k in range(1, len(indices))
+            if _ordinal(quarters[indices[k]]) - _ordinal(quarters[indices[k - 1]]) > 1]
+
+
+def comp_break_label(record: dict, before: int, after: int) -> str:
+    """What the consolidated-comp axis skips between two record indices.
+
+    Three different things can sit in the jump -- a withdrawn range, quarters
+    the company declined to guide, and guided quarters whose comp guidance was
+    for the U.S. only -- and the label names each rather than one of them.
+    """
+    quarters = record["quarters"]
+    gone = withdrawn_guidance(record)
+    between = quarters[before + 1:after]
+    parts = []
+    withdrawn = [q for q in between if q in gone]
+    if withdrawn:
+        parts.append(f"{'、'.join(compact_period(q) for q in withdrawn)} 指引撤回")
+    unguided = _ordinal(quarters[after]) - _ordinal(quarters[before]) - 1 - len(between)
+    if unguided:
+        parts.append(f"{unguided} 季不给指引")
+    us_only = [q for q in between if q not in gone]
+    if us_only:
+        parts.append(f"{len(us_only)} 季只指引美国 comp")
+    return "、".join(parts)
 
 
 def miss_note(record: dict, metric: str, index: int, values: dict) -> str:
@@ -347,17 +408,19 @@ def miss_sentence(record: dict, metric: str, below: list[int], labels: list[str]
 
 # ── section one: the guided record ──────────────────────────────────────────
 def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
-    """Three guided metrics, three different windows, one shape.
+    """Three guided metrics, their own windows, one shape.
 
     TJX guides next-quarter diluted EPS, pretax profit margin and consolidated
-    comparable sales in the same Outlook paragraph, but this page's three
-    records start at different quarters.  Each chart is drawn over its own
-    metric's record rather than over the shortest one they share, and each title
-    says how long that record is.
+    comparable sales in the same Outlook paragraph, but the three records do not
+    all start at the same quarter.  Each chart is drawn over its own metric's
+    record rather than over the shortest one they share, and each title says how
+    long that record is.
 
-    Where the company published an adjusted figure *and* judged the quarter
-    against plan on that basis because the adjusting event postdated the range,
-    the adjusted figure is what the chart compares (``scored_on_adjusted``).
+    Where the adjusting event postdated the range (or the range said it left the
+    item out) and the company printed an adjusted figure that removes only that
+    item -- the basis it judged the quarter against plan on -- the adjusted
+    figure is what the chart compares (``scored_on_adjusted``).  A range the
+    company withdrew is not scored at all (``withdrawn_guidance``).
     """
     record = staging["quarterly_guidance_history"]
     quarters = record["quarters"]
@@ -366,12 +429,12 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
     timing = lag["timing"]
     dev_timing = f"（口径提醒：本组每张图的指引都是在{timing}才发布的。）"
     held = withheld_words(record)
-    covid_label = f"指引中断 {held['gap']} 个季度（COVID-19）"
     covid_note = (
         "<b>红色竖线是记录里的断口。</b>"
         f"公司在 {held['span'][0]}到 {held['span'][1]}的{held['releases']}份业绩稿里"
-        f"写明 is not providing guidance at this time，连续 {held['gap']} 个会计季没有给出任何数字指引；"
-        f"横轴在这里从 {held['before']} 直接跳到 {held['after']}，中间的季度不是漏掉，而是本来就没有指引可对。"
+        f"写明 is not providing guidance at this time，连续 {held['gap']} 个会计季没有给出任何数字指引"
+        + (f"；在那之前，{withdrawal_sentence(record)}" if held["withdrawn"] else "。")
+        + f"横轴在这里从 {held['before']} 直接跳到 {held['after']}，中间的季度不是漏掉，而是本来就没有指引可对。"
         "一份只数「没跌破过多少次」的记录会把这段一起删掉，这里保留它。"
     )
     lag_note = (
@@ -384,10 +447,10 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         "一页把「几乎没跌破过」放着不加这句话，就是把同义反复当成发现。"
     )
 
-    eps_lo = record["guide_eps_lo_usd"]
-    eps_hi = record["guide_eps_hi_usd"]
+    eps_lo, eps_hi = scored_range(record, "guide_eps_lo_usd", "guide_eps_hi_usd")
     eps_actual = record["actual_eps_usd"]
-    eps_finished = [index for index, value in enumerate(eps_actual) if value is not None]
+    eps_finished = [index for index, value in enumerate(eps_actual)
+                    if value is not None and eps_lo[index] is not None]
 
     above = [i for i in eps_finished if eps_actual[i] > eps_hi[i]]
     below = [i for i in eps_finished if eps_actual[i] < eps_lo[i]]
@@ -407,7 +470,7 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         venue="业绩发布", timing=timing, scope=f"（近 {window} 季）",
         src_extra=SOURCE_8K,
         extra_note=(
-            f"<b>整段记录（{len(quarters)} 季指引、{len(eps_finished)} 季已完结）不在这张图上，"
+            f"<b>整段记录（{len(quarters)} 季指引、{len(eps_finished)} 季已完结并计分）不在这张图上，"
             f"在它的下一张。</b>本图只画最近 {window} 季，因为拆股调整后的每股数"
             f"从 US${usd_eps(min(levels))} 长到 US${usd_eps(max(levels))}，"
             "一条线性纵轴放不下整段记录而不把早年的区间压成一根发丝。"
@@ -426,11 +489,7 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
                  + "一直把下一季的每股收益指引设在自己大概率能过的位置。")
     else:
         shape = ""
-    other_basis = record.get("scored_on_reported_despite_adjusted", {})
-    shortfalls = {i: {"shortfall": usd_eps(round(eps_lo[i] - eps_actual[i], 6)),
-                      **({"adjusted": f"{other_basis[quarters[i]]['adjusted']:.2f}"}
-                         if quarters[i] in other_basis else {})}
-                  for i in below}
+    shortfalls = {i: {"shortfall": usd_eps(round(eps_lo[i] - eps_actual[i], 6))} for i in below}
     if len(below) > 1:
         misses = (f"{cn_count(len(below))}次跌破各有各的原因，不是同一类事："
                   + miss_sentence(record, "eps", below, labels, shortfalls) + "。")
@@ -454,8 +513,8 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
     )
 
     # ── pretax profit margin ─────────────────────────────────────────────────
-    margin_lo = record["guide_pretax_margin_lo_pct"]
-    margin_hi = record["guide_pretax_margin_hi_pct"]
+    margin_lo, margin_hi = scored_range(record, "guide_pretax_margin_lo_pct",
+                                        "guide_pretax_margin_hi_pct")
     margin_actual = record["actual_pretax_margin_pct"]
     m_start = next(i for i, value in enumerate(margin_lo) if value is not None)
     m_labels = labels[m_start:]
@@ -485,7 +544,7 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         ),
     )
     adjusted = [(quarter, item) for quarter, item in scored_adjusted(record).items()
-                if quarter in quarters[m_start:]]
+                if quarter in quarters[m_start:] and "pretax_margin" in item["metrics"]]
     verdicts = {item["company_verdict"] for _, item in adjusted}
     margin_dev = midpoint_deviation(
         "EX_PTM_DEV", "税前利润率", quarters[m_start:], m_lo, m_hi, m_actual,
@@ -505,17 +564,24 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
     )
 
     # ── consolidated comparable sales ────────────────────────────────────────
-    comp_lo = record["guide_comp_lo_pct"]
-    comp_hi = record["guide_comp_hi_pct"]
+    # The axis carries the quarters that have a consolidated range to score:
+    # the withdrawn range, the quarters the company declined to guide and the
+    # 2022 quarters guided on U.S. comp only are all left off it, and the jump
+    # is marked with what it skips.
+    comp_lo, comp_hi = scored_range(record, "guide_comp_lo_pct", "guide_comp_hi_pct")
     comp_actual = record["actual_comp_pct"]
-    c_start = next(i for i, value in enumerate(comp_lo) if value is not None)
-    c_labels = labels[c_start:]
-    c_lo, c_hi = comp_lo[c_start:], comp_hi[c_start:]
-    c_actual = [None if value is None else float(value) for value in comp_actual[c_start:]]
+    c_index = [i for i, value in enumerate(comp_lo) if value is not None]
+    c_labels = [labels[i] for i in c_index]
+    c_lo, c_hi = [comp_lo[i] for i in c_index], [comp_hi[i] for i in c_index]
+    c_actual = [None if comp_actual[i] is None else float(comp_actual[i]) for i in c_index]
     c_finished = [i for i, value in enumerate(c_actual) if value is not None]
     c_above = [i for i in c_finished if c_actual[i] > c_hi[i]]
     c_below = [i for i in c_finished if c_actual[i] < c_lo[i]]
     c_inside = [i for i in c_finished if i not in c_above and i not in c_below]
+    c_breaks = break_positions(record, c_index)
+    c_break_labels = [comp_break_label(record, c_index[k - 1], c_index[k]) for k in c_breaks]
+    us_only = [i for i in range(c_index[0], len(quarters))
+               if record["guide_comp_lo_pct"][i] is None and quarters[i] not in withdrawn_guidance(record)]
     edge = ""
     if c_inside and all(c_actual[i] == c_hi[i] for i in c_inside) \
             and len({(c_lo[i], c_hi[i]) for i in c_inside}) == 1:
@@ -524,36 +590,63 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
                 f"真值区间是 {hi - 0.5:.1f}–{hi + 0.5:.1f}%，其中一半在区间外 —— "
                 "所以「落在区间内」这一格在本图上比在其他图上软。")
 
+    def comp_pct(value: float) -> str:
+        return f"{value:+.0f}%" if value else "0%"
+
+    if len(c_below) == 1:
+        j = c_below[0]
+        comp_misses = (f"<b>唯一一次跌破是 {c_labels[j]} 的 {comp_pct(c_actual[j])} 对 "
+                       f"{c_lo[j]:.0f}–{c_hi[j]:.0f}%</b>"
+                       + miss_note(record, "comp", c_index[j], {}) + "。")
+    elif c_below:
+        comp_misses = (f"<b>{cn_count(len(c_below))}次跌破：</b>"
+                       + miss_sentence(record, "comp", [c_index[j] for j in c_below], labels, {}) + "。")
+    else:
+        comp_misses = "<b>一次都没有跌破过下限</b>。"
+
     comp_band = delivery_band(
         "EX_COMP_RANGE", "合并同店销售", c_labels, c_lo, c_hi, c_actual,
         fmt="pct0", ylab="%", unit="%", venue="业绩发布", timing=timing,
         src_extra=SOURCE_8K,
+        break_at=(c_breaks[0] if len(c_breaks) == 1 else c_breaks) if c_breaks else None,
+        break_label=(c_break_labels[0] if len(c_break_labels) == 1 else c_break_labels),
         extra_note=(
-            f"合并口径的 comp 指引本页从 {labels[c_start]} 接起，因此这条记录只有 {len(c_labels)} 季；"
-            "更早的新闻稿其实也印过（写作每股收益指引所依据的 comp 假设，如 "
-            f"{EARLIER_COMP_OUTLOOK[0]} 那一份的 {EARLIER_COMP_OUTLOOK[1]}），本页尚未接入。"
-            f"{len(c_finished)} 个已完结季里 {len(c_above)} 季超出上限、{len(c_inside)} 季落在区间内，"
-            + ("<b>一次都没有跌破过下限</b>。" if not c_below else f"{len(c_below)} 季跌破下限。")
+            "Outlook 段在每股收益区间之后写一句它所依据的合并 comp 区间"
+            "（如 This outlook is based upon estimated consolidated comparable store sales growth of …），"
+            f"本页从 {c_labels[0]} 起逐季接入，这条记录 {len(c_labels)} 季。"
+            f"{len(c_finished)} 个已完结季里 {len(c_above)} 季超出上限、{len(c_inside)} 季落在区间内；"
+            + comp_misses
             + "<b>但这张图要打一个折扣：comp 是按整数百分点披露的。</b>"
             + edge
-            + "更早的 Q1'22–Q4'22 公司指引的是<b>美国</b> comp 而不是合并 comp，口径不同，本页不接进来。"
+            + (f"{labels[us_only[0]]}–{labels[us_only[-1]]} 公司指引的是<b>美国</b> comp 而不是合并 comp，"
+               "口径不同，本页不接进来，横轴在断点处跳过它们。" if us_only else "")
         ),
     )
     mids = [(c_lo[i] + c_hi[i]) / 2 for i in c_finished]
     mode_mid, mode_count = max(((m, mids.count(m)) for m in set(mids)), key=lambda pair: pair[1]) \
         if mids else (None, 0)
     comp_dev = midpoint_deviation(
-        "EX_COMP_DEV", "合并同店销售", quarters[c_start:], c_lo, c_hi, c_actual,
+        "EX_COMP_DEV", "合并同店销售", [quarters[i] for i in c_index], c_lo, c_hi, c_actual,
         mode="pp", window=len(c_finished), label=compact_period,
         src_extra=SOURCE_8K + "偏离为实际 comp 减去指引中值的自算值。",
         extra_note=(
             (f"指引中值这 {len(c_finished)} 季里有 {mode_count} 季是同一个数（{mode_mid:.1f}%），"
              "所以这张图基本等于把实际 comp 重画了一遍 —— 这本身就是读数："
              "公司几乎每季都给同一个区间，真正在动的只有实际值。"
-             if mode_count * 2 > len(c_finished) else "")
+             if mode_count >= 0.9 * len(c_finished) else "")
             + dev_timing
         ),
     )
+    # the deviation chart draws finished quarters only, so its breaks are
+    # counted along its own axis
+    dev_breaks = [k for k in range(1, len(c_finished))
+                  if any(c_finished[k - 1] < b <= c_finished[k] for b in c_breaks)]
+    if dev_breaks:
+        dev_labels = [c_break_labels[next(n for n, b in enumerate(c_breaks)
+                                          if c_finished[k - 1] < b <= c_finished[k])]
+                      for k in dev_breaks]
+        comp_dev["break_at"] = dev_breaks[0] if len(dev_breaks) == 1 else dev_breaks
+        comp_dev["break_label"] = dev_labels[0] if len(dev_labels) == 1 else dev_labels
 
     delivery_rows = []
     for index in range(len(quarters) - 1, -1, -1):
@@ -564,14 +657,15 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
             quarters[index],
             record["fiscal_labels"][index],
             record["guidance_published"][index],
-            f"${eps_lo[index]:.2f}–{eps_hi[index]:.2f}",
+            f"${record['guide_eps_lo_usd'][index]:.2f}–{record['guide_eps_hi_usd'][index]:.2f}",
             f"${actual_eps:.2f}" if actual_eps is not None else "待披露",
-            (f"{margin_lo[index]:.1f}–{margin_hi[index]:.1f}%"
-             if margin_lo[index] is not None else "—"),
+            (f"{record['guide_pretax_margin_lo_pct'][index]:.1f}–"
+             f"{record['guide_pretax_margin_hi_pct'][index]:.1f}%"
+             if record["guide_pretax_margin_lo_pct"][index] is not None else "—"),
             (f"{margin_actual[index]:.2f}%"
              if margin_actual[index] is not None else "待披露"),
-            (f"{comp_lo[index]:.0f}–{comp_hi[index]:.0f}%"
-             if comp_lo[index] is not None else "—"),
+            (f"{record['guide_comp_lo_pct'][index]:.0f}–{record['guide_comp_hi_pct'][index]:.0f}%"
+             if record["guide_comp_lo_pct"][index] is not None else "—"),
             (f"{comp_actual[index]:.0f}%" if comp_actual[index] is not None else "待披露"),
         ])
     delivery_table = {
@@ -583,8 +677,11 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
                     "税前利润率指引", "税前利润率实际", "comp 指引", "comp 实际"],
         "rows": delivery_rows,
     }
-    eps_dev["break_at"] = held["resumed"]
-    eps_dev["break_label"] = covid_label
+    # The deviation chart draws finished, scored quarters only, so the gap is
+    # found along its own axis -- the first bar after it -- not at the record
+    # index, which the two unreported quarters and the withdrawn one shift.
+    eps_dev["break_at"] = next(k for k, i in enumerate(eps_finished) if i >= held["resumed"])
+    eps_dev["break_label"] = held["label"]
     charts = [eps_band, eps_dev, margin_band, margin_dev, comp_band, comp_dev]
     return charts, delivery_table
 
@@ -592,7 +689,8 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
 def record_tallies(record: dict) -> dict:
     """The three hit rates the brief quotes, counted the way the charts count them."""
     def tally(lo_key: str, hi_key: str, actual_key: str) -> tuple[int, int, int]:
-        rows = [(a, lo, hi) for lo, hi, a in zip(record[lo_key], record[hi_key], record[actual_key])
+        low, high = scored_range(record, lo_key, hi_key)
+        rows = [(a, lo, hi) for lo, hi, a in zip(low, high, record[actual_key])
                 if lo is not None and a is not None]
         return (len(rows), sum(1 for a, _, hi in rows if a > hi), sum(1 for a, lo, _ in rows if a < lo))
     return {
@@ -846,6 +944,10 @@ def build_payload(staging: dict) -> dict:
         resolve_exhibit_refs(group)
 
     first_table = routine_ex[-1]["n"] + 1
+    # The adjusted-EPS series is carried for the reviewed quarters only; an older
+    # quarter the guidance record scores on the company's adjusted figure prints
+    # that figure rather than claiming it had none.
+    scored_eps = {quarter: item["adjusted"] for quarter, item in scored_adjusted(record).items()}
     core_rows = []
     for index, label in enumerate(periods):
         core_rows.append([
@@ -860,7 +962,8 @@ def build_payload(staging: dict) -> dict:
             f"{pretax_margin[index]:.2f}%",
             f"${eps[index]:.2f}",
             (f"${fin['adjusted_diluted_eps_usd'][index]:.2f}"
-             if fin["adjusted_diluted_eps_usd"][index] is not None else "同 GAAP"),
+             if fin["adjusted_diluted_eps_usd"][index] is not None
+             else f"${scored_eps[label]:.2f}" if label in scored_eps else "同 GAAP"),
             f"{shares[index]:,}M",
             f"{stores[index]:,}",
         ])
@@ -984,6 +1087,8 @@ def build_payload(staging: dict) -> dict:
     brief += "</div>"
 
     record_start = record["quarters"][0].split()[1]
+    reaching = [name for key, name in (("guide_eps_lo_usd", "每股收益"), ("guide_comp_lo_pct", "合并 comp"))
+                if record[key][0] is not None]
     highlight_parts = ["四个分部的分化"]
     if adj_seg:
         highlight_parts.append(f"{story.get('adjustment_name', '调整项')}把分部利润率推歪了多少")
@@ -1060,10 +1165,10 @@ def build_payload(staging: dict) -> dict:
                 "title": "一、上季兑现与指引记录",
                 "description": (
                     ("先结清上季设下的阈值，再看新数字。" if prior_kpi is not None else "")
-                    + "公司每季在业绩新闻稿末尾的 Outlook 段里"
-                    "给出下一季的合并 comp、税前利润率与摊薄每股收益 —— "
-                    f"每股收益这条记录能一直回到 {record_start} 年；"
-                    "但它是在被指引的那个季度开始之后才发布的，这一点写在每张图上。"
+                    + "公司在业绩新闻稿末尾的 Outlook 段里给出下一季的指引 —— "
+                    + spaced("与".join(reaching), f"{'两条记录都' if len(reaching) == 2 else '这条记录'}"
+                             f"能一直回到 {record_start} 年；")
+                    + "但指引是在被指引的那个季度开始之后才发布的，这一点写在每张图上。"
                 ),
                 "exhibits": settled_ex,
             },
@@ -1812,18 +1917,29 @@ def long_charts(staging: dict, ytd_word: str, store_plan: dict | None,
 def record_starts_note(record: dict) -> str:
     def start(key: str) -> str:
         return record["quarters"][next(i for i, v in enumerate(record[key]) if v is not None)]
-    return ("第一节的指引兑现组图用的是同一批业绩 8-K：每份 EX-99.1 新闻稿末尾的 Outlook 段落用同一种句式"
-            "给出下一季的合并 comp、税前利润率与摊薄每股收益区间；实际值取自随后一季 8-K 的 Financial "
-            f"Summary 合并损益表。三条记录起点不同（每股收益 {start('guide_eps_lo_usd')}、"
-            f"税前利润率 {start('guide_pretax_margin_lo_pct')}、合并 comp {start('guide_comp_lo_pct')}），"
-            "各图按自己的记录长度画，不往前补。")
+    starts: dict[str, list[str]] = {}
+    for key, name in (("guide_eps_lo_usd", "每股收益"), ("guide_pretax_margin_lo_pct", "税前利润率"),
+                      ("guide_comp_lo_pct", "合并 comp")):
+        starts.setdefault(start(key), []).append(name)
+    if len(starts) == 3:
+        where = "三条记录起点不同（" + "、".join(f"{names[0]} {q}" for q, names in starts.items()) + "）"
+    elif len(starts) == 2:
+        where = "；".join(spaced("与".join(names), f"{'都' if len(names) > 1 else ''}从 {q} 起")
+                         for q, names in starts.items())
+    else:
+        where = f"三条记录都从 {next(iter(starts))} 起"
+    return ("第一节的指引兑现组图用的是同一批业绩 8-K：EX-99.1 新闻稿末尾的 Outlook 段落给出下一季的指引区间，"
+            "实际值取自随后一季的业绩 8-K（每股收益与税前利润率取 Financial Summary 合并损益表，"
+            f"comp 取 Comparable Sales 分部表）。{where}，各图按自己的记录长度画，不往前补。")
 
 
 def withheld_note(record: dict) -> str:
     held = withheld_words(record)
     return (f"公司在 {held['span'][0]}至 {held['span'][1]}的{held['releases']}份业绩稿里写明不提供指引，"
-            f"连续 {held['gap']} 个会计季没有任何数字指引。本页的记录在横轴上从 {held['before']} "
-            f"直接跳到 {held['after']}，并在图上打断点；这段空白不计入任何命中率的分母。")
+            f"连续 {held['gap']} 个会计季没有任何数字指引。"
+            + withdrawal_sentence(record)
+            + f"图在这里打断点（每股收益的横轴从 {held['before']} 直接跳到 {held['after']}）；"
+            "这段空白不计入任何命中率的分母。")
 
 
 def split_note(record: dict) -> str:
@@ -1851,18 +1967,14 @@ def scored_adjusted(record: dict) -> dict:
 
 def adjusted_basis_note(record: dict) -> str:
     adjusted = scored_adjusted(record)
-    reported = record.get("scored_on_reported_despite_adjusted", {})
-    return ("有调整项的季度，指引兑现按公司自己判定「相对 plan」时所用的口径比较："
-            + ("与 ".join(spaced(f"{quarter} 的", item["event"]) for quarter, item in adjusted.items())
-               + ("都" if len(adjusted) > 1 else "")
-               + "发生在指引给出之后，用报表值去对当初的区间等于让指引为它装不下的事负责。"
-               if adjusted else "指引给出之后才发生的事，不让指引为它负责。")
-            + ("其余季度一律按报表口径计 —— 其中也有公司另报过调整后数的季度，例如 "
-               + "；".join(f"{quarter}（报表 US${item['reported']:.2f}，剔除{item['item']}后的调整后 "
-                           f"US${item['adjusted']:.2f}，{item['company_words']}）"
-                           for quarter, item in reported.items())
-               + "，本页没有改按调整后口径计分。"
-               if reported else "其余季度公司未披露调整项，报表值即调整后值。"))
+    rule = ("调整项在指引给出之后才出现（或指引原文写明不含它）、公司又印了只剔除这一项的调整后数的季度，"
+            "指引兑现按调整后口径比较 —— 那也是公司自己判定「相对 plan」时所用的口径；"
+            "用报表值去对当初的区间，等于让指引为它装不下的事负责。")
+    if not adjusted:
+        return rule + "本记录里还没有这样的季度，一律按报表口径计。"
+    return (rule + "这样计的有" + cn_count(len(adjusted)) + "季："
+            + "、".join(spaced(f"{quarter} 的", item["event"]) for quarter, item in adjusted.items())
+            + "。其余季度按报表口径计。")
 
 
 def identity_note(staging: dict) -> str:

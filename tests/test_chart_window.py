@@ -166,7 +166,7 @@ REACH_2016 = {
     "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 3, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
-    "spgi": 11, "tjx": 8, "tsm": 17 + _tsm_story_reach(), "v": 15,
+    "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15,
 }
 
 # Exemption keys are matched on the *shape* of a title, not on its digits: in the
@@ -562,13 +562,12 @@ CONVERTED = {
         "单季股东回报 / 自由现金流 D vs 阈值": "threshold chart, recent by design.",
     },
     "tjx": {
-        # Two floors. The quarterly guidance record on EDGAR starts with the
-        # FY2023 releases -- before that TJX gave its next-quarter pretax-margin
-        # and comp guidance in the CFO's prepared remarks on the call, which is
-        # not a filed document and this site does not read. The four ten-year
-        # charts run on fiscal years, not quarters, and ten years of them is the
-        # whole of `long_history`. Their keys name the year count as `#`: the
-        # record grows by a year with each 10-K, and the title counts it.
+        # Two floors. The pretax-margin guidance joins the filed Outlook paragraph
+        # in 2022; the consolidated-comp ranges were backfilled to 2012 from the
+        # EX-99.1s and no longer need an entry here. The four ten-year charts run
+        # on fiscal years, not quarters, and ten years of them is the whole of
+        # `long_history`. Their keys name the year count as `#`: the record grows
+        # by a year with each 10-K, and the title counts it.
         "摊薄每股收益（近 16 季）": "not fetched yet, not absent: TJX's 2019-05-21 EX-99.1 gives "
                           "a second-quarter EPS outlook and the comp-sales growth it "
                           "rests on, in the filed exhibit. FY2023 is where the "
@@ -577,8 +576,6 @@ CONVERTED = {
                  "this only on the call is withdrawn -- the FY2020 exhibits carry a "
                  "next-quarter outlook.",
         "税前利润率相对指引中值": "the deviation view of the same record.",
-        "合并同店销售：": "same guidance record.",
-        "合并同店销售相对指引中值": "the deviation view of the same record.",
         "#年税前利润率与资本强度": "an annual chart -- ten fiscal years, not quarters.",
         "#年门店数与总面积": "annual.",
         "#年回购与股数": "annual.",
@@ -1050,8 +1047,6 @@ FLOOR_KIND = {
         '摊薄每股收益（近 16 季）': 'coverage',
         '税前利润率：': 'coverage',
         '税前利润率相对指引中值': 'coverage',
-        '合并同店销售：': 'coverage',
-        '合并同店销售相对指引中值': 'coverage',
         '#年税前利润率与资本强度': 'design',
         '#年门店数与总面积': 'design',
         '#年回购与股数': 'design',
@@ -1154,7 +1149,7 @@ class ChartWindowTest(unittest.TestCase):
         by_kind = {}
         for slug, title, kind in pending:
             by_kind.setdefault(kind, []).append(f"{slug}/{title}")
-        self.assertEqual(len(by_kind.get("coverage", [])), 37,
+        self.assertEqual(len(by_kind.get("coverage", [])), 35,
                          "charts whose data exists and has not been fetched")
         # Zero, and that is the point: every exemption on this page has now been
         # read against an actual pre-floor filing. The fourteen that had never
