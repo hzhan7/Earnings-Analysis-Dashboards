@@ -998,6 +998,41 @@ def margin_view(long: dict) -> dict:
             "diverge": ebit[-1] - ebit[-2] > 0 > ebitda[-1] - ebitda[-2]}
 
 
+def engines_break(staging: dict) -> dict | None:
+    """Where the Engines line stops, and the year the company folded it into Other.
+
+    The fold happened in the 2024 releases, which restated 2023 alongside; the
+    series holds the restated 2023, so the gap opens a year before the fold.
+    ``reprints`` records which releases restated which quarters."""
+    engines = staging["long_history"]["engines_eur_m"]
+    quarters = staging["long_history"]["quarters"]
+    at = next((i for i, value in enumerate(engines)
+               if value is None and i > 0 and engines[i - 1] is not None), None)
+    if at is None:
+        return None
+    restated = [r for r in staging.get("reprints", [])
+                if r["key"] == "engines_eur_m" and r["reprint"] is None]
+    gap_year = qparts(quarters[at])[0]
+    merged = min((qparts(r["reprinted_in"])[0] for r in restated), default=gap_year)
+    return {"at": at, "year": gap_year, "merged": merged, "quarter": quarters[at]}
+
+
+def reprint_words(staging: dict, keys: tuple[str, ...]) -> list[dict]:
+    """Reprinted quarters for these series, grouped by the year they belong to:
+    ``{"year", "where", "first", "reprint", "rows"}`` -- ``where`` the years of the
+    releases that reprinted them. The one still waiting for its offset is left
+    to the year-sum census, which explains it."""
+    rows = [r for r in staging.get("reprints", []) if r["key"] in keys and not r.get("offset_pending")
+            and r["reprint"] is not None]
+    groups = {}
+    for r in rows:
+        groups.setdefault(qparts(r["quarter"])[0], []).append(r)
+    return [{"year": year, "rows": rs,
+             "where": sorted({qparts(r["reprinted_in"])[0] for r in rs}),
+             "first": sum(r["first_print"] for r in rs), "reprint": sum(r["reprint"] for r in rs)}
+            for year, rs in sorted(groups.items())]
+
+
 def long_charts(staging: dict) -> tuple[list[dict], list[dict]]:
     """The ten-year series, split into the four that belong beside the quarter
     and the two that are genuinely routine."""
@@ -1085,11 +1120,18 @@ def long_charts(staging: dict) -> tuple[list[dict], list[dict]]:
     }
 
     engines = long["engines_eur_m"]
-    break_at = next((index for index, value in enumerate(engines)
-                     if value is None and index > 0 and engines[index - 1] is not None), None)
+    fold = engines_break(staging)
+    break_at = fold["at"] if fold else None
     legs_sum = [sum(long[key][i] for key, _, _ in LEGS) + (engines[i] or 0) for i in range(n)]
     worst_leg_gap = max(abs(s - r) for s, r in zip(legs_sum, long["net_revenues_eur_m"]))
-    break_year = qparts(quarters[break_at])[0] if break_at is not None else None
+    break_year = fold["year"] if fold else None
+    merged = fold["merged"] if fold else None
+    # the one move between two legs the company made without a footnote
+    shifts = [g for g in reprint_words(staging, ("cars_and_spare_parts_eur_m",))]
+    shift_text = "".join(
+        f"{g['year']} 年四季的 Cars and spare parts 与 Sponsorship, commercial and brand 取 "
+        f"{'、'.join(map(str, g['where']))} 年各季新闻稿上年同期栏的重印值（两者之间 €{abs(g['reprint'] - g['first']):,.0f}M 的重分类）。"
+        for g in shifts)
     mix_now = ""
     if printed:
         rates = {}
@@ -1106,7 +1148,8 @@ def long_charts(staging: dict) -> tuple[list[dict], list[dict]]:
     mix = {
         "ref": "EX_L_MIX",
         "kind": "grouped_bars",
-        "title": (f"{n_cn}季收入结构：Engines 这一行在 {break_year} 年被并进 Other" if break_year
+        "title": ((f"{n_cn}季收入结构：Engines 这一行在 {merged} 年被并进 Other"
+                   + (f"，{break_year} 年取重述值" if merged != break_year else "")) if break_year
                   else f"{n_cn}季收入结构"),
         "xlabels": quarters,
         "groups": [
@@ -1120,14 +1163,16 @@ def long_charts(staging: dict) -> tuple[list[dict], list[dict]]:
         "bar_labels": False,
         "fmt": "f0c", "label_fmt": "f0c", "ylab": "€M", "xstep": LONG_STEP,
         "note": ("<b>Engines 那一行是断的，不是归零的。</b>"
-                 f"公司自 {break_year} 年起把向 Maserati 售发动机的"
-                 f"剩余收入并入 Other，并在同一份新闻稿里重述了 {break_year - 1} 年的可比数；"
-                 "本页把它留成空档而不是补零，因为补零会把一次列报变更画成一次业务消失。"
+                 f"公司自 {merged} 年起把向 Maserati 售发动机的"
+                 f"剩余收入并入 Other，并在 {merged} 年各季新闻稿里重述了 {merged - 1} 年的可比数"
+                 + (f"，本页取重述值，所以空档从 {compact(fold['quarter'])} 开始" if merged != break_year else "")
+                 + "；空档不补零，因为补零会把一次列报变更画成一次业务消失。"
                  f"四条腿在 {break_year} 年之前相加等于合并净收入，之后前三条相加等于合并净收入，"
                  f"{n} 个季度逐季核对"
                  + ("无差。" if worst_leg_gap < 0.5 else f"最大差 €{worst_leg_gap:,.0f}M。")
                  + mix_now),
-        "src_extra": f"各季业绩新闻稿的 Total net revenues 表；并表说明见 {break_year} 年各期新闻稿脚注。",
+        "src_extra": (f"各季业绩新闻稿的 Total net revenues 表；并表说明见 {merged} 年各期新闻稿脚注。"
+                      + shift_text),
     }
     if break_at is not None:
         mix["break_at"] = break_at
@@ -1240,7 +1285,10 @@ def long_charts(staging: dict) -> tuple[list[dict], list[dict]]:
                  f"{cash_years}，{nid_text} —— "
                  "多出来的现金没有留在资产负债表上，也没有变成产能，而是以股息与回购发了出去。"
                  f"季度 IFCF 有强季节性（{season}），跨年比较要同季对同季。"),
-        "src_extra": "工业自由现金流与净工业（负债）/现金均为各季业绩新闻稿的披露值。",
+        "src_extra": ("工业自由现金流与净工业（负债）/现金均为各季业绩新闻稿的披露值。"
+                      + "".join(f"{g['year']} 年四季取 {'、'.join(map(str, g['where']))} 年各季新闻稿上年同期栏的重印值"
+                                f"（四季合计 €{g['reprint']:,.0f}M，原印 €{g['first']:,.0f}M）。"
+                                for g in reprint_words(staging, ("industrial_fcf_eur_m",)))),
     }
 
     capex = long["capex_eur_m"]
@@ -1281,6 +1329,15 @@ def long_charts(staging: dict) -> tuple[list[dict], list[dict]]:
                       "附件的累计栏与 20-F 全年数还原 D。" + capex_basis),
     }
     return [unit, margin, mix, region], [cash, capex_chart]
+
+
+def engines_note(staging: dict) -> str:
+    fold = engines_break(staging)
+    if fold is None:
+        return "Engines 收入一直单列，长序列没有断开。"
+    return (f"Engines 收入自 {fold['merged']} 年起并入 Other，公司同时重述了 {fold['merged'] - 1} 年可比数"
+            + ("，本页取重述值" if fold["merged"] != fold["year"] else "")
+            + f"。长序列在 {compact(fold['quarter'])} 断开并加标记，不补零 —— 补零会把一次列报变更画成一次业务消失。")
 
 
 def headline_metrics(staging: dict) -> list[str]:
@@ -1514,7 +1571,7 @@ def build_payload(staging: dict) -> dict:
             adjust_note,
             "指引形状分为四类：两端区间、只给下限、只给上限、单点约数。只给下限或单点时图上的色块没有宽度，画成有宽度的区间等于替公司发明一个上界。判定「兑现」时对单点与下限留出等于印刷精度的容差：公司把 €1.27B 印到小数点后两位，FY2019 的 €1.269B 因此记为持平而不是跌破。",
             f"全年指引的四档分别发布于当年的 {slot_months(record)}，最后一档发出时全年已过去{months_gone(record)}。因此「结清」在本页比在季度指引页上弱得多，本页对每张区间图都写明了这一点，并另画一张相对每一档指引的偏离图。",
-            "Engines 收入自 2024 年起并入 Other，公司同时重述了 2023 年可比数。长序列在那一季断开并加标记，不补零 —— 补零会把一次列报变更画成一次业务消失。",
+            engines_note(staging),
             f"资本开支与资本化研发的序列自 {compact(quarters[next(i for i, v in enumerate(long['capex_eur_m']) if v is not None)])} 起：业绩新闻稿从 2019 年第一季才开始印 Capex and R&D 表，更早的季度由各季中报 6-K 附件的累计栏与 20-F 全年数逐季还原（见资本开支那一张的图注）。",
             "单台车与零件收入为 Cars and spare parts 收入除以出货台数，是本页自算（D），不是 ASP：分子含零件与个性化收入，分母只含整车。公司已明确表示永不披露车型级的出货量与售价。",
             "地区披露的是出货台数而非收入，因此地域结构对收入与利润的影响无法从申报中拆出来，本页不做该拆分。",
