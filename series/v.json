@@ -6,6 +6,69 @@
     "analysis_date": "2026-07-29",
     "audit_status": "unaudited"
   },
+  "_checks": {
+    "period": "Q2 2026",
+    "fiscal_label": "FY2026Q3",
+    "period_end": "2026-06-30",
+    "release_date": "2026-07-28",
+    "revenue_usd_m": {
+      "service": 4922,
+      "data_processing": 6042,
+      "international_transaction": 3853,
+      "other": 1496,
+      "client_incentives": -4680,
+      "net_revenue": 11633
+    },
+    "growth_printed_pct": {
+      "service": 14,
+      "data_processing": 17,
+      "international_transaction": 6,
+      "other": 45,
+      "client_incentives": 18,
+      "net_revenue": 14,
+      "total_opex": 19
+    },
+    "net_revenue_by_geography_usd_m": {
+      "us": 4410,
+      "international": 7223
+    },
+    "total_opex_usd_m": 4756,
+    "litigation_provision_usd_m": 253,
+    "special_items_usd_m": {
+      "severance": 563,
+      "litigation_provision_mdl": 237
+    },
+    "operating_income_usd_m": 6877,
+    "net_income_usd_m": 5628,
+    "diluted_eps_usd": 2.97,
+    "prior_year": {
+      "period": "Q2 2025",
+      "net_revenue_usd_m": 10172,
+      "total_opex_usd_m": 3995,
+      "litigation_provision_usd_m": 615,
+      "international_transaction_usd_m": 3633,
+      "client_incentives_usd_m": -3972
+    },
+    "litigation_usd_m": {
+      "escrow": 888,
+      "us_covered": 822,
+      "accrued_total": 1274
+    },
+    "cash_flow_year_to_date_usd_m": {
+      "months": 9,
+      "operating": 16342,
+      "capex": -1178,
+      "buyback": -16430,
+      "dividends": -3852
+    },
+    "nominal_payments_volume_prior_quarter_usd_b": {
+      "period": "Q1 2026",
+      "value": 3728
+    },
+    "value_added_services_revenue_usd_bn": 3.8,
+    "source": "Visa FY2026 Q3 业绩新闻稿（8-K EX-99.1，2026-07-28，acc 0001403161-26-000103）：电头「San Francisco, CA, July 28, 2026」、Financial Summary 表（Service revenue 4,922 / 14%、Data processing 6,042 / 17%、International transaction 3,853 / 6%、Other 1,496 / 45%、Client incentives (4,680) / 18%、Net revenue 11,633 / 14%、Total operating expenses 4,756 / 19%、Net income 5,628、EPS 2.97）、Financial Highlights 段（遣散费 $563 million、MDL 诉讼计提 $237 million）、季度损益表（Litigation provision 253 / 去年同季 615，Total operating expenses 去年同季 3,995）、资产负债表（U.S. litigation escrow 888、Accrued litigation 1,274）、九个月现金流量表（经营 16,342、资本开支 (1,178)、回购 (16,430)、分红 (3,852)）；截至 2026-06-30 的 10-Q（acc 0001403161-26-000104）：收入分解附注（U.S. 4,410、International 7,223；去年同季 International transaction 3,633、Client incentives (3,972)、净收入 10,172；value-added services 本季 $3.8 billion）、法律事项附注（Accrual Summary—U.S. Covered Litigation 期末 822）、MD&A 名义支付额表（Three Months Ended March 31, 2026 Total nominal payments volume $3,728 billion）。",
+    "checked_on": "2026-09-19"
+  },
   "periods": [
     "Q3 2024",
     "Q4 2024",
@@ -1108,6 +1171,14 @@
         "accession": "0001193125-16-550256",
         "text": "收窄为「区间上沿」（high-end of the 17.5% to 18.5% range）"
       }
+    ],
+    "other_numeric_ranges": [
+      {
+        "metric": "有效税率",
+        "fiscal_year": 2020,
+        "range": "19%–19.5%",
+        "source": "2019-10-24 业绩新闻稿（acc 0001403161-19-000042，q42019ex9913.htm）Financial Outlook 表「Effective Tax Rate 19% – 19.5%」"
+      }
     ]
   },
   "capital_allocation_usd_m": {
@@ -1768,50 +1839,70 @@
     ]
   },
   "quarter_one_offs": {
+    "period": "Q2 2026",
     "severance_usd_m": 563.0,
     "note": "公司在 FY2026 Q3 业绩新闻稿里把本季特殊项列为遣散费 US$563M、与诉讼相关的计提 US$237M 及并购相关摊销与成本 US$78M；损益表上的 Litigation provision 行本季为 US$253M。"
   },
+  "printed_growth_pct": {
+    "period": "Q2 2026",
+    "service": 14,
+    "data_processing": 17,
+    "international_transaction": 6,
+    "other": 45
+  },
   "next_kpi": {
+    "period": "Q2 2026",
     "quantified": [
       {
         "metric": "客户激励率",
         "direction": "down",
         "threshold": 29.5,
         "unit": "pct",
-        "current": 28.69
+        "reads": "revenue_lines_usd_m.incentive_rate_pct",
+        "rationale": "阈值取的是本季再向上一个季度级别的台阶，不是长期趋势的外推。"
       },
       {
         "metric": "International transaction 收入同比",
         "direction": "up",
         "threshold": 4.0,
         "unit": "pct",
-        "current": 6.06
+        "reads": "yoy:revenue_lines_usd_m.international_transaction",
+        "rationale": "阈值设在 {threshold}：跌破它意味着这条线的减速不再能用去年同期的高基数解释。",
+        "rationale_tail": "阈值守的是「在没有疫情这类外因时它是否还能守住 {threshold}」，不是「历史上从未破过」。"
       },
       {
         "metric": "托管账户相对 U.S. covered 计提的盈余",
         "direction": "up",
         "threshold": -500.0,
         "unit": "usd_m",
-        "current": 66.0
+        "reads": "escrow_surplus",
+        "rationale": "阈值是负数：账户可以短暂低于计提额（公司按季补存），真正需要关注的是缺口大到必须一次性大额补存的时候。"
       },
       {
         "metric": "净收入同比",
         "direction": "up",
         "threshold": 10.0,
         "unit": "pct",
-        "current": 14.36
+        "reads": "yoy:financials.net_revenue_usd_m"
       },
       {
         "metric": "单季股东回报 / 自由现金流",
         "direction": "down",
         "threshold": 120.0,
         "unit": "pct",
-        "current": 99.04
+        "reads": "payout_to_fcf"
       }
     ],
-    "excluded": "另有四条本页<b>不接入</b>，原因写在这里而不是省略掉：（1）<b>公司口径 non-GAAP 营业费用增速</b> —— 公司对下季只给「low double digits」这类定性区间，没有可对照的数字，把定性词翻译成百分数再画成兑现图正是本页拒绝做的事；（2）<b>单位交易变现率（收入 ÷ 交易额）</b> —— 公司只披露支付额与跨境交易额的同比百分比，从不按季披露绝对金额，这个比率在申报文件里无法复算；（3）<b>增值服务与商业支付的分部收入</b> —— 公司在电话会上给增速，但申报文件不做这个拆分，无法逐季复算，也就无法设阈值；（4）<b>裁员规模与年化节约</b> —— 本季电话会未量化，申报文件未披露员工人数变动。"
+    "excluded": [
+      "（1）<b>公司口径 non-GAAP 营业费用增速</b> —— 公司对下季只给「low double digits」这类定性区间，没有可对照的数字，把定性词翻译成百分数再画成兑现图正是本页拒绝做的事",
+      "（2）<b>国际交易收入的单位变现率（收入 ÷ 跨境交易额）</b> —— 公司只披露跨境交易额的同比百分比，不披露金额，这个比率在申报文件里无法复算（支付额这一边 10-Q 印着金额，见口径说明）",
+      "（3）<b>商业支付的分部收入</b> —— 公司在电话会上给增速，但申报文件不做这个拆分，无法逐季复算，也就无法设阈值；增值服务收入 10-Q 按季印着金额（四舍五入到 0.1B），本页尚未接入",
+      "（4）<b>裁员规模与年化节约</b> —— 本季电话会未量化，申报文件未披露员工人数变动"
+    ]
   },
   "followup_closure": {
+    "period": "Q2 2026",
+    "set_in": "2026-04-29 VISA Q1 2026 vs Q4 2025 Analysis（公司 FY26 Q1）第 0 节之后留下的 10 条 follow-up；本季笔记 2026-07-28 第 0 节逐条闭环",
     "labels": [
       "已验证",
       "部分验证",
@@ -1824,9 +1915,19 @@
       4,
       1
     ],
-    "note": "上一份笔记留下 10 条待验问题，本季连同上一季的申报文件一起结清：3 条已验证、2 条部分验证、4 条公司仍未披露、1 条被证伪。被证伪的那条是把商业支付收入的加速当成结构性变化 —— 本季收入增速回落而交易量反而加快，量价再次反向。仍未披露的四条里有三条是公司从未在申报文件里给过的拆分。"
+    "keys": {
+      "已验证": "verified",
+      "部分验证": "partial",
+      "仍未披露": "undisclosed",
+      "被证伪": "refuted"
+    },
+    "figures": {
+      "never_filed": 3
+    },
+    "note": "上一份笔记留下 {total} 条待验问题，本季连同上一季的申报文件一起结清：{verified} 条已验证、{partial} 条部分验证、{undisclosed} 条公司仍未披露、{refuted} 条被证伪。被证伪的那条是把商业支付收入的加速当成结构性变化 —— 本季收入增速回落而交易量反而加快，量价再次反向。仍未披露的{undisclosed_cn}条里有{never_filed_cn}条是公司从未在申报文件里给过的拆分。"
   },
   "tracked_metric_verdicts": {
+    "period": "Q2 2026",
     "labels": [
       "继续跟踪",
       "升级为阈值",
@@ -1839,7 +1940,13 @@
       2,
       2
     ],
-    "note": "上一份笔记的 8 条跟踪点按结清方式分类。两条因公司<b>停止披露</b>而退役 —— 稳定币结算 run rate 连续两季给过之后不再给，Visa Flex Credential 的张数连续两季不披露。本站的处理是<b>退役</b>而不是继续用估计值顶着：一个指标一旦只能靠推算，它就不再能证伪任何判断。"
+    "keys": {
+      "继续跟踪": "kept",
+      "升级为阈值": "promoted",
+      "退役：公司停披": "stopped",
+      "退役：议题失效": "moot"
+    },
+    "note": "上一份笔记的 {total} 条跟踪点按结清方式分类。{stopped_cn}条因公司<b>停止披露</b>而退役 —— 稳定币结算 run rate 至少连续三季给过数字之后本季不再给，Visa Flex Credential 的张数连续两季不披露。本站的处理是<b>退役</b>而不是继续用估计值顶着：一个指标一旦只能靠推算，它就不再能证伪任何判断。"
   },
   "market_expectation": {
     "as_of": "2026-07-29",
@@ -2323,5 +2430,11 @@
       71662.0
     ],
     "provenance": "支付金额与处理笔数逐季读自各季业绩 8-K 的 operational performance 表。两条序列的季度对齐不同：支付金额按公司口径滞后一个季度申报（本季报的是上一季的量），处理笔数是当季 —— 所以两个 quarters 数组各自独立，不要合并成一根轴。"
+  },
+  "quarter_story": {
+    "period": "Q2 2026",
+    "not_wired": [
+      "员工人数与裁员规模（本季电话会未量化，申报文件未披露）"
+    ]
   }
 }
