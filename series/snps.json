@@ -1,10 +1,82 @@
 {
-  "_provenance": "所有公司披露值逐季读自 SEC EDGAR 上 Synopsys（CIK 883241）的申报文件：24 份季度业绩 8-K 的 EX-99.1（合并损益表、分部与调整后分部营业利润调节表、下一季与全年 Financial Targets 表）、各季 10-Q 与各年 10-K（分部、分地区、backlog、现金流与回购）。财政年度截至 10 月 31 日；本页一律按自然年季度标注（FY 的 Q1→上一自然年 Q4，Q2→Q1，Q3→Q2，Q4→Q3）。会计季 Q4 无 10-Q，其分部与分地区值为财年数减去九个月数，两端均为申报值。FY2024 Q1 的年同比分母 1,510.989 为 FY2024 Q2 业绩 8-K 所载六个月 2,965.701 减去该季 1,454.712；FY2023 Q4 的 1,467.383 为重述后的 Design Automation 953.718 与 Design IP 513.665 之和。",
+  "_provenance": "所有公司披露值逐季读自 SEC EDGAR 上 Synopsys（CIK 883241）的申报文件：43 份季度业绩 8-K 的 EX-99.1（合并损益表、分部与调整后分部营业利润调节表、下一季与全年 Financial Targets 表）、各季 10-Q 与各年 10-K（分部、分地区、backlog、现金流与回购）。财政年度截至 10 月 31 日；本页一律按自然年季度标注（FY 的 Q1→上一自然年 Q4，Q2→Q1，Q3→Q2，Q4→Q3）。会计季 Q4 无 10-Q，其分部与分地区值为财年数减去九个月数，两端均为申报值。FY2024 Q1 的年同比分母 1,510.989 为 FY2024 Q2 业绩 8-K 所载六个月 2,965.701 减去该季 1,454.712；FY2023 Q4 的 1,467.383 为重述后的 Design Automation 953.718 与 Design IP 513.665 之和。",
   "latest": {
     "period": "Q2 2026",
     "release_date": "2026-08-26",
     "analysis_date": "2026-08-27",
     "audit_status": "unaudited"
+  },
+  "_checks": {
+    "period": "Q2 2026",
+    "fiscal_label": "FY2026 Q3",
+    "period_end": "2026-07-31",
+    "release_date": "2026-08-26",
+    "revenue_usd_k": 2476822,
+    "revenue_year_ago_usd_k": 1739737,
+    "gaap_operating_income_usd_k": 357491,
+    "segment_adjusted_operating_income_usd_m": {
+      "design_automation": 905.0,
+      "design_ip": 125.4
+    },
+    "design_ip_revenue_usd_k": 473851,
+    "design_ip_revenue_year_ago_usd_k": 427571,
+    "gaap_diluted_eps_usd": 2.84,
+    "non_gaap_diluted_eps_usd": 3.91,
+    "diluted_shares_k": 192319,
+    "non_gaap_net_income_usd_m": 752.5,
+    "non_gaap_tax_rate_pct": 18.0,
+    "backlog_usd_bn": 10.9,
+    "fsa_usd_bn": 1.9,
+    "next_12m_pct_of_ex_fsa": 49,
+    "ansys_share_pct": 28.7,
+    "next_quarter": {
+      "period": "Q3 2026",
+      "fiscal_label": "FY2026 Q4",
+      "revenue_usd_m": [
+        2530,
+        2580
+      ],
+      "non_gaap_expenses_usd_m": [
+        1450,
+        1480
+      ],
+      "non_gaap_eps_usd": [
+        4.1,
+        4.16
+      ],
+      "diluted_shares_m": [
+        192,
+        194
+      ],
+      "non_gaap_tax_rate_pct": 18
+    },
+    "full_year": {
+      "fiscal_year": "FY2026",
+      "revenue_usd_m": [
+        9690,
+        9740
+      ],
+      "non_gaap_eps_usd": [
+        15.04,
+        15.1
+      ],
+      "operating_cash_flow_usd_m": 2800,
+      "free_cash_flow_usd_m": 2600,
+      "capex_usd_m": 225,
+      "expected_ansys_revenue_usd_m": 2980,
+      "previous_released": "2026-05-27",
+      "previous_revenue_usd_m": [
+        9625,
+        9705
+      ],
+      "previous_non_gaap_eps_usd": [
+        14.72,
+        14.8
+      ],
+      "previous_operating_cash_flow_usd_m": 2300
+    },
+    "source": "Synopsys FY2026 Q3 业绩 8-K（2026-08-26，acc 0001193125-26-368620）EX-99.1：首页（Aug. 26, 2026；revenue $2.477 billion；GAAP EPS $2.84、non-GAAP EPS $3.91；non-GAAP net income $752.5 million）、Condensed Consolidated Statements of Income（Total revenue 2,476,822 / 1,739,737；Operating income 357,491；Diluted shares 192,319）、分部表（adjusted operating income Design Automation 905.0、Design IP 125.4）、GAAP to Non-GAAP Tax Rate Reconciliation（non-GAAP 18.0%）、Fourth Quarter and Full Fiscal Year 2026 Financial Targets（Q4 收入 2,530–2,580、non-GAAP 费用 1,450–1,480、non-GAAP EPS 4.10–4.16、股数 192–194、税率 18%；全年收入 9,690–9,740、non-GAAP EPS 15.04–15.10、OCF ~2,800、FCF ~2,600、capex ~225，脚注 Ansys $2.98 billion）；上一版全年指引读自 2026-05-27 业绩 8-K（acc 0001193125-26-241911）EX-99.1 的 Third Quarter and Full Fiscal Year 2026 Financial Targets（收入 9,625–9,705、non-GAAP EPS 14.72–14.80、OCF ~2,300）。截至 2026-07-31 的 10-Q（acc 0000883241-26-000025）：分部附注 Design IP revenue 473,851 / 427,571；收入附注 backlog $10.9 billion、non-cancellable FSA $1.9 billion、approximately 49%；收入分解三个月列 Ansys 28.7%。",
+    "checked_on": "2026-09-19"
   },
   "periods": [
     "Q3 2024",
@@ -218,7 +290,13 @@
       66.12,
       110.658,
       125.392
-    ]
+    ],
+    "design_ip_revenue_prior_year_outside_window": {
+      "Q3 2024": 513.7,
+      "Q4 2024": 525.7,
+      "Q1 2025": 399.8,
+      "Q2 2025": 463.1
+    }
   },
   "quarterly_guidance_history": {
     "quarters": [
@@ -2020,7 +2098,9 @@
     ]
   },
   "guidance": {
-    "q3_2026_next_quarter": {
+    "period": "Q2 2026",
+    "next_quarter": {
+      "period": "Q3 2026",
       "fiscal_label": "FY2026Q4",
       "period_end": "2026-10-31",
       "revenue_usd_m": [
@@ -2054,35 +2134,65 @@
       ],
       "margin_not_guided_note": "公司不给单季营业利润率指引。由下一季的收入与费用区间中点可以隐含出 non-GAAP 42.66%、GAAP 11.45%，本站把它标注为隐含值（D），不写成公司指引。"
     },
-    "fy2026": {
-      "revenue_usd_m": [
-        9690.0,
-        9740.0
-      ],
-      "gaap_expenses_usd_m": [
-        8667.0,
-        8742.0
-      ],
-      "non_gaap_expenses_usd_m": [
-        5670.0,
-        5700.0
-      ],
-      "gaap_eps_usd": [
-        3.84,
-        4.08
-      ],
-      "non_gaap_eps_usd": [
-        15.04,
-        15.1
-      ],
-      "operating_cash_flow_usd_m": 2800.0,
-      "free_cash_flow_usd_m": 2600.0,
-      "capex_usd_m": 225.0,
-      "gaap_operating_margin_midpoint_pct": 10.4,
-      "non_gaap_operating_margin_midpoint_pct": 41.5,
-      "margin_midpoint_note": "这两个中点是**全年**的，不是下一季的。它们此前存在 q3_2026_next_quarter 里，于是页面上那张指引表把「下一季 non-GAAP 营业利润率中点」印成 41.5%、并算出「较本季 −0.1pp」—— 方向是反的。发布稿里这两行的 Q4 格是空的，数字落在一个从全年列开始的 COLSPAN 单元格里，与 OCF ~$2,800 / FCF ~$2,600 / capex ~$225 同一个位置，而那三个本站一直就归在 fy2026 下。发布稿自己的调节表标题写着 「Operating Margin at Midpoint of Full Fiscal Year 2026 Targets」。中点算术也能独立判定：全年 (9,715−5,685)/9,715 = 41.48%、(9,715−8,704.5)/9,715 = 10.40%，与存的两个数逐位相同；下一季 (2,555−1,465)/2,555 = 42.66%、(2,555−2,262.5)/2,555 = 11.45%，都对不上。**值本身没错，错的是它挂在哪个块下面** —— 所以没有任何东西看起来是坏的。"
+    "full_year": {
+      "fiscal_year": "FY2026",
+      "current": {
+        "revenue_usd_m": [
+          9690.0,
+          9740.0
+        ],
+        "gaap_expenses_usd_m": [
+          8667.0,
+          8742.0
+        ],
+        "non_gaap_expenses_usd_m": [
+          5670.0,
+          5700.0
+        ],
+        "gaap_eps_usd": [
+          3.84,
+          4.08
+        ],
+        "non_gaap_eps_usd": [
+          15.04,
+          15.1
+        ],
+        "operating_cash_flow_usd_m": 2800.0,
+        "free_cash_flow_usd_m": 2600.0,
+        "capex_usd_m": 225.0,
+        "gaap_operating_margin_midpoint_pct": 10.4,
+        "non_gaap_operating_margin_midpoint_pct": 41.5,
+        "margin_midpoint_note": "这两个中点是**全年**的，不是下一季的。它们此前存在 q3_2026_next_quarter 里，于是页面上那张指引表把「下一季 non-GAAP 营业利润率中点」印成 41.5%、并算出「较本季 −0.1pp」—— 方向是反的。发布稿里这两行的 Q4 格是空的，数字落在一个从全年列开始的 COLSPAN 单元格里，与 OCF ~$2,800 / FCF ~$2,600 / capex ~$225 同一个位置，而那三个本站一直就归在 fy2026 下。发布稿自己的调节表标题写着 「Operating Margin at Midpoint of Full Fiscal Year 2026 Targets」。中点算术也能独立判定：全年 (9,715−5,685)/9,715 = 41.48%、(9,715−8,704.5)/9,715 = 10.40%，与存的两个数逐位相同；下一季 (2,555−1,465)/2,555 = 42.66%、(2,555−2,262.5)/2,555 = 11.45%，都对不上。**值本身没错，错的是它挂在哪个块下面** —— 所以没有任何东西看起来是坏的。"
+      },
+      "previous": {
+        "released": "2026-05-27",
+        "revenue_usd_m": [
+          9625.0,
+          9705.0
+        ],
+        "gaap_expenses_usd_m": [
+          8469.0,
+          8599.0
+        ],
+        "non_gaap_expenses_usd_m": [
+          5675.0,
+          5725.0
+        ],
+        "gaap_eps_usd": [
+          2.49,
+          2.91
+        ],
+        "non_gaap_eps_usd": [
+          14.72,
+          14.8
+        ],
+        "operating_cash_flow_usd_m": 2300.0,
+        "free_cash_flow_usd_m": 2000.0,
+        "capex_usd_m": 300.0
+      }
     },
-    "fy2026_revenue_footnote": {
+    "full_year_revenue_footnote": {
+      "fiscal_year": "FY2026",
       "releases": [
         "2025-12-10",
         "2026-02-25",
@@ -2107,6 +2217,12 @@
         2960.0,
         2980.0
       ],
+      "ansys_channel_accounting_usd_m": [
+        null,
+        null,
+        60.0,
+        null
+      ],
       "ansys_precision": [
         "~$2.9B",
         "~$2.9B",
@@ -2123,13 +2239,37 @@
     }
   },
   "market_expectation": {
+    "period": "Q2 2026",
     "as_of": "2026-08-26 财报发布前",
     "revenue_usd_m": 2440.0,
     "non_gaap_eps_usd": 3.67,
     "next_quarter_non_gaap_eps_usd": 3.78,
     "basis": "取自本地分析稿所采用的公开隐含一致预期（营收 US$2.44B、non-GAAP EPS $3.67，下一季 non-GAAP EPS $3.78），不具名、不引用任何卖方机构；仅作为带日期的对照点。"
   },
+  "quarter_story": {
+    "period": "Q2 2026",
+    "requires": [
+      "guide_beats_quarter",
+      "gaap_gain_quarter",
+      "ansys_base_partial"
+    ],
+    "closure_reading": "本季的信息增量在财务执行，不在结构性举证。",
+    "gaap_eps_note": "本季 GAAP 利润里含一笔 Processor IP Solutions 出售的税前收益，它不进 non-GAAP，却全额进 GAAP",
+    "expectation_lead": "本季对市场预期只是常规幅度，真正超出的是下季指引",
+    "expectation_note": "上一季被 {prev_restructuring} 重组费用压平、本季被一笔出售业务的税前收益推高，两季都不干净。",
+    "gaap_eps_table_note": "含出售收益",
+    "gaap_eps_next_note": "重组费用回归，口径不可与本季连读",
+    "non_gaap_tax_rate_actual_pct": 18.0,
+    "tax_note": "FY2026 起改用三年归一化税率",
+    "revenue_title_tail": "但同比里有一大半不是自己长出来的",
+    "revenue_note": "绿线从 Q3'25 起的抬升几乎全部是 Ansys 并表的机械结果 —— 该笔交易在 2025 年 7 月 17 日交割，Q2'25 只并进两周，所以本季的同比分母里 Ansys 只有两周，Q3'26 才是第一个两边都是全季的同比。",
+    "ansys_quarterly_note": "公司不按季印 Ansys 的收入金额，产品组占比只在并入之后的几季出现，拉不出一条长序列，所以本页不画季度级的「剔除 Ansys」曲线。",
+    "buyback_authorization_note": "进入 FY2026 后公司在 2 月把授权补到 US$2.0B，",
+    "last_quarter_buyback_note": "是上一季那笔加速回购的交割尾款",
+    "not_tracked": "本页已知未接入：Ansys 的季度收入金额（10-Q 只给产品组占比）与其渠道会计的单季金额（公司拒绝按季披露）、EDA 软件与硬件的拆分（公司未披露）、Factory 2 与 agentic 产品的任何量化口径（公司尚未给出）、客户集中度，以及 2026 年 9 月 30 日投资者日的内容（本页数据截至 {release_date} 的申报）。"
+  },
   "followup_closure": {
+    "period": "Q2 2026",
     "labels": [
       "已验证",
       "部分验证",
@@ -2145,6 +2285,7 @@
     "note": "上季留下的 5 条待验证问题，本季一条也没有完全闭环，也一条都没有被证伪。4 条部分验证、1 条仍未披露 —— 未披露的那条是 Ansys 渠道会计的单季金额，公司上季主动给过 $12.5M，本季被连问三次后不再给。"
   },
   "tracked_metric_verdicts": {
+    "period": "Q2 2026",
     "labels": [
       "触发（正面）",
       "部分触发",
@@ -2160,44 +2301,54 @@
     "note": "上季 5 条跟踪指标的判定：non-GAAP 营业利润率连续第三季兑现（触发，正面）；Design IP 的同比分量达标、环比分量未达标（部分触发）；Investor Day 与同业增速差两条未触发；还有一条被判为指标设计本身失效 —— 它的增速阈值没有内建基数校验，在并表与剥离同时发生的季度里会给出假信号。5 条全部保留，但阈值与口径都重设。"
   },
   "next_kpi": {
+    "period": "Q2 2026",
     "quantified": [
       {
+        "id": "ng_margin",
         "metric": "non-GAAP 营业利润率",
         "direction": "up",
         "threshold": 41.0,
-        "unit": "pct",
-        "current": 41.6
+        "unit": "pct"
       },
       {
+        "id": "ip_yoy",
         "metric": "Design IP 收入同比",
         "direction": "up",
         "threshold": 8.0,
-        "unit": "pct",
-        "current": 10.82
+        "unit": "pct"
       },
       {
+        "id": "backlog_12m",
         "metric": "未来 12 个月可确认 backlog",
         "direction": "up",
         "threshold": 4.2,
-        "unit": "usd_bn",
-        "current": 4.41
+        "unit": "usd_bn"
       },
       {
+        "id": "fsa_share",
         "metric": "FSA 占 backlog",
         "direction": "down",
         "threshold": 18.0,
-        "unit": "pct",
-        "current": 17.43
+        "unit": "pct"
       },
       {
+        "id": "shares",
         "metric": "摊薄股数",
         "direction": "down",
         "threshold": 194.0,
-        "unit": "million",
-        "current": 192.319
+        "unit": "million"
       }
     ],
-    "excluded": "另有三条本页<b>不接入</b>，原因各不相同，都写在这里而不是省略掉：（1）<b>EDA（剔除 Ansys）的收入与增速</b> —— 这是本季最关键的一条。<b>本页此前写着「公司从未在任何申报文件里单列 Ansys 的实际收入，所以季度级的\"DA 减 Ansys\"无法复算」，那句话太宽了。</b>公司确实从不印 Ansys 的**金额**，但本季 10-Q 的收入分解附注按产品组印了**占比**：EDA 51.8%、Design IP 19.1%、Ansys 28.7%、Other 0.4%（三个月列）。乘上当季收入 $2,476.8M，Ansys ≈ $710.9M、DA 减 Ansys ≈ $1,292M，一位小数的占比意味着不确定区间只有约 ±$0.2M。本页仍不发布这条**序列**，理由换成真的那个：占比只在 Ansys 并入之后的少数几个季度里出现，拉不出一条能和本页其余四十二季并排的线；单季的值以推导值（D）形式写在这里，不进图。指引脚注里的 $2.98B 是全年**预期**口径，不是已发生的收入；（2）<b>9 月 30 日 Investor Day 的货币化三要素</b> —— 是事件而不是连续指标，没有可画的序列；（3）<b>与同业的核心增速差</b> —— 两家公司的「核心 EDA」不是同一个口径，跨公司增速比较会把口径差算成增速差，本页不做。"
+    "thinnest_two": [
+      "shares",
+      "ng_margin"
+    ],
+    "note": "<b>余量最薄的两条最值得盯，而且性质完全不同</b>：<b>摊薄股数</b>只剩 {next_margin:shares} —— 这是全表唯一一条阈值不是本地设定的，{next_threshold:shares} 就是公司自己在同一张指引表里写的上限，所以越线等于公司没做到自己的数；<b>non-GAAP 营业利润率</b> {next_current:ng_margin} 对 {next_threshold:ng_margin} 的警戒线剩 {next_margin:ng_margin}，而公司把 {fy_label} 全年中点定在 {fy_ng_margin_mid}，这条线现在既是研究阈值也是公司承诺。另一条值得看的是 FSA 占 backlog：{next_current:fsa_share} 对 {next_threshold:fsa_share} 剩 {next_margin:fsa_share}，它是 backlog 里客户可自由调配的那部分，占比连续上行才算信号 —— 单季变化建立在 US$0.1B 的取整精度上，{fsa_prev} 到 {fsa_now} 有可能只是 {fsa_prev_high} 到 {fsa_now_low}（见 Exhibit {EX_BACKLOG}）。",
+    "excluded": [
+      "<b>EDA（剔除 Ansys）的收入与增速</b> —— 这是本季最关键的一条。<b>本页此前写着「公司从未在任何申报文件里单列 Ansys 的实际收入，所以季度级的\"DA 减 Ansys\"无法复算」，那句话太宽了。</b>公司确实从不印 Ansys 的<b>金额</b>，但本季 10-Q 的收入分解附注按产品组印了<b>占比</b>：{ansys_shares}（三个月列）。乘上当季收入 {ansys_base}，Ansys ≈ {ansys_implied}、DA 减 Ansys ≈ {ansys_rest}，一位小数的占比意味着不确定区间只有约 ±{ansys_precision}。本页仍不发布这条<b>序列</b>，理由换成真的那个：占比只在 Ansys 并入之后的少数几个季度里出现，拉不出一条能和本页其余{record_quarters}季并排的线；单季的值以推导值（D）形式写在这里，不进图。指引脚注里的 {fy_ansys_expected} 是全年<b>预期</b>口径，不是已发生的收入",
+      "<b>9 月 30 日 Investor Day 的货币化三要素</b> —— 是事件而不是连续指标，没有可画的序列",
+      "<b>与同业的核心增速差</b> —— 两家公司的「核心 EDA」不是同一个口径，跨公司增速比较会把口径差算成增速差，本页不做"
+    ]
   },
   "sources": [
     {
@@ -2222,6 +2373,7 @@
     }
   ],
   "ansys_split_note": {
+    "period": "Q2 2026",
     "source": "Q3 FY2026 10-Q（accession 0000883241-26-000025）R52「Revenue - Schedule of Disaggregation of Revenue」的三个月列。",
     "percentages_pct": {
       "EDA": 51.8,
@@ -2232,6 +2384,6 @@
     "revenue_usd_m": 2476.822,
     "implied_ansys_usd_m": 710.8,
     "implied_da_ex_ansys_usd_m": 1292.9,
-    "precision": "占比印到一位小数，所以每个推导值的区间约为 ±$0.2M。"
+    "precision": "占比印到一位小数（±0.05pp），所以每个推导值带约 ±$1.2M 的取整区间。"
   }
 }
