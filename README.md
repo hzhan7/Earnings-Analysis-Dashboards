@@ -3,7 +3,8 @@
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
 American Express, Broadcom, Brunello Cucinelli, Cadence, Cboe Global Markets,
-Charles Schwab, CME Group, Costco, Ferrari, Hermès International,
+Charles Schwab, CME Group, Costco, Ermenegildo Zegna, Ferrari,
+Hermès International,
 Hong Kong Exchanges and Clearing, Interactive Brokers, Kering, LVMH, Mastercard,
 Meta, Micron, Microsoft, Moody's, MSCI, Nasdaq, NIKE, NVIDIA,
 Philip Morris International, Richemont, S&P Global,
@@ -52,6 +53,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/tjx/`
 - `http://127.0.0.1:8765/tsm/`
 - `http://127.0.0.1:8765/v/`
+- `http://127.0.0.1:8765/zgn/`
 
 Live site: https://hzhan7.github.io/Earnings-Analysis-Dashboards/
 
@@ -110,7 +112,8 @@ no dependency at all, and is what actually runs on a fresh clone.
   PDFs, PPTs and transcripts.
 - `D` means Derived / 自算; it does not mean a company-defined non-GAAP metric.
 - Amounts are in the currency the filer reports in. Ferrari, Brunello
-  Cucinelli, Kering, LVMH, Hermès International and Richemont all report under IFRS in
+  Cucinelli, Ermenegildo Zegna, Kering, LVMH, Hermès International and Richemont
+  all report under IFRS in
   euro, so their pages are denominated in EUR and their figures are not addable to the US-dollar pages; SK hynix reports under K-IFRS in won and is denominated
   in KRW, quoted in trillions the way the company quotes itself, so it is not
   addable to either. The cross-page capex table stays in US dollars on every
@@ -284,7 +287,19 @@ Charts are ordered the way the note is actually used:
    handset division's operating margin set against its own semiconductor
    division's prices -- the group sits on both sides of the same price rise --
    and the intersegment elimination the segment table has no
-   line for; and Brunello Cucinelli gets the guidance sentence it repeats year
+   line for; Ermenegildo Zegna gets the opposite of the LVMH split — a revenue
+   axis on which every one of its twenty-two quarters was printed as a discrete
+   quarter by the company itself, nothing subtracted, set against a profit axis
+   that runs on halves — the direct-to-consumer conversion that took the
+   channel from two thirds of branded revenue to six sevenths of it while group
+   revenue moved less than a point across two years, the half in which revenue,
+   gross profit, operating profit and Adjusted EBIT all rose and profit fell by
+   two fifths because a dollar-denominated put option over the minority of one
+   brand moved twice in the same direction, the one segment whose Adjusted EBIT
+   is larger than the whole group's because the other two brands and the
+   corporate line are negative, and a republication census in which the group
+   total came back the same on all twenty-four occasions it was printed again
+   while four of the lines beneath it did not; and Brunello Cucinelli gets the guidance sentence it repeats year
    after year — revenue growth of "around 10%" — set against the two
    different answers it produces, because none of the 110 quantified forward
    statements in its results calls before December 2025 says which

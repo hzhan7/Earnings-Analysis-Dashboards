@@ -14,7 +14,7 @@ from build import (  # noqa: E402
     amzn, avgo, axp, bc, cboe, cdns, cfr, cme, cost, googl, hkex, ibkr, ker, ma, mc, mco,
     meta, msci, msft, mu, ndaq, nke, nvda, pm, race, rms, samsung, schw,
     skhynix, snps,
-    spgi, tjx, tsm, v,
+    spgi, tjx, tsm, v, zgn,
 )
 from build.home import write_home  # noqa: E402
 from build.payload_guard import write_js  # noqa: E402
@@ -57,6 +57,7 @@ MODULES = {
     "tjx": tjx,
     "tsm": tsm,
     "v": v,
+    "zgn": zgn,
 }
 
 GROUPS = [
@@ -418,6 +419,18 @@ ENTRIES = [
         "group": "payment_networks",
         "cadence_label": "9 月制财年；本站按自然年季度标注",
         "search_text": "v visa 维萨 支付 卡组织 网络 跨境 client incentives 激励 借记卡 信用卡 发卡行 收单",
+    },
+    {
+        "slug": "zgn",
+        "ticker": "ZGN",
+        "name": "Ermenegildo Zegna N.V.",
+        "aliases": ["Zegna", "杰尼亚", "Ermenegildo Zegna", "Thom Browne", "TOM FORD FASHION"],
+        "group": "luxury_brands",
+        "cadence_label": "自然年财年；收入按单季公布，完整损益一年两次",
+        "search_text": ("zgn zegna ermenegildo 杰尼亚 奢侈品 意大利 男装 面料 filiera "
+                        "thom browne tom ford fashion 汤姆布朗 汤姆福特 dtc 直营 批发 "
+                        "retail-first 大中华区 gcr 有机增速 organic adjusted ebit 看跌期权 "
+                        "put option 纽交所 外国私人发行人 20-f 6-k ifrs 欧元"),
     },
 ]
 

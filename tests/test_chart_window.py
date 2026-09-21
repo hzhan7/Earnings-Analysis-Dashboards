@@ -166,7 +166,7 @@ REACH_2016 = {
     "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 3, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 0, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
-    "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15,
+    "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
 }
 
 # Exemption keys are matched on the *shape* of a title, not on its digits: in the
@@ -784,12 +784,52 @@ CONVERTED = {
         "HPC 从": "same disclosure limit, long-run version of the same series.",
         "2nm 占晶圆收入": "2nm sat inside the 'advanced' aggregate until 2025Q2.",
     },
+    # Zegna listed on 2021-12-17 and is a foreign private issuer, so its whole
+    # record is on EDGAR and the floor is checkable in one place. Every filing
+    # that could carry a financial table before the listing was read for this --
+    # the F-4 of 2021-08-27, the F-1 of 2022-01-19 and the FY2021 20-F -- and
+    # none of the three tables a quarter; all three discuss quarters only in
+    # prose. The earliest quarterly figure the company has ever printed is
+    # 2021Q1, in the prior-year column of the Q1 2022 revenue release.
+    "zgn": {
+        "DTC 占品牌收入从": "revenue by distribution channel is quarterly only from the "
+                      "Q1 2022 release; no pre-listing filing tables a quarter.",
+        "集团单季收入": "the quarterly revenue record starts at 2021Q1 and cannot start "
+                   "earlier -- see the note above this entry.",
+        "#个区域#季": "revenue by geographic area, same quarterly floor. The regions "
+                  "themselves also changed at the Q1 2024 release; the earlier "
+                  "quarters here are restated onto the current four by the two "
+                  "identities the chart's note states.",
+        "美洲与大中华区": "same quarterly floor, the two-region view of the same series.",
+        "直营门店从": "the store table's own floor: the earliest column any release "
+                  "prints is 2020-12-31, in the Q1 2022 release.",
+        "#个品牌的 Adjusted EBIT": "Adjusted EBIT by segment begins with FY2020. The FY2021 "
+                               "20-F does print FY2019, but on the basis that had no "
+                               "Corporate line -- Zegna 91,385 with corporate costs "
+                               "inside it -- so drawing it here would splice two bases "
+                               "on one axis.",
+        "分部的 Adjusted EBIT 相当于集团的": "same segment floor; this is the ratio view of the "
+                                   "same series.",
+        "Thom Browne 直营门店": "Thom Browne's DTC revenue is split out by brand only from "
+                            "the 2021Q3 release, so FY2022 is the first year that has "
+                            "four quarters of it to divide by a year-end door count.",
+    },
 }
 
 
 FLOOR_KIND = {
     'ker': {
         '新分部口径下的可比增速': 'disclosure',
+    },
+    'zgn': {
+        'DTC 占品牌收入从': 'disclosure',
+        '集团单季收入': 'disclosure',
+        '#个区域#季': 'disclosure',
+        '美洲与大中华区': 'disclosure',
+        '直营门店从': 'disclosure',
+        '#个品牌的 Adjusted EBIT': 'disclosure',
+        '分部的 Adjusted EBIT 相当于集团的': 'disclosure',
+        'Thom Browne 直营门店': 'disclosure',
     },
     'hkex': {
         '现货市场日均成交额与交易结算费': 'disclosure',
@@ -1175,7 +1215,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 126)
+        self.assertEqual(settled.count("disclosure"), 134)
         self.assertEqual(settled.count("design"), 34)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:

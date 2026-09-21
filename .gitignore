@@ -53,6 +53,7 @@ series/*.json
 !series/tjx.json
 !series/tsm.json
 !series/v.json
+!series/zgn.json
 config/
 build/ingest_local.py
 

@@ -108,7 +108,7 @@ COMPANY_SLUGS = (
     "ibkr", "ker",
     "ma", "mc", "mco",
     "meta", "msci", "msft", "mu", "ndaq", "nke", "nvda", "pm", "race", "rms",
-    "samsung", "schw", "skhynix", "snps", "spgi", "tjx", "tsm", "v",
+    "samsung", "schw", "skhynix", "snps", "spgi", "tjx", "tsm", "v", "zgn",
 )
 
 

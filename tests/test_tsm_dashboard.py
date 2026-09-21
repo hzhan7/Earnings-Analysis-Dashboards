@@ -775,7 +775,7 @@ class TsmDashboardTest(unittest.TestCase):
              "msft",
              "mu", "ndaq", "nke", "nvda", "pm", "race", "rms", "samsung",
              "schw",
-             "skhynix", "snps", "spgi", "tjx", "tsm", "v",
+             "skhynix", "snps", "spgi", "tjx", "tsm", "v", "zgn",
             ],
         )
         shell = (ROOT / "tsm" / "index.html").read_text(encoding="utf-8")
