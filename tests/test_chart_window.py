@@ -43,7 +43,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build.all import ENTRIES  # noqa: E402
-from tests.test_chart_contract import exhibits  # noqa: E402
+from tests.test_chart_contract import exhibits, payloads  # noqa: E402
 
 TARGET_YEAR = 2016
 
@@ -165,8 +165,12 @@ REACH_2016 = {
     "amzn": 13, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
     "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 3, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
-    "race": 9, "rms": 0, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
+    "race": 9, "rms": 5, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
     "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
+    # Not a company page. It is here because the ratchet now walks every
+    # published payload rather than `ENTRIES`: a page that was invisible to the
+    # ratchet could lose ground without the count moving.
+    "luxury": 4,
 }
 
 # Exemption keys are matched on the *shape* of a title, not on its digits: in the
@@ -198,6 +202,26 @@ def key_matches(key: str, title: str) -> bool:
 # that stops it. An entry that no longer matches a short exhibit fails too --
 # otherwise the list would slowly fill with excuses for charts that were fixed.
 CONVERTED = {
+    "luxury": {
+        # Not disclosure floors and not a backlog: these axes are intersections.
+        # Two of the six publish no quarterly growth rate of their own, so their
+        # line has to be divided out of their euro series, which cannot begin
+        # until that series is a year old; Richemont printed no standalone
+        # quarterly rate at all before 2021Q2. The half-year axis is the same
+        # shape one clock down -- five of the six close a half on 30 June and
+        # the sixth does not, so the shared axis is only as long as the five
+        # have in common. Widening either one would mean drawing a comparison
+        # where a member has no figure, which is the thing this page is about.
+        "六家在共同的": "the rate window is the intersection of six growth lines, "
+                   "two of which are derived from a euro series and so start a "
+                   "year late.",
+        "六家之间的极差": "the column range of the chart above; same window by "
+                     "construction.",
+        "公司自己的口径比欧元口径高出多少": "one line per company with a printed rate, "
+                                 "on the same intersection.",
+        "同一根日历轴上": "the calendar half-year axis is the intersection of the "
+                    "five members that close a half on 30 June.",
+    },
     "v": {
         # Visa adopted ASC 606 with the fiscal 2019 first quarter and published
         # its first disaggregation-of-revenue note in the 10-Q filed
@@ -818,6 +842,12 @@ CONVERTED = {
 
 
 FLOOR_KIND = {
+    'luxury': {
+        '六家在共同的': 'design',
+        '六家之间的极差': 'design',
+        '公司自己的口径比欧元口径高出多少': 'design',
+        '同一根日历轴上': 'design',
+    },
     'ker': {
         '新分部口径下的可比增速': 'disclosure',
     },
@@ -1120,10 +1150,11 @@ FLOOR_KIND = {
 class ChartWindowTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.pages = {
-            entry["slug"]: js_payload(ROOT / "data" / f"{entry['slug']}.js", "window.DASH")
-            for entry in ENTRIES
-        }
+        # Discovered, like `test_chart_contract.payloads()`: the unit of this
+        # file is 「published page」, and the first page that is not a company
+        # was invisible to this ratchet while it walked `ENTRIES` -- it could
+        # have lost ground without the count moving.
+        cls.pages = dict(payloads())
         cls.timed = {}
         for slug, payload in cls.pages.items():
             found = []
@@ -1216,7 +1247,7 @@ class ChartWindowTest(unittest.TestCase):
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
         self.assertEqual(settled.count("disclosure"), 134)
-        self.assertEqual(settled.count("design"), 34)
+        self.assertEqual(settled.count("design"), 38)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
         """Every short chart either names its reason or is counted here.
@@ -1251,7 +1282,7 @@ class ChartWindowTest(unittest.TestCase):
         combined = {slug: SHORT_BY_DESIGN.get(slug, 0) + UNEXPLAINED_LONG.get(slug, 0)
                     for slug in set(SHORT_BY_DESIGN) | set(UNEXPLAINED_LONG)}
         self.assertEqual(by_page, combined)
-        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 64)
+        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 55)
         # Zero, as of the SK hynix backfill. This number is not load-bearing on
         # its own -- an empty dict sums to zero for free -- but `by_length ==
         # UNEXPLAINED_LONG` two lines down is, and that one is what turns red if
@@ -1422,17 +1453,10 @@ class ChartWindowTest(unittest.TestCase):
 # they sit in the 550 denominator and have to be accounted for somewhere.
 SHORT_BY_DESIGN = {
     'bc': 7,
-    # The cross-company page is short for a reason no company page can be: its
-    # axes are intersections. Four charts run on the window the six luxury
-    # companies *share* -- eight quarters of revenue and seven calendar halves
-    # of profit -- and widening either one would mean drawing a comparison
-    # where one of the six has no figure. The page's own subject is where that
-    # intersection comes from, so these four are the argument, not a backlog.
-    'luxury': 4,
     'mc': 10,
     'nvda': 11,
     'pm': 5,
-    'rms': 7,
+    'rms': 2,
     'samsung': 15,
     'skhynix': 5,
 
@@ -1484,6 +1508,13 @@ UNDERIVABLE_QUARTER_COUNTS = {
     "axp Ex17":  ([16], "同上，同一句重叠区间长度出现在另一张信用图的图注里"),
     "skhynix Ex7": ([22], "这一页此前的窗口长度。图注解释的正是「从 22 季拉到 42 季」"
                           "改变了什么，所以那个 22 指的是旧窗口，不是本图的任何一段"),
+    "luxury Ex13": ([12], "这张图的 x 轴是十九条品类线，不是时间；12 是回归窗口的季度数，"
+                          "写在标题里是为了让读者知道这些 α 是在多长的样本上拟合的。"
+                          "一张分类轴的图按构造推不出任何季度数，所以它只能 pin"),
+    "rms Ex16": ([30], "阈值之上的季度数，是条件计数不是窗口长度。它在八季窗口上碰巧等于 n−1 "
+                       "而被当成可推导；回补到 42 季之后不再等于任何一个轴长，这条 pin 才是它"
+                       "本来的样子。同句里的「三十八季」是印出增速的季度数（42 季轴上有 4 季"
+                       "只有欧元金额、没有增速），用中文数字写，所以不进这个正则"),
     **_tsm_advanced_count(),
 }
 

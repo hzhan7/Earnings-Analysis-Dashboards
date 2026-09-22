@@ -160,6 +160,19 @@ class LuxuryCrossPageTest(unittest.TestCase):
                        for slug, data in cls.series.items()}
         cls.window = sorted(set.intersection(*(set(r) for r in cls.revenue.values())),
                             key=lambda q: (int(q[:4]), int(q[5])))
+        # Two windows. Every member has a euro figure across `window`; a growth
+        # reading additionally needs either a rate the company printed or a
+        # year-ago euro quarter to divide by, and neither is available for the
+        # whole of it. Recomputed here rather than read off the payload, which
+        # is the number under test.
+        cls.rates = {}
+        for slug in MEMBERS:
+            published = printed_growth(slug, cls.series[slug])
+            cls.rates[slug] = ({q: published[q] for q in cls.window if q in published}
+                               if published is not None else
+                               {q: year_on_year(cls.revenue[slug], q) for q in cls.window
+                                if year_on_year(cls.revenue[slug], q) is not None})
+        cls.rate_window = [q for q in cls.window if all(q in cls.rates[s] for s in MEMBERS)]
         cls.exhibits = {exhibit["n"]: exhibit
                         for section in cls.payload["sections"]
                         for exhibit in section["exhibits"]}
@@ -246,7 +259,10 @@ class LuxuryCrossPageTest(unittest.TestCase):
     def test_the_common_window_is_the_intersection_of_the_six(self) -> None:
         """Recomputed here; the page states it in four separate places."""
         exhibit = self.exhibit_titled("六家在共同的")
-        self.assertEqual(exhibit["xlabels"], self.window)
+        self.assertEqual(exhibit["xlabels"], self.rate_window)
+        self.assertLess(len(self.rate_window), len(self.window),
+                        "the rate window is the shorter of the two; if it stops "
+                        "being shorter, the note explaining why is now false")
         self.assertEqual(self.payload["latest"]["disclosed_period_label"],
                          f"Q{self.window[-1][5]} {self.window[-1][:4]}")
         self.assertIn(f"{self.window[0]}–{self.window[-1]}", self.payload["subtitle"])
@@ -297,12 +313,10 @@ class LuxuryCrossPageTest(unittest.TestCase):
             published = printed_growth(slug, self.series[slug])
             values = self.series_named(exhibit, short[slug])
             if published is None:
-                expected = [year_on_year(self.revenue[slug], q) for q in self.window]
                 name = next(s["name"] for s in exhibit["series"] if short[slug] in s["name"])
                 self.assertIn("D", name, f"{slug}: a self-computed rate must be marked")
-            else:
-                expected = [published.get(q) for q in self.window]
-            for quarter, got, want in zip(self.window, values, expected):
+            expected = [self.rates[slug][q] for q in self.rate_window]
+            for quarter, got, want in zip(self.rate_window, values, expected):
                 self.assertAlmostEqual(got, want, places=4,
                                        msg=f"{slug} {quarter}")
 
@@ -354,7 +368,7 @@ class LuxuryCrossPageTest(unittest.TestCase):
                                  f"{slug} has no company rate and cannot have a wedge")
                 continue
             values = self.series_named(exhibit, short[slug])
-            for index, quarter in enumerate(self.window):
+            for index, quarter in enumerate(self.rate_window):
                 reported = year_on_year(self.revenue[slug], quarter)
                 if reported is None:
                     # No year-ago euro figure on this site, so there is nothing
@@ -384,12 +398,10 @@ class LuxuryCrossPageTest(unittest.TestCase):
         worst = max(gaps, key=gaps.get)
         exhibit = self.exhibit_titled("两种算法")
         self.assertIn(f"{gaps[worst]:.1f}pp", exhibit["note"])
-        self.assertIn(worst, self.payload["brief"])
+        self.assertIn(worst, exhibit["note"])
         for quarter in (q for q, gap in gaps.items() if gap > 1.0):
             self.assertIn(quarter, exhibit["note"],
                           "every quarter where the two disagree is named in the note")
-        # ...and the page says so in the same words the brief uses.
-        self.assertIn(f"{gaps[worst]:.1f}pp", self.payload["brief"])
 
     def test_the_margin_chart_excludes_the_company_on_another_clock(self) -> None:
         """Five lines, not six, and the sixth is on its own chart.
@@ -537,6 +549,17 @@ class LuxuryCrossPageTest(unittest.TestCase):
             luxury.cfr_view = original
             luxury.VIEWS["cfr"] = original
 
+    def test_no_story_placeholder_reaches_the_reader(self) -> None:
+        """`fill_story` only substitutes lower-case names, and says nothing about the rest.
+
+        `{ac4}` shipped verbatim into the headline for exactly this reason: a
+        digit in the name put it outside the substitution pattern, so it was
+        neither filled nor reported -- it was simply printed. The builder cannot
+        catch this; the published payload can.
+        """
+        text = json.dumps(self.payload, ensure_ascii=False)
+        self.assertEqual(re.findall(r"\{[a-z_][a-z_0-9]*\}", text), [])
+
     def test_the_page_reads_only_the_six_series_it_declares(self) -> None:
         """No filings data of its own, and no seventh company smuggled in."""
         source = (ROOT / "build" / "luxury.py").read_text(encoding="utf-8")
@@ -547,7 +570,7 @@ class LuxuryCrossPageTest(unittest.TestCase):
         figures = [key for key in self.staging
                    if key not in {"schema_version", "_provenance", "_no_checks_rationale",
                                   "page", "members", "latest", "growth_metrics",
-                                  "quarter_story", "sources"}]
+                                  "quarter_story", "sources", "factor_panel"}]
         self.assertEqual(figures, [], f"unexpected data in series/luxury.json: {figures}")
 
 

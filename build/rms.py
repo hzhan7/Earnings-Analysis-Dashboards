@@ -101,6 +101,25 @@ SOURCE_HALF = ("上半年数值取半年度财务报告与半年度业绩新闻�
 AXIS = "纵轴不自 0 起，但没有任何点被截掉。"
 
 
+def pct_or_dash(value: float | None) -> str:
+    """A rate, or an em dash where the company printed an amount and no rate."""
+    return "—" if value is None else f"{value:.1f}%"
+
+
+def rated_quarters(staging: dict) -> list[int]:
+    """Indices of the quarters that carry a published *and* a constant-currency rate.
+
+    The revenue window reaches back further than the rate window: the 2016
+    quarters arrive as the prior-year column of the 2017 releases, which prints
+    the euro amount and not the growth beside it. Every census, extreme and
+    ranking below runs over these indices, so a sentence about "every quarter"
+    means every quarter that could have carried the thing it is counting.
+    """
+    group = staging["group_revenue"]
+    return [i for i in range(len(staging["periods"]))
+            if group["published_pct"][i] is not None and group["cc_pct"][i] is not None]
+
+
 def signed(value: float, digits: int = 1, suffix: str = "%") -> str:
     return f"{value:+.{digits}f}{suffix}"
 
@@ -284,16 +303,26 @@ def outlook_charts(staging: dict, story: dict | None) -> list[dict]:
     group = staging["group_revenue"]
     published = group["published_pct"]
     cc = group["cc_pct"]
-    wedge = [p - c for p, c in zip(published, cc)]
-    worst = wedge.index(min(wedge))
-    peak = wedge.index(max(wedge))
-    diverging = peak < worst and all(wedge[i + 1] < wedge[i] for i in range(peak, worst))
+    # The window reaches further back than the rates do: the 2016 quarters are
+    # in this file as the prior-year column of the 2017 releases, which prints
+    # the euro amount and not the growth. Everything below therefore runs over
+    # the quarters that actually carry both rates, and the prose counts those
+    # rather than the window, so a sentence cannot claim a span the lines do
+    # not cover.
+    rated = rated_quarters(staging)
+    wedge = [None if published[i] is None or cc[i] is None else published[i] - cc[i]
+             for i in range(n)]
+    worst = min(rated, key=lambda i: wedge[i])
+    peak = max(rated, key=lambda i: wedge[i])
+    diverging = (peak < worst
+                 and all(wedge[j] < wedge[i] for i, j in zip(rated, rated[1:])
+                         if peak <= i and j <= worst))
 
-    flips_group = [i for i in range(n) if published[i] < 0 < cc[i]]
+    flips_group = [i for i in rated if published[i] < 0 < cc[i]]
     rates_note = ("<b>这两条线是这家公司每季度唯一给出的可结算数字，而它们不是同一件事。</b>"
                   "published 是读者在标题里看到的那个数，固定汇率是公司自己按上期平均汇率重算的那个数。")
     if diverging and wedge[peak] > 0:
-        rates_note += (f"{cn_count(n)}个季度里两条线一路分开：{periods[peak]} 时 published 还比固定汇率高 "
+        rates_note += (f"{cn_count(len(rated))}个季度里两条线一路分开：{periods[peak]} 时 published 还比固定汇率高 "
                        f"{signed(wedge[peak], 1, 'pp')}，到 {periods[worst]} 已经低了 "
                        f"{abs(wedge[worst]):.1f}pp。")
     if flips_group:
@@ -358,9 +387,12 @@ def outlook_charts(staging: dict, story: dict | None) -> list[dict]:
 
     regions = staging["by_region"]
     latest = n - 1
-    flips = [(period, block["label"], block["published_pct"][i], block["cc_pct"][i], key)
+    # Same rule as the group lines above: only the quarters that carry both
+    # rates are in the census, so the denominator the note prints is the number
+    # of cells that could have flipped, not the number of cells on the axis.
+    flips = [(periods[i], block["label"], block["published_pct"][i], block["cc_pct"][i], key)
              for key, block in regions.items()
-             for i, period in enumerate(periods)
+             for i in rated
              if block["published_pct"][i] * block["cc_pct"][i] < 0]
     gap = {k: regions[k]["cc_pct"][latest] - regions[k]["published_pct"][latest] for k in REGION_ORDER}
     focus = max(REGION_ORDER, key=lambda k: abs(gap[k]))
@@ -378,8 +410,9 @@ def outlook_charts(staging: dict, story: dict | None) -> list[dict]:
     if "france" in same:
         region_note += "法国两根柱一样高 —— 本币计价，没有汇率可换算；"
     region_note += (f"{regions[focus]['label']}两根柱差 {abs(gap[focus]):.1f}pp，是全表最大的一格。"
-                    f"把窗口拉到{cn_count(n)}个季度、{cn_count(len(REGION_ORDER))}个地区共 "
-                    f"{n * len(REGION_ORDER)} 格，其中 <b>{len(flips)} 格的两个口径符号相反</b>")
+                    f"把窗口拉到{cn_count(len(rated))}个印出增速的季度、"
+                    f"{cn_count(len(REGION_ORDER))}个地区共 "
+                    f"{len(rated) * len(REGION_ORDER)} 格，其中 <b>{len(flips)} 格的两个口径符号相反</b>")
     if flips:
         region_note += ("：" + "、".join(f"{p} 的{label}（{signed(a)} 对 {signed(b)}）"
                                         for p, label, a, b, _ in flips) + "。")
@@ -411,6 +444,7 @@ def outlook_charts(staging: dict, story: dict | None) -> list[dict]:
 
 # ── section two: the quarter, which exists only at the revenue line ──────────
 def quarter_charts(staging: dict, story: dict | None) -> list[dict]:
+    rated = rated_quarters(staging)
     periods = staging["periods"]
     n = len(periods)
     latest = n - 1
@@ -431,7 +465,7 @@ def quarter_charts(staging: dict, story: dict | None) -> list[dict]:
     # asserted -- the sentence that used to say "three of the four" was typed by
     # hand and was wrong by one.
     off_the_low = [k for k in accelerating
-                   if sectors[k]["cc_pct"][latest - 1] == min(sectors[k]["cc_pct"])]
+                   if sectors[k]["cc_pct"][latest - 1] == min(sectors[k]["cc_pct"][i] for i in rated)]
     negative_now = [k for k in SECTOR_ORDER if sectors[k]["cc_pct"][latest] < 0]
     k_acc = cn_count(len(accelerating))
     pace_note = ""
@@ -577,7 +611,7 @@ def quarter_charts(staging: dict, story: dict | None) -> list[dict]:
         "src_extra": SOURCE_QUARTER + "（增量权重为本页自算 D）",
     }
 
-    peak = group["cc_pct"].index(max(group["cc_pct"]))
+    peak = max(rated, key=lambda i: group["cc_pct"][i])
     double_digit = [k for k in SECTOR_ORDER if sectors[k]["cc_pct"][peak] >= 10.0]
     lowest = [k for k in SECTOR_ORDER
               if k in sorted(SECTOR_ORDER, key=lambda key: sectors[key]["cc_pct"][peak])[:2]]
@@ -585,7 +619,8 @@ def quarter_charts(staging: dict, story: dict | None) -> list[dict]:
                                         for k in SECTOR_ORDER)
     watches = sectors["watches"]["cc_pct"]
     watch_positive = sum(1 for v in watches[-4:] if v > 0)
-    deep = [(periods[i], v) for i, v in enumerate(watches[:n // 2]) if v <= -10]
+    deep = [(periods[i], v) for i, v in enumerate(watches[:n // 2])
+            if v is not None and v <= -10]
     consecutive = len(deep) >= 2 and all(periods.index(b[0]) == periods.index(a[0]) + 1
                                          for a, b in zip(deep, deep[1:]))
     trend_note = ""
@@ -977,6 +1012,7 @@ def kpi_entries(staging: dict, kpi: dict) -> list[dict]:
 def next_quarter_charts(staging: dict, kpi: dict, entries: list[dict], values: dict) -> list[dict]:
     periods = staging["periods"]
     n = len(periods)
+    rated = rated_quarters(staging)
     breached = [e for e in entries
                 if headroom_value(e["direction"], e["threshold"], e["current"]) < 0]
     later = kpi["full_year_only"]
@@ -1011,7 +1047,11 @@ def next_quarter_charts(staging: dict, kpi: dict, entries: list[dict], values: d
         block = staging[kind][key]
         values_now = block["cc_pct"]
         threshold = entry["threshold"]
-        above = sum(1 for v in values_now if v >= threshold)
+        # Counted over the quarters that carry a rate, not over the axis: the
+        # early quarters have a euro amount and no growth beside it, and a
+        # quarter with no rate is neither above nor below the threshold.
+        scored = [values_now[i] for i in rated]
+        above = sum(1 for v in scored if v >= threshold)
         chart_note = ""
         if kind == "by_region" and first_half is not None and segments is not None and income is not None:
             total_roi = next(cur for k, _, cur, _ in income["lines"] if k == "recurring_operating_income")
@@ -1022,11 +1062,11 @@ def next_quarter_charts(staging: dict, kpi: dict, entries: list[dict], values: d
                            f"{first_half['by_region'][key]['revenue_eur_m'] / first_half['group']['revenue_eur_m'] * 100:.1f}%、"
                            f"占分部经常性经营利润 {row['roi_now'] / total_roi * 100:.1f}%"
                            + ("，是集团利润率的第一决定变量" if largest else "")
-                           + f"，而它在这 {n} 个季度里有 {sum(1 for v in values_now if v < threshold)} 季"
+                           + f"，而它在这 {len(scored)} 个季度里有 {sum(1 for v in scored if v < threshold)} 季"
                            f"低于 {threshold:g}%。")
         chart_note += fill_story(raw[metric].get("chart_note", ""), values)
         charts.append(threshold_exhibit(
-            f"{block['label']}固定汇率增速与 {threshold:g}% 阈值：{cn_count(n)}季里 {above} 季在阈值之上",
+            f"{block['label']}固定汇率增速与 {threshold:g}% 阈值：{cn_count(len(scored))}季里 {above} 季在阈值之上",
             list(periods), rounded(values_now), threshold,
             fmt="pct1", ylab="同比 %（固定汇率）",
             actual_name=f"{block['label']}固定汇率增速", threshold_name=f"本页阈值 {threshold:.1f}%",
@@ -1096,7 +1136,8 @@ def build_payload(staging: dict) -> dict:
     r_inc, r_total = cc_increments(regions, REGION_ORDER, latest)
     engine = max(REGION_ORDER, key=lambda k: r_inc[k])
     engine_share = r_inc[engine] / r_total * 100
-    wedge = [p - c for p, c in zip(group["published_pct"], group["cc_pct"])]
+    wedge = [None if p is None or c is None else p - c
+             for p, c in zip(group["published_pct"], group["cc_pct"])]
     year, number = quarter_parts(period)
     outlook_block = staging["outlook"]
 
@@ -1107,8 +1148,9 @@ def build_payload(staging: dict) -> dict:
             "headers": ["期间", "集团收入", "集团 published", "集团固定汇率"]
                        + [sectors[key]["label"] for key in SECTOR_ORDER],
             "rows": [[periods[i], f"€{group['revenue_eur_m'][i]:,}M",
-                      f"{group['published_pct'][i]:.1f}%", f"{group['cc_pct'][i]:.1f}%"]
-                     + [f"€{sectors[key]['revenue_eur_m'][i]:,}M / {sectors[key]['cc_pct'][i]:.1f}%"
+                      pct_or_dash(group["published_pct"][i]), pct_or_dash(group["cc_pct"][i])]
+                     + [f"€{sectors[key]['revenue_eur_m'][i]:,}M / "
+                        + pct_or_dash(sectors[key]["cc_pct"][i])
                         for key in SECTOR_ORDER]
                      for i in range(n)],
         },
@@ -1118,8 +1160,8 @@ def build_payload(staging: dict) -> dict:
                                    for key in REGION_ORDER],
             "rows": [[periods[i]]
                      + [f"€{regions[key]['revenue_eur_m'][i]:,}M / "
-                        f"{regions[key]['published_pct'][i]:.1f}% / "
-                        f"{regions[key]['cc_pct'][i]:.1f}%"
+                        + pct_or_dash(regions[key]["published_pct"][i]) + " / "
+                        + pct_or_dash(regions[key]["cc_pct"][i])
                         for key in REGION_ORDER]
                      for i in range(n)],
         },
@@ -1304,8 +1346,17 @@ def build_payload(staging: dict) -> dict:
     full_year_quarters = [y for y in {p[-4:] for p in periods} if all(f"Q{k} {y}" in periods for k in (1, 2, 3, 4))]
     for y in sorted(full_year_quarters):
         quarters_sum = sum(group["revenue_eur_m"][periods.index(f"Q{k} {y}")] for k in (1, 2, 3, 4))
-        if y in staging["full_years"] and quarters_sum == staging["full_years"][y]["revenue_eur_m"]:
+        if y not in staging["full_years"]:
+            continue
+        filed = staging["full_years"][y]["revenue_eur_m"]
+        if quarters_sum == filed:
             checks.append(f"{y} 年四个季度相加等于公司申报的全年 €{quarters_sum:,}M")
+        else:
+            # Hermès's own four printed quarters do not always re-add to its own
+            # printed year. Saying so is the point of a reconciliation note: a
+            # check that only speaks when it passes is not a check.
+            checks.append(f"{y} 年四个季度相加 €{quarters_sum:,}M，"
+                          f"与公司申报的全年 €{filed:,}M 差 €{abs(quarters_sum - filed):,}M")
     if first_half is not None and f"Q1 {half.split()[1]}" in periods and f"Q2 {half.split()[1]}" in periods:
         q1, q2 = periods.index(f"Q1 {half.split()[1]}"), periods.index(f"Q2 {half.split()[1]}")
         diffs = [abs(group["revenue_eur_m"][q1] + group["revenue_eur_m"][q2] - first_half["group"]["revenue_eur_m"]),

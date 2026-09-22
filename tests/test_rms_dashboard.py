@@ -75,6 +75,21 @@ HALF_BLOCKS = ("first_half", "h1_income", "h1_segments", "half_story")
 PLACEHOLDER = r"\{[A-Za-z_]+(?::[a-z_]+)?\}"
 
 
+def rated(staging: dict) -> list[int]:
+    """Indices whose quarter carries both printed rates.
+
+    The revenue window runs four quarters longer than the rate window: 2016
+    reaches this file as the prior-year column of the 2017 releases, which
+    prints the euro amount without the growth beside it. Written again here
+    rather than imported from `build/rms.py`, because a test that borrowed the
+    builder's own idea of which quarters count could not catch the builder
+    counting the wrong ones.
+    """
+    group = staging["group_revenue"]
+    return [i for i in range(len(staging["periods"]))
+            if group["published_pct"][i] is not None and group["cc_pct"][i] is not None]
+
+
 def quarter_of(period: str) -> tuple[int, int]:
     return int(period[-4:]), int(period[1])
 
@@ -128,21 +143,36 @@ class RmsSeriesTest(unittest.TestCase):
                     self.assertEqual(len(block[field]), width, f"{name}.{key}.{field}")
 
     def test_the_seven_metiers_sum_to_the_printed_group_total(self) -> None:
-        """Each line is printed to the million, so ±1 is the whole tolerance."""
+        """The issuer's own rows against the issuer's own total.
+
+        The tolerance was ±1 while the window held only the whole-million era's
+        last eight quarters. Over the full 42 it has to be ±2, because Hermès's
+        own printed rows miss its own printed total by 2 in Q3 2023 (3,363
+        against 3,365) -- seven rows each rounded to the million can lose that
+        much, and both of this repo's independent transcriptions read the same
+        figures. The bound is re-measured below rather than widened by guess,
+        and the worst residual is pinned so it cannot creep.
+        """
         self.assertEqual(sorted(self.staging["by_sector"]), sorted(rms.SECTOR_ORDER))
+        worst = 0
         for index, period in enumerate(self.staging["periods"]):
             total = self.staging["group_revenue"]["revenue_eur_m"][index]
             summed = sum(block["revenue_eur_m"][index]
                          for block in self.staging["by_sector"].values())
-            self.assertLessEqual(abs(summed - total), 1, f"{period}: {summed} vs {total}")
+            self.assertLessEqual(abs(summed - total), 2, f"{period}: {summed} vs {total}")
+            worst = max(worst, abs(summed - total))
+        self.assertEqual(worst, 2, "re-measure this bound; do not widen it")
 
     def test_the_six_regions_sum_to_the_printed_group_total(self) -> None:
         self.assertEqual(sorted(self.staging["by_region"]), sorted(rms.REGION_ORDER))
+        worst = 0
         for index, period in enumerate(self.staging["periods"]):
             total = self.staging["group_revenue"]["revenue_eur_m"][index]
             summed = sum(block["revenue_eur_m"][index]
                          for block in self.staging["by_region"].values())
             self.assertLessEqual(abs(summed - total), 1, f"{period}: {summed} vs {total}")
+            worst = max(worst, abs(summed - total))
+        self.assertEqual(worst, 1, "re-measure this bound; do not widen it")
 
     def test_every_complete_year_in_the_window_equals_the_filed_full_year(self) -> None:
         """The one check that would catch a cumulative column read as a quarter.
@@ -160,11 +190,28 @@ class RmsSeriesTest(unittest.TestCase):
         years = [y for y in sorted({p[-4:] for p in periods})
                  if all(f"Q{k} {y}" in periods for k in (1, 2, 3, 4)) and y in self.staging["full_years"]]
         self.assertTrue(years)
+        # The window now holds ten of these, and one of them does not close:
+        # Hermès printed 13,427 for 2023 while its own four printed quarters
+        # sum to 13,426, the euro entering at the half (a printed H1 of 6,698
+        # against Q1+Q2 = 6,697). So the assertion is no longer equality -- it
+        # is that the page states whichever of the two it found. An exact-match
+        # rule here would have forced the backfill to drop the one year that
+        # actually has something to say.
+        self.assertTrue(years)
+        gaps = {}
         for year in years:
             quarters = sum(self.staging["group_revenue"]["revenue_eur_m"][periods.index(f"Q{k} {year}")]
                            for k in (1, 2, 3, 4))
-            self.assertEqual(quarters, self.staging["full_years"][year]["revenue_eur_m"], year)
-            self.assertIn(f"{year} 年四个季度相加等于公司申报的全年 €{quarters:,}M", self.reconciliations)
+            filed = self.staging["full_years"][year]["revenue_eur_m"]
+            self.assertLessEqual(abs(quarters - filed), 1, f"{year}: {quarters} vs {filed}")
+            if quarters == filed:
+                self.assertIn(f"{year} 年四个季度相加等于公司申报的全年 €{quarters:,}M", self.reconciliations)
+            else:
+                gaps[year] = abs(quarters - filed)
+                self.assertIn(f"{year} 年四个季度相加 €{quarters:,}M，"
+                              f"与公司申报的全年 €{filed:,}M 差 €{gaps[year]:,}M", self.reconciliations)
+        # Pinned so a second non-closing year cannot slip in unremarked.
+        self.assertEqual(gaps, {"2023": 1})
 
     def test_the_two_quarters_of_the_half_equal_the_printed_first_half(self) -> None:
         """To the million, each row -- and the note says by how much it misses."""
@@ -434,15 +481,18 @@ class RmsPayloadTest(unittest.TestCase):
         published, cc = (series["values"] for series in rates["series"])
         self.assertEqual(len(wedge["values"]), len(published))
         for index, value in enumerate(wedge["values"]):
+            if published[index] is None or cc[index] is None:
+                self.assertIsNone(value, f"index {index}: no rate, so no wedge")
+                continue
             self.assertAlmostEqual(value, published[index] - cc[index], places=6)
 
     def test_the_sign_flips_the_page_counts_are_the_ones_in_the_data(self) -> None:
         """The note counts the region-quarters; a new one appearing must be said,
         and 「全部落在日本与亚太」 must stop being said the day it is not."""
         periods = self.staging["periods"]
-        flips = [(period, key)
+        flips = [(periods[index], key)
                  for key, block in self.staging["by_region"].items()
-                 for index, period in enumerate(periods)
+                 for index in rated(self.staging)
                  if block["published_pct"][index] * block["cc_pct"][index] < 0]
         exhibit = self.by_ref["EX_REGION_RATES"]
         self.assertIn(f"<b>{len(flips)} 格的两个口径符号相反</b>", exhibit["note"])
@@ -653,14 +703,15 @@ class RmsPayloadTest(unittest.TestCase):
         accelerating = [k for k in rms.SECTOR_ORDER
                         if sectors[k]["cc_pct"][latest] > sectors[k]["cc_pct"][latest - 1]]
         off_low = sum(1 for k in accelerating
-                      if sectors[k]["cc_pct"][latest - 1] == min(sectors[k]["cc_pct"]))
+                      if sectors[k]["cc_pct"][latest - 1]
+                      == min(sectors[k]["cc_pct"][i] for i in rated(self.staging)))
         self.assertIn(f"：{len(accelerating)} 个在加速", pace)
         if len(accelerating) >= 2 and off_low:
             self.assertIn(f"这{cn_count(len(accelerating))}条里有 {off_low} 条", pace)
 
         # the trend chart: double-digit lines in the window's peak quarter
         cc = self.staging["group_revenue"]["cc_pct"]
-        peak = cc.index(max(cc))
+        peak = max(rated(self.staging), key=lambda i: cc[i])
         if f"{self.staging['periods'][peak]} 那一格是本窗口的顶" in trend:
             double = sum(1 for k in rms.SECTOR_ORDER if sectors[k]["cc_pct"][peak] >= 10.0)
             self.assertIn(f"{cn_count(len(rms.SECTOR_ORDER))}条线里有 {double} 条在两位数以上", trend)
@@ -684,7 +735,10 @@ class RmsPayloadTest(unittest.TestCase):
         raw = {e["metric"]: e for e in self.staging["next_kpi"]["quantified"]}
         for metric in self.staging["next_kpi"]["threshold_charts"]:
             kind, key, _ = raw[metric]["reads"].split(".")
-            values = self.staging[kind][key]["cc_pct"]
+            # Only the quarters that carry a rate are scored: a quarter with a
+            # euro amount and no growth beside it is neither above the
+            # threshold nor below it.
+            values = [self.staging[kind][key]["cc_pct"][i] for i in rated(self.staging)]
             threshold = by_metric[metric]["threshold"]
             chart = next(ex for ex in self.exhibits if ex["title"].startswith(
                 f"{self.staging[kind][key]['label']}固定汇率增速与 {threshold:g}% 阈值"))
@@ -776,6 +830,9 @@ class RmsPayloadTest(unittest.TestCase):
 
         # the wedge is a difference of two printed rates
         for i, stored in enumerate(by_ref["EX_WEDGE"]["values"]):
+            if group["published_pct"][i] is None or group["cc_pct"][i] is None:
+                self.assertIsNone(stored)
+                continue
             compare(f"EX_WEDGE[{i}]", stored,
                     group["published_pct"][i] - group["cc_pct"][i], pp1)
 
@@ -1052,6 +1109,13 @@ class RmsRollTest(unittest.TestCase):
                   "生产线上的个别资产", "同期期间平均股价下跌", "日元贬值同时压低了",
                   "管理层口头说下半年会加速", "法国大企业特别税", "准指引",
                   "分析师在电话会上按亚太约 5% 的提价幅度提问", "兑现了上一季管理层")
+    # Some of these ride a condition as well as a block. 「有时候是去年太差」 is
+    # printed only while an accelerating métier's previous reading is the
+    # window's own low, and on the 42-quarter window nothing is: the 2020 floor
+    # is lower than anything since. That is the page working, not failing -- the
+    # sentence was true of an eight-quarter window and is false of this one --
+    # so the guard below asks that most of these are live rather than all.
+    STORY_ONLY_LIVE_FLOOR = 12
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -1081,9 +1145,13 @@ class RmsRollTest(unittest.TestCase):
             del bare[key]
         payload = rms.build_payload(bare)
         text = json.dumps(payload, ensure_ascii=False)
+        live = [phrase for phrase in self.STORY_ONLY if phrase in self.text]
+        self.assertGreaterEqual(
+            len(live), self.STORY_ONLY_LIVE_FLOOR,
+            "too few of these sentences are being printed at all -- this check "
+            "goes vacuous if the list drifts away from what the page says")
         for phrase in self.STORY_ONLY:
             with self.subTest(phrase=phrase):
-                self.assertIn(phrase, self.text)
                 self.assertNotIn(phrase, text)
         self.assertNotIn("next_quarter", [s["id"] for s in payload["sections"]])
         for index, section in enumerate(payload["sections"], start=1):
@@ -1126,21 +1194,46 @@ class RmsRollTest(unittest.TestCase):
             self.assertNotIn("与本季普遍的读法相反", text)
         self.assertNotIn(self.s["periods"][0], payload["sections"][0]["exhibits"][0]["xlabels"])
 
+    def test_the_flip_sentence_appears_only_while_the_flips_are_confined(self) -> None:
+        """The other direction of a computed sentence, which is the harder one.
+
+        On the eight-quarter window every sign flip fell in Japan and
+        Asia-Pacific, and the page said so. On the 42-quarter window there are
+        15 of them and three of the six regions are involved, so the page stops
+        saying it -- correctly, and silently, which is why this exists. Removing
+        the Americas flips should bring the sentence back; if it does not, the
+        sentence has stopped being computed from the data at all.
+        """
+        self.assertNotIn("全部落在日本与亚太（除日本）", self.text)
+        s = copy.deepcopy(self.s)
+        keep = rated(s)
+        block = s["by_region"]["americas"]
+        touched = 0
+        for i in keep:
+            if block["published_pct"][i] * block["cc_pct"][i] < 0:
+                block["published_pct"][i] = abs(block["published_pct"][i]) * (
+                    1 if block["cc_pct"][i] > 0 else -1)
+                touched += 1
+        self.assertEqual(touched, 3, "re-measure: the Americas flips moved")
+        self.assertIn("全部落在日本与亚太（除日本）",
+                      json.dumps(rms.build_payload(s), ensure_ascii=False))
+
     def test_the_record_sentences_are_computed_not_remembered(self) -> None:
         """Make each finding false on a copy of the series: its words must go."""
         latest = len(self.s["periods"]) - 1
+        skipped: list[str] = []
         cases = []
-        s = copy.deepcopy(self.s)
-        s["by_region"]["americas"]["published_pct"][0], s["by_region"]["americas"]["cc_pct"][0] = -0.5, 0.5
-        cases.append((s, "全部落在日本与亚太（除日本）"))
+
         s = copy.deepcopy(self.s)
         s["by_sector"]["other_products"]["cc_pct"][latest] = -1.0
         cases += [(s, "个板块里唯一负增长的一个"), (s, "唯一没有回到正区间的是"),
                   (s, "是唯一一条本季仍在零以下并且还在下探的线")]
         s = copy.deepcopy(self.s)
         g = s["group_revenue"]
-        wedge = [p - c for p, c in zip(g["published_pct"], g["cc_pct"])]
-        peak = wedge.index(max(wedge))
+        keep = rated(s)
+        wedge = [None if g["published_pct"][i] is None or g["cc_pct"][i] is None
+                 else g["published_pct"][i] - g["cc_pct"][i] for i in range(len(g["cc_pct"]))]
+        peak = max(keep, key=lambda i: wedge[i])
         g["published_pct"][peak + 2] = round(g["cc_pct"][peak + 2] + wedge[peak + 1] + 0.5, 1)
         cases += [(s, "两条线一路分开"), (s, "转为拖累并逐季加深")]
         s = copy.deepcopy(self.s)
@@ -1164,7 +1257,7 @@ class RmsRollTest(unittest.TestCase):
         cases.append((s, "个财年的上下半年相加都等于公司申报的全年"))
         s = copy.deepcopy(self.s)
         cc = s["group_revenue"]["cc_pct"]
-        top = cc.index(max(cc))
+        top = max(rated(s), key=lambda i: cc[i])
         leather = s["by_sector"]["leather_goods_saddlery"]["cc_pct"]
         leather[top + 1] = leather[top] + 1
         cases.append((s, "那一格是本窗口的顶"))
@@ -1173,8 +1266,20 @@ class RmsRollTest(unittest.TestCase):
         cases.append((s, "（公司印）"))
         for staging, phrase in cases:
             with self.subTest(phrase=phrase):
-                self.assertIn(phrase, self.text)
+                if phrase not in self.text:
+                    # The finding is already false on today's window, so there
+                    # is no sentence to knock out. 「转为拖累并逐季加深」 went
+                    # this way when the window widened: it needs the wedge to
+                    # fall monotonically from its peak to its trough, which
+                    # holds over eight quarters and does not over thirty-eight.
+                    skipped.append(phrase)
+                    continue
                 self.assertNotIn(phrase, json.dumps(rms.build_payload(staging), ensure_ascii=False))
+
+        self.assertLessEqual(
+            len(skipped), 2,
+            f"too many findings are already false, so this check is mostly "
+            f"skipping: {skipped}")
 
     def test_worded_findings_switch_with_the_data(self) -> None:
         """Where a finding has two wordings, the data picks one."""
@@ -1191,7 +1296,8 @@ class RmsRollTest(unittest.TestCase):
         # watches' two double-digit falls become consecutive
         s = copy.deepcopy(self.s)
         watches = s["by_sector"]["watches"]["cc_pct"]
-        deep = [i for i, v in enumerate(watches[:len(watches) // 2]) if v <= -10]
+        deep = [i for i, v in enumerate(watches[:len(watches) // 2])
+                if v is not None and v <= -10]
         if len(deep) == 2 and deep[1] - deep[0] == 2:
             watches[deep[0] + 1] = -12.0
             changed = json.dumps(rms.build_payload(s), ensure_ascii=False)
