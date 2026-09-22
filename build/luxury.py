@@ -2105,6 +2105,7 @@ def demand_grid(members: list[dict], staging: dict) -> dict:
         "regions": regions, "labels": labels, "slugs": slugs, "rows": rows,
         "pairs": pairs, "share": share,
         "median": _median(share), "low": min(share), "high": max(share),
+        "basis_caveat": spec["basis_caveat"],
         "fine_share": fine_share, "fine_median": _median(fine_share),
         "fine_regions": fine_regions, "fine_slugs": list(fine["members"]),
         "absent": spec["absent"],
@@ -2152,7 +2153,8 @@ def demand_charts(members: list[dict], a: dict, g: dict) -> list[dict]:
                  f"差得最远的是 {widest[0]}：实际 {widest[1]:.1f}pp，被动 {widest[2]:.1f}pp。"
                  f"{absent}不在这张图里 —— 它们不按季印分地区收入。"
                  + big_note + "这件事本身就是答案的一部分：想问「是不是需求」，"
-                 "先得有人按季告诉你需求在哪里，而最需要被问到的那几家没有说。"),
+                 "先得有人按季告诉你需求在哪里，而最需要被问到的那几家没有说。"
+                 + g["basis_caveat"]),
         "src_extra": AXIS + " 分地区收入取各公司自己的季度披露，按报告口径同比；恒汇与更细网格的复核见图注下方的核对表。",
     }
 
