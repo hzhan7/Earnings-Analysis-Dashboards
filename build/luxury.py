@@ -875,6 +875,29 @@ def basis_charts(members: list[dict], a: dict) -> list[dict]:
     return [wedge_ex, seam]
 
 
+def late_start_note(calendar: list[dict], a: dict) -> str:
+    """Which lines do not reach the left edge, and from where they do start.
+
+    A reader who sees one line begin two thirds of the way along has no way to
+    tell a company that did not publish from a company this site has not typed
+    in. The page cannot tell them apart either unless the series says so, so it
+    says which it knows: the half the reading starts at, and that the floor is
+    this site's until someone checks the filings and says otherwise.
+    """
+    halves = a["half_common"]
+    late = [(m, next((i for i, v in enumerate(a["margin"][m["slug"]]) if v is not None), None))
+            for m in calendar]
+    late = [(m, i) for m, i in late if i]
+    if not late:
+        return f"{cn_count(len(calendar))}条线都画满了{cn_count(len(halves))}个半年。"
+    full = len(calendar) - len(late)
+    return (f"{cn_count(len(calendar))}条线里{cn_count(full)}条画满了{cn_count(len(halves))}个半年；"
+            + "、".join(f"{m['zh']}从 {halves[i]} 起（{len(halves) - i}/{len(halves)}）"
+                        for m, i in late)
+            + " —— 更早的半年本站只录了收入、没有利润读数，"
+              "这一格是本站的接入边界，未经核实不当作公司的披露边界。")
+
+
 def profit_charts(members: list[dict], a: dict) -> list[dict]:
     halves = a["half_common"]
     calendar, off = a["calendar"], a["off_clock"]
@@ -900,7 +923,8 @@ def profit_charts(members: list[dict], a: dict) -> list[dict]:
                  f"{cn_count(len(a['profit_terms']))}种叫法（{'、'.join(a['profit_terms'])}）。"
                  f"本期最高的{top['zh']} {a['margin'][top['slug']][-1]:.1f}% 与最低的"
                  f"{bottom['zh']} {a['margin'][bottom['slug']][-1]:.1f}% 相差 "
-                 f"{a['margin'][top['slug']][-1] - a['margin'][bottom['slug']][-1]:.1f}pp。"),
+                 f"{a['margin'][top['slug']][-1] - a['margin'][bottom['slug']][-1]:.1f}pp。"
+                 + late_start_note(calendar, a)),
         "src_extra": AXIS + " 下半年各家均为公司申报的全年减上半年（D）。",
     }
     cfr = off[0]

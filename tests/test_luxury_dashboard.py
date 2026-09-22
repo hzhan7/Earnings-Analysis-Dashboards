@@ -117,6 +117,17 @@ def printed_growth(slug: str, data: dict) -> dict[str, float] | None:
     return None
 
 
+def cn_count(n: int) -> str:
+    """Written out the way the page writes it, spelled here rather than imported."""
+    digits = "零一二三四五六七八九"
+    if n < 0 or n > 99:
+        return str(n)
+    if n < 10:
+        return "两" if n == 2 else digits[n]
+    tens, ones = divmod(n, 10)
+    return ("" if tens == 1 else digits[tens]) + "十" + ("" if ones == 0 else digits[ones])
+
+
 def half_margin(slug: str, data: dict) -> dict[str, float]:
     if slug == "mc":
         labels = data["halves"]
@@ -451,6 +462,40 @@ class LuxuryCrossPageTest(unittest.TestCase):
                     continue
                 self.assertAlmostEqual(values[index], margins[slug][half], places=4,
                                        msg=f"{slug} {half}")
+
+    def test_a_line_that_starts_late_is_named_and_dated(self) -> None:
+        """A short line has to say where it starts, and whose floor it is.
+
+        Four of the five lines were seven halves long until LVMH's profit was
+        typed back to 2016; the one that stayed short is a different kind of
+        gap. Neither the reader nor this page can tell "the company did not
+        publish" from "this site has not read it" by looking at the chart, so
+        the note names the line, dates its first reading and says the floor is
+        the site's until someone checks. A line that later reaches the left
+        edge turns this red, which is the point.
+        """
+        exhibit = self.exhibit_titled("同一根日历轴上")
+        calendar = [slug for slug in MEMBERS if slug != "cfr"]
+        short = {m["slug"]: m["short"] for m in self.staging["members"]}
+        zh = {m["slug"]: m["zh"] for m in self.staging["members"]}
+        axis = exhibit["xlabels"]
+        late = {}
+        for slug in calendar:
+            values = self.series_named(exhibit, short[slug])
+            first = next((i for i, v in enumerate(values) if v is not None), None)
+            self.assertIsNotNone(first, f"{slug} has no reading at all")
+            if first:
+                late[slug] = first
+        note = exhibit["note"]
+        if not late:
+            self.assertIn(f"{cn_count(len(calendar))}条线都画满了", note)
+            return
+        for slug, first in late.items():
+            self.assertIn(f"{zh[slug]}从 {axis[first]} 起（{len(axis) - first}/{len(axis)}）", note)
+        self.assertIn("是本站的接入边界", note)
+        # The count of full-length lines, so a backfill that lands has to be
+        # recorded here rather than quietly leaving the sentence behind.
+        self.assertIn(cn_count(len(calendar) - len(late)) + "条画满了", note)
 
     def test_the_off_clock_chart_runs_the_fiscal_halves(self) -> None:
         exhibit = self.exhibit_titled("自己的时钟")
