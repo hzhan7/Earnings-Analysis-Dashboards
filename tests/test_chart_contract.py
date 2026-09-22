@@ -61,13 +61,56 @@ UNEXERCISED_KINDS = frozenset({
 
 
 def payloads() -> list[tuple[str, dict]]:
-    """`(slug, payload)` for every published company payload."""
+    """`(slug, payload)` for every published payload -- discovered, not listed.
+
+    This used to walk `ENTRIES`, which made every check in this file a check on
+    the *company* pages. The first page that is not a company (the luxury
+    cross-company page) is deliberately absent from `ENTRIES` -- it has no
+    filings series, it must not be counted in 「N 家公司」 and it must not get a
+    company card -- and it was therefore invisible here: a series one element
+    short of its axis, an invented `kind`, a `stacked_dual` whose `ymax` sat at
+    the top level and a bridge `net` as a bare list all shipped green.
+
+    Globbing `data/` instead makes the unit of this file 「published page」
+    rather than 「registered company」, which is what its assertions were always
+    about. `ENTRIES` stays imported: `test_the_glob_still_finds_every_company`
+    below is what stops the glob from silently narrowing.
+    """
     out = []
-    for entry in ENTRIES:
-        slug = entry["slug"]
-        text = (ROOT / "data" / f"{slug}.js").read_text(encoding="utf-8")
-        out.append((slug, json.loads(text.split(" = ", 1)[1].rstrip().rstrip(";\n"))))
+    for path in sorted((ROOT / "data").glob("*.js")):
+        if path.name == "roster.js":
+            continue
+        text = path.read_text(encoding="utf-8")
+        out.append((path.stem, json.loads(text.split(" = ", 1)[1].rstrip().rstrip(";\n"))))
     return out
+
+
+class PayloadDiscoveryTest(unittest.TestCase):
+    """The glob above replaced a hand-maintained list; this is what checks it."""
+
+    def test_the_glob_still_finds_every_company(self) -> None:
+        """A glob that stopped matching would make this whole file pass vacuously.
+
+        That is the same failure the slug list in `test_content_boundary.py`
+        was written against, one layer down: there, a company missing from a
+        typed list went unscanned; here, a payload the glob stops reaching goes
+        unchecked. Neither is visible in the output -- the suite just gets
+        quieter.
+        """
+        found = {slug for slug, _ in payloads()}
+        self.assertEqual(found & {entry["slug"] for entry in ENTRIES},
+                         {entry["slug"] for entry in ENTRIES})
+
+    def test_the_glob_reaches_past_the_company_roster(self) -> None:
+        """And that it is actually wider than the list it replaced.
+
+        If every published payload happened to be a company again, this file
+        would be back to walking `ENTRIES` by another route and the sentence in
+        `payloads()` about cross pages would be quietly false.
+        """
+        found = {slug for slug, _ in payloads()}
+        self.assertTrue(found - {entry["slug"] for entry in ENTRIES},
+                        "no non-company payload found: the glob is no wider than ENTRIES")
 
 
 def exhibits() -> list[tuple[str, dict]]:

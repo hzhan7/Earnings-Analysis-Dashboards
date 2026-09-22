@@ -16,6 +16,7 @@ from build import (  # noqa: E402
     skhynix, snps,
     spgi, tjx, tsm, v, zgn,
 )
+from build import luxury  # noqa: E402
 from build.home import write_home  # noqa: E402
 from build.payload_guard import write_js  # noqa: E402
 
@@ -435,6 +436,29 @@ ENTRIES = [
 ]
 
 
+# ── cross-company pages ─────────────────────────────────────────────────────
+# A page that is about a group rather than a company. It is deliberately NOT in
+# `MODULES`/`ENTRIES`: it has no filings series of its own, it must not be
+# counted in the home page's 「N 家公司」, and it must not get a company card.
+# What it does share with the company pages is the build pipeline -- it is in
+# `build_all()`, so `build/home.py`'s window counts see its charts, the AI capex
+# cross-page table identity covers it, and `build/all.py && git status` stays
+# the drift check for its payload and shell too.
+CROSS_MODULES = {
+    "luxury": luxury,
+}
+
+CROSS_ENTRIES = [
+    {
+        "slug": "luxury",
+        "name": "奢侈品组跨公司对照",
+        "group": "luxury_brands",
+        "members": ["mc", "cfr", "rms", "ker", "zgn", "bc"],
+        "blurb": "六家同框：能对齐的，和对不齐的",
+    },
+]
+
+
 def roster_payload(payloads: dict) -> dict:
     """Return the deterministic cross-company navigation payload.
 
@@ -463,6 +487,10 @@ def roster_payload(payloads: dict) -> dict:
         "schema_version": "quarterly-roster/v1",
         "groups": GROUPS,
         "items": items,
+        # A separate key, not another `items` entry: `build/home.py` writes one
+        # company card per `items` row and the home-page census counts them, so
+        # a cross page added there would be counted as a 36th company.
+        "cross": CROSS_ENTRIES,
         "footer": "Quarterly Results · 公司披露值与透明自算 · 仅供研究",
     }
 
@@ -472,9 +500,16 @@ def write_roster(payload: dict) -> None:
 
 
 def build_all() -> dict:
-    """Return every company payload, built from its reviewed source series."""
+    """Return every published payload: the company pages and the cross pages.
+
+    Cross pages are in here rather than beside it because three site-wide checks
+    read this dict and each of them should cover every published page, not every
+    company: `build/home.py`'s 42-quarter census, the AI-capex cross-page table
+    identity, and the drift check. `roster_payload` walks `ENTRIES`, so the extra
+    keys never reach the company roster.
+    """
     payloads = {}
-    for slug, module in MODULES.items():
+    for slug, module in {**MODULES, **CROSS_MODULES}.items():
         source = json.loads(module.STAGING_PATH.read_text(encoding="utf-8"))
         payloads[slug] = module.build_payload(source)
     return payloads
@@ -490,9 +525,10 @@ def main() -> int:
     # The home page's cards and counts are written from the same roster and
     # payloads, so a quarter roll never has to retype a card.
     write_home(roster, payloads)
-    for module in MODULES.values():
+    for module in {**MODULES, **CROSS_MODULES}.values():
         module.main()
-    print(f"Quarterly Results: {len(MODULES)} reviewed companies + shared roster")
+    print(f"Quarterly Results: {len(MODULES)} reviewed companies "
+          f"+ {len(CROSS_MODULES)} cross-company page(s) + shared roster")
     return 0
 
 

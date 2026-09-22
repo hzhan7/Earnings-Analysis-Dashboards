@@ -1251,7 +1251,7 @@ class ChartWindowTest(unittest.TestCase):
         combined = {slug: SHORT_BY_DESIGN.get(slug, 0) + UNEXPLAINED_LONG.get(slug, 0)
                     for slug in set(SHORT_BY_DESIGN) | set(UNEXPLAINED_LONG)}
         self.assertEqual(by_page, combined)
-        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 60)
+        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 64)
         # Zero, as of the SK hynix backfill. This number is not load-bearing on
         # its own -- an empty dict sums to zero for free -- but `by_length ==
         # UNEXPLAINED_LONG` two lines down is, and that one is what turns red if
@@ -1422,6 +1422,13 @@ class ChartWindowTest(unittest.TestCase):
 # they sit in the 550 denominator and have to be accounted for somewhere.
 SHORT_BY_DESIGN = {
     'bc': 7,
+    # The cross-company page is short for a reason no company page can be: its
+    # axes are intersections. Four charts run on the window the six luxury
+    # companies *share* -- eight quarters of revenue and seven calendar halves
+    # of profit -- and widening either one would mean drawing a comparison
+    # where one of the six has no figure. The page's own subject is where that
+    # intersection comes from, so these four are the argument, not a backlog.
+    'luxury': 4,
     'mc': 10,
     'nvda': 11,
     'pm': 5,

@@ -37,6 +37,18 @@
       });
       html += '</optgroup>';
     });
+    /* Cross-company pages are not companies: they live in their own roster key
+       so the home page's company census cannot count them, and they get their
+       own optgroup here rather than being folded into a group's company list. */
+    if (R.cross && R.cross.length) {
+      html += '<optgroup label="跨公司对照">';
+      R.cross.forEach(function (item) {
+        html += '<option value="' + esc(item.slug) + '"' +
+          (item.slug === D.page.slug ? ' selected' : '') + '>' +
+          esc(item.name) + '</option>';
+      });
+      html += '</optgroup>';
+    }
     return html + '</select></label></nav>';
   }
 

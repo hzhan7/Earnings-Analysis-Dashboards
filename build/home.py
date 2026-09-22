@@ -130,6 +130,26 @@ def card(item: dict) -> str:
     )
 
 
+def cross_cards(roster: dict) -> str:
+    """The cross-company pages, as their own block below the company cards.
+
+    Deliberately not `class="hcard"`: three home-page checks count that string
+    to census the companies, and a group page counted as a company would make
+    「N 家公司」 wrong in a way those very checks would then certify.
+    """
+    items = roster.get("cross") or []
+    if not items:
+        return "\n"
+    esc = lambda text: html.escape(text, quote=False)  # noqa: E731
+    return ('\n<h2 class="hubgrp">跨公司对照</h2>\n<div class="hub">\n' + "".join(
+        f'  <a class="xcard" href="{item["slug"]}/">\n'
+        f'    <span class="ht">{esc(item["name"])}</span>\n'
+        f'    <span class="hm">{esc(item["blurb"])}</span>\n'
+        f'    <span class="hc">{esc("、".join(item["members"]).upper())}</span>\n'
+        f'  </a>\n'
+        for item in items) + "</div>\n")
+
+
 def cards(roster: dict) -> str:
     """Group headings in GROUPS order, cards in slug order inside each group."""
     blocks = []
@@ -154,6 +174,7 @@ def render_home(text: str, roster: dict, payloads: dict) -> str:
         '</div>\n')
     text = replace_region(text, "window", f"{total} 张时间轴图里 {reached} 张已经到位")
     text = replace_region(text, "cards", cards(roster))
+    text = replace_region(text, "cross", cross_cards(roster))
     return text
 
 

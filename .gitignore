@@ -54,6 +54,10 @@ series/*.json
 !series/tsm.json
 !series/v.json
 !series/zgn.json
+# Cross-company pages carry no filings data; this file is their member list and
+# metric definitions. It still lives under `series/`, so it still needs the
+# negation or `git add` skips it silently.
+!series/luxury.json
 config/
 build/ingest_local.py
 

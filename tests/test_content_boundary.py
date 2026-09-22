@@ -30,7 +30,7 @@ sys.path.insert(0, str(ROOT))
 # so `hooks/pre-push` keeps its budget. What it buys is the test below: with no
 # ENTRIES to compare against, the slug list is only ever checked by hand, which
 # is how NVDA stayed off it while three other companies were added to it.
-from build.all import ENTRIES, GROUPS, MODULES  # noqa: E402
+from build.all import CROSS_ENTRIES, ENTRIES, GROUPS, MODULES  # noqa: E402
 
 # Lower-cased substrings that must never reach a published file.
 #
@@ -473,14 +473,20 @@ class ContentBoundaryTest(unittest.TestCase):
         listed = re.findall(
             r"^- `http://127\.0\.0\.1:8765/([a-z0-9]+)/`$", readme, re.M)
         slugs = [entry["slug"] for entry in ENTRIES]
+        cross = [entry["slug"] for entry in CROSS_ENTRIES]
 
         self.assertEqual(
             sorted(set(slugs) - set(listed)), [], "registered but absent from README"
         )
         self.assertEqual(
-            sorted(set(listed) - set(slugs)), [], "listed in README but not registered"
+            sorted(set(listed) - set(slugs) - set(cross)), [],
+            "listed in README but not registered"
         )
-        self.assertEqual(listed, sorted(slugs))
+        # The company list stays alphabetical-by-slug, which is the order a
+        # reader scans; the cross-company pages follow it in their own list
+        # rather than being sorted into it, because they are a different kind of
+        # page and sorting them in would put 「luxury」 between ker and ma.
+        self.assertEqual(listed, sorted(slugs) + cross)
 
     def test_the_readme_paragraph_names_every_company(self) -> None:
         """The `Reviewed pages currently cover ...` sentence is its own mirror.

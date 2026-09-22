@@ -10,6 +10,17 @@ Meta, Micron, Microsoft, Moody's, MSCI, Nasdaq, NIKE, NVIDIA,
 Philip Morris International, Richemont, S&P Global,
 Samsung Electronics, SK hynix, Synopsys, TJX, TSMC and Visa.
 
+One page is not about a company. `luxury/` compares the six luxury-goods
+houses — Brunello Cucinelli, Ermenegildo Zegna, Hermès, Kering, LVMH and
+Richemont — and holds no filings data of its own: `build/luxury.py` computes
+every figure on it from those six companies' reviewed series at build time, so
+a quarter roll on any of them moves it without an edit. Its subject is how far
+the comparison can be pushed: the six publish growth on two different exclusion
+rules, close their half-years on two different clocks, and name their operating
+profit three different ways, so the page states what is comparable and measures
+what is not. `series/luxury.json` carries only the member list, each company's
+own term for its growth metric, and the period-stamped prose.
+
 ## Build
 
 ```bash
@@ -54,6 +65,10 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/tsm/`
 - `http://127.0.0.1:8765/v/`
 - `http://127.0.0.1:8765/zgn/`
+
+and the cross-company page:
+
+- `http://127.0.0.1:8765/luxury/`
 
 Live site: https://hzhan7.github.io/Earnings-Analysis-Dashboards/
 

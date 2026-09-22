@@ -1,0 +1,151 @@
+{
+  "schema_version": "cross-page-staging/luxury-v1",
+  "_provenance": "本文件不保存任何财务数字。奢侈品组对照页上的每一个数都从六家公司自己的 series/<slug>.json 现算，所以换季时只要那六个文件动了，这一页就跟着动，本文件不用改。这里只存三样东西：成员名单与画图用的颜色（导航文案）、每家公司自己那把增长尺子的名字与它剔除了什么（定义，不是数字）、以及只属于某一季的叙述块。",
+  "_no_checks_rationale": "本文件没有 _checks 块，这是有意的。各公司页的 _checks 回答的是「这个数有没有抄错申报」，那件事已经在六页上各自做过一遍；把它们抄到这里只能证明本文件等于那六个文件。本页要回答的是另一个问题 ——「跨页的连接与计算对不对」—— 所以守它的是 tests/test_luxury_dashboard.py：那份测试不调用 build/luxury.py 的任何函数，自己从六个 series 重新读、重新算，再和发布出来的 payload 比。",
+  "page": {
+    "slug": "luxury",
+    "group_key": "luxury_brands"
+  },
+  "members": [
+    {
+      "slug": "mc",
+      "short": "LVMH",
+      "zh": "路威酩轩",
+      "color": "NAVY"
+    },
+    {
+      "slug": "cfr",
+      "short": "Richemont",
+      "zh": "历峰",
+      "color": "GOLD"
+    },
+    {
+      "slug": "rms",
+      "short": "Hermès",
+      "zh": "爱马仕",
+      "color": "MBLUE"
+    },
+    {
+      "slug": "ker",
+      "short": "Kering",
+      "zh": "开云",
+      "color": "GREEN"
+    },
+    {
+      "slug": "zgn",
+      "short": "Zegna",
+      "zh": "杰尼亚",
+      "color": "BLUE"
+    },
+    {
+      "slug": "bc",
+      "short": "Cucinelli",
+      "zh": "库奇内利",
+      "color": "GRAY"
+    }
+  ],
+  "latest": {
+    "period": "Q2 2026",
+    "analysis_date": "2026-09-22",
+    "audit_status": "mixed"
+  },
+  "growth_metrics": [
+    {
+      "slug": "mc",
+      "term_en": "organic revenue growth",
+      "term_zh": "有机增速",
+      "excludes": [
+        "fx",
+        "perimeter"
+      ],
+      "cadence": "quarterly",
+      "printed_by_company": true,
+      "definition_source": "公司在半年度与全年业绩新闻稿分部收入表的脚注里把集团口径拆成有机、并表、汇率三条腿；series/mc.json 的 half_growth_components_pct 存的就是那三条腿，long_window_note 写明有机增速「按定义就剔除了结构性变化」。"
+    },
+    {
+      "slug": "cfr",
+      "term_en": "constant exchange rates",
+      "term_zh": "恒定汇率增速",
+      "excludes": [
+        "fx"
+      ],
+      "cadence": "quarterly",
+      "printed_by_company": true,
+      "definition_source": "公司用上一个完整财年的平均汇率同时折算本期与比较期，基准汇率每年换一次。公司同时印出 actual rates 一列，两列都是整数百分比。"
+    },
+    {
+      "slug": "rms",
+      "term_en": "constant exchange rates",
+      "term_zh": "固定汇率增速",
+      "excludes": [
+        "fx"
+      ],
+      "cadence": "quarterly",
+      "printed_by_company": true,
+      "definition_source": "公司在每个季度的收入表里把 published 与 constant exchange rates 两列并排印出，每一个板块、每一个地区都有。series/rms.json 里没有任何合并范围调整的记录。"
+    },
+    {
+      "slug": "ker",
+      "term_en": "comparable basis",
+      "term_zh": "可比增速",
+      "excludes": [
+        "fx",
+        "perimeter"
+      ],
+      "cadence": "quarterly",
+      "printed_by_company": true,
+      "definition_source": "公司在收入公告里逐行印出 reported 与 comparable 两种增速。可比口径剔除汇率与合并范围变化 —— 这是本站读法，series/ker.json 本身没有存定义句；它不是同店口径，2020 年二季度的 −44% 里就含着门店关闭。"
+    },
+    {
+      "slug": "zgn",
+      "term_en": "organic growth",
+      "term_zh": "有机增速",
+      "excludes": null,
+      "cadence": "not_connected",
+      "printed_by_company": true,
+      "definition_source": "公司按季给恒定汇率增速，但不给恒定汇率的绝对额；本站 series/zgn.json 里没有按季的有机增速序列，只有 H1 2026 一个标量。所以本页给杰尼亚画的是报告口径自算同比，并在图上标出来。剔除项不详 —— 两份文件都没有记录它是否也剔除合并范围（Tom Ford Fashion 于 2023 年 4 月并表）。"
+    },
+    {
+      "slug": "bc",
+      "term_en": "constant exchange rates",
+      "term_zh": "恒定汇率增速",
+      "excludes": [
+        "fx"
+      ],
+      "cadence": "半年与全年",
+      "printed_by_company": true,
+      "definition_source": "公司在半年报与年报里印出按上年汇率折算的收入，由它得到恒定汇率增速。但它只有半年与全年两种频率：公司只印累计数，一年里三个季度是相减出来的，所以按季的恒定汇率增速不存在，也推不出来。"
+    }
+  ],
+  "quarter_story": {
+    "period": "Q2 2026",
+    "lead": "同一个季度，六家公司报出来的增长从开云的 +2% 到历峰的 +20%。这不是六个可以排序的数 —— 它们分属三种剔除法、两种披露时钟、六种利润口径。本页先把能对齐的对齐，再把对不齐的逐条说清楚。",
+    "unconnected": "开云在本站没有接入任何分地区或分渠道数据（公司只在正文里给零散的文字增速）；爱马仕的季度收入序列本站只回补到 2024 年第三季度，它自己披露得更早。这两处都是本站的接入边界，不是公司的披露边界。"
+  },
+  "sources": [
+    {
+      "label": "LVMH — Investors / Publications",
+      "url": "https://www.lvmh.com/en/publications"
+    },
+    {
+      "label": "Richemont — Investor Relations / Results",
+      "url": "https://www.richemont.com/en/home/investors/results-reports-presentations/"
+    },
+    {
+      "label": "Hermès Finance — 财务出版物",
+      "url": "https://finance.hermes.com/en/publications/"
+    },
+    {
+      "label": "Kering — Finance / Publications",
+      "url": "https://www.kering.com/en/finance/publications/"
+    },
+    {
+      "label": "Ermenegildo Zegna — SEC EDGAR (CIK 0001877787)",
+      "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001877787&type=6-K&dateb=&owner=include&count=40"
+    },
+    {
+      "label": "Brunello Cucinelli — Investor Relations",
+      "url": "https://investor.brunellocucinelli.com/en/"
+    }
+  ]
+}

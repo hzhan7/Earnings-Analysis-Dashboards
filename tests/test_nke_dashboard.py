@@ -40,7 +40,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from build.all import ENTRIES, GROUPS  # noqa: E402
+from build.all import CROSS_ENTRIES, ENTRIES, GROUPS  # noqa: E402
 from build.board import headroom  # noqa: E402
 from build.board import stamped_block  # noqa: E402
 from build.nke import build_payload, compact_period, fiscal_to_calendar  # noqa: E402
@@ -571,7 +571,11 @@ class NkeDashboardTest(unittest.TestCase):
         """
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         listed = re.findall(r"http://127\.0\.0\.1:8765/([a-z]+)/", readme)
-        self.assertEqual(listed, [entry["slug"] for entry in ENTRIES])
+        # Company pages first, in `ENTRIES` order, then the cross-company pages
+        # in theirs. Both lists are here because the check is 「every page you
+        # can open is listed」, and a cross page is a page you can open.
+        self.assertEqual(listed, [entry["slug"] for entry in ENTRIES]
+                         + [entry["slug"] for entry in CROSS_ENTRIES])
 
     def test_compact_period_and_fiscal_mapping_round_trip(self) -> None:
         self.assertEqual(compact_period("Q2 2026"), "Q2'26")

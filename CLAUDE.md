@@ -870,3 +870,70 @@ for (const slug of SLUGS) {
   造成的假红（KER）。
 - 多个 agent 并行时，临时脚本放在各自的子目录；「全绿且失败列表为空」要当成可疑结果，先确认被瞄准的那条真的跑了
   （并行的各批迁移）。
+
+---
+
+## 10. 跨公司页（不是公司页）：`luxury` 这一类要动什么
+
+2026-09-22 接奢侈品组对照页时定下来的。这一节只讲「一页不是关于一家公司」时与 §2
+有哪里不同；其余（渲染契约、闸门、变异验证）与公司页完全一样。
+
+**它不进 `MODULES` / `ENTRIES`。** 三条理由都是实测过的失败：放进去，`index.html`
+的「N 家公司」会多算一家、首页会多一张 `hcard`、`test_scan_covers_every_company`
+会要求 `series/<slug>.json` 里有申报数据（跨公司页没有）。把它当公司注册一次，
+12 条测试同时变红（首页卡片计数、分组归属、slug 顺序、README 名单、各页的
+`test_..._home_card`）。改用并列的 `CROSS_MODULES` / `CROSS_ENTRIES`。
+
+**但它必须进 `build_all()`。** 这是唯一一条容易漏、且**只会红一条**的：
+`build/home.py` 的 42 季普查从 `build_all()` 的返回值数图，而
+`test_the_home_page_counts_the_companies_it_lists` 用 `data/*.js` 的 glob 重数。
+两边不同源，masthead 就会少算这一页的图。实测：只落地
+`luxury/index.html` + `data/luxury.js`、不动别的，**全套 1848 条里恰好红这一条**
+（`'31 家已有 42 季' not found`）—— 而且只有当新页至少有一张能被解析成时间轴的图
+时才红，把 `xlabels` 全删掉就又全绿了。
+
+**进了 `build_all()` 就必须带 `ai_capex_cycle_table`**（§2 结尾那条对跨公司页同样
+成立）。`test_cross_page_table_is_identical_on_every_page` 用无默认值的 `next()`
+遍历 `build_all().values()`，缺了抛 **StopIteration** 而不是断言失败。
+
+**`.gitignore` 照样要反否定。** 跨公司页的配置文件仍然落在 `series/` 下，
+`series/*.json` 会把它静默吃掉。`git check-ignore -v series/luxury.json` 实测命中。
+（`.gitattributes` 不用动：`data/*.js` 与 `*/index.html` 两条 pattern 已经覆盖。）
+
+**`tests/test_chart_contract.py` 的 `payloads()` 已经从走 `ENTRIES` 改成 glob
+`data/*.js`。** 改之前实测过：给跨公司页注入一个比 `xlabels` 短一格的 series，
+**全套 1848 条全绿、`render_check.js` 也全绿**——整份 chart contract 对它按构造
+不可见（凭空的 `kind`、写在顶层的 `stacked_dual` ymax、裸列表的 bridge `net`、
+半声明的 `avg12`，一样看不见）。glob 之后那条注入立刻被
+`test_every_series_is_as_long_as_the_axis_it_is_plotted_against` 抓住。
+换成 glob 之后加了两条自检（`test_the_glob_still_finds_every_company` 与
+`test_the_glob_reaches_past_the_company_roster`）——一个停止匹配的 glob
+会让整份文件按构造通过，这和 §2 那条「手工维护的名单没人看着」是同一个形状。
+注意 `tests/test_chart_window.py` 的 `setUpClass` **仍然**走 `ENTRIES`，
+所以 `REACH_2016` 那条棘轮还是公司页的棘轮；短轴普查（走 `exhibits()`）则覆盖跨公司页。
+这个不对称是有意的，别顺手抹平。
+
+**跨公司页没有 `_checks`，也不该有。** 各公司页的 `_checks` 回答「这个数有没有抄错
+申报」，那件事已经在六页上各自做过；把它们抄进跨公司页的 series 只能证明这个文件
+等于那六个文件 —— 就是 §5 那条「共享同一个输入的两个读数」。它的第二个读数是
+`tests/test_<slug>_dashboard.py`：**不 import builder 的任何函数**，自己从六个
+series 重读、重算、再和发布出来的 payload 比。
+
+**两处这次真的踩到的：**
+
+1. **组里可能有不属于这一页主题的公司。** `luxury_brands` 这个组的 label 是
+   「奢侈品与豪华汽车」，里面有七家 —— 第七家是法拉利。我原先写的断言是
+   「成员集合 == 该组全部成员」，被自己的测试当场抓住。正确写法是断言**真子集**
+   加上**显式列出被排除的那家**，并让页面说出排除理由（法拉利按季发完整损益表，
+   这六家一年只出两次利润）。**一个集合相等的断言会把「我漏了一家」和
+   「我有意排除一家」写成同一个形状。**
+2. **把一家财年制公司标成日历半年，不会报错，会在三个函数之外抛 `IndexError`。**
+   空交集一路传下去，构建确实停了 —— 但停在一句既不提公司也不提时钟的话上。
+   变异台架把这一格判为 `BUILD-CRASH(unnamed)` 而不是 RED，因为**崩溃不是闸门**。
+   补了一条显式 `ValueError`（连同一条断言它会抛的测试），再跑同一个变异体就是
+   `BUILD-STOPS(named)`，报的是「cfr is marked calendar_halves but its half labels
+   are ['FY16H1', ...]」。
+
+**画图**：`RED` 是断点与越界保留色（`assets/charts.js` 头部写着），六条公司线用
+`NAVY / MBLUE / BLUE / GOLD / GREEN / GRAY`。`lines` 不给 `color` 时六条全是 NAVY，
+不报错。
