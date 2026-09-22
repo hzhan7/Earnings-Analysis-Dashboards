@@ -778,6 +778,27 @@ def quarter_charts(staging: dict, der: dict, labels: list[str],
     return [rev_chart, bridge, gaps_chart, mix, divorg, bridge_pro]
 
 
+def trailing_run(flags: list[bool]) -> int:
+    """How many of the most recent readings are True, counting back from the end."""
+    run = 0
+    for flag in reversed(flags):
+        if not flag:
+            break
+        run += 1
+    return run
+
+
+def is_a_recent_habit(flags: list[bool], least: int = 2) -> bool:
+    """True when the trailing streak is long and what came before it was not.
+
+    A claim that holds over the last few complete years and almost never before
+    them is a regime, not a property of the business; the page says which.
+    """
+    run = trailing_run(flags)
+    earlier = flags[:len(flags) - run]
+    return run >= least and bool(earlier) and sum(earlier) * 3 <= len(earlier)
+
+
 # ── section three: what only the half-year shows ─────────────────────────────
 def half_charts(staging: dict, der: dict, hstory: dict | None) -> list[dict]:
     halves = staging["halves"]
@@ -794,24 +815,62 @@ def half_charts(staging: dict, der: dict, hstory: dict | None) -> list[dict]:
     i_prior = year_ago_half(halves, latest_half)
 
     # ── seasonality ──
-    every = der["h2_bigger"] == len(pairs) and der["h2_thinner"] == len(pairs) and pairs
+    thin_flags = [p["margin_h2"] < p["margin_h1"] for p in pairs]
+    rev_every = bool(pairs) and der["h2_bigger"] == len(pairs)
+    every = rev_every and der["h2_thinner"] == len(pairs)
+    # How far back the thinner-second-half streak runs, and how often it happened
+    # before that streak began. Over three complete years the two halves of this
+    # sentence were the same sentence; over ten they are not.
+    run = trailing_run(thin_flags)
+    earlier = thin_flags[:len(pairs) - run]
     n_years = cn_count(len(pairs))
     if every:
         season_title = (f"{n_years}个完整年度里，下半年每一次都是收入更高、利润率更低 "
                         f"（{der['h2_bigger']}/{len(pairs)} 与 {der['h2_thinner']}/{len(pairs)}）")
+    elif rev_every:
+        season_title = (f"{n_years}个完整年度里，下半年收入每一次都更高（{der['h2_bigger']}/{len(pairs)}），"
+                        f"而利润率更低只有 {der['h2_thinner']} 次")
     else:
         season_title = (f"{n_years}个完整年度里，下半年收入更高的 {der['h2_bigger']} 次、"
                         f"利润率更低的 {der['h2_thinner']} 次")
-    season_note = ("<b>本页最该被记住的一张，也是只有半年度披露才画得出来的一张。</b>"
-                   + "；".join(f"{p['year']} 年下半年收入比上半年"
-                              f"{'多' if p['rev_h2'] >= p['rev_h1'] else '少'} "
-                              f"€{abs(p['rev_h2'] - p['rev_h1']):,.0f}M，利润率"
-                              f"{'低' if p['margin_h2'] < p['margin_h1'] else '高'} "
-                              f"{abs(p['margin_h1'] - p['margin_h2']):.2f}pp"
-                              for p in pairs) + "。")
+    season_note = "<b>本页最该被记住的一张，也是只有半年度披露才画得出来的一张。</b>"
+    if len(pairs) <= 4:
+        season_note += "；".join(f"{p['year']} 年下半年收入比上半年"
+                                f"{'多' if p['rev_h2'] >= p['rev_h1'] else '少'} "
+                                f"€{abs(p['rev_h2'] - p['rev_h1']):,.0f}M，利润率"
+                                f"{'低' if p['margin_h2'] < p['margin_h1'] else '高'} "
+                                f"{abs(p['margin_h1'] - p['margin_h2']):.2f}pp"
+                                for p in pairs) + "。"
+    elif pairs:
+        thin_gap = min((p for p, f in zip(pairs, thin_flags) if f),
+                       key=lambda p: p["margin_h1"] - p["margin_h2"], default=None)
+        rev_gaps = sorted(pairs, key=lambda p: p["rev_h2"] - p["rev_h1"])
+        how_often = "每一次" if rev_every else f"{der['h2_bigger']} 次"
+        season_note += (f"收入那一半是结构性的：{len(pairs)} 个完整年度里下半年{how_often}都更高，"
+                        f"从 {rev_gaps[0]['year']} 年的 €{rev_gaps[0]['rev_h2'] - rev_gaps[0]['rev_h1']:,.0f}M "
+                        f"到 {rev_gaps[-1]['year']} 年的 €{rev_gaps[-1]['rev_h2'] - rev_gaps[-1]['rev_h1']:,.0f}M。"
+                        f"利润率那一半不是：更薄只有 {der['h2_thinner']}/{len(pairs)} 次"
+                        + (f"，最小的一次是 {thin_gap['year']} 年的 "
+                           f"{thin_gap['margin_h1'] - thin_gap['margin_h2']:.2f}pp" if thin_gap else "")
+                        + "。")
     if every:
         season_note += (f"{n_years}年{n_years}次，方向没有例外："
                         "<b>季节性更大的那半年，利润率反而更薄</b>。")
+    elif is_a_recent_habit(thin_flags):
+        first = pairs[len(pairs) - run]
+        season_note += (f"<b>「季节性更大的那半年利润率反而更薄」是最近{cn_count(run)}年才成立的</b>："
+                        f"{first['year']}–{pairs[-1]['year']} 连续{cn_count(run)}次更薄，"
+                        f"而在那之前的{cn_count(len(earlier))}年里只有 {sum(earlier)} 次。"
+                        "把它当成这家公司的固有季节性，会把一段还不到一个周期长的历史读成结构。")
+    widest = max(pairs, key=lambda p: abs(p["margin_h2"] - p["margin_h1"]), default=None)
+    h1_margins = [p["margin_h1"] for p in pairs]
+    if widest is not None and len(pairs) > 4:
+        season_note += (f"差得最远的是 {widest['year']} 年，下半年"
+                        f"{'高' if widest['margin_h2'] > widest['margin_h1'] else '低'} "
+                        f"{abs(widest['margin_h2'] - widest['margin_h1']):.2f}pp"
+                        + (f"——那一年的上半年利润率 {widest['margin_h1']:.2f}% 是"
+                           f"{n_years}个上半年里最低的一个。"
+                           if widest["margin_h1"] == min(h1_margins) else "。"))
     prior_year = half_parts(latest_half)[1] - 1
     prior_fy = full_year_margin(staging, prior_year)
     if every and latest_half.startswith("H1") and prior_fy is not None:
@@ -863,14 +922,19 @@ def half_charts(staging: dict, der: dict, hstory: dict | None) -> list[dict]:
     # Which divisions carry the thinner second half in every complete year --
     # checked division by division rather than said of all five.
     thinner = [d for d in DIVS if pairs and all(margins[d][p["h2"]] < margins[d][p["h1"]] for p in pairs)]
-    exceptions = [(d, p) for d in DIVS if d not in thinner
-                  for p in pairs if margins[d][p["h2"]] >= margins[d][p["h1"]]]
+    # Over three complete years the exceptions could be named one by one; over
+    # ten there are too many to name, so each division carries its own count.
+    # The count is bounded by the number of divisions, the naming was not.
+    thin_count = {d: sum(1 for p in pairs if margins[d][p["h2"]] < margins[d][p["h1"]]) for d in DIVS}
     if len(thinner) == len(DIVS):
         rhythm = "各分部利润率同时呈现下半年更薄的同一节奏"
-    elif thinner:
-        rhythm = (f"{cn_count(len(DIVS))}个分部里有{cn_count(len(thinner))}个在每个完整年度都是下半年更薄，"
-                  + "、".join(f"{DIV_NAMES[d]} {p['year']} 年例外（下半年 {margins[d][p['h2']]:.1f}%、"
-                             f"上半年 {margins[d][p['h1']]:.1f}%）" for d, p in exceptions))
+    elif pairs:
+        order = sorted(DIVS, key=lambda d: (-thin_count[d], DIV_NAMES[d]))
+        rhythm = (f"下半年更薄不是{cn_count(len(DIVS))}个分部共同的节奏 —— "
+                  f"{cn_count(len(pairs))}个完整年度里更薄的次数逐个分部是："
+                  + "、".join(f"{DIV_NAMES[d]} {thin_count[d]} 次" for d in order)
+                  + ("，其中" + "、".join(DIV_NAMES[d] for d in thinner) + "每年都薄"
+                     if thinner else "，没有一个分部每年都薄"))
     else:
         rhythm = ""
     extreme = ""
@@ -1130,10 +1194,35 @@ def routine_charts(staging: dict, der: dict, labels: list[str], kpi: dict | None
         margin_note = f"本半年{'高于' if now_b else '低于'}上一整年的 {fy:.1f}%。"
     else:
         margin_note = ""
-    h1_above = [margin[i] > round(fy, 1) for i, h in enumerate(halves) if h.startswith("H1")] if fy else []
+    # Each first half against its OWN full year, not against one year's level:
+    # over seven halves those were the same comparison, over twenty-one they
+    # are not, and the sentence this guards is about the shape of the business.
+    own = [(half_parts(h)[1], margin[i], full_year_margin(staging, half_parts(h)[1]))
+           for i, h in enumerate(halves) if h.startswith("H1")]
+    own = [(year, m, level) for year, m, level in own if level is not None]
+    # Compared at the precision the page prints, so the count in the sentence is
+    # the count a reader gets by looking at the chart.
+    h1_above = [round(m, 1) > round(level, 1) for _, m, level in own]
     if h1_above and all(h1_above):
         margin_note += ("但注意这条阈值线本身的性质：<b>上半年高于全年是这家公司的常态</b>"
                         "（见 {EX_SEASON}），所以站在这条线之上不是新信息，跌破它才是。")
+    elif is_a_recent_habit(h1_above):
+        run = trailing_run(h1_above)
+        early = h1_above[:len(h1_above) - run]
+        thin_flags = [p["margin_h2"] < p["margin_h1"] for p in der["half_pairs"]]
+        # `half_pairs` keys the year as a string and `half_parts` returns an int;
+        # comparing them raw makes this condition unreachable rather than false.
+        same = (trailing_run(thin_flags) == run and der["half_pairs"]
+                and int(der["half_pairs"][-run]["year"]) == int(own[-run][0]))
+        how_many = "一次都没有" if sum(early) == 0 else f"只有 {sum(early)} 次"
+        margin_note += (f"但注意这条阈值线本身的性质：<b>上半年高于它自己那一整年，是 {own[-run][0]} 年以后才有的事</b> —— "
+                        f"{own[-run][0]}–{own[-1][0]} 连续{cn_count(run)}年如此，"
+                        f"而 {own[0][0]}–{own[len(early) - 1][0]} 的{cn_count(len(early))}年里{how_many}。"
+                        + ("这不是另一个发现：全年利润率是两个半年按收入加权的平均，"
+                           "所以「下半年更薄」与「上半年高于全年」在算术上是同一句话，"
+                           "两边数出来的转折年份也确实相同。"
+                           if same else "")
+                        + "所以跌破这条线是信息，站在线上只说明这一年还在这段里。")
     if fy is not None:
         charts.append(threshold_exhibit(
             f"半年集团经营利润率对 FY{fy_year} 全年水平（{fy:.1f}%）",

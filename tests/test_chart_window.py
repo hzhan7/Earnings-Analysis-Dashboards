@@ -163,7 +163,7 @@ def _tsm_advanced_count() -> dict:
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
     "amzn": 13, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
-    "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 3, "mco": 7, "meta": 10,
+    "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
     "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
@@ -1281,7 +1281,7 @@ class ChartWindowTest(unittest.TestCase):
         combined = {slug: SHORT_BY_DESIGN.get(slug, 0) + UNEXPLAINED_LONG.get(slug, 0)
                     for slug in set(SHORT_BY_DESIGN) | set(UNEXPLAINED_LONG)}
         self.assertEqual(by_page, combined)
-        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 53)
+        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 51)
         # Zero, as of the SK hynix backfill. This number is not load-bearing on
         # its own -- an empty dict sums to zero for free -- but `by_length ==
         # UNEXPLAINED_LONG` two lines down is, and that one is what turns red if
@@ -1452,7 +1452,7 @@ class ChartWindowTest(unittest.TestCase):
 # they sit in the 550 denominator and have to be accounted for somewhere.
 SHORT_BY_DESIGN = {
     'bc': 7,
-    'mc': 10,
+    'mc': 8,
     'nvda': 11,
     'pm': 5,
     'samsung': 15,

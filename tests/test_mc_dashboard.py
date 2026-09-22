@@ -253,7 +253,10 @@ class McDashboardTest(unittest.TestCase):
         self.assertGreaterEqual(len(pairs), 1)
         season = next(ex for ex in self.exhibits if ex.get("ref") == "EX_SEASON")
         every = self.der["h2_bigger"] == len(pairs) == self.der["h2_thinner"]
-        self.assertEqual(every, "每一次都" in season["title"])
+        # 「每一次都」 alone is no longer the key: the title says it of revenue
+        # (10/10) while denying it of margin (5/10), so the claim being guarded
+        # here is the whole conjunction, not the adverb.
+        self.assertEqual(every, "每一次都是收入更高、利润率更低" in season["title"])
         self.assertIn(f"{self.der['h2_bigger']}", season["title"])
 
     def test_a_division_called_first_positive_really_is(self) -> None:
@@ -652,14 +655,26 @@ class McDashboardTest(unittest.TestCase):
 
     def test_the_second_half_rhythm_is_claimed_division_by_division(self) -> None:
         """「各分部利润率同时呈现下半年更薄」 was printed while Fashion & Leather
-        Goods' 2025 second half (35.2%) was thicker than its first (34.7%)."""
+        Goods' 2025 second half (35.2%) was thicker than its first (34.7%).
+
+        Over three complete years the exceptions were named one by one. Over ten
+        there are thirty-two of them, so each division carries its own count
+        instead: bounded by the number of divisions, and still falsifiable --
+        a division whose count is wrong fails here just as a missing exception did.
+        """
         exhibit = next(ex for ex in self.exhibits if ex.get("ref") == "EX_DIVMARGIN")
         margins, pairs = self.der["div_half_margin"], self.der["half_pairs"]
         breaks = [(key, p["year"]) for key in DIVS for p in pairs
                   if margins[key][p["h2"]] >= margins[key][p["h1"]]]
         self.assertEqual(not breaks, "各分部利润率同时呈现下半年更薄" in exhibit["note"])
-        for key, year in breaks:
-            self.assertIn(f"{mc.DIV_NAMES[key]} {year} 年例外", exhibit["note"])
+        if breaks:
+            for key in DIVS:
+                thin = sum(1 for p in pairs if margins[key][p["h2"]] < margins[key][p["h1"]])
+                with self.subTest(division=key):
+                    self.assertIn(f"{mc.DIV_NAMES[key]} {thin} 次", exhibit["note"])
+            every = [key for key in DIVS
+                     if all(margins[key][p["h2"]] < margins[key][p["h1"]] for p in pairs)]
+            self.assertEqual(not every, "没有一个分部每年都薄" in exhibit["note"])
 
     def test_published_payload_and_shell(self) -> None:
         self.assertEqual(js_payload(ROOT / "data" / "mc.js", "window.DASH"), self.payload)
@@ -895,41 +910,135 @@ class McRollTest(unittest.TestCase):
         bump = total[i - 4] * 1.05 - total[i]
         total[i] += bump
         s["quarterly_revenue_eur_m"]["selective_retailing"][i] += bump
-        cases.append((s, "季里第一次不再下滑"))
-        # one second half that was not thinner than its first half
-        s = copy.deepcopy(self.staging)
+        cases.append((None, s, "季里第一次不再下滑"))
+        # Three sentences the ten-year window no longer earns: over 2023-2025
+        # every second half was thinner than its first, over 2016-2025 only five
+        # of ten were. The page is right to have dropped them, so the control
+        # that proves the words can still appear has to be built here -- an
+        # assertNotIn against words that no branch can produce passes for free.
+        # 「下半年更薄」 and 「上半年高于全年」 are the same statement: a full year
+        # is the revenue-weighted average of its halves, so one mutation is
+        # expected to take all three phrases.
+        every_thinner = copy.deepcopy(self.staging)
+        halves = every_thinner["halves"]
+        rev = every_thinner["half_revenue_eur_m"]["total"]
+        pro = every_thinner["half_pro_eur_m"]["total"]
+        for i, half in enumerate(halves):
+            if half.startswith("H2"):
+                j = halves.index(f"H1 {mc.half_parts(half)[1]}")
+                pro[i] = round(rev[i] * (pro[j] / rev[j] - 0.02))
+        s = copy.deepcopy(every_thinner)
         h2 = next(i for i, h in enumerate(s["halves"]) if h.startswith("H2"))
-        s["half_pro_eur_m"]["total"][h2] = round(s["half_revenue_eur_m"]["total"][h2] * 0.30)
-        cases += [(s, "下半年每一次都是"), (s, "方向没有例外")]
+        j = s["halves"].index(f"H1 {mc.half_parts(s['halves'][h2])[1]}")
+        s["half_pro_eur_m"]["total"][h2] = round(
+            s["half_revenue_eur_m"]["total"][h2]
+            * (s["half_pro_eur_m"]["total"][j] / s["half_revenue_eur_m"]["total"][j] + 0.005))
+        cases += [(every_thinner, s, "下半年每一次都是"),
+                  (every_thinner, s, "方向没有例外"),
+                  (every_thinner, s, "上半年高于全年是这家公司的常态")]
         # capital intensity that rose once
         s = copy.deepcopy(self.staging)
         s["half_cash_eur_m"]["capex"][2] = s["half_cash_eur_m"]["capex"][1] * 1.5
-        cases.append((s, "连续下降"))
+        cases.append((None, s, "连续下降"))
         # a June below the December before it
         s = copy.deepcopy(self.staging)
         s["net_financial_debt_eur_m"][-1] = s["net_financial_debt_eur_m"][-2] - 1
-        cases.append((s, "每年 6 月都比前一个 12 月高"))
-        # a first half below the previous full year's line
-        s = copy.deepcopy(self.staging)
-        h1 = s["halves"].index(f"H1 {mc.half_parts(s['halves'][-1])[1] - 2}")
-        s["half_pro_eur_m"]["total"][h1] = round(s["half_revenue_eur_m"]["total"][h1] * 0.20)
-        cases.append((s, "上半年高于全年是这家公司的常态"))
+        cases.append((None, s, "每年 6 月都比前一个 12 月高"))
         # this half below the previous full year
         s = copy.deepcopy(self.staging)
         s["half_pro_eur_m"]["total"][-1] = round(s["half_revenue_eur_m"]["total"][-1] * 0.20)
-        cases.append((s, "以来第一次同时做到"))
+        cases.append((None, s, "以来第一次同时做到"))
         # the division that "turned positive" had a positive quarter inside its run
         s = copy.deepcopy(self.staging)
         s["organic_growth_pct"]["fashion_leather"][-3] = 1
-        cases.append((s, "个非正季度之后的第一个正数"))
+        cases.append((None, s, "个非正季度之后的第一个正数"))
         # the currency gap widened instead of snapping back
         s = copy.deepcopy(self.staging)
         s["organic_growth_pct"]["total"][-1] = 10
-        cases.append((s, "本季骤缩到"))
-        for staging, phrase in cases:
+        cases.append((None, s, "本季骤缩到"))
+        for base, staging, phrase in cases:
             with self.subTest(phrase=phrase):
-                self.assertIn(phrase, self.text)
+                text = (self.text if base is None
+                        else json.dumps(mc.build_payload(base), ensure_ascii=False))
+                self.assertIn(phrase, text)
                 self.assertNotIn(phrase, json.dumps(mc.build_payload(staging), ensure_ascii=False))
+
+    def test_a_habit_of_the_last_few_years_is_not_called_a_property(self) -> None:
+        """The sentences that replaced the three the window falsified.
+
+        「下半年更薄」 holds in 2022-2025 and in one of the six years before them.
+        Saying so is only worth a sentence while it stays a streak: if every year
+        were thinner the page owes the universal claim instead, and if the streak
+        breaks it owes neither. Both directions are checked by rebuilding.
+        """
+        halves = self.staging["halves"]
+        rev, pro = (self.staging["half_revenue_eur_m"]["total"],
+                    self.staging["half_pro_eur_m"]["total"])
+        years = [mc.half_parts(h)[1] for h in halves if h.startswith("H2")]
+        thin = []
+        for year in years:
+            h1, h2 = halves.index(f"H1 {year}"), halves.index(f"H2 {year}")
+            thin.append(pro[h2] / rev[h2] < pro[h1] / rev[h1])
+        run = next((i for i, flag in enumerate(reversed(thin)) if not flag), len(thin))
+        earlier = thin[:len(thin) - run]
+        recent = run >= 2 and bool(earlier) and sum(earlier) * 3 <= len(earlier)
+        self.assertTrue(recent, "the window no longer makes this a streak; revisit the sentence")
+        claim = f"是最近{mc.cn_count(run)}年才成立的"
+        self.assertIn(claim, self.text)
+        self.assertIn(f"{years[len(thin) - run]}–{years[-1]} 连续{mc.cn_count(run)}次更薄", self.text)
+
+        # every year thinner: the universal sentence is owed, not this one
+        s = copy.deepcopy(self.staging)
+        for year in years:
+            h1, h2 = halves.index(f"H1 {year}"), halves.index(f"H2 {year}")
+            s["half_pro_eur_m"]["total"][h2] = round(rev[h2] * (pro[h1] / rev[h1] - 0.02))
+        text = json.dumps(mc.build_payload(s), ensure_ascii=False)
+        self.assertNotIn(claim, text)
+        self.assertIn("方向没有例外", text)
+
+        # the streak broken in its middle: neither sentence is owed
+        s = copy.deepcopy(self.staging)
+        h1, h2 = halves.index(f"H1 {years[-2]}"), halves.index(f"H2 {years[-2]}")
+        s["half_pro_eur_m"]["total"][h2] = round(rev[h2] * (pro[h1] / rev[h1] + 0.02))
+        text = json.dumps(mc.build_payload(s), ensure_ascii=False)
+        self.assertNotIn(claim, text)
+        self.assertNotIn("方向没有例外", text)
+
+    def test_the_two_halves_of_the_same_arithmetic_are_named_as_one(self) -> None:
+        """A full year is the revenue-weighted average of its halves, so
+        「下半年更薄」 and 「上半年高于全年」 cannot disagree. The page says so
+        only when both counts, taken at printed precision, land on the same year.
+        """
+        halves = self.staging["halves"]
+        rev, pro = (self.staging["half_revenue_eur_m"]["total"],
+                    self.staging["half_pro_eur_m"]["total"])
+        margin = [100.0 * a / b for a, b in zip(pro, rev)]
+        years = [mc.half_parts(h)[1] for h in halves if h.startswith("H2")]
+        thin, above = [], []
+        for year in years:
+            h1, h2 = halves.index(f"H1 {year}"), halves.index(f"H2 {year}")
+            thin.append(pro[h2] / rev[h2] < pro[h1] / rev[h1])
+            whole = 100.0 * (pro[h1] + pro[h2]) / (rev[h1] + rev[h2])
+            above.append(round(margin[h1], 1) > round(whole, 1))
+        turn = lambda f: len(f) - next((i for i, x in enumerate(reversed(f)) if not x), len(f))
+        same = turn(thin) == turn(above)
+        self.assertEqual(same, "在算术上是同一句话" in self.text)
+        if same:
+            self.assertIn(f"上半年高于它自己那一整年，是 {years[turn(above)]} 年以后才有的事", self.text)
+
+        # The two counts are equivalent in exact arithmetic, so the only thing
+        # that can separate them is the rounding the page prints at -- which is
+        # what 2018 already does at 0.02pp. A second half thinner by less than
+        # that lengthens one streak and not the other, and then the page may not
+        # call them the same sentence. Without this the claim is unfalsifiable:
+        # the condition is true of the real data, so forcing it true changes
+        # nothing and a gate that can only be satisfied proves nothing.
+        s = copy.deepcopy(self.staging)
+        year = years[turn(thin) - 1]
+        h1, h2 = halves.index(f"H1 {year}"), halves.index(f"H2 {year}")
+        s["half_pro_eur_m"]["total"][h2] = rev[h2] * (pro[h1] / rev[h1] - 0.000_01)
+        text = json.dumps(mc.build_payload(s), ensure_ascii=False)
+        self.assertNotIn("在算术上是同一句话", text)
 
 
 if __name__ == "__main__":
