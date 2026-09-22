@@ -215,10 +215,12 @@ CONVERTED = {
         "六家在共同的": "the rate window is the intersection of six growth lines, "
                    "two of which are derived from a euro series and so start a "
                    "year late.",
-        "六家之间的极差": "the column range of the chart above; same window by "
-                     "construction.",
         "公司自己的口径比欧元口径高出多少": "one line per company with a printed rate, "
-                                 "on the same intersection.",
+                                 "on the window those four share.",
+        "之间的极差": "a like-for-like column needs all four printed rates in the same "
+                 "quarter, and Richemont printed a standalone quarterly rate only in "
+                 "its fiscal Q1/Q3 announcements before FY22 -- so the first quarter "
+                 "with four comparable rates is 2017Q4, not 2016Q1.",
         "同一根日历轴上": "the calendar half-year axis is the intersection of the "
                     "five members that close a half on 30 June.",
     },
@@ -844,8 +846,8 @@ CONVERTED = {
 FLOOR_KIND = {
     'luxury': {
         '六家在共同的': 'design',
-        '六家之间的极差': 'design',
         '公司自己的口径比欧元口径高出多少': 'design',
+        '之间的极差': 'disclosure',
         '同一根日历轴上': 'design',
     },
     'ker': {
@@ -1246,8 +1248,8 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 134)
-        self.assertEqual(settled.count("design"), 38)
+        self.assertEqual(settled.count("disclosure"), 135)
+        self.assertEqual(settled.count("design"), 37)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
         """Every short chart either names its reason or is counted here.

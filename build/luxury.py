@@ -370,14 +370,22 @@ def analysis(members: list[dict], staging: dict) -> dict:
     # Each company's own rate on the shared axis, and -- for the two with no
     # connected quarterly rate -- this page's own arithmetic on its euro line,
     # which is a different kind of number and is labelled as one everywhere.
-    own_rate, own_kind = {}, {}
+    # Every company's rate over the **union** window, not the intersection.
+    # Cutting each series to the six-way intersection at this point is what made
+    # four-company charts as short as the six-company one: a chart should be as
+    # deep as the companies it actually draws, and that is a property of the
+    # subset, not of the page.
+    rate_by_slug, own_kind = {}, {}
     for m in members:
         if m["growth"] is not None:
-            own_rate[m["slug"]] = at(m["growth_quarters"], m["growth"], common)
+            values = at(m["growth_quarters"], m["growth"], longest)
             own_kind[m["slug"]] = "printed"
         else:
-            own_rate[m["slug"]] = yoy(m["quarters"], m["revenue"], common)
+            values = yoy(m["quarters"], m["revenue"], longest)
             own_kind[m["slug"]] = "derived"
+        rate_by_slug[m["slug"]] = {q: v for q, v in zip(longest, values) if v is not None}
+    own_rate = {m["slug"]: at(longest, [rate_by_slug[m["slug"]].get(q) for q in longest], common)
+                for m in members}
     long_rate = {}
     for m in members:
         if m["growth"] is not None:
@@ -396,8 +404,7 @@ def analysis(members: list[dict], staging: dict) -> dict:
     # adds its own holes: it printed no standalone rate at all before 2021Q2.
     # So the rate charts run on `rate_window`, which is where all six can be
     # read, and the page says why it is shorter.
-    rate_window = [q for i, q in enumerate(common)
-                   if all(own_rate[m["slug"]][i] is not None for m in members)]
+    rate_window = window_for(members, rate_by_slug, longest)
     spread = []
     for quarter in rate_window:
         index = common.index(quarter)
@@ -503,6 +510,7 @@ def analysis(members: list[dict], staging: dict) -> dict:
     return {
         "common": common,
         "rate_window": rate_window,
+        "rate_by_slug": rate_by_slug,
         "longest": longest,
         "latest": latest,
         "own_rate": own_rate,
@@ -523,6 +531,24 @@ def analysis(members: list[dict], staging: dict) -> dict:
 
 
 # ── exhibits ────────────────────────────────────────────────────────────────
+def window_for(subset: list[dict], rate_by_slug: dict, axis: list[str]) -> list[str]:
+    """From the first quarter every member of `subset` can fill, to the end.
+
+    A chart drawn from four companies has no business being cut to the window
+    six of them share -- that is how a four-company chart ended up 18 quarters
+    long when its members reach back to 2016Q4.
+
+    The window runs from the first covered quarter and does **not** stop at the
+    next gap. Richemont printed a standalone quarterly rate only in some years
+    before 2021, so the middle of this range has holes; a hole is drawn as a
+    break in the line, which says 「the company printed nothing here」. Cutting
+    the window at the last gap instead would throw away every quarter before it
+    and say nothing at all.
+    """
+    covered = [q for q in axis if all(q in rate_by_slug[m["slug"]] for m in subset)]
+    return axis[axis.index(covered[0]):] if covered else []
+
+
 def rule_census(members: list[dict], a: dict) -> str:
     """「只剔除汇率：历峰、爱马仕、库奇内利；剔除汇率与合并范围：LVMH、开云」.
 
@@ -579,16 +605,35 @@ def comparability_charts(members: list[dict], a: dict) -> list[dict]:
                                     for s in unknown) + "的剔除项本站没有记录。" if unknown else "。")),
         "src_extra": AXIS,
     }
+    printed_only = [m for m in members if kinds[m["slug"]] == "printed"]
+    wide = window_for(printed_only, a["rate_by_slug"], a["longest"])
+    def range_of(subset, axis):
+        out = []
+        for q in axis:
+            column = [a["rate_by_slug"][m["slug"]].get(q) for m in subset]
+            out.append(None if any(v is None for v in column) else round(max(column) - min(column), 4))
+        return out
     spread = {
         "ref": "EX_SPREAD",
-        "kind": "bars_labeled",
-        "title": "同一个季度里，六家之间的极差",
-        "xlabels": list(window),
-        "values": rounded(a["spread"]),
+        "kind": "lines",
+        "title": "同一个季度里，这些公司之间的极差",
+        "xlabels": list(wide),
+        "series": [
+            {"name": f"六家（{window[0]} 起）", "color": "NAVY",
+             "values": rounded(range_of(members, wide))},
+            {"name": f"印出口径的四家（{wide[0]} 起）", "color": "GOLD",
+             "values": rounded(range_of(printed_only, wide))},
+        ],
+        "end_label": True,
+        "xstep": 4,
+        "full": True,
+        "zero_base": True,
         "label_fmt": "pp1",
         "ylab": "最高与最低之差（pp）",
-        "note": ("把上一张图的每一列取最大减最小。这条线回答的是「奢侈品这一季怎么样」"
-                 "这个问题本身成不成立："
+        "note": ("每一列取最大减最小。蓝线是六家都有数的那一段，金线只算印出公司口径的"
+                 f"{cn_count(len(printed_only))}家、因此能多画 {len(wide) - len(window)} 个季度 —— "
+                 "两条线一起看才知道极差是这一轮才宽的，还是一直就宽。"
+                 "这回答的是「奢侈品这一季怎么样」这个问题本身成不成立："
                  + (f"这{cn_count(len(window))}个季度里极差一次都没有收到 10pp 以内，"
                     if min(v for v in a["spread"] if v is not None) >= 10 else
                     f"极差最窄的一格是 {a['rate_window'][a['spread'].index(min(v for v in a['spread'] if v is not None))]} 的 "
@@ -616,6 +661,19 @@ def comparability_charts(members: list[dict], a: dict) -> list[dict]:
         "src_extra": AXIS,
     }
     return [own, spread, scale]
+
+
+def lead_with_depth(comparability: list[dict], window_block: list[dict]) -> tuple[list, list]:
+    """Put the 42-quarter chart first and the six-way zoom second.
+
+    A reader who meets the eighteen-quarter chart first reads it as 「this is
+    the record」. It is not: it is the part of the record six companies share,
+    and three of them have four times as much. So the long chart opens the page
+    and the intersection follows it, explicitly as a zoom.
+    """
+    own, spread, scale = comparability
+    window_chart, long_view = window_block
+    return [long_view, own, spread], [window_chart, scale]
 
 
 def window_charts(members: list[dict], a: dict) -> list[dict]:
@@ -731,12 +789,14 @@ def window_charts(members: list[dict], a: dict) -> list[dict]:
 
 def basis_charts(members: list[dict], a: dict) -> list[dict]:
     """Two charts about the rulers, not about the companies."""
-    window = a["rate_window"]
     printed = [m for m in members if a["own_kind"][m["slug"]] == "printed"]
+    # This chart draws four companies, so it runs on the window those four
+    # share -- not on the six-company one. They reach considerably further back.
+    window = window_for(printed, a["rate_by_slug"], a["longest"])
     wedge = {}
     for m in printed:
         reported = yoy(m["quarters"], m["revenue"], window)
-        own = a["own_rate"][m["slug"]]
+        own = [a["rate_by_slug"][m["slug"]].get(q) for q in window]
         wedge[m["slug"]] = [None if o is None or r is None else round(o - r, 4)
                             for o, r in zip(own, reported)]
     latest_gap = {m["slug"]: wedge[m["slug"]][-1] for m in printed}
@@ -759,8 +819,12 @@ def basis_charts(members: list[dict], a: dict) -> list[dict]:
         "zero_line": True,
         "end_label": True,
         "label_fmt": "pp1",
+        "xstep": 4,
+        "full": True,
         "ylab": "自己口径 − 报告口径自算（pp）",
-        "note": ("只画有公司口径可比的四家。每条线是「公司印出来的那个增速」减去「本页用它自己的"
+        "note": (f"只画有公司口径可比的{cn_count(len(printed))}家 —— 也正因为只有这"
+                 f"{cn_count(len(printed))}家，这张图能画 {len(window)} 个季度"
+                 f"（{window[0]}–{window[-1]}），比六家共同的那根轴长得多。每条线是「公司印出来的那个增速」减去「本页用它自己的"
                  "欧元收入算出来的同比」（D）。差额里装着汇率，对剔除合并范围的两家还装着并购与处置。"
                  f"本季最宽的是{widest['zh']}的 "
                  f"{'+' if (latest_gap[widest['slug']] or 0) >= 0 else '−'}"
@@ -1144,13 +1208,17 @@ def build_payload(staging: dict) -> dict:
     meta = latest_block(staging, members, a)
     latest = a["latest"]
 
+    lead, window_block = lead_with_depth(comparability_charts(members, a),
+                                         window_charts(members, a))
     sections_spec = [
         ("comparability", "一、六个都叫「增长」的数",
-         "先看能对齐的：六家在同一组季度上的读数，它们之间的距离，以及它们的体量差。",
-         comparability_charts(members, a)),
+         "先把能画的画到底：每条线走到它自己在本站的下限，而不是走到六家的交集。"
+         "然后才是六家同时有数的那一段，以及它们之间的距离。",
+         lead),
         ("window", "二、这张表能画多长，是谁定的",
-         "跨公司的窗口是交集，所以它由最短的那条线决定 —— 而最短的那条不一定是披露最少的那家。",
-         window_charts(members, a)),
+         "交集由最短的那条线决定 —— 而最短的那条不一定是披露最少的那家，"
+         "有时候只是本站还没回补。这一节把两者分开。",
+         window_block),
         ("basis", "三、每家自己的那把尺",
          "「增速」这个词在这六家里指六件不完全相同的事。这一节量它们之间的差，并给出一个反例：同一家公司、同一个口径，两种算法为什么会分开。",
          basis_charts(members, a)),
@@ -1160,9 +1228,10 @@ def build_payload(staging: dict) -> dict:
         ("visibility", "五、看得见什么",
          "同一个问题问六家，答案的深浅差一个数量级。这一节画能画的，并把不能画的逐家写清楚。",
          visibility_charts(members, a)),
-        ("factor", "六、「板块」到底解释了多少",
-         "前五节说的是这些数能不能放在一起。这一节假设它们能，然后问一个不一样的问题："
-         "把它们放在一起之后，共同的那部分有多大。答案是：比想象的小，而且分布极不均匀。",
+        ("factor", "六、「板块」到底解释了多少，以及拉开差距的到底是什么",
+         "前五节说的是这些数能不能放在一起。这一节假设它们能，然后问两个问题："
+         "共同的那部分有多大，以及剩下的那部分属于谁。"
+         "答案是：共同的部分比想象的小，而剩下的部分主要不属于「公司」。",
          factor_charts(members, a, f)),
     ]
     exhibits = number_exhibits([e for _, _, _, block in sections_spec for e in block])
@@ -1527,7 +1596,7 @@ def factor_charts(members: list[dict], a: dict, f: dict) -> list[dict]:
                  "本页不据此给任何操作建议，它只说明这份数据能支持什么样的陈述。"),
         "src_extra": "合并全部品类线计算（pooled），不是逐线平均。",
     }
-    return [alpha, explain, persist]
+    return [alpha, explain, within_company_chart(within_company(members, f), f), persist]
 
 
 def factor_table(n: int, f: dict) -> dict:
@@ -1544,6 +1613,80 @@ def factor_table(n: int, f: dict) -> dict:
                   f"{f['fits'][label]['alpha']:+.1f}",
                   "是" if f["fits"][label]["r2"] >= 50 else "否"]
                  for label in ranked],
+    }
+
+
+
+
+def within_company(members: list[dict], f: dict) -> dict:
+    """Split the persistent-performance spread into between-company and within-company.
+
+    This is the one decomposition a cross-company panel can do that a
+    single-company page cannot: four of the six contribute several category
+    lines each, so the same arithmetic that separates a line from the sector can
+    separate it from its own parent. If the between-company share were the large
+    one, 「which house」 would be the right question. It is not.
+    """
+    zh = {m["slug"]: m["zh"] for m in members}
+    by_company = {}
+    for label, fit in f["fits"].items():
+        by_company.setdefault(fit["slug"], []).append((label, fit["alpha"]))
+    alphas = [fit["alpha"] for fit in f["fits"].values()]
+    grand = sum(alphas) / len(alphas)
+    between = sum(len(rows) * (sum(a for _, a in rows) / len(rows) - grand) ** 2
+                  for rows in by_company.values())
+    within = sum((a - sum(b for _, b in rows) / len(rows)) ** 2
+                 for rows in by_company.values() for _, a in rows)
+    total = sum((a - grand) ** 2 for a in alphas)
+    spreads = []
+    for slug, rows in by_company.items():
+        rows = sorted(rows, key=lambda t: -t[1])
+        spreads.append({
+            "slug": slug, "zh": zh[slug], "lines": len(rows),
+            "top": rows[0][0], "top_alpha": rows[0][1],
+            "bottom": rows[-1][0], "bottom_alpha": rows[-1][1],
+            "span": rows[0][1] - rows[-1][1],
+            "mean": sum(a for _, a in rows) / len(rows),
+        })
+    spreads.sort(key=lambda r: -r["span"])
+    return {"between_pct": between / total * 100, "within_pct": within / total * 100,
+            "spreads": spreads, "widest": spreads[0],
+            "company_span": max(r["mean"] for r in spreads) - min(r["mean"] for r in spreads)}
+
+
+def within_company_chart(w: dict, f: dict) -> dict:
+    """Each company's own internal range, against the range between companies."""
+    rows = w["spreads"]
+    return {
+        "ref": "EX_WITHIN",
+        "kind": "grouped_bars",
+        "title": "同一家公司内部，不同品类之间差多少",
+        "xlabels": [r["zh"] for r in rows],
+        "groups": [
+            {"name": "该公司最好的品类线 α", "color": "NAVY",
+             "values": rounded([r["top_alpha"] for r in rows])},
+            {"name": "该公司最差的品类线 α", "color": "GOLD",
+             "values": rounded([r["bottom_alpha"] for r in rows])},
+            {"name": "该公司各线 α 的均值", "color": "GRAY",
+             "values": rounded([r["mean"] for r in rows])},
+        ],
+        "bar_labels": True,
+        "label_fmt": "pp1",
+        "ylab": "α（pp / 季）",
+        "xrot": 0,
+        "zero_line": True,
+        "full": True,
+        "note": (f"把 α 的总离散拆成两层：<b>公司之间只占 {w['between_pct']:.0f}%，"
+                 f"公司之内占 {w['within_pct']:.0f}%</b>。"
+                 f"{w['widest']['zh']}内部最宽，"
+                 f"{w['widest']['top'].split()[-1]} 与 {w['widest']['bottom'].split()[-1]} "
+                 f"相差 {w['widest']['span']:.1f}pp；"
+                 f"而四家公司各自均值之间的差只有 {w['company_span']:.1f}pp。"
+                 "同一家公司、同一张资产负债表、同一套分销，两条品类线可以差出比公司之间"
+                 "更大的距离 —— 所以「买哪一家」这个问法本身就选错了单位，"
+                 "持续差是品类与机制层面的，不是公司层面的。"),
+        "src_extra": "α 来自 Exhibit {EX_ALPHA} 的同一次留一法回归；"
+                     "分解是组间／组内平方和，未做自由度调整（组数 4、样本 19）。",
     }
 
 

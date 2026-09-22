@@ -165,13 +165,20 @@ class LuxuryCrossPageTest(unittest.TestCase):
         # year-ago euro quarter to divide by, and neither is available for the
         # whole of it. Recomputed here rather than read off the payload, which
         # is the number under test.
+        # Over the **union** of every member's quarters, not the intersection:
+        # a chart drawn from four of the six runs on the window those four
+        # share, which reaches further back than the six-company one, and a
+        # rate map cut to the intersection could not check it.
+        cls.union = sorted(set().union(*(set(r) for r in cls.revenue.values())),
+                           key=lambda q: (int(q[:4]), int(q[5])))
         cls.rates = {}
         for slug in MEMBERS:
             published = printed_growth(slug, cls.series[slug])
-            cls.rates[slug] = ({q: published[q] for q in cls.window if q in published}
-                               if published is not None else
-                               {q: year_on_year(cls.revenue[slug], q) for q in cls.window
-                                if year_on_year(cls.revenue[slug], q) is not None})
+            if published is not None:
+                cls.rates[slug] = {q: published[q] for q in cls.union if q in published}
+            else:
+                cls.rates[slug] = {q: year_on_year(cls.revenue[slug], q) for q in cls.union
+                                   if year_on_year(cls.revenue[slug], q) is not None}
         cls.rate_window = [q for q in cls.window if all(q in cls.rates[s] for s in MEMBERS)]
         cls.exhibits = {exhibit["n"]: exhibit
                         for section in cls.payload["sections"]
@@ -321,13 +328,20 @@ class LuxuryCrossPageTest(unittest.TestCase):
                                        msg=f"{slug} {quarter}")
 
     def test_the_spread_is_the_column_range_of_that_chart(self) -> None:
+        spread = self.exhibit_titled("之间的极差")
+        six = next(s for s in spread["series"] if s["name"].startswith("六家"))
+        # The spread chart now runs on the longer four-company axis, so the
+        # six-company line is null before the six-company window opens and is
+        # the column range of Exhibit 「六家在共同的」 inside it.
         own = self.exhibit_titled("六家在共同的")
-        spread = self.exhibit_titled("六家之间的极差")
-        self.assertEqual(spread["xlabels"], own["xlabels"])
-        for index, quarter in enumerate(own["xlabels"]):
-            column = [s["values"][index] for s in own["series"]]
-            self.assertAlmostEqual(spread["values"][index], max(column) - min(column),
-                                   places=4, msg=quarter)
+        offset = spread["xlabels"].index(own["xlabels"][0])
+        for index in range(len(spread["xlabels"])):
+            if index < offset:
+                self.assertIsNone(six["values"][index], spread["xlabels"][index])
+                continue
+            column = [s["values"][index - offset] for s in own["series"]]
+            self.assertAlmostEqual(six["values"][index], max(column) - min(column),
+                                   places=4, msg=spread["xlabels"][index])
 
     def test_the_scale_bars_are_four_quarters_of_euro_revenue(self) -> None:
         exhibit = self.exhibit_titled("最近四个季度的收入合计")
@@ -368,7 +382,12 @@ class LuxuryCrossPageTest(unittest.TestCase):
                                  f"{slug} has no company rate and cannot have a wedge")
                 continue
             values = self.series_named(exhibit, short[slug])
-            for index, quarter in enumerate(self.rate_window):
+            # This chart runs on the window its own four members share, which is
+            # longer than the six-company one.
+            for index, quarter in enumerate(exhibit["xlabels"]):
+                if quarter not in self.rates[slug]:
+                    self.assertIsNone(values[index], f"{slug} {quarter}")
+                    continue
                 reported = year_on_year(self.revenue[slug], quarter)
                 if reported is None:
                     # No year-ago euro figure on this site, so there is nothing
@@ -376,7 +395,7 @@ class LuxuryCrossPageTest(unittest.TestCase):
                     # is the opposite of "not measurable".
                     self.assertIsNone(values[index], f"{slug} {quarter}")
                     continue
-                self.assertAlmostEqual(values[index], published[quarter] - reported,
+                self.assertAlmostEqual(values[index], self.rates[slug][quarter] - reported,
                                        places=4, msg=f"{slug} {quarter}")
 
     def test_the_seam_chart_measures_the_gap_it_describes(self) -> None:
