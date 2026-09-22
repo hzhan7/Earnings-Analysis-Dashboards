@@ -642,7 +642,8 @@ class LuxuryCrossPageTest(unittest.TestCase):
                    if key not in {"schema_version", "_provenance", "_no_checks_rationale",
                                   "page", "members", "latest", "growth_metrics",
                                   "quarter_story", "sources", "factor_panel", "regimes",
-                                  "region_grid", "price_bands", "channel_lines"}]
+                                  "region_grid", "price_bands", "channel_lines",
+                                  "category_cycle"}]
         self.assertEqual(figures, [], f"unexpected data in series/luxury.json: {figures}")
 
     def test_the_declaration_blocks_declare_and_do_not_measure(self) -> None:
@@ -664,7 +665,7 @@ class LuxuryCrossPageTest(unittest.TestCase):
                     yield from leaves(value, f"{path}[{i}]")
             else:
                 yield path, node
-        for block in ("region_grid", "price_bands", "channel_lines"):
+        for block in ("region_grid", "price_bands", "channel_lines", "category_cycle"):
             for path, value in leaves(self.staging[block], block):
                 with self.subTest(path=path):
                     self.assertNotIsInstance(value, (int, float),
@@ -887,8 +888,14 @@ class LuxuryCrossPageTest(unittest.TestCase):
         self.assertNotIn("结论是否定的", note)
         self.assertIn("同号", note)
 
-    def test_the_channel_gap_is_the_one_cross_company_line(self) -> None:
-        """Wholesale against each company's own retail, recomputed per filer."""
+    def test_the_channel_gap_is_one_of_the_two_cross_company_lines(self) -> None:
+        """Wholesale against each company's own retail, recomputed per filer.
+
+        This was called "the one cross-company line" until the watch category
+        turned out to be a second one. Nothing about the wholesale arithmetic
+        changed; the word 「唯一」 did, and a count that says 「唯一」 while a
+        second line exists is the kind of claim this file is here to catch.
+        """
         spec = self.staging["channel_lines"]
         means = {}
         for entry in spec["members"]:
@@ -915,14 +922,114 @@ class LuxuryCrossPageTest(unittest.TestCase):
             tail = rows[-8:]
             means[slug] = (sum(w for w, _ in tail) / len(tail),
                            sum(r for _, r in tail) / len(tail))
-        exhibit = self.exhibit_titled("本页唯一在多家公司里同号")
+        exhibit = self.exhibit_titled("多品牌批发减自营零售")
         every = all(w < r for w, r in means.values())
         self.assertEqual(every, f"{cn_count(len(means))}家全部同向" in exhibit["note"])
         for slug, (w, r) in means.items():
             with self.subTest(slug=slug):
                 self.assertIn(f"{w:+.1f}% 对 {r:+.1f}%", exhibit["note"])
         if every:
-            self.assertIn("唯一", self.payload["headline"])
+            self.assertIn("多品牌批发", self.payload["headline"])
+
+    def test_the_watch_gap_is_recomputed_and_its_verdict_is_earned(self) -> None:
+        """The second cross-company line, rebuilt from the two filings.
+
+        Each company's watch line is differenced against its own flagship, so
+        currency, channel and geography cancel and what is left is the category.
+        The claim the page makes is about the level of that difference, not
+        about co-movement -- and the note has to say so with the measured
+        weakest correlation, because a reader who reaches for a correlation
+        here would find +0.8 between any two lines on the page.
+        """
+        spec = self.staging["category_cycle"]
+        gaps, levels = {}, {}
+        for entry in spec["members"]:
+            slug = entry["slug"]
+            data = self.series[slug]
+            if slug == "rms":
+                quarters = [norm_quarter(q) for q in data["periods"]]
+                rate = lambda k: data["by_sector"][k]["cc_pct"]
+            else:
+                quarters = [norm_quarter(q) for q in data["quarters"]]
+                rate = lambda k: data["quarterly_cer_pct"][k]
+            watch, against = rate(entry["watch"]), rate(entry["against"])
+            rows = [(q, w, a) for q, w, a in zip(quarters, watch, against)
+                    if w is not None and a is not None]
+            gaps[slug] = {q: w - a for q, w, a in rows}
+            levels[f"{slug}.watch"] = {q: w for q, w, _ in rows}
+            levels[f"{slug}.against"] = {q: a for q, _, a in rows}
+
+        exhibit = self.exhibit_titled("第二条在多家公司里同号的线")
+        short = {m["slug"]: m["short"] for m in self.staging["members"]}
+        for entry in spec["members"]:
+            slug = entry["slug"]
+            values = self.series_named(exhibit, short[slug])
+            for i, quarter in enumerate(exhibit["xlabels"]):
+                with self.subTest(slug=slug, quarter=quarter):
+                    if quarter in gaps[slug]:
+                        self.assertAlmostEqual(values[i], gaps[slug][quarter], places=3)
+                    else:
+                        self.assertIsNone(values[i])
+            tail = sorted(gaps[slug])[-8:]
+            mean = sum(gaps[slug][q] for q in tail) / len(tail)
+            self.assertIn(f"{mean:+.1f}pp", exhibit["note"])
+            self.assertIn(f"有 {sum(1 for v in gaps[slug].values() if v < 0)} 个低于",
+                          exhibit["note"])
+
+        shared = sorted(set.intersection(*(set(g) for g in gaps.values())))[-8:]
+        every = all(gaps[s][q] < 0 for s in gaps for q in shared)
+        self.assertEqual(every, "两家全部为负" in exhibit["note"])
+
+        # the correlation the note declines to lean on, recomputed here
+        names = sorted(levels)
+        window = sorted(set.intersection(*(set(g) for g in gaps.values())))
+        pairs = []
+        for i, one in enumerate(names):
+            for two in names[i + 1:]:
+                both = [q for q in window if q in levels[one] and q in levels[two]]
+                if len(both) < 8:
+                    continue
+                xs = [levels[one][q] for q in both]
+                ys = [levels[two][q] for q in both]
+                n = len(xs)
+                mx, my = sum(xs) / n, sum(ys) / n
+                sx = (sum((x - mx) ** 2 for x in xs) / n) ** 0.5
+                sy = (sum((y - my) ** 2 for y in ys) / n) ** 0.5
+                pairs.append(sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / n / (sx * sy))
+        self.assertEqual(len(pairs), 6)
+        self.assertIn(f"{min(pairs):+.2f}", exhibit["note"])
+        self.assertGreater(min(pairs), 0.5,
+                           "if the lines stopped co-moving, the note's argument changes")
+
+    def test_the_watch_verdict_can_say_the_other_thing(self) -> None:
+        """Positive control: lift one quarter and the 「全部为负」 sentence must go.
+
+        The real window happens to be eight for eight, so forcing the condition
+        true changes nothing and the assertion above cannot fail on its own.
+        """
+        import copy
+
+        from build import luxury
+        original = luxury._load
+        entry = self.staging["category_cycle"]["members"][0]
+
+        def watch_line_lifted(slug: str) -> dict:
+            data = copy.deepcopy(original(slug))
+            if slug == entry["slug"]:
+                line = data["quarterly_cer_pct"][entry["watch"]]
+                line[-1] = (data["quarterly_cer_pct"][entry["against"]][-1] or 0) + 5
+            return data
+
+        luxury._load = watch_line_lifted
+        try:
+            payload = luxury.build_payload(json.loads(json.dumps(self.staging)))
+        finally:
+            luxury._load = original
+        note = next(ex["note"] for section in payload["sections"]
+                    for ex in section["exhibits"]
+                    if "第二条在多家公司里同号的线" in ex["title"])
+        self.assertNotIn("两家全部为负", note)
+        self.assertIn("方向并不一致", note)
 
 
 if __name__ == "__main__":

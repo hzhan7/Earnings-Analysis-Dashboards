@@ -1280,6 +1280,7 @@ def build_payload(staging: dict) -> dict:
     g = demand_grid(members, staging)
     b = price_bands(members, staging)
     c = channel_spread(members, staging)
+    w = watch_cycle(members, staging)
     meta = latest_block(staging, members, a)
     latest = a["latest"]
 
@@ -1296,11 +1297,12 @@ def build_payload(staging: dict) -> dict:
          "那么每家公司最弱的那条线应该是同一样东西 —— 入门价带。这一节检验这句话，"
          "用的是每家自己在同一份申报里印出的两个品类，所以汇率与渠道全部被约掉。",
          band_charts(members, a, b)),
-        ("channel", "三、唯一在多家公司里同号的那件事",
-         "前两节否掉了两个行业级解释。这一节给出本页找得到的唯一一个："
-         "多品牌批发 —— 客人不必走进品牌自己的店的那条渠道 —— "
-         "在三家国别、价位、准则、披露频率都不同的公司里同时弱于它们各自的零售。",
-         channel_charts(members, a, c)),
+        ("channel", "三、那么有没有在多家公司里同号的线",
+         "前两节否掉了两个行业级解释。这一节找剩下的：本页一共找到两条，"
+         "一条是渠道 —— 多品牌批发，客人不必走进品牌自己的店的那条 —— "
+         "在三家国别、价位、准则、披露频率都不同的公司里同时弱于它们各自的零售；"
+         "另一条是品类 —— 钟表，在两家印出纯钟表线的公司里同时跑在自家主力线下面十几个百分点。",
+         channel_charts(members, a, c) + watch_charts(members, a, w)),
         ("factor", "四、那分化到底属于谁",
          "既然共同的那部分这么小，剩下的属于谁？这一节把十九条品类线拆成"
          "「跟着板块走的那部分」与「不跟的那部分」，再问后者是公司的属性还是品类的属性。"
@@ -1358,8 +1360,10 @@ def build_payload(staging: dict) -> dict:
         "把汇率整条腿拿掉、按两家自己印的恒汇率重算是 {cc}%）。"
         "第二个候选解释是价格带，也不成立：同一个入门价带在{flip_a}比自家顶价带高 {flip_gap}pp，"
         "在{flip_b}却低 {same_gap}pp —— 符号相反，所以「金字塔底部在退」是公司现象不是行业现象。"
-        "本页唯一在多家公司里同号的是多品牌批发：{chan_n}家国别、价位、准则、"
-        "披露频率都不同的公司，批发同时弱于它们各自的零售。"
+        "本页只找到两条在多家公司里同号的线，而且都不是「需求」这一层的："
+        "多品牌批发（{chan_n}家国别、价位、准则、披露频率都不同的公司，批发同时弱于各自零售）"
+        "与钟表品类（印出纯钟表线的两家，最近{watch_n}季每一季都跑在自家主力线下面，"
+        "平均 {watch_gap}pp）。"
         "把这三条并起来，这一季的「奢侈品增长」不是一个行业变量 —— "
         "而开头那六个数本来也不可比：它们分属{rules}种剔除法、{clocks}种利润时钟、{terms}种利润口径。",
         {
@@ -1377,6 +1381,8 @@ def build_payload(staging: dict) -> dict:
             "same_gap": (f"{[p for p in b['bands'] if p not in b['flipped']][0]['strong_mean'] - [p for p in b['bands'] if p not in b['flipped']][0]['weak_mean']:.1f}"
                          if b["flipped"] and len(b["bands"]) > len(b["flipped"]) else "—"),
             "chan_n": cn_count(len(c["blocks"])),
+            "watch_n": cn_count(len(w["recent"])),
+            "watch_gap": f"{sum(x['mean'] for x in w['blocks']) / len(w['blocks']):+.0f}",
             "low_name": low["zh"], "low_val": signed1(a["own_rate"][low["slug"]][-1]),
             "top_name": top["zh"], "top_val": signed1(a["own_rate"][top["slug"]][-1]),
             "rules": cn_count(len(known_rules)),
@@ -1407,10 +1413,12 @@ def build_payload(staging: dict) -> dict:
           f"{other_band['strong_mean']:+.1f}%。同一个价格带在两家公司里符号相反，"
           "所以它不是一个行业级的解释。") if b["flipped"] and other_band else
          "本期各家的入门价带同号，见价格带一节。"),
-        ("唯一同号的那条", f"{cn_count(len(c['blocks']))}家批发同时弱于零售",
-         "；".join(f"{by_zh(members, x['slug'])} {x['wholesale_mean']:+.1f}% 对 "
-                  f"{x['retail_mean']:+.1f}%" for x in c["blocks"])
-         + "。这三家的国别、价位、准则、披露频率都不同，是本页找得到的唯一跨公司共同项。"),
+        ("同号的只有两条", "一条渠道，一条品类",
+         "渠道：" + "、".join(f"{by_zh(members, x['slug'])} {x['wholesale_mean']:+.1f}% 对 "
+                            f"{x['retail_mean']:+.1f}%" for x in c["blocks"])
+         + f"。品类：印出纯钟表线的两家，最近{cn_count(len(w['recent']))}季每一季都低于自家主力线，"
+         + "、".join(f"{by_zh(members, x['slug'])} {x['mean']:+.1f}pp" for x in w["blocks"])
+         + "。两条都不是「需求」那一层的。"),
         ("本季极差", f"{a['spread'][-1]:.1f}pp",
          f"{cn_count(len(a['rate_window']))}个季度里的极差在 {narrowest:.1f}–{widest:.1f}pp 之间"
          + ("，一次都没有收窄到 10pp 以内" if narrowest >= 10 else "")
@@ -2396,7 +2404,7 @@ def channel_charts(members: list[dict], a: dict, c: dict) -> list[dict]:
     gap = {
         "ref": "EX_CHANNELGAP",
         "kind": "lines",
-        "title": "多品牌批发减自营零售：本页唯一在多家公司里同号的那条线",
+        "title": "多品牌批发减自营零售：本页两条跨公司同号的线之一",
         "xlabels": axis,
         "series": [
             {"name": f"{by_slug[b['slug']]['short']} 批发 − 零售", "color": colours[b["slug"]],
@@ -2412,7 +2420,8 @@ def channel_charts(members: list[dict], a: dict, c: dict) -> list[dict]:
                              f"{b['wholesale_mean']:+.1f}% 对 {b['retail_mean']:+.1f}%"
                              for b in c["blocks"]) + "。"
                  + f"这三家的国别、价位、报表准则、披露频率都不一样，"
-                   f"所以方向一致不容易用巧合解释。{absent}不印渠道拆分，不在这张图里。"),
+                   f"所以方向一致不容易用巧合解释。{absent}不印渠道拆分，不在这张图里。"
+                   "本页找到的另一条同号的线在下一张图上，它是品类不是渠道。"),
         "src_extra": AXIS + " 历峰用公司印出的恒定汇率增速；杰尼亚与库奇内利的渠道只印收入，同比为本页自算（D）。",
     }
     half = next(b for b in c["blocks"] if b["cadence"] == "half")
@@ -2435,6 +2444,123 @@ def channel_charts(members: list[dict], a: dict, c: dict) -> list[dict]:
         "src_extra": AXIS + " 半年渠道收入为公司披露，同比为本页自算（D）。",
     }
     return [gap, half_ex]
+
+
+# ── the second cross-company line, and why a correlation could not find it ──
+# Two filers print a watch-only line. Both run it far below their own flagship,
+# and both have done so for every one of the last eight quarters. What makes
+# this a finding is the level, not the co-movement: over the same window every
+# pair of lines on this page correlates above +0.8, so a correlation between
+# the two watch lines would have been true of any two lines picked at random.
+def _pearson(xs: list[float], ys: list[float]) -> float:
+    n = len(xs)
+    mx, my = sum(xs) / n, sum(ys) / n
+    sx = (sum((x - mx) ** 2 for x in xs) / n) ** 0.5
+    sy = (sum((y - my) ** 2 for y in ys) / n) ** 0.5
+    if not sx or not sy:
+        return 0.0
+    return sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / n / (sx * sy)
+
+
+def _trailing_run(flags: list[bool]) -> int:
+    """How many of the most recent readings are True, counting back from the end."""
+    run = 0
+    for flag in reversed(flags):
+        if not flag:
+            break
+        run += 1
+    return run
+
+
+def watch_cycle(members: list[dict], staging: dict) -> dict:
+    spec = staging["category_cycle"]
+    by_slug = {m["slug"]: m for m in members}
+    blocks = []
+    for entry in spec["members"]:
+        slug = entry["slug"]
+        quarters, rate, _ = BAND_SOURCE[slug](by_slug[slug]["data"])
+        watch, against = rate(entry["watch"]), rate(entry["against"])
+        rows = [(q, w - a) for q, w, a in zip(quarters, watch, against)
+                if w is not None and a is not None]
+        levels = [(q, w, a) for q, w, a in zip(quarters, watch, against)
+                  if w is not None and a is not None]
+        tail = rows[-8:]
+        blocks.append({
+            "slug": slug, "rows": rows, "window": len(tail),
+            "watch_label": entry["watch_label"], "against_label": entry["against_label"],
+            "below": sum(1 for _, v in rows if v < 0), "n": len(rows),
+            "mean": sum(v for _, v in tail) / len(tail),
+            "watch_mean": sum(w for _, w, _ in levels[-8:]) / len(levels[-8:]),
+            "streak": _trailing_run([v < 0 for _, v in rows]),
+        })
+    shared = sorted(set.intersection(*(set(q for q, _ in b["rows"]) for b in blocks)), key=_order)
+    # The correlation this section refuses to lean on, measured rather than
+    # asserted: every pair of the four lines involved, over the window they
+    # share. If the weakest of them is already high, co-movement cannot tell
+    # a category cycle from anything else.
+    levels = {}
+    for entry in spec["members"]:
+        quarters, rate, _ = BAND_SOURCE[entry["slug"]](by_slug[entry["slug"]]["data"])
+        for key, tag in ((entry["watch"], "watch"), (entry["against"], "against")):
+            values = dict(zip(quarters, rate(key)))
+            levels[f"{entry['slug']}.{tag}"] = {q: values[q] for q in shared
+                                                if values.get(q) is not None}
+    names = sorted(levels)
+    corrs = []
+    for i, one in enumerate(names):
+        for two in names[i + 1:]:
+            both_q = sorted(set(levels[one]) & set(levels[two]), key=_order)
+            if len(both_q) < 8:
+                continue
+            xs = [levels[one][q] for q in both_q]
+            ys = [levels[two][q] for q in both_q]
+            corrs.append((_pearson(xs, ys), one, two))
+    both = [q for q in shared if all(dict(b["rows"])[q] < 0 for b in blocks)]
+    recent = [q for q in shared[-8:] if all(dict(b["rows"])[q] < 0 for b in blocks)]
+    return {"blocks": blocks, "shared": shared, "both": both, "recent": recent,
+            "absent": spec["absent"], "category": spec["category"],
+            "pairs": len(corrs), "weakest_corr": min(c for c, _, _ in corrs) if corrs else None,
+            "every_recent": len(recent) == len(shared[-8:])}
+
+
+def watch_charts(members: list[dict], a: dict, w: dict) -> list[dict]:
+    by_slug = {m["slug"]: m for m in members}
+    axis = sorted({q for b in w["blocks"] for q, _ in b["rows"]}, key=_order)
+    colours = {"cfr": "GOLD", "rms": "MBLUE"}
+    absent = "、".join(f"{by_slug[s]['zh']}（{why.split('：')[0].split('，')[0].rstrip('。')}）"
+                      for s, why in w["absent"].items() if s in by_slug)
+    lead = (f"<b>最近{cn_count(len(w['shared'][-8:]))}个季度，两家全部为负。</b>"
+            if w["every_recent"] else "<b>两家方向并不一致。</b>")
+    gap = {
+        "ref": "EX_WATCHGAP",
+        "kind": "lines",
+        "title": f"{w['category']}减各自主力线：第二条在多家公司里同号的线",
+        "xlabels": axis,
+        "series": [
+            {"name": f"{by_slug[b['slug']]['short']} {b['watch_label']} − {b['against_label']}",
+             "color": colours[b["slug"]],
+             "values": [None if q not in rows else round(rows[q], 4) for q in axis]}
+            for b, rows in ((b, dict(b["rows"])) for b in w["blocks"])
+        ],
+        "end_label": True, "label_fmt": "pp1", "ylab": f"{w['category']} − 主力线（pp）",
+        "full": True,
+        "note": (lead + "两条都是公司内部的差，所以汇率、渠道、地区结构全部被约掉，"
+                 f"剩下的是品类。"
+                 + "；".join(f"{by_slug[b['slug']]['zh']}的{b['watch_label']}在 {b['n']} 个季度里"
+                             f"有 {b['below']} 个低于自己的{b['against_label']}，"
+                             f"最近连续 {b['streak']} 季为负，最近{cn_count(b['window'])}季平均 "
+                             f"{b['mean']:+.1f}pp"
+                             for b in w["blocks"]) + "。"
+                 + f"<b>这一条不能用相关系数来证明</b>：这张图涉及的{cn_count(4)}条线两两相关一共 "
+                   f"{w['pairs']} 对，最弱的一对也有 {w['weakest_corr']:+.2f} —— "
+                   "共同周期把一切都拉到一起，"
+                   "所以「两条钟表线高度相关」对「有没有钟表品类周期」按构造无分辨力。"
+                   "能分辨的是水平 —— 两家的钟表线都跑在自己主力线下面十几个百分点，"
+                   "而这两家的主力线是完全不同的东西。"
+                 + f"{absent}不在这张图里。"),
+        "src_extra": AXIS + " 两家各用自己印出的剔汇口径（历峰恒定汇率、爱马仕固定汇率）。",
+    }
+    return [gap]
 
 
 if __name__ == "__main__":

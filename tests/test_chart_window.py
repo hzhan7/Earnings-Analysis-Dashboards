@@ -170,7 +170,7 @@ REACH_2016 = {
     # Not a company page. It is here because the ratchet now walks every
     # published payload rather than `ENTRIES`: a page that was invisible to the
     # ratchet could lose ground without the count moving.
-    "luxury": 7,
+    "luxury": 8,
 }
 
 # Exemption keys are matched on the *shape* of a title, not on its digits: in the
@@ -1369,8 +1369,12 @@ class ChartWindowTest(unittest.TestCase):
         self.assertEqual(reached, sum(REACH_2016.values()))
         # The denominator moves when a page gains or loses an exhibit, so it is
         # a range rather than a point -- tight enough to notice a page vanishing.
+        # The lower bound is the load-bearing one: a page that disappears takes
+        # a dozen or more exhibits with it. The upper bound only stops the count
+        # running away unnoticed, so it is re-measured with headroom rather than
+        # tracked exhibit by exhibit (621 at the luxury page's rebuild).
         self.assertGreaterEqual(total, 540)
-        self.assertLessEqual(total, 620)
+        self.assertLessEqual(total, 660)
 
     def test_flipping_the_alternation_changes_nothing(self) -> None:
         """The property that makes the parser safe, stated as a property.
