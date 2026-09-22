@@ -433,15 +433,22 @@ class LuxuryCrossPageTest(unittest.TestCase):
         exhibit = self.exhibit_titled("同一根日历轴上")
         calendar = [slug for slug in MEMBERS if slug != "cfr"]
         margins = {slug: half_margin(slug, self.series[slug]) for slug in calendar}
-        shared = sorted(set.intersection(*(set(m) for m in margins.values())),
+        # The union, from the first half any of them can fill: cutting to the
+        # intersection made this seven halves long while three of the five
+        # reach 2016. A member that has not started yet is a gap.
+        shared = sorted(set().union(*(set(m) for m in margins.values())),
                         key=lambda h: (h.split()[1], h.split()[0]))
         self.assertEqual(exhibit["xlabels"], shared)
+        self.assertGreaterEqual(len(shared), 20, "the half axis should reach 2016")
         self.assertEqual(len(exhibit["series"]), len(calendar))
         short = {m["slug"]: m["short"] for m in self.staging["members"]}
         self.assertNotIn(short["cfr"], "".join(s["name"] for s in exhibit["series"]))
         for slug in calendar:
             values = self.series_named(exhibit, short[slug])
             for index, half in enumerate(shared):
+                if half not in margins[slug]:
+                    self.assertIsNone(values[index], f"{slug} {half}")
+                    continue
                 self.assertAlmostEqual(values[index], margins[slug][half], places=4,
                                        msg=f"{slug} {half}")
 
@@ -589,7 +596,7 @@ class LuxuryCrossPageTest(unittest.TestCase):
         figures = [key for key in self.staging
                    if key not in {"schema_version", "_provenance", "_no_checks_rationale",
                                   "page", "members", "latest", "growth_metrics",
-                                  "quarter_story", "sources", "factor_panel"}]
+                                  "quarter_story", "sources", "factor_panel", "regimes"}]
         self.assertEqual(figures, [], f"unexpected data in series/luxury.json: {figures}")
 
 

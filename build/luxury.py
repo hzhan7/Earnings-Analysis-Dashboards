@@ -482,7 +482,11 @@ def analysis(members: list[dict], staging: dict) -> dict:
                 f"{member['slug']} is marked calendar_halves but its half labels are "
                 f"{odd[:3]}: a fiscal half cannot go on the shared axis, because its "
                 "six months are not the other members' six months")
-    half_common = sorted(set.intersection(*(set(m["halves"]) for m in calendar)),
+    # The union, from the first half any member can fill. Cutting to the
+    # intersection made this seven halves long while three of the five reach
+    # 2016 -- the same mistake the quarterly charts had, one clock down. A line
+    # that has not started yet is a gap, which is the honest picture.
+    half_common = sorted(set().union(*(set(m["halves"]) for m in calendar)),
                          key=lambda h: (h.split()[1], h.split()[0]))
     if not half_common:
         raise ValueError("the members on the calendar clock share no half-year: "
@@ -493,7 +497,10 @@ def analysis(members: list[dict], staging: dict) -> dict:
         row = []
         index = {h: i for i, h in enumerate(m["halves"])}
         for half in half_common:
-            i = index[half]
+            i = index.get(half)
+            if i is None:
+                row.append(None)
+                continue
             revenue, profit = m["half_revenue"][i], m["half_profit"][i]
             row.append(None if not revenue or profit is None else round(profit / revenue * 100, 4))
         margin[m["slug"]] = row
@@ -1205,6 +1212,7 @@ def build_payload(staging: dict) -> dict:
     members = read_members(staging)
     a = analysis(members, staging)
     f = factor_analysis(members, a, staging["factor_panel"]["start"])
+    regime = regime_test(members, staging)
     meta = latest_block(staging, members, a)
     latest = a["latest"]
 
@@ -1232,7 +1240,7 @@ def build_payload(staging: dict) -> dict:
          "前五节说的是这些数能不能放在一起。这一节假设它们能，然后问两个问题："
          "共同的那部分有多大，以及剩下的那部分属于谁。"
          "答案是：共同的部分比想象的小，而剩下的部分主要不属于「公司」。",
-         factor_charts(members, a, f)),
+         factor_charts(members, a, f, staging)),
     ]
     exhibits = number_exhibits([e for _, _, _, block in sections_spec for e in block])
     first_table = exhibits[-1]["n"] + 1
@@ -1266,8 +1274,10 @@ def build_payload(staging: dict) -> dict:
         "把口径对齐之后再看，拉开差距的不是周期 —— "
         "{lines}条品类线里，持续跑赢与持续跑输之间相差 {alpha_range}pp／季，"
         "比同期整个板块 {factor_range}pp 的峰谷波幅还大；"
-        "而这个相对位置隔四个季度的自相关仍有 {ac_four}，它的变化却只有 {ac_delta}。"
-        "位置可读，拐点不可读。",
+        "而这个相对位置在一个时期之内很黏（隔四个季度的自相关 {ac_four}，"
+        "它的变化却只有 {ac_delta}）—— 但把同一套回归搬到疫情前那三年，"
+        "α 的排名只剩 ρ {regime_rho}，{flipped} 条线换了符号。"
+        "位置在一个时期之内可读，跨过时期切换就不可读。",
         {
             "latest": display_period(latest),
             "low_name": low["zh"], "low_val": signed1(a["own_rate"][low["slug"]][-1]),
@@ -1280,6 +1290,8 @@ def build_payload(staging: dict) -> dict:
             "factor_range": f"{f['factor_range']:.1f}",
             "ac_four": f"{f['persistence'][4]:+.2f}",
             "ac_delta": f"{f['change_autocorr']:+.2f}",
+            "regime_rho": f"{regime['rho']:+.2f}" if regime else "—",
+            "flipped": str(len(regime["flipped"])) if regime else "—",
         })
 
     cards = [
@@ -1516,7 +1528,7 @@ def factor_analysis(members: list[dict], a: dict, start: str) -> dict:
     }
 
 
-def factor_charts(members: list[dict], a: dict, f: dict) -> list[dict]:
+def factor_charts(members: list[dict], a: dict, f: dict, staging: dict) -> list[dict]:
     """Three charts and one claim: the cycle is not what separates these lines."""
     ranked = sorted(f["fits"], key=lambda k: -f["fits"][k]["alpha"])
     best, worst = f["best"], f["worst"]
@@ -1596,7 +1608,11 @@ def factor_charts(members: list[dict], a: dict, f: dict) -> list[dict]:
                  "本页不据此给任何操作建议，它只说明这份数据能支持什么样的陈述。"),
         "src_extra": "合并全部品类线计算（pooled），不是逐线平均。",
     }
-    return [alpha, explain, within_company_chart(within_company(members, f), f), persist]
+    charts = [alpha, explain, within_company_chart(within_company(members, f), f), persist]
+    regime = regime_test(members, staging)
+    if regime is not None:
+        charts.append(regime_chart(regime))
+    return charts
 
 
 def factor_table(n: int, f: dict) -> dict:
@@ -1687,6 +1703,114 @@ def within_company_chart(w: dict, f: dict) -> dict:
                  "持续差是品类与机制层面的，不是公司层面的。"),
         "src_extra": "α 来自 Exhibit {EX_ALPHA} 的同一次留一法回归；"
                      "分解是组间／组内平方和，未做自由度调整（组数 4、样本 19）。",
+    }
+
+
+
+
+def regime_test(members: list[dict], staging: dict) -> dict | None:
+    """Does a line keep its place when the regime changes?
+
+    The persistence measured inside one window is a within-regime property, and
+    a window that sits entirely inside one regime cannot tell the difference
+    between 「this line is structurally ahead」 and 「this line suits the current
+    regime」. Now that the quarterly rates reach back far enough, the same
+    regression runs on a pre-COVID window and on the current one, and the two
+    α rankings are compared.
+
+    Richemont is out of this panel: it printed a standalone quarterly rate only
+    in some quarters before 2021Q2, so it cannot be fitted on the early window,
+    and a factor whose membership changes between the two halves would make the
+    comparison meaningless.
+    """
+    spec = staging.get("regimes")
+    if not spec:
+        return None
+    lines = {k: v for k, v in panel_lines(members).items() if v["slug"] not in spec["exclude"]}
+    axis = [f"{y}Q{n}" for y in range(2016, 2027) for n in range(1, 5)]
+    fits = {}
+    windows = {}
+    for name, (lo, hi) in spec["windows"].items():
+        window = [q for q in axis if lo <= q <= hi]
+        usable = {k: v for k, v in lines.items()
+                  if all(q in v["growth"] and v["revenue"].get(q) is not None for q in window)}
+        growth = {k: [v["growth"][q] for q in window] for k, v in usable.items()}
+        revenue = {k: [v["revenue"][q] for q in window] for k, v in usable.items()}
+        out = {}
+        for key in usable:
+            others = [j for j in usable if j != key]
+            loo = [sum(growth[j][i] * revenue[j][i] for j in others)
+                   / sum(revenue[j][i] for j in others) for i in range(len(window))]
+            r2, beta, alpha = _fit(growth[key], loo)
+            out[key] = {"r2": r2 * 100, "beta": beta, "alpha": alpha}
+        fits[name] = out
+        windows[name] = window
+    names = list(spec["windows"])
+    shared = sorted(set(fits[names[0]]) & set(fits[names[1]]))
+    if len(shared) < 6:
+        return None
+    early, late = (fits[n] for n in names)
+    order_a = sorted(shared, key=lambda k: -early[k]["alpha"])
+    order_b = sorted(shared, key=lambda k: -late[k]["alpha"])
+    d = sum((order_a.index(k) - order_b.index(k)) ** 2 for k in shared)
+    n = len(shared)
+    held = [k for k in shared if (early[k]["alpha"] > 0) == (late[k]["alpha"] > 0)]
+    # The two ends that survived, not the two flattest: a line that sat near
+    # zero in both windows has held nothing worth holding. Steadiness only
+    # means something for a line that was a long way from the middle.
+    ahead = [k for k in held if late[k]["alpha"] > 0]
+    behind = [k for k in held if late[k]["alpha"] < 0]
+    stable = ([max(ahead, key=lambda k: min(early[k]["alpha"], late[k]["alpha"]))] if ahead else []) \
+        + ([min(behind, key=lambda k: max(early[k]["alpha"], late[k]["alpha"]))] if behind else [])
+    return {
+        "names": names, "windows": windows, "lines": shared,
+        "early": early, "late": late,
+        "rho": 1 - 6 * d / (n * (n * n - 1)),
+        "flipped": [k for k in shared if k not in held],
+        "steadiest": stable[:2],
+        "spread_early": max(early[k]["alpha"] for k in shared) - min(early[k]["alpha"] for k in shared),
+        "spread_late": max(late[k]["alpha"] for k in shared) - min(late[k]["alpha"] for k in shared),
+    }
+
+
+def regime_chart(r: dict) -> dict:
+    """Each line's α in the earlier regime against its α in the current one."""
+    early_name, late_name = r["names"]
+    order = sorted(r["lines"], key=lambda k: -r["late"][k]["alpha"])
+    flipped = set(r["flipped"])
+    return {
+        "ref": "EX_REGIME",
+        "kind": "grouped_bars",
+        "title": f"换一个时期，同一条线还在同一个位置吗（{r['windows'][early_name][0]}– 对 "
+                 f"{r['windows'][late_name][0]}–）",
+        "xlabels": [k + ("＊" if k in flipped else "") for k in order],
+        "groups": [
+            {"name": f"{early_name}的 α", "color": "GRAY",
+             "values": rounded([r["early"][k]["alpha"] for k in order])},
+            {"name": f"{late_name}的 α", "color": "NAVY",
+             "values": rounded([r["late"][k]["alpha"] for k in order])},
+        ],
+        "bar_labels": True,
+        "label_fmt": "pp1",
+        "ylab": "α（pp / 季）",
+        "zero_line": True,
+        "full": True,
+        "height": 320,
+        "note": (f"同一套回归跑在两段不相交的时期上。<b>α 的排名只剩 Spearman ρ "
+                 f"{r['rho']:+.2f}，{cn_count(len(r['lines']))}条线里有 "
+                 f"{len(r['flipped'])} 条换了符号</b>（带＊的）。"
+                 "所以前一张图量到的黏性是<b>同一个时期之内</b>的性质 —— 位置在一年的尺度上可读，"
+                 "跨过一次时期切换就不可读了。"
+                 + (f"两端都保住了位置的是"
+                    + "与".join(f"{k}（{r['early'][k]['alpha']:+.1f} → {r['late'][k]['alpha']:+.1f}）"
+                                for k in r["steadiest"])
+                    + "；其余各线的领先或落后，更像是这一段时期奖励或惩罚了它们的站位，"
+                      "而不是它们自身的属性。" if r["steadiest"] else "")
+                 + f"另外值得记下的是：早一段的 α 极差 {r['spread_early']:.1f}pp <b>比现在的 "
+                 f"{r['spread_late']:.1f}pp 还宽</b> —— 「这个板块最近才分化」这个说法，数据不支持。"),
+        "src_extra": "历峰不在这张图里：它在 2021Q2 之前只在部分季度印单季增速，"
+                     "早一段拟合不了，而成员在两段之间变化会让比较失去意义。"
+                     "早一段 12 季、晚一段 14 季，β 的估计在早一段尤其带噪声，此处只读 α。",
     }
 
 

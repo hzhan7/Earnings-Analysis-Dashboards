@@ -208,10 +208,18 @@ class RmsSeriesTest(unittest.TestCase):
                 self.assertIn(f"{year} 年四个季度相加等于公司申报的全年 €{quarters:,}M", self.reconciliations)
             else:
                 gaps[year] = abs(quarters - filed)
+                digits = 1 if any(float(v) != int(v) for v in (quarters, filed)) else 0
                 self.assertIn(f"{year} 年四个季度相加 €{quarters:,}M，"
-                              f"与公司申报的全年 €{filed:,}M 差 €{gaps[year]:,}M", self.reconciliations)
+                              f"与公司申报的全年 €{filed:,}M 差 €{gaps[year]:,.{digits}f}M",
+                              self.reconciliations)
         # Pinned so a second non-closing year cannot slip in unremarked.
-        self.assertEqual(gaps, {"2023": 1})
+        # 2021 is here because the filed value was repaired: the file used to
+        # carry 8,982.1, which is nine months at one decimal plus a whole-million
+        # fourth quarter -- a number no Hermès document prints. The company
+        # prints 8,982 in five places. Putting the printed value back makes this
+        # check able to fail, and the 0.1 it now reports is the splice.
+        self.assertEqual({y: round(g, 4) for y, g in gaps.items()},
+                         {"2021": 0.1, "2023": 1})
 
     def test_the_two_quarters_of_the_half_equal_the_printed_first_half(self) -> None:
         """To the million, each row -- and the note says by how much it misses."""
@@ -271,6 +279,10 @@ class RmsSeriesTest(unittest.TestCase):
 
     def test_every_derived_half_is_the_filed_year_minus_the_filed_half(self) -> None:
         halves = {h["label"]: h for h in self.staging["half_years"]}
+        # Adjusted free cash flow is a company-defined line the pre-2023
+        # releases do not print, so it is absent from the backfilled halves.
+        # Asking every year for it would fail on the data's shape rather than
+        # on the identity this test is about.
         fields = ("revenue_eur_m", "recurring_operating_income_eur_m",
                   "net_profit_group_eur_m", "operating_cash_flows_eur_m",
                   "operating_investments_eur_m", "adjusted_fcf_eur_m")
@@ -281,8 +293,10 @@ class RmsSeriesTest(unittest.TestCase):
             full = self.staging["full_years"][year]
             first = halves[f"H1 {year}"]
             for field in fields:
-                self.assertEqual(half[field], full[field] - first[field],
-                                 f"{half['label']}.{field}")
+                if any(row.get(field) is None for row in (half, full, first)):
+                    continue
+                self.assertAlmostEqual(half[field], full[field] - first[field], places=4,
+                                       msg=f"{half['label']}.{field}")
         self.assertIn(f"{cn_count(len(derived))}个财年的上下半年相加都等于公司申报的全年", self.reconciliations)
 
     def test_only_the_second_halves_are_flagged_derived(self) -> None:
@@ -782,10 +796,13 @@ class RmsPayloadTest(unittest.TestCase):
         years = sorted({h["label"].split()[1] for h in self.staging["half_years"]})
         for y in years:
             if f"H2 {y}" in halves:
-                self.assertEqual(
+                # Almost-equal, not equal: the backfilled years are printed to
+                # one decimal, so a derived half is a float difference and exact
+                # equality is not a property the data can have.
+                self.assertAlmostEqual(
                     halves[f"H2 {y}"]["operating_investments_eur_m"],
                     self.staging["full_years"][y]["operating_investments_eur_m"]
-                    - halves[f"H1 {y}"]["operating_investments_eur_m"], y)
+                    - halves[f"H1 {y}"]["operating_investments_eur_m"], places=4, msg=y)
         capex = self.by_ref["EX_CAPEX"]
         self.assertEqual(capex["xlabels"], years)
         for group in capex["groups"]:
@@ -979,7 +996,20 @@ class RmsChecksTest(unittest.TestCase):
         self.assertIn(f"{c['recurring_operating_margin_prior_year_pct']:.1f}% → "
                       f"{c['recurring_operating_margin_pct']:.1f}%", bridge["title"])
         seasonality = next(ex for ex in exhibits(self.payload) if ex.get("ref") == "EX_HALF_MARGIN")
-        self.assertIn(f"上半年 {c['recurring_operating_margin_pct']:.1f}% 被广泛引用", seasonality["note"])
+        # Printed only while every year in the window has H1 above H2. On the
+        # 21-half window two years break it -- 2020 (COVID: 21.5% against 37.1%)
+        # and, less excusably for the old sentence, 2017 (34.3% against 34.9%)
+        # in an ordinary year. The page stops claiming it; this checks that the
+        # claim and the sentence move together.
+        blocks = self.halves
+        pairs = [y for y in sorted({h["label"].split()[1] for h in self.s["half_years"]})
+                 if f"H1 {y}" in blocks and f"H2 {y}" in blocks]
+        always = all(
+            blocks[f"H1 {y}"]["recurring_operating_income_eur_m"] / blocks[f"H1 {y}"]["revenue_eur_m"]
+            > blocks[f"H2 {y}"]["recurring_operating_income_eur_m"] / blocks[f"H2 {y}"]["revenue_eur_m"]
+            for y in pairs)
+        self.assertFalse(always, "re-read the seasonality sentence: it holds again")
+        self.assertNotIn("被广泛引用", seasonality["note"])
         for label in (c["half"], f"H1 {year - 1}"):
             half = self.halves[label]
             computed = half["roi_margin_pct"]
@@ -1276,8 +1306,14 @@ class RmsRollTest(unittest.TestCase):
                     continue
                 self.assertNotIn(phrase, json.dumps(rms.build_payload(staging), ensure_ascii=False))
 
+        # Five, and each is the window working rather than a bug:
+        # 「转为拖累并逐季加深」 needs a monotone wedge from peak to trough;
+        # 「每一次都高于下半年」/「上半年每次都高于下半年」/「全年落在」 all rest on H1
+        # beating H2 in every year, which 2017 and 2020 break; and
+        # 「上下半年相加都等于公司申报的全年」 stops holding once the filed 2021
+        # revenue is the printed 8,982 instead of the spliced 8,982.1.
         self.assertLessEqual(
-            len(skipped), 2,
+            len(skipped), 5,
             f"too many findings are already false, so this check is mostly "
             f"skipping: {skipped}")
 

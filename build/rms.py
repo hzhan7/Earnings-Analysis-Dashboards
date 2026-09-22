@@ -101,6 +101,18 @@ SOURCE_HALF = ("上半年数值取半年度财务报告与半年度业绩新闻�
 AXIS = "纵轴不自 0 起，但没有任何点被截掉。"
 
 
+def euro_cell(row: dict, field: str) -> str:
+    """A euro amount, or an em dash where the backfill has no reading for it.
+
+    The half-year window now reaches 2016, and the adjusted free-cash-flow line
+    was not collected that far back -- it is a company-defined measure the early
+    releases do not print. An absent cell prints as a dash rather than
+    disappearing into a zero.
+    """
+    value = row.get(field)
+    return "—" if value is None else f"€{value:,}M"
+
+
 def pct_or_dash(value: float | None) -> str:
     """A rate, or an em dash where the company printed an amount and no rate."""
     return "—" if value is None else f"{value:.1f}%"
@@ -1170,13 +1182,13 @@ def build_payload(staging: dict) -> dict:
             "headers": ["半年", "口径", "收入", "经常性经营利润", "经常性经营利润率 D",
                         "归母净利润", "经营现金流", "经营性投资", "调整后自由现金流"],
             "rows": [[h["label"], "公司披露" if not h["derived"] else "全年减上半年 D",
-                      f"€{h['revenue_eur_m']:,}M",
-                      f"€{h['recurring_operating_income_eur_m']:,}M",
+                      euro_cell(h, "revenue_eur_m"),
+                      euro_cell(h, "recurring_operating_income_eur_m"),
                       margin_cell(h),
-                      f"€{h['net_profit_group_eur_m']:,}M",
-                      f"€{h['operating_cash_flows_eur_m']:,}M",
-                      f"€{h['operating_investments_eur_m']:,}M",
-                      f"€{h['adjusted_fcf_eur_m']:,}M"]
+                      euro_cell(h, "net_profit_group_eur_m"),
+                      euro_cell(h, "operating_cash_flows_eur_m"),
+                      euro_cell(h, "operating_investments_eur_m"),
+                      euro_cell(h, "adjusted_fcf_eur_m")]
                      for h in staging["half_years"]],
         },
     ]
@@ -1355,8 +1367,13 @@ def build_payload(staging: dict) -> dict:
             # Hermès's own four printed quarters do not always re-add to its own
             # printed year. Saying so is the point of a reconciliation note: a
             # check that only speaks when it passes is not a check.
+            gap = abs(quarters_sum - filed)
+            # Printed at the precision the two figures carry, not at whatever
+            # binary subtraction produced: €0.1000000000003638M is not a
+            # reconciliation note, it is a float artefact wearing one.
+            digits = 1 if any(float(v) != int(v) for v in (quarters_sum, filed)) else 0
             checks.append(f"{y} 年四个季度相加 €{quarters_sum:,}M，"
-                          f"与公司申报的全年 €{filed:,}M 差 €{abs(quarters_sum - filed):,}M")
+                          f"与公司申报的全年 €{filed:,}M 差 €{gap:,.{digits}f}M")
     if first_half is not None and f"Q1 {half.split()[1]}" in periods and f"Q2 {half.split()[1]}" in periods:
         q1, q2 = periods.index(f"Q1 {half.split()[1]}"), periods.index(f"Q2 {half.split()[1]}")
         diffs = [abs(group["revenue_eur_m"][q1] + group["revenue_eur_m"][q2] - first_half["group"]["revenue_eur_m"]),
@@ -1375,9 +1392,20 @@ def build_payload(staging: dict) -> dict:
     # The second half is stored as the year less the first, so this holds by
     # construction -- checked anyway, because a typo in any one of the three
     # would otherwise be printed under the word 「都」.
-    fields = [k for k in staging["full_years"][full_halves[-1]] if k.endswith("_eur_m")] if full_halves else []
+    # Per year, not from one year's field list: the backfilled years carry
+    # fewer lines than the recent ones (adjusted free cash flow is a
+    # company-defined measure the early releases do not print), and taking the
+    # newest year's fields would have asked 2016 for a cell that does not exist.
+    def closing_fields(year: str) -> list[str]:
+        rows = [staging["full_years"][year], halves[f"H1 {year}"], halves[f"H2 {year}"]]
+        return [k for k in rows[0]
+                if k.endswith("_eur_m") and all(row.get(k) is not None for row in rows)]
+    # A derived half closes by construction, so the only thing that can break
+    # this is a typo -- or binary subtraction on the one-decimal years, which is
+    # not a disagreement. Half a unit of the printed precision is the tolerance.
     unequal = [y for y in full_halves
-               if any(halves[f"H1 {y}"][k] + halves[f"H2 {y}"][k] != staging["full_years"][y][k] for k in fields)]
+               if any(abs(halves[f"H1 {y}"][k] + halves[f"H2 {y}"][k] - staging["full_years"][y][k]) > 0.05
+                      for k in closing_fields(y))]
     if full_halves and not unequal:
         checks.append(f"{cn_count(len(full_halves))}个财年的上下半年相加都等于公司申报的全年")
     elif unequal:

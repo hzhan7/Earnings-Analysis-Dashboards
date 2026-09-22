@@ -2755,6 +2755,166 @@
  },
  "half_years": [
   {
+   "label": "H1 2016",
+   "derived": false,
+   "revenue_eur_m": 2440.4,
+   "recurring_operating_income_eur_m": 826.8,
+   "net_profit_group_eur_m": 545.4,
+   "operating_cash_flows_eur_m": 699.4,
+   "operating_investments_eur_m": 107.6,
+   "roi_margin_pct": 33.8797,
+   "_source": "2017-04-27 «Quarterly information report as at the end of March 2017», p.4 block «REMINDER - KEY FIGURES 2016», column «First half of 2016»"
+  },
+  {
+   "label": "H2 2016",
+   "derived": true,
+   "revenue_eur_m": 2761.8,
+   "recurring_operating_income_eur_m": 869.7,
+   "net_profit_group_eur_m": 554.9,
+   "operating_cash_flows_eur_m": 739.3,
+   "operating_investments_eur_m": 177.8,
+   "roi_margin_pct": 31.4903,
+   "_source": "公司申报的 2016 全年减公司申报的上半年（D）"
+  },
+  {
+   "label": "H1 2017",
+   "derived": false,
+   "revenue_eur_m": 2713.1,
+   "recurring_operating_income_eur_m": 931.3,
+   "net_profit_group_eur_m": 605.2,
+   "operating_cash_flows_eur_m": 794.2,
+   "operating_investments_eur_m": 105.2,
+   "roi_margin_pct": 34.326,
+   "roi_margin_printed_pct": 34.3,
+   "_source": "2017-09-14 «2017 HALF-YEAR RESULTS» 新闻稿，表«KEY FIGURES – 2017 FIRST HALF RESULT»，列 First half of 2017"
+  },
+  {
+   "label": "H2 2017",
+   "derived": true,
+   "revenue_eur_m": 2836.1,
+   "recurring_operating_income_eur_m": 990.7,
+   "net_profit_group_eur_m": 615.8,
+   "operating_cash_flows_eur_m": 803.8,
+   "operating_investments_eur_m": 164.8,
+   "roi_margin_pct": 34.9318,
+   "_source": "公司申报的 2017 全年减公司申报的上半年（D）"
+  },
+  {
+   "label": "H1 2018",
+   "derived": false,
+   "revenue_eur_m": 2853.4,
+   "recurring_operating_income_eur_m": 985,
+   "net_profit_group_eur_m": 708,
+   "operating_cash_flows_eur_m": 849,
+   "operating_investments_eur_m": 128,
+   "roi_margin_pct": 34.5202,
+   "roi_margin_printed_pct": 34.5,
+   "_source": "2018 «2018 HALF-YEAR RESULTS» 新闻稿，表«KEY FIGURES – 2018 FIRST HALF RESULT» 列 H1 2018（利润行整数百万）；revenue 2,853.4 取自同一份新闻稿后附的分地区/分板块收入表"
+  },
+  {
+   "label": "H2 2018",
+   "derived": true,
+   "revenue_eur_m": 3112.7,
+   "recurring_operating_income_eur_m": 1060,
+   "net_profit_group_eur_m": 697,
+   "operating_cash_flows_eur_m": 834,
+   "operating_investments_eur_m": 184,
+   "roi_margin_pct": 34.054,
+   "_source": "公司申报的 2018 全年减公司申报的上半年（D）"
+  },
+  {
+   "label": "H1 2019",
+   "derived": false,
+   "revenue_eur_m": 3284.2,
+   "recurring_operating_income_eur_m": 1144,
+   "net_profit_group_eur_m": 754,
+   "operating_cash_flows_eur_m": 971,
+   "operating_investments_eur_m": 170,
+   "roi_margin_pct": 34.8334,
+   "roi_margin_printed_pct": 34.8,
+   "_source": "利润行：2020 «2020 Half Year Results» 新闻稿表«FIRST HALF 2020 KEY FIGURES» 的 H1 2019 比较列（整数百万）。revenue 3,284.2 取自 2019-07-19 第二季度收入公告的分地区/分板块收入表"
+  },
+  {
+   "label": "H2 2019",
+   "derived": true,
+   "revenue_eur_m": 3599.2,
+   "recurring_operating_income_eur_m": 1194.9,
+   "net_profit_group_eur_m": 774.2,
+   "operating_cash_flows_eur_m": 1092.3,
+   "operating_investments_eur_m": 308.0,
+   "roi_margin_pct": 33.199,
+   "_source": "公司申报的 2019 全年减公司申报的上半年（D）"
+  },
+  {
+   "label": "H1 2020",
+   "derived": false,
+   "revenue_eur_m": 2488.0,
+   "recurring_operating_income_eur_m": 534.7,
+   "net_profit_group_eur_m": 335.0,
+   "operating_cash_flows_eur_m": 634.3,
+   "operating_investments_eur_m": 162.2,
+   "roi_margin_pct": 21.4912,
+   "roi_margin_printed_pct": 21.5,
+   "_source": "2021 半年度财务报告（RMS_H1_2021_Half_Year_Financial_Report.pdf）§3.1 合并损益表与合并现金流量表的 H1 2020 比较列（一位小数）"
+  },
+  {
+   "label": "H2 2020",
+   "derived": true,
+   "revenue_eur_m": 3901.4,
+   "recurring_operating_income_eur_m": 1446.7,
+   "net_profit_group_eur_m": 1050.4,
+   "operating_cash_flows_eur_m": 1358.4,
+   "operating_investments_eur_m": 286.2,
+   "roi_margin_pct": 37.0816,
+   "_source": "公司申报的 2020 全年减公司申报的上半年（D）"
+  },
+  {
+   "label": "H1 2021",
+   "derived": false,
+   "revenue_eur_m": 4235.1,
+   "recurring_operating_income_eur_m": 1721.7,
+   "net_profit_group_eur_m": 1173.6,
+   "operating_cash_flows_eur_m": 1486.7,
+   "operating_investments_eur_m": 214.4,
+   "roi_margin_pct": 40.6531,
+   "roi_margin_printed_pct": 40.7,
+   "_source": "2021 半年度财务报告（RMS_H1_2021_Half_Year_Financial_Report.pdf）§3.1 合并损益表与合并现金流量表的 H1 2021 列（一位小数）"
+  },
+  {
+   "label": "H2 2021",
+   "derived": true,
+   "revenue_eur_m": 4746.9,
+   "recurring_operating_income_eur_m": 1808.3,
+   "net_profit_group_eur_m": 1271.4,
+   "operating_cash_flows_eur_m": 1573.3,
+   "operating_investments_eur_m": 317.6,
+   "roi_margin_pct": 38.0943,
+   "_source": "公司申报的 2021 全年减公司申报的上半年（D）"
+  },
+  {
+   "label": "H1 2022",
+   "derived": false,
+   "revenue_eur_m": 5475,
+   "recurring_operating_income_eur_m": 2304,
+   "net_profit_group_eur_m": 1641,
+   "operating_cash_flows_eur_m": 2001,
+   "operating_investments_eur_m": 190,
+   "roi_margin_pct": 42.0822,
+   "roi_margin_printed_pct": 42.1,
+   "_source": "2022 «H1 2022 Results» 新闻稿，表«FIRST HALF 2022 KEY FIGURES» 列 H1 2022，并与同一份文件后附的合并损益表/合并现金流量表逐行核对"
+  },
+  {
+   "label": "H2 2022",
+   "derived": true,
+   "revenue_eur_m": 6127,
+   "recurring_operating_income_eur_m": 2393,
+   "net_profit_group_eur_m": 1726,
+   "operating_cash_flows_eur_m": 2110,
+   "operating_investments_eur_m": 328,
+   "roi_margin_pct": 39.0566,
+   "_source": "公司申报的 2022 全年减公司申报的上半年（D）"
+  },
+  {
    "label": "H1 2023",
    "derived": false,
    "revenue_eur_m": 6698,
@@ -2838,25 +2998,67 @@
  ],
  "full_years": {
   "2016": {
-   "revenue_eur_m": 5202.2
+   "revenue_eur_m": 5202.2,
+   "recurring_operating_income_eur_m": 1696.5,
+   "net_profit_group_eur_m": 1100.3,
+   "operating_cash_flows_eur_m": 1438.7,
+   "operating_investments_eur_m": 285.4,
+   "roi_margin_printed_pct": 32.6,
+   "_source": "2017-04-27 «Quarterly information report as at the end of March 2017», p.4 block «REMINDER - KEY FIGURES 2016», column «Fiscal year 2016»（一位小数）；利润率 32.6% 取自 2017 全年业绩新闻稿 key figures 表的 2016 比较列"
   },
   "2017": {
-   "revenue_eur_m": 5549.2
+   "revenue_eur_m": 5549.2,
+   "recurring_operating_income_eur_m": 1922,
+   "net_profit_group_eur_m": 1221,
+   "operating_cash_flows_eur_m": 1598,
+   "operating_investments_eur_m": 270,
+   "roi_margin_printed_pct": 34.6,
+   "_source": "2018-02 «2017 RESULTS» 新闻稿，表«KEY FIGURES 2017» 列 Fiscal year 2017（利润行整数百万）；revenue 5,549.2 取自同一份新闻稿«REMINDER OF PREVIOUS PUBLICATIONS» 的分地区/分板块收入表"
   },
   "2018": {
-   "revenue_eur_m": 5966.1
+   "revenue_eur_m": 5966.1,
+   "recurring_operating_income_eur_m": 2045,
+   "net_profit_group_eur_m": 1405,
+   "operating_cash_flows_eur_m": 1683,
+   "operating_investments_eur_m": 312,
+   "roi_margin_printed_pct": 34.3,
+   "_source": "2019-02 «2018 RESULTS» 新闻稿，表«KEY FIGURES 2018» 列 2018（首次公布口径，IFRS 16 之前）；revenue 5,966.1 取自同一份新闻稿的分地区/分板块收入表"
   },
   "2019": {
-   "revenue_eur_m": 6883.4
+   "revenue_eur_m": 6883.4,
+   "recurring_operating_income_eur_m": 2338.9,
+   "net_profit_group_eur_m": 1528.2,
+   "operating_cash_flows_eur_m": 2063.3,
+   "operating_investments_eur_m": 478.0,
+   "roi_margin_printed_pct": 34.0,
+   "_source": "2020-02 «2019 RESULTS» 新闻稿«Extract from consolidated accounts»：合并损益表（revenue / recurring operating income / net income attributable to owners of the parent）与合并现金流量表（operating cash flows / operating investments），均一位小数；利润率 34.0% 取自同一份的«2019 key figures»表"
   },
   "2020": {
-   "revenue_eur_m": 6389.4
+   "revenue_eur_m": 6389.4,
+   "recurring_operating_income_eur_m": 1981.4,
+   "net_profit_group_eur_m": 1385.4,
+   "operating_cash_flows_eur_m": 1992.7,
+   "operating_investments_eur_m": 448.4,
+   "roi_margin_printed_pct": 31.0,
+   "_source": "2021-02 «2020 FULL YEAR RESULTS» 新闻稿合并损益表与合并现金流量表 2020 列（一位小数）；利润率 31.0% 取自同一份的«KEY FIGURES»表"
   },
   "2021": {
-   "revenue_eur_m": 8982.1
+   "revenue_eur_m": 8982,
+   "recurring_operating_income_eur_m": 3530,
+   "net_profit_group_eur_m": 2445,
+   "operating_cash_flows_eur_m": 3060,
+   "operating_investments_eur_m": 532,
+   "roi_margin_printed_pct": 39.3,
+   "_source": "2022-02 «2021 RESULTS» 新闻稿，表«2021 KEY FIGURES» 与同一份文件的合并损益表/合并现金流量表（整数百万）"
   },
   "2022": {
-   "revenue_eur_m": 11602
+   "revenue_eur_m": 11602,
+   "recurring_operating_income_eur_m": 4697,
+   "net_profit_group_eur_m": 3367,
+   "operating_cash_flows_eur_m": 4111,
+   "operating_investments_eur_m": 518,
+   "roi_margin_printed_pct": 40.5,
+   "_source": "2023-02 «2022 RESULTS» 新闻稿，表«2022 KEY FIGURES» 与同一份文件的合并损益表/合并现金流量表（整数百万）"
   },
   "2023": {
    "revenue_eur_m": 13427,
@@ -3493,5 +3695,6 @@
    "kind": "半年度业绩新闻稿的「第二季度」表"
   },
   "_note": "回补季度的出处。每个季度取它自己那份发布印出的单季表；2016 年四个季度是例外 —— 公司出版物页的年份标签从 2017 开始，2016 年自己的四份发布不在其中，所以这四格取自 2017 年各份发布的上年同期列，只有欧元金额，没有增速：2016 年的增速要用 2015 年的季度算，而任何一份在手的文件都不印 2015 年的单季。"
- }
+ },
+ "half_years_basis_note": "2016–2022 各半年于 2026-09-22 回补：上半年取公司半年度业绩发布（或次年发布里的上半年比较列），下半年为公司申报的全年减公司申报的上半年（D），两条腿始终取同一口径。**2018 年有一处 IFRS 16 接缝**：公司自 2019 年起全面追溯适用，FY2018 的经常性经营利润由首次公布的 2,045 重述为 2,075.3、经营现金流由 1,683 重述为 1,863.4、利润率由 34.3% 变为 34.8%。本文件在 2016–2018 一律采用**首次公布口径**（与 2016、2017 同基准），因为可得的 H1 2018 只有首次公布值，混用会把 H2 2018 的经常性经营利润抬高约 30、经营现金流抬高约 180。公司自己的五年表同样是拼接的：URD 2020/2021/2022 把重述后的 2018 与未重述的 2017、2016 并排印。H1 2016 的利润率公司从未印过（2017 半年报只说「比上年同期高 0.4 个百分点」），因此该格为空。"
 }

@@ -165,12 +165,12 @@ REACH_2016 = {
     "amzn": 13, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
     "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 3, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
-    "race": 9, "rms": 5, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
+    "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
     "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
     # Not a company page. It is here because the ratchet now walks every
     # published payload rather than `ENTRIES`: a page that was invisible to the
     # ratchet could lose ground without the count moving.
-    "luxury": 4,
+    "luxury": 5,
 }
 
 # Exemption keys are matched on the *shape* of a title, not on its digits: in the
@@ -221,8 +221,6 @@ CONVERTED = {
                  "quarter, and Richemont printed a standalone quarterly rate only in "
                  "its fiscal Q1/Q3 announcements before FY22 -- so the first quarter "
                  "with four comparable rates is 2017Q4, not 2016Q1.",
-        "同一根日历轴上": "the calendar half-year axis is the intersection of the "
-                    "five members that close a half on 30 June.",
     },
     "v": {
         # Visa adopted ASC 606 with the fiscal 2019 first quarter and published
@@ -848,7 +846,6 @@ FLOOR_KIND = {
         '六家在共同的': 'design',
         '公司自己的口径比欧元口径高出多少': 'design',
         '之间的极差': 'disclosure',
-        '同一根日历轴上': 'design',
     },
     'ker': {
         '新分部口径下的可比增速': 'disclosure',
@@ -1249,7 +1246,7 @@ class ChartWindowTest(unittest.TestCase):
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
         self.assertEqual(settled.count("disclosure"), 135)
-        self.assertEqual(settled.count("design"), 37)
+        self.assertEqual(settled.count("design"), 36)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
         """Every short chart either names its reason or is counted here.
@@ -1284,7 +1281,7 @@ class ChartWindowTest(unittest.TestCase):
         combined = {slug: SHORT_BY_DESIGN.get(slug, 0) + UNEXPLAINED_LONG.get(slug, 0)
                     for slug in set(SHORT_BY_DESIGN) | set(UNEXPLAINED_LONG)}
         self.assertEqual(by_page, combined)
-        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 55)
+        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 53)
         # Zero, as of the SK hynix backfill. This number is not load-bearing on
         # its own -- an empty dict sums to zero for free -- but `by_length ==
         # UNEXPLAINED_LONG` two lines down is, and that one is what turns red if
@@ -1458,7 +1455,6 @@ SHORT_BY_DESIGN = {
     'mc': 10,
     'nvda': 11,
     'pm': 5,
-    'rms': 2,
     'samsung': 15,
     'skhynix': 5,
 
@@ -1510,9 +1506,6 @@ UNDERIVABLE_QUARTER_COUNTS = {
     "axp Ex17":  ([16], "同上，同一句重叠区间长度出现在另一张信用图的图注里"),
     "skhynix Ex7": ([22], "这一页此前的窗口长度。图注解释的正是「从 22 季拉到 42 季」"
                           "改变了什么，所以那个 22 指的是旧窗口，不是本图的任何一段"),
-    "luxury Ex13": ([12], "这张图的 x 轴是十九条品类线，不是时间；12 是回归窗口的季度数，"
-                          "写在标题里是为了让读者知道这些 α 是在多长的样本上拟合的。"
-                          "一张分类轴的图按构造推不出任何季度数，所以它只能 pin"),
     "rms Ex16": ([30], "阈值之上的季度数，是条件计数不是窗口长度。它在八季窗口上碰巧等于 n−1 "
                        "而被当成可推导；回补到 42 季之后不再等于任何一个轴长，这条 pin 才是它"
                        "本来的样子。同句里的「三十八季」是印出增速的季度数（42 季轴上有 4 季"
