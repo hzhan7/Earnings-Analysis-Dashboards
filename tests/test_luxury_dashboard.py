@@ -536,7 +536,7 @@ class LuxuryCrossPageTest(unittest.TestCase):
             rules.setdefault(key, []).append(entry["slug"])
         self.assertEqual(set(rules) - {"unknown"}, {"fx", "fx + perimeter"})
         headline = self.payload["headline"]
-        self.assertIn("两种剔除法", headline,
+        self.assertIn(f"{cn_count(len(set(rules) - {'unknown'}))}种剔除法", headline,
                       "the headline counts the exclusion rules; recount before editing")
         self.assertEqual(sorted(e["slug"] for e in self.staging["growth_metrics"]), sorted(MEMBERS))
 
@@ -641,8 +641,288 @@ class LuxuryCrossPageTest(unittest.TestCase):
         figures = [key for key in self.staging
                    if key not in {"schema_version", "_provenance", "_no_checks_rationale",
                                   "page", "members", "latest", "growth_metrics",
-                                  "quarter_story", "sources", "factor_panel", "regimes"}]
+                                  "quarter_story", "sources", "factor_panel", "regimes",
+                                  "region_grid", "price_bands", "channel_lines"}]
         self.assertEqual(figures, [], f"unexpected data in series/luxury.json: {figures}")
+
+    def test_the_declaration_blocks_declare_and_do_not_measure(self) -> None:
+        """The three blocks added for the industry questions carry no figures.
+
+        `region_grid`, `price_bands` and `channel_lines` say which line of which
+        company belongs in which cell. The moment one of them carries a number,
+        a reading on this page stops being recomputed from the six series and
+        starts being copied -- which is the whole reason this file has no
+        `_checks` block. Prose may contain a year or a percent inside an
+        explanation, so what is banned is a bare numeric leaf, not a digit.
+        """
+        def leaves(node, path=""):
+            if isinstance(node, dict):
+                for key, value in node.items():
+                    yield from leaves(value, f"{path}.{key}")
+            elif isinstance(node, list):
+                for i, value in enumerate(node):
+                    yield from leaves(value, f"{path}[{i}]")
+            else:
+                yield path, node
+        for block in ("region_grid", "price_bands", "channel_lines"):
+            for path, value in leaves(self.staging[block], block):
+                with self.subTest(path=path):
+                    self.assertNotIsInstance(value, (int, float),
+                                             f"{path} is a figure; this file declares, it does not measure")
+
+    # ── the three industry questions, recomputed from the six series ────────
+
+    def _region_cells(self, spec):
+        """Rebuilt here from each company's own regional lines, not from the page."""
+        cells = {}
+        for slug, mapping in spec["members"].items():
+            data = self.series[slug]
+            if slug == "cfr":
+                quarters = [norm_quarter(q) for q in data["quarters"]]
+                line, scale = (lambda k: data["quarterly_eur_m"][k]), 1.0
+            elif slug == "rms":
+                quarters = [norm_quarter(q) for q in data["periods"]]
+                line, scale = (lambda k: data["by_region"][k]["revenue_eur_m"]), 1.0
+            else:
+                quarters = [norm_quarter(q) for q in data["quarterly"]["periods"]]
+                line, scale = (lambda k: data["quarterly"]["geography"][k]), 0.001
+            for region, keys in mapping.items():
+                legs = [line(k) for k in keys]
+                for i, quarter in enumerate(quarters):
+                    values = [leg[i] for leg in legs]
+                    if all(v is not None for v in values):
+                        cells[(slug, quarter, region)] = sum(values) * scale
+        return cells
+
+    def _spreads(self, spec, regions, least):
+        cells = self._region_cells(spec)
+        slugs = list(spec["members"])
+        out = []
+        for quarter in sorted({q for _, q, _ in cells}):
+            prior = f"{int(quarter[:4]) - 1}{quarter[4:]}"
+            here = [s for s in slugs
+                    if all((s, quarter, r) in cells and (s, prior, r) in cells for r in regions)]
+            if len(here) < least:
+                continue
+            vector = {r: (sum(cells[(s, quarter, r)] for s in here)
+                          / sum(cells[(s, prior, r)] for s in here) - 1) * 100 for r in regions}
+            actual, passive = [], []
+            for slug in here:
+                base = sum(cells[(slug, prior, r)] for r in regions)
+                actual.append((sum(cells[(slug, quarter, r)] for r in regions) / base - 1) * 100)
+                passive.append(sum(cells[(slug, prior, r)] / base * vector[r] for r in regions))
+            out.append((quarter, here, actual, passive, vector))
+        return out
+
+    def test_the_passive_prediction_is_what_the_regional_lines_say(self) -> None:
+        """Rebuild the decomposition and check both charts against it.
+
+        The claim this page leads with is that regional exposure accounts for a
+        small share of the distance between these companies. It is arithmetic on
+        three published regional tables, so it can be redone here from the same
+        tables without going through the builder -- which is the only way this
+        file can disagree with the page.
+        """
+        spec = self.staging["region_grid"]
+        regions = [r["key"] for r in spec["regions"]]
+        rows = self._spreads(spec, regions, least=2)
+        self.assertGreaterEqual(len(rows), 12, "too few quarters to claim anything")
+
+        exhibit = self.exhibit_titled("该有的极差")
+        quarters = [q for q, here, *_ in rows if len(here) >= 3]
+        self.assertEqual(exhibit["xlabels"], quarters)
+        actual = self.series_named(exhibit, "实际增速的极差")
+        passive = [v for v in self.series_named(exhibit, "被动预测")]
+        for i, quarter in enumerate(quarters):
+            _, here, act, pas, _ = next(r for r in rows if r[0] == quarter)
+            with self.subTest(quarter=quarter):
+                self.assertAlmostEqual(actual[i], max(act) - min(act), places=3)
+                self.assertAlmostEqual(passive[i], max(pas) - min(pas), places=3)
+
+        share = sorted(100 * (max(p) - min(p)) / (max(a) - min(a))
+                       for _, here, a, p, _ in rows
+                       if len(here) >= 3 and max(a) - min(a) >= 1)
+        median = share[len(share) // 2] if len(share) % 2 else (share[len(share) // 2 - 1]
+                                                                + share[len(share) // 2]) / 2
+        self.assertIn(f"中位数是 {median:.0f}%", exhibit["note"])
+        self.assertIn(f"{median:.0f}%", self.payload["headline"])
+        self.assertLess(median, 50, "the page's lead sentence no longer holds; rewrite it")
+
+    def test_the_common_vector_is_the_one_the_spread_chart_used(self) -> None:
+        """The second chart must be the input to the first, not a second opinion."""
+        spec = self.staging["region_grid"]
+        regions = [r["key"] for r in spec["regions"]]
+        labels = {r["key"]: r["label"] for r in spec["regions"]}
+        rows = [r for r in self._spreads(spec, regions, least=2) if len(r[1]) >= 3]
+        exhibit = self.exhibit_titled("三个地区各自在长多少")
+        self.assertEqual(exhibit["xlabels"], [q for q, *_ in rows])
+        self.assertEqual(len(exhibit["series"]), len(regions))
+        for region in regions:
+            values = self.series_named(exhibit, labels[region])
+            for i, (_, _, _, _, vector) in enumerate(rows):
+                with self.subTest(region=region, at=exhibit["xlabels"][i]):
+                    self.assertAlmostEqual(values[i], vector[region], places=3)
+
+    def test_the_grid_survives_a_finer_cut_and_a_currency_free_one(self) -> None:
+        """Three ways of asking, and the table has to print what each one gives.
+
+        One grid's answer is one grid's answer. The finer grid and the
+        constant-currency rebuild are in the table so that a reader who suspects
+        the cut can see the other two, and so that a cut that stops agreeing
+        turns this red rather than quietly staying in the note.
+        """
+        table = next(t for t in self.payload["tables"] if "三种拆法" in t["title"])
+        self.assertEqual(len(table["rows"]), 3)
+        spec = self.staging["region_grid"]
+        base_regions = [r["key"] for r in spec["regions"]]
+        fine = spec["fine_grid"]
+        fine_regions = [r["key"] for r in fine["regions"]]
+
+        def share_of(rows, least):
+            return sorted(100 * (max(p) - min(p)) / (max(a) - min(a))
+                          for _, here, a, p, _ in rows
+                          if len(here) >= least and max(a) - min(a) >= 1)
+
+        base = share_of([r for r in self._spreads(spec, base_regions, 2)], 3)
+        finer = share_of(self._spreads(fine, fine_regions, 2), 2)
+        for row, share in ((table["rows"][0], base), (table["rows"][1], finer)):
+            with self.subTest(row=row[0]):
+                self.assertEqual(row[6], f"{sum(1 for v in share if v < 25)}/{len(share)}")
+        # every row must agree that the answer is small; that is the claim
+        for row in table["rows"]:
+            with self.subTest(row=row[0]):
+                self.assertLess(int(row[4].rstrip("%")), 50)
+
+    def test_the_price_band_verdict_follows_the_signs(self) -> None:
+        """「金字塔底部在退」 is denied only while the pairs disagree.
+
+        Each pair is two category lines from one company's own release, so the
+        currency, the channel and the customer definition are shared and the
+        price band is what is left. The page says the industry reading fails
+        because the pairs point different ways; if they ever stop doing that the
+        sentence has to change, and this is what makes it.
+        """
+        spec = self.staging["price_bands"]
+        gaps = {}
+        for entry in list(spec["pairs"]) + [spec["category_pair"]]:
+            slug = entry["slug"]
+            weak, strong = (entry.get("entry") or entry["weak"], entry.get("top") or entry["strong"])
+            data = self.series[slug]
+            if slug == "mc":
+                quarters = [norm_quarter(q) for q in data["long_quarters"]]
+                rate = lambda k: data["organic_growth_pct"][k]
+            elif slug == "rms":
+                quarters = [norm_quarter(q) for q in data["periods"]]
+                rate = lambda k: data["by_sector"][k]["cc_pct"]
+            else:
+                quarters = [norm_quarter(q) for q in data["quarters"]]
+                rate = lambda k: data["quarterly_cer_pct"][k]
+            lo, hi = rate(weak), rate(strong)
+            paired = [(q, a, b) for q, a, b in zip(quarters, lo, hi)
+                      if a is not None and b is not None]
+            tail = paired[-8:]
+            gaps[slug] = (sum(a for _, a, _ in tail) / len(tail),
+                          sum(b for _, _, b in tail) / len(tail))
+        exhibit = self.exhibit_titled("入门价带减顶价带")
+        signs = {weak > strong for weak, strong in gaps.values()}
+        denied = "结论是否定的" in exhibit["note"]
+        self.assertEqual(len(signs) > 1, denied,
+                         "the verdict must follow the signs, not the other way round")
+        # the companion chart plots the two means themselves, so check there:
+        # a note can round a number out of existence, a bar cannot.
+        levels = self.exhibit_titled("每家自己那两条线各自在什么水平")
+        plotted = dict(zip(levels["xlabels"], levels["values"]))
+        short = {m["slug"]: m["short"] for m in self.staging["members"]}
+        names = {}
+        for entry in list(spec["pairs"]) + [spec["category_pair"]]:
+            slug = entry["slug"]
+            data = self.series[slug]
+            keys = (entry.get("entry") or entry["weak"], entry.get("top") or entry["strong"])
+            if slug == "mc":
+                names[slug] = tuple(data["division_names"][k] for k in keys)
+            elif slug == "rms":
+                names[slug] = tuple(data["by_sector"][k].get("label")
+                                    or data["by_sector"][k]["label_en"] for k in keys)
+            else:
+                names[slug] = ("专业制表", "珠宝")
+        for slug, (weak, strong) in gaps.items():
+            weak_name, strong_name = names[slug]
+            with self.subTest(slug=slug):
+                # which label carries which value, so a swap cannot pass: the set
+                # of two numbers is the same either way round.
+                self.assertAlmostEqual(plotted[f"{short[slug]} {weak_name}"], weak, places=3)
+                self.assertAlmostEqual(plotted[f"{short[slug]} {strong_name}"], strong, places=3)
+
+    def test_the_band_verdict_can_say_the_other_thing(self) -> None:
+        """A positive control for the sentence the real data happens to earn.
+
+        The pairs disagree today, so the page prints the denial -- and forcing
+        the condition true changes nothing, which means the assertion above
+        cannot fail on its own. It is only a gate together with this: rebuild on
+        a series where the pairs agree, and the denial has to go. Without this,
+        `assertEqual(len(signs) > 1, denied)` is a check that has never been
+        asked a question it could answer wrongly.
+        """
+        import copy
+
+        from build import luxury
+        original = luxury._load
+        flip = self.staging["price_bands"]["pairs"][0]
+
+        def entry_band_pushed_under(slug: str) -> dict:
+            data = copy.deepcopy(original(slug))
+            if slug == flip["slug"]:
+                line = data["organic_growth_pct"][flip["entry"]]
+                data["organic_growth_pct"][flip["entry"]] = [
+                    None if v is None else v - 40 for v in line]
+            return data
+
+        luxury._load = entry_band_pushed_under
+        try:
+            payload = luxury.build_payload(json.loads(json.dumps(self.staging)))
+        finally:
+            luxury._load = original
+        note = next(ex["note"] for section in payload["sections"]
+                    for ex in section["exhibits"] if "入门价带减顶价带" in ex["title"])
+        self.assertNotIn("结论是否定的", note)
+        self.assertIn("同号", note)
+
+    def test_the_channel_gap_is_the_one_cross_company_line(self) -> None:
+        """Wholesale against each company's own retail, recomputed per filer."""
+        spec = self.staging["channel_lines"]
+        means = {}
+        for entry in spec["members"]:
+            slug = entry["slug"]
+            data = self.series[slug]
+            if entry["cadence"] == "half":
+                block = data["channel_h1_eur_k"]
+                rows = [((block[entry["wholesale"]][i] / block[entry["wholesale"]][i - 1] - 1) * 100,
+                         (block[entry["retail"]][i] / block[entry["retail"]][i - 1] - 1) * 100)
+                        for i in range(1, len(block["years"]))]
+            elif slug == "cfr":
+                rows = [(w, r) for w, r in zip(data["quarterly_cer_pct"][entry["wholesale"]],
+                                               data["quarterly_cer_pct"][entry["retail"]])
+                        if w is not None and r is not None]
+            else:
+                chan = data["quarterly"]["channel"]
+                pairs = []
+                for key in (entry["wholesale"], entry["retail"]):
+                    values = chan[key]
+                    pairs.append([None if (i < 4 or values[i] is None or not values[i - 4])
+                                  else (values[i] / values[i - 4] - 1) * 100
+                                  for i in range(len(values))])
+                rows = [(w, r) for w, r in zip(*pairs) if w is not None and r is not None]
+            tail = rows[-8:]
+            means[slug] = (sum(w for w, _ in tail) / len(tail),
+                           sum(r for _, r in tail) / len(tail))
+        exhibit = self.exhibit_titled("本页唯一在多家公司里同号")
+        every = all(w < r for w, r in means.values())
+        self.assertEqual(every, f"{cn_count(len(means))}家全部同向" in exhibit["note"])
+        for slug, (w, r) in means.items():
+            with self.subTest(slug=slug):
+                self.assertIn(f"{w:+.1f}% 对 {r:+.1f}%", exhibit["note"])
+        if every:
+            self.assertIn("唯一", self.payload["headline"])
 
 
 if __name__ == "__main__":

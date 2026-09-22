@@ -170,7 +170,7 @@ REACH_2016 = {
     # Not a company page. It is here because the ratchet now walks every
     # published payload rather than `ENTRIES`: a page that was invisible to the
     # ratchet could lose ground without the count moving.
-    "luxury": 5,
+    "luxury": 7,
 }
 
 # Exemption keys are matched on the *shape* of a title, not on its digits: in the
@@ -221,6 +221,22 @@ CONVERTED = {
                  "quarter, and Richemont printed a standalone quarterly rate only in "
                  "its fiscal Q1/Q3 announcements before FY22 -- so the first quarter "
                  "with four comparable rates is 2017Q4, not 2016Q1.",
+        # The regional decomposition needs three filers in the same quarter AND
+        # in the quarter a year before it. Zegna's quarterly regional table
+        # begins with 2021Q1 -- its first as a listed company, it went public in
+        # December 2021 -- so the first quarter that has a year-ago leg for all
+        # three is 2022Q1. Lengthening this axis would mean dropping Zegna, not
+        # reading further back.
+        "该有的极差": "the common regional vector needs all three filers in the quarter "
+                 "and in the quarter a year earlier; Zegna's quarterly regional "
+                 "table starts at 2021Q1, so the first comparable quarter is 2022Q1.",
+        "三个地区各自在长多少": "same intersection as the spread chart above: three filers, "
+                       "each needing a year-ago regional base.",
+        "每家自己剩下多少": "a deliberate eight-quarter cut of the chart above it, so the "
+                    "bars stay legible; the full window is drawn in that chart.",
+        "只按半年印渠道": "Brunello Cucinelli splits retail from wholesale only in the "
+                   "half-year report, and the series holds six half-years, so five "
+                   "year-on-year readings exist.",
     },
     "v": {
         # Visa adopted ASC 606 with the fiscal 2019 first quarter and published
@@ -846,6 +862,16 @@ FLOOR_KIND = {
         '六家在共同的': 'design',
         '公司自己的口径比欧元口径高出多少': 'design',
         '之间的极差': 'disclosure',
+        # Zegna's quarterly regional table begins with its first quarter as a
+        # listed company. That is the company's floor, not this repo's: there is
+        # no earlier quarterly regional disclosure to read.
+        '该有的极差': 'disclosure',
+        '三个地区各自在长多少': 'disclosure',
+        # An eight-quarter cut of the chart above it, so grouped bars stay
+        # readable. The full window is drawn one exhibit up.
+        '每家自己剩下多少': 'design',
+        # Brunello Cucinelli splits the channel only in the half-year report.
+        '只按半年印渠道': 'disclosure',
     },
     'ker': {
         '新分部口径下的可比增速': 'disclosure',
@@ -1245,8 +1271,8 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 135)
-        self.assertEqual(settled.count("design"), 36)
+        self.assertEqual(settled.count("disclosure"), 138)
+        self.assertEqual(settled.count("design"), 37)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
         """Every short chart either names its reason or is counted here.

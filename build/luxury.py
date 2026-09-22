@@ -1232,43 +1232,100 @@ def latest_block(staging: dict, members: list[dict], a: dict) -> dict:
     }
 
 
+def _quartiles(values: list[float]) -> tuple[float, float]:
+    ordered = sorted(values)
+    lower = ordered[: len(ordered) // 2]
+    upper = ordered[(len(ordered) + 1) // 2:]
+    return _median(lower), _median(upper)
+
+
+def demand_table(n: int, g: dict, members: list[dict]) -> dict:
+    """The same question asked three ways, so the answer is not one grid's answer."""
+    def row(label, share, grid, who, basis):
+        low, high = _quartiles(share)
+        return [label, grid, "、".join(by_zh(members, s) for s in who), basis,
+                f"{_median(share):.0f}%", f"{low:.0f}–{high:.0f}%",
+                f"{sum(1 for v in share if v < 25)}/{len(share)}"]
+    return {
+        "n": n,
+        "title": "地区能解释多少：同一个问题的三种拆法",
+        "headers": ["拆法", "网格", "参与的公司", "增速口径", "中位",
+                    "四分位区间", "低于 25% 的季度"],
+        "rows": [
+            row("基准", g["share"], f"{len(g['regions'])} 格",
+                g["slugs"], "报告口径（含汇率）"),
+            row("网格加细", g["fine_share"], f"{len(g['fine_regions'])} 格",
+                g["fine_slugs"], "报告口径（含汇率）"),
+            row("剔除汇率", g["cc_share"], f"{len(g['fine_regions'])} 格",
+                g["cc_slugs"], "各公司自印的恒定汇率"),
+        ],
+        "note": ("每一格是「被动预测极差 ÷ 实际极差」：地区暴露解释了公司之间多大一部分距离。"
+                 "这里印四分位区间而不是最大最小，因为分母是一个可以很小的差 —— "
+                 "实际极差不足 1pp 的季度已经不计入，但两家那两行里仍有个别季度的比值超过 100%，"
+                 "那是 1pp 上的除法，不是反证。"
+                 "三行的参与公司、网格与口径都不同，所以它们不是同一个读数的三次重复；"
+                 "最后一列直接数「这个比值低于四分之一的季度有几个」，不依赖任何中心统计量。"),
+    }
+
+
+def by_zh(members: list[dict], slug: str) -> str:
+    return next(m["zh"] for m in members if m["slug"] == slug)
+
+
 def build_payload(staging: dict) -> dict:
     members = read_members(staging)
     a = analysis(members, staging)
     f = factor_analysis(members, a, staging["factor_panel"]["start"])
     regime = regime_test(members, staging)
+    g = demand_grid(members, staging)
+    b = price_bands(members, staging)
+    c = channel_spread(members, staging)
     meta = latest_block(staging, members, a)
     latest = a["latest"]
 
     lead, window_block = lead_with_depth(comparability_charts(members, a),
                                          window_charts(members, a))
     sections_spec = [
-        ("comparability", "一、六个都叫「增长」的数",
-         "先把能画的画到底：每条线走到它自己在本站的下限，而不是走到六家的交集。"
-         "然后才是六家同时有数的那一段，以及它们之间的距离。",
-         lead),
-        ("window", "二、这张表能画多长，是谁定的",
-         "交集由最短的那条线决定 —— 而最短的那条不一定是披露最少的那家，"
-         "有时候只是本站还没回补。这一节把两者分开。",
-         window_block),
-        ("basis", "三、每家自己的那把尺",
-         "「增速」这个词在这六家里指六件不完全相同的事。这一节量它们之间的差，并给出一个反例：同一家公司、同一个口径，两种算法为什么会分开。",
-         basis_charts(members, a)),
-        ("profit", "四、利润：两个时钟",
+        ("demand", "一、这一季的分化，是需求造成的吗",
+         "同一个季度，六家报出来的增长从个位数到二十几。第一个要问的是最朴素的那个问题："
+         "这是不是因为它们卖在不同的地方？把按季印出分地区收入的那几家对齐到同一张网格，"
+         "让每家只按自己的地区权重去承接同一条需求向量，答案可以量出来。",
+         demand_charts(members, a, g)),
+        ("bands", "二、那是不是同一批客人在退",
+         "地区解释不了，下一个候选解释是价格带：如果是金字塔底部的客人在退，"
+         "那么每家公司最弱的那条线应该是同一样东西 —— 入门价带。这一节检验这句话，"
+         "用的是每家自己在同一份申报里印出的两个品类，所以汇率与渠道全部被约掉。",
+         band_charts(members, a, b)),
+        ("channel", "三、唯一在多家公司里同号的那件事",
+         "前两节否掉了两个行业级解释。这一节给出本页找得到的唯一一个："
+         "多品牌批发 —— 客人不必走进品牌自己的店的那条渠道 —— "
+         "在三家国别、价位、准则、披露频率都不同的公司里同时弱于它们各自的零售。",
+         channel_charts(members, a, c)),
+        ("factor", "四、那分化到底属于谁",
+         "既然共同的那部分这么小，剩下的属于谁？这一节把十九条品类线拆成"
+         "「跟着板块走的那部分」与「不跟的那部分」，再问后者是公司的属性还是品类的属性。"
+         "答案是：主要不属于「公司」。",
+         factor_charts(members, a, f, staging)),
+        ("profit", "五、利润：两个时钟",
          "六家全部一年只出两次利润，所以这一页没有季度利润率。五家的半年落在日历上，一家不落。",
          profit_charts(members, a)),
-        ("visibility", "五、看得见什么",
-         "同一个问题问六家，答案的深浅差一个数量级。这一节画能画的，并把不能画的逐家写清楚。",
+        ("basis", "六、每家自己的那把尺",
+         "以上每一节都要求把六家的数放在一起。这一节量它们之间到底差多少，"
+         "并给出一个反例：同一家公司、同一个口径，两种算法为什么会分开。",
+         basis_charts(members, a)),
+        ("visibility", "七、看得见什么",
+         "同一个问题问六家，答案的深浅差一个数量级 —— 而这件事本身就是前三节的一部分："
+         "第一节里缺席的两家，正是这一节里最看不见的两家。",
          visibility_charts(members, a)),
-        ("factor", "六、「板块」到底解释了多少，以及拉开差距的到底是什么",
-         "前五节说的是这些数能不能放在一起。这一节假设它们能，然后问两个问题："
-         "共同的那部分有多大，以及剩下的那部分属于谁。"
-         "答案是：共同的部分比想象的小，而剩下的部分主要不属于「公司」。",
-         factor_charts(members, a, f, staging)),
+        ("comparability", "八、附录：这张表能画多长，是谁定的",
+         "以上都建立在「这些线能放在一起」之上。这一节把它拆开：每条线走到它自己在本站的下限，"
+         "而不是走到六家的交集；交集由最短的那条决定，而最短的那条不一定是披露最少的那家。",
+         lead + window_block),
     ]
     exhibits = number_exhibits([e for _, _, _, block in sections_spec for e in block])
     first_table = exhibits[-1]["n"] + 1
     tables = tables_for(members, staging, a, first_table)
+    tables.append(demand_table(first_table + len(tables), g, members))
     tables.append(factor_table(first_table + len(tables), f))
     tables.append(ai_capex_cycle_table(first_table + len(tables)))
     resolve_refs(exhibits, tables)
@@ -1293,17 +1350,33 @@ def build_payload(staging: dict) -> dict:
                          f"but the six series share {latest!r}")
 
     headline = fill_story(
-        "{latest}：六家报出来的增长从{low_name}的 {low_val} 到{top_name}的 {top_val}，"
-        "而这六个数分属{rules}种剔除法、{clocks}种利润时钟、{terms}种利润口径。"
-        "把口径对齐之后再看，拉开差距的不是周期 —— "
-        "{lines}条品类线里，持续跑赢与持续跑输之间相差 {alpha_range}pp／季，"
-        "比同期整个板块 {factor_range}pp 的峰谷波幅还大；"
-        "而这个相对位置在一个时期之内很黏（隔四个季度的自相关 {ac_four}，"
-        "它的变化却只有 {ac_delta}）—— 但把同一套回归搬到疫情前那三年，"
-        "α 的排名只剩 ρ {regime_rho}，{flipped} 条线换了符号。"
-        "位置在一个时期之内可读，跨过时期切换就不可读。",
+        "{latest}：六家报出来的增长从{low_name}的 {low_val} 到{top_name}的 {top_val}。"
+        "最朴素的解释是它们卖在不同的地方 —— 把按季印出分地区收入的{grid_n}家对齐到同一张网格，"
+        "让每家只按自己的地区权重去承接同一条需求向量，"
+        "地区暴露解释公司间分化的中位只有 {share}%"
+        "（{share_n}个季度，区间 {share_lo}–{share_hi}%；网格加细到{fine_n}格是 {fine}%，"
+        "把汇率整条腿拿掉、按两家自己印的恒汇率重算是 {cc}%）。"
+        "第二个候选解释是价格带，也不成立：同一个入门价带在{flip_a}比自家顶价带高 {flip_gap}pp，"
+        "在{flip_b}却低 {same_gap}pp —— 符号相反，所以「金字塔底部在退」是公司现象不是行业现象。"
+        "本页唯一在多家公司里同号的是多品牌批发：{chan_n}家国别、价位、准则、"
+        "披露频率都不同的公司，批发同时弱于它们各自的零售。"
+        "把这三条并起来，这一季的「奢侈品增长」不是一个行业变量 —— "
+        "而开头那六个数本来也不可比：它们分属{rules}种剔除法、{clocks}种利润时钟、{terms}种利润口径。",
         {
             "latest": display_period(latest),
+            "grid_n": cn_count(len(g["slugs"])),
+            "share": f"{g['median']:.0f}", "share_n": str(len(g["pairs"])),
+            "share_lo": f"{g['low']:.0f}", "share_hi": f"{g['high']:.0f}",
+            "fine_n": cn_count(len(g["fine_regions"])), "fine": f"{g['fine_median']:.0f}",
+            "cc": f"{g['cc_median']:.0f}" if g["cc_median"] is not None else "—",
+            "flip_a": by_zh(members, b["flipped"][0]["slug"]) if b["flipped"] else "—",
+            "flip_gap": (f"{b['flipped'][0]['weak_mean'] - b['flipped'][0]['strong_mean']:.1f}"
+                         if b["flipped"] else "—"),
+            "flip_b": (by_zh(members, [p for p in b["bands"] if p not in b["flipped"]][0]["slug"])
+                       if b["flipped"] and len(b["bands"]) > len(b["flipped"]) else "—"),
+            "same_gap": (f"{[p for p in b['bands'] if p not in b['flipped']][0]['strong_mean'] - [p for p in b['bands'] if p not in b['flipped']][0]['weak_mean']:.1f}"
+                         if b["flipped"] and len(b["bands"]) > len(b["flipped"]) else "—"),
+            "chan_n": cn_count(len(c["blocks"])),
             "low_name": low["zh"], "low_val": signed1(a["own_rate"][low["slug"]][-1]),
             "top_name": top["zh"], "top_val": signed1(a["own_rate"][top["slug"]][-1]),
             "rules": cn_count(len(known_rules)),
@@ -1318,21 +1391,30 @@ def build_payload(staging: dict) -> dict:
             "flipped": str(len(regime["flipped"])) if regime else "—",
         })
 
+    other_band = next((x for x in b["bands"] if x not in b["flipped"]), None)
     cards = [
-        ("共同窗口", f"收入 {cn_count(len(a['common']))}季 / 增速 {cn_count(len(a['rate_window']))}季",
-         f"六家欧元收入都有数的区间是 {a['common'][0]}–{a['common'][-1]}，"
-         f"六家增速都有数的只有 {a['rate_window'][0]}–{a['rate_window'][-1]}；"
-         f"最深的一条能到 {a['longest'][0]}，最浅的只到 "
-         f"{min(members, key=lambda m: len(m['plottable']))['plottable'][0]}。"),
+        ("地区解释了多少", f"中位 {g['median']:.0f}%",
+         f"把按季印分地区收入的{cn_count(len(g['slugs']))}家对齐到同一张网格，"
+         f"让每家只按自己的权重承接同一条需求向量：{len(g['pairs'])} 个季度里，"
+         f"实际极差中位 {_median([v for _, v, _ in g['pairs']]):.1f}pp，被动极差中位 "
+         f"{_median([v for _, _, v in g['pairs']]):.1f}pp。加细网格 {g['fine_median']:.0f}%、"
+         f"恒汇口径 {g['cc_median']:.0f}% —— 三种拆法给同一个答案。"),
+        ("价格带", "符号相反",
+         (f"{by_zh(members, b['flipped'][0]['slug'])}的入门价带最近八季平均 "
+          f"{b['flipped'][0]['weak_mean']:+.1f}%，高于它自己的顶价带（"
+          f"{b['flipped'][0]['strong_mean']:+.1f}%）；"
+          f"{by_zh(members, other_band['slug'])}反过来，{other_band['weak_mean']:+.1f}% 对 "
+          f"{other_band['strong_mean']:+.1f}%。同一个价格带在两家公司里符号相反，"
+          "所以它不是一个行业级的解释。") if b["flipped"] and other_band else
+         "本期各家的入门价带同号，见价格带一节。"),
+        ("唯一同号的那条", f"{cn_count(len(c['blocks']))}家批发同时弱于零售",
+         "；".join(f"{by_zh(members, x['slug'])} {x['wholesale_mean']:+.1f}% 对 "
+                  f"{x['retail_mean']:+.1f}%" for x in c["blocks"])
+         + "。这三家的国别、价位、准则、披露频率都不同，是本页找得到的唯一跨公司共同项。"),
         ("本季极差", f"{a['spread'][-1]:.1f}pp",
          f"{cn_count(len(a['rate_window']))}个季度里的极差在 {narrowest:.1f}–{widest:.1f}pp 之间"
          + ("，一次都没有收窄到 10pp 以内" if narrowest >= 10 else "")
-         + " —— 「这一季奢侈品怎么样」这句话在数据上没有单一答案。"),
-        ("周期解释了多少", f"中位 R² {f['median_r2']:.0f}%",
-         f"{cn_count(len(f['fits']))}条品类线里，{cn_count(len(f['tracks']))}条跟着板块走"
-         f"（平均 β {f['beta_tracks']:+.2f}），{cn_count(len(f['loose']))}条几乎不跟"
-         f"（{f['beta_loose']:+.2f}）。最强的 α 是{f['best']} {f['fits'][f['best']]['alpha']:+.1f}pp／季，"
-         f"而它的 R² 只有 {f['fits'][f['best']]['r2']:.0f}% —— 它基本不在这个周期里。"),
+         + " —— 这一页要解释的就是这个数；前三张卡片是三次尝试，其中两次失败。"),
     ]
     brief = (f'<h4>本期{cn_count(len(cards))}条主线</h4><div class="takeaway-grid">' + "".join(
         f"<article><span>{label}</span><b>{value}</b><p>{body}</p></article>"
@@ -1836,6 +1918,523 @@ def regime_chart(r: dict) -> dict:
                      "早一段拟合不了，而成员在两段之间变化会让比较失去意义。"
                      "早一段 12 季、晚一段 14 季，β 的估计在早一段尤其带噪声，此处只读 α。",
     }
+
+
+# ── question one: is the spread a demand phenomenon? ────────────────────────
+# Three of the six print revenue by region every quarter. Mapping their lines
+# onto one grid lets the page ask the question a single company's report cannot:
+# if every company faced the same regional demand, how far apart would they be?
+REGION_SOURCE = {
+    "cfr": lambda d: ([_q(q) for q in d["quarters"]],
+                      lambda k: d["quarterly_eur_m"][k], 1.0),
+    "rms": lambda d: ([_q(q) for q in d["periods"]],
+                      lambda k: d["by_region"][k]["revenue_eur_m"], 1.0),
+    "zgn": lambda d: ([_q(q) for q in d["quarterly"]["periods"]],
+                      lambda k: d["quarterly"]["geography"][k], 0.001),
+}
+
+
+def _region_cells(members: list[dict], spec: dict) -> dict:
+    """``{(slug, quarter, region): revenue in €M}`` from each member's own lines."""
+    by_slug = {m["slug"]: m for m in members}
+    cells = {}
+    for slug, mapping in spec["members"].items():
+        quarters, line, scale = REGION_SOURCE[slug](by_slug[slug]["data"])
+        for region, keys in mapping.items():
+            legs = [line(k) for k in keys]
+            for i, quarter in enumerate(quarters):
+                values = [leg[i] for leg in legs]
+                if all(v is not None for v in values):
+                    cells[(slug, quarter, region)] = sum(values) * scale
+    return cells
+
+
+def _year_ago(quarter: str) -> str:
+    return f"{int(quarter[:4]) - 1}{quarter[4:]}"
+
+
+def _passive(cells: dict, regions: list[str], slugs: list[str]) -> list[dict]:
+    """Per quarter: the common regional vector, and each company against it.
+
+    The vector is the combined growth of each region across the companies that
+    disclose it -- not a median of their rates, so a small filer cannot swing a
+    region it barely sells in. Each company's passive rate is that vector read
+    through its own year-ago regional weights: what it would have grown if it
+    had only been carried by where it sells.
+    """
+    quarters = sorted({q for _, q, _ in cells}, key=_order)
+    rows = []
+    for quarter in quarters:
+        prior = _year_ago(quarter)
+        here = [s for s in slugs
+                if all((s, quarter, r) in cells and (s, prior, r) in cells for r in regions)]
+        if len(here) < 2:
+            continue
+        vector = {}
+        for region in regions:
+            then = sum(cells[(s, prior, region)] for s in here)
+            vector[region] = (sum(cells[(s, quarter, region)] for s in here) / then - 1) * 100
+        each = {}
+        for slug in here:
+            base = sum(cells[(slug, prior, r)] for r in regions)
+            actual = (sum(cells[(slug, quarter, r)] for r in regions) / base - 1) * 100
+            passive = sum(cells[(slug, prior, r)] / base * vector[r] for r in regions)
+            each[slug] = {"actual": actual, "passive": passive, "own": actual - passive}
+        shares = {s: {r: cells[(s, prior, r)] / sum(cells[(s, prior, x)] for x in regions)
+                      for r in regions} for s in here}
+        rows.append({"quarter": quarter, "vector": vector, "each": each,
+                     "slugs": here, "shares": shares})
+    return rows
+
+
+def _explained(rows: list[dict], least: int = 3) -> list[tuple[str, float, float]]:
+    """(quarter, actual spread, passive spread) for quarters with enough companies."""
+    out = []
+    for row in rows:
+        if len(row["slugs"]) < least:
+            continue
+        actual = [row["each"][s]["actual"] for s in row["slugs"]]
+        passive = [row["each"][s]["passive"] for s in row["slugs"]]
+        out.append((row["quarter"], max(actual) - min(actual), max(passive) - min(passive)))
+    return out
+
+
+def _median(values: list[float]) -> float:
+    ordered = sorted(values)
+    middle = len(ordered) // 2
+    return (ordered[middle] if len(ordered) % 2
+            else (ordered[middle - 1] + ordered[middle]) / 2)
+
+
+def _share_of_spread(pairs: list[tuple[str, float, float]], floor: float = 1.0) -> list[float]:
+    """How much of each quarter's spread the regional vector accounts for.
+
+    Quarters whose actual spread is under a point are dropped: the ratio there
+    is a division by noise, and one such quarter printed 127% on a spread of
+    0.9pp, which reads as a refutation and is an artefact.
+    """
+    return sorted(100 * passive / actual for _, actual, passive in pairs if actual >= floor)
+
+
+CC_SOURCE = {
+    "cfr": lambda d: ([_q(q) for q in d["quarters"]],
+                      lambda k: d["quarterly_eur_m"][k], lambda k: d["quarterly_cer_pct"][k]),
+    "rms": lambda d: ([_q(q) for q in d["periods"]],
+                      lambda k: d["by_region"][k]["revenue_eur_m"],
+                      lambda k: d["by_region"][k]["cc_pct"]),
+}
+
+
+def _cc_cells(members: list[dict], spec: dict) -> dict:
+    """``{(slug, quarter, region): (now, base at constant currency)}``.
+
+    The obvious objection to the reported-basis version is that the gap it
+    leaves is currency. Rebuilding each region's year-ago base from the rate the
+    company itself printed removes the currency leg entirely; the question is
+    whether the answer moves, and it is only askable for the two filers that
+    print a constant-currency rate region by region.
+    """
+    by_slug = {m["slug"]: m for m in members}
+    cells = {}
+    for slug, mapping in spec["members"].items():
+        if slug not in CC_SOURCE:
+            continue
+        quarters, revenue, rate = CC_SOURCE[slug](by_slug[slug]["data"])
+        for region, keys in mapping.items():
+            legs = [(revenue(k), rate(k)) for k in keys]
+            for i, quarter in enumerate(quarters):
+                values = [(r[i], g[i]) for r, g in legs]
+                if any(v is None or g is None for v, g in values):
+                    continue
+                now = sum(v for v, _ in values)
+                base = sum(v / (1 + g / 100) for v, g in values)
+                if base:
+                    cells[(slug, quarter, region)] = (now, base)
+    return cells
+
+
+def _cc_share(cells: dict, regions: list[str], slugs: list[str]) -> list[float]:
+    quarters = sorted({q for _, q, _ in cells}, key=_order)
+    pairs = []
+    for quarter in quarters:
+        here = [s for s in slugs if all((s, quarter, r) in cells for r in regions)]
+        if len(here) < 2:
+            continue
+        vector = {}
+        for region in regions:
+            now = sum(cells[(s, quarter, region)][0] for s in here)
+            base = sum(cells[(s, quarter, region)][1] for s in here)
+            vector[region] = (now / base - 1) * 100
+        actual, passive = [], []
+        for slug in here:
+            base = sum(cells[(slug, quarter, r)][1] for r in regions)
+            actual.append((sum(cells[(slug, quarter, r)][0] for r in regions) / base - 1) * 100)
+            passive.append(sum(cells[(slug, quarter, r)][1] / base * vector[r] for r in regions))
+        pairs.append((quarter, max(actual) - min(actual), max(passive) - min(passive)))
+    return _share_of_spread(pairs)
+
+
+def demand_grid(members: list[dict], staging: dict) -> dict:
+    spec = staging["region_grid"]
+    regions = [r["key"] for r in spec["regions"]]
+    labels = {r["key"]: r["label"] for r in spec["regions"]}
+    slugs = list(spec["members"])
+    rows = _passive(_region_cells(members, spec), regions, slugs)
+    if not rows:
+        raise ValueError("region_grid produced no quarter any two members share")
+    pairs = _explained(rows)
+    share = _share_of_spread(pairs)
+
+    fine = spec["fine_grid"]
+    fine_regions = [r["key"] for r in fine["regions"]]
+    fine_rows = _passive(_region_cells(members, fine), fine_regions, list(fine["members"]))
+    fine_share = _share_of_spread(_explained(fine_rows, least=2))
+
+    cc_share = _cc_share(_cc_cells(members, fine), fine_regions, list(fine["members"]))
+    return {
+        "cc_share": cc_share, "cc_median": _median(cc_share) if cc_share else None,
+        "cc_slugs": [s for s in fine["members"] if s in CC_SOURCE],
+        "regions": regions, "labels": labels, "slugs": slugs, "rows": rows,
+        "pairs": pairs, "share": share,
+        "median": _median(share), "low": min(share), "high": max(share),
+        "fine_share": fine_share, "fine_median": _median(fine_share),
+        "fine_regions": fine_regions, "fine_slugs": list(fine["members"]),
+        "absent": spec["absent"],
+    }
+
+
+def demand_charts(members: list[dict], a: dict, g: dict) -> list[dict]:
+    by_slug = {m["slug"]: m for m in members}
+    quarters = [q for q, _, _ in g["pairs"]]
+    actual = [round(v, 4) for _, v, _ in g["pairs"]]
+    passive = [round(v, 4) for _, _, v in g["pairs"]]
+    widest = max(g["pairs"], key=lambda r: r[1])
+    names = "、".join(by_slug[s]["zh"] for s in g["slugs"])
+    absent = "、".join(by_slug[s]["zh"] for s in g["absent"])
+    # Is the missing side also the big side? Measured on the trailing four
+    # quarters each member can fill, not asserted.
+    size = {m["slug"]: sum(v for v in m["revenue"] if v is not None) for m in members}
+    rank = sorted(size, key=size.get, reverse=True)
+    big = [s for s in rank[:len(g["absent"])] if s in g["absent"]]
+    big_note = ("" if not big else
+                f"按本站窗口内的收入合计，其中{cn_count(len(big))}家"
+                f"（{'、'.join(by_slug[s]['zh'] for s in big)}）排在六家的前"
+                f"{cn_count(len(g['absent']))}位。")
+
+    spread = {
+        "ref": "EX_DEMANDSPREAD",
+        "kind": "lines",
+        "title": (f"同一季里，{cn_count(len(g['slugs']))}家实际增速的极差，"
+                  f"和「只按各自卖在哪里」该有的极差"),
+        "xlabels": quarters,
+        "series": [
+            {"name": "实际增速的极差", "color": "NAVY", "values": actual},
+            {"name": "被动预测的极差（同一需求向量 × 各自地区权重）", "color": "GOLD",
+             "values": passive},
+        ],
+        "end_label": True, "label_fmt": "pp1", "ylab": "pp", "zero_base": True, "full": True,
+        "note": (f"<b>本页最该被记住的一张。</b>把{names}按季印出的分地区收入对齐到同一张"
+                 f"{cn_count(len(g['regions']))}格网格，得到一条各家共用的地区需求向量；"
+                 "再让每家只按它自己去年同期的地区权重去承接这条向量，得到它的「被动预测增速」。"
+                 f"{len(g['pairs'])} 个季度里，实际极差的中位是 "
+                 f"{_median([v for _, v, _ in g['pairs']]):.1f}pp，被动极差的中位只有 "
+                 f"{_median([v for _, _, v in g['pairs']]):.1f}pp —— "
+                 f"<b>地区暴露解释公司间分化的中位数是 {g['median']:.0f}%</b>"
+                 f"（区间 {g['low']:.0f}–{g['high']:.0f}%）。"
+                 f"差得最远的是 {widest[0]}：实际 {widest[1]:.1f}pp，被动 {widest[2]:.1f}pp。"
+                 f"{absent}不在这张图里 —— 它们不按季印分地区收入。"
+                 + big_note + "这件事本身就是答案的一部分：想问「是不是需求」，"
+                 "先得有人按季告诉你需求在哪里，而最需要被问到的那几家没有说。"),
+        "src_extra": AXIS + " 分地区收入取各公司自己的季度披露，按报告口径同比；恒汇与更细网格的复核见图注下方的核对表。",
+    }
+
+    vectors = {x["quarter"]: x["vector"] for x in g["rows"]}
+    region_spread = _median([max(x["vector"].values()) - min(x["vector"].values())
+                             for x in g["rows"] if len(x["slugs"]) >= 3])
+    last = g["rows"][-1]
+    weights = {s: {r: last["shares"][s][r] for r in g["regions"]} for s in last["slugs"]}
+    top_region = g["labels"][max(g["regions"], key=lambda r: sum(w[r] for w in weights.values()))]
+    top_key = max(g["regions"], key=lambda r: sum(w[r] for w in weights.values()))
+    weight_line = "、".join(f"{by_slug[s]['short']} {weights[s][top_key] * 100:.0f}%"
+                           for s in last["slugs"])
+    vector = {
+        "ref": "EX_DEMANDVECTOR",
+        "kind": "lines",
+        "title": f"三家合起来看，{cn_count(len(g['regions']))}个地区各自在长多少",
+        "xlabels": quarters,
+        "series": [
+            {"name": g["labels"][r], "color": c,
+             "values": [round(vectors[q][r], 4) for q in quarters]}
+            for r, c in zip(g["regions"], ("NAVY", "GOLD", "MBLUE"))
+        ],
+        "end_label": True, "label_fmt": "pct1", "ylab": "同比 %", "full": True,
+        "note": ("这是上一张图里那条被各家共用的向量本身。它不是「行业增速」——"
+                 "它只是这三家在同一个地区里合起来长了多少。"
+                 f"<b>地区之间其实拉得很开</b>：{len(quarters)} 个季度里，"
+                 f"三个地区当季极差的中位是 {region_spread:.1f}pp，"
+                 f"比同期公司之间实际极差的中位（{_median([v for _, v, _ in g['pairs']]):.1f}pp）还"
+                 f"{'大' if region_spread > _median([v for _, v, _ in g['pairs']]) else '小'}。"
+                 f"各家的权重也并不相同：本季各家最大的一格都是{top_region}，"
+                 f"占比分别是 {weight_line}。"
+                 "<b>两个输入都分化，相乘之后却不分化</b> —— 上一张图里被动极差的中位"
+                 f"只有 {_median([v for _, _, v in g['pairs']]):.1f}pp。"
+                 "这就是第一节的全部内容：不是「地区都一样」，也不是「权重都一样」，"
+                 "而是按地区能解释的那部分，无论怎么拆都远小于公司之间的实际距离。"),
+        "src_extra": AXIS,
+    }
+
+    tail = [q for q, _, _ in g["pairs"]][-8:]
+    owns = {x["quarter"]: {k: v["own"] for k, v in x["each"].items()} for x in g["rows"]}
+    own = {
+        "ref": "EX_DEMANDOWN",
+        "kind": "grouped_bars",
+        "title": "剔掉「卖在哪里」之后，每家自己剩下多少（最近八季）",
+        "xlabels": tail,
+        "groups": [
+            {"name": by_slug[s]["short"], "color": c,
+             "values": [None if s not in owns.get(q, {}) else round(owns[q][s], 4)
+                        for q in tail]}
+            for s, c in zip(g["slugs"], ("GOLD", "MBLUE", "BLUE"))
+        ],
+        "fmt": "pp1", "label_fmt": "pp1", "ylab": "实际 − 被动（pp）",
+        "note": ("每根柱是「这家这一季的实际增速，减掉它按自己的地区权重承接共同需求向量该有的增速」。"
+                 "柱子越高，这一季越多东西是这家自己做出来的 —— 开店或关店、配给产量、"
+                 "换创意总监、改渠道结构、提价或不提价。"
+                 "这张图不判断哪一种动作更好，它只说明<b>这些柱子加起来，比地区那一层高得多</b>。"),
+        "src_extra": AXIS,
+    }
+    return [spread, vector, own]
+
+
+# ── question two: is it the same customer leaving everywhere? ───────────────
+# If the spread were the bottom of the pyramid going quiet, the same price band
+# would be the weak one at every company. It is not: at one company the entry
+# band is the stronger line. That sign flip is what this section is for.
+BAND_SOURCE = {
+    "mc": lambda d: ([_q(q) for q in d["long_quarters"]],
+                     lambda k: d["organic_growth_pct"][k], "有机增速"),
+    "rms": lambda d: ([_q(q) for q in d["periods"]],
+                      lambda k: d["by_sector"][k]["cc_pct"], "固定汇率增速"),
+    "cfr": lambda d: ([_q(q) for q in d["quarters"]],
+                      lambda k: d["quarterly_cer_pct"][k], "恒定汇率增速"),
+}
+
+
+def _line_label(data: dict, slug: str, key: str) -> str:
+    if slug == "mc":
+        return data["division_names"][key]
+    if slug == "rms":
+        sector = data["by_sector"][key]
+        return sector.get("label") or sector.get("label_en")
+    return {"specialist_watchmakers": "专业制表", "jewellery_maisons": "珠宝",
+            "wholesale": "批发", "retail": "零售"}[key]
+
+
+def _band_pair(members: list[dict], slug: str, weak: str, strong: str) -> dict:
+    data = {m["slug"]: m for m in members}[slug]["data"]
+    quarters, line, basis = BAND_SOURCE[slug](data)
+    lo, hi = line(weak), line(strong)
+    paired = [(q, a, b) for q, a, b in zip(quarters, lo, hi)
+              if a is not None and b is not None]
+    tail = paired[-8:]
+    return {
+        "slug": slug, "quarters": [q for q, _, _ in paired],
+        "gap": [a - b for _, a, b in paired],
+        "weak_label": _line_label(data, slug, weak),
+        "strong_label": _line_label(data, slug, strong),
+        "basis": basis,
+        "weak_mean": sum(a for _, a, _ in tail) / len(tail),
+        "strong_mean": sum(b for _, _, b in tail) / len(tail),
+        "behind": sum(1 for _, a, b in paired[-12:] if a < b),
+        "of": len(paired[-12:]),
+        "n": len(paired),
+    }
+
+
+def price_bands(members: list[dict], staging: dict) -> dict:
+    spec = staging["price_bands"]
+    pairs = [dict(_band_pair(members, p["slug"], p["entry"], p["top"]),
+                  kind="band", basis_note=p["basis"]) for p in spec["pairs"]]
+    other = spec["category_pair"]
+    pairs.append(dict(_band_pair(members, other["slug"], other["weak"], other["strong"]),
+                      kind="category", basis_note=other["basis"]))
+    bands = [p for p in pairs if p["kind"] == "band"]
+    flipped = [p for p in bands if p["weak_mean"] > p["strong_mean"]]
+    return {"pairs": pairs, "bands": bands, "flipped": flipped}
+
+
+def band_charts(members: list[dict], a: dict, b: dict) -> list[dict]:
+    by_slug = {m["slug"]: m for m in members}
+    axis = sorted({q for p in b["pairs"] for q in p["quarters"]}, key=_order)
+    colours = {"mc": "NAVY", "rms": "MBLUE", "cfr": "GOLD", "ker": "GREEN",
+               "zgn": "BLUE", "bc": "GRAY"}
+    flip = b["flipped"]
+    same = [p for p in b["bands"] if p not in flip]
+    signs = {p["weak_mean"] > p["strong_mean"] for p in b["pairs"]}
+    verdict = ("<b>结论是否定的</b>：这几条线不同号，所以「金字塔底部在退」"
+               "不是本页数据支持的行业解释，它在各家是各家自己的事。"
+               if len(signs) > 1 else
+               "这几条线目前同号 —— 本页数据不与「金字塔底部在退」相矛盾。"
+               "但同号的线只有这几条，而它们分属两种归类（价格带与品类对），"
+               "所以这不构成对该解释的证明，只构成一次没有把它否掉。")
+    lead = ""
+    if flip and same:
+        one, two = flip[0], same[0]
+        lead = (f"<b>同一个价格带，在两家公司里符号相反。</b>"
+                f"{by_slug[one['slug']]['zh']}的{one['weak_label']}最近八季平均 "
+                f"{one['weak_mean']:+.1f}%，<b>高于</b>它自己的{one['strong_label']}（"
+                f"{one['strong_mean']:+.1f}%）；"
+                f"而{by_slug[two['slug']]['zh']}的{two['weak_label']}平均 "
+                f"{two['weak_mean']:+.1f}%，<b>低于</b>它的{two['strong_label']}（"
+                f"{two['strong_mean']:+.1f}%），差 "
+                f"{two['strong_mean'] - two['weak_mean']:.1f}pp。")
+    gap = {
+        "ref": "EX_BANDGAP",
+        "kind": "lines",
+        "title": "入门价带减顶价带：如果是同一批客人在退，这几条线该同号",
+        "xlabels": axis,
+        "series": [
+            {"name": (f"{by_slug[p['slug']]['short']} {p['weak_label']} − {p['strong_label']}"
+                      + ("" if p["kind"] == "band" else "（品类对，非价格带）")),
+             "color": colours[p["slug"]],
+             "values": [round(dict(zip(p["quarters"], p["gap"])).get(q), 4)
+                        if q in p["quarters"] else None for q in axis]}
+            for p in b["pairs"]
+        ],
+        "end_label": True, "label_fmt": "pp1", "ylab": "弱线 − 强线（pp）", "full": True,
+        "note": (lead
+                 + "每条线是同一家公司在同一份申报里印出的两个品类之差，所以汇率、渠道结构、"
+                 "客群口径全部相同 —— 它把「价格带」单独隔离了出来。"
+                 + "".join(f"{by_slug[p['slug']]['zh']}最近 {p['of']} 季里"
+                           f"{p['weak_label']}跑输 {p['behind']} 季；"
+                           for p in b["pairs"])
+                 + verdict),
+        "src_extra": AXIS + " 各家用自己印出的剔汇口径（LVMH 有机、爱马仕固定汇率、历峰恒定汇率）。",
+    }
+
+    shapes = {p["slug"]: ("两条都在长" if min(p["weak_mean"], p["strong_mean"]) > 0 else
+                          ("两条都在缩" if max(p["weak_mean"], p["strong_mean"]) < 0
+                           else "一条在长、一条在缩")) for p in b["pairs"]}
+    shape_note = ((f"{cn_count(len(shapes))}家都是同一个形状：" + next(iter(shapes.values()))
+                   + " —— 所以上一张图里的「差」在每一家都是真的分开，不是两条一起动。")
+                  if len(set(shapes.values())) == 1 else
+                  "；".join(f"{by_slug[p['slug']]['short']} {shapes[p['slug']]}"
+                            for p in b["pairs"]) + "。")
+    weakest = {
+        "ref": "EX_WEAKEST",
+        "kind": "diverging_bars",
+        "title": "最近八季，每家自己那两条线各自在什么水平",
+        "xlabels": [f"{by_slug[p['slug']]['short']} {lab}"
+                    for p in b["pairs"]
+                    for lab in (p["weak_label"], p["strong_label"])],
+        "values": [round(v, 4) for p in b["pairs"]
+                   for v in (p["weak_mean"], p["strong_mean"])],
+        "fmt": "pct1", "label_fmt": "pct1", "ylab": "最近八季平均同比 %",
+        "note": ("上一张图画的是每一对之差，这一张画的是这两条线各自站在哪里 —— "
+                 "因为「差」相同可以来自两条都在长、也可以来自两条都在缩。"
+                 + shape_note),
+        "src_extra": AXIS,
+    }
+    return [gap, weakest]
+
+
+# ── question three: the one thing that does point the same way ─────────────
+CHANNEL_SOURCE = {
+    "cfr": lambda d: ([_q(q) for q in d["quarters"]],
+                      lambda k: d["quarterly_cer_pct"][k], "恒定汇率增速", False),
+    "zgn": lambda d: ([_q(q) for q in d["quarterly"]["periods"]],
+                      lambda k: d["quarterly"]["channel"][k], "报告口径同比 D", True),
+}
+
+
+def channel_spread(members: list[dict], staging: dict) -> dict:
+    spec = staging["channel_lines"]
+    by_slug = {m["slug"]: m for m in members}
+    out = []
+    for entry in spec["members"]:
+        slug = entry["slug"]
+        data = by_slug[slug]["data"]
+        if entry["cadence"] == "half":
+            block = data["channel_h1_eur_k"]
+            years = [str(y) for y in block["years"]]
+            rows = []
+            for i in range(1, len(years)):
+                w0, w1 = block[entry["wholesale"]][i - 1], block[entry["wholesale"]][i]
+                r0, r1 = block[entry["retail"]][i - 1], block[entry["retail"]][i]
+                rows.append((f"H1 {years[i]}", (w1 / w0 - 1) * 100, (r1 / r0 - 1) * 100))
+            out.append({"slug": slug, "cadence": "half", "basis": "报告口径同比 D",
+                        "rows": rows})
+            continue
+        quarters, line, basis, is_revenue = CHANNEL_SOURCE[slug](data)
+        wholesale, retail = line(entry["wholesale"]), line(entry["retail"])
+        if is_revenue:
+            wholesale = yoy(quarters, wholesale, quarters)
+            retail = yoy(quarters, retail, quarters)
+        rows = [(q, w, r) for q, w, r in zip(quarters, wholesale, retail)
+                if w is not None and r is not None]
+        out.append({"slug": slug, "cadence": "quarterly", "basis": basis, "rows": rows})
+    for block in out:
+        tail = block["rows"][-8:]
+        block["window"] = len(tail)
+        block["wholesale_mean"] = sum(w for _, w, _ in tail) / len(tail)
+        block["retail_mean"] = sum(r for _, _, r in tail) / len(tail)
+        block["behind"] = sum(1 for _, w, r in block["rows"] if w < r)
+        block["n"] = len(block["rows"])
+    return {"blocks": out, "absent": spec["absent"],
+            "all_behind": all(b["wholesale_mean"] < b["retail_mean"] for b in out)}
+
+
+def channel_charts(members: list[dict], a: dict, c: dict) -> list[dict]:
+    by_slug = {m["slug"]: m for m in members}
+    quarterly = [b for b in c["blocks"] if b["cadence"] == "quarterly"]
+    axis = sorted({q for b in quarterly for q, _, _ in b["rows"]}, key=_order)
+    colours = {"cfr": "GOLD", "zgn": "BLUE", "bc": "GRAY"}
+    absent = "、".join(by_slug[s]["zh"] for s in c["absent"])
+    unit = lambda block: "季度" if block["cadence"] == "quarterly" else "半年"
+    verdict = (f"<b>{cn_count(len(c['blocks']))}家全部同向。</b>" if c["all_behind"]
+               else "<b>方向并不一致。</b>")
+    gap = {
+        "ref": "EX_CHANNELGAP",
+        "kind": "lines",
+        "title": "多品牌批发减自营零售：本页唯一在多家公司里同号的那条线",
+        "xlabels": axis,
+        "series": [
+            {"name": f"{by_slug[b['slug']]['short']} 批发 − 零售", "color": colours[b["slug"]],
+             "values": [None if q not in gaps else round(gaps[q], 4) for q in axis]}
+            for b, gaps in ((b, {q: w - r for q, w, r in b["rows"]}) for b in quarterly)
+        ],
+        "end_label": True, "label_fmt": "pp1", "ylab": "批发 − 零售（pp）", "full": True,
+        "note": (verdict + "批发是这几家触达非核心客群的那条渠道 —— "
+                 "买手店、百货、免税，客人不必走进品牌自己的店。"
+                 + "；".join(f"{by_slug[b['slug']]['zh']}的批发在 {b['n']} 个{unit(b)}里"
+                             f"有 {b['behind']} 个跑输自己的零售，"
+                             f"最近{cn_count(b['window'])}个{unit(b)}平均 "
+                             f"{b['wholesale_mean']:+.1f}% 对 {b['retail_mean']:+.1f}%"
+                             for b in c["blocks"]) + "。"
+                 + f"这三家的国别、价位、报表准则、披露频率都不一样，"
+                   f"所以方向一致不容易用巧合解释。{absent}不印渠道拆分，不在这张图里。"),
+        "src_extra": AXIS + " 历峰用公司印出的恒定汇率增速；杰尼亚与库奇内利的渠道只印收入，同比为本页自算（D）。",
+    }
+    half = next(b for b in c["blocks"] if b["cadence"] == "half")
+    half_ex = {
+        "ref": "EX_CHANNELHALF",
+        "kind": "lines",
+        "title": (f"{by_slug[half['slug']]['zh']}只按半年印渠道，"
+                  f"{cn_count(len(half['rows']))}个半年走完同一条路"),
+        "xlabels": [q for q, _, _ in half["rows"]],
+        "series": [
+            {"name": "批发", "color": "GRAY", "values": [round(w, 4) for _, w, _ in half["rows"]]},
+            {"name": "零售", "color": "NAVY", "values": [round(r, 4) for _, _, r in half["rows"]]},
+        ],
+        "end_label": True, "label_fmt": "pct1", "ylab": "同比 %", "full": True,
+        "note": (f"这家公司按季只印收入总额，渠道只在半年报里拆。"
+                 f"{len(half['rows'])} 个半年里，批发从 {half['rows'][0][1]:+.1f}% 一路走到 "
+                 f"{half['rows'][-1][1]:+.1f}%，而同期零售从 {half['rows'][0][2]:+.1f}% 只回到 "
+                 f"{half['rows'][-1][2]:+.1f}%。"
+                 "频率比另外两家粗得多，方向却是同一个。"),
+        "src_extra": AXIS + " 半年渠道收入为公司披露，同比为本页自算（D）。",
+    }
+    return [gap, half_ex]
 
 
 if __name__ == "__main__":

@@ -173,5 +173,182 @@
       "bc"
     ],
     "_note": "两段互不相交的时期，用来检验「相对位置有多黏」这件事是不是只在一个时期之内成立。起止点是外生选的：早一段取疫情之前最后三个完整年，晚一段取疫情反弹结束之后。历峰被排除是因为它 2021Q2 之前只在部分季度印单季增速，早一段拟合不了；杰尼亚与库奇内利不披露分品类增速，本来就不在这个面板里。"
+  },
+  "region_grid": {
+    "_what": "把按季印出分地区收入的那几家对齐到同一张网格。这里只有「哪条线归哪一格」，没有任何数字 —— 需求向量、各家权重、被动预测增速全部由 build/luxury.py 从各家 series 现算。",
+    "regions": [
+      {
+        "key": "emea",
+        "label": "欧洲、中东与非洲"
+      },
+      {
+        "key": "americas",
+        "label": "美洲"
+      },
+      {
+        "key": "apac",
+        "label": "亚太（含日本）"
+      }
+    ],
+    "members": {
+      "cfr": {
+        "emea": [
+          "europe",
+          "middle_east_africa"
+        ],
+        "americas": [
+          "americas"
+        ],
+        "apac": [
+          "asia_pacific",
+          "japan"
+        ]
+      },
+      "rms": {
+        "emea": [
+          "france",
+          "europe_ex_france",
+          "other_middle_east"
+        ],
+        "americas": [
+          "americas"
+        ],
+        "apac": [
+          "japan",
+          "asia_pacific_ex_japan"
+        ]
+      },
+      "zgn": {
+        "emea": [
+          "emea",
+          "other"
+        ],
+        "americas": [
+          "americas"
+        ],
+        "apac": [
+          "greater_china",
+          "rest_of_apac"
+        ]
+      }
+    },
+    "fine_grid": {
+      "_what": "两家 42 季的公司共有的最细网格，用来检验「网格太粗」这个反驳。",
+      "regions": [
+        {
+          "key": "europe",
+          "label": "欧洲"
+        },
+        {
+          "key": "japan",
+          "label": "日本"
+        },
+        {
+          "key": "apac_ex_japan",
+          "label": "亚太（除日本）"
+        },
+        {
+          "key": "americas",
+          "label": "美洲"
+        },
+        {
+          "key": "mea",
+          "label": "中东与非洲"
+        }
+      ],
+      "members": {
+        "cfr": {
+          "europe": [
+            "europe"
+          ],
+          "japan": [
+            "japan"
+          ],
+          "apac_ex_japan": [
+            "asia_pacific"
+          ],
+          "americas": [
+            "americas"
+          ],
+          "mea": [
+            "middle_east_africa"
+          ]
+        },
+        "rms": {
+          "europe": [
+            "france",
+            "europe_ex_france"
+          ],
+          "japan": [
+            "japan"
+          ],
+          "apac_ex_japan": [
+            "asia_pacific_ex_japan"
+          ],
+          "americas": [
+            "americas"
+          ],
+          "mea": [
+            "other_middle_east"
+          ]
+        }
+      }
+    },
+    "absent": {
+      "mc": "公司只在半年报附录里把两年的 Q1 与 Q2 排成分地区表；第三、四季度的分地区数字只出现在全年演示材料的柱状图上，没有对应的数字表，本站不从图上目测取数。",
+      "ker": "公司在收入公告里不印分地区收入，正文里只给零散的文字增速。",
+      "bc": "公司只按半年印三大洲，不按季。"
+    }
+  },
+  "price_bands": {
+    "_what": "每家自己印出的两条品类线：一条是公司自己定义为「可及」的入门价带，一条是它单价最高的品类。这里只有归类与归类依据，两条线的每一个数都从各家 series 现算。",
+    "pairs": [
+      {
+        "slug": "mc",
+        "entry": "perfumes_cosmetics",
+        "top": "fashion_leather",
+        "basis": "香水与化妆品是集团单价最低、铺货最广的分部（含丝芙兰之外的品牌业务）；时装与皮具单价最高，也是集团经常性经营利润的主要来源。两条都是公司自己的分部口径，两条都印有机增速。"
+      },
+      {
+        "slug": "rms",
+        "entry": "perfume_beauty",
+        "top": "leather_goods_saddlery",
+        "basis": "香水与美妆是爱马仕单价最低的板块；皮具与马具单价最高，也是集团收入占比最大的板块。两条都是公司自己的板块口径，两条都印固定汇率增速。"
+      }
+    ],
+    "category_pair": {
+      "slug": "cfr",
+      "weak": "specialist_watchmakers",
+      "strong": "jewellery_maisons",
+      "basis": "这一对不是价格带 —— 专业制表里有集团单价最高的几个品牌。它是品类对：同一家公司、同一份申报、同一套汇率与渠道，两个品类分开。"
+    }
+  },
+  "channel_lines": {
+    "_what": "印出「多品牌批发」与「自营零售」两条线的公司。批发是这几家触达非核心客群的渠道；本页用它与各自零售的差来问「共同的那件事是不是渠道」。",
+    "members": [
+      {
+        "slug": "cfr",
+        "wholesale": "wholesale",
+        "retail": "retail",
+        "cadence": "quarterly"
+      },
+      {
+        "slug": "zgn",
+        "wholesale": "wholesale_branded",
+        "retail": "dtc",
+        "cadence": "quarterly"
+      },
+      {
+        "slug": "bc",
+        "wholesale": "wholesale",
+        "retail": "retail",
+        "cadence": "half"
+      }
+    ],
+    "absent": {
+      "mc": "精品零售是一个分部（丝芙兰、DFS），不是集团自己的渠道拆分；公司不印批发对零售。",
+      "rms": "公司在电话会上口头提批发，不印按季的批发收入或增速。",
+      "ker": "公司不印渠道拆分。"
+    }
   }
 }
