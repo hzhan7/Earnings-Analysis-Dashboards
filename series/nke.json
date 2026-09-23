@@ -173,6 +173,60 @@
       "high": 25.0
      }
     ]
+   },
+   "next_thresholds": [
+    {
+     "id": "gm_add",
+     "item": 1,
+     "threshold": 50.0,
+     "direction": "up",
+     "gate": "加仓",
+     "unit": "bps"
+    },
+    {
+     "id": "gm_cut",
+     "item": 1,
+     "threshold": 0.0,
+     "direction": "up",
+     "gate": "减仓",
+     "unit": "bps"
+    },
+    {
+     "id": "gc_cut",
+     "item": 3,
+     "threshold": -20.0,
+     "direction": "up",
+     "gate": "减仓",
+     "unit": "pct"
+    },
+    {
+     "id": "ebit_add",
+     "item": 4,
+     "threshold": 10.0,
+     "direction": "up",
+     "gate": "加仓",
+     "unit": "level_pct"
+    },
+    {
+     "id": "na_warn",
+     "item": 5,
+     "threshold": -3.0,
+     "direction": "up",
+     "gate": "警示",
+     "unit": "pct"
+    },
+    {
+     "id": "overhead_warn",
+     "item": 5,
+     "threshold": 0.0,
+     "direction": "down",
+     "gate": "警示",
+     "unit": "pct"
+    }
+   ],
+   "next_not_quantified": {
+    "count": 4,
+    "_what": "#2 Sportswear + Jordan Streetwear（不披露）；#3 同店销售与环比收窄（第三方 / 相对条件）；#4 投资者日内容（事件）；#5 Foot Locker 与 reserves（不披露）"
    }
   }
  },
@@ -455,6 +509,7 @@
   "ieepa_refund_converse": 21.0,
   "ieepa_cash_received_by_period_end": 302.0,
   "ieepa_receivable_at_period_end": 684.0,
+  "ieepa_eps_benefit_usd": 0.52,
   "severance_q4_total": 81,
   "severance_q4_cost_of_sales": 104,
   "severance_q4_operating_overhead": -23,
@@ -823,10 +878,50 @@
    0.0,
    -3.0,
    -4.0
+  ],
+  "nike_brand_wholesale_reported": [
+   -8.0,
+   -3.0,
+   -7.0,
+   -9.0,
+   7.0,
+   8.0,
+   5.0,
+   4.0
+  ],
+  "nike_brand_wholesale_currency_neutral": [
+   -7.0,
+   -4.0,
+   -4.0,
+   -9.0,
+   5.0,
+   8.0,
+   1.0,
+   1.0
+  ],
+  "nike_direct_reported": [
+   -13.0,
+   -13.0,
+   -12.0,
+   -14.0,
+   -4.0,
+   -8.0,
+   -4.0,
+   -7.0
+  ],
+  "nike_direct_currency_neutral": [
+   -12.0,
+   -14.0,
+   -10.0,
+   -14.0,
+   -5.0,
+   -9.0,
+   -7.0,
+   -9.0
   ]
  },
  "release_changes": {
-  "_note": "八份业绩新闻稿（8-K EX-99.1）Income Statement Review 一段印出的同比变化，逐季照录：Gross margin increased/decreased N basis points；Operating overhead expense … up/down N percent（flat 记 0）。剔除退款的毛利率变化只在有退款的那一季与报表值不同：FY2026 Q4 印的是 +890bp、其中退款约 900bp，CFO 在电话会上说剔除后 down 10 basis points。自算值与这些印出值差在四舍五入之内（毛利率 ±5bp）。",
+  "_note": "八份业绩新闻稿（8-K EX-99.1）Income Statement Review 一段印出的同比变化，逐季照录：Gross margin increased/decreased N basis points；Operating overhead expense … up/down N percent（flat 记 0）。剔除退款的毛利率变化只在有退款的那一季与报表值不同：FY2026 Q4 印的是 +890bp、其中退款约 900bp，CFO 在电话会上说剔除后 down 10 basis points。自算值与这些印出值差在四舍五入之内（毛利率 ±5bp）。渠道增速（批发 / NIKE Direct，报表与固定汇率）同样逐季读自这八份新闻稿的 Wholesale revenues … / NIKE Direct revenues … 两句，存在 growth_pct 里与地域增速并列。",
   "source": [
    "FY2025 Q1 https://www.sec.gov/Archives/edgar/data/320187/000032018724000062/q1fy25exhibit991er.htm",
    "FY2025 Q2 https://www.sec.gov/Archives/edgar/data/320187/000032018724000069/q2fy25exhibit991er.htm",
@@ -2932,6 +3027,37 @@
   "remaining_accrual_as_of": "2026-05-31",
   "src_extra": "FY2026 10-K 附注十八与 FY2024 10-K 的重组附注，均为申报值。"
  },
+ "jordan_brand": {
+  "_note": "Jordan Brand 的全年收入（GAAP 收入口径）。FY2025 10-K 的 Supplemental NIKE Brand Revenue Details 表印 FY2023–FY2025 三年（7,270 / 8,701 / 8,460，FY2025 −16%、FY2024 +3%，两个口径相同）；FY2026 10-K 与 FY2026 Q4 新闻稿的脚注印 FY2024–FY2026（7,034 / 7,270 / 8,701，FY2026 报表 −3%、固定汇率 −5%）。重叠年份两份文件一致。FY2024 10-K 及更早只印批发等价口径（FY2024 6,988、FY2023 6,589），与这条线不可比，不接。",
+  "source": [
+   "FY2025 10-K https://www.sec.gov/Archives/edgar/data/320187/000032018725000047/nke-20250531.htm",
+   "FY2026 10-K https://www.sec.gov/Archives/edgar/data/320187/000032018726000088/nke-20260531.htm"
+  ],
+  "fiscal_years": [
+   2023,
+   2024,
+   2025,
+   2026
+  ],
+  "revenue_usd_m": [
+   8460.0,
+   8701.0,
+   7270.0,
+   7034.0
+  ],
+  "reported_change_pct": [
+   null,
+   3.0,
+   -16.0,
+   -3.0
+  ],
+  "currency_neutral_change_pct": [
+   null,
+   3.0,
+   -16.0,
+   -5.0
+  ]
+ },
  "buyback_programme": {
   "_note": "同一年的回购金额，公司在三处印出三个数：现金流量表 146（当期实际付现，含结算上一年的交易）、股东权益表与业绩新闻稿 123、10-K 的 MD&A 122.4（180 万股，均价 $67.63）。本页图上用现金流量表口径，因为十年序列的其余各年也取自同一张表。",
   "as_of_fiscal_year": 2026,
@@ -3247,52 +3373,111 @@
    }
   ]
  },
- "next_kpi": [
-  {
-   "metric": "毛利率同比（剔除关税退款）vs 加仓门槛 +50bp",
-   "direction": "up",
-   "threshold": 0.5,
-   "unit": "pp",
-   "current": -0.1062,
-   "short": "毛利率同比"
-  },
-  {
-   "metric": "大中华区收入同比（固定汇率）vs 减仓门槛 −20%",
-   "direction": "up",
-   "threshold": -20.0,
-   "unit": "pct",
-   "current": -17.0,
-   "short": "大中华区"
-  },
-  {
-   "metric": "北美收入同比（固定汇率）vs 警示门槛 −3%",
-   "direction": "up",
-   "threshold": -3.0,
-   "unit": "pct",
-   "current": 3.0,
-   "short": "北美"
-  },
-  {
-   "metric": "全年 EBIT 利润率（剔除关税退款）vs 双位数目标",
-   "direction": "up",
-   "threshold": 10.0,
-   "unit": "pct",
-   "current": 6.1727,
-   "short": "那个双位数利润率目标"
-  }
- ],
- "next_kpi_not_plotted": [
-  {
-   "metric": "Sportswear 与 Jordan Streetwear 的降幅",
-   "reason": "公司从不披露 Sportswear 的收入或增速，只在电话会上用 declined double digits 这样的词描述；把一个词换算成数需要自选一个比例，那是假设不是算术。",
-   "summary": "Sportswear 与 Jordan 的降幅公司从不披露收入，只在电话会上用 double digits 这样的词描述"
-  },
-  {
-   "metric": "FY2027 operating overhead 同比增速",
-   "reason": "阈值是「不高于 0%」，零阈值没有百分比余量可算；本页只在核对表里记录它的触发状态。",
-   "summary": "经营费用增速的阈值是「不高于 0%」，零阈值没有百分比余量可算"
-  }
- ],
+ "next_kpi": {
+  "period": "Q2 2026",
+  "for_period": "Q3 2026",
+  "_note": "本季报告（2026-06-30 NKE Q2 2026 vs Q1 2026 Analysis.md）第 8 节五条关键观察指标里写成数的阈值，数值与方向逐字取自报告，reads 指向当前读数的名字（builder 从 series 现算，不存当前值）；alt_reads 是报告没写口径时的另一口径；settles 缺省即下一季结算。下一季换季时，这个 quantified 列表原样挪进 prior_kpi_settlement。not_quantified 是写不成数、申报不披露或本站不接入的部分。",
+  "quantified": [
+   {
+    "id": "gm_add",
+    "item": 1,
+    "metric": "毛利率同比（剔除关税退款）",
+    "gate": "加仓",
+    "direction": "up",
+    "threshold": 50.0,
+    "unit": "bps",
+    "reads": "gm_change_ex_bp",
+    "alt_reads": "gm_change_bp",
+    "basis": "报告写的是 FY2027 Q1 毛利率同比，没写要不要剔除退款；剔除后才与去年同季可比，本页按剔除退款结算"
+   },
+   {
+    "id": "gm_cut",
+    "item": 1,
+    "metric": "毛利率同比（剔除关税退款）",
+    "gate": "减仓",
+    "direction": "up",
+    "threshold": 0.0,
+    "unit": "bps",
+    "reads": "gm_change_ex_bp",
+    "alt_reads": "gm_change_bp",
+    "basis": "同上"
+   },
+   {
+    "id": "gc_cut",
+    "item": 3,
+    "metric": "大中华区收入同比（固定汇率）",
+    "gate": "减仓",
+    "direction": "up",
+    "threshold": -20.0,
+    "unit": "pct",
+    "reads": "gc_cn",
+    "alt_reads": "gc_rep",
+    "either": "Meritco 月度同店销售持续 ≤ 5%（第三方数据，本站不接入）",
+    "basis": "报告没写口径；它引用的公司说法「近期趋势与最近表现一致」是固定汇率口径，本页按固定汇率"
+   },
+   {
+    "id": "ebit_add",
+    "item": 4,
+    "metric": "全年 EBIT 利润率（剔除关税退款）",
+    "gate": "加仓",
+    "direction": "up",
+    "threshold": 10.0,
+    "unit": "level_pct",
+    "reads": "fy_ebit_margin_ex",
+    "alt_reads": "fy_ebit_margin_rep",
+    "settles": "Q4 2026",
+    "joint": "投资者日给出 FY2027 全年指引与可信的双位数 EBIT 利润率时间表，且新 CFO 不重设基数（事件，不是读数）",
+    "basis": "「双位数」读作 10%；报告写的当前值是剔除退款的 6.2% [自算]"
+   },
+   {
+    "id": "na_warn",
+    "item": 5,
+    "metric": "北美收入同比（固定汇率）",
+    "gate": "警示",
+    "direction": "up",
+    "threshold": -3.0,
+    "unit": "pct",
+    "reads": "na_cn",
+    "alt_reads": "na_rep",
+    "settles": "Q4 2026",
+    "basis": "报告写的是 FY2027 Q2 基数偏高时北美转负超过 −3%；北美报表与固定汇率本季相同"
+   },
+   {
+    "id": "overhead_warn",
+    "item": 5,
+    "metric": "经营费用同比",
+    "gate": "警示",
+    "direction": "down",
+    "threshold": 0.0,
+    "unit": "pct",
+    "reads": "overhead_change_pct",
+    "basis": "公司指引 FY2027 Q1 起经营费用同比下降；不降反升即警示"
+   }
+  ],
+  "not_quantified": [
+   {
+    "item": 2,
+    "metric": "Sportswear + Jordan Streetwear 降幅（FY2027 Q1/Q2 收窄到 −MSD → 加仓；仍 −DD 且下半年新品无实证 → 重新评估）",
+    "reason": "NIKE 不按这两个口径披露收入或增速，只在电话会上用 declined double digits 这样的词描述；把词换算成数要自选一个比例，那是假设不是算术。"
+   },
+   {
+    "item": 3,
+    "metric": "大中华区：FY2027 Q2 起降幅环比收窄且 Meritco 月度同店销售回到双位数 → 加仓；同店销售持续 ≤ 5% → 减仓",
+    "reason": "同店销售是第三方商场追踪，本站不接入；环比收窄是相对条件，FY2027 Q2（2026 Q4）起才可判。"
+   },
+   {
+    "item": 4,
+    "metric": "投资者日内容与新 CFO 表态（给出 FY2027 全年指引与可信的双位数 EBIT 利润率时间表且不重设基数 → 加仓；重设基数或只给定性目标 → 警示）",
+    "reason": "事件，不是读数：投资者日定在 {investor_day}，在下一季业绩之后；数字那一半画在「全年 EBIT 利润率」那张线上。"
+   },
+   {
+    "item": 5,
+    "metric": "北美渠道质量：Foot Locker 连续第二季正增长、sales-related reserves 与折扣继续改善",
+    "reason": "Foot Locker 是客户，公司只在电话会上口头提及；reserves 与折扣不按季披露。"
+   }
+  ],
+  "followups_answered": "本季报告留给下季的 5 个问题里，第 4 个（退款应收何时收现、10-K 会不会计提减值）已被 2026-07-15 的 10-K 提前回答：年末已收现 {refund_cash}、余额 {refund_receivable}，期后已基本收回，没有减值准备（见第二板块应收图）。"
+ },
  "guidance": {
   "period": "Q2 2026",
   "title": "公司展望（2026-06-30 电话会，公司披露值；不在任何申报文件中）",
@@ -3352,7 +3537,20 @@
     "新增"
    ]
   ],
-  "note": "这张表是本页唯一不来自申报文件的数据块，放在这里正是因为它不在申报文件里。NIKE 在业绩新闻稿里自己写着 Revised guidance will be provided on the conference call，本站清点的 40 份业绩新闻稿里没有一份带经营指引。所以这些数字既无法用第二份文件交叉核对，也不会像其他页那样在下一季被自动结清 —— 本页不为它们建命中率记录。"
+  "note": "这张表来自电话会，不在任何申报文件里：NIKE 在业绩新闻稿里自己写着 Revised guidance will be provided on the conference call，本站清点的 {releases_examined} 份业绩新闻稿没有一份带经营指引，所以这些说法无法用第二份文件交叉核对。下一季第一节会拿它结算一次（给了数的逐条对，给的是词的只列读数、不判命中），本页不为它累积命中率记录。"
+ },
+ "quarter_story": {
+  "period": "Q2 2026",
+  "source": "2026-06-30 NKE Q2 2026 vs Q1 2026 Analysis.md 第 1、3、7 节",
+  "not_drawn": [
+   "报告洞察 1「用收入买毛利率拐点」的另一半在电话会上：未来三个会计季的收入展望从 down low single digits 下修到 down low-to-mid single digits，毛利率转正从 FY2027 Q2 提前到 Q1 —— 公司口径，列在上面的「公司展望」表里。",
+   "Running 连续 5 个季度双位数增长、累计约 10 亿美元，是电话会口径；NIKE 不按运动品类披露收入，画不了。",
+   "CFO 交接（报告洞察 3 的起点）：2026-06-23 的 8-K（Item 5.02）宣布 David Denton 8 月中旬接任（8-K 正文写 8 月 16 日、所附新闻稿写 8 月 17 日），Matthew Friend 9 月 4 日离任 —— 是事件，不是序列。"
+  ],
+  "channel_words": "本季报告把直营的恶化归于主动收缩促销（电话会：EMEA 的 off-price 收入下降一半以上、全价实现率提高 15 个百分点），批发的增长主要在北美 —— CFO 说北美批发报表 +10% 并不是出货多了 10%，相当一部分来自退货与 sales-related reserves、折扣、取消的下降。",
+  "jordan_words": "本季报告把它列为 Sportswear 之外的第二块拖累。本季报告说这是公司「首次在新闻稿披露年度值」，不成立：FY2025 Q4 新闻稿与 FY2025 10-K 的 Supplemental NIKE Brand Revenue Details 表都印过 Jordan Brand 的全年收入。",
+  "tradeoff_words": "电话会上公司把未来三个会计季的收入展望从 down low single digits 下修到 down low-to-mid single digits，同时把毛利率转正从 FY2027 Q2 提前到 Q1（公司口径，不在申报文件里）—— 报告的洞察 1：用收入买毛利率拐点。",
+  "handover_words": "2026-06-23 的 8-K 宣布 CFO 交接：David Denton 8 月中旬接任，Matthew Friend 9 月 4 日离任；投资者日定在 {investor_day}，公司说届时公布下一阶段的增长战略，并恢复给出全年与长期指引。报告把「新 CFO 会不会重设基数」列为四条判断里信心最低的一条。"
  },
  "spoken": {
   "period": "Q2 2026",
