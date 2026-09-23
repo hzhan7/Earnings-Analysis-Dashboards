@@ -1,7 +1,7 @@
 # Earnings Analysis Dashboards
 
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
-chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
+chart-led research pages. Reviewed pages currently cover Advanced Micro Devices, Alphabet, Amazon,
 American Express, Arm Holdings, Broadcom, Brunello Cucinelli, Cadence, Cboe Global Markets,
 Charles Schwab, CME Group, Costco, Ermenegildo Zegna, Ferrari,
 Hermès International,
@@ -30,6 +30,7 @@ python3 -m http.server 8765
 
 Open `http://127.0.0.1:8765/`, then choose:
 
+- `http://127.0.0.1:8765/amd/`
 - `http://127.0.0.1:8765/amzn/`
 - `http://127.0.0.1:8765/arm/`
 - `http://127.0.0.1:8765/avgo/`
@@ -193,7 +194,11 @@ Charts are ordered the way the note is actually used:
    leverage — 42 quarters back to 2016Q1, long enough to contain the 2018
    crypto unwind and the 2022 gaming de-stock rather than starting after them —
    plus the inventory-and-supply-commitment block that carries its real capital
-   intensity; Broadcom gets its two engines' segment operating margins, the
+   intensity; AMD gets its non-GAAP margins back to the loss-making quarters of
+   2016, the old two-segment record in which servers and game-console chips
+   shared one line — so no data-center figure exists before 2021 — free cash
+   flow, operating-expense intensity, the diluted share count the Xilinx deal
+   stepped up, and inventory days; Broadcom gets its two engines' segment operating margins, the
    capital intensity a fab-lite designer actually runs on, cash conversion, and
    the post-VMware deleveraging path; TSMC gets node migration, platform mix and
    working capital;

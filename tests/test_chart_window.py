@@ -162,7 +162,7 @@ def _tsm_advanced_count() -> dict:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amzn": 13, "arm": 0, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
+    "amd": 16, "amzn": 13, "arm": 0, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
     "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
@@ -202,6 +202,30 @@ def key_matches(key: str, title: str) -> bool:
 # that stops it. An entry that no longer matches a short exhibit fails too --
 # otherwise the list would slowly fill with excuses for charts that were fixed.
 CONVERTED = {
+    "amd": {
+        # AMD reported two segments until 2022Q1 -- servers sat with game-console
+        # chips in "Enterprise, Embedded and Semi-Custom" -- and the four-segment
+        # structure was recast only to the year-ago quarter of Q2 2022. So no
+        # Data Center, Client, Gaming or Embedded figure exists before 2021Q2 in
+        # any filing; the old structure is drawn separately, back to 2016.
+        "数据中心 US$#B、同比": "the four-segment structure starts 2021Q2 (recast only to the "
+                          "year-ago quarter of the Q2 2022 release); earlier quarters "
+                          "exist only in the two-segment structure, drawn separately.",
+        "分部营业利润率：": "same four-segment floor as the revenue chart above it.",
+        # The first 10-Q that tables the total unconditional commitment in its
+        # notes is Q2 2021; earlier 10-Qs print an MD&A "purchase obligations"
+        # row on another basis (GLOBALFOUNDRIES excluded until Q1 2019), and the
+        # three 2020 10-Qs plus Q1 2021 print nothing at all.
+        "无条件采购承诺 US$#B": "the note-basis commitment total begins with the Q2 2021 10-Q; "
+                          "earlier filings print a different MD&A row or nothing.",
+        # Two deliberate short cuts: the current release's three-column
+        # reconciliation, and an eight-quarter cash-flow split printed as a
+        # three-month column only from 2022Q2.
+        "GAAP 每股收益环比": "the three columns one reconciliation table prints side by side.",
+        "来自应付账款增加": "an eight-quarter cut; the three-month payables line in the "
+                     "release cash-flow statement starts 2022Q2, and the long payables "
+                     "history is the days chart in section three.",
+    },
     "luxury": {
         # Not disclosure floors and not a backlog: these axes are intersections.
         # Two of the six publish no quarterly growth rate of their own, so their
@@ -890,6 +914,13 @@ CONVERTED = {
 
 
 FLOOR_KIND = {
+    'amd': {
+        '数据中心 US$#B、同比': 'disclosure',
+        '分部营业利润率：': 'disclosure',
+        '无条件采购承诺 US$#B': 'disclosure',
+        'GAAP 每股收益环比': 'design',
+        '来自应付账款增加': 'design',
+    },
     'luxury': {
         '六家在共同的': 'design',
         '公司自己的口径比欧元口径高出多少': 'design',
@@ -1318,8 +1349,8 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 151)
-        self.assertEqual(settled.count("design"), 37)
+        self.assertEqual(settled.count("disclosure"), 154)
+        self.assertEqual(settled.count("design"), 39)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
         """Every short chart either names its reason or is counted here.
