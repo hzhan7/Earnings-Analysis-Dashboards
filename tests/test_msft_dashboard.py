@@ -208,9 +208,15 @@ class MsftDashboardTest(unittest.TestCase):
         nxt = [e for e in self.source["next_kpi"]["quantified"] if not e.get("annual")]
         self.assertEqual(
             [(section["id"], len(section["exhibits"])) for section in self.payload["sections"]],
-            [("settled", 2 + len(prior)), ("quarter_highlights", 6),
-             ("next_quarter", 1 + len(nxt)), ("routine", 4)],
+            [("settled", 2 + len(prior)), ("quarter_highlights", 5),
+             ("next_quarter", 1 + len(nxt)), ("routine", 5)],
         )
+        # A chart whose title is a range over the whole record is not this
+        # quarter's conclusion; it belongs with the long series.
+        for exhibit in self.by_section["quarter_highlights"]:
+            self.assertNotRegex(exhibit["title"], r"季在 .* 之间", exhibit["title"])
+        self.assertTrue(any(ex["title"].startswith("其他收入（净）")
+                            for ex in self.by_section["routine"]))
 
     def test_headroom_bars_reproduce_the_thresholds(self) -> None:
         for section, block, key in (
@@ -323,10 +329,12 @@ class MsftDashboardTest(unittest.TestCase):
         self.assertEqual(len(depreciation_chart["xlabels"]), WINDOW)
         self.assertIn("只有这张没有", depreciation_chart["note"])
 
-        # The other three routine charts did make it back to the start.
+        # Every other routine chart did make it back to the start, and the note
+        # counts them rather than naming a number that was true once.
         routine = self.by_section["routine"]
         long_axes = [ex for ex in routine if len(ex["xlabels"]) > WINDOW]
-        self.assertEqual(len(long_axes), 3)
+        self.assertEqual(len(long_axes), len(routine) - 1)
+        self.assertIn(f"本节其余{cn_count(len(long_axes))}张都拉到了", depreciation_chart["note"])
 
     def test_finance_leases_are_never_added_to_cash_capex(self) -> None:
         """The two spending channels take different routes through the cash flow

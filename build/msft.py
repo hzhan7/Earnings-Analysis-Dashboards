@@ -607,41 +607,43 @@ def build_payload(staging: dict) -> dict:
                 "未付资本开支来自 10-K 的物业及设备附注。调整后口径为报告值减该余额的年度增量，是算术调整，不是公司定义的指标。"
             ),
         },
-        {
-            "kind": "diverging_bars",
-            "title": (
-                f"其他收入（净）{cn_count(len(long_other_income))}季在 ${min(long_other_income):,.0f}M 与 "
-                f"+${max(long_other_income):,.0f}M 之间摆动，本季 "
-                f"{'+' if other_income[-1] >= 0 else '-'}${abs(other_income[-1]):,}M"
-            ),
-            "xlabels": long_labels,
-            "xstep": LONG_STEP,
-            "values": long_other_income,
-            "legend": "其他收入（净）",
-            "positive_label": "净收益",
-            "negative_label": "净损失",
-            "fmt": "f0c",
-            "yfmt": "f0c",
-            "label_fmt": "f0c",
-            "ylab": "$M",
-            "zero_line": True,
-            "note": (
-                "这条线几乎全部是非现金的权益法与估值变动，方向可逆"
-                + ("——同一套会计方法在上一财年产生的是净损失。" if last_fy_other is not None and last_fy_other < 0
-                   else "。")
-                + "跨期比较 GAAP 每股收益会被它系统性带偏，本页因此把经营利润与现金流放在前面。"
-                f"<b>八季的窗口把这条线画成一个「最近变大了」的故事，{cn_count(len(long_other_income))}季不是。</b>"
-                f"{quarters[0][:4]}–{quarters[quiet_end - 1][:4]} 年它长期在 ${min(quiet):,.0f}M 到 "
-                f"${max(quiet):,.0f}M 的窄带里，"
-                f"绝对值超过 $2,000M 的只有 {sum(1 for v in quiet if abs(v) > 2000)} 季；"
-                f"最近{cn_count(len(recent))}季里有 {sum(1 for v in recent if abs(v) > 2000)} 季超过。"
-                "变大的是波幅，不是水平。"
-                "同一个季度会被多份申报重印，且数会变（2016 年 9 月止季 100 → 112），"
-                "本页一律取最后一次申报的值。"
-            ),
-            "src_extra": source_note("其他收入（净）来自各期利润表；本页不拆分其中的单笔投资"),
-        },
     ]
+    # A range over the whole record is not this quarter's conclusion, so the
+    # long other-income line sits with the other long series in section four.
+    other_income_chart = {
+        "kind": "diverging_bars",
+        "title": (
+            f"其他收入（净）{cn_count(len(long_other_income))}季在 ${min(long_other_income):,.0f}M 与 "
+            f"+${max(long_other_income):,.0f}M 之间摆动，本季 "
+            f"{'+' if other_income[-1] >= 0 else '-'}${abs(other_income[-1]):,}M"
+        ),
+        "xlabels": long_labels,
+        "xstep": LONG_STEP,
+        "values": long_other_income,
+        "legend": "其他收入（净）",
+        "positive_label": "净收益",
+        "negative_label": "净损失",
+        "fmt": "f0c",
+        "yfmt": "f0c",
+        "label_fmt": "f0c",
+        "ylab": "$M",
+        "zero_line": True,
+        "note": (
+            "这条线几乎全部是非现金的权益法与估值变动，方向可逆"
+            + ("——同一套会计方法在上一财年产生的是净损失。" if last_fy_other is not None and last_fy_other < 0
+               else "。")
+            + "跨期比较 GAAP 每股收益会被它系统性带偏，本页因此把经营利润与现金流放在前面。"
+            f"<b>八季的窗口把这条线画成一个「最近变大了」的故事，{cn_count(len(long_other_income))}季不是。</b>"
+            f"{quarters[0][:4]}–{quarters[quiet_end - 1][:4]} 年它长期在 ${min(quiet):,.0f}M 到 "
+            f"${max(quiet):,.0f}M 的窄带里，"
+            f"绝对值超过 $2,000M 的只有 {sum(1 for v in quiet if abs(v) > 2000)} 季；"
+            f"最近{cn_count(len(recent))}季里有 {sum(1 for v in recent if abs(v) > 2000)} 季超过。"
+            "变大的是波幅，不是水平。"
+            "同一个季度会被多份申报重印，且数会变（2016 年 9 月止季 100 → 112），"
+            "本页一律取最后一次申报的值。"
+        ),
+        "src_extra": source_note("其他收入（净）来自各期利润表；本页不拆分其中的单笔投资"),
+    }
 
     # ── section three ────────────────────────────────────────────────────────
     next_charts: list[dict] = []
@@ -804,8 +806,6 @@ def build_payload(staging: dict) -> dict:
                    f"{guidance['useful_life_years'][0]} 年延长到 "
                    f"{guidance['useful_life_years'][1]} 年，这条线的下一段斜率因此不再可比。"
                    if guidance else "")
-                + f"<b>本节其余三张都拉到了 {quarters[0][:4]} 年，只有这张没有</b>："
-                f"{long['depreciation_note']}"
             ),
             "src_extra": source_note("季度折旧来自各期现金流量表，按公司披露精度到 $100M；占收入比为自算"),
         },
@@ -842,7 +842,17 @@ def build_payload(staging: dict) -> dict:
                 "本页不把它与现金资本开支相加，因为两者的现金路径不同。"
             ),
         },
+        other_income_chart,
     ]
+    # The depreciation chart says why it alone is short; how many of its
+    # neighbours do reach the record's first year is counted, not typed.
+    depreciation_chart = next(ex for ex in routine if ex["kind"] == "gs_bar")
+    reaching = [ex for ex in routine if ex is not depreciation_chart
+                and ex["xlabels"][0].endswith(f"'{quarters[0][2:4]}")]
+    depreciation_chart["note"] += (
+        f"<b>本节其余{cn_count(len(reaching))}张都拉到了 {quarters[0][:4]} 年，只有这张没有</b>："
+        f"{long['depreciation_note']}"
+    )
 
     exhibits = number_exhibits(settled_charts + highlights + next_charts + routine)
     first_table = len(exhibits) + 2
@@ -1110,7 +1120,8 @@ def build_payload(staging: dict) -> dict:
     sections.append({
         "id": "routine",
         "title": "四、长期常规跟踪",
-        "description": "MSFT 专属的常规序列：资本强度、利润率、折旧曲线，以及资本开支口径之外的融资租赁通道。",
+        "description": ("MSFT 专属的常规序列：资本强度、利润率、折旧曲线、资本开支口径之外的融资租赁通道，"
+                        "以及其他收入（净）的长期波幅。"),
         "exhibits": exhibits[-len(routine):],
     })
 
