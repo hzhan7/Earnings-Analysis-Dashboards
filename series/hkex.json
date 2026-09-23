@@ -2896,6 +2896,971 @@
   "adt_headline": "每一年的值在两份公告里各出现一次（当年全年公告的本期列、次年全年公告的比较列），逐年两两核对无差异。",
   "derivatives_not_published": "公司的衍生品与 LME 成交量年度序列在本窗口内发生过三次不同的口径变化：FY2018 把 LME 那一行从「ADV」改成「Chargeable ADV」（剔除管理性交易）并重述 2017 年比较值 624,480 → 601,067；FY2019 把单位从绝对手数改成千手；FY2021 又把算法从「总成交量 ÷ 总交易日」改成「各产品 ADV 之和」并重述全部比较值（FY2021 公告附注 4）。三代不是同一个数换了单位，因此本页不把它们接成一条年度线，也不发布该序列。"
  },
+ "segment_readings": {
+  "_basis": "港交所 2023 年起重组经营分部：交易与结算按资产类别合并管理，原结算分部（Post Trade）的收入与开支分回现货、股本证券及金融衍生产品、商品三个分部，香港的数据业务与原 Technology 分部的非周期业务合成「数据及连接」（2023 年第一季度业绩公告第 5 页）。因此商品分部从此包括 LME Clear 的结算收入与所分配的保证金投资收益。2022 年的四个时点只以比较列（as restated）出现在 2023 年的四份公告里；2022 年及以前发布的公告用的是旧口径，结算另成一个分部，数额不可比，不接。季度、中期与第三季公告只印累计期（三个月、六个月、九个月）的分部表，全年公告印十二个月，所以第二、三、四季由相邻两个累计期相减。每条读数的五个分部相加等于表中合计，由读数脚本逐列核过。",
+  "segments": {
+   "cash": "现货",
+   "equity_financial_derivatives": "股本证券及金融衍生产品",
+   "commodities": "商品",
+   "data_connectivity": "数据及连接",
+   "corporate_items": "集团项目"
+  },
+  "readings": [
+   {
+    "period": "2023Q1",
+    "doc": "2023_Q1",
+    "page": 5,
+    "column": "current",
+    "roi_less_txn": {
+     "cash": 2124,
+     "equity_financial_derivatives": 1817,
+     "commodities": 506,
+     "data_connectivity": 505,
+     "corporate_items": 560,
+     "group": 5512
+    },
+    "ebitda": {
+     "cash": 1853,
+     "equity_financial_derivatives": 1595,
+     "commodities": 215,
+     "data_connectivity": 397,
+     "corporate_items": 149,
+     "group": 4209
+    }
+   },
+   {
+    "period": "2022Q1",
+    "doc": "2023_Q1",
+    "page": 5,
+    "column": "prior-year comparative",
+    "roi_less_txn": {
+     "cash": 2369,
+     "equity_financial_derivatives": 1279,
+     "commodities": 589,
+     "data_connectivity": 485,
+     "corporate_items": -71,
+     "group": 4651
+    },
+    "ebitda": {
+     "cash": 2133,
+     "equity_financial_derivatives": 1053,
+     "commodities": 345,
+     "data_connectivity": 385,
+     "corporate_items": -443,
+     "group": 3473
+    }
+   },
+   {
+    "period": "2023H1",
+    "doc": "2023_H1",
+    "page": 8,
+    "column": "current",
+    "roi_less_txn": {
+     "cash": 4201,
+     "equity_financial_derivatives": 3364,
+     "commodities": 1039,
+     "data_connectivity": 1022,
+     "corporate_items": 855,
+     "group": 10481
+    },
+    "ebitda": {
+     "cash": 3649,
+     "equity_financial_derivatives": 2938,
+     "commodities": 448,
+     "data_connectivity": 809,
+     "corporate_items": 15,
+     "group": 7859
+    }
+   },
+   {
+    "period": "2022H1",
+    "doc": "2023_H1",
+    "page": 8,
+    "column": "prior-year comparative",
+    "roi_less_txn": {
+     "cash": 4696,
+     "equity_financial_derivatives": 2409,
+     "commodities": 1100,
+     "data_connectivity": 980,
+     "corporate_items": -335,
+     "group": 8850
+    },
+    "ebitda": {
+     "cash": 4191,
+     "equity_financial_derivatives": 1982,
+     "commodities": 585,
+     "data_connectivity": 766,
+     "corporate_items": -1130,
+     "group": 6394
+    }
+   },
+   {
+    "period": "20239M",
+    "doc": "2023_Q3",
+    "page": 6,
+    "column": "current",
+    "roi_less_txn": {
+     "cash": 6227,
+     "equity_financial_derivatives": 4875,
+     "commodities": 1598,
+     "data_connectivity": 1545,
+     "corporate_items": 1246,
+     "group": 15491
+    },
+    "ebitda": {
+     "cash": 5382,
+     "equity_financial_derivatives": 4240,
+     "commodities": 740,
+     "data_connectivity": 1224,
+     "corporate_items": -21,
+     "group": 11565
+    }
+   },
+   {
+    "period": "20229M",
+    "doc": "2023_Q3",
+    "page": 6,
+    "column": "prior-year comparative",
+    "roi_less_txn": {
+     "cash": 6797,
+     "equity_financial_derivatives": 3618,
+     "commodities": 1581,
+     "data_connectivity": 1467,
+     "corporate_items": -338,
+     "group": 13125
+    },
+    "ebitda": {
+     "cash": 6029,
+     "equity_financial_derivatives": 2984,
+     "commodities": 800,
+     "data_connectivity": 1151,
+     "corporate_items": -1586,
+     "group": 9378
+    }
+   },
+   {
+    "period": "2024Q1",
+    "doc": "2024_Q1",
+    "page": 5,
+    "column": "current",
+    "roi_less_txn": {
+     "cash": 1879,
+     "equity_financial_derivatives": 1489,
+     "commodities": 673,
+     "data_connectivity": 523,
+     "corporate_items": 552,
+     "group": 5116
+    },
+    "ebitda": {
+     "cash": 1582,
+     "equity_financial_derivatives": 1276,
+     "commodities": 363,
+     "data_connectivity": 420,
+     "corporate_items": 64,
+     "group": 3705
+    }
+   },
+   {
+    "period": "2023Q1",
+    "doc": "2024_Q1",
+    "page": 5,
+    "column": "prior-year comparative",
+    "roi_less_txn": {
+     "cash": 2124,
+     "equity_financial_derivatives": 1817,
+     "commodities": 506,
+     "data_connectivity": 505,
+     "corporate_items": 560,
+     "group": 5512
+    },
+    "ebitda": {
+     "cash": 1853,
+     "equity_financial_derivatives": 1595,
+     "commodities": 215,
+     "data_connectivity": 397,
+     "corporate_items": 149,
+     "group": 4209
+    }
+   },
+   {
+    "period": "2024H1",
+    "doc": "2024_H1",
+    "page": 10,
+    "column": "current",
+    "roi_less_txn": {
+     "cash": 4125,
+     "equity_financial_derivatives": 2937,
+     "commodities": 1405,
+     "data_connectivity": 1048,
+     "corporate_items": 940,
+     "group": 10455
+    },
+    "ebitda": {
+     "cash": 3505,
+     "equity_financial_derivatives": 2494,
+     "commodities": 816,
+     "data_connectivity": 840,
+     "corporate_items": 6,
+     "group": 7661
+    }
+   },
+   {
+    "period": "2023H1",
+    "doc": "2024_H1",
+    "page": 10,
+    "column": "prior-year comparative",
+    "roi_less_txn": {
+     "cash": 4201,
+     "equity_financial_derivatives": 3364,
+     "commodities": 1039,
+     "data_connectivity": 1022,
+     "corporate_items": 855,
+     "group": 10481
+    },
+    "ebitda": {
+     "cash": 3649,
+     "equity_financial_derivatives": 2938,
+     "commodities": 448,
+     "data_connectivity": 809,
+     "corporate_items": 15,
+     "group": 7859
+    }
+   },
+   {
+    "period": "20249M",
+    "doc": "2024_Q3",
+    "page": 7,
+    "column": "current",
+    "roi_less_txn": {
+     "cash": 6344,
+     "equity_financial_derivatives": 4277,
+     "commodities": 2099,
+     "data_connectivity": 1560,
+     "corporate_items": 1466,
+     "group": 15746
+    },
+    "ebitda": {
+     "cash": 5393,
+     "equity_financial_derivatives": 3611,
+     "commodities": 1189,
+     "data_connectivity": 1242,
+     "corporate_items": 152,
+     "group": 11587
+    }
+   },
+   {
+    "period": "20239M",
+    "doc": "2024_Q3",
+    "page": 7,
+    "column": "prior-year comparative",
+    "roi_less_txn": {
+     "cash": 6227,
+     "equity_financial_derivatives": 4875,
+     "commodities": 1598,
+     "data_connectivity": 1545,
+     "corporate_items": 1246,
+     "group": 15491
+    },
+    "ebitda": {
+     "cash": 5382,
+     "equity_financial_derivatives": 4240,
+     "commodities": 740,
+     "data_connectivity": 1224,
+     "corporate_items": -21,
+     "group": 11565
+    }
+   },
+   {
+    "period": "2025Q1",
+    "doc": "2025_Q1",
+    "page": 5,
+    "column": "current",
+    "roi_less_txn": {
+     "cash": 3297,
+     "equity_financial_derivatives": 1634,
+     "commodities": 746,
+     "data_connectivity": 546,
+     "corporate_items": 547,
+     "group": 6770
+    },
+    "ebitda": {
+     "cash": 2985,
+     "equity_financial_derivatives": 1403,
+     "commodities": 365,
+     "data_connectivity": 445,
+     "corporate_items": 56,
+     "group": 5254
+    }
+   },
+   {
+    "period": "2024Q1",
+    "doc": "2025_Q1",
+    "page": 5,
+    "column": "prior-year comparative",
+    "roi_less_txn": {
+     "cash": 1879,
+     "equity_financial_derivatives": 1489,
+     "commodities": 673,
+     "data_connectivity": 523,
+     "corporate_items": 552,
+     "group": 5116
+    },
+    "ebitda": {
+     "cash": 1582,
+     "equity_financial_derivatives": 1276,
+     "commodities": 363,
+     "data_connectivity": 420,
+     "corporate_items": 64,
+     "group": 3705
+    }
+   },
+   {
+    "period": "2025H1",
+    "doc": "2025_H1",
+    "page": 10,
+    "column": "current",
+    "roi_less_txn": {
+     "cash": 6693,
+     "equity_financial_derivatives": 3395,
+     "commodities": 1514,
+     "data_connectivity": 1104,
+     "corporate_items": 1206,
+     "group": 13912
+    },
+    "ebitda": {
+     "cash": 6063,
+     "equity_financial_derivatives": 2932,
+     "commodities": 797,
+     "data_connectivity": 895,
+     "corporate_items": 252,
+     "group": 10939
+    }
+   },
+   {
+    "period": "2024H1",
+    "doc": "2025_H1",
+    "page": 10,
+    "column": "prior-year comparative",
+    "roi_less_txn": {
+     "cash": 4125,
+     "equity_financial_derivatives": 2937,
+     "commodities": 1405,
+     "data_connectivity": 1048,
+     "corporate_items": 940,
+     "group": 10455
+    },
+    "ebitda": {
+     "cash": 3505,
+     "equity_financial_derivatives": 2494,
+     "commodities": 816,
+     "data_connectivity": 840,
+     "corporate_items": 6,
+     "group": 7661
+    }
+   },
+   {
+    "period": "20259M",
+    "doc": "2025_Q3",
+    "page": 7,
+    "column": "current",
+    "roi_less_txn": {
+     "cash": 11101,
+     "equity_financial_derivatives": 5070,
+     "commodities": 2275,
+     "data_connectivity": 1668,
+     "corporate_items": 1503,
+     "group": 21617
+    },
+    "ebitda": {
+     "cash": 10118,
+     "equity_financial_derivatives": 4339,
+     "commodities": 1255,
+     "data_connectivity": 1339,
+     "corporate_items": 113,
+     "group": 17164
+    }
+   },
+   {
+    "period": "20249M",
+    "doc": "2025_Q3",
+    "page": 7,
+    "column": "prior-year comparative",
+    "roi_less_txn": {
+     "cash": 6344,
+     "equity_financial_derivatives": 4277,
+     "commodities": 2099,
+     "data_connectivity": 1560,
+     "corporate_items": 1466,
+     "group": 15746
+    },
+    "ebitda": {
+     "cash": 5393,
+     "equity_financial_derivatives": 3611,
+     "commodities": 1189,
+     "data_connectivity": 1242,
+     "corporate_items": 152,
+     "group": 11587
+    }
+   },
+   {
+    "period": "2026Q1",
+    "doc": "2026_Q1",
+    "page": 5,
+    "column": "current",
+    "roi_less_txn": {
+     "cash": 4159,
+     "equity_financial_derivatives": 1811,
+     "commodities": 1039,
+     "data_connectivity": 599,
+     "corporate_items": 526,
+     "group": 8134
+    },
+    "ebitda": {
+     "cash": 3825,
+     "equity_financial_derivatives": 1548,
+     "commodities": 747,
+     "data_connectivity": 491,
+     "corporate_items": -19,
+     "group": 6592
+    }
+   },
+   {
+    "period": "2025Q1",
+    "doc": "2026_Q1",
+    "page": 5,
+    "column": "prior-year comparative",
+    "roi_less_txn": {
+     "cash": 3297,
+     "equity_financial_derivatives": 1634,
+     "commodities": 746,
+     "data_connectivity": 546,
+     "corporate_items": 547,
+     "group": 6770
+    },
+    "ebitda": {
+     "cash": 2985,
+     "equity_financial_derivatives": 1403,
+     "commodities": 365,
+     "data_connectivity": 445,
+     "corporate_items": 56,
+     "group": 5254
+    }
+   },
+   {
+    "period": "2026H1",
+    "doc": "2026_H1",
+    "page": 10,
+    "column": "current",
+    "roi_less_txn": {
+     "cash": 8838,
+     "equity_financial_derivatives": 3298,
+     "commodities": 1992,
+     "data_connectivity": 1199,
+     "corporate_items": 1239,
+     "group": 16566
+    },
+    "ebitda": {
+     "cash": 8141,
+     "equity_financial_derivatives": 2758,
+     "commodities": 1364,
+     "data_connectivity": 978,
+     "corporate_items": 170,
+     "group": 13411
+    }
+   },
+   {
+    "period": "2025H1",
+    "doc": "2026_H1",
+    "page": 10,
+    "column": "prior-year comparative",
+    "roi_less_txn": {
+     "cash": 6693,
+     "equity_financial_derivatives": 3395,
+     "commodities": 1514,
+     "data_connectivity": 1104,
+     "corporate_items": 1206,
+     "group": 13912
+    },
+    "ebitda": {
+     "cash": 6063,
+     "equity_financial_derivatives": 2932,
+     "commodities": 797,
+     "data_connectivity": 895,
+     "corporate_items": 252,
+     "group": 10939
+    }
+   },
+   {
+    "period": "2023FY",
+    "doc": "2023_FY",
+    "page": 47,
+    "column": "current",
+    "roi_less_txn": {
+     "cash": 8154,
+     "equity_financial_derivatives": 6265,
+     "commodities": 2188,
+     "data_connectivity": 2073,
+     "corporate_items": 1589,
+     "group": 20269
+    },
+    "ebitda": {
+     "cash": 7027,
+     "equity_financial_derivatives": 5403,
+     "commodities": 980,
+     "data_connectivity": 1635,
+     "corporate_items": -217,
+     "group": 14828
+    }
+   },
+   {
+    "period": "2022FY",
+    "doc": "2023_FY",
+    "page": 47,
+    "column": "as restated",
+    "roi_less_txn": {
+     "cash": 9023,
+     "equity_financial_derivatives": 5114,
+     "commodities": 2051,
+     "data_connectivity": 1998,
+     "corporate_items": 94,
+     "group": 18280
+    },
+    "ebitda": {
+     "cash": 7996,
+     "equity_financial_derivatives": 4243,
+     "commodities": 958,
+     "data_connectivity": 1551,
+     "corporate_items": -1563,
+     "group": 13185
+    }
+   },
+   {
+    "period": "2024FY",
+    "doc": "2024_FY",
+    "page": 52,
+    "column": "current",
+    "roi_less_txn": {
+     "cash": 9413,
+     "equity_financial_derivatives": 5881,
+     "commodities": 2788,
+     "data_connectivity": 2126,
+     "corporate_items": 1834,
+     "group": 22042
+    },
+    "ebitda": {
+     "cash": 8169,
+     "equity_financial_derivatives": 4990,
+     "commodities": 1574,
+     "data_connectivity": 1692,
+     "corporate_items": -144,
+     "group": 16281
+    }
+   },
+   {
+    "period": "2023FY",
+    "doc": "2024_FY",
+    "page": 52,
+    "column": "prior-year comparative",
+    "roi_less_txn": {
+     "cash": 8154,
+     "equity_financial_derivatives": 6265,
+     "commodities": 2188,
+     "data_connectivity": 2073,
+     "corporate_items": 1589,
+     "group": 20269
+    },
+    "ebitda": {
+     "cash": 7027,
+     "equity_financial_derivatives": 5403,
+     "commodities": 980,
+     "data_connectivity": 1635,
+     "corporate_items": -217,
+     "group": 14828
+    }
+   },
+   {
+    "period": "2025FY",
+    "doc": "2025_FY",
+    "page": 53,
+    "column": "current",
+    "roi_less_txn": {
+     "cash": 14693,
+     "equity_financial_derivatives": 6577,
+     "commodities": 3171,
+     "data_connectivity": 2270,
+     "corporate_items": 2153,
+     "group": 28864
+    },
+    "ebitda": {
+     "cash": 13398,
+     "equity_financial_derivatives": 5597,
+     "commodities": 1822,
+     "data_connectivity": 1834,
+     "corporate_items": 145,
+     "group": 22796
+    }
+   },
+   {
+    "period": "2024FY",
+    "doc": "2025_FY",
+    "page": 53,
+    "column": "prior-year comparative",
+    "roi_less_txn": {
+     "cash": 9413,
+     "equity_financial_derivatives": 5881,
+     "commodities": 2788,
+     "data_connectivity": 2126,
+     "corporate_items": 1834,
+     "group": 22042
+    },
+    "ebitda": {
+     "cash": 8169,
+     "equity_financial_derivatives": 4990,
+     "commodities": 1574,
+     "data_connectivity": 1692,
+     "corporate_items": -144,
+     "group": 16281
+    }
+   }
+  ]
+ },
+ "unlisted_equity": {
+  "_note": "Corporate Funds 净投资收益分析表的「Equity securities」一行，脚注写明是对未上市公司的少数股权投资（Investments in minority stakes of unlisted companies）；公司正文称之为未上市股权投资的估值收益或损失（non-recurring gains / losses on valuation）。这一行带着这个脚注从 2021 年全年业绩公告起出现（2020 年比较列为「-」）；2021 年三个季度时点取自 2022 年三份公告的比较列。2016–2017 年的表里也有一行「Equity securities」（2018 年为零，2019–2020 年的表里没有这一行），当年没有这个脚注、所含投资没有说明，本页不把两代接在一起。季度、中期与第三季公告只印累计期，第二、三、四季为相减所得；2023 年第三季度业绩公告另印了两年的三个月列，全年公告正文另以文字印出若干单季数，列在 prose_quarters 里对照。",
+  "readings": [
+   {
+    "period": "2021FY",
+    "value": 121,
+    "doc": "2021_FY",
+    "page": 33,
+    "column": "current"
+   },
+   {
+    "period": "2020FY",
+    "value": 0,
+    "doc": "2021_FY",
+    "page": 33,
+    "column": "prior-year comparative"
+   },
+   {
+    "period": "2022Q1",
+    "value": 2,
+    "doc": "2022_Q1",
+    "page": 15,
+    "column": "current"
+   },
+   {
+    "period": "2021Q1",
+    "value": 0,
+    "doc": "2022_Q1",
+    "page": 15,
+    "column": "prior-year comparative"
+   },
+   {
+    "period": "2022H1",
+    "value": -12,
+    "doc": "2022_H1",
+    "page": 18,
+    "column": "current"
+   },
+   {
+    "period": "2021H1",
+    "value": 4,
+    "doc": "2022_H1",
+    "page": 18,
+    "column": "prior-year comparative"
+   },
+   {
+    "period": "20229M",
+    "value": -26,
+    "doc": "2022_Q3",
+    "page": 15,
+    "column": "current"
+   },
+   {
+    "period": "20219M",
+    "value": 5,
+    "doc": "2022_Q3",
+    "page": 15,
+    "column": "prior-year comparative"
+   },
+   {
+    "period": "2022FY",
+    "value": -21,
+    "doc": "2022_FY",
+    "page": 35,
+    "column": "current"
+   },
+   {
+    "period": "2021FY",
+    "value": 121,
+    "doc": "2022_FY",
+    "page": 35,
+    "column": "prior-year comparative"
+   },
+   {
+    "period": "2023Q1",
+    "value": 3,
+    "doc": "2023_Q1",
+    "page": 14,
+    "column": "current"
+   },
+   {
+    "period": "2022Q1",
+    "value": 2,
+    "doc": "2023_Q1",
+    "page": 14,
+    "column": "prior-year comparative"
+   },
+   {
+    "period": "2023H1",
+    "value": -11,
+    "doc": "2023_H1",
+    "page": 18,
+    "column": "current"
+   },
+   {
+    "period": "2022H1",
+    "value": -12,
+    "doc": "2023_H1",
+    "page": 18,
+    "column": "prior-year comparative"
+   },
+   {
+    "period": "20239M",
+    "value": -11,
+    "doc": "2023_Q3",
+    "page": 15,
+    "column": "current"
+   },
+   {
+    "period": "20229M",
+    "value": -26,
+    "doc": "2023_Q3",
+    "page": 15,
+    "column": "prior-year comparative"
+   },
+   {
+    "period": "2023Q3",
+    "value": 0,
+    "doc": "2023_Q3",
+    "page": 15,
+    "column": "three months current"
+   },
+   {
+    "period": "2022Q3",
+    "value": -14,
+    "doc": "2023_Q3",
+    "page": 15,
+    "column": "three months prior-year"
+   },
+   {
+    "period": "2023FY",
+    "value": -253,
+    "doc": "2023_FY",
+    "page": 32,
+    "column": "current"
+   },
+   {
+    "period": "2022FY",
+    "value": -21,
+    "doc": "2023_FY",
+    "page": 32,
+    "column": "prior-year comparative"
+   },
+   {
+    "period": "2024Q1",
+    "value": -4,
+    "doc": "2024_Q1",
+    "page": 13,
+    "column": "current"
+   },
+   {
+    "period": "2023Q1",
+    "value": 3,
+    "doc": "2024_Q1",
+    "page": 13,
+    "column": "prior-year comparative"
+   },
+   {
+    "period": "2024H1",
+    "value": -32,
+    "doc": "2024_H1",
+    "page": 20,
+    "column": "current"
+   },
+   {
+    "period": "2023H1",
+    "value": -11,
+    "doc": "2024_H1",
+    "page": 20,
+    "column": "prior-year comparative"
+   },
+   {
+    "period": "20249M",
+    "value": -24,
+    "doc": "2024_Q3",
+    "page": 18,
+    "column": "current"
+   },
+   {
+    "period": "20239M",
+    "value": -11,
+    "doc": "2024_Q3",
+    "page": 18,
+    "column": "prior-year comparative"
+   },
+   {
+    "period": "2024FY",
+    "value": -62,
+    "doc": "2024_FY",
+    "page": 36,
+    "column": "current"
+   },
+   {
+    "period": "2023FY",
+    "value": -253,
+    "doc": "2024_FY",
+    "page": 36,
+    "column": "prior-year comparative"
+   },
+   {
+    "period": "2025Q1",
+    "value": 3,
+    "doc": "2025_Q1",
+    "page": 16,
+    "column": "current"
+   },
+   {
+    "period": "2024Q1",
+    "value": -4,
+    "doc": "2025_Q1",
+    "page": 16,
+    "column": "prior-year comparative"
+   },
+   {
+    "period": "2025H1",
+    "value": 5,
+    "doc": "2025_H1",
+    "page": 20,
+    "column": "current"
+   },
+   {
+    "period": "2024H1",
+    "value": -32,
+    "doc": "2025_H1",
+    "page": 20,
+    "column": "prior-year comparative"
+   },
+   {
+    "period": "20259M",
+    "value": 4,
+    "doc": "2025_Q3",
+    "page": 18,
+    "column": "current"
+   },
+   {
+    "period": "20249M",
+    "value": -24,
+    "doc": "2025_Q3",
+    "page": 18,
+    "column": "prior-year comparative"
+   },
+   {
+    "period": "2025FY",
+    "value": 167,
+    "doc": "2025_FY",
+    "page": 36,
+    "column": "current"
+   },
+   {
+    "period": "2024FY",
+    "value": -62,
+    "doc": "2025_FY",
+    "page": 36,
+    "column": "prior-year comparative"
+   },
+   {
+    "period": "2026Q1",
+    "value": 8,
+    "doc": "2026_Q1",
+    "page": 14,
+    "column": "current"
+   },
+   {
+    "period": "2025Q1",
+    "value": 3,
+    "doc": "2026_Q1",
+    "page": 14,
+    "column": "prior-year comparative"
+   },
+   {
+    "period": "2026H1",
+    "value": 298,
+    "doc": "2026_H1",
+    "page": 23,
+    "column": "current"
+   },
+   {
+    "period": "2025H1",
+    "value": 5,
+    "doc": "2026_H1",
+    "page": 23,
+    "column": "prior-year comparative"
+   }
+  ],
+  "prose_quarters": [
+   {
+    "quarter": "2023Q4",
+    "value": -242,
+    "doc": "2024_FY",
+    "page": 5,
+    "text": "lower losses on valuation of the Group’s unlisted equity investments (Q4 2024: $38 million; Q4 2023: $242 million)"
+   },
+   {
+    "quarter": "2024Q4",
+    "value": -38,
+    "doc": "2024_FY",
+    "page": 5,
+    "text": "(Q4 2024: $38 million; Q4 2023: $242 million)"
+   },
+   {
+    "quarter": "2024Q3",
+    "value": 8,
+    "doc": "2024_FY",
+    "page": 6,
+    "text": "(Q4 2024: losses of $38 million; Q3 2024: gains of $8 million)"
+   },
+   {
+    "quarter": "2025Q4",
+    "value": 163,
+    "doc": "2025_FY",
+    "page": 5,
+    "text": "non-recurring gains on valuation of the Group’s unlisted equity investments of $163 million (Q4 2024: losses of $38 million)"
+   },
+   {
+    "quarter": "2025Q3",
+    "value": -1,
+    "doc": "2025_FY",
+    "page": 6,
+    "text": "gains ... of $163 million (Q3 2025: losses of $1 million)"
+   },
+   {
+    "quarter": "2026Q2",
+    "value": 290,
+    "doc": "2026_H1",
+    "page": 4,
+    "text": "non-recurring gains on valuation of the Group’s unlisted equity investments of $290 million"
+   },
+   {
+    "quarter": "2023Q4",
+    "value": -246,
+    "doc": "2023_FY",
+    "page": 4,
+    "text": "non-recurring losses on valuation of the Group’s unlisted equity investments of $246 million",
+    "differs": "同一季度，一年后的 2024 年全年公告正文印的是 $242 million，与表里相减所得一致；2023 年全年公告与 2024 年第一季度公告正文印的是 $246 million。本页用表里的一行，差额 4 不影响任何阈值判断。"
+   }
+  ]
+ },
  "announcements": [
   {
    "doc": "2016_FY",
@@ -3147,6 +4112,180 @@
   "identities": 648,
   "source": "解析 42 份业绩公告的简明综合损益表时逐份跑的报表自身算术闸门（六项费用相加等于收入、加其他收入等于收入及其他收益、EBITDA 减折旧摊销等于经营溢利、除税前溢利减税项等于期内溢利、股东应占加非控股权益等于期内溢利等），9f34235 接入时记下；增加一份公告就要重跑并同时改 documents 与 identities。"
  },
+ "prior_kpi_settlement": {
+  "period": "Q2 2026",
+  "set_in": "Q1 2026",
+  "source": "上季分析稿（2026-05-01 HKEX Q1 2026 vs Q4 2025 Analysis）第 8 节「关键观察指标」5 个指标；判定对照本季分析稿（2026-08-19 HKEX Q2 2026 vs Q1 2026 Analysis）第 8 节「上季指标校准」。",
+  "indicators": [
+   {
+    "n": 1,
+    "name": "现货日均成交额 + 北向日均成交额",
+    "words": "Q2/Q3 ADT ≥ 上季 90% + Northbound ADT 维持 = 加仓；Q2 ADT < 上季 70% + Northbound 转弱 = 跟踪",
+    "report_verdict": "加仓",
+    "verdict_kind": "bull"
+   },
+   {
+    "n": 2,
+    "name": "Stock Connect 收入占集团收入",
+    "words": "连续 2 季 ≥ 18% = 加仓；回落到 < 15% = 警示",
+    "report_verdict": "未触发",
+    "verdict_kind": "none"
+   },
+   {
+    "n": 3,
+    "name": "IPO 募资金额 + 新上市公司数",
+    "words": "Q2/Q3 单季 IPO 募资 ≥ HK$400 亿 + 新上市 ≥ 30 家 = 多元化里程碑；< HK$200 亿 或上市 < 15 家 = 跟踪",
+    "report_verdict": "多元化里程碑",
+    "verdict_kind": "bull"
+   },
+   {
+    "n": 4,
+    "name": "LME 商品分部 EBITDA 与利润率",
+    "words": "连续 2 季 margin ≥ 70% + 收入 ≥ HK$1,000m = 加仓；任一季 margin < 65% 或出现 LMEselect 重大故障 = 警示",
+    "report_verdict": "警示",
+    "verdict_kind": "risk"
+   },
+   {
+    "n": 5,
+    "name": "未上市股权 / 投资组合一次性 mark-to-market 项",
+    "words": "连续 2 季无此类一次性项 = 跟踪；任一季出现 > HK$200m 一次性收益/损失 = 重新评估",
+    "report_verdict": "重新评估",
+    "verdict_kind": "risk"
+   }
+  ],
+  "quantified": [
+   {
+    "id": "adt_vs_prior",
+    "indicator": 1,
+    "metric": "现货日均成交额 ÷ 上季",
+    "unit": "pct",
+    "direction": "up",
+    "threshold": 70.0,
+    "bull_threshold": 90.0
+   },
+   {
+    "id": "connect_share",
+    "indicator": 2,
+    "metric": "Stock Connect 收入占收入及其他收益",
+    "unit": "pct",
+    "direction": "up",
+    "threshold": 15.0,
+    "bull_threshold": 18.0,
+    "bull_quarters": 2
+   },
+   {
+    "id": "ipo_funds",
+    "indicator": 3,
+    "metric": "单季 IPO 募资额",
+    "unit": "hkd_bn",
+    "direction": "up",
+    "threshold": 20.0,
+    "bull_threshold": 40.0
+   },
+   {
+    "id": "ipo_listings",
+    "indicator": 3,
+    "metric": "单季新上市公司数",
+    "unit": "count",
+    "direction": "up",
+    "threshold": 15.0,
+    "bull_threshold": 30.0
+   },
+   {
+    "id": "commodities_margin",
+    "indicator": 4,
+    "metric": "商品分部 EBITDA 利润率",
+    "unit": "pct",
+    "direction": "up",
+    "threshold": 65.0,
+    "bull_threshold": 70.0,
+    "bull_quarters": 2
+   },
+   {
+    "id": "commodities_revenue",
+    "indicator": 4,
+    "metric": "商品分部收入",
+    "unit": "hkd_m",
+    "direction": "up",
+    "bull_threshold": 1000.0,
+    "bull_quarters": 2
+   },
+   {
+    "id": "unlisted_equity",
+    "indicator": 5,
+    "metric": "未上市股权估值收益 / 损失（绝对值）",
+    "unit": "hkd_m",
+    "direction": "down",
+    "threshold": 200.0
+   }
+  ],
+  "readings": {
+   "connect_revenue_hkd_m": [
+    {
+     "period": "2026Q1",
+     "value": 1355,
+     "doc": "2026_Q1",
+     "page": 7,
+     "text": "revenue and other income from Stock Connect grew 44 per cent to $1,355 million"
+    },
+    {
+     "period": "2026H1",
+     "value": 2851,
+     "doc": "2026_H1",
+     "page": 12,
+     "text": "revenue and other income from Stock Connect increased by 57 per cent to a record half-yearly high of $2,851 million"
+    }
+   ],
+   "ipo_funds_hkd_bn": [
+    {
+     "period": "2026Q1",
+     "value": 110.4,
+     "doc": "2026_Q1",
+     "page": 7,
+     "text": "Total equity funds raised - IPOs ($bn) 110.4"
+    },
+    {
+     "period": "2026H1",
+     "value": 212.4,
+     "doc": "2026_H1",
+     "page": 12,
+     "text": "Total equity funds raised - IPOs ($bn) 212.4"
+    }
+   ],
+   "newly_listed": [
+    {
+     "period": "2026Q1",
+     "main_board": 39,
+     "gem": 1,
+     "doc": "2026_Q1",
+     "page": 7,
+     "text": "Number of newly listed companies on the Main Board 39 / on GEM 1（脚注：本季无 GEM 转主板）"
+    },
+    {
+     "period": "2026H1",
+     "main_board": 86,
+     "gem": 1,
+     "doc": "2026_H1",
+     "page": 12,
+     "text": "Number of newly listed companies on the Main Board 86 / on GEM 1（脚注：含 2 家由 GEM 转主板）"
+    }
+   ]
+  },
+  "qualitative": [
+   {
+    "indicator": 1,
+    "text": "「北向维持 / 转弱」没有写成数字，本页不替它设阈值，只在现货日均成交额那张走势图的图注里列出北向的两季读数。"
+   },
+   {
+    "indicator": 4,
+    "text": "「或出现 LMEselect 重大故障」是事件，不是数：2026 年中期业绩公告第 22 页写明，3 月 16 日那次短暂中断之后，第二季 LMEselect 运行时间为 100%。"
+   },
+   {
+    "indicator": 5,
+    "text": "「连续 2 季无此类一次性项 = 跟踪」本季不适用：第二季出现了一笔。"
+   }
+  ]
+ },
  "next_kpi": {
   "period": "Q2 2026",
   "quantified": [
@@ -3254,6 +4393,10 @@
   {
    "label": "HKEX 2026 年中期业绩公告（2026-08-19，hkexnews）",
    "url": "https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0819/2026081900213.pdf"
+  },
+  {
+   "label": "HKEX 2026 年中期简明综合财务报表（2026-08-19，hkexnews；第 33 页未上市股权的第三层级估值附注）",
+   "url": "https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0819/2026081900464.pdf"
   },
   {
    "label": "HKEX 2026 年第一季度业绩公告（2026-04-29）",
@@ -5709,6 +6852,273 @@
    ]
   },
   "source": "HKEX 2026 年中期业绩公告（hkexnews 2026081900213.pdf，2026-08-19）：封面「2026 INTERIM RESULTS」；第 3 页 1H 摘要；第 4 页「Comparison of Q2 2026 with Q2 2025 Results」—— 「Q2 2026 revenue and other income, and profit, both reached record quarterly highs」、「$8,499 million was 18 per cent higher」、「EBITDA margin stood at 81 per cent」、「Profit attributable to shareholders of $5,380 million was 21 per cent above」，Key Financials 三个月两栏（8,499 / 7,219，1,613 / 1,457，6,819 / 5,685，5,380 / 4,442）与 Key Market Statistics 三个月两栏（289.54 即 289.5 加纪录上标 4 …）；第 32 页 CONDENSED CONSOLIDATED INCOME STATEMENT 六个月两栏（Trading fees 5,991 / 4,906 … Profit attributable 10,568 / 8,519）。",
-  "checked_on": "2026-09-19"
+  "checked_on": "2026-09-19",
+  "note": {
+   "source": {
+    "this_quarter": "5.Earnings Analysis/HKEX/2026-08-19 HKEX Q2 2026 vs Q1 2026 Analysis.md",
+    "prior_quarter": "5.Earnings Analysis/HKEX/2026-05-01 HKEX Q1 2026 vs Q4 2025 Analysis.md",
+    "sections": "本季稿第 0 节「上季遗留问题回答」（6 条逐条判定）；本季稿第 8 节「上季指标校准」（上季 5 个指标的判定）与「本季指标表」（下季 5 个指标）；上季稿第 8 节「关键观察指标」（上季 5 个指标的阈值原文）。"
+   },
+   "checked_on": "2026-09-23",
+   "followup_closure": {
+    "total": 6,
+    "counts": {
+     "已验证": 4,
+     "被证伪": 0,
+     "仍未披露": 2
+    },
+    "open": [
+     4,
+     6
+    ],
+    "worse_than_prior": [
+     3
+    ]
+   },
+   "prior_thresholds": [
+    {
+     "indicator": 1,
+     "metric": "HK 现货 ADT + Northbound ADT",
+     "role": "bull",
+     "threshold": 90.0,
+     "direction": "up",
+     "unit": "上季的 %",
+     "text": "Q2/Q3 ADT ≥ 上季 90% + Northbound ADT 维持 = 加仓"
+    },
+    {
+     "indicator": 1,
+     "metric": "HK 现货 ADT + Northbound ADT",
+     "role": "risk",
+     "threshold": 70.0,
+     "direction": "up",
+     "unit": "上季的 %",
+     "text": "Q2 ADT < 上季 70% + Northbound 转弱 = 跟踪"
+    },
+    {
+     "indicator": 2,
+     "metric": "Stock Connect 收入占 group revenue",
+     "role": "bull",
+     "threshold": 18.0,
+     "direction": "up",
+     "unit": "%",
+     "quarters": 2,
+     "text": "连续 2 季 ≥ 18% = 加仓"
+    },
+    {
+     "indicator": 2,
+     "metric": "Stock Connect 收入占 group revenue",
+     "role": "risk",
+     "threshold": 15.0,
+     "direction": "up",
+     "unit": "%",
+     "text": "回落到 < 15% = 警示"
+    },
+    {
+     "indicator": 3,
+     "metric": "单季 IPO 募资",
+     "role": "bull",
+     "threshold": 40.0,
+     "direction": "up",
+     "unit": "HK$bn",
+     "text": "Q2/Q3 单季 IPO 募资 ≥ HK$400 亿 + 新上市 ≥ 30 家 = 多元化里程碑"
+    },
+    {
+     "indicator": 3,
+     "metric": "单季 IPO 募资",
+     "role": "risk",
+     "threshold": 20.0,
+     "direction": "up",
+     "unit": "HK$bn",
+     "text": "< HK$200 亿 或上市 < 15 家 = 跟踪"
+    },
+    {
+     "indicator": 3,
+     "metric": "新上市公司数",
+     "role": "bull",
+     "threshold": 30.0,
+     "direction": "up",
+     "unit": "家",
+     "text": "新上市 ≥ 30 家"
+    },
+    {
+     "indicator": 3,
+     "metric": "新上市公司数",
+     "role": "risk",
+     "threshold": 15.0,
+     "direction": "up",
+     "unit": "家",
+     "text": "上市 < 15 家"
+    },
+    {
+     "indicator": 4,
+     "metric": "Commodities EBITDA margin",
+     "role": "bull",
+     "threshold": 70.0,
+     "direction": "up",
+     "unit": "%",
+     "quarters": 2,
+     "text": "连续 2 季 margin ≥ 70% + 收入 ≥ HK$1,000m = 加仓"
+    },
+    {
+     "indicator": 4,
+     "metric": "Commodities 收入",
+     "role": "bull",
+     "threshold": 1000.0,
+     "direction": "up",
+     "unit": "HK$m",
+     "quarters": 2,
+     "text": "收入 ≥ HK$1,000m（与 margin 同一条加仓线）"
+    },
+    {
+     "indicator": 4,
+     "metric": "Commodities EBITDA margin",
+     "role": "risk",
+     "threshold": 65.0,
+     "direction": "up",
+     "unit": "%",
+     "text": "任一季 margin < 65% 或出现 LMEselect 重大故障 = 警示"
+    },
+    {
+     "indicator": 5,
+     "metric": "未上市股权 / 一次性 mark-to-market",
+     "role": "risk",
+     "threshold": 200.0,
+     "direction": "down",
+     "unit": "HK$m（绝对值）",
+     "text": "任一季出现 > HK$200m 一次性收益/损失 = 重新评估"
+    }
+   ],
+   "prior_verdicts": {
+    "1": "加仓",
+    "2": "未触发",
+    "3": "多元化里程碑",
+    "4": "警示",
+    "5": "重新评估"
+   },
+   "next_thresholds": [
+    {
+     "indicator": 1,
+     "metric": "月度 Headline ADT（9 月）",
+     "role": "bull",
+     "threshold": 310.0,
+     "direction": "up",
+     "unit": "HK$bn",
+     "text": "9 月 ≥ HK$310b = 见顶判断被推翻 → 加仓"
+    },
+    {
+     "indicator": 1,
+     "metric": "Headline ADT（Q3 季均）",
+     "role": "risk",
+     "threshold": 265.0,
+     "direction": "up",
+     "unit": "HK$bn",
+     "text": "Q3 季均 < HK$265b = 本轮周期首次 ADT 同比下滑 → 减仓"
+    },
+    {
+     "indicator": 2,
+     "metric": "未上市股权（Level 3）重估（Q3）",
+     "role": "risk",
+     "threshold": 100.0,
+     "direction": "down",
+     "unit": "HK$m",
+     "text": "Q3 出现 > HK$100m = 「半年一估」判断被证伪 → 重新评估"
+    },
+    {
+     "indicator": 2,
+     "metric": "未上市股权重估（全年累计）",
+     "role": "track",
+     "threshold": 350.0,
+     "direction": "down",
+     "unit": "HK$m",
+     "text": "Q3 为零且全年累计 < HK$350m = 符合预期 → 跟踪"
+    },
+    {
+     "indicator": 2,
+     "metric": "未上市股权重估（年报负向）",
+     "role": "warn",
+     "threshold": 150.0,
+     "direction": "down",
+     "unit": "HK$m",
+     "text": "年报出现负向重估 > HK$150m = 对称风险兑现 → 警示"
+    },
+    {
+     "indicator": 3,
+     "metric": "Margin + Clearing House Fund 年化净投资回报率",
+     "role": "risk",
+     "threshold": 1.0,
+     "direction": "up",
+     "unit": "%",
+     "text": "2H 2026 仍 < 1.0% 且平均规模未缩水 = 结构性让利确认 → 警示"
+    },
+    {
+     "indicator": 3,
+     "metric": "Margin + Clearing House Fund 年化净投资回报率",
+     "role": "bull",
+     "threshold": 1.3,
+     "direction": "up",
+     "unit": "%",
+     "text": "回升至 > 1.3% = 让利为阶段性 → upside"
+    },
+    {
+     "indicator": 4,
+     "metric": "LME chargeable ADV",
+     "role": "bull",
+     "threshold": 850.0,
+     "direction": "up",
+     "unit": "千手",
+     "text": "Q3 ADV ≥ 850k 且 margin ≥ 70% = 加仓"
+    },
+    {
+     "indicator": 4,
+     "metric": "LME chargeable ADV",
+     "role": "risk",
+     "threshold": 750.0,
+     "direction": "up",
+     "unit": "千手",
+     "text": "ADV < 750k 或 margin < 62% = 减仓"
+    },
+    {
+     "indicator": 4,
+     "metric": "Commodities EBITDA margin",
+     "role": "bull",
+     "threshold": 70.0,
+     "direction": "up",
+     "unit": "%",
+     "text": "margin ≥ 70%（与 ADV ≥ 850k 同一条加仓线）"
+    },
+    {
+     "indicator": 4,
+     "metric": "Commodities EBITDA margin",
+     "role": "risk",
+     "threshold": 62.0,
+     "direction": "up",
+     "unit": "%",
+     "text": "margin < 62%（与 ADV < 750k 同一条减仓线）"
+    },
+    {
+     "indicator": 5,
+     "metric": "IPO 有效在审申请数",
+     "role": "risk",
+     "threshold": 300.0,
+     "direction": "up",
+     "unit": "家",
+     "text": "下次披露 < 300 家 = 警示"
+    },
+    {
+     "indicator": 5,
+     "metric": "IPO 有效在审申请数",
+     "role": "bull",
+     "threshold": 400.0,
+     "direction": "up",
+     "unit": "家",
+     "text": "≥ 400 家 = 多元化里程碑"
+    }
+   ],
+   "report_errors_found": [
+    "本季稿第 8 节指标 5 与第 2 节 B 表称有效在审 IPO 申请数「H1 2026 未披露」「Q1 亦未披露」，以 FY2025 的 345 家为当前值：2026 年第一季度业绩公告第 8 页印有「reaching 431 as at 31 March 2026」。中期公告与中期演示稿确实没有印。",
+    "本季稿第 8 节指标 3 称 Margin + Clearing House Fund 年化净投资回报率「半年披露一次」：2026 年第一季度业绩公告第 16 页印有第一季的同一张表（合计 1.11%），第三季公告亦印前九个月。",
+    "本季稿洞察 2 计算换手强度时，南向 ADT 除以 2（「含买卖双边」）而北向没有；公告的同一个脚注（Includes buy and sell trades under Stock Connect）同时标在北向与南向两行上。"
+   ]
+  }
  }
 }

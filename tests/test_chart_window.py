@@ -868,6 +868,21 @@ CONVERTED = {
         "越往损益表下面走": "same disclosure limit, the pass-through version of the same series.",
         "三条量：期货": "same disclosure limit, volumes rather than value.",
         "互联互通：北向日均": "same disclosure limit, Connect volumes.",
+        # Section one's settlement of last quarter's thresholds (2026-09 four-section pass).
+        "现货日均成交额为上季的": "same disclosure limit as the quarterly market statistics above; a "
+                          "quarter-on-quarter ratio also needs the quarter before, so it starts "
+                          "one quarter after the first printed three-month table (2021Q1).",
+        "商品分部 EBITDA 利润率：": "the commodities segment on its current basis (LME plus LME Clear and "
+                          "the margin-fund income allocated to it) exists from 2022 only: HKEX "
+                          "reorganised its segments in 2023 and restated just the 2022 comparatives. "
+                          "The 2022 Q1 announcement, read, prints Commodities Q1 2022 at HK$376M on the "
+                          "old basis (clearing a segment of its own); the 2023 Q1 announcement "
+                          "reprints the same quarter at HK$589M. Every earlier quarter is old-basis only.",
+        "未上市股权估值收益：": "the Corporate Funds line footnoted 'investments in minority stakes of "
+                       "unlisted companies' first appears in the FY2021 announcement, with FY2020 "
+                       "printed as nil; the 2021 Q1, interim and Q3 announcements, read, carry no "
+                       "such line, and the 2016-2017 'Equity securities' row has no such footnote "
+                       "and is not spliced on.",
     },
     "ker": {
         # Read against every 2016-2024 revenue table on this page's corpus (both
@@ -1011,6 +1026,9 @@ FLOOR_KIND = {
         '越往损益表下面走': 'disclosure',
         '三条量：期货': 'disclosure',
         '互联互通：北向日均': 'disclosure',
+        '现货日均成交额为上季的': 'disclosure',
+        '商品分部 EBITDA 利润率：': 'disclosure',
+        '未上市股权估值收益：': 'disclosure',
     },
     'avgo': {
         '把「超出自身指引」拆成两条腿': 'coverage',
@@ -1391,7 +1409,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 160)
+        self.assertEqual(settled.count("disclosure"), 163)
         self.assertEqual(settled.count("design"), 40)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
@@ -1642,7 +1660,7 @@ UNEXPLAINED_LONG = {
 # ("42 季里 39 季为正" licenses the 39) is not listed; the anchor is checked
 # exhibit-wide, not field by field, because a title routinely anchors its note.
 UNDERIVABLE_QUARTER_COUNTS = {
-    "hkex Ex7": ([13], "这张图（第四板块的「收入怎么拆开的」）的 x 轴"
+    "hkex Ex12": ([13], "这张图（第四板块的「收入怎么拆开的」）的 x 轴"
                        "是 29 个「收入分项被公司印过」的季度；13 是它在 42 季"
                        "窗口里的补集，而 42 是别的图的轴长、不是这张图的任何属性 —— 这张图"
                        "自己没有任何地方声明窗口有多长。那 13 个季度本身在本页每一张 42 季图"

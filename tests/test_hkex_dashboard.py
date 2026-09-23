@@ -814,13 +814,16 @@ SECTIONS = [("settled", "一、上季跟踪指标兑现了吗"),
             ("next_quarter", "三、下季要跟踪什么"),
             ("routine", "四、长期常规跟踪")]
 
-# The owner's Q2 2026 analysis, section 0 ("上季遗留问题回答"): six follow-up
-# questions left by the Q1 2026 analysis, each given a verdict. These are the
-# report's facts, typed from the report -- not filing figures -- so they are
-# literals here and the page must reproduce them.
-REPORT_FOLLOWUPS = 6
-REPORT_CLOSURE = {"已验证": 4, "被证伪": 0, "仍未披露": 2}
-REPORT_CLOSURE_OPEN = [4, 6]      # minimum-spread Phase 2; CMU OmniClear / FIC revenue
+def report_note(staging: dict) -> dict:
+    """The owner's two analyses, keyed from the reports into `_checks["note"]`.
+
+    Report facts -- question counts, verdicts, thresholds -- are held there and
+    not in this file, so a roll re-keys them with the series and this file does
+    not change (CLAUDE.md §9). The builder never reads `_checks`; the blocks it
+    does read (`followup_closure`, `prior_kpi_settlement`, `next_kpi`) are held
+    against this independent keying.
+    """
+    return staging["_checks"]["note"]
 
 
 class HkexFourSectionTest(unittest.TestCase):
@@ -832,6 +835,7 @@ class HkexFourSectionTest(unittest.TestCase):
         cls.staging = json.loads(hkex.STAGING_PATH.read_text(encoding="utf-8"))
         cls.payload = hkex.build_payload(cls.staging)
         cls.sections = cls.payload["sections"]
+        cls.note = report_note(cls.staging)
 
     def test_the_page_runs_in_the_four_sections(self) -> None:
         self.assertEqual([(s["id"], s["title"]) for s in self.sections], SECTIONS)
@@ -851,27 +855,40 @@ class HkexFourSectionTest(unittest.TestCase):
         self.assertIn(f"{census['forward_statements_with_a_number']} 处", description)
 
     def test_the_closure_is_the_reports_section_zero(self) -> None:
+        expected = self.note["followup_closure"]
         closure = self.staging["followup_closure"]
-        self.assertEqual(len(closure["items"]), REPORT_FOLLOWUPS)
+        self.assertEqual(len(closure["items"]), expected["total"])
         counted = {label: sum(1 for item in closure["items"] if item["verdict"] == label)
                    for label in closure["labels"]}
-        self.assertEqual(counted, REPORT_CLOSURE)
+        self.assertEqual(counted, expected["counts"])
         self.assertEqual([item["n"] for item in closure["items"] if item["verdict"] == "仍未披露"],
-                         REPORT_CLOSURE_OPEN)
+                         expected["open"])
+        self.assertEqual([item["n"] for item in closure["items"] if item.get("against_prior") == "worse"],
+                         expected["worse_than_prior"])
         chart = self.sections[0]["exhibits"][0]
         self.assertEqual(chart["kind"], "bars_labeled")
-        self.assertEqual(chart["title"],
-                         "上季 6 条待验证问题：4 条已验证、2 条仍未披露，没有一条被证伪")
+        drawn = {label: count for label, count in expected["counts"].items() if count}
+        self.assertEqual(
+            chart["title"],
+            f"上季 {expected['total']} 条待验证问题："
+            + "、".join(f"{count} 条{label}" for label, count in drawn.items())
+            + "".join(f"，没有一条{label}" for label, count in expected["counts"].items() if not count))
         # a verdict nobody received is named in the title, never drawn as an empty column
-        self.assertEqual(dict(zip(chart["xlabels"], chart["values"])), {"已验证": 4, "仍未披露": 2})
+        self.assertEqual(dict(zip(chart["xlabels"], chart["values"])), drawn)
         self.assertNotIn(0, chart["values"])
 
     def test_the_closure_title_is_counted_from_the_items(self) -> None:
         changed = copy.deepcopy(self.staging)
-        changed["followup_closure"]["items"][3]["verdict"] = "被证伪"
+        before = hkex.build_payload(changed)["sections"][0]["exhibits"][0]
+        closure = changed["followup_closure"]
+        item = closure["items"][0]
+        item["verdict"] = next(label for label in closure["labels"] if label != item["verdict"])
+        counts = {label: sum(1 for i in closure["items"] if i["verdict"] == label)
+                  for label in closure["labels"]}
         chart = hkex.build_payload(changed)["sections"][0]["exhibits"][0]
-        self.assertEqual(chart["title"], "上季 6 条待验证问题：4 条已验证、1 条被证伪、1 条仍未披露")
-        self.assertEqual(chart["values"], [4, 1, 1])
+        self.assertNotEqual(chart["title"], before["title"])
+        self.assertIn(f"{counts[item['verdict']]} 条{item['verdict']}", chart["title"])
+        self.assertEqual(sum(chart["values"]), sum(before["values"]))
 
     def test_a_verdict_outside_the_labels_stops_the_build(self) -> None:
         changed = copy.deepcopy(self.staging)
@@ -889,6 +906,229 @@ class HkexFourSectionTest(unittest.TestCase):
         self.assertNotRegex(text, r"\{EX_[A-Z]+\}")
         for match in re.finditer(r"Exhibit (\d+)", text):
             self.assertLessEqual(int(match.group(1)), len(numbers))
+
+
+def by_ref(payload: dict) -> dict:
+    return {ex["ref"]: ex for section in payload["sections"] for ex in section["exhibits"] if ex.get("ref")}
+
+
+def cumulative(readings: list[dict], value) -> dict:
+    """Period -> value, asserting every period printed twice was printed the same."""
+    out: dict = {}
+    for reading in readings:
+        v = value(reading)
+        if reading["period"] in out and out[reading["period"]] != v:
+            raise AssertionError(f"{reading['period']} printed as {out[reading['period']]} and {v}")
+        out[reading["period"]] = v
+    return out
+
+
+def quarter_of(cum: dict, quarter: str):
+    """Recomputed here, not with the builder's helper: Q2 = H1 − Q1 and so on."""
+    year, n = quarter[:4], quarter[5]
+    span = {"1": "Q1", "2": "H1", "3": "9M", "4": "FY"}[n]
+    before = {"1": None, "2": "Q1", "3": "H1", "4": "9M"}[n]
+    return cum[year + span] - (cum[year + before] if before else 0)
+
+
+class HkexPriorSettlementTest(unittest.TestCase):
+    """Section one (b): last quarter's quantified lines, settled on this quarter.
+
+    Thresholds and verdicts are held against `_checks["note"]`, keyed from the
+    two reports; the actuals are recomputed here from the readings, without the
+    builder's own helpers (a check that derives its expectation from the code
+    under test cannot fail).
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(hkex.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = hkex.build_payload(cls.staging)
+        cls.note = report_note(cls.staging)
+        cls.prior = cls.staging["prior_kpi_settlement"]
+        cls.charts = by_ref(cls.payload)
+
+    def lines_of(self, indicator: int) -> list[tuple]:
+        out = []
+        for entry in self.prior["quantified"]:
+            if entry["indicator"] != indicator:
+                continue
+            if "threshold" in entry:
+                out.append(("risk", entry["threshold"], entry["direction"], 1))
+            if "bull_threshold" in entry:
+                out.append(("bull", entry["bull_threshold"], entry["direction"], entry.get("bull_quarters", 1)))
+        return sorted(out)
+
+    def test_the_lines_are_the_prior_reports_section_eight(self) -> None:
+        indicators = sorted({line["indicator"] for line in self.note["prior_thresholds"]})
+        self.assertEqual(indicators, [i["n"] for i in self.prior["indicators"]])
+        for n in indicators:
+            expected = sorted((line["role"], line["threshold"], line["direction"], line.get("quarters", 1))
+                              for line in self.note["prior_thresholds"] if line["indicator"] == n)
+            with self.subTest(indicator=n):
+                self.assertEqual(self.lines_of(n), expected)
+
+    def test_the_verdicts_are_the_reports(self) -> None:
+        self.assertEqual({str(i["n"]): i["report_verdict"] for i in self.prior["indicators"]},
+                         self.note["prior_verdicts"])
+
+    def actuals(self) -> dict[str, list[float]]:
+        """The settled quarter and the one before, recomputed from the readings."""
+        s = self.staging
+        quarters = s["quarters"]
+        prev, last = quarters[-2], quarters[-1]
+        roi = dict(zip(quarters, s["quarterly"]["revenue_and_other_income"]))
+        r = self.prior["readings"]
+        connect = cumulative(r["connect_revenue_hkd_m"], lambda x: x["value"])
+        funds = cumulative(r["ipo_funds_hkd_bn"], lambda x: x["value"])
+        listed = cumulative(r["newly_listed"], lambda x: x["main_board"] + x["gem"])
+        seg = s["segment_readings"]["readings"]
+        rev = cumulative(seg, lambda x: x["roi_less_txn"]["commodities"])
+        ebitda = cumulative(seg, lambda x: x["ebitda"]["commodities"])
+        eq = cumulative([x for x in s["unlisted_equity"]["readings"]
+                         if not x["column"].startswith("three months")], lambda x: x["value"])
+        adt = s["kpi_quarterly"]["adt_headline"]
+        return {
+            "adt_vs_prior": [adt[-2] / adt[-3] * 100, adt[-1] / adt[-2] * 100],
+            "connect_share": [quarter_of(connect, q) / roi[q] * 100 for q in (prev, last)],
+            "ipo_funds": [quarter_of(funds, q) for q in (prev, last)],
+            "ipo_listings": [quarter_of(listed, q) for q in (prev, last)],
+            "commodities_margin": [quarter_of(ebitda, q) / quarter_of(rev, q) * 100 for q in (prev, last)],
+            "commodities_revenue": [quarter_of(rev, q) for q in (prev, last)],
+            "unlisted_equity": [abs(quarter_of(eq, q)) for q in (prev, last)],
+        }
+
+    @staticmethod
+    def margin(entry: dict, threshold: float, actual: float) -> float:
+        sign = 1 if entry["direction"] == "up" else -1
+        return round(sign * (actual - threshold) / threshold * 100, 1)
+
+    def test_the_two_headroom_charts_are_recomputed_here(self) -> None:
+        actuals = self.actuals()
+        risk_chart, bull_chart = self.charts["EX_PRIOR_RISK"], self.charts["EX_PRIOR_BULL"]
+        risk = [e for e in self.prior["quantified"] if "threshold" in e]
+        bull = [e for e in self.prior["quantified"] if "bull_threshold" in e]
+        self.assertEqual(risk_chart["xlabels"], [e["metric"] for e in risk])
+        self.assertEqual(risk_chart["values"],
+                         [self.margin(e, e["threshold"], actuals[e["id"]][-1]) for e in risk])
+        worst = {e["id"]: (min if e["direction"] == "up" else max)(actuals[e["id"]][-e.get("bull_quarters", 1):])
+                 for e in bull}
+        self.assertEqual(bull_chart["values"], [self.margin(e, e["bull_threshold"], worst[e["id"]]) for e in bull])
+        held = sum(1 for v in risk_chart["values"] if v >= 0)
+        self.assertTrue(risk_chart["title"].startswith(
+            f"上季 {len(risk)} 条量化阈值：{held} 条守住、{len(risk) - held} 条被击穿"))
+        cleared = sum(1 for v in bull_chart["values"] if v >= 0)
+        self.assertIn(f"{len(bull)} 条里 {cleared} 条兑现", bull_chart["title"])
+
+    def test_each_indicator_lands_where_the_report_put_it(self) -> None:
+        """Risk line breached -> the risk verdict; every bull line cleared -> the bull
+        verdict; neither -> 未触发. The report's five verdicts, reproduced."""
+        actuals = self.actuals()
+        kinds = {"加仓": "bull", "多元化里程碑": "bull", "警示": "risk", "重新评估": "risk", "未触发": "none"}
+        for indicator in self.prior["indicators"]:
+            rows = [e for e in self.prior["quantified"] if e["indicator"] == indicator["n"]]
+            risk = any("threshold" in e and self.margin(e, e["threshold"], actuals[e["id"]][-1]) < 0
+                       for e in rows)
+            bulls = [e for e in rows if "bull_threshold" in e]
+            bull = bool(bulls) and all(
+                self.margin(e, e["bull_threshold"],
+                            (min if e["direction"] == "up" else max)(actuals[e["id"]][-e.get("bull_quarters", 1):])) >= 0
+                for e in bulls)
+            got = "risk" if risk else ("bull" if bull else "none")
+            with self.subTest(indicator=indicator["n"]):
+                self.assertEqual(got, kinds[self.note["prior_verdicts"][str(indicator["n"])]])
+
+    def test_a_verdict_the_numbers_no_longer_support_stops_the_build(self) -> None:
+        changed = copy.deepcopy(self.staging)
+        entry = next(e for e in changed["prior_kpi_settlement"]["quantified"] if e["id"] == "commodities_margin")
+        entry["threshold"] = 60.0       # now held, but the block still says 警示
+        with self.assertRaisesRegex(ValueError, "prior_kpi_settlement indicator 4"):
+            hkex.build_payload(changed)
+
+    def test_the_three_line_charts_carry_their_lines(self) -> None:
+        adt = self.charts["EX_PRIOR_ADT"]
+        commod = self.charts["EX_PRIOR_COMMOD"]
+        equity = self.charts["EX_PRIOR_EQUITY"]
+        by_id = {e["id"]: e for e in self.prior["quantified"]}
+        self.assertEqual({s["values"][0] for s in adt["series"][1:]},
+                         {by_id["adt_vs_prior"]["threshold"], by_id["adt_vs_prior"]["bull_threshold"]})
+        self.assertEqual({s["values"][0] for s in commod["series"][1:]},
+                         {by_id["commodities_margin"]["threshold"], by_id["commodities_margin"]["bull_threshold"]})
+        self.assertEqual({s["values"][0] for s in equity["series"][1:]},
+                         {by_id["unlisted_equity"]["threshold"], -by_id["unlisted_equity"]["threshold"]})
+        actuals = self.actuals()
+        self.assertAlmostEqual(adt["series"][0]["values"][-1], actuals["adt_vs_prior"][-1], places=4)
+        self.assertAlmostEqual(commod["series"][0]["values"][-1], actuals["commodities_margin"][-1], places=4)
+        self.assertEqual(abs(equity["series"][0]["values"][-1]), actuals["unlisted_equity"][-1])
+        for chart in (adt, commod, equity):
+            self.assertEqual(chart["xlabels"][-1], self.staging["quarters"][-1])
+            word = "守住" if "守住上季阈值" in chart["title"] else "击穿"
+            self.assertIn(f"{word}上季阈值", chart["title"])
+
+    # ── the two new reading blocks ───────────────────────────────────────────
+    def test_every_segment_reading_adds_up_and_agrees_with_its_second_printing(self) -> None:
+        readings = self.staging["segment_readings"]["readings"]
+        segments = list(self.staging["segment_readings"]["segments"])
+        seen: dict = {}
+        for r in readings:
+            for field in ("roi_less_txn", "ebitda"):
+                self.assertEqual(sum(r[field][s] for s in segments), r[field]["group"], (r["doc"], field))
+            key = (r["period"],)
+            pair = (r["roi_less_txn"], r["ebitda"])
+            if key in seen:
+                self.assertEqual(seen[key], pair, r["period"])
+            seen[key] = pair
+        twice = {r["period"] for r in readings if r["column"] == "prior-year comparative"}
+        self.assertGreaterEqual(len(twice), 10)
+
+    def test_the_segment_totals_are_this_pages_income_statement(self) -> None:
+        """The group column of every segment table equals the page's own quarters.
+
+        Two different tables of the same announcements -- the segment note and
+        the condensed income statement the rest of this page is built from --
+        so this ties the new block to twelve years of reconciled series.
+        """
+        quarters = self.staging["quarters"]
+        q = self.staging["quarterly"]
+        spans = {"Q1": (1,), "H1": (1, 2), "9M": (1, 2, 3), "FY": (1, 2, 3, 4)}
+        checked = 0
+        for r in self.staging["segment_readings"]["readings"]:
+            year, span = r["period"][:4], r["period"][4:]
+            idx = [quarters.index(f"{year}Q{n}") for n in spans[span]]
+            ebitda = sum(q["ebitda"][i] for i in idx)
+            less = sum(q["revenue_and_other_income"][i] + q["transaction_expenses"][i] for i in idx)
+            self.assertAlmostEqual(r["ebitda"]["group"], ebitda, delta=0.5, msg=r["period"])
+            self.assertAlmostEqual(r["roi_less_txn"]["group"], less, delta=0.5, msg=r["period"])
+            checked += 1
+        self.assertGreaterEqual(checked, 28)
+
+    def test_the_commodities_series_starts_where_the_2023_basis_starts(self) -> None:
+        """2022 exists on this basis only as the restated comparatives of 2023."""
+        readings = self.staging["segment_readings"]["readings"]
+        self.assertEqual(min(r["period"][:4] for r in readings), "2022")
+        restated = [r for r in readings if r["period"].startswith("2022")]
+        self.assertEqual(sorted(r["period"] for r in restated), sorted(["2022Q1", "2022H1", "20229M", "2022FY"]))
+        self.assertTrue(all(r["doc"].startswith("2023_") for r in restated))
+        chart = self.charts["EX_PRIOR_COMMOD"]
+        self.assertEqual(chart["xlabels"][0], "2022Q1")
+
+    def test_the_unlisted_equity_line_agrees_with_every_other_printing(self) -> None:
+        block = self.staging["unlisted_equity"]
+        cum = cumulative([r for r in block["readings"] if not r["column"].startswith("three months")],
+                         lambda r: r["value"])
+        printed = [(r["period"], r["value"]) for r in block["readings"] if r["column"].startswith("three months")]
+        printed += [(p["quarter"], p["value"]) for p in block["prose_quarters"] if "differs" not in p]
+        self.assertGreaterEqual(len(printed), 8)
+        for quarter, value in printed:
+            with self.subTest(quarter=quarter):
+                self.assertEqual(quarter_of(cum, quarter), value)
+        # the one printing that does not agree is named, with the size of the gap
+        differs = [p for p in block["prose_quarters"] if "differs" in p]
+        self.assertEqual([(p["quarter"], p["value"] - quarter_of(cum, p["quarter"])) for p in differs],
+                         [("2023Q4", -4)])
+        chart = self.charts["EX_PRIOR_EQUITY"]
+        self.assertEqual(chart["xlabels"][0], "2021Q1")
+        self.assertEqual(len(chart["xlabels"]), len(chart["series"][0]["values"]))
 
 
 class HkexRollTest(unittest.TestCase):
@@ -914,7 +1154,7 @@ class HkexRollTest(unittest.TestCase):
                 self.assertEqual(claim in after, not present_before)
 
     def test_quarter_blocks_refuse_to_publish_under_another_quarter(self) -> None:
-        for key in ("next_kpi", "quarter_context", "followup_closure"):
+        for key in ("next_kpi", "quarter_context", "followup_closure", "prior_kpi_settlement"):
             with self.subTest(block=key):
                 with self.assertRaisesRegex(ValueError, "stamped"):
                     self.rebuilt(lambda s, key=key: s[key].__setitem__("period", "Q1 1999"))
@@ -928,11 +1168,13 @@ class HkexRollTest(unittest.TestCase):
             del s["next_kpi"]
             del s["quarter_context"]
             del s["followup_closure"]
+            del s["prior_kpi_settlement"]
         payload = self.rebuilt(strip)
-        self.assertEqual(len(payload["tables"]), len(self.payload["tables"]) - 1)
+        # the next-quarter unit table, and the prior-settlement table with its two ledgers
+        self.assertEqual(len(payload["tables"]), len(self.payload["tables"]) - 4)
         text = published_text(payload)
         for gone in ("条本地阈值离触发还有多远", "公司在同一份公告里印的是", "条本地阈值的原始单位",
-                     "条待验证问题"):
+                     "条待验证问题", "条量化阈值", "上季阈值与本季实际"):
             with self.subTest(gone=gone):
                 self.assertIn(gone, self.text)
                 self.assertNotIn(gone, text)
