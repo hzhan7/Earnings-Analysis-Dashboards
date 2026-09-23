@@ -1040,7 +1040,7 @@
   "quarter_story": {
     "period": "Q2 2026",
     "_note": "只属于这一季的叙述与判断（电话会口径与本页的读法，不是申报值）。换季时换成新一季的内容，没有这件事的字段就删掉；整块都没有时页面对应的句子整句不出。",
-    "source": "2Q26 法说会（2026-07-16）与 2Q26 Management Report；prior_call_quote 出自 1Q26 法说会 CFO 答问「the revenue growth outpaced the CapEx growth」。n2_dilution_prior 出自 4Q25 法说会（2026-01-15）与 1Q26 法说会（2026-04-16）CFO 的同一句「expect between 2% and 3% dilution for the full year of 2026」，两场都说稀释从下半年开始 —— 所以本季的「2H26 约 3–4pp」不是首次量化，是口径从全年换成了下半年。",
+    "source": "2Q26 法说会（2026-07-16）与 2Q26 Management Report；prior_call_quote 出自 1Q26 法说会 CFO 答问「the revenue growth outpaced the CapEx growth」。n2_dilution_prior 出自 4Q25 法说会（2026-01-15）与 1Q26 法说会（2026-04-16）CFO 的同一口径：1Q26 原话「we expect between 2% and 3% dilution for the full year of 2026」，4Q25 为「between 2 to 3 percentage -- percent dilution for the full year of 2026」，两场都说稀释从下半年开始 —— 所以本季的「2H26 约 3–4pp」不是首次量化，是口径从全年换成了下半年。",
     "market_sold": "资本强度",
     "n2_dilution_prior": {
       "calls": "1 月与 4 月两场法说会",
