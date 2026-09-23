@@ -146,7 +146,88 @@
           5
         ],
         "_report": "#2 AI 季度收入占比 Q2/Q3 ≥ 28% / < 22%（公司不按季披露）；#5 前 3 大客户占比 ≤ 60% / ≥ 65%（只在年度 20-F）"
-      }
+      },
+      "next_rows": 8,
+      "next_thresholds": [
+        {
+          "id": "gross_margin",
+          "row": 2,
+          "metric": "毛利率",
+          "threshold": 65.5,
+          "direction": "up",
+          "report": "#2 Q3 实际 GM：≥66.5% = 稀释被对冲、Bull 触发；<65.5% = N2 稀释失控或汇率假设未兑现 → <65.5% 警示"
+        },
+        {
+          "id": "inventory",
+          "row": 4,
+          "metric": "库存天数",
+          "threshold": 90.0,
+          "direction": "down",
+          "report": "#4 存货天数：任一季 >90 天 … = 备货叙事失效 → 警示；回落 <80 天解除"
+        },
+        {
+          "id": "capex",
+          "row": 3,
+          "metric": "单季 CapEx",
+          "threshold": 19.0,
+          "direction": "down",
+          "report": "#3 Q3 单季 capex + FCF：capex >$19B 或 Q3 FCF <NT$200B → 警示"
+        },
+        {
+          "id": "fcf",
+          "row": 3,
+          "metric": "单季自由现金流",
+          "threshold": 200.0,
+          "direction": "up",
+          "report": "#3 的后半：Q3 FCF <NT$200B → 警示（页面此前漏了这一条）"
+        },
+        {
+          "id": "hpc",
+          "row": 6,
+          "metric": "HPC 占比（集中度）",
+          "threshold": 68.0,
+          "direction": "down",
+          "report": "#6 前半：HPC ≥68% = 集中度继续抬升（跟踪集中度风险）"
+        },
+        {
+          "id": "n2",
+          "row": 5,
+          "metric": "2nm 占晶圆收入",
+          "threshold": 5.0,
+          "direction": "up",
+          "report": "#5：Q3 <5% = 爬坡不及定性口径 → 警示（报告注明阈值自设）"
+        },
+        {
+          "id": "fx",
+          "row": 8,
+          "metric": "USD/TWD 即期（升值为逆风）",
+          "threshold": 31.0,
+          "direction": "up",
+          "report": "#8：即期 <31.0 → 警示；报告对照的当前值是 Q2 实际均价 31.60"
+        }
+      ],
+      "next_gated": [
+        {
+          "row": 1,
+          "short": "Q3 实际收入",
+          "report": "#1：≥45.2 = 需求兑现 → 加仓确认；<44.6 = 首次 miss、40%+ 全年指引存疑 → 减仓评估。「首次 miss」与 6-K 不符：2019Q1 实际 US$7.10B 低于指引 US$7.3–7.4B"
+        },
+        {
+          "row": 7,
+          "short": "2027 CapEx 指引",
+          "report": "#7 前半：2027 capex ≥$70B 且无对应收入指引 → 重新评估"
+        },
+        {
+          "row": 7,
+          "short": "长期毛利率目标",
+          "report": "#7 后半：长期 GM 上修至 58%+ = Bull 确认 → 加仓"
+        },
+        {
+          "row": 6,
+          "short": "Smartphone 连续负增长",
+          "report": "#6 后半：Smartphone 连续 3 季负增长 → 警示"
+        }
+      ]
     }
   },
   "periods": [
@@ -549,6 +630,7 @@
     ],
     "fy_capex_prior_positioning": "towards the high end",
     "fy_capex_prior_positioning_cn": "接近上端",
+    "fy_outlook_source_cn": "法说会口径，本季 6-K 新闻稿不载全年增速与资本预算",
     "long_term_gross_margin_floor_pct": 56,
     "long_term_gross_margin_change_cn": "长期目标未上修，也未下修",
     "n2_gross_margin_dilution_half": "2H26",
@@ -851,49 +933,78 @@
   "next_kpi": {
     "period": "Q2 2026",
     "for_period": "Q3 2026",
+    "_note": "本季（Q2 2026）本地分析第 8 节「关键观察指标」8 行。quantified 是有当季读数的量化阈值：threshold、direction 与 basis 逐字取自该节（basis 里报告写的「首次 miss」一句不收：2019Q1 收入 US$7.10B 已低于当季指引 US$7.3–7.4B，见 quarterly_guidance_history）；当前值不在这里存，由 build/tsm.py 按 reads 从本文件的序列现算。row 是该节的行号，一行可以拆成两条（#3 的 CapEx 与 FCF）。disclosure_gated 是要等之后的披露才能结算的条件，why 写原因。下季换季时本块原样搬进 prior_kpi_settlement，再换成新一季第 8 节。",
     "quantified": [
       {
+        "id": "gross_margin",
+        "row": 2,
+        "reads": "gross_margin",
         "metric": "毛利率",
         "direction": "up",
         "threshold": 65.5,
-        "current": 67.7,
-        "unit": "pct"
+        "unit": "pct",
+        "basis": "指引 65-67%（中值 66%）；≥66.5% = 稀释被对冲、Bull 触发；<65.5% = N2 稀释失控或汇率假设未兑现 → ≥66.5% 加仓；<65.5% 警示"
       },
       {
+        "id": "inventory",
+        "row": 4,
+        "reads": "inventory_days",
         "metric": "库存天数",
         "direction": "down",
         "threshold": 90.0,
-        "current": 87.0,
-        "unit": "days"
+        "unit": "days",
+        "basis": "Q2 87 天（N2 备货口径）；任一季 >90 天、或 Q3 N2 占比已跳升而库存仍 >87 天 = 备货叙事失效、需求侧风险（阈值不再上调）→ >90 天或「放量不去库」警示；回落 <80 天解除"
       },
       {
+        "id": "capex",
+        "row": 3,
+        "reads": "capex_usd_quarter",
         "metric": "单季 CapEx",
         "direction": "down",
         "threshold": 19.0,
-        "current": 15.7,
-        "unit": "usd_bn"
+        "unit": "usd_bn",
+        "basis": "2H 隐含季均 US$16.6-18.6B；capex >$19B 或 Q3 FCF <NT$200B = FCF 压缩超预期路径 → 警示（重估 FCF 路径）"
       },
       {
+        "id": "fcf",
+        "row": 3,
+        "reads": "fcf_ntd",
+        "metric": "单季自由现金流",
+        "direction": "up",
+        "threshold": 200.0,
+        "unit": "ntd_bn",
+        "basis": "capex >$19B 或 Q3 FCF <NT$200B = FCF 压缩超预期路径 → 警示（重估 FCF 路径）"
+      },
+      {
+        "id": "hpc",
+        "row": 6,
+        "reads": "hpc_share",
         "metric": "HPC 占比（集中度）",
         "direction": "down",
         "threshold": 68.0,
-        "current": 66.0,
-        "unit": "pct"
+        "unit": "pct",
+        "basis": "HPC 66%；≥68% = 集中度继续抬升（跟踪集中度风险）"
       },
       {
+        "id": "n2",
+        "row": 5,
+        "reads": "n2_share",
         "metric": "2nm 占晶圆收入",
         "direction": "up",
         "threshold": 5.0,
-        "current": 3.0,
         "unit": "pct",
-        "short": "2nm 占比"
+        "short": "2nm 占比",
+        "basis": "Q2 首季 3%；\"steep ramp\" 下 Q3 <5% = 爬坡不及定性口径（阈值为本季分析自设）→ <5% 警示"
       },
       {
+        "id": "fx",
+        "row": 8,
+        "reads": "usd_ntd",
         "metric": "USD/TWD 即期（升值为逆风）",
         "direction": "up",
         "threshold": 31.0,
-        "current": 31.6,
-        "unit": "fx"
+        "unit": "fx",
+        "basis": "Q3 指引假设 32.0（vs Q2 实际均价 31.60）；即期 <31.0（较假设升值 >3%）→ 警示（Q3 GM 中值兑现概率显著下调）"
       }
     ],
     "ramp_metric": "2nm 占晶圆收入",
@@ -901,33 +1012,54 @@
     "watch_metric": "库存天数",
     "disclosure_gated": [
       {
+        "row": 1,
         "short": "Q3 实际收入",
-        "text": "Q3 实际收入：低于指引下限 US$44.6B 即减仓评估"
+        "text": "Q3 实际营收对指引 US$44.6–45.8B（中值 45.2）：≥ 45.2 = 需求兑现 → 加仓确认；< 44.6 = 低于指引下限、40%+ 全年指引存疑 → 减仓评估",
+        "why": "阈值挂在 Q3 的收入上，而收入每季都在长，拿本季读数去比只会显示已越线；Q3 发布时结算"
       },
       {
+        "row": 7,
         "short": "2027 CapEx 指引",
-        "text": "1 月年度 call 的 2027 CapEx 指引：≥ US$70B 且无对应收入指引即重新评估"
+        "text": "1 月年度法说会的 2027 CapEx 指引 ≥ US$70B 且无对应收入指引 → 重新评估",
+        "why": "要等 2027 年 1 月的年度法说会"
       },
       {
+        "row": 7,
         "short": "长期毛利率目标",
-        "text": "1 月年度 call 是否正式上修长期毛利率目标至 58%+"
+        "text": "1 月年度法说会是否把长期毛利率目标正式上修到 58%+ → 加仓",
+        "why": "同样要等 1 月的年度法说会"
       },
       {
+        "row": 6,
         "short": "Smartphone 连续负增长",
-        "text": "Smartphone 连续三季负增长即警示终端弱于管理层口径"
+        "text": "Smartphone 若旺季仍负增长 = 终端弱于管理层口径；连续 3 季负增长 → 警示",
+        "why": "平台环比增速印在各季 management report，本页没有接入这条序列；Q3 发布时结算"
       }
     ]
   },
   "quarter_story": {
     "period": "Q2 2026",
     "_note": "只属于这一季的叙述与判断（电话会口径与本页的读法，不是申报值）。换季时换成新一季的内容，没有这件事的字段就删掉；整块都没有时页面对应的句子整句不出。",
-    "source": "2Q26 法说会（2026-07-16）与 2Q26 Management Report；prior_call_quote 出自 1Q26 法说会 CFO 答问「the revenue growth outpaced the CapEx growth」。",
+    "source": "2Q26 法说会（2026-07-16）与 2Q26 Management Report；prior_call_quote 出自 1Q26 法说会 CFO 答问「the revenue growth outpaced the CapEx growth」。n2_dilution_prior 出自 4Q25 法说会（2026-01-15）与 1Q26 法说会（2026-04-16）CFO 的同一句「expect between 2% and 3% dilution for the full year of 2026」，两场都说稀释从下半年开始 —— 所以本季的「2H26 约 3–4pp」不是首次量化，是口径从全年换成了下半年。",
     "market_sold": "资本强度",
-    "n2_dilution_first_quantified": true,
+    "n2_dilution_prior": {
+      "calls": "1 月与 4 月两场法说会",
+      "words": "「2026 全年 2–3%」"
+    },
     "prior_call_quote": "收入增速快于 CapEx 增速",
     "crossover_reading": "这是股价的直接压制项",
     "inventory_attribution": "N2 爬坡备货",
-    "inventory_test": "若下季 2nm 占比已跳升而库存仍不回落，备货解释即失效"
+    "inventory_test": "若下季 2nm 占比已跳升而库存仍不回落，备货解释即失效",
+    "undrawn": [
+      {
+        "what": "AI 需求变宽（Agentic AI 带动数据中心 CPU、AI 数据中心拉动成熟制程的 PMIC 与传感器短缺）",
+        "why": "只在法说会上定性讲过，没有可画的申报数"
+      },
+      {
+        "what": "地区收入组合与客户集中度",
+        "why": "本页没有接入地区组合序列，客户集中度只在年度 20-F 里披露"
+      }
+    ]
   },
   "quarterly_guidance_history": {
     "quarters": [
