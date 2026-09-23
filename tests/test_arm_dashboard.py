@@ -370,7 +370,7 @@ class ArmPageTest(unittest.TestCase):
                         eps_actual=q["non_gaap_first_printed"]["diluted_eps"][-1], opex_actual=700)
         rolled["latest"] = dict(rolled["latest"], period="Q3 2026")
         # every one-quarter block is last quarter's once the arrays move on
-        for block in ("quarter_story", "next_kpi"):
+        for block in ("quarter_story", "next_kpi", "followup_closure", "prior_kpi_settlement"):
             rolled.pop(block, None)
         rolled["sources"] = rolled["sources"] + [
             {"label": "Q2 FYE27 股东信（6-K EX-99.2，2026-11-04）",
@@ -399,6 +399,17 @@ FOUR_PARTS = [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_hig
 NEXT_THRESHOLDS = {"royalty": (690.0, "up", "usd_m"), "acv_yoy": (10.0, "up", "pct"),
                    "fcf": (250.0, "up", "usd_m")}
 NEXT_GATED = ("AGI CPU", "智能手机")
+
+# Section 0 of the same note: the five follow-ups the 2026-05-06 note left, and
+# the verdict it gave each. The note prints no tally line; this is the tally of
+# its verdict column, with #5 「已验证且恶化」 counted as verified.
+CLOSURE_VERDICTS = {1: "已验证", 2: "未兑现", 3: "已验证", 4: "部分验证", 5: "已验证"}
+CLOSURE_COUNTS = {"已验证": 3, "部分验证": 1, "未兑现": 1}
+
+# Section 8 of the 2026-05-06 note: two of its five thresholds are numbers this
+# quarter can settle, three cannot (no figure / not yet due).
+PRIOR_THRESHOLDS = {"royalty_yoy": (15.0, "up", "pct"), "softbank_consulting": (180.0, "up", "usd_m")}
+PRIOR_UNSETTLED = ("数据中心 royalty", "FY27 Q4 芯片收入", "累计需求")
 
 
 class ArmFourPartTest(unittest.TestCase):
@@ -502,6 +513,119 @@ class ArmFourPartTest(unittest.TestCase):
         self.assertNotIn("下季阈值", json.dumps(rest, ensure_ascii=False))
         for sec in payload["sections"]:
             self.assertNotIn("下季阈值", json.dumps(sec["exhibits"], ensure_ascii=False))
+
+
+class ArmSettledTest(unittest.TestCase):
+    """Section one settles what last quarter left: its questions, then its thresholds."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.st = json.loads(arm.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = arm.build_payload(cls.st)
+        cls.settled = cls.payload["sections"][0]["exhibits"]
+        cls.ex = by_ref(cls.payload)
+
+    def rebuilt(self, edit) -> dict:
+        changed = copy.deepcopy(self.st)
+        edit(changed)
+        self.assertNotEqual(changed, self.st, "the edit changed nothing")
+        return arm.build_payload(changed)
+
+    def test_section_one_opens_with_the_closure_then_the_thresholds(self) -> None:
+        refs = [ex["ref"] for ex in self.settled]
+        self.assertEqual(refs[:4], ["EX_CLOSURE", "EX_PRIOR_HEADROOM", "EX_PRIOR_ROYALTY_YOY",
+                                    "EX_PRIOR_SOFTBANK_CONSULTING"])
+        self.assertLess(refs.index("EX_PRIOR_HEADROOM"), refs.index("EX_REV_BAND"))
+
+    def test_the_closure_is_the_notes_section_zero(self) -> None:
+        block = self.st["followup_closure"]
+        self.assertEqual((block["period"], block["set_in"]), ("Q2 2026", "Q1 2026"))
+        self.assertEqual({item["n"]: item["verdict"] for item in block["items"]}, CLOSURE_VERDICTS)
+        ex = self.ex["EX_CLOSURE"]
+        self.assertEqual(dict(zip(ex["xlabels"], ex["values"])), CLOSURE_COUNTS)
+        self.assertEqual(ex["title"], "上季 5 条待验证问题：3 条已验证、1 条部分验证、1 条未兑现")
+        # the evidence names numbers the builder computes; recompute them here
+        q, rp, kpi = self.st["quarterly"], self.st["related_party"], self.st["kpi"]
+        acv = dict(zip(kpi["dates"], kpi["acv"]))
+        for text in (f"+{(q['royalty'][-1] / q['royalty'][-5] - 1) * 100:.1f}%",
+                     f"+{(q['royalty'][-2] / q['royalty'][-6] - 1) * 100:.1f}%",
+                     f"${rp['softbank_affiliate'][-1]:.1f}M",
+                     f"+{(acv['2026-06-30'] / acv['2025-06-30'] - 1) * 100:.1f}%",
+                     f"+{(acv['2026-03-31'] / acv['2025-03-31'] - 1) * 100:.1f}%"):
+            self.assertIn(text, ex["note"])
+        self.assertNotRegex(ex["note"], r"\{[a-z_]+\}", "an evidence placeholder was left unfilled")
+        for word in ("方向对", "幅度低估", "归因部分错", "时点错一个季度"):
+            self.assertIn(word, ex["note"])
+
+    def test_the_closure_counts_follow_the_items(self) -> None:
+        def verify_two(s):
+            next(i for i in s["followup_closure"]["items"] if i["n"] == 2)["verdict"] = "已验证"
+        title = by_ref(self.rebuilt(verify_two))["EX_CLOSURE"]["title"]
+        self.assertEqual(title, "上季 5 条待验证问题：4 条已验证、1 条部分验证")
+
+    def test_prior_thresholds_are_last_quarters_notes(self) -> None:
+        block = self.st["prior_kpi_settlement"]
+        self.assertEqual((block["period"], block["set_in"]), ("Q2 2026", "Q1 2026"))
+        got = {e["id"]: (e["threshold"], e["direction"], e["unit"]) for e in block["quantified"]}
+        self.assertEqual(got, PRIOR_THRESHOLDS)
+        self.assertEqual(len(block["quantified"]) + len(block["unsettled"]), 5, "the note's section 8 has five")
+        for word, item in zip(PRIOR_UNSETTLED, block["unsettled"]):
+            self.assertIn(word, item["metric"])
+        for entry in block["quantified"]:
+            self.assertNotIn("actual", entry, "the settled value is computed, never typed")
+
+    def test_the_settlement_is_recomputed_from_the_series(self) -> None:
+        q, rp = self.st["quarterly"], self.st["related_party"]
+        actual = {"royalty_yoy": (q["royalty"][-1] / q["royalty"][-5] - 1) * 100,
+                  "softbank_consulting": rp["softbank_affiliate"][-1]}
+        bars = self.ex["EX_PRIOR_HEADROOM"]
+        self.assertEqual(bars["title"], "上季 2 条量化阈值：2 条守住、0 条被击穿")
+        for entry, value in zip(self.st["prior_kpi_settlement"]["quantified"], bars["values"]):
+            threshold = PRIOR_THRESHOLDS[entry["id"]][0]
+            self.assertAlmostEqual(value, round((actual[entry["id"]] - threshold) / threshold * 100, 1))
+        self.assertEqual(self.ex["EX_PRIOR_ROYALTY_YOY"]["title"], "royalty 同比：守住上季阈值 15.0%")
+        self.assertEqual(self.ex["EX_PRIOR_SOFTBANK_CONSULTING"]["title"],
+                         "软银咨询协议季度收入：守住上季阈值 $180M")
+        # the SoftBank line keeps its zeros: the agreement began in 2024Q3
+        line = self.ex["EX_PRIOR_SOFTBANK_CONSULTING"]["series"][0]["values"]
+        first = next(k for k, v in enumerate(line) if v)
+        self.assertEqual(self.ex["EX_PRIOR_SOFTBANK_CONSULTING"]["xlabels"][first], "2024Q3")
+        self.assertTrue(all(v == 0 for v in line[:first]))
+
+    def test_a_breached_threshold_reads_as_breached(self) -> None:
+        def raise_bar(s):
+            next(e for e in s["prior_kpi_settlement"]["quantified"] if e["id"] == "royalty_yoy")["threshold"] = 25.0
+        ex = by_ref(self.rebuilt(raise_bar))
+        self.assertEqual(ex["EX_PRIOR_ROYALTY_YOY"]["title"], "royalty 同比：已击穿上季阈值 25.0%")
+        self.assertEqual(ex["EX_PRIOR_HEADROOM"]["title"], "上季 2 条量化阈值：1 条守住、1 条被击穿（royalty 同比）")
+
+    def test_the_notes_point_at_both_threshold_charts(self) -> None:
+        pattern = re.compile(r"Exhibit (\d+) 与 Exhibit (\d+) 的阈值")
+        found = [m.groups() for note in self.payload["notes"] for m in pattern.finditer(note)]
+        self.assertEqual(found, [(str(self.ex["EX_PRIOR_HEADROOM"]["n"]), str(self.ex["EX_NEXT_HEADROOM"]["n"]))])
+
+    def test_a_block_that_settles_another_quarter_stops_the_build(self) -> None:
+        cases = (
+            ("settles what was set in", lambda s: s["followup_closure"].__setitem__("set_in", "Q4 2025")),
+            ("settles what was set in", lambda s: s["prior_kpi_settlement"].__setitem__("set_in", "Q4 2025")),
+            ("not among its labels", lambda s: s["followup_closure"]["items"][0].__setitem__("verdict", "存疑")),
+            ("stamped", lambda s: s["followup_closure"].__setitem__("period", "Q1 2026")),
+            ("typed", lambda s: s["prior_kpi_settlement"]["quantified"][0].__setitem__("actual", 20.0)),
+        )
+        for message, edit in cases:
+            with self.subTest(case=message):
+                with self.assertRaisesRegex(ValueError, message):
+                    self.rebuilt(edit)
+
+    def test_absent_blocks_drop_their_charts_and_the_words_about_them(self) -> None:
+        for key, ref, phrase in (("followup_closure", "EX_CLOSURE", "条待验证问题"),
+                                 ("prior_kpi_settlement", "EX_PRIOR_HEADROOM", "上季阈值")):
+            with self.subTest(block=key):
+                payload = self.rebuilt(lambda s, key=key: s.pop(key))
+                self.assertNotIn(ref, by_ref(payload))
+                self.assertNotIn(phrase, json.dumps(payload, ensure_ascii=False))
+                numbers = [ex["n"] for ex in exhibits_of(payload)]
+                self.assertEqual(numbers, list(range(2, 2 + len(numbers))))
 
 
 class ArmChecksTest(unittest.TestCase):

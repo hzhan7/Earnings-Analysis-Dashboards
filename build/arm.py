@@ -48,6 +48,7 @@ from build.board import (  # noqa: E402
     cn_ordinal,
     delivery_band,
     display_period,
+    fill_story,
     headroom,
     headroom_exhibit,
     latest_block,
@@ -804,9 +805,10 @@ def tracked_metric(s: dict, metric_id: str) -> dict:
         labels, values = span(q["cash"]["free_cash_flow"], P)
         spec = {"fmt": "f0c", "ylab": "US$M（单季）", "name": "non-GAAP 自由现金流（单季）"}
     elif metric_id == "softbank_consulting":
+        # The whole related-party run, zeros included: the agreement earned
+        # nothing before 2024Q3, and the zeros are what show when it began.
         rp = s["related_party"]
-        start = next(k for k, v in enumerate(rp["softbank_affiliate"]) if v)
-        labels, values = rp["periods"][start:], rp["softbank_affiliate"][start:]
+        labels, values = rp["periods"], rp["softbank_affiliate"]
         spec = {"fmt": "f1", "ylab": "US$M（单季）", "name": "软银咨询协议收入（单季）"}
     else:
         raise ValueError(f"threshold `{metric_id}` names no series this page draws")
@@ -837,7 +839,7 @@ def after_cjk(word: str) -> str:
 
 
 def threshold_line_charts(s: dict, entries: list[dict], key: str, prefix: str, word: str,
-                          headline) -> list[dict]:
+                          headline, source: str) -> list[dict]:
     """One line chart per charted threshold: the metric's own series against the line."""
     charts = []
     for entry in entries:
@@ -854,7 +856,7 @@ def threshold_line_charts(s: dict, entries: list[dict], key: str, prefix: str, w
                   f"余量 {room_text(entry, key)}。分析稿写的是：{entry['rule']}"
                   + (f"；另一侧：{entry['upside']}" if entry.get("upside") else "") + "。"
                   + f"本图从这条序列的第一格 {m['labels'][0]} 画起。"),
-            src_extra=THRESHOLD_SOURCE,
+            src_extra=source,
         )
         chart["ref"] = f"EX_{prefix}_{entry['id'].upper()}"
         chart["xrot"] = 90
@@ -873,19 +875,72 @@ def next_quarter_charts(s: dict, next_kpi: dict, entries: list[dict]) -> list[di
         closest = min(entries, key=lambda e: rooms[e["id"]])
         title += f"，离阈值最近的是{after_cjk(closest['metric'])}（余量 {room_text(closest, 'current')}）"
     gated = next_kpi.get("disclosure_gated", [])
+    source = THRESHOLD_SOURCE.replace("本地季报分析稿", f"本季（{next_kpi['period']}）本地季报分析稿")
     chart = headroom_exhibit(
         title, entries, "current",
         ("正值 = 仍在安全侧。当前值是本季实际，阈值说的是下一季（"
          f"{next_kpi['for_period']}）的数。"
          + (f"分析稿第 8 节另有{cn_count(len(gated))}条不能作图（"
             + "、".join(g["metric"] for g in gated) + "），理由见本节说明与核对抽屉。" if gated else "")),
-        THRESHOLD_SOURCE,
+        source,
     )
     chart["ref"] = "EX_NEXT_HEADROOM"
     return [chart] + threshold_line_charts(
         s, entries, "current", "NEXT", "下季阈值",
         lambda e: (f"{e['metric']}：下季阈值 {unit_text(e['unit'], e['threshold'])}，"
-                   f"当前 {unit_text(e['unit'], e['current'])}"))
+                   f"当前 {unit_text(e['unit'], e['current'])}"),
+        source)
+
+
+def prior_settlement_charts(s: dict, prior: dict, entries: list[dict]) -> list[dict]:
+    """Section one (b): last quarter's quantified thresholds, settled on this quarter's values."""
+    rooms = {e["id"]: headroom(e["direction"], e["threshold"], e["actual"]) for e in entries}
+    broken = [e for e in entries if rooms[e["id"]] < 0]
+    unsettled = prior.get("unsettled", [])
+    source = THRESHOLD_SOURCE.replace("本地季报分析稿", f"上季（{prior['set_in']}）本地季报分析稿")
+    chart = headroom_exhibit(
+        (f"上季 {len(entries)} 条量化阈值：{len(entries) - len(broken)} 条守住、{len(broken)} 条被击穿"
+         + (f"（{'、'.join(e['metric'] for e in broken)}）" if broken else "")),
+        entries, "actual",
+        ("正值 = 仍在安全侧。"
+         + (f"上季分析稿第 8 节另有{cn_count(len(unsettled))}条本季结不了：" + "；".join(
+             f"{u['metric']}（{u['status']}：{u['why']}）" for u in unsettled) + "。" if unsettled else "")),
+        source,
+    )
+    chart["ref"] = "EX_PRIOR_HEADROOM"
+    return [chart] + threshold_line_charts(
+        s, entries, "actual", "PRIOR", "上季阈值",
+        lambda e: (f"{e['metric']}：{'守住' if rooms[e['id']] >= 0 else '已击穿'}上季阈值 "
+                   f"{unit_text(e['unit'], e['threshold'])}"),
+        source)
+
+
+def closure_chart(block: dict, values: dict) -> dict:
+    """Section one (a): last quarter's open questions, closed item by item."""
+    labels = block["labels"]
+    items = block["items"]
+    unknown = sorted({item["verdict"] for item in items} - set(labels))
+    if unknown:
+        raise ValueError(f"followup_closure: verdicts {unknown} are not among its labels {labels}")
+    counts = [sum(1 for item in items if item["verdict"] == label) for label in labels]
+    shown = [(label, count) for label, count in zip(labels, counts) if count]
+    scorecard = "、".join(f"{d['dimension']}{d['verdict']}" for d in block.get("scorecard", []))
+    lines = "".join(f"<br>{item['n']}. {item['question']} —— <b>{item['verdict']}</b>："
+                    f"{fill_story(item['evidence'], values)}" for item in items)
+    return {
+        "ref": "EX_CLOSURE",
+        "kind": "bars_labeled",
+        "title": f"上季 {len(items)} 条待验证问题：" + "、".join(f"{c} 条{l}" for l, c in shown),
+        "xlabels": [label for label, _ in shown],
+        "values": [count for _, count in shown],
+        "legend": "问题条数",
+        "fmt": "f0", "yfmt": "f0", "label_fmt": "f0",
+        "ylab": "条",
+        "note": ("问题与判定逐条取自本季分析稿第 0 节"
+                 + (f"；分析稿对上季判断的自评是{scorecard}" if scorecard else "") + "。" + lines),
+        "src_extra": (f"问题清单来自 {block['set_in']} 本地分析稿的 follow-up；证据依据本季股东信、"
+                      "中期财务报表与业绩电话会。"),
+    }
 
 
 def kpi_table(title: str, entries: list[dict], key: str, head: str, extra: list[dict]) -> dict:
@@ -923,11 +978,28 @@ def build_payload(staging: dict) -> dict:
     counts_stopped = calendar_of(counts_last) != view["period"]
 
     following = display_period(shift(view["period"], 1))
+    previous = display_period(shift(view["period"], -1))
     next_kpi = stamped_block(s, "next_kpi", period)
     if next_kpi is not None and display_period(next_kpi["for_period"]) != following:
         raise ValueError(f"series block `next_kpi` is stamped for {next_kpi['for_period']!r}, but the "
                          f"quarter after {period!r} is {following!r}: update it with the roll")
     next_entries = settle(s, next_kpi["quantified"], "current") if next_kpi else []
+    closure = stamped_block(s, "followup_closure", period)
+    prior_kpi = stamped_block(s, "prior_kpi_settlement", period)
+    for name, block in (("followup_closure", closure), ("prior_kpi_settlement", prior_kpi)):
+        if block is not None and display_period(block["set_in"]) != previous:
+            raise ValueError(f"series block `{name}` settles what was set in {block['set_in']!r}, "
+                             f"but last quarter was {previous!r}: rewrite it for this quarter")
+    prior_entries = settle(s, prior_kpi["quantified"], "actual") if prior_kpi else []
+
+    # The numbers the closure's evidence sentences name, computed here so the
+    # series block never types one.
+    royalty_yoy = tracked_metric(s, "royalty_yoy")["values"]
+    acv_yoy = acv_yoy_run(s)[1]
+    softbank = s["related_party"]["softbank_affiliate"]
+    values = {"royalty_yoy": signed(royalty_yoy[-1]), "royalty_yoy_prior": signed(royalty_yoy[-2]),
+              "acv_yoy": signed(acv_yoy[-1]), "acv_yoy_prior": signed(acv_yoy[-2]),
+              "softbank": usd_m(softbank[-1], 1), "softbank_prior": usd_m(softbank[-2], 1)}
 
     # Every chart the page draws, by ref, then placed into the four sections. A
     # chart placed twice or not at all stops the build: the sections are the
@@ -945,7 +1017,9 @@ def build_payload(staging: dict) -> dict:
     if sorted(placed) != sorted(charts) or len(set(placed)) != len(placed):
         raise ValueError(f"every chart goes into exactly one section: placed {sorted(placed)}, "
                          f"drawn {sorted(charts)}")
-    settled_ex = [charts[ref] for ref in placement["settled"]]
+    settled_ex = (([closure_chart(closure, values)] if closure else [])
+                  + (prior_settlement_charts(s, prior_kpi, prior_entries) if prior_kpi else [])
+                  + [charts[ref] for ref in placement["settled"]])
     highlight_ex = [charts[ref] for ref in placement["quarter_highlights"]]
     next_ex = next_quarter_charts(s, next_kpi, next_entries) if next_kpi else []
     routine_ex = [charts[ref] for ref in placement["routine"]]
@@ -960,6 +1034,9 @@ def build_payload(staging: dict) -> dict:
     rp = s["related_party"]
     kpi = s["kpi"]
     tables = []
+    if prior_kpi is not None:
+        tables.append(kpi_table("上季阈值与本季实际（原单位；取自上季本地分析稿第 8 节）", prior_entries,
+                                "actual", f"{period} 实际", prior_kpi.get("unsettled", [])))
     if next_kpi is not None:
         tables.append(kpi_table("下季阈值与当前值（原单位；取自本季本地分析稿第 8 节）", next_entries,
                                 "current", "当前值", next_kpi.get("disclosure_gated", [])))
@@ -1069,12 +1146,21 @@ def build_payload(staging: dict) -> dict:
     ]
 
     gated = (next_kpi or {}).get("disclosure_gated", [])
+    unsettled = (prior_kpi or {}).get("unsettled", [])
     sections = [
         {
             "id": "settled",
             "title": "一、上季跟踪指标兑现了吗",
             "description": (
-                "公司自己给的指引兑现记录：每季只给下一季的收入、non-GAAP 运营费用与 EPS 三个数，"
+                (f"先结算上一季留下的：上季本地分析稿的{cn_count(len(closure['items']))}条待验证问题逐条闭环，"
+                 "判定取自本季分析稿第 0 节。" if closure else "")
+                + (f"它第 8 节的{cn_count(len(prior_entries) + len(unsettled))}条观察指标里，本季能用数字结算的"
+                   f"{cn_count(len(prior_entries))}条画成距阈值余量与逐条走势"
+                   + (f"，另{cn_count(len(unsettled))}条本季结不了（"
+                      + "、".join(f"{u['metric']}{u['status']}" for u in unsettled) + "），理由列在核对抽屉"
+                      if unsettled else "") + "。" if prior_kpi else "")
+                + ("然后是" if closure or prior_kpi else "")
+                + "公司自己给的指引兑现记录：每季只给下一季的收入、non-GAAP 运营费用与 EPS 三个数，"
                 "本节把每一季的实际值放回当时的区间里，再把「高于上沿」拆成超出中值多少与区间有多宽两件事；"
                 f"全年指引只给过{cn_count(len(s['guidance']['annual']))}个财年。"),
             "exhibits": settled_ex,
@@ -1111,11 +1197,18 @@ def build_payload(staging: dict) -> dict:
     derived_rp = [p for p, d in zip(rp["periods"], rp["derived"]) if d]
     gap_k = max(range(len(rp["periods"])), key=lambda k: abs(rp["unattributed"][k]))
     gap_p, gap_v = rp["periods"][gap_k], rp["unattributed"][gap_k]
+    headrooms = {ex["ref"]: ex["n"] for ex in exhibits if ex["ref"] in ("EX_PRIOR_HEADROOM", "EX_NEXT_HEADROOM")}
     thresholds_note = []
-    if next_ex:
+    if len(headrooms) == 2:
         thresholds_note = [
-            f"Exhibit {next_ex[0]['n']} 与其后各图的阈值取自本季本地分析稿第 8 节「关键观察指标」，"
-            "是研究设定，不是公司指引，也不构成投资建议；「距阈值余量」正值代表安全侧。"]
+            f"Exhibit {headrooms['EX_PRIOR_HEADROOM']} 与 Exhibit {headrooms['EX_NEXT_HEADROOM']} 的阈值"
+            "取自本地季报分析稿（上季与本季各自的第 8 节「关键观察指标」），是研究设定，不是公司指引，"
+            "也不构成投资建议；「距阈值余量」正值代表安全侧。第一段的闭环判定取自本季分析稿第 0 节。"]
+    elif headrooms:
+        (ref, n), = headrooms.items()
+        thresholds_note = [
+            f"Exhibit {n} 与其后各图的阈值取自{'上季' if ref == 'EX_PRIOR_HEADROOM' else '本季'}本地分析稿第 8 节"
+            "「关键观察指标」，是研究设定，不是公司指引，也不构成投资建议；「距阈值余量」正值代表安全侧。"]
     notes = [
         "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；"
         "支撑表格收在核对抽屉里。",

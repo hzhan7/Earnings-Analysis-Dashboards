@@ -291,6 +291,10 @@ CONVERTED = {
         "两条腿的同比": "a year-on-year line needs four quarters of run-up, so it starts 2023Q1.",
         "RPO 同比": "RPO is first printed for 2022-09-30 (a letter comparative); the prospectus "
                   "prints it only at 2023-03-31 and 2023-06-30, so the unbroken run starts 2022Q3.",
+        "上季阈值": "each settled threshold is drawn on its metric's own series from its first printed "
+                "point: royalty year on year from 2023Q1 (four quarters after the record's 2022Q1 floor); "
+                "the SoftBank Consulting Agreement line from 2022Q2, where the related-party note begins "
+                "(the agreement itself earns nothing before 2024Q3, and the zeros are drawn).",
         "下季阈值": "each threshold line plots its metric's own series from its first printed point: "
                 "quarterly royalty from the quarter ended 2022-03-31 (the prospectus table), ACV year on "
                 "year from 2023Q1 (ACV is printed at 2021-03-31 and then quarterly only from 2022-03-31), "
@@ -980,6 +984,7 @@ FLOOR_KIND = {
         '的两条收入腿': 'disclosure',
         '两条腿的同比': 'disclosure',
         'RPO 同比': 'disclosure',
+        '上季阈值': 'disclosure',
         '下季阈值': 'disclosure',
         'Arm Total Access 授权从': 'disclosure',
         '、占总收入': 'disclosure',
@@ -1396,7 +1401,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 161)
+        self.assertEqual(settled.count("disclosure"), 162)
         self.assertEqual(settled.count("design"), 40)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:

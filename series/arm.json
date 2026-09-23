@@ -2513,6 +2513,116 @@
     "demand_window": "FY27 与 FY28 合计",
     "source": "Q1 FYE27 股东信：「now exceeds $2 billion across fiscal 2027 and fiscal 2028」、「the $1 billion opportunity we outlined last quarter」；Q4 FYE26 股东信：「more than $2 billion of customer demand across fiscal 2027 and fiscal 2028」"
   },
+  "followup_closure": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "labels": [
+      "已验证",
+      "部分验证",
+      "未兑现"
+    ],
+    "items": [
+      {
+        "n": 1,
+        "id": "royalty_yoy",
+        "question": "royalty 同比能不能回到公司指引的 +20% 左右",
+        "verdict": "已验证",
+        "evidence": "本季 royalty 同比 {royalty_yoy}（上季 {royalty_yoy_prior}）。"
+      },
+      {
+        "n": 2,
+        "id": "agi_demand",
+        "question": "AGI CPU 的 FY27+FY28 客户需求会不会再上调，FY28 芯片收入有没有更确定的指引",
+        "verdict": "未兑现",
+        "evidence": "本季股东信写需求 now exceeds $2 billion，上一封写的是 more than $2 billion，是同一个数；公司据以展望的收入机会仍是 $1 billion，电话会上说到 Q3 FY27 业绩时再更新。"
+      },
+      {
+        "n": 3,
+        "id": "softbank",
+        "question": "软银那份技术授权与设计服务协议每季约 $200M 能不能维持",
+        "verdict": "已验证",
+        "evidence": "中期财务报表附注 14：本季咨询协议收入 {softbank}，上季 {softbank_prior}。"
+      },
+      {
+        "n": 4,
+        "id": "dc_royalty",
+        "question": "数据中心 royalty 是否仍同比翻倍以上，会不会首次披露金额",
+        "verdict": "部分验证",
+        "evidence": "股东信仍写 data center royalties more than doubling，但依旧没有金额。"
+      },
+      {
+        "n": 5,
+        "id": "acv_yoy",
+        "question": "ACV 同比会不会从上季继续回落（渠道冲突的量化迹象）",
+        "verdict": "已验证",
+        "evidence": "ACV 同比上季 {acv_yoy_prior}、本季 {acv_yoy}；分析稿原判「已验证且恶化」。"
+      }
+    ],
+    "scorecard": [
+      {
+        "dimension": "方向",
+        "verdict": "对"
+      },
+      {
+        "dimension": "幅度",
+        "verdict": "低估"
+      },
+      {
+        "dimension": "归因",
+        "verdict": "部分错"
+      },
+      {
+        "dimension": "时点",
+        "verdict": "错一个季度"
+      }
+    ],
+    "_note": "上季（Q1 2026）本地分析稿留下的 5 条待验证问题在本季的闭环，问题与判定逐条取自本季分析稿第 0 节；第 5 条原判为「已验证且恶化」，归入已验证。分析稿第 0 节没有单独的统计行，图上的计数由 items 的 verdict 现算。evidence 里的数字不写死，由 builder 从 series 现算后填入。scorecard 是分析稿对上季判断的自评（方向 / 幅度 / 归因 / 时点）。"
+  },
+  "prior_kpi_settlement": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "quantified": [
+      {
+        "id": "royalty_yoy",
+        "metric": "royalty 同比",
+        "direction": "up",
+        "threshold": 15.0,
+        "unit": "pct",
+        "chart": true,
+        "rule": "Q1 FY27 royalty 同比（公司指引约 +20%）< +15% 即说明高基数解释不充分、royalty 在结构性减速"
+      },
+      {
+        "id": "softbank_consulting",
+        "metric": "软银咨询协议季度收入",
+        "direction": "up",
+        "threshold": 180.0,
+        "unit": "usd_m",
+        "chart": true,
+        "rule": "软银那份技术授权与设计服务协议的季度收入 < $180M（或出现转向下一代定价的措辞）即说明与软银的关系在变"
+      }
+    ],
+    "unsettled": [
+      {
+        "metric": "数据中心 royalty 同比",
+        "rule": "< +50% 为翻倍叙事破裂的警示；连续四季 ≥ +100% 为护城河指标",
+        "status": "无数可结算",
+        "why": "股东信只写 data center royalties more than doubling，从不给金额；按措辞 +50% 这条没有触发，但没有数可以结算或作图"
+      },
+      {
+        "metric": "AGI CPU 的 FY27 Q4 芯片收入",
+        "rule": "指引约 $90M；< $50M 为供应链没有解锁的警示，≥ $120M 为爬坡超预期",
+        "status": "未到期",
+        "why": "FY27 Q4 是 2027 年 1–3 月，要到那一季的业绩才有这个数"
+      },
+      {
+        "metric": "AGI CPU 的 FY27+FY28 累计需求更新",
+        "rule": "≤ $2.0B 为需求见顶；≥ $2.5B 且 FY28 芯片收入上调到 $1.0–1.2B 为里程碑",
+        "status": "未到期",
+        "why": "公司说到 Q3 FY27 业绩时更新；本季股东信写 now exceeds $2 billion，与上一封是同一个数"
+      }
+    ],
+    "_note": "上季（Q1 2026）本地分析稿第 8 节「关键观察指标」的 5 条阈值，数值与方向逐字取自该节。quantified 的实际值不写死，由 builder 从 series 现算（royalty 同比取 quarterly.royalty，软银咨询协议取 related_party.softbank_affiliate）；unsettled 是本季结不了的 3 条及其原因。"
+  },
   "next_kpi": {
     "period": "Q2 2026",
     "for_period": "Q3 2026",
