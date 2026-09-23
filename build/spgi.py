@@ -729,7 +729,7 @@ def convergence_chart(staging: dict) -> dict:
         "ref": "EX_CONVERGE",
         "kind": "grouped_bars",
         "title": (
-            f"实际结果相对<b>每一档</b>指引中值的偏离：开局那一档 {len(opening)} 年里 "
+            f"实际结果相对每一档指引中值的偏离：开局那一档 {len(opening)} 年里 "
             f"{beaten} 年偏正，平均绝对偏离从 {open_abs:.1f}% 收敛到 {final_abs:.1f}%"
         ),
         "xlabels": dev["years"],
@@ -2471,7 +2471,7 @@ def build_payload(staging: dict) -> dict:
         "sections": [
             {
                 "id": "settled",
-                "title": "一、上季兑现了吗",
+                "title": "一、上季跟踪指标兑现了吗",
                 "description": plain_text(
                     ("先结清上一份笔记留下的阈值，再看新数字。"
                      "这一节的后半段是本页与本站其他几页最不一样的地方："

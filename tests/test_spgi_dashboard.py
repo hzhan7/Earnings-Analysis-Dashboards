@@ -726,9 +726,22 @@ class SpgiDashboardTest(unittest.TestCase):
                 self.assertTrue(exhibit["src_extra"])
 
     def test_section_order_matches_how_the_note_is_used(self) -> None:
+        """The site's four-part format, ids and titles verbatim (TSM is the reference)."""
         self.assertEqual(
-            [section["id"] for section in self.payload["sections"]],
-            ["settled", "quarter_highlights", "next_quarter", "routine"])
+            [(section["id"], section["title"]) for section in self.payload["sections"]],
+            [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+             ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+        for section in self.payload["sections"]:
+            with self.subTest(section=section["id"]):
+                self.assertTrue(section["exhibits"])
+
+    def test_exhibit_titles_carry_no_markup(self) -> None:
+        """`charts.js` writes an exhibit title into the card's h3 *and* into the
+        SVG's `aria-label` with `setAttribute`, where a `<b>` stays the literal
+        three characters a screen reader then reads out."""
+        for exhibit in self.exhibits:
+            with self.subTest(exhibit=exhibit["n"]):
+                self.assertNotRegex(exhibit["title"], r"<[^>]+>")
 
     def test_exhibit_numbers_are_assigned_in_render_order(self) -> None:
         self.assertEqual([ex["n"] for ex in self.exhibits],
