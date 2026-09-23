@@ -501,7 +501,10 @@ def form_chart(record: dict, source: str) -> dict:
     return {
         "ref": "EX_FORM",
         "kind": "grouped_bars",
-        "title": (f"指引的<b>形状</b>按发布档次分布：年初那一档 {totals['initial']} 个读数里 "
+        # No markup in a title: the card's <h3> is already bold, and the same
+        # string becomes the chart's SVG aria-label, where a tag is read out as
+        # the literal characters.
+        "title": (f"指引的形状按发布档次分布：年初那一档 {totals['initial']} 个读数里 "
                   f"{ranges['initial']} 个是两端区间，"
                   f"结算这一年的 Q3 那一档 {totals['q3']} 个读数里只有 "
                   f"{ranges['q3']} 个"),
@@ -686,7 +689,7 @@ def convergence_chart(record: dict, source: str) -> dict:
     return {
         "ref": "EX_CONVERGE",
         "kind": "grouped_bars",
-        "title": (f"调整后摊薄 EPS 相对<b>每一档</b>指引中值的偏离："
+        "title": (f"调整后摊薄 EPS 相对每一档指引中值的偏离："
                   f"年初那一档 {len(opening)} 年里 {beaten} 年偏正，"
                   f"平均绝对偏离从 {open_abs:.1f}% 收敛到 {final_abs:.1f}%"),
         "xlabels": [f"FY{year}" for year in years],
@@ -1033,9 +1036,11 @@ def reprint_words(staging: dict, keys: tuple[str, ...]) -> list[dict]:
             for year, rs in sorted(groups.items())]
 
 
-def long_charts(staging: dict) -> tuple[list[dict], list[dict]]:
-    """The ten-year series, split into the four that belong beside the quarter
-    and the two that are genuinely routine."""
+def long_charts(staging: dict) -> tuple[dict, list[dict]]:
+    """The ten-year series: the margin chart, whose title reads this quarter's
+    record against the D&A line and so belongs beside the quarter, and the five
+    structural ones (volume and price, revenue mix, regions, cash, capex) that
+    are the routine record."""
     long = staging["long_history"]
     quarters = long["quarters"]
     n = len(quarters)
@@ -1098,11 +1103,16 @@ def long_charts(staging: dict) -> tuple[list[dict], list[dict]]:
     else:
         tail = (f"本季 EBIT 利润率环比 {signed(mv['ebit_change'], 1, 'pp')}、EBITDA 利润率环比 "
                 f"{signed(mv['ebitda_change'], 1, 'pp')}（D&A 见 Exhibit {{EX_DA}}）。")
+    # The title says the quarter's reading first; the ten-year span is context
+    # and goes to the note.
+    title = (f"EBIT 利润率 {mv['ebit'][-1]:.1f}%" + (f" 创 {n} 季新高" if mv["record"] else "")
+             + f"、环比 {signed(mv['ebit_change'], 1, 'pp')}，EBITDA 利润率"
+             + ("却" if mv["diverge"] else "") + f"环比 {signed(mv['ebitda_change'], 1, 'pp')}"
+             + (f"：{'纪录' if mv['record'] else '改善'}发生在折旧线以下" if mv["diverge"] else ""))
     margin = {
         "ref": "EX_L_MARGIN",
         "kind": "lines",
-        "title": (f"{n_cn}季利润率：EBIT 从 {mv['ebit'][0]:.1f}% 到 {mv['ebit'][-1]:.1f}%，"
-                  f"EBITDA 从 {mv['ebitda'][0]:.1f}% 到 {mv['ebitda'][-1]:.1f}%"),
+        "title": title,
         "xlabels": quarters,
         "series": [
             {"name": "EBIT 利润率", "values": rounded(long["ebit_margin_pct"]), "color": "NAVY"},
@@ -1110,12 +1120,14 @@ def long_charts(staging: dict) -> tuple[list[dict], list[dict]]:
         ],
         "fmt": "pct1", "yfmt": "pct1", "label_fmt": "pct1", "end_label": True,
         "ylab": "%", "xstep": LONG_STEP,
-        "note": ("两条线之间的距离就是折旧摊销占收入的比重。"
+        "note": (tail
+                 + "两条线之间的距离就是折旧摊销占收入的比重。"
                  f"按全年算，它在 {narrow} 年最窄（{gap[narrow]:.1f}%），在 {wide} 年最宽（{gap[wide]:.1f}%），"
                  f"{last_year} 年是 {gap[last_year]:.1f}%。"
+                 f"{n_cn}季里 EBIT 利润率从 {mv['ebit'][0]:.1f}% 到 {mv['ebit'][-1]:.1f}%，"
+                 f"EBITDA 利润率从 {mv['ebitda'][0]:.1f}% 到 {mv['ebitda'][-1]:.1f}%。"
                  "这两条画的是<b>报告口径</b>：" + basis
-                 + "全年指引的结算另用调整口径，两者不混。"
-                 + tail),
+                 + "全年指引的结算另用调整口径，两者不混。"),
         "src_extra": "EBIT、EBITDA 与净收入为披露值，利润率为本页自算（D）；标题与正文里的利润率取公司印出的数。",
     }
 
@@ -1328,7 +1340,7 @@ def long_charts(staging: dict) -> tuple[list[dict], list[dict]]:
         "src_extra": ("2019Q1 起取自各季业绩新闻稿的 Capex and R&D 表；2016Q1–2018Q4 由各季中报 6-K "
                       "附件的累计栏与 20-F 全年数还原 D。" + capex_basis),
     }
-    return [unit, margin, mix, region], [cash, capex_chart]
+    return margin, [unit, mix, region, cash, capex_chart]
 
 
 def engines_note(staging: dict) -> str:
@@ -1374,8 +1386,8 @@ def build_payload(staging: dict) -> dict:
     kpi_block, entries = kpi_entries(staging)
 
     settled, settled_tables = guidance_charts(staging)
-    structural, routine = long_charts(staging)
-    highlights = quarter_charts(staging) + structural
+    margin_chart, routine = long_charts(staging)
+    highlights = [margin_chart] + quarter_charts(staging)
     next_block = next_quarter_charts(staging, kpi_block, entries)
 
     exhibits = number_exhibits(settled + highlights + next_block + routine)
@@ -1463,14 +1475,12 @@ def build_payload(staging: dict) -> dict:
     ship_x = ship[-1] / ship[0]
     pu_x = per_unit[-1] / per_unit[0]
 
-    yoy_regions = [pct_change(long[key][-1], long[key][-5]) for key, _, _ in REGIONS]
-    ship_yoy = pct_change(ship[-1], ship[-5])
-    pu_yoy = pct_change(per_unit[-1], per_unit[-5])
-    topics = ["利润率与折旧" + ("的背离" if mv["diverge"] else ""),
-              "量与价的长期走势" + ("与本季的反向" if ship_yoy * pu_yoy < 0 else ""),
-              "收入结构的口径断点",
-              "分地区出货" + ("的分化" if min(yoy_regions) < 0 < max(yoy_regions) else "")]
-    all_long = all(len(ex.get("xlabels", [])) == n for ex in highlight_ex)
+    highlights_text = (
+        (f"本季 EBIT 利润率 {mv['ebit'][-1]:.1f}%" + (" 创纪录" if mv["record"] else "")
+         + f"，EBITDA 利润率却环比 {signed(mv['ebitda_change'], 1, 'pp')}：两者之间只隔着 D&A，"
+         if mv["diverge"] else "本季的利润率与 D&A：")
+        + "先看两条利润率线，再看 D&A "
+        + ("的低点与全年指引隐含的下半年台阶。" if guide is not None else "的走势。"))
     guidance_word = "大多不是区间" if all_ranges * 2 < all_readings else "不全是区间"
     name, url = release_source(staging)
     audit = AUDIT_WORDS.get(staging["latest"]["audit_status"])
@@ -1541,23 +1551,21 @@ def build_payload(staging: dict) -> dict:
         "summary": {"blocks": []},
         "guidance": None,
         "sections": [
-            {"id": "settled", "title": "一、公司自己的指引兑现了吗",
-             "description": (f"法拉利只给全年指引，每季修订一次，而且给的{guidance_word}，"
+            {"id": "settled", "title": "一、上季跟踪指标兑现了吗",
+             "description": (f"公司自己的全年指引兑现记录：法拉利只给全年指引，每季修订一次，而且给的{guidance_word}，"
                              "是「至少」「不超过」「约」这样的单边不等式。"
                              f"所以这一节先看指引的形状怎么随年份推进而变，再看{cn_count(finished)}个已完结年度落在哪里。"),
              "exhibits": settled_ex},
             {"id": "quarter_highlights", "title": "二、本季重点",
-             "description": ("、".join(topics[:-1]) + "，以及" + topics[-1] + "。"
-                             + (f"本节每一张都画在 {compact(quarters[0])} 起的 {n} 个季度上 —— " if all_long else "")
-                             + "这四条序列此前在本页出现过两次：这里八季、第四节四十二季。"
-                               "同一条线画两种长度不是两张图，短的那一版已经去掉。"),
+             "description": highlights_text,
              "exhibits": highlight_ex},
             {"id": "next_quarter", "title": "三、下季要跟踪什么",
              "description": (f"{cn_count(len(entries))}条可从申报复算的阈值，统一用「距阈值余量」口径；"
                              f"本页不接入的{cn_count(len(kpi_block.get('not_tracked', [])))}条写在这里。"),
              "exhibits": next_ex},
             {"id": "routine", "title": "四、长期常规跟踪",
-             "description": f"{cn_count(n)}个季度的工业自由现金流、净工业头寸与资本开支。",
+             "description": (f"{cn_count(n)}个季度的结构性序列：量与价、收入结构、分地区出货、"
+                             "工业自由现金流与净工业头寸、资本开支。"),
              "exhibits": routine_ex},
         ],
         "tables": tables,

@@ -601,6 +601,38 @@ class RaceDashboardTest(unittest.TestCase):
         printed = self.long["ebit_margin_printed_pct"][-len(self.staging["periods"]):]
         self.assertEqual([row[column] for row in quarterly["rows"]], [f"{v:.1f}%" for v in printed])
 
+    # ── the four-part format ────────────────────────────────────────────────
+    def test_the_page_is_in_the_four_part_format(self) -> None:
+        """Every company page reads 上季兑现 → 本季重点 → 下季跟踪 → 长期常规,
+        under these exact ids and titles, and says so in its own notes."""
+        self.assertEqual([(s["id"], s["title"]) for s in self.payload["sections"]],
+                         [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+                          ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+        for section in self.payload["sections"]:
+            self.assertTrue(section["exhibits"], section["id"])
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列", self.payload["notes"][0])
+
+    def test_the_long_structural_series_are_routine_not_highlights(self) -> None:
+        """Section two is the quarter's conclusions; a chart whose title only
+        describes the ten-year span belongs in section four."""
+        long_window = cn_count(len(self.long["quarters"])) + "季"
+        routine = [ex.get("ref") for ex in self.payload["sections"][3]["exhibits"]]
+        self.assertEqual(routine, ["EX_L_UNIT", "EX_L_MIX", "EX_L_REGION", "EX_L_CASH", "EX_L_CAPEX"])
+        for ex in self.payload["sections"][1]["exhibits"]:
+            self.assertFalse(ex["title"].startswith(long_window), ex["title"])
+            self.assertIn("本季", ex["title"] + ex["note"][:40], ex["title"])
+        margin = exhibits_of(self.payload)["EX_L_MARGIN"]
+        self.assertTrue(margin["title"].startswith(f"EBIT 利润率 {self.long['ebit_margin_printed_pct'][-1]:.1f}%"))
+
+    def test_exhibit_titles_carry_no_markup(self) -> None:
+        """An exhibit title is innerHTML in the card's <h3> -- already bold, so a
+        <b> there changes nothing a reader sees -- but the same string is the
+        chart's SVG aria-label, set with setAttribute, where a tag is read out as
+        the literal characters `<b>`."""
+        for section in self.payload["sections"]:
+            for ex in section["exhibits"]:
+                self.assertNotIn("<", ex["title"], ex["title"][:40])
+
     # ── exhibits and publication ────────────────────────────────────────────
     def test_the_page_carries_the_cross_page_capex_table(self) -> None:
         """Published byte-identically on every page, including pages outside the chain."""
@@ -1067,7 +1099,7 @@ class RaceRollTest(unittest.TestCase):
         self.assertEqual(payload["source_url"], rolled["sources"][0]["url"])
         n = len(rolled["long_history"]["quarters"])
         self.assertIn(f"{cn_count(n)}季的量与价", text_of(payload))
-        self.assertIn(f"{cn_count(n)}个季度的工业自由现金流", payload["sections"][3]["description"])
+        self.assertIn(f"{cn_count(n)}个季度的结构性序列", payload["sections"][3]["description"])
         # nothing the previous quarter's story said survives it
         story = self.full["quarter_story"]
         for text in (story["americas"][:12], story["regions"][:12], "把全年 D&A 量化为"):
