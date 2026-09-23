@@ -148,6 +148,18 @@ def _intc_threshold_reach() -> int:
                if "警戒线" in ex["title"])
 
 
+def _ker_threshold_reach() -> int:
+    """Kering's threshold-line charts (last quarter's in section one, the next
+    quarter's in section three) are drawn on the full record while the series
+    carries a stamped threshold block for the quarter -- the page is rolled by
+    editing `series/ker.json` alone -- so the pin counts the permanent charts and
+    adds these while they are published."""
+    page = js_payload(ROOT / "data" / "ker.js", "window.DASH")
+    return sum(1 for section in page["sections"] if section["id"] in ("settled", "next_quarter")
+               for ex in section["exhibits"]
+               if ex["kind"] == "lines" and (first_year(ex) or 9999) <= TARGET_YEAR)
+
+
 def _tsm_advanced_count() -> dict:
     """The process-mix note counts the quarters since 2021Q1 in which the page's
     summed 7nm-and-below line equals TSMC's own aggregate. The count grows by
@@ -173,7 +185,7 @@ def _tsm_advanced_count() -> dict:
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
     "amd": 16, "amzn": 13, "arm": 0, "asml": 16, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
-    "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
+    "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11 + _ker_threshold_reach(), "ma": 17, "mc": 5, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
     "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,

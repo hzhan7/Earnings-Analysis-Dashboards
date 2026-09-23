@@ -39,8 +39,110 @@
   "net_debt_eur_bn_printed": 3.3,
   "net_debt_change_eur_bn_printed": 4.7,
   "outlook_quote": "its objective remains to return to growth and improve profitability",
-  "source": "Kering「2026 First-Half Results」新闻稿（2026-07-28，kering.com，KER_H1_2026_results_release）：首页要点「Q2 revenue at €3,652 million, +2% on a comparable basis」「recurring operating margin at 12.8% of revenue; €921 million」「Net debt: €3.3 billion reduced by €4.7 billion」；第 2 页 FINANCIAL INDICATORS 表（Revenue 7 220 / 7 439，Recurring operating income 921 / 920，% of revenue 12.8% / 12.4% / +0.4pts）；第 3 页 Revenue 表 Q2 2026 / Q2 2025（Kering Fashion & Leather Goods 2,948 / 2,986 +0%，of which Gucci 1,410 / 1,456 −2%，Kering Jewelry 252 / 219 +18%，Kering Eyewear 476 / 445 +8%，KERING 3,652 / 3,626 +2%；H1 Gucci 2,757）与 Recurring operating income 表（of which Gucci 468）；Gucci 段「Its recurring operating margin was 17.0%」；OUTLOOK 段原话；附录合并损益表 Gross margin 5,170。净负债精确值取自 2026 First Half Report 第 2.3 节「NET DEBT AS OF JUNE 30 3,324」「Net debt as of January 1 8,039」。",
-  "checked_on": "2026-09-19"
+  "source": "Kering「2026 First-Half Results」新闻稿（2026-07-28，kering.com，KER_H1_2026_results_release）：首页要点「Q2 revenue at €3,652 million, +2% on a comparable basis」「recurring operating margin at 12.8% of revenue; €921 million」「Net debt: €3.3 billion reduced by €4.7 billion」；第 2 页 FINANCIAL INDICATORS 表（Revenue 7 220 / 7 439，Recurring operating income 921 / 920，% of revenue 12.8% / 12.4% / +0.4pts）；第 3 页 Revenue 表 Q2 2026 / Q2 2025（Kering Fashion & Leather Goods 2,948 / 2,986 +0%，of which Gucci 1,410 / 1,456 −2%，Kering Jewelry 252 / 219 +18%，Kering Eyewear 476 / 445 +8%，KERING 3,652 / 3,626 +2%；H1 Gucci 2,757）与 Recurring operating income 表（of which Gucci 468）；Gucci 段「Its recurring operating margin was 17.0%」；OUTLOOK 段原话；附录合并损益表 Gross margin 5,170。净负债精确值取自 2026 First Half Report 第 2.3 节「NET DEBT AS OF JUNE 30 3,324」「Net debt as of January 1 8,039」。Gucci 北美零售可比 +9% 取自 H1 2026 业绩演示材料第 36 页「Retail by geography」表 Q2 26 列（North America +9%，Total Retail −2%；新闻稿第 4 页「a 2% decline on a comparable basis」同值）。",
+  "checked_on": "2026-09-19",
+  "q_gucci_na_retail_comparable_pct": 9,
+  "q_gucci_retail_comparable_pct": -2,
+  "report": {
+   "file": "2026-07-28 KER Q2 2026 vs Q1 2026 Analysis.md",
+   "prior_files": [
+    "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis.md",
+    "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis（估值与隐性指引版）.md"
+   ],
+   "followup_counts": {
+    "已闭环": 6,
+    "部分闭环": 6,
+    "上季判断失效": 1,
+    "未回答": 1
+   },
+   "prior_thresholds": [
+    [
+     "half_group_comparable",
+     2,
+     "up",
+     "加仓"
+    ],
+    [
+     "half_group_comparable",
+     -1,
+     "up",
+     "减仓"
+    ],
+    [
+     "half_recurring_margin",
+     12,
+     "up",
+     "加仓"
+    ],
+    [
+     "half_recurring_margin",
+     11.5,
+     "up",
+     "警示"
+    ],
+    [
+     "gucci_comparable",
+     -5,
+     "up",
+     "加仓"
+    ],
+    [
+     "gucci_comparable",
+     -8,
+     "up",
+     "警示"
+    ],
+    [
+     "gucci_na_retail",
+     5,
+     "up",
+     "加仓"
+    ],
+    [
+     "gucci_na_retail",
+     3,
+     "up",
+     "警示"
+    ],
+    [
+     "half_jewelry_comparable",
+     18,
+     "up",
+     "加仓"
+    ],
+    [
+     "jewelry_comparable",
+     15,
+     "up",
+     "加仓"
+    ],
+    [
+     "jewelry_comparable",
+     10,
+     "up",
+     "跟踪"
+    ],
+    [
+     "eyewear_comparable",
+     5,
+     "up",
+     "加仓"
+    ],
+    [
+     "net_debt",
+     3000,
+     "down",
+     "加仓"
+    ],
+    [
+     "net_debt",
+     4000,
+     "down",
+     "跟踪"
+    ]
+   ],
+   "source": "2026-07-28 KER Q2 2026 vs Q1 2026 Analysis.md 第 0.1 节「上季 Follow-up 逐项闭环」14 行的「结论」栏；上季两份分析稿第 8 节「关键观察指标」表的阈值原话。分析稿第 0 节没有汇总数，计数按逐条结论原话归类后清点。"
+  }
  },
  "long_quarters": [
   "2016Q1",
@@ -985,6 +1087,75 @@
    "KER_H1_2026_results_release"
   ]
  },
+ "new_grid_retail_regions": {
+  "_what": "Gucci 直营零售的可比增速（%），按地区。2025 年四季取自 2026-03-16 新分部重述公告第 4 页「Restated comparable retail revenue change」表（of which Gucci），每一格都与该季自己的演示材料（2025Q1 收入演示材料、H1 2025 业绩演示材料、2025Q3 收入演示材料、FY 2025 业绩演示材料的 Gucci「Retail by geography」表）对过、逐格相同；2026 年各季取自当季演示材料的同一张表（2026Q1 收入演示材料第 18 页；H1 2026 业绩演示材料第 36 页 Q2 26 列）。公司把 2025Q4 北美印作「−0%」，记作 0。换季时追加一格，quarters 末格必须是页面的季度。",
+  "quarters": [
+   "2025Q1",
+   "2025Q2",
+   "2025Q3",
+   "2025Q4",
+   "2026Q1",
+   "2026Q2"
+  ],
+  "gucci": {
+   "western_europe": [
+    -22,
+    -23,
+    -13,
+    -14,
+    -12,
+    -5
+   ],
+   "north_america": [
+    -21,
+    -16,
+    -3,
+    0,
+    8,
+    9
+   ],
+   "japan": [
+    -19,
+    -36,
+    -24,
+    -20,
+    -24,
+    -8
+   ],
+   "asia_pacific": [
+    -32,
+    -27,
+    -19,
+    -15,
+    -14,
+    -5
+   ],
+   "rest_of_world": [
+    -10,
+    -11,
+    -5,
+    -6,
+    -15,
+    -14
+   ],
+   "total": [
+    -25,
+    -23,
+    -13,
+    -10,
+    -9,
+    -2
+   ]
+  },
+  "src": [
+   "KER_FY_2025_segment_reporting_restatement_release",
+   "KER_FY_2025_segment_reporting_restatement_release",
+   "KER_FY_2025_segment_reporting_restatement_release",
+   "KER_FY_2025_segment_reporting_restatement_release",
+   "KER_2026Q1_revenue_presentation",
+   "KER_H1_2026_presentation"
+  ]
+ },
  "halves": [
   "H1 2016",
   "H2 2016",
@@ -1858,6 +2029,10 @@
    "url": "https://www.kering.com/api/download-file/?path=Kering_Press_release_Q3_revenue_2025_22_10_2025_589da209ff.pdf"
   },
   {
+   "doc": "KER_2026Q1_revenue_presentation",
+   "url": "https://www.kering.com/api/download-file/?path=Presentation_Q1_2026_14042026_b79dbc728d.pdf"
+  },
+  {
    "doc": "KER_2026Q1_revenue_release",
    "url": "https://www.kering.com/api/download-file/?path=Kering_Press_Release_2026_First_Quarter_Revenue_04_14_26_71ec2db5b6.pdf"
   },
@@ -2018,6 +2193,10 @@
    "url": "https://www.kering.com/api/download-file/?path=02_First_Half_Report_2026_EN_d6129bcfad.pdf"
   },
   {
+   "doc": "KER_H1_2026_presentation",
+   "url": "https://www.kering.com/api/download-file/?path=Kering_H1_26_Presentation_28_07_26_4e7f17b8e3.pdf"
+  },
+  {
    "doc": "KER_H1_2026_results_release",
    "url": "https://www.kering.com/api/download-file/?path=Kering_H1_26_Press_Release_28_07_26_49a507e6ca.pdf"
   }
@@ -2118,6 +2297,293 @@
     "threshold": 4000,
     "unit": "eur_m",
     "why": "出售 Kering Beauté 之后降到 €3.3B；重新高于 €4B 说明经营现金流没有接上资产出售。"
+   }
+  ]
+ },
+ "followup_closure": {
+  "period": "Q2 2026",
+  "set_in": "Q1 2026",
+  "_what": "上季两份本地分析稿（2026-04-17 普通版与估值与隐性指引版）的 Follow-up 在本季本地分析稿（2026-07-28 KER Q2 2026 vs Q1 2026 Analysis.md）第 0.1 节被合并成 14 条逐条核验。question 是问题原话的简写，verdict 是本季分析稿「结论」一栏的原话，label 是本页按原话的归类：强验证 / 闭环 / 已给出答案 → 已闭环；部分验证、方向对但幅度或量化缺失、主问题有答案而子问题未答 → 部分闭环；上季判断失效 → 上季判断失效；未回答 → 未回答。分析稿本身没有给汇总数，计数由页面按 label 现算。换季时换成下一季分析稿第 0 节的内容并改戳；那一季没有闭环表就删掉整块。",
+  "labels": [
+   "已闭环",
+   "部分闭环",
+   "上季判断失效",
+   "未回答"
+  ],
+  "items": [
+   {
+    "question": "中东冲击是否一次性？79 家门店的品牌分布？",
+    "verdict": "“一次性”假设失败；门店构成仍未回答。",
+    "label": "部分闭环"
+   },
+   {
+    "question": "Gucci 中国是否首次环比改善？Conversion 如何？",
+    "verdict": "方向部分验证，量化证据缺失。",
+    "label": "部分闭环"
+   },
+   {
+    "question": "Gucci 北美能否延续增长？新品与价格架构是否有效？",
+    "verdict": "强验证。",
+    "label": "已闭环"
+   },
+   {
+    "question": "珠宝增速及 Raselli Franco 进展？",
+    "verdict": "强验证。",
+    "label": "已闭环"
+   },
+   {
+    "question": "Bottega Veneta / Saint Laurent 是否加速？",
+    "verdict": "部分验证。",
+    "label": "部分闭环"
+   },
+   {
+    "question": "资本市场日之后是否给出 FY26 利润率目标？",
+    "verdict": "方向升级，仍低模型化。",
+    "label": "部分闭环"
+   },
+   {
+    "question": "L’Oréal / Kering Beauté 交易的财务影响？",
+    "verdict": "闭环。",
+    "label": "已闭环"
+   },
+   {
+    "question": "McQueen 的终局是出售、收缩还是重组？",
+    "verdict": "当前路径是重组与收缩，不支持近期出售假设。",
+    "label": "已闭环"
+   },
+   {
+    "question": "Coty 的 Gucci Beauty 授权如何处理？",
+    "verdict": "闭环，但新增过渡现金支出。",
+    "label": "已闭环"
+   },
+   {
+    "question": "上半年末净负债能否降到 €2–3bn？",
+    "verdict": "方向正确、幅度轻微未达。",
+    "label": "部分闭环"
+   },
+   {
+    "question": "四个珠宝品牌各自表现如何？",
+    "verdict": "增长并非四品牌同速。",
+    "label": "已闭环"
+   },
+   {
+    "question": "Bottega Veneta 手袋 AUR 改善来自价格还是 mix？",
+    "verdict": "未回答。",
+    "label": "未回答"
+   },
+   {
+    "question": "Balenciaga 新创意方向的反馈？",
+    "verdict": "上季改善判断失效。",
+    "label": "上季判断失效"
+   },
+   {
+    "question": "中东冲击是否外溢到欧洲旅游消费？",
+    "verdict": "方向存在、无法量化。",
+    "label": "部分闭环"
+   }
+  ]
+ },
+ "prior_kpi_settlement": {
+  "period": "Q2 2026",
+  "set_in": "Q1 2026",
+  "_what": "上季两份本地分析稿第 8 节「关键观察指标」里、本季能用公司印出的数字结算的阈值。threshold 与 rule（阈值的比较符）逐字取自 quote（分析稿原话），gate 是分析稿给的动作（加仓 / 警示 / 减仓 / 跟踪）；direction 指有利的一侧：加仓线是达到那一侧，其余是没有触发那一侧。actual 只在序列里没有这个量时才手录，并写明出处；measure 能从序列算出的一律现算。unsettled 是本季结不了的条目与原因。换季时换成下一季分析稿第 8 节并改戳。",
+  "entries": [
+   {
+    "measure": "half_group_comparable",
+    "metric": "H1 集团可比",
+    "rule": "≥",
+    "threshold": 2,
+    "unit": "pct",
+    "direction": "up",
+    "gate": "加仓",
+    "signed": true,
+    "report": "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis.md",
+    "quote": "H1 集团 ≥ +2% + EBIT margin ≥ 12% = 转折点确立 → 加仓",
+    "actual": 1,
+    "source": "2026 上半年业绩新闻稿第 1 页「First-half revenue at €7,220 million, +1% on a comparable basis」"
+   },
+   {
+    "measure": "half_group_comparable",
+    "metric": "H1 集团可比",
+    "rule": "≤",
+    "threshold": -1,
+    "unit": "pct",
+    "direction": "up",
+    "gate": "减仓",
+    "signed": true,
+    "report": "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis.md",
+    "quote": "H1 集团 ≤ -1% = 转折推迟到 FY 2027 → 减仓",
+    "actual": 1,
+    "source": "2026 上半年业绩新闻稿第 1 页「First-half revenue at €7,220 million, +1% on a comparable basis」"
+   },
+   {
+    "measure": "half_recurring_margin",
+    "metric": "H1 利润率",
+    "rule": "≥",
+    "threshold": 12,
+    "unit": "pct",
+    "direction": "up",
+    "gate": "加仓",
+    "signed": false,
+    "report": "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis（估值与隐性指引版）.md",
+    "quote": "H1 报告 ≥ 12% + FY26 actual ≥ 12.5% = 隐性上修兑现 → 加仓"
+   },
+   {
+    "measure": "half_recurring_margin",
+    "metric": "H1 利润率",
+    "rule": "<",
+    "threshold": 11.5,
+    "unit": "pct",
+    "direction": "up",
+    "gate": "警示",
+    "signed": false,
+    "report": "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis（估值与隐性指引版）.md",
+    "quote": "H1 < 11.5% = \"slight improvement\"叙事被打脸、management credibility 受损 → 警示"
+   },
+   {
+    "measure": "gucci_comparable",
+    "metric": "Gucci 季度可比",
+    "rule": "≥",
+    "threshold": -5,
+    "unit": "pct",
+    "direction": "up",
+    "gate": "加仓",
+    "signed": true,
+    "report": "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis（估值与隐性指引版）.md",
+    "quote": "Q2/Q3 Primavera 完整一季 sell-through + Gucci AUR 维持 + Gucci global comp 收窄到 -5% 以内 = Demna 设计语言被市场接受 → 加仓"
+   },
+   {
+    "measure": "gucci_comparable",
+    "metric": "Gucci 季度可比",
+    "rule": "≤",
+    "threshold": -8,
+    "unit": "pct",
+    "direction": "up",
+    "gate": "警示",
+    "signed": true,
+    "report": "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis（估值与隐性指引版）.md",
+    "quote": "Primavera disappointing + Gucci comp 仍 ≤ -8% = 设计师调整未生效 → 警示"
+   },
+   {
+    "measure": "gucci_na_retail",
+    "metric": "Gucci 北美零售可比",
+    "rule": "≥",
+    "threshold": 5,
+    "unit": "pct",
+    "direction": "up",
+    "gate": "加仓",
+    "signed": true,
+    "report": "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis.md",
+    "quote": "Q2/Q3 Gucci 北美 ≥ +5% + 中国从 -mid-teens 收窄到 < -10% = 双区域同步触底 → 加仓"
+   },
+   {
+    "measure": "gucci_na_retail",
+    "metric": "Gucci 北美零售可比",
+    "rule": "<",
+    "threshold": 3,
+    "unit": "pct",
+    "direction": "up",
+    "gate": "警示",
+    "signed": true,
+    "report": "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis.md",
+    "quote": "北美回落 < +3% 或中国仍 ≤ -15% = 北美 playbook 不可复制 → 警示"
+   },
+   {
+    "measure": "half_jewelry_comparable",
+    "metric": "H1 珠宝可比",
+    "rule": "≥",
+    "threshold": 18,
+    "unit": "pct",
+    "direction": "up",
+    "gate": "加仓",
+    "signed": true,
+    "report": "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis.md",
+    "quote": "H1 Jewelry comp ≥ +18% + Raselli Franco 第二阶段持股扩张披露 = 长期复利机会兑现 → 加仓 + 重估为独立估值乘数",
+    "actual": 20,
+    "source": "2026 上半年业绩新闻稿第 5 页「In the first half, revenue amounted to €521 million, up 14% as reported and 20% on a comparable basis」"
+   },
+   {
+    "measure": "jewelry_comparable",
+    "metric": "珠宝季度可比",
+    "rule": "≥",
+    "threshold": 15,
+    "unit": "pct",
+    "direction": "up",
+    "gate": "加仓",
+    "signed": true,
+    "report": "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis（估值与隐性指引版）.md",
+    "quote": "Q2/Q3 Jewelry ≥ +15% + Eyewear ≥ +5% = 多引擎兑现 → 加仓 + 重估为 Richemont jewelry / EssilorLuxottica 估值框架"
+   },
+   {
+    "measure": "jewelry_comparable",
+    "metric": "珠宝季度可比",
+    "rule": "<",
+    "threshold": 10,
+    "unit": "pct",
+    "direction": "up",
+    "gate": "跟踪",
+    "signed": true,
+    "report": "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis（估值与隐性指引版）.md",
+    "quote": "Jewelry 跌至 < +10% = 高增长 normalize 过快 → 跟踪"
+   },
+   {
+    "measure": "eyewear_comparable",
+    "metric": "眼镜季度可比",
+    "rule": "≥",
+    "threshold": 5,
+    "unit": "pct",
+    "direction": "up",
+    "gate": "加仓",
+    "signed": true,
+    "report": "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis（估值与隐性指引版）.md",
+    "quote": "Q2/Q3 Jewelry ≥ +15% + Eyewear ≥ +5% = 多引擎兑现 → 加仓 + 重估为 Richemont jewelry / EssilorLuxottica 估值框架"
+   },
+   {
+    "measure": "net_debt",
+    "metric": "H1 末净负债",
+    "rule": "≤",
+    "threshold": 3000,
+    "unit": "eur_m",
+    "direction": "down",
+    "gate": "加仓",
+    "signed": false,
+    "report": "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis（估值与隐性指引版）.md",
+    "quote": "H1 末 net debt ≤ €3.0B + free cash flow 正向 + McQueen / Pomellato 等子品牌处置进展 = capital discipline 兑现 → 加仓"
+   },
+   {
+    "measure": "net_debt",
+    "metric": "H1 末净负债",
+    "rule": "≥",
+    "threshold": 4000,
+    "unit": "eur_m",
+    "direction": "down",
+    "gate": "跟踪",
+    "signed": false,
+    "report": "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis（估值与隐性指引版）.md",
+    "quote": "H1 net debt 维持 ≥ €4B = 现金流压力升级 → 跟踪"
+   }
+  ],
+  "conjunctions": "五条加仓线的原话还带着别的条件，图上只结算数字那一腿：H1 利润率那条还要 FY26 实际 ≥ 12.5%（全年指标，未到期）；Gucci 可比那条还要 Primavera 的 sell-through 与 AUR（本季公告与演示材料里没有这两个数）；Gucci 北美那条还要中国从 −mid-teens 收窄到 < −10%（结不了，见核对表）；H1 珠宝那条还要 Raselli Franco 第二阶段增持（半年度财务报告只写了 3 月 30 日完成的首批 20%）；净负债那条还要自由现金流为正与子品牌处置。",
+  "unsettled": [
+   {
+    "item": "Gucci 中国可比从 −mid-teens 收窄到 < −10%（加仓）/ 仍 ≤ −15%（警示）",
+    "report": "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis.md",
+    "why": "季度公告与演示材料的分地区表不单列中国大陆（它在亚太里），新闻稿对中国只有文字描述。"
+   },
+   {
+    "item": "中东 Q2 ≥ 0%（一次性，跟踪）/ 仍为负（减仓）",
+    "report": "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis.md",
+    "why": "一季度收入公告给过中东零售 −11%，本季新闻稿只说中东拖累集团增速约 1 个百分点，没有给中东本身的增速。"
+   },
+   {
+    "item": "Bottega Veneta ≥ +5% 且 Saint Laurent ≥ +3%（加仓）/ 任一 < 0%（警示）",
+    "report": "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis.md",
+    "why": "2026 年起两个品牌不再单独披露收入与增速。"
+   },
+   {
+    "item": "Gucci 中国 cohort 首次环比改善（加仓）/ 连续 4 季无改善（减仓）",
+    "report": "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis（估值与隐性指引版）.md",
+    "why": "本季公告与演示材料里没有中国客群或中国大陆的数字。"
    }
   ]
  }

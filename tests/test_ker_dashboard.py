@@ -33,6 +33,7 @@ against `_checks`, a separate reading of the release. Rolling a quarter re-keys
 
 from __future__ import annotations
 
+import collections
 import copy
 import json
 import re
@@ -100,6 +101,100 @@ class KerDashboardTest(unittest.TestCase):
         for ref in ("EX_HOUSES", "EX_HOUSE_COMP", "EX_HOUSE_MARGIN", "EX_GROUP_MARGIN", "EX_GROSS",
                     "EX_NET_DEBT", "EX_CMD_LINE"):
             self.assertEqual(where[ref], "routine", ref)
+        # section one runs (a) the closure, (b) last quarter's thresholds, (c) the
+        # company's own targets -- in that order
+        settled = [ex.get("ref") for ex in self.payload["sections"][0]["exhibits"]]
+        order = ["EX_CLOSURE", "EX_PRIOR_HEADROOM"] + [r for r in settled if r.startswith("EX_PRIOR_")
+                                                         and r != "EX_PRIOR_HEADROOM"]
+        present = [r for r in order if r in settled]
+        self.assertEqual(settled[:len(present)], present)
+        self.assertEqual(settled[len(present):],
+                         ["EX_G2024", "EX_GUCCI_TARGET", "EX_YSL_TARGET", "EX_TARGETS_2022"])
+
+    # ── section one (a): report §0's closure of last quarter's questions ─────
+    def test_the_closure_chart_counts_the_verdicts_it_lists(self) -> None:
+        """The report gives a verdict per question and no tally, so the page counts
+        the labels itself: the bars, the title and the table are one count."""
+        closure = self.st["followup_closure"]
+        ex = self.by_ref["EX_CLOSURE"]
+        counts = collections.Counter(item["label"] for item in closure["items"])
+        self.assertLessEqual(set(counts), set(closure["labels"]))
+        shown = [label for label in closure["labels"] if counts[label]]
+        self.assertEqual(ex["xlabels"], shown)
+        self.assertEqual(ex["values"], [counts[label] for label in shown])
+        self.assertTrue(ex["title"].startswith(f"上季 {len(closure['items'])} 条待验证问题："))
+        for label in shown:
+            self.assertIn(f"{counts[label]} 条{label}", ex["title"])
+        for item in closure["items"]:
+            if item["label"] in ("上季判断失效", "未回答"):
+                self.assertIn(item["question"], ex["note"])
+        table = next(t for t in self.payload["tables"] if "待验证问题的闭环" in t["title"])
+        self.assertEqual([row[1:] for row in table["rows"]],
+                         [[item["question"], item["verdict"], item["label"]] for item in closure["items"]])
+
+    # ── section one (b): last quarter's thresholds ───────────────────────────
+    def prior_values(self) -> dict:
+        """This quarter's value for each measure a prior threshold names, read here
+        from the series; a measure the series does not carry is the entry's own
+        typed figure, which then has to name where it was read."""
+        values = self.current_values()
+        regions = self.st["new_grid_retail_regions"]["gucci"]
+        values["gucci_na_retail"] = regions["north_america"][-1]
+        values["gucci_retail"] = regions["total"][-1]
+        return values
+
+    def test_last_quarters_thresholds_are_settled_on_this_quarters_figures(self) -> None:
+        block = self.st["prior_kpi_settlement"]
+        values = self.prior_values()
+        actual = []
+        for entry in block["entries"]:
+            if entry["measure"] in values:
+                self.assertNotIn("actual", entry, f"{entry['measure']} is measured; a typed copy would drift")
+                actual.append(values[entry["measure"]])
+            else:
+                self.assertTrue(entry.get("source"), f"{entry['measure']} is typed without a source")
+                actual.append(entry["actual"])
+        ex = self.by_ref["EX_PRIOR_HEADROOM"]
+        self.assertEqual(ex["kind"], "diverging_bars")
+        self.assertEqual(ex["values"], [round(headroom(e["direction"], e["threshold"], a), 1)
+                                        for e, a in zip(block["entries"], actual)])
+        for label, entry in zip(ex["xlabels"], block["entries"]):
+            self.assertTrue(label.startswith(entry["metric"]), label)
+            self.assertTrue(label.endswith(f"（{entry['gate']}）"), label)
+        good = [headroom(e["direction"], e["threshold"], a) >= 0 for e, a in zip(block["entries"], actual)]
+        bull = [g for e, g in zip(block["entries"], good) if e["gate"] == "加仓"]
+        rest = [g for e, g in zip(block["entries"], good) if e["gate"] != "加仓"]
+        title = ex["title"]
+        self.assertTrue(title.startswith(f"上季 {len(block['entries'])} 条量化阈值："), title)
+        self.assertIn(f"{len(bull)} 条加仓线", title)
+        if any(bull):
+            self.assertIn(f"{sum(bull)} 条达到", title)
+        if not all(bull):
+            self.assertIn(f"{len(bull) - sum(bull)} 条没够着", title)
+            self.assertIn("没够着的加仓线", ex["note"])
+        self.assertIn("一条都没碰到" if all(rest) else f"有 {len(rest) - sum(rest)} 条被触发", title)
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("上季量化阈值的结算"))
+        self.assertEqual([row[4] for row in table["rows"]], [e["quote"] for e in block["entries"]])
+
+    def test_each_prior_threshold_line_draws_every_threshold_set_on_its_measure(self) -> None:
+        block = self.st["prior_kpi_settlement"]
+        charts = [ex for ex in self.payload["sections"][0]["exhibits"]
+                  if ex.get("ref", "").startswith("EX_PRIOR_") and ex["kind"] == "lines"]
+        self.assertTrue(charts)
+        for ex in charts:
+            measure = ex["ref"][len("EX_PRIOR_"):].lower()
+            entries = [e for e in block["entries"] if e["measure"] == measure]
+            self.assertTrue(entries, measure)
+            lines = ex["series"][1:]
+            self.assertEqual([line["values"] for line in lines],
+                             [[e["threshold"]] * len(ex["xlabels"]) for e in entries])
+            self.assertEqual([line["color"] for line in lines],
+                             ["GREEN" if e["gate"] == "加仓" else "RED" for e in entries])
+            for e in entries:
+                self.assertIn(f"上季{e['gate']}线", ex["title"])
+            # drawn on the whole record, not on a recent window
+            self.assertIn(ex["xlabels"][0], (ker.compact_quarter(self.st["long_quarters"][0]),
+                                             self.st["halves"][0], self.st["balance_dates"][0]), ex["ref"])
 
     # ── the disclosure shape this page exists to respect ─────────────────────
     def test_no_profit_series_is_carried_on_the_quarterly_axis(self) -> None:
@@ -384,7 +479,8 @@ class KerDashboardTest(unittest.TestCase):
                 self.assertEqual(row[3], unit_text(entry["unit"], values[entry["measure"]]))
 
     def test_the_headroom_chart_agrees_with_the_audit_table_and_names_its_breach(self) -> None:
-        ex = next(e for e in self.exhibits if e["kind"] == "diverging_bars")
+        ex = next(e for section in self.payload["sections"] if section["id"] == "next_quarter"
+                  for e in section["exhibits"] if e["kind"] == "diverging_bars")
         entries = self.st["next_kpi"]["entries"]
         values = self.current_values()
         self.assertEqual(ex["xlabels"], [e["metric"] for e in entries])
@@ -632,6 +728,7 @@ class KerRollTest(unittest.TestCase):
 
     def test_a_block_stamped_with_another_period_stops_the_build(self) -> None:
         for key, stale_period in (("next_kpi", "Q1 1999"), ("outlook", "Q1 1999"), ("corpus_audit", "Q1 1999"),
+                                  ("followup_closure", "Q1 1999"), ("prior_kpi_settlement", "Q1 1999"),
                                   ("half_bridge", "H1 1999"), ("net_debt_story", "H1 1999")):
             stale = copy.deepcopy(self.full)
             stale[key]["period"] = stale_period
@@ -664,6 +761,37 @@ class KerRollTest(unittest.TestCase):
         lagging["halves"] = lagging["halves"][:-1]
         with self.assertRaisesRegex(ValueError, "release carries"):
             ker.build_payload(lagging)
+        # last quarter's questions and thresholds have to be last quarter's
+        for key in ("followup_closure", "prior_kpi_settlement"):
+            wrong = copy.deepcopy(self.full)
+            wrong[key]["set_in"] = "Q1 1999"
+            with self.subTest(block=key, case="set_in"):
+                with self.assertRaisesRegex(ValueError, "last quarter was"):
+                    ker.build_payload(wrong)
+        undeclared = copy.deepcopy(self.full)
+        undeclared["followup_closure"]["items"][0]["label"] = "不在清单里的类"
+        with self.assertRaisesRegex(ValueError, "does not declare"):
+            ker.build_payload(undeclared)
+        # a measured value typed beside its threshold is a second copy; an unmeasured
+        # one with no source is a number from nowhere
+        entries = self.full["prior_kpi_settlement"]["entries"]
+        measured = next(i for i, e in enumerate(entries) if e["measure"] == "net_debt")
+        typed = copy.deepcopy(self.full)
+        typed["prior_kpi_settlement"]["entries"][measured]["actual"] = 1
+        with self.assertRaisesRegex(ValueError, "remove its typed actual"):
+            ker.build_payload(typed)
+        unmeasured = next(i for i, e in enumerate(entries) if "actual" in e)
+        sourceless = copy.deepcopy(self.full)
+        del sourceless["prior_kpi_settlement"]["entries"][unmeasured]["source"]
+        with self.assertRaisesRegex(ValueError, "no source"):
+            ker.build_payload(sourceless)
+        behind = copy.deepcopy(self.full)
+        regions = behind["new_grid_retail_regions"]
+        regions["quarters"] = regions["quarters"][:-1]
+        for values in regions["gucci"].values():
+            values.pop()
+        with self.assertRaisesRegex(ValueError, "new_grid_retail_regions"):
+            ker.build_payload(behind)
 
     def test_a_period_without_a_story_leaves_it_out(self) -> None:
         full = self.full
@@ -673,6 +801,9 @@ class KerRollTest(unittest.TestCase):
             "net_debt_story": (full["net_debt_story"]["headline"], full["net_debt_story"]["note"]),
             "corpus_audit": ("每一次被后续公告重印都与首次公布相同", "两个互不知情的转录者",
                              "与首次公布不同的重印"),
+            "followup_closure": ("条待验证问题：", "待验证问题的闭环", "条问题闭环到哪一步"),
+            "prior_kpi_settlement": ("条量化阈值：", "上季量化阈值的结算", "上季加仓线",
+                                     "条阈值落在哪一侧"),
         }
         for key, texts in cases.items():
             bare = copy.deepcopy(full)
@@ -822,6 +953,31 @@ class KerRollTest(unittest.TestCase):
             cur["other_recurring_operating_income_expenses"] -= gross - cur["gross_margin"]
             set_half(d, "gross_margin", gross)
 
+        regions = lambda d: d["new_grid_retail_regions"]["gucci"]
+
+        def one_region_up(d):
+            for key, values in regions(d).items():
+                values[-1] = 9 if key == "north_america" else -5
+                values[-2] = values[-1] - 3
+
+        def second_region_up(d):
+            regions(d)["japan"][-1] = 2
+
+        def one_region_worse(d):
+            r = regions(d)["western_europe"]
+            r[-1] = r[-2] - 1
+
+        def a_warning_line_hit(d):
+            gucci = comp(d)["gucci"]
+            gucci[-1] = -9
+
+        def every_buy_line_reached(d):
+            for entry in d["prior_kpi_settlement"]["entries"]:
+                if "actual" in entry:
+                    entry["actual"] = max(entry["actual"], entry["threshold"]) + 1
+            d["net_debt_eur_m"][-1] = 2900.0
+            regions(d)["north_america"][-1] = 9
+
         noop = lambda d: None
         halves = len(self.full["halves"])
         cases = {
@@ -846,6 +1002,11 @@ class KerRollTest(unittest.TestCase):
             "Bottega mostly positive lately": (noop, bottega_negative_lately, ("近年多为正",)),
             "costs carry the margin": (costs_carry_margin, gross_carries_margin,
                                        ("利润率的改善全部来自费用", "但毛利率低了", "利润率改善来自费用")),
+            "one region above zero": (one_region_up, second_region_up, ("是唯一为正的地区",)),
+            "every region better than last quarter": (one_region_up, one_region_worse,
+                                                      ("个地区都比上季好",)),
+            "no warning line touched": (noop, a_warning_line_hit, ("一条都没碰到",)),
+            "a buy line missed": (noop, every_buy_line_reached, ("没够着的加仓线", "条没够着")),
         }
         for name, (make_true, make_false, claims) in cases.items():
             held = copy.deepcopy(self.full)
@@ -882,6 +1043,11 @@ class KerRollTest(unittest.TestCase):
             for values in block.values():
                 values.append(values[-1])
         grid["src"].append(ker.release_doc(nxt))
+        regions = rolled["new_grid_retail_regions"]
+        regions["quarters"].append(nxt)
+        for values in regions["gucci"].values():
+            values.append(values[-1])
+        regions["src"].append(ker.release_doc(nxt))
         rolled["sources"].append({"doc": ker.release_doc(nxt), "url": "https://www.kering.com/"})
         adds_half = nxt[-1] in "24"
         if adds_half:
@@ -902,9 +1068,13 @@ class KerRollTest(unittest.TestCase):
             rolled.pop("net_debt_story", None)
         stamp = display_period(nxt)
         rolled["latest"].update(period=stamp)
-        for key in ("next_kpi", "outlook", "corpus_audit"):
+        for key in ("next_kpi", "outlook", "corpus_audit", "followup_closure", "prior_kpi_settlement"):
             if key in rolled:
                 rolled[key]["period"] = stamp
+        # last quarter's questions and thresholds are now the ones set in the quarter just left
+        for key in ("followup_closure", "prior_kpi_settlement"):
+            if key in rolled:
+                rolled[key]["set_in"] = display_period(last)
         payload = ker.build_payload(rolled)
         self.assertEqual(payload["title"], f"Kering（KER.PA）：{stamp} / {rolled['halves'][-1]} 季报仪表盘")
         refs = [ex.get("ref") for section in payload["sections"] for ex in section["exhibits"]]
@@ -994,6 +1164,39 @@ class KerChecksTest(unittest.TestCase):
             self.assertEqual(nd[dates.index(c["net_debt_compare_date"])], c["net_debt_compare_eur_m"])
         if "outlook_quote" in c:
             self.assertEqual(st["outlook"]["quote"], c["outlook_quote"])
+        if "q_gucci_na_retail_comparable_pct" in c:
+            regions = st["new_grid_retail_regions"]
+            self.assertEqual(regions["quarters"][-1], st["long_quarters"][-1])
+            self.assertEqual(regions["gucci"]["north_america"][-1], c["q_gucci_na_retail_comparable_pct"])
+            self.assertEqual(regions["gucci"]["total"][-1], c["q_gucci_retail_comparable_pct"])
+
+    def test_the_report_blocks_are_the_report_reading(self) -> None:
+        """What the local analysis decides -- the verdict on each of last quarter's
+        questions and the thresholds it set -- is typed a second time in
+        `_checks.report`, read off the reports themselves. The report gives no tally
+        of its verdicts, so the reading records the count per label."""
+        report = self.checks.get("report")
+        if report is None:
+            self.assertNotIn("followup_closure", self.st)
+            self.assertNotIn("prior_kpi_settlement", self.st)
+            return
+        if "followup_closure" in self.st:
+            items = self.st["followup_closure"]["items"]
+            self.assertEqual(dict(collections.Counter(item["label"] for item in items)), report["followup_counts"])
+            title = self.exhibits["EX_CLOSURE"]["title"]
+            self.assertIn(f"上季 {sum(report['followup_counts'].values())} 条待验证问题", title)
+            for label, count in report["followup_counts"].items():
+                self.assertIn(f"{count} 条{label}", title)
+        if "prior_kpi_settlement" in self.st:
+            entries = self.st["prior_kpi_settlement"]["entries"]
+            self.assertEqual([[e["measure"], e["threshold"], e["direction"], e["gate"]] for e in entries],
+                             report["prior_thresholds"])
+            for e in entries:
+                t = e["threshold"]
+                number = rf"€{t / 1000:g}(\.0)?B" if e["unit"] == "eur_m" else rf"(?<![\d.]){abs(t):g}%"
+                with self.subTest(quote=e["quote"]):
+                    self.assertRegex(e["quote"], number)
+                    self.assertIn(e["gate"], e["quote"])
 
     def test_the_rounding_the_page_uses_is_the_companys(self) -> None:
         c = self.checks
