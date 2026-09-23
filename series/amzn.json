@@ -13,6 +13,10 @@
     "analysis_date": "2026-08-01",
     "audit_status": "unaudited"
   },
+  "analysis_record": {
+    "first_period": "Q4 2025",
+    "note": "本站库里最早的一份 AMZN 季报分析覆盖 Q4 2025（库中有两份：2026-03-05 那份没有 Follow-up 与观察指标，2026-04-26 那份有「下季度需要关注」）。此后每一季都有上一份分析可结算，所以 series 必须带 prior_kpi_settlement（及 followup_closure），缺了就停止构建；不写死在 builder 里。"
+  },
   "_checks": {
     "period": "Q2 2026",
     "period_end": "2026-06-30",
@@ -63,7 +67,147 @@
       "energy_derivative_gain": 551
     },
     "source": "Q2 2026 业绩 8-K EX-99.1（accession 0001018724-26-000024）：Consolidated Statements of Operations 的 Total net sales / Operating income / Other income (expense), net / Income before income taxes / Net income / Diluted earnings per share 列；Consolidated Statements of Cash Flows 三个月列的 operating activities 合计、Purchases of property and equipment 与 Proceeds from property and equipment sales and incentives；Segment Information 表的三个分部；Supplemental 表的 Free cash flow -- TTM、Advertising services、AWS -- Y/Y growth, excluding F/X 与 Operating margin 各行；首页要点「Net sales increased 20%」；Financial Guidance 段的 Q3 区间与「unfavorable impact of approximately 80 basis points」。Q2 2026 10-Q（accession 0001018724-26-000026）：Note 1 能源合约段「net unrealized gains of $551 million in Q2 2026」、关税退款段「approximately $640 million of tariff refunds」、承诺附注「approximately $496 billion」。",
-    "checked_on": "2026-09-19"
+    "checked_on": "2026-09-19",
+    "note": {
+      "source": {
+        "this_quarter": "2026-07-30 AMZN Q2 2026 vs Q1 2026 Analysis.md：第 0 节「上季遗留问题回答」5 题（每题一句「答」加方向 / 幅度 / 归因 / 时点打分，没有统计行）；§8「关键洞察总结」末尾「关键观察指标（下季必查）」8 行（Bull / Bear 两档）；文末 Follow-up Questions 5 条",
+        "last_quarter": "2026-04-30 AMZN Q1 2026 vs Q4 2025 Analysis.md：「9. 关键观察指标」5 行（每行一个加码档与一个警示档，第 3 行多头档写明是下半年）；文末 Follow-up Questions 5 条"
+      },
+      "checked_on": "2026-09-24",
+      "closure": {
+        "total": 5,
+        "direction_marks": [
+          "✓",
+          "✓✓",
+          "✗✗",
+          "✗",
+          "✓"
+        ],
+        "answer_says_undisclosed": [
+          false,
+          false,
+          false,
+          false,
+          true
+        ],
+        "verdicts": [
+          "已验证",
+          "已验证",
+          "被证伪",
+          "被证伪",
+          "仍未披露"
+        ]
+      },
+      "prior_rows": 5,
+      "prior_thresholds": [
+        {
+          "row": 1,
+          "tier": "risk",
+          "op": "<",
+          "threshold": 15.0,
+          "unit": "pct"
+        },
+        {
+          "row": 1,
+          "tier": "bull",
+          "op": ">=",
+          "threshold": 400.0,
+          "unit": "usd_bn"
+        },
+        {
+          "row": 2,
+          "tier": "risk",
+          "op": "<",
+          "threshold": 25.0,
+          "unit": "pct"
+        },
+        {
+          "row": 2,
+          "tier": "bull",
+          "op": ">=",
+          "threshold": 27.0,
+          "unit": "pct"
+        },
+        {
+          "row": 2,
+          "tier": "risk",
+          "op": "<",
+          "threshold": 35.0,
+          "unit": "pct"
+        },
+        {
+          "row": 2,
+          "tier": "bull",
+          "op": ">=",
+          "threshold": 36.0,
+          "unit": "pct"
+        },
+        {
+          "row": 3,
+          "tier": "risk",
+          "op": "<=",
+          "threshold": -10.0,
+          "unit": "usd_bn"
+        },
+        {
+          "row": 3,
+          "tier": "bull",
+          "op": ">=",
+          "threshold": 5.0,
+          "unit": "usd_bn",
+          "due": "下半年"
+        },
+        {
+          "row": 4,
+          "tier": "risk",
+          "op": "<",
+          "threshold": 22.0,
+          "unit": "usd_bn"
+        },
+        {
+          "row": 4,
+          "tier": "bull",
+          "op": ">=",
+          "threshold": 24.0,
+          "unit": "usd_bn"
+        },
+        {
+          "row": 4,
+          "tier": "risk",
+          "op": "<=",
+          "threshold": 11.0,
+          "unit": "pct"
+        },
+        {
+          "row": 4,
+          "tier": "bull",
+          "op": ">=",
+          "threshold": 12.0,
+          "unit": "pct"
+        }
+      ],
+      "prior_row_logic": {
+        "1": [
+          "and",
+          "or"
+        ],
+        "2": [
+          "and",
+          "or"
+        ],
+        "3": [
+          "and",
+          "or"
+        ],
+        "4": [
+          "and",
+          "and"
+        ]
+      },
+      "prior_unquantified_rows": [
+        5
+      ]
+    }
   },
   "periods": [
     "Q3 2023",
@@ -2101,10 +2245,36 @@
       "customer": "Anthropic",
       "more_than_usd_bn": 100.0
     },
+    "named_commitments": [
+      {
+        "customer": "OpenAI",
+        "parts_usd_bn": [
+          38.0,
+          100.0
+        ],
+        "parts_words": [
+          "原有",
+          "Q1 2026 扩容"
+        ],
+        "years": 8.0,
+        "years_of": "扩容部分 ",
+        "more_than": false
+      },
+      {
+        "customer": "Anthropic",
+        "parts_usd_bn": [
+          100.0
+        ],
+        "parts_words": [
+          "Q2 2026 扩容"
+        ],
+        "years": 10.0,
+        "more_than": true
+      }
+    ],
     "top_three_share_undisclosed_quarters": 2,
     "brief_title": "backlog 增量高度集中",
-    "text": "公司连续两季拒绝披露前三大客户占比。可从申报文件下限推算的只有两笔：OpenAI 原有 US$38.0B 承诺加 Q1 2026 扩容的 US$100.0B / 8 年，Anthropic 于 Q2 2026 扩容「超过 US$100.0B」/ 10 年，两者合计 ≥US$238B、占 US$496B 的 ≥48%。",
-    "basis": "Q2 2026 10-Q：「In Q2 2026, AWS and Anthropic announced an expansion of the strategic collaboration and existing multi-year commitment by more than $100.0 billion over 10.0 years」。前三大客户占比两季都没有披露。"
+    "basis": "Q2 2026 10-Q 收入附注：「In Q1 2026, AWS and OpenAI Group PBC (“OpenAI”) announced an expansion of the existing $38.0 billion multi-year commitment and commercial arrangement with OpenAI by $100.0 billion over 8.0 years」；同一份 10-Q：「In Q2 2026, AWS and Anthropic announced an expansion of the strategic collaboration and existing multi-year commitment by more than $100.0 billion over 10.0 years」。前三大客户占比两季都没有披露。两笔相加只能当量级看：合约额里有已确认为收入的部分，Anthropic 原有承诺没有单列。"
   },
   "guidance": {
     "period": "Q2 2026",
@@ -2140,102 +2310,232 @@
     "post_earnings_price_change_pct": 15.3,
     "note": "只发布财报前的每股收益预期与财报次日的股价变动幅度两项，均不具名、不附机构来源，也不发布评级、目标价或估值倍数。"
   },
+  "followup_closure": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "labels": [
+      "已验证",
+      "部分验证",
+      "被证伪",
+      "仍未披露"
+    ],
+    "rule": "本季分析第 0 节没有统计行：每题只有一句「答」和方向、幅度、归因、时点四维打分。本页按两步归类 —— 答复首句说仍未量化、仍未披露的记「仍未披露」；其余按该题的「方向」打分，✓ 记「已验证」、✗ 记「被证伪」。第 0 节问的是上季的判断在本季对不对，所以第四题虽然「守住了」，上季担心的是守不住，方向打 ✗，记被证伪；幅度、归因打 ✗ 或 ~ 的不改归类，逐条见核对抽屉。",
+    "items": [
+      {
+        "question": "Trainium US$225B 累计承诺中 Anthropic + OpenAI 占比？是否会在 Q2/Q3 披露前三大客户口径？是否有第 3 个 multi-GW 客户加入、分散集中度？",
+        "short": "客户集中度与第三个大客户",
+        "answer": "集中度不但没分散，反而进一步恶化，且首次可以精确量化。",
+        "scores": "方向 ✓｜幅度 ~｜归因 ✓｜时点 ✓",
+        "verdict": "已验证",
+        "evidence": "10-Q 写明的两笔：{named_commitments}；本季 backlog {backlog}、单季净增 {backlog_add}。报告把两笔相加得 {named_floor}、占 backlog {named_share}（合约额里有已确认为收入的部分，Anthropic 原有承诺没有单列，只能当量级看）。本季没有第三个 multi-GW 客户，前三大客户占比仍未披露，上季用的「Trainium 累计承诺」口径本季没有再出现。"
+      },
+      {
+        "question": "2026 全年 FCF 是否会转负，深度多少？Q2 关键看 capex 是否维持 US$40B+ 节奏，OCF 增速是否从 +30% 回落到 +20%。",
+        "short": "全年自由现金流是否转负",
+        "answer": "已经转负，且比我给的最悲观区间还要深一倍。",
+        "scores": "方向 ✓✓｜幅度 ✗｜归因 ✓｜时点 ✓",
+        "verdict": "已验证",
+        "evidence": "新闻稿印出的 TTM 自由现金流 {fcf}（去年同期 {fcf_year_ago}）；电话会把全年资本开支从约 {fy_capex_prior} 上修到约 {fy_capex}，管理层把原因归为内存涨价。报告自评方向对、幅度低估近一倍。"
+      },
+      {
+        "question": "AWS Q2 增速能否守住 27%+？Q2 同期基数较高，数学上加速难度高于 Q1；如增速跌破 25%，13.1% OM 叙事会被快速重估。",
+        "short": "AWS 同比能否守住 27%",
+        "answer": "这个问题本身问错了。实际 36.7%，不是「能否守住」，而是史诗级加速。",
+        "scores": "方向 ✗✗｜幅度 ✗✗｜归因 ✗｜时点 —",
+        "verdict": "被证伪",
+        "evidence": "新闻稿印出的固定汇率同比 {aws_yoy_fx}，按两期美元收入自算 {aws_yoy_usd}（报告写的是 36.7%）；环比增量 {aws_increment}，是此前最大单季增量（{aws_record_at} 的 {aws_record}）的 {aws_record_ratio} 倍。报告据此把「AWS 同比能否守住 X%」这条阈值退役，下季改看环比绝对增量。"
+      },
+      {
+        "question": "AWS 单季 OM 能否守 36%+？内存通胀与 AI 资本开支折旧的双重压力，Q2 是首个测试季度。",
+        "short": "AWS 经营利润率能否守住 36%",
+        "answer": "守住了，而且远超 —— 但内存通胀确实来了，只是走错了报表。",
+        "scores": "方向 ✗｜幅度 ✗｜归因 ~｜时点 ✓",
+        "verdict": "被证伪",
+        "evidence": "AWS 经营利润率 {aws_om}；剔除 10-Q 披露的 {energy} 能源合约净未实现收益后 {aws_om_ex}（报告按电话会的「约 {energy_on_call}」剔除得 {aws_om_ex_call}），都在 36% 之上。报告的解释是内存涨价先进了资本开支（全年指引上修到约 {fy_capex}），还没有进 AWS 的利润表。"
+      },
+      {
+        "question": "Amazon Leo Q3 商业首发后，Q4 财报会不会披露 Leo 营收口径？目前所有合同金额未量化。",
+        "short": "Amazon Leo 营收口径",
+        "answer": "仍未量化，且出现了一个我完全没预料到的新变量。",
+        "scores": "方向 ✓｜幅度 —｜归因 ✓｜时点 ✓",
+        "verdict": "仍未披露",
+        "evidence": "新闻稿与 10-Q 都没有 Amazon Leo 的收入数。新变量是 10-Q 写明的 Globalstar 收购协议：2026-04-13 签署，含债务隐含价值约 US$10.9B，每股 US$90.00 现金或 0.3210 股亚马逊股票（现金选择合计不超过 40%），预计 2027 年完成。"
+      }
+    ],
+    "diagnosis": "第 0 节还诊断出三条同向的框架性误差：连续两季用「高基数所以难加速」看供给受限的 AWS；锚定管理层偏保守的经营利润指引中值（本季实际超出了区间上限）；把 AWS 增长与自由现金流当成同向变量 —— 本季是增长兑现、现金流恶化同时发生，上季的情景矩阵里没有这个组合。",
+    "source": "问题原文：2026-04-30《AMZN Q1 2026 vs Q4 2025 Analysis》文末 Follow-up Questions 5 条；答复与打分：2026-07-30《AMZN Q2 2026 vs Q1 2026 Analysis》第 0 节。每条证据已回本季 8-K EX-99.1 与 10-Q 核对，无一与申报矛盾。"
+  },
   "prior_kpi_settlement": {
     "period": "Q2 2026",
     "set_in": "Q1 2026",
-    "settled_in": "Q2 2026",
-    "framing": "上季设的每条指标都给了「多头确认线」与「风险线」两条。本节的余量图按风险线画（正值 = 没有触发风险线），另一张按多头确认线画（正值 = 多头论证被兑现），因为这两条线在本季给出的答案不一样。",
+    "section": "第 9 节「关键观察指标」",
+    "rows": [
+      {
+        "row": 1,
+        "subject": "AWS backlog 环比增长与客户多元化披露",
+        "bull": "Q2 backlog ≥ US$400B，且 Q2/Q3 披露前三大客户占比 ≤ 55%",
+        "risk": "backlog 环比增速回落到 < +15%，或前三大客户占比 ≥ 60%",
+        "bull_logic": "and",
+        "risk_logic": "or",
+        "bull_unquantified": "Q2/Q3 披露前三大客户占比 ≤ 55%",
+        "risk_unquantified": "前三大客户占比 ≥ 60%"
+      },
+      {
+        "row": 2,
+        "subject": "AWS Q2 固定汇率同比与 AWS 经营利润率",
+        "bull": "Q2 固定汇率同比 ≥ +27%，且 OM ≥ 36%",
+        "risk": "Q2 固定汇率同比 < +25%，或 OM < 35%",
+        "bull_logic": "and",
+        "risk_logic": "or"
+      },
+      {
+        "row": 3,
+        "subject": "TTM 自由现金流",
+        "bull": "下半年 TTM 自由现金流 ≥ +US$5B",
+        "risk": "Q2/Q3 TTM 自由现金流转负到 ≤ −US$10B",
+        "bull_logic": "and",
+        "risk_logic": "or"
+      },
+      {
+        "row": 4,
+        "subject": "Q2 经营利润对指引中值 US$22B",
+        "bull": "Q2 实际 ≥ US$24B，且 OM ≥ 12%",
+        "risk": "< US$22B，且 OM ≤ 11%",
+        "bull_logic": "and",
+        "risk_logic": "and"
+      },
+      {
+        "row": 5,
+        "subject": "Trainium 第三个 multi-GW 客户 / 客户集中度披露",
+        "bull": "Q2/Q3 披露第三个 multi-GW 客户，或前三大客户占比 < 55%",
+        "risk": "继续不披露，且 Anthropic 融资估值或模型迭代出现负面消息",
+        "qualitative": "多头一档要的第三个 multi-GW 客户本季没有出现，前三大客户占比也仍未披露；风险一档要「继续不披露」与「Anthropic 负面消息」同时出现，而 10-Q 记的是 Anthropic 融资带来的 {pe_upward} 向上调整 —— 两档都不成立。"
+      }
+    ],
     "quantified": [
       {
+        "id": "backlog_growth_risk",
+        "row": 1,
+        "tier": "risk",
         "metric": "AWS backlog 环比增速",
-        "direction": "up",
+        "reads": "backlog_qoq_pct",
+        "op": "<",
         "threshold": 15.0,
-        "bull_threshold": 400.0,
-        "bull_unit": "usd_bn",
-        "bull_actual": 496.0,
-        "actual": 36.3,
-        "unit": "pct",
-        "bull_note": "多头线是余额 ≥US$400B，风险线是环比增速 <+15%"
+        "unit": "pct"
       },
       {
-        "metric": "AWS 收入同比",
-        "direction": "up",
+        "id": "backlog_level_bull",
+        "row": 1,
+        "tier": "bull",
+        "metric": "AWS backlog 余额",
+        "reads": "backlog_level",
+        "op": ">=",
+        "threshold": 400.0,
+        "unit": "usd_bn"
+      },
+      {
+        "id": "aws_growth_risk",
+        "row": 2,
+        "tier": "risk",
+        "metric": "AWS 收入同比（固定汇率）",
+        "reads": "aws_yoy_ex_fx",
+        "op": "<",
         "threshold": 25.0,
-        "bull_threshold": 27.0,
-        "bull_unit": "pct",
-        "bull_actual": 36.8,
-        "actual": 36.8,
-        "unit": "pct",
-        "bull_note": "公司披露的固定汇率同比为 37%，按两期披露美元额自算为 36.8%"
+        "unit": "pct"
       },
       {
+        "id": "aws_growth_bull",
+        "row": 2,
+        "tier": "bull",
+        "metric": "AWS 收入同比（固定汇率）",
+        "reads": "aws_yoy_ex_fx",
+        "op": ">=",
+        "threshold": 27.0,
+        "unit": "pct"
+      },
+      {
+        "id": "aws_margin_risk",
+        "row": 2,
+        "tier": "risk",
         "metric": "AWS 分部经营利润率",
-        "direction": "up",
+        "reads": "aws_margin",
+        "op": "<",
         "threshold": 35.0,
-        "bull_threshold": 36.0,
-        "bull_unit": "pct",
-        "bull_actual": 39.4,
-        "actual": 39.4,
-        "unit": "pct",
-        "bull_note": "剔除 US$551M 能源衍生品收益后为 38.1%，仍在两条线之上"
+        "unit": "pct"
       },
       {
-        "metric": "集团单季经营利润",
-        "direction": "up",
-        "threshold": 22.0,
-        "bull_threshold": 24.0,
-        "bull_unit": "usd_bn",
-        "bull_actual": 27.461,
-        "actual": 27.461,
-        "unit": "usd_bn",
-        "bull_note": "风险线是上季给的指引中值 US$22B，实际值超出指引区间上限 US$24B"
+        "id": "aws_margin_bull",
+        "row": 2,
+        "tier": "bull",
+        "metric": "AWS 分部经营利润率",
+        "reads": "aws_margin",
+        "op": ">=",
+        "threshold": 36.0,
+        "unit": "pct"
       },
       {
-        "metric": "集团经营利润率",
-        "direction": "up",
-        "threshold": 11.0,
-        "bull_threshold": 12.0,
-        "bull_unit": "pct",
-        "bull_actual": 13.7,
-        "actual": 13.7,
-        "unit": "pct",
-        "bull_note": "剔除两笔一次性经营项后为 13.1%，仍高于多头线"
-      },
-      {
+        "id": "fcf_risk",
+        "row": 3,
+        "tier": "risk",
         "metric": "TTM 自由现金流",
-        "direction": "up",
+        "reads": "fcf_ttm",
+        "op": "<=",
         "threshold": -10.0,
-        "bull_threshold": 5.0,
-        "bull_unit": "usd_bn",
-        "bull_actual": -7.604,
-        "actual": -7.604,
-        "unit": "usd_bn",
-        "bull_note": "唯一一条只守住风险线、没到多头线的指标，落在两条线中间的无动作区"
-      }
-    ],
-    "qualitative_triggered": [
-      {
-        "short": "Trainium 客户集中度连续两季未披露",
-        "text": "Trainium 累计承诺的客户集中度连续两季未披露：上季设的「披露前三大客户占比」没有兑现，而且上季用的「Trainium 累计承诺 US$225B」口径本季直接消失，被更宽的 AWS backlog US$496B 取代。"
+        "unit": "usd_bn"
       },
       {
-        "short": "未出现第三个 multi-GW 客户",
-        "text": "没有出现第三个 multi-GW 客户：本季 backlog 净增 US$132B，其中单笔 Anthropic 扩容就 >US$100B。"
-      }
-    ],
-    "retired": [
+        "id": "fcf_bull",
+        "row": 3,
+        "tier": "bull",
+        "metric": "TTM 自由现金流",
+        "reads": "fcf_ttm",
+        "op": ">=",
+        "threshold": 5.0,
+        "unit": "usd_bn",
+        "due_from": "Q3 2026",
+        "due_words": "下半年"
+      },
       {
-        "short": "AWS 同比增速阈值",
-        "text": "「AWS 同比增速能否守住 X%」退役：在产能受限的状态下同比增速由产能上线节奏决定，与同比基数关系不大，上季用高基数推断「加速难度大」得出的方向是错的。下季改用 AWS 环比绝对收入增量。"
-      }
-    ],
-    "excluded_from_chart": [
+        "id": "oi_risk",
+        "row": 4,
+        "tier": "risk",
+        "metric": "集团单季经营利润",
+        "reads": "group_oi",
+        "op": "<",
+        "threshold": 22.0,
+        "unit": "usd_bn"
+      },
       {
-        "short": "前三大客户占比",
-        "text": "「前三大客户占比 ≤55%」：公司未披露，没有可判定的实际值，只能记为未兑现。"
+        "id": "oi_bull",
+        "row": 4,
+        "tier": "bull",
+        "metric": "集团单季经营利润",
+        "reads": "group_oi",
+        "op": ">=",
+        "threshold": 24.0,
+        "unit": "usd_bn"
+      },
+      {
+        "id": "om_risk",
+        "row": 4,
+        "tier": "risk",
+        "metric": "集团经营利润率",
+        "reads": "group_margin",
+        "op": "<=",
+        "threshold": 11.0,
+        "unit": "pct"
+      },
+      {
+        "id": "om_bull",
+        "row": 4,
+        "tier": "bull",
+        "metric": "集团经营利润率",
+        "reads": "group_margin",
+        "op": ">=",
+        "threshold": 12.0,
+        "unit": "pct"
       }
-    ],
-    "bull_lesson": "上季那套阈值把「增长」与「现金流」当成同向变量，而本季实际发生的是增长兑现、现金流恶化同时成立，这个组合在上季的框架里没有位置。"
+    ]
   },
   "next_kpi": {
     "period": "Q2 2026",

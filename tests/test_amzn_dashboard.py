@@ -26,6 +26,7 @@ a counterexample (`AmznRollTest`).
 
 from __future__ import annotations
 
+import collections
 import copy
 import json
 import math
@@ -38,8 +39,37 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build.all import build_all, roster_payload  # noqa: E402
-from build.board import headroom  # noqa: E402
+from build.board import cn_ordinal as cn, headroom  # noqa: E402
 from build.amzn import build_payload  # noqa: E402
+
+
+def order(period: str) -> tuple[int, int]:
+    quarter, year = period.split()
+    return int(year), int(quarter[1])
+
+
+def favourable_side(entry: dict) -> str:
+    """A risk line written ``<`` / ``<=`` and a confirmation line written ``>`` /
+    ``>=`` are both good above; the other two combinations are good below."""
+    return "up" if (entry["tier"] == "bull") == (entry["op"] in (">", ">=")) else "down"
+
+
+def prior_readings(source: dict) -> dict:
+    """This quarter's value of everything a previous-analysis line can read,
+    computed here from the series rather than by the builder's own registry."""
+    long = source["long_history"]
+    aws_revenue, aws_income = long["aws_revenue_usd_m"], long["aws_operating_income_usd_m"]
+    backlog = source["aws_backlog"]["level_usd_bn"]
+    q = source["quarterly_usd_m"]
+    return {
+        "backlog_qoq_pct": (backlog[-1] / backlog[-2] - 1) * 100,
+        "backlog_level": backlog[-1],
+        "aws_yoy_ex_fx": source["current_snapshot"]["aws_growth_ex_fx_pct"][-1],
+        "aws_margin": aws_income[-1] / aws_revenue[-1] * 100,
+        "fcf_ttm": source["cash_flow_disclosed"]["free_cash_flow_ttm"][-1] / 1000,
+        "group_oi": q["operating_income"][-1] / 1000,
+        "group_margin": q["operating_income"][-1] / q["revenue_total"][-1] * 100,
+    }
 
 
 def js_payload(path: Path, assignment: str) -> dict:
@@ -340,30 +370,159 @@ class AmznDashboardTest(unittest.TestCase):
                 checked += 1
         self.assertGreater(checked, 0)
 
-    def test_settled_thresholds_carry_both_lines(self) -> None:
-        """Last quarter's settings had a risk line and a bull line, and the page
-        shows both. Dropping either would turn an all-safe risk read into the
-        whole story, which is exactly the reading the page argues against."""
-        entries = self.source["prior_kpi_settlement"]["quantified"]
-        for entry in entries:
-            for field in ("threshold", "actual", "bull_threshold", "bull_actual", "unit"):
-                self.assertIn(field, entry, entry["metric"])
+    # ── section one: what last quarter's analysis left open ──────────────────
+    def test_section_one_settles_questions_then_thresholds_then_the_guided_record(self) -> None:
+        """(a) the follow-up closure, (b) the threshold overview and one chart per
+        reading, (c) the company's own guided record -- in that order."""
         settled = self.by_section["settled"]
-        risk = next(ex for ex in settled if ex["title"].startswith("上季") and "风险线" in ex["title"])
-        bull = next(ex for ex in settled if ex["title"].startswith("换成多头确认线"))
+        kinds = [ex["kind"] for ex in settled]
+        self.assertEqual(settled[0]["kind"], "bars_labeled")
+        self.assertRegex(settled[0]["title"], r"^上季 \d+ 条待验证问题：")
+        self.assertEqual(settled[1]["kind"], "diverging_bars")
+        self.assertRegex(settled[1]["title"], r"^上季 \d+ 条量化阈值：")
+        first_band = kinds.index("range_band")
+        self.assertGreater(first_band, 2)
+        for ex in settled[2:first_band]:
+            self.assertEqual(ex["kind"], "lines")
+            self.assertRegex(ex["title"], r"(守住|越线|达到|没到)上季(风险线|多头确认线)")
+        self.assertEqual(kinds[first_band:].count("range_band"), 2)
+
+    def test_the_closure_is_the_reports_section_zero(self) -> None:
+        """Counts, per-question verdicts and the rule that turns the report's
+        marks into verdicts, against the report facts kept in `_checks.note`."""
+        note = self.source["_checks"]["note"]["closure"]
+        items = self.source["followup_closure"]["items"]
+        self.assertEqual(len(items), note["total"])
+        # The page's rule, applied here to the report's own marks: an answer that
+        # says the item is still undisclosed is 仍未披露, otherwise the direction
+        # mark decides.
+        derived = ["仍未披露" if undisclosed else ("已验证" if "✓" in mark else "被证伪")
+                   for mark, undisclosed in zip(note["direction_marks"], note["answer_says_undisclosed"])]
+        self.assertEqual(derived, note["verdicts"])
+        self.assertEqual([item["verdict"] for item in items], note["verdicts"])
+        for item, mark in zip(items, note["direction_marks"]):
+            self.assertTrue(item["scores"].startswith(f"方向 {mark}｜"), item["short"])
+        counts = collections.Counter(note["verdicts"])
+        shown = [label for label in ("已验证", "部分验证", "被证伪", "仍未披露") if counts[label]]
+        chart = self.by_section["settled"][0]
+        self.assertEqual(chart["xlabels"], shown)
+        self.assertEqual(chart["values"], [counts[label] for label in shown])
+        self.assertEqual(chart["title"], f"上季 {note['total']} 条待验证问题："
+                         + "、".join(f"{counts[label]} 条{label}" for label in shown))
+        table = next(t for t in self.payload["tables"] if "待验证问题" in t["title"])
+        self.assertEqual([row[4] for row in table["rows"]], note["verdicts"])
+        for row in table["rows"]:
+            self.assertNotRegex(row[5], r"\{[a-z_]+\}", "a story placeholder was not filled")
+
+    def test_the_prior_lines_are_the_reports_section_nine(self) -> None:
+        """Every line of last quarter's observation table, verbatim: row, tier,
+        comparison, threshold, unit -- and how each row combines its lines."""
+        note = self.source["_checks"]["note"]
+        block = self.source["prior_kpi_settlement"]
         self.assertEqual(
-            risk["values"],
-            [round(headroom(e["direction"], e["threshold"], e["actual"]), 1) for e in entries],
-        )
-        self.assertEqual(
-            bull["values"],
-            [round(headroom(e["direction"], e["bull_threshold"], e["bull_actual"]), 1)
-             for e in entries],
-        )
-        missed = sum(1 for e in entries
-                     if headroom(e["direction"], e["bull_threshold"], e["bull_actual"]) < 0)
-        self.assertEqual(sum(1 for value in bull["values"] if value < 0), missed)
-        self.assertIn(f"{len(entries) - missed} / {len(entries)} 条兑现", bull["title"])
+            [(e["row"], e["tier"], e["op"], e["threshold"], e["unit"]) for e in block["quantified"]],
+            [(e["row"], e["tier"], e["op"], e["threshold"], e["unit"]) for e in note["prior_thresholds"]])
+        self.assertEqual(len(block["rows"]), note["prior_rows"])
+        for row in block["rows"]:
+            logic = note["prior_row_logic"].get(str(row["row"]))
+            if logic is None:
+                self.assertIn(row["row"], note["prior_unquantified_rows"])
+                self.assertTrue(row.get("qualitative"))
+            else:
+                self.assertEqual([row["bull_logic"], row["risk_logic"]], logic, row["row"])
+        self.assertEqual(sum(1 for e in block["quantified"] if e.get("due_from")),
+                         sum(1 for e in note["prior_thresholds"] if e.get("due")))
+
+    def test_each_due_line_is_settled_on_its_own_reading(self) -> None:
+        """The overview's bars are the headroom of each line that is due, on a
+        reading computed here from the series -- not typed into the block."""
+        block = self.source["prior_kpi_settlement"]
+        read = prior_readings(self.source)
+        period = self.source["periods"][-1]
+        due = [e for e in block["quantified"]
+               if not (e.get("due_from") and order(e["due_from"]) > order(period))]
+        overview = self.by_section["settled"][1]
+        self.assertEqual(len(overview["values"]), len(due))
+        for entry, label, value in zip(due, overview["xlabels"], overview["values"]):
+            with self.subTest(line=entry["id"]):
+                self.assertIn(entry["metric"], label)
+                self.assertEqual(value, round(headroom(favourable_side(entry), entry["threshold"],
+                                                       read[entry["reads"]]), 1))
+        for tier, words, good in (("risk", "风险线", "守住"), ("bull", "多头确认线", "达到")):
+            lines = [e for e in due if e["tier"] == tier]
+            fine = sum(1 for e in lines if headroom(favourable_side(e), e["threshold"], read[e["reads"]]) >= 0)
+            self.assertIn(f"{len(lines)} 条{words}" + (f"都{good}" if fine == len(lines) else
+                                                        f"{len(lines) - fine} 条"), overview["title"])
+        # every due line is drawn, as its own flat series, on the chart of its reading
+        charts = self.by_section["settled"][2:]
+        for entry in due:
+            with self.subTest(drawn=entry["id"]):
+                self.assertTrue(any(
+                    series["values"] == [entry["threshold"]] * len(ex["xlabels"])
+                    and series["name"].startswith("上季" + ("风险线" if entry["tier"] == "risk" else "多头确认线"))
+                    for ex in charts if ex["kind"] == "lines" for series in ex["series"][1:]))
+
+    def test_a_line_dated_later_is_named_not_settled(self) -> None:
+        """A line the analysis dated after this quarter is listed with where the
+        reading stands, and settled only once it is due."""
+        block = self.source["prior_kpi_settlement"]
+        period = self.source["periods"][-1]
+        later = [e for e in block["quantified"] if e.get("due_from") and order(e["due_from"]) > order(period)]
+        overview = self.by_section["settled"][1]
+        for entry in later:
+            self.assertIn(f"要到 {entry['due_from']} 起才结算", overview["note"])
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("上季阈值逐线"))
+        self.assertEqual(sum(1 for row in table["rows"] if row[-1].startswith("未到期")), len(later))
+        if later:
+            due_now = copy.deepcopy(self.source)
+            for entry in due_now["prior_kpi_settlement"]["quantified"]:
+                entry.pop("due_from", None)
+            moved = build_payload(due_now)
+            self.assertEqual(len(moved["sections"][0]["exhibits"][1]["values"]),
+                             len(overview["values"]) + len(later))
+            self.assertNotIn("起才结算", published_text(moved))
+
+    def test_rows_combine_their_lines_the_way_the_report_wrote_them(self) -> None:
+        """「且」needs every line of the tier, 「或」any one -- checked on states built
+        here, because in the published quarter every line lands on its good side."""
+        base = published_text(self.payload)
+        block = self.source["prior_kpi_settlement"]
+        rows = {row["row"]: row for row in block["rows"]}
+        both = [row for row in rows.values() if row.get("bull_logic") == "and"
+                and not row.get("bull_unquantified")
+                and sum(1 for e in block["quantified"] if e["row"] == row["row"] and e["tier"] == "bull") > 1]
+        self.assertTrue(both)
+
+        # One of two joint confirmation lines falls short: that row's condition fails.
+        short = copy.deepcopy(self.source)
+        long = short["long_history"]
+        target = next(e for e in block["quantified"] if e["reads"] == "aws_margin" and e["tier"] == "bull")
+        income = round(long["aws_revenue_usd_m"][-1] * (target["threshold"] - 0.5) / 100)
+        long["aws_operating_income_usd_m"][-1] = income
+        short["segments_usd_m"]["aws_operating_income"][-1] = income
+        text = published_text(build_payload(short))
+        self.assertIn(f"第{cn(target['row'])}行的多头条件没有成立（AWS 分部经营利润率没到 "
+                      f"{target['threshold']:g}%）", text)
+        self.assertNotIn(f"第{cn(target['row'])}行的多头条件没有成立", base)
+
+        # A joint risk condition with only one of its lines crossed is not met.
+        joint = next(row for row in rows.values() if row.get("risk_logic") == "and")
+        margin = next(e for e in block["quantified"]
+                      if e["row"] == joint["row"] and e["tier"] == "risk" and e["reads"] == "group_margin")
+        income_line = next(e for e in block["quantified"]
+                           if e["row"] == joint["row"] and e["tier"] == "risk" and e["reads"] == "group_oi")
+        one = copy.deepcopy(self.source)
+        revenue = (income_line["threshold"] + 0.1) * 1000 / (margin["threshold"] - 0.01) * 100
+        for series, key in ((one["quarterly_usd_m"], "revenue_total"), (one["long_history"], "revenue_usd_m")):
+            series[key][-1] = round(revenue)
+        for series, key in ((one["quarterly_usd_m"], "operating_income"),
+                            (one["long_history"], "operating_income_usd_m")):
+            series[key][-1] = round((income_line["threshold"] + 0.1) * 1000)
+        text = published_text(build_payload(one))
+        self.assertIn(f"第{cn(joint['row'])}行的风险条件要几条线同时越过，本季只有集团经营利润率越线，不算成立",
+                      text)
+        self.assertIn("没有一行的风险条件成立", text)
+        self.assertNotIn("要几条线同时越过", base)
 
     def test_headroom_bars_reproduce_the_next_quarter_thresholds(self) -> None:
         entries = self.source["next_kpi"]["quantified"]
@@ -520,8 +679,10 @@ class AmznDashboardTest(unittest.TestCase):
 
 
 STAMPED = ("current_snapshot", "one_off_items", "other_income_story", "backlog_concentration",
-           "guidance", "calendar_shift", "market_expectation", "prior_kpi_settlement", "next_kpi",
-           "quarter_story", "local_note_errata")
+           "guidance", "calendar_shift", "market_expectation", "followup_closure", "prior_kpi_settlement",
+           "next_kpi", "quarter_story", "local_note_errata")
+# The two blocks section one settles; required in every quarter after the first analysis.
+SETTLEMENT = ("followup_closure", "prior_kpi_settlement")
 
 
 class AmznChecksTest(unittest.TestCase):
@@ -617,9 +778,11 @@ class AmznChecksTest(unittest.TestCase):
         self.assertIn(f"US${c['commitments_not_yet_recognized_usd_bn']:.0f}B", self.payload["brief"])
 
     def test_every_threshold_value_matches_the_series(self) -> None:
-        """Each typed `actual` / `current` against the arithmetic that should
-        produce it. The one-off-adjusted margins are recomputed from the filed
-        one-off amounts, not from the call's round numbers."""
+        """Each typed `current` against the arithmetic that should produce it.
+        The one-off-adjusted margins are recomputed from the filed one-off
+        amounts, not from the call's round numbers. (Last quarter's lines carry
+        no typed reading at all: the page computes them, and
+        `test_each_due_line_is_settled_on_its_own_reading` checks that.)"""
         q, segments = self.q, self.source["segments_usd_m"]
         one_off = self.source["one_off_items"]
         backlog = self.source["aws_backlog"]["level_usd_bn"]
@@ -636,7 +799,6 @@ class AmznChecksTest(unittest.TestCase):
             "北美分部经营利润率": (segments["na_operating_income"][-1] - one_off["tariff_refund_usd_m"])
                                / segments["na_revenue"][-1] * 100,
         }
-        reported_aws_margin = segments["aws_operating_income"][-1] / segments["aws_revenue"][-1] * 100
         adjusted_aws_margin = ((segments["aws_operating_income"][-1] - one_off["energy_derivative_gain_usd_m"])
                                / segments["aws_revenue"][-1] * 100)
         checked = 0
@@ -647,11 +809,7 @@ class AmznChecksTest(unittest.TestCase):
                     self.assertAlmostEqual(entry["current"], value, places=1)
                 checked += 1
         for entry in self.source["prior_kpi_settlement"]["quantified"]:
-            value = reported_aws_margin if entry["metric"] == "AWS 分部经营利润率" else expected.get(entry["metric"])
-            if value is not None:
-                with self.subTest(prior=entry["metric"]):
-                    self.assertAlmostEqual(entry["actual"], value, places=1)
-                checked += 1
+            self.assertNotIn("actual", entry, "a previous-analysis line carries a typed reading")
         self.assertGreater(checked, 0)
 
 
@@ -676,10 +834,16 @@ class AmznRollTest(unittest.TestCase):
             build_payload(stale)
 
     def test_a_missing_quarter_block_leaves_its_part_out(self) -> None:
+        """Every one-quarter block is optional except the two that settle the
+        previous analysis -- and those are absent only in the first analysis's
+        quarter, which is the state built here."""
         bare = copy.deepcopy(self.source)
         for key in STAMPED:
             del bare[key]
+        bare["analysis_record"]["first_period"] = bare["periods"][-1]
         payload = build_payload(bare)
+        self.assertIn(f"本站对亚马逊的第一份季报分析是 {bare['periods'][-1]}",
+                      payload["sections"][0]["description"])
         self.assertEqual([s["id"] for s in payload["sections"]],
                          ["settled", "quarter_highlights", "routine"])
         text = published_text(payload)
@@ -689,6 +853,31 @@ class AmznRollTest(unittest.TestCase):
                 self.assertNotIn(gone, text)
         # The guided record and the long series do not depend on any of them.
         self.assertEqual(len(payload["sections"][0]["exhibits"]), 6)
+
+    def test_the_settlement_blocks_are_required_after_the_first_analysis(self) -> None:
+        period = self.source["periods"][-1]
+        for key in SETTLEMENT:
+            missing = copy.deepcopy(self.source)
+            del missing[key]
+            with self.subTest(missing=key), self.assertRaisesRegex(ValueError, key):
+                build_payload(missing)
+        # An analysis that closed no questions says why, and then the page builds.
+        excused = copy.deepcopy(self.source)
+        del excused["followup_closure"]
+        excused["prior_kpi_settlement"]["no_closure_reason"] = "上一份分析没有留下待验证问题。"
+        payload = build_payload(excused)
+        self.assertNotRegex(payload["sections"][0]["exhibits"][0]["title"], "待验证问题")
+        # Blocks that settle an analysis other than last quarter's stop the build.
+        for key in SETTLEMENT:
+            stale = copy.deepcopy(self.source)
+            stale[key]["set_in"] = "Q3 2025"
+            with self.subTest(stale=key), self.assertRaisesRegex(ValueError, "quarter before"):
+                build_payload(stale)
+        # In the first analysis's quarter there is nothing to settle, so the blocks may not be there.
+        first = copy.deepcopy(self.source)
+        first["analysis_record"]["first_period"] = period
+        with self.assertRaisesRegex(ValueError, "nothing for"):
+            build_payload(first)
 
     def test_the_quarter_release_must_be_in_the_sources(self) -> None:
         missing = copy.deepcopy(self.source)
@@ -758,11 +947,9 @@ class AmznRollTest(unittest.TestCase):
                       ["是第三段连升三季以上的回升", "是三段里最长的"]))
 
         breached = copy.deepcopy(self.source)
-        for entry in breached["prior_kpi_settlement"]["quantified"]:
-            if entry["metric"] == "AWS 收入同比":
-                entry["actual"] = 20.0
+        breached["current_snapshot"]["aws_growth_ex_fx_pct"][-1] = 20
         cases.append(("a settled risk line breached", breached,
-                      ["一条都没有被触发", "六条全部安全"]))
+                      ["6 条风险线都守住", "没有一行的风险条件成立"]))
 
         crossing = copy.deepcopy(self.source)
         for entry in crossing["next_kpi"]["quantified"]:
