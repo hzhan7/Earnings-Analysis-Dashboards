@@ -16,7 +16,7 @@ a set of soft targets, so the tests pin all three to the cent and the tenth of a
 point.
 
 The distinction is between the two forecast horizons, and it is the whole point
-of the first section. Against the final (October) range the record looks like
+of the guidance record in section one. Against the final (October) range the record looks like
 every other "never missed" record on this site; against the initial (February)
 range the same seven years look nothing like it. A test that only counted
 "cleared its guidance" would not notice if the two were ever conflated, so this
@@ -26,7 +26,8 @@ A roll edits `series/mco.json` and nothing else (CLAUDE.md §9). Tallies,
 extremes and years named on the page are recounted here from the series rather
 than pinned; what stays pinned is history that a roll cannot move (FY2018's four
 vintages, FY2022's cut, the FY2016-17 holes). What the quarter's release printed
-is asserted from `_checks` (`McoChecksTest`); `McoRollTest` rolls the series a
+is asserted from `_checks` (`McoChecksTest`), and what the owner's two analyses
+concluded from `_checks["note"]` (`McoFourPartTest`); `McoRollTest` rolls the series a
 quarter back and a quarter forward and tampers each stamped block; and
 `McoFindingsTest` forces each judgement true and then false and checks that the
 words follow.
@@ -547,7 +548,10 @@ def own_text(payload: dict) -> str:
     return json.dumps(own, ensure_ascii=False)
 
 
-QUARTER_BLOCKS = ("quarter_figures", "current_guidance", "guidance_bridges", "quarter_story")
+QUARTER_BLOCKS = ("quarter_figures", "current_guidance", "guidance_bridges", "quarter_story",
+                  "followup_closure", "prior_kpi_settlement", "next_kpi")
+# Quarterly blocks that carry their own `periods` and must move with segment_quarterly.
+ALIGNED_BLOCKS = ("quarterly_cash", "ma_kpi_quarterly")
 PLACEHOLDER = r"\{[a-z_]+\}"
 
 
@@ -623,14 +627,220 @@ class McoChecksTest(unittest.TestCase):
         self.assertIn(f"US${c['guidance_current']['adj_diluted_eps_usd'][0]:.2f}", bridge["title"])
 
 
+class McoFourPartTest(unittest.TestCase):
+    """The four sections say what their titles promise, and say what the analyses say.
+
+    What the owner's two analyses concluded -- the closure tally, last quarter's
+    thresholds, this quarter's thresholds -- is keyed once per roll into
+    `_checks["note"]`, re-read from the report files rather than copied from the
+    series blocks, and the builder never sees it. So a roll edits the series file
+    alone; nothing the reports said is written into this file.
+    """
+
+    SECTIONS = [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+                ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")]
+    ORDER = ("已验证", "部分验证", "被证伪", "仍未披露", "指标设计失效")
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.s = json.loads(STAGING_PATH.read_text(encoding="utf-8"))
+        cls.note = cls.s["_checks"]["note"]
+        cls.payload = build_payload(cls.s)
+        cls.sections = {section["id"]: section for section in cls.payload["sections"]}
+
+    def overview(self, section: str, prefix: str) -> dict:
+        return next(ex for ex in self.sections[section]["exhibits"]
+                    if ex["kind"] == "diverging_bars" and ex["title"].startswith(prefix))
+
+    def test_the_four_sections_carry_the_four_titles(self) -> None:
+        self.assertEqual([(s["id"], s["title"]) for s in self.payload["sections"]], self.SECTIONS)
+        for section in self.payload["sections"]:
+            self.assertTrue(section["exhibits"], section["id"])
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列", self.payload["notes"][0])
+
+    def test_the_closure_is_the_analysis_section_zero(self) -> None:
+        closure = self.s["followup_closure"]
+        self.assertEqual(closure["set_in"], self.s["segment_quarterly"]["periods"][-2])
+        expected = [(label, self.note["closure"]["counts"][label]) for label in self.ORDER
+                    if self.note["closure"]["counts"].get(label)]
+        chart = self.sections["settled"]["exhibits"][0]
+        self.assertEqual(chart["kind"], "bars_labeled")
+        self.assertEqual(list(zip(chart["xlabels"], chart["values"])), expected)
+        total = self.note["closure"]["total"]
+        self.assertEqual(sum(chart["values"]), total)
+        self.assertTrue(chart["title"].startswith(f"上季 {total} 条待验证问题："), chart["title"])
+        for label, count in expected:
+            self.assertIn(f"{count} 条{label}", chart["title"])
+
+    def test_a_verdict_the_chart_does_not_know_stops_the_build(self) -> None:
+        odd = copy.deepcopy(self.s)
+        odd["followup_closure"]["items"][0]["verdict"] = "大致验证"
+        with self.assertRaisesRegex(ValueError, "verdicts"):
+            build_payload(odd)
+
+    def test_the_prior_thresholds_are_the_last_analysis_section_eight(self) -> None:
+        prior = self.s["prior_kpi_settlement"]
+        self.assertEqual(prior["set_in"], self.s["segment_quarterly"]["periods"][-2])
+        self.assertEqual(len(prior["dispositions"]), self.note["prior_rows"])
+        typed = [(entry["metric"], entry.get("threshold", 0.0), entry["direction"]) for entry in prior["quantified"]]
+        self.assertEqual(typed, [(row["metric"], row["threshold"], row["direction"])
+                                 for row in self.note["prior_thresholds"]])
+        self.assertFalse(any("actual" in entry for entry in prior["quantified"]))
+
+    def test_the_prior_settlement_is_read_from_the_series(self) -> None:
+        """Recomputed along a second route: from the arrays, not the builder's functions.
+
+        A zero threshold (「同比为负即警示」) has no percentage headroom, so it is
+        settled as a level -- the same quarter a year earlier -- whose headroom is
+        the growth rate itself.
+        """
+        seg, cash, kpi = self.s["segment_quarterly"], self.s["quarterly_cash"], self.s["ma_kpi_quarterly"]
+        now = {"ma_arr_growth": kpi["arr_growth_pct"][-1],
+               "ma_organic_growth": kpi["organic_cc_revenue_growth_pct"][-1],
+               "mis_revenue": seg["mis_revenue_usd_m"][-1],
+               "share_repurchases": cash["share_repurchases_usd_m"][-1]}
+        expected = []
+        for row, entry in zip(self.note["prior_thresholds"], self.s["prior_kpi_settlement"]["quantified"]):
+            actual = now[entry["series"]]
+            # 0% growth has no percentage headroom: settle it as the year-ago level
+            threshold = seg["mis_revenue_usd_m"][-5] if row["threshold"] == 0 else row["threshold"]
+            sign = 1 if row["direction"] == "up" else -1
+            expected.append(round(sign * (actual - threshold) / abs(threshold) * 100, 1))
+        overview = self.overview("settled", "上季")
+        self.assertEqual(overview["xlabels"], [row["metric"] for row in self.note["prior_thresholds"]])
+        self.assertEqual(overview["values"], expected)
+        held = sum(1 for value in expected if value >= 0)
+        self.assertTrue(overview["title"].startswith(
+            f"上季 {len(expected)} 条量化阈值：{held} 条守住、{len(expected) - held} 条被击穿"), overview["title"])
+
+    def test_the_rounding_that_decides_a_threshold_is_named(self) -> None:
+        """MA organic constant-currency revenue printed a whole-percent rate against a bar
+        set at the same whole percent; its own printed amounts can land on the other side.
+        The page settles on the company's figure and says which side the amounts fall."""
+        now, before = self.s["quarter_figures"]["ma_organic_cc_revenue_usd_m"]
+        exact = (now / before - 1) * 100
+        printed = self.s["ma_kpi_quarterly"]["organic_cc_revenue_growth_pct"][-1]
+        self.assertEqual(printed, self.s["_checks"]["ma_organic_cc_revenue_growth_pct"])
+        self.assertEqual(round(exact), printed)
+        bar = next(row["threshold"] for row in self.note["prior_thresholds"]
+                   if row["metric"] == "MA 有机固定汇率收入同比")
+        overview = self.overview("settled", "上季")
+        self.assertIn(f"算是 {exact:.2f}%", overview["note"])
+        self.assertEqual("只在整数精度上达到" in overview["note"], exact < bar <= printed)
+
+    def test_the_next_thresholds_are_this_analysis_section_eight(self) -> None:
+        block = self.s["next_kpi"]
+        quarter, year = self.s["segment_quarterly"]["periods"][-1].split()
+        after = f"Q1 {int(year) + 1}" if quarter == "Q4" else f"Q{int(quarter[1]) + 1} {year}"
+        self.assertEqual(block["for_period"], after)
+        typed =[(entry["metric"], entry["threshold"], entry["direction"]) for entry in block["quantified"]]
+        self.assertEqual(typed, [(row["metric"], row["threshold"], row["direction"])
+                                 for row in self.note["next_thresholds"]])
+        self.assertFalse(any("current" in entry for entry in block["quantified"]))
+
+    def test_the_next_thresholds_are_measured_from_the_series(self) -> None:
+        seg, cash, kpi = self.s["segment_quarterly"], self.s["quarterly_cash"], self.s["ma_kpi_quarterly"]
+        g = self.s["annual_guidance_history"]
+        latest = next(v for v in ("Oct", "Jul", "Apr", "Feb") if g["fcf_usd_b_lo"][v][-1] is not None)
+        quarter = int(seg["periods"][-1][1])
+        fcf = [o - c for o, c in zip(cash["operating_cash_flow_usd_m"], cash["capital_additions_usd_m"])]
+        paid = [b + d for b, d in zip(cash["share_repurchases_usd_m"], cash["dividends_paid_usd_m"])]
+        ratio = sum(paid[-quarter:]) / sum(fcf[-quarter:]) * 100
+        current = {"mis_revenue": seg["mis_revenue_usd_m"][-1], "ma_arr_growth": kpi["arr_growth_pct"][-1],
+                   "ma_recurring_growth": kpi["organic_cc_recurring_growth_pct"][-1],
+                   "ma_margin": seg["ma_adj_operating_margin_pct"][-1],
+                   "fcf_guide_low": g["fcf_usd_b_lo"][latest][-1], "returns_to_fcf_ytd": ratio}
+        expected = []
+        for row, entry in zip(self.note["next_thresholds"], self.s["next_kpi"]["quantified"]):
+            sign = 1 if row["direction"] == "up" else -1
+            expected.append(round(sign * (current[entry["series"]] - row["threshold"])
+                                  / abs(row["threshold"]) * 100, 1))
+        overview = self.overview("next_quarter", "下季")
+        self.assertEqual(overview["xlabels"], [row["metric"] for row in self.note["next_thresholds"]])
+        self.assertEqual(overview["values"], expected)
+        self.assertTrue(overview["title"].startswith(f"下季 {len(expected)} 条量化阈值："), overview["title"])
+        # every threshold is drawn as a flat line on the chart of the series it watches
+        drawn = [line["values"][0] for ex in self.sections["next_quarter"]["exhibits"][1:]
+                 for line in ex["series"] if len(set(line["values"])) == 1]
+        self.assertEqual(sorted(drawn), sorted(row["threshold"] for row in self.note["next_thresholds"]))
+
+    def test_section_two_carries_no_range_only_chart(self) -> None:
+        """「42 季里 X 在 a–b 之间」 is a routine chart; section two leads with the quarter."""
+        n = len(self.s["segment_quarterly"]["periods"])
+        for ex in self.sections["quarter_highlights"]["exhibits"]:
+            self.assertNotRegex(ex["title"], rf"^{n} 季里.*之间", ex["title"])
+        routine_titles = [ex["title"] for ex in self.sections["routine"]["exhibits"]]
+        for prefix in (f"{n} 季里 MIS 收入在", "评级业务占收入", "两条分部调整后营业利润率"):
+            self.assertTrue(any(title.startswith(prefix) for title in routine_titles), prefix)
+
+    def test_section_two_numbers_are_the_filings(self) -> None:
+        seg, checks = self.s["segment_quarterly"], self.s["_checks"]
+        titles = [ex["title"] for ex in self.sections["quarter_highlights"]["exhibits"]]
+        d_rev = seg["revenue_usd_m"][-1] - seg["revenue_usd_m"][-2]
+        d_aoi = seg["adj_operating_income_usd_m"][-1] - seg["adj_operating_income_usd_m"][-2]
+        self.assertTrue(titles[0].startswith(f"环比多出的 US${d_rev:,.0f}M 收入里有 US${d_aoi:,.0f}M"), titles[0])
+        bridge = next(ex for ex in self.sections["quarter_highlights"]["exhibits"] if ex["kind"] == "bars_labeled")
+        self.assertEqual(bridge["values"][0], checks["diluted_eps_usd"])
+        self.assertEqual(bridge["values"][-1], checks["adj_diluted_eps_usd"])
+        steps = self.s["quarter_figures"]["eps_bridge_usd"]
+        self.assertAlmostEqual(checks["diluted_eps_usd"] + sum(v for _, v in steps), checks["adj_diluted_eps_usd"],
+                               places=2)
+        ytd = checks["ytd_cash_usd_m"]
+        quarter = int(seg["periods"][-1][1])
+        cash = self.s["quarterly_cash"]
+        for key, column in (("operating_cash_flow", "operating_cash_flow_usd_m"),
+                            ("capital_additions", "capital_additions_usd_m"),
+                            ("treasury_shares", "share_repurchases_usd_m"), ("dividends", "dividends_paid_usd_m")):
+            self.assertEqual(round(sum(cash[column][-quarter:])), ytd[key], key)
+        returns = ytd["treasury_shares"] + ytd["dividends"]
+        fcf = ytd["operating_cash_flow"] - ytd["capital_additions"]
+        self.assertTrue(any(f"回购加股息 US${returns:,.0f}M，是同期自由现金流 US${fcf:,.0f}M 的 "
+                            f"{returns / fcf * 100:.0f}%" in title for title in titles), titles)
+
+    def test_a_threshold_on_a_series_the_page_holds_cannot_carry_a_typed_value(self) -> None:
+        """A typed current next to a computed one is two copies free to disagree; a metric
+        no series here carries (next quarter's analysis may add one) must bring its source."""
+        typed = copy.deepcopy(self.s)
+        typed["next_kpi"]["quantified"][0]["current"] = 1.0
+        with self.assertRaisesRegex(ValueError, "computed from the series"):
+            build_payload(typed)
+        bare = copy.deepcopy(self.s)
+        bare["next_kpi"]["quantified"].append({"id": "new", "metric": "新指标", "condition": "x", "action": "y",
+                                               "direction": "up", "threshold": 10.0, "unit": "pct"})
+        with self.assertRaisesRegex(ValueError, "no series to read"):
+            build_payload(bare)
+        bare["next_kpi"]["quantified"][-1].update(current=12.0, source="某份申报某表")
+        overview = next(ex for s in build_payload(bare)["sections"] for ex in s["exhibits"]
+                        if ex["title"].startswith("下季"))
+        self.assertEqual(overview["xlabels"][-1], "新指标")
+        self.assertEqual(overview["values"][-1], 20.0)
+
+    def test_the_ma_growth_rates_are_the_releases(self) -> None:
+        kpi, checks = self.s["ma_kpi_quarterly"], self.s["_checks"]
+        self.assertEqual(kpi["arr_growth_pct"][-1], checks["ma_arr_growth_pct"])
+        self.assertEqual(kpi["organic_cc_recurring_growth_pct"][-1], checks["ma_organic_cc_recurring_growth_pct"])
+        self.assertEqual(kpi["periods"], self.s["segment_quarterly"]["periods"])
+
+    def test_the_page_no_longer_says_moodys_never_guides_a_quarter(self) -> None:
+        """Heuland on the Q1 2026 call: 「For the second quarter, we expect … adjusted diluted
+        EPS of approximately $4.15 to $4.30」. The quarter's numbers are call-only, not absent."""
+        correction = "本页此前写的是「从不给下一季度的数字指引」"
+        text = own_text(self.payload)
+        self.assertIn(correction, text)
+        for phrase in ("从不给下一季度的数字指引", "穆迪不给季度指引", "穆迪不给下一季度的数字区间",
+                       "本页真正的对象不是这个季度"):
+            self.assertNotIn(phrase, text.replace(correction, ""))
+
+
 def rolled_back(staging: dict) -> dict:
     """The series one quarter earlier: the segment arrays lose their last cell,
     the open year loses its latest vintage, and the quarter's own blocks go."""
     s = copy.deepcopy(staging)
     seg = s["segment_quarterly"]
-    for key, values in seg.items():
-        if isinstance(values, list) and len(values) == len(staging["segment_quarterly"]["periods"]):
-            seg[key] = values[:-1]
+    for block in [seg] + [s[key] for key in ALIGNED_BLOCKS]:
+        for key, values in block.items():
+            if isinstance(values, list) and len(values) == len(staging["segment_quarterly"]["periods"]):
+                block[key] = values[:-1]
     g = s["annual_guidance_history"]
     year = max(g["fiscal_years"])
     i = g["fiscal_years"].index(year)
@@ -662,15 +872,16 @@ def rolled_forward(staging: dict) -> dict:
     label = f"Q{quarter} {year}"
     ends = {1: "03-31", 2: "06-30", 3: "09-30", 4: "12-31"}
     n = len(seg["periods"])
-    for key, values in seg.items():
-        if not isinstance(values, list) or len(values) != n:
-            continue
-        if key == "periods":
-            values.append(label)
-        elif key == "period_ends":
-            values.append(f"{year}-{ends[quarter]}")
-        else:
-            values.append(values[-1] * 1.01)
+    for block in [seg] + [s[key] for key in ALIGNED_BLOCKS]:
+        for key, values in block.items():
+            if not isinstance(values, list) or len(values) != n:
+                continue
+            if key == "periods":
+                values.append(label)
+            elif key == "period_ends":
+                values.append(f"{year}-{ends[quarter]}")
+            else:
+                values.append(None if values[-1] is None else values[-1] * 1.01)
     g = s["annual_guidance_history"]
     open_year = max(g["fiscal_years"])
     i = g["fiscal_years"].index(open_year)
@@ -709,8 +920,8 @@ def rolled_forward(staging: dict) -> dict:
 class McoRollTest(unittest.TestCase):
     """What a roll can change without touching the builder."""
 
-    STORY_ONLY = ("被两笔业务处置压住的 MA 收入增速", "见口径说明", "Learning Solutions",
-                  "“high-single-digit percent range”")
+    STORY_ONLY = ("被两笔业务处置压住的 MA 报告收入增速", "见口径说明", "Learning Solutions",
+                  "“high-single-digit percent range”", "它给的证伪条件是", "low-single-digit 增长")
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -898,8 +1109,9 @@ class McoFindingsTest(unittest.TestCase):
 
         text = self.page(broken)
         self.assertNotIn("指引表自己就能对平", text)
-        self.assertIn("指引表三条桥没有全部对平", text)
+        self.assertIn("指引表的 EPS 桥：GAAP 指引下限加五项加回项是", text)
         self.assertIn("对不上", text)
+        self.assertIn("指引表自己就能对平", self.page())
 
 
 if __name__ == "__main__":
