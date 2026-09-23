@@ -20,14 +20,19 @@ Rolling the page to a new quarter edits `series/meta.json` and nothing else.
 Every figure, period label, count and record claim is computed here from the
 series; a sentence such as "the lower bound has never been tested", "the only
 time" or "for the first time" is printed only while the series makes it true.
-What belongs to one quarter -- the settlement of last quarter's thresholds and
-questions, the new thresholds, the market's expectation, the call's outlook
-wording, the quarter's one-off items and the rows of the quality table the
-series does not carry -- lives in blocks stamped with that quarter and is read
-through `board.stamped_block`: a block stamped with another quarter stops the
-build, a missing one leaves its part of the page out.  The three guidance
-records (quarterly revenue, annual expenses, annual capex) are read from
-`quarterly_guidance_history` alone; the page no longer keeps its own copies.
+What belongs to one quarter -- the previous analysis's follow-up questions and
+section-8 lines, this analysis's section-8 lines, the market's expectation, the
+call's outlook wording, the 10-Q's off-balance-sheet facts and the rows of the
+quality table the series does not carry -- lives in blocks stamped with that
+quarter and is read through `board.stamped_block`: a block stamped with another
+quarter stops the build. The three settlement blocks are required every quarter;
+a missing optional one leaves its part of the page out. The one-off items the
+analysis adds back are a record keyed by quarter, because a quarter-on-quarter
+reading needs last quarter's too. Threshold lines never carry a typed reading:
+each names a `measure` computed here from the series, so a roll moves `next_kpi`
+into `prior_kpi_settlement` as it stands. The three guidance records (quarterly
+revenue, annual expenses, annual capex) are read from `quarterly_guidance_history`
+alone; the page no longer keeps its own copies.
 """
 
 from __future__ import annotations
@@ -50,9 +55,6 @@ from build.board import (  # noqa: E402
     latest_block,
     number_exhibits,
     stamped_block,
-    threshold_exhibit,
-    threshold_table,
-    unit_text,
 )
 from build.page_shell import render_shell  # noqa: E402
 from build.payload_guard import write_dash  # noqa: E402
@@ -369,15 +371,21 @@ MEASURES = {
                         "reading": "US${:g}B", "point": True},
     "capex_guide_first_mid": {"name": "首次 CapEx 指引中点", "short": "首次 CapEx 指引", "unit": "usd_bn",
                               "reading": "US${:g}B", "point": True},
-    "fy_capex": {"name": "全年 CapEx", "short": "全年 CapEx", "unit": "usd_bn",
+    "fy_capex": {"name": "CapEx（全年；年内取最新指引中点）", "short": "CapEx", "unit": "usd_bn",
                  "reading": "US${:g}B", "point": True},
-    "fy_operating_income": {"name": "全年经营利润", "short": "全年经营利润", "unit": "usd_m",
+    "fy_operating_income": {"name": "经营利润（全年）", "short": "经营利润", "unit": "usd_m",
                             "reading": "${:,.0f}M", "point": True},
     "cumulative_rvg": {"name": "累计残值担保敞口", "short": "累计残值担保", "unit": "usd_bn",
                        "reading": "约 US${:g}B", "point": True},
 }
 
 LINE_WORDS = {"加仓线": "加仓", "减仓线": "减仓", "警示线": "警示", "跟踪线": "跟踪"}
+
+
+def quarter_order(label: str) -> tuple[int, int]:
+    """``'Q3 2026'`` → ``(2026, 3)``, so two quarter labels can be compared."""
+    quarter, year = label.split()
+    return int(year), int(quarter[1])
 
 
 def threshold_direction(entry: dict) -> str:
@@ -505,6 +513,10 @@ def evaluate(staging: dict, block: dict, value_key: str, period: str) -> list[di
             if not (entry.get("unread") or entry.get("settles")):
                 raise ValueError(f"threshold {entry['id']!r} has no reading for {period}: say why in "
                                  "`unread`, or when it settles in `settles`")
+            if entry.get("settles") and quarter_order(entry["settles"]) <= quarter_order(period):
+                raise ValueError(f"threshold {entry['id']!r} settles in {entry['settles']}, and {period} has no "
+                                 f"reading for it: add the figure it settles on (for a full year, the year's "
+                                 f"10-K line in `annual_actuals_usd_m`)")
             entries.append({**item, "fired": None, "favourable": None, "run": []})
             continue
         run = run if run is not None else [value]
@@ -631,14 +643,15 @@ def threshold_line_charts(staging: dict, block: dict, entries: list[dict], value
         note = "".join(f"{'上季' if value_key == 'actual' else '本季'}分析第 8 节第 {row} 行原文：{html_text(rows[row]['text'])}。"
                        for row in seen_rows if row in rows)
         for entry in group:
-            room = headroom(entry["direction"], entry["threshold"], entry[value_key])
+            room = ("" if entry["threshold"] == 0 else
+                    f"（余量 {headroom(entry['direction'], entry['threshold'], entry[value_key]) + 0.0:+.1f}%）")
             if entry.get("consecutive", 1) > 1:
                 note += html_text(run_words(entry, value_key)) + "。"
             elif value_key == "actual":
-                note += f"{html_text(settle_words(entry))}（余量 {room:+.1f}%）。"
+                note += f"{html_text(settle_words(entry))}{room}。"
             else:
                 note += (f"{entry['line']} {html_text(entry['fires'] + threshold_words(entry))}：当前"
-                         f"{'在有利一侧' if entry['favourable'] else '在不利一侧'}（余量 {room:+.1f}%）。")
+                         f"{'在有利一侧' if entry['favourable'] else '在不利一侧'}{room}。")
             if entry.get("reads_as"):
                 note += html_text(entry["reads_as"]) + "。"
             if entry.get("also"):
@@ -667,13 +680,30 @@ def threshold_line_charts(staging: dict, block: dict, entries: list[dict], value
     return charts
 
 
-def rule_sentences(block: dict, entries: list[dict], value_key: str, values: dict) -> str:
-    """What the bars cannot show: joint halves, runs, zero lines, lines with no reading, word-only legs."""
+def rule_sentences(block: dict, entries: list[dict], value_key: str, values: dict,
+                   progress: dict | None = None) -> str:
+    """What the bars cannot show: joint halves, runs, zero lines, lines with no reading,
+    word-only legs and conditions with no series at all."""
     words = []
+    by_id = {entry["id"]: entry for entry in entries}
+    seen: set[str] = set()
+    for entry in entries:
+        partner = by_id.get(entry.get("joint", ""))
+        if partner is None or entry["id"] in seen or entry[value_key] is None or partner[value_key] is None:
+            continue
+        seen |= {entry["id"], partner["id"]}
+        legs = [entry, partner]
+        reached = [leg for leg in legs if leg["fired"]]
+        state = ("两腿都已到" if len(reached) == 2 else "两腿都没到" if not reached
+                 else f"只有「{measure_name(reached[0], short=True)}」一腿到了")
+        words.append(f"「{line_label(entry)}」与「{line_label(partner)}」要同时成立才算"
+                     f"{LINE_WORDS.get(entry['line'], entry['line'])}：{'本季' if value_key == 'actual' else '当前'} "
+                     f"{reading_words(entry, entry[value_key])} / {reading_words(partner, partner[value_key])}，{state}。")
     for entry in entries:
         if entry.get("also"):
             words.append(f"{line_label(entry)}这一档还要「{entry['also']['text']}」"
-                         + (f"：{entry['also']['reading']}" if entry["also"].get("reading") else "，要等披露")
+                         + (f"：{fill_story(entry['also']['reading'], values)}" if entry["also"].get("reading")
+                            else "，要等披露")
                          + "。")
     for entry in entries:
         if entry[value_key] is not None and entry.get("consecutive", 1) > 1:
@@ -684,17 +714,69 @@ def rule_sentences(block: dict, entries: list[dict], value_key: str, values: dic
             words.append(f"{line_label(entry)}的阈值是 0，没有百分比余量、不进柱图：本季 "
                          f"{reading_words(entry, entry[value_key])}，{verdict}。")
     for entry in entries:
-        if entry[value_key] is None:
-            words.append(f"「{measure_name(entry)} {entry['fires']}{threshold_words(entry)}」"
-                         f"（{LINE_WORDS.get(entry['line'], entry['line'])}）本季没有读数："
-                         + (fill_story(entry["unread"], values) if entry.get("unread")
-                            else f"它结算的是 {entry['settles']} 才有的数")
-                         + "。")
+        if entry[value_key] is not None:
+            continue
+        pending = f"它结算的是 {entry.get('settles')} 才有的数"
+        done = (progress or {}).get(f"{entry['measure']}:{entry.get('year')}")
+        if done and entry.get("settles"):
+            so_far, value = done
+            need = entry["threshold"] - value
+            pending += (f"；{so_far}已实现 {reading_words(entry, value)}，剩下的季度至少要 "
+                        f"{reading_words(entry, need)} 才{'不低于' if entry['kind'] == 'warn' else '达到'}"
+                        f" {threshold_words(entry)}")
+        words.append(f"「{measure_name(entry)} {entry['fires']}{threshold_words(entry)}」"
+                     f"（{LINE_WORDS.get(entry['line'], entry['line'])}）本季没有读数："
+                     + (fill_story(entry["unread"], values) if entry.get("unread") else pending)
+                     + "。")
     for leg in block.get("text_legs", []):
         words.append(f"第 {leg['row']} 行还有一条只能按文字结算的条件「{leg['text']}」"
                      + (f"：{fill_story(leg['reading'], values)}" if leg.get("reading") else "")
                      + "。")
+    for item in block.get("gated", []):
+        words.append(f"{item['row']}的「{item['text']}」没有序列、不进柱图：{fill_story(item['why'], values)}。")
     return html_text("".join(words))
+
+
+def next_overview(block: dict, entries: list[dict], values: dict, progress: dict, period: str) -> dict:
+    """Section three: this report's section-8 lines, measured from where the quarter left off."""
+    bars = [entry for entry in entries if on_bars(entry, "current")]
+    good = [entry for entry in bars if entry["favourable"]]
+    bad = [entry for entry in bars if not entry["favourable"]]
+    title = f"下季 {len(bars)} 条阈值：当前 {len(good)} 条在有利一侧、{len(bad)} 条在不利一侧"
+    if bad and len(bad) <= 3:
+        title += "（" + "、".join(f"{measure_name(entry, short=True)} {entry['fires']}{threshold_words(entry)}"
+                                  for entry in bad) + "）"
+    on_line = [entry for entry in bars if round(entry["current"], 6) == entry["threshold"]]
+    yearly = [entry for entry in entries if entry.get("year") and entry["measure"] != "capex_guide_first_mid"]
+    exhibit = headroom_exhibit(
+        title,
+        [{**entry, "metric": line_label(entry)} for entry in bars],
+        "current",
+        html_text(
+            "正值 = 当前读数落在这条线的有利一侧（警示线未触发、目标线已到），负值 = 不利一侧；当前值是本季的读数，"
+            f"这些线结算的是 {block['for_period']} 的读数"
+            + (f"（带年份的{cn_count(len(yearly))}条结算的是全年数）" if yearly else "") + "。"
+            + (f"{cn_count(len(on_line))}条正好压在线上（余量 0）："
+               + "、".join(line_label(entry) for entry in on_line)
+               + " —— 这几条线就是报告按本季读数设的。" if on_line else ""))
+        + rule_sentences(block, entries, "current", values, progress),
+        src_extra=(f"阈值与比较符逐字取自本季（{period}）本地分析第 8 节「本季 5 条指标」与立场撤销条件，是研究设定，"
+                   "不是公司指引；当前值由本页从序列现算（新闻稿、10-Q、10-K）。逐行原文、触发动作与撤销条件见核对抽屉。"),
+    )
+    # a line the reading sits exactly on prints 0.0, not -0.0
+    exhibit["values"] = [value + 0.0 for value in exhibit["values"]]
+    exhibit["positive_label"] = "落在有利一侧"
+    exhibit["negative_label"] = "落在不利一侧"
+    return exhibit
+
+
+def next_row_table(block: dict) -> dict:
+    """This report's section-8 rows as written, their actions, and the revocation conditions."""
+    rows = [[f"第 {row['row']} 行", row["metric"], row["text"], row["action"]] for row in block["rows"]]
+    rows += [[f"撤销条件{item['n']}", item["text"], "—", "撤回「经营无恙、资本待验证」的中性判断并转为负面重估"]
+             for item in block.get("revocation", [])]
+    return {"n": 0, "title": f"本季（{block['period']}）第 8 节原文、触发动作与立场撤销条件",
+            "headers": ["行", "指标", "原文", "触发动作"], "rows": rows}
 
 
 def prior_overview(block: dict, entries: list[dict], values: dict, basis_words: str) -> dict:
@@ -723,6 +805,8 @@ def prior_overview(block: dict, entries: list[dict], values: dict, basis_words: 
         src_extra=(f"阈值与比较符逐字取自上季（{block['set_in']}）本地分析第 8 节「关键观察指标」，是研究设定，"
                    "不是公司指引；实际值由本页从序列现算（新闻稿、10-Q、10-K）。每行原文与本季分析的读法、处理见核对抽屉。"),
     )
+    # a line the reading sits exactly on prints 0.0, not -0.0
+    exhibit["values"] = [value + 0.0 for value in exhibit["values"]]
     exhibit["positive_label"] = "落在有利一侧"
     exhibit["negative_label"] = "落在不利一侧"
     return exhibit
@@ -748,7 +832,7 @@ def settlement_table(title: str, entries: list[dict], value_key: str, value_head
             f"{entry['fires']}{threshold_words(entry)}",
             "—" if value is None else reading_words(entry, value),
             "—" if value is None or entry["threshold"] == 0
-            else f"{headroom(entry['direction'], entry['threshold'], value):+.1f}%",
+            else f"{headroom(entry['direction'], entry['threshold'], value) + 0.0:+.1f}%",
             verdict,
         ])
     return {"n": 0, "title": title,
@@ -810,7 +894,8 @@ def closure_exhibit(closure: dict, values: dict) -> tuple[dict, dict]:
 
 
 def regional_chart(geography: dict, quarter_revenue: float, period: str) -> dict:
-    """The quarter's revenue growth by region, as the 10-Q prints it.
+    """The quarter's revenue growth by region, as the 10-Q prints it, read against where the
+    10-Q says the impressions grew.
 
     A one-quarter reading, so it sits with the quarter's other findings rather
     than among the long series.
@@ -821,10 +906,23 @@ def regional_chart(geography: dict, quarter_revenue: float, period: str) -> dict
     share = geography["customer_address_current"][0] / quarter_revenue * 100
     address_growth = pct_change(geography["customer_address_current"][0],
                                 geography["customer_address_prior_year"][0])
+    led = geography.get("impressions_led_by")
+    if led in regions:
+        rank = order.index(regions.index(led)) + 1
+        at = growth[regions.index(led)]
+        title = (f"10-Q：曝光增长尤其在{led}，而{led}收入同比只有 {at:g}%，四个区域里最低"
+                 if rank == len(regions) else
+                 f"10-Q：曝光增长尤其在{led}，{led}收入同比 {at:g}%，四个区域里排第{cn_ordinal(rank)}")
+        filing = (f"10-Q 写明本季曝光在所有地区都增长、尤其在{led}，而平均单价的涨幅被「在变现率较低的地区与产品"
+                  "（如 Reels）投放的更多曝光」部分抵消 —— 与本季分析洞察 2 说的量价两难是同一个机制：量靠低变现的"
+                  "地区与版面撑，价就被稀释。")
+    else:
+        title = (f"本季四大区域收入同比：{regions[order[0]]}最快，"
+                 f"{regions[order[-2]]}与{regions[order[-1]]}落在后两位")
+        filing = ""
     return {
         "kind": "bars_labeled",
-        "title": (f"本季四大区域收入同比：{regions[order[0]]}最快，"
-                  f"{regions[order[-2]]}与{regions[order[-1]]}落在后两位"),
+        "title": title,
         "xlabels": regions,
         "values": growth,
         "legend": "收入同比",
@@ -833,9 +931,9 @@ def regional_chart(geography: dict, quarter_revenue: float, period: str) -> dict
         "label_fmt": "pct1",
         "ylab": "同比增速",
         "note": (
-            f"{regions[0]}同比 {growth[0]:g}%（公司按用户所在地印的口径）；按收入分解附注的客户所在地口径，"
+            filing
+            + f"{regions[0]}同比 {growth[0]:g}%（公司按用户所在地印的口径）；按收入分解附注的客户所在地口径，"
             f"它占本季收入 {share:.1f}%、同比 {address_growth:.1f}% —— 两个口径不同，本图画前者。"
-            + geography.get("management_remark", "")
         ),
         "src_extra": (
             f"区域同比取 {period} 10-Q MD&A「revenue by user geography」一段公司印出的整数百分比；"
@@ -843,6 +941,105 @@ def regional_chart(geography: dict, quarter_revenue: float, period: str) -> dict
             + "、".join(f"{pct_change(c, p):.1f}%" for c, p in
                        zip(geography["customer_address_current"], geography["customer_address_prior_year"]))
             + "，口径不同、不混用。公司未按区域披露利润，本页不做区域盈利推断。"
+            + (f"曝光与单价一句出自 {geography['filing_words_source']}：{html_text(geography['filing_words'])}。"
+               if geography.get("filing_words") else "")
+        ),
+    }
+
+
+def expectation_chart(consensus: dict, actual: dict, one_offs: list[dict], period: str) -> dict:
+    """The quarter against the market's expectation going in: where it beat and where it missed.
+
+    `actual` carries this quarter's revenue, diluted EPS and DAP and the midpoint of
+    the next quarter's revenue guide, all from the release.
+    """
+    rows = [("收入", pct_change(actual["revenue_usd_m"], consensus["revenue_usd_m"])),
+            ("摊薄 EPS", pct_change(actual["diluted_eps_usd"], consensus["diluted_eps_usd"])),
+            ("Family DAP", pct_change(actual["dap_bn"], consensus["family_daily_active_people_bn"]))]
+    if actual.get("next_guide_mid_usd_m") and consensus.get("q3_revenue_usd_m"):
+        rows.append(("下季收入指引中点", pct_change(actual["next_guide_mid_usd_m"], consensus["q3_revenue_usd_m"])))
+    revenue_gap, eps_gap = rows[0][1], rows[1][1]
+    low, high = consensus.get("diluted_eps_usd_range", (None, None))
+    note = (f"市场预期是财报前的一致预期（{consensus['as_of']}），不具名。"
+            f"收入 ${actual['revenue_usd_m']:,}M 对预期 ${consensus['revenue_usd_m']:,.0f}M；"
+            f"摊薄 EPS ${actual['diluted_eps_usd']:.2f} 对预期 ${consensus['diluted_eps_usd']:.2f}"
+            + (f"（各来源的 EPS 预期在 ${low:.2f}–${high:.2f} 之间，按两端算是 "
+               f"{pct_change(actual['diluted_eps_usd'], low):+.1f}% 到 {pct_change(actual['diluted_eps_usd'], high):+.1f}%）"
+               if low and high else "")
+            + "。"
+            + (f"本季经营利润里有{cn_count(len(one_offs))}笔一次性项（"
+               + "、".join(f"{item['name']} ${item['usd_m']:,}M" for item in one_offs)
+               + "，税前），公司没有给剔除后的每股收益。" if one_offs else "")
+            + (f"下季收入指引中点 ${actual['next_guide_mid_usd_m']:,.0f}M 对财报前的下季预期 "
+               f"${consensus['q3_revenue_usd_m']:,.0f}M。" if len(rows) > 3 else ""))
+    return {
+        "kind": "diverging_bars",
+        "title": (f"对市场预期：收入{'高' if revenue_gap >= 0 else '低'} {abs(revenue_gap):.1f}%，"
+                  f"摊薄 EPS {'高' if eps_gap >= 0 else '低'} {abs(eps_gap):.1f}%"),
+        "xlabels": [label for label, _ in rows],
+        "values": [round(value, 2) for _, value in rows],
+        "legend": "较市场预期",
+        "positive_label": "高于市场预期",
+        "negative_label": "低于市场预期",
+        "fmt": "pct1",
+        "yfmt": "pct1",
+        "label_fmt": "pct1",
+        "ylab": "% 较市场预期",
+        "zero_line": True,
+        "note": note,
+        "src_extra": f"实际值来自 {period} 业绩新闻稿（EX-99.1）；{consensus['label']}。",
+    }
+
+
+def off_balance_chart(leases: dict, off_balance: dict | None, period: str) -> dict:
+    """What does not go through the capex line: lease obligations signed but not yet commenced,
+    quarter by quarter since the disclosure began, with the ventures' guarantees in the note."""
+    quarters, total = leases["quarters"], leases["total_usd_bn"]
+    if quarter_key(period) != quarters[-1]:
+        raise ValueError(f"`leases_not_yet_commenced` ends at {quarters[-1]} but the page is {period}: "
+                         "append the quarter's 10-Q figure with the roll")
+    year_end_at = max(i for i, quarter in enumerate(quarters[:-1]) if quarter.endswith("Q4"))
+    year_end = total[year_end_at]
+    ratio = total[-1] / year_end
+    first_at = {basis: leases["basis"].index(basis) for basis in dict.fromkeys(leases["basis"])}
+    ventures = ""
+    if off_balance is not None:
+        guarantees = off_balance["residual_value_guarantees"]
+        ventures = (
+            f"不进资本开支线的还有不并表合资的残值担保（RVG）："
+            + "；".join(f"{item['name']}（{item['basis']}；{item['measure_words']}约 US${item['usd_bn']:g}B）"
+                       for item in guarantees)
+            + f"。路易斯安那合资的最大损失敞口 {quarter_label(quarters[-1])} 为 US${off_balance['louisiana_max_exposure_usd_bn']:.2f}B"
+            f"（上年末 US${off_balance['louisiana_max_exposure_year_end_usd_bn']:.2f}B），含股权账面值、租约承诺、后续出资与 RVG 门槛。"
+            f"季末之后又签了约 US${off_balance['leases_signed_after_quarter_usd_bn']:g}B"
+            f"（{off_balance['leases_signed_after_quarter_words']}），不在这条线里。")
+    return {
+        "kind": "lines",
+        "title": (f"已签约未起租的租赁义务 US${total[-1]:.2f}B：比上年末多 US${total[-1] - year_end:.2f}B，"
+                  f"是上年末的 {ratio:.1f} 倍"),
+        "xlabels": [quarter_label(quarter) for quarter in quarters],
+        "xstep": LONG_STEP,
+        "series": [{"name": "未起租的租赁义务（季末）", "values": total, "color": "NAVY"}],
+        "fmt": "f1",
+        "yfmt": "f1",
+        "label_fmt": "f1",
+        "end_label": True,
+        "ylab": "US$B",
+        "note": (
+            "季末已经签约、还没起租的经营与融资租赁义务。起租后才进资产负债表：融资租赁的本金偿付从那时起计入"
+            "公司口径的资本开支，经营租赁的租金不计入。本季分析洞察 3 以 El Paso 合资说明「资本开支指引已不是资本强度的"
+            "完整度量」；申报里同类义务在它之前就有，而且在上升 —— "
+            f"这条线 {quarter_label(quarters[year_end_at])} 是 US${year_end:.2f}B，{quarter_label(quarters[-1])} 是 "
+            f"US${total[-1]:.2f}B。{ventures}"
+            f"<b>这张图只能回到 {quarter_label(quarters[0])}</b>：新租赁准则 2019 年起才要求披露这个数，此前的年报没有。"
+        ),
+        "src_extra": (
+            "逐季取自 10-Q / 10-K 租赁附注（2025 年起在 Commitments and Contingencies）那一句；"
+            f"{quarter_label(quarters[first_at['分列相加']])} 起公司分列经营与融资两个数（本页相加），"
+            + (f"{quarter_label(quarters[first_at['只写经营租赁']])}–{quarter_label(quarters[first_at['合计'] - 1])} "
+               "只写了经营租赁，" if "只写经营租赁" in first_at else "")
+            + (f"{quarter_label(quarters[first_at['合计']])} 起写合计。" if "合计" in first_at else "")
+            + "逐季的申报编号见 series 的 leases_not_yet_commenced.sources。"
         ),
     }
 
@@ -863,7 +1060,24 @@ def build_payload(staging: dict) -> dict:
     closure = stamped_block(staging, "followup_closure", period)
     prior_kpi = stamped_block(staging, "prior_kpi_settlement", period)
     next_kpi = stamped_block(staging, "next_kpi", period)
+    # Every quarter now has a local analysis before it and one of its own, so
+    # section one always settles the previous one and section three always
+    # places this one: a roll that leaves a block out stops here rather than
+    # publishing a page that silently skipped a section.
+    missing = [name for name, block in (("followup_closure", closure), ("prior_kpi_settlement", prior_kpi),
+                                        ("next_kpi", next_kpi)) if block is None]
+    if missing:
+        raise ValueError(f"series blocks {missing} are required every quarter: section one settles the "
+                         "previous analysis (its section 0 and section 8), section three places this one's section 8")
+    for name, block in (("followup_closure", closure), ("prior_kpi_settlement", prior_kpi)):
+        if block["set_in"] != prev_period:
+            raise ValueError(f"series block `{name}` settles what {block['set_in']!r} left, but the quarter "
+                             f"before {period} is {prev_period!r}")
+    if next_kpi["for_period"] != period_of(next_key(key)):
+        raise ValueError(f"series block `next_kpi` is set for {next_kpi['for_period']!r}, but the quarter "
+                         f"after {period} is {period_of(next_key(key))!r}")
     consensus = stamped_block(staging, "market_expectation", period)
+    off_balance = stamped_block(staging, "off_balance_sheet", period)
     outlook = stamped_block(staging, "outlook", period)
     snapshot = stamped_block(staging, "quarter_snapshot", period)
     geography = stamped_block(staging, "quarter_geography", period)
@@ -1026,7 +1240,6 @@ def build_payload(staging: dict) -> dict:
     so_far_words = {1: "一季度", 2: "上半年", 3: "前三季"}.get(elapsed, f"前{elapsed}季")
     rest = {1: "余下三季", 2: "H2", 3: "Q4"}.get(elapsed, "")
     line_words = {1: "四分之一线", 2: "半程线", 3: "四分之三线"}.get(elapsed, "全年线")
-    base_quarterly_average = base["operating_income"] / 4 if base else None
     pace_line = base["operating_income"] * elapsed / 4 if base else None
     price_low, price_high = (consensus or {}).get("post_earnings_price_change_range_pct", (None, None))
 
@@ -1037,110 +1250,6 @@ def build_payload(staging: dict) -> dict:
 
     def source_note(detail: str) -> str:
         return f"{detail}；历史期同口径。自算项目均可在核对表中复核。"
-
-    # Two tracked metrics are settled on the adjusted basis while their history
-    # only exists on the GAAP one, so those charts carry a second short line:
-    # it coincides with the GAAP line through last quarter (which had no
-    # comparable one-off items) and separates only where the add-backs land.
-    # Without it the plotted last point and the stated "current" value disagree.
-    def adjusted_tail(previous: float, current: float, length: int) -> dict:
-        return {
-            "name": "调整后（本季）D",
-            "values": [None] * (length - 2) + [round(previous, 2), round(current, 2)],
-            "color": "GOLD",
-        }
-
-    # One entry per tracked metric, so §1 and §3 can each draw the metric's own
-    # history under its own threshold instead of only a normalised bar.
-    # Each tracked metric runs on the longest window its own series has, and
-    # carries the labels that go with it.
-    long_operating = long["operating_income_usd_m"]
-    long_operating_margin = [
-        income / sales * 100 for income, sales in zip(long_operating, long_revenue)
-    ]
-    long_incremental_margin = [
-        None if index < 4 or long_revenue[index] == long_revenue[index - 4]
-        else (long_operating[index] - long_operating[index - 4])
-        / (long_revenue[index] - long_revenue[index - 4]) * 100
-        for index in range(len(long_revenue))
-    ]
-    long_volume_price = [
-        None if impressions is None or price is None
-        else ((1 + impressions / 100) * (1 + price / 100) - 1) * 100
-        for impressions, price in zip(long_impressions, long_price)
-    ]
-    segment_labels = long_labels[segment_from:]
-    tracked = {
-        "经营利润率（调整后）": (
-            long_labels, long_operating_margin, "pct1", "经营利润率", "经营利润率（GAAP）",
-            adjusted_tail(
-                long_operating_margin[-2],
-                adjusted_operating_income / revenue[-1] * 100,
-                len(long_labels),
-            ) if one_offs else None,
-        ),
-        "平均每条广告价格 YoY": (
-            long_labels, long_price, "pct0", "同比", "平均每条广告价格 YoY", None,
-        ),
-        "同比增量经营利润率": (
-            long_labels, long_incremental_margin, "pct1", "ΔOI / ΔRevenue",
-            "同比增量经营利润率（GAAP）D",
-            adjusted_tail(long_incremental_margin[-2], adjusted_incremental_margin,
-                          len(long_labels)) if one_offs else None,
-        ),
-        "广告量价乘积（隐含收入增速）": (
-            long_labels, long_volume_price, "pct1", "隐含同比", "量价乘积 D", None,
-        ),
-        "FoA Other 单季收入": (
-            segment_labels, long_foa_other[segment_from:], "f0c", "$M", "FoA Other 收入", None,
-        ),
-    }
-    if base:
-        tracked[f"单季经营利润 vs FY{base_year} 季均线"] = (
-            long_labels, long_operating, "f0c", "$M", "单季经营利润", None,
-        )
-
-    def tracking_charts(entries, value_key, threshold_label, headline) -> list[dict]:
-        charts = []
-        for entry in entries:
-            metric = entry["metric"]
-            if metric not in tracked:
-                continue
-            metric_labels, values, fmt, ylab, actual_name, adjusted = tracked[metric]
-            side = "上方" if entry["direction"] == "up" else "下方"
-            adjusted_note = (
-                ""
-                if adjusted is None
-                else f"金色线为剔除本季 {one_off_words}后的同一指标，阈值按该口径结算。"
-            )
-            exhibit = threshold_exhibit(
-                headline(entry),
-                metric_labels,
-                values,
-                entry["threshold"],
-                xstep=LONG_STEP if len(metric_labels) > 16 else None,
-                fmt=fmt,
-                ylab=ylab,
-                actual_name=actual_name,
-                threshold_name=f"{threshold_label}（安全侧在{side}）",
-                note=(
-                    f"阈值 {unit_text(entry['unit'], entry['threshold'])}，"
-                    f"当前 {unit_text(entry['unit'], entry[value_key])}，"
-                    f"余量 {headroom(entry['direction'], entry['threshold'], entry[value_key]):+.1f}%。"
-                    f"{adjusted_note}"
-                ),
-                src_extra=(
-                    "实际值来自各期 10-Q / 10-K 与当季 earnings release；"
-                    "阈值为本地研究设定，不是公司指引。"
-                ),
-            )
-            if adjusted is not None:
-                exhibit["series"].insert(1, adjusted)
-            charts.append(exhibit)
-        return charts
-
-    def margin_of(entry: dict, value_key: str) -> float:
-        return headroom(entry["direction"], entry["threshold"], entry[value_key])
 
     # Numbers the quarter's story blocks name ({capex_now}, {positions} ...):
     # computed here from the arrays, never typed into the series beside them.
@@ -1182,6 +1291,13 @@ def build_payload(staging: dict) -> dict:
     for item in one_offs:
         if item.get("key"):
             story[item["key"]] = f"${item['usd_m']:,}M"
+    if off_balance is not None:
+        for item in off_balance["residual_value_guarantees"]:
+            story[item["key"]] = f"约 US${item['usd_bn']:g}B"
+    # How far into the year a full-year line already is, for the lines that
+    # settle only when the year closes.
+    progress = ({f"fy_operating_income:{guided_year}": (so_far_words, float(year_to_date_oi))}
+                if 0 < elapsed < 4 else {})
 
     # ── section one ──────────────────────────────────────────────────────────
     # What last quarter left, in the order it was left: (a) the follow-up
@@ -1297,6 +1413,15 @@ def build_payload(staging: dict) -> dict:
             ),
             "src_extra": source_note("收入来自各期 10-Q / 10-K 与当季 release，同比为自算"),
         },
+    ]
+    if consensus is not None and snapshot is not None:
+        highlights.append(expectation_chart(consensus, {
+            "revenue_usd_m": revenue[-1],
+            "diluted_eps_usd": snapshot["diluted_eps_usd"][0],
+            "dap_bn": ads["family_daily_active_people_bn"][-1],
+            "next_guide_mid_usd_m": q3_midpoint,
+        }, one_offs, period))
+    highlights += [
         {
             "kind": "lines",
             "title": (
@@ -1386,6 +1511,7 @@ def build_payload(staging: dict) -> dict:
         trough_words = ("，收入仍在两位数增长时掉到这个水平，此前还有 "
                         + "、".join(f"{long_labels[i]}（${long_fcf[i]:,.0f}M，收入同比 "
                                    f"{long_revenue_yoy[i]:+.1f}%）" for i in low_while_growing) + "。")
+    negative_fcf = sum(1 for v in long_fcf if v is not None and v < 0)
     fcf_title = (f"单季自由现金流塌到 ${fcf_now:,.0f}M，环比 {pct_change(fcf_now, fcf_before):.1f}% —— "
                  if collapsed else
                  f"单季自由现金流 ${fcf_now:,.0f}M，环比 {pct_change(fcf_now, fcf_before):.1f}% —— ")
@@ -1394,7 +1520,8 @@ def build_payload(staging: dict) -> dict:
             "kind": "diverging_bars",
             "title": (
                 fcf_title
-                + f"{len(long_fcf)} 季里为负的有 {sum(1 for v in long_fcf if v is not None and v < 0)} 季"
+                + (f"{len(long_fcf)} 季里为负的有 {negative_fcf} 季" if negative_fcf
+                   else f"{len(long_fcf)} 季里没有一季为负")
             ),
             "xlabels": long_labels,
             "xstep": LONG_STEP,
@@ -1468,7 +1595,8 @@ def build_payload(staging: dict) -> dict:
             ),
             "src_extra": (
                 "资本开支为购买物业及设备加融资租赁本金，与公司指引口径一致；占收入比为自算。"
-                "指引不覆盖以合资与租赁结构取得的算力，因此这条线是资本强度的下界而非全貌。"
+                "经营租赁的租金与不并表合资的建设支出不进这条线，所以它是资本强度的下界而非全貌"
+                "（已签约未起租的租赁义务见本板块最后一张图）。"
             ),
         },
     ]
@@ -1508,62 +1636,23 @@ def build_payload(staging: dict) -> dict:
                 + ("最新一次是区间收窄，但收窄的方式是抬高下限——中点仍在上移。" if narrowed_up else "")
             ),
             "src_extra": (
-                f"{cn_count(len(capex_calls))}次口径来自对应季度的 earnings call；中点为自算。"
-                + (f"较 FY{base_year} 实际的 ${prior_actual:,}M 为同一口径对照。" if prior_actual else "")
+                f"{cn_count(len(capex_calls))}次区间逐字取自对应季度业绩 8-K EX-99.1 的 CFO Outlook Commentary；中点为自算。"
+                + (f"FY{base_year} 实际（同口径，含融资租赁本金）${prior_actual:,}M，最新中点比它高 "
+                   f"{pct_change(capex_guide_mid[-1] * 1000, prior_actual):.1f}%。" if prior_actual else "")
             ),
         })
+    leases_chart = None
+    if staging.get("leases_not_yet_commenced"):
+        leases_chart = off_balance_chart(staging["leases_not_yet_commenced"], off_balance, period)
+        highlights.append(leases_chart)
 
     # ── section three ────────────────────────────────────────────────────────
-    next_charts: list[dict] = []
-    if next_kpi is not None:
-        entries = next_kpi["quantified"]
-        below = [entry for entry in entries if margin_of(entry, "current") < 0]
-        themed = [entry for entry in below if entry.get("theme")]
-        theme_words = next_kpi.get("theme_words", {})
-        if not below:
-            state = "当前值全部在安全侧"
-        elif themed and len(themed) == len(below):
-            state = (f"{cn_count(len(below))}条已在阈值之下，且都直接指向"
-                     f"「{theme_words[themed[0]['theme']]}」")
-        elif themed:
-            state = (f"{cn_count(len(below))}条已在阈值之下，其中{cn_count(len(themed))}条直接指向"
-                     f"「{theme_words[themed[0]['theme']]}」")
-        else:
-            state = f"{cn_count(len(below))}条已在阈值之下"
-        profit_lines = [entry for entry in below if entry.get("theme") == "incremental_profit"]
-        pace_words = ""
-        if base and len(profit_lines) >= 2:
-            pace_words = (
-                "增量经营利润率与单季经营利润两条都在线下：本季 GAAP 经营利润 "
-                f"${operating_income[-1]:,}M，{'低于' if operating_income[-1] < base_quarterly_average else '高于'} "
-                f"FY{base_year} 经营利润的季均值 ${base_quarterly_average:,.0f}M；{so_far_words}累计 ${year_to_date_oi:,}M，"
-                + (f"只比全年承诺的{line_words} ${pace_line:,.0f}M 高 ${year_to_date_oi - pace_line:,.0f}M。"
-                   if year_to_date_oi >= pace_line else
-                   f"比全年承诺的{line_words} ${pace_line:,.0f}M 低 ${pace_line - year_to_date_oi:,.0f}M。")
-            )
-        gated = next_kpi.get("disclosure_gated", [])
-        next_charts.append(headroom_exhibit(
-            f"下季 {len(entries)} 条量化阈值：{state}",
-            entries,
-            "current",
-            "正值 = 仍在安全侧。" + pace_words,
-            src_extra=(
-                f"阈值为本地研究设定，不是公司指引；当前值为 {period} 实际。"
-                + ("增量经营利润率的当前值取剔除一次性项后的口径。"
-                   if any(entry.get("basis") == "adjusted" for entry in entries) and one_offs else "")
-                + (f"另有 {len(gated)} 条需等披露才能判定（"
-                   + "、".join(item["short"] for item in gated) + "）。" if gated else "")
-            ),
-        ))
-        next_charts += tracking_charts(
-            entries,
-            "current",
-            "下季阈值",
-            lambda entry: (
-                f"{entry['metric']}：下季阈值 {unit_text(entry['unit'], entry['threshold'])}，"
-                f"当前 {unit_text(entry['unit'], entry['current'])}"
-            ),
-        )
+    # This quarter's section 8, tier by tier, placed against where the quarter
+    # left each reading. Same format as last quarter's block, so the roll moves
+    # it into `prior_kpi_settlement` as it stands.
+    next_entries = evaluate(staging, next_kpi, "current", period)
+    next_charts = ([next_overview(next_kpi, next_entries, story, progress, period)]
+                   + threshold_line_charts(staging, next_kpi, next_entries, "current"))
 
     # ── section four ─────────────────────────────────────────────────────────
     ahead = runs([None if a is None or b is None else a - b
@@ -1583,6 +1672,10 @@ def build_payload(staging: dict) -> dict:
                else "为正" if rl_yoy[-1] > 0
                else "转负" if rl_yoy[-2] > 0 else "仍为负")
     foa_first_billion = foa_other_shown[-1] >= 1000 > max(v for v in long_foa_other[:-1] if v is not None)
+    # Both non-advertising lines add revenue that does not depend on ad load; how
+    # the year-on-year increment splits between them is computed, not asserted.
+    foa_increment = foa_other_shown[-1] - foa_other_shown[-5]
+    rl_increment = reality_labs_shown[-1] - reality_labs_shown[-5]
     routine = [
         {
             "kind": "lines",
@@ -1663,8 +1756,12 @@ def build_payload(staging: dict) -> dict:
             "ylab": "$M",
             "note": (
                 f"FoA Other 同比 {foa_other_yoy[-1]:+.1f}%、年化约 "
-                f"${foa_other_shown[-1] * 4 / 1000:.1f}B，是唯一不依赖广告负载的增量引擎；"
-                f"Reality Labs 收入同比 {pct_change(reality_labs_shown[-1], reality_labs_shown[-5]):+.1f}% {rl_step}"
+                f"${foa_other_shown[-1] * 4 / 1000:.1f}B"
+                + (f"：两条非广告收入线的同比增量 ${foa_increment + rl_increment:,.0f}M 里，"
+                   f"{foa_increment / (foa_increment + rl_increment) * 100:.0f}% 来自它；"
+                   if foa_increment > 0 and rl_increment > 0 else
+                   "：两条非广告收入线的同比增量全部来自它；" if foa_increment > 0 >= rl_increment else "；")
+                + f"Reality Labs 收入同比 {pct_change(reality_labs_shown[-1], reality_labs_shown[-5]):+.1f}% {rl_step}"
                 + (f"，但本季经营亏损仍有 ${abs(snapshot['reality_labs_operating_loss_usd_m'][0]):,}M。"
                    if snapshot else "。")
                 + f"<b>这张图只能回到 {long_labels[segment_from]}，不能到 {quarters[0][:4]}</b>：{long['segment_note']}"
@@ -1747,7 +1844,9 @@ def build_payload(staging: dict) -> dict:
             ["自由现金流 D"] + three(series_three(free_cash_flow)),
             ["计入应付的未付资本开支"] + three(unpaid),
             ["其他资产项下的受限现金", f"${restricted[2]:,}M", "—", f"${restricted[0]:,}M", "—",
-             snapshot.get("restricted_cash_remark") or f"{pct_change(restricted[0], restricted[2]):+.1f}%"],
+             (f"含 ${off_balance['restricted_escrow_usd_bn']:.2f}B 多年期基础设施采购协议的托管资金，"
+              f"预计 {off_balance['restricted_escrow_release']} 释放（10-Q）"
+              if off_balance else f"{pct_change(restricted[0], restricted[2]):+.1f}%")],
             ["员工数", f"{heads[2]:,}", f"{heads[1]:,}", f"{heads[0]:,}",
              f"{pct_change(heads[0], heads[1]):+.1f}%", f"{pct_change(heads[0], heads[2]):+.1f}%"],
         ]
@@ -1815,7 +1914,7 @@ def build_payload(staging: dict) -> dict:
             ["余下各季有效税率",
              f"{outlook['tax_rate_prior_pct'][0]}–{outlook['tax_rate_prior_pct'][1]}%", "—",
              f"{outlook['tax_rate_pct'][0]}–{outlook['tax_rate_pct'][1]}%",
-             "持平" if tax_move == 0 else f"{'上调' if tax_move > 0 else '下调'}约 {abs(round(tax_move)):.0f}pp"])
+             "持平" if tax_move == 0 else f"区间中值{'上调' if tax_move > 0 else '下调'} {abs(tax_move):g}pp D"])
         guidance_rows.append(
             [f"FY{int(guided_year) + 1} CapEx", outlook["fy2027_capex_prior"], "—",
              outlook["fy2027_capex"], outlook["fy2027_capex_remark"]])
@@ -1827,9 +1926,9 @@ def build_payload(staging: dict) -> dict:
         tables.append(settlement_table(f"上季（{prior_kpi['set_in']}）第 8 节逐档结算（原单位）", prior_entries,
                                        "actual", f"{period} 实际", story))
         tables.append(prior_row_table(prior_kpi))
-    if next_kpi is not None:
-        tables.append(threshold_table(0, "下季阈值与当前值（原单位）",
-                                      next_kpi["quantified"], "current", "当前值"))
+    tables.append(settlement_table(f"下季阈值与当前值（原单位，结算 {next_kpi['for_period']}）", next_entries,
+                                   "current", "当前值", story))
+    tables.append(next_row_table(next_kpi))
     if guidance_rows:
         tables.append({
             "n": 0,
@@ -1892,6 +1991,9 @@ def build_payload(staging: dict) -> dict:
         if long_price[index - 1] is None or long_price[index - 1] != long_price[-1]:
             break
         price_streak += 1
+    qoq_incremental = measure_series(staging)["incremental_margin_qoq_adjusted"][-1]
+    adjusted_change = adjusted_operating_income - (
+        operating_income[-2] + sum(item["usd_m"] for item in one_off_record(staging).get(prev_period, [])))
     brief = (
         '<h4>本季三条主线</h4><div class="takeaway-grid">'
         '<article><span>亮点</span><b>广告绝对竞争力没有裂缝</b>'
@@ -1908,35 +2010,40 @@ def build_payload(staging: dict) -> dict:
         + ('<article><span>存疑</span><b>增量资本没有产出增量利润</b>'
            if adjusted_incremental_margin < adjusted_margin / 2 else
            '<article><span>观察</span><b>增量利润率与资本强度</b>')
-        + f'<p>同比增量经营利润率 {adjusted_incremental_margin:.1f}%，'
+        + '<p>'
+        + (f'环比多做 ${revenue[-1] - revenue[-2]:,}M 收入，调整后经营利润'
+           f'{"少" if adjusted_change < 0 else "多"} ${abs(adjusted_change):,}M'
+           f'（环比增量经营利润率 {qoq_incremental:+.1f}%）；'.replace("-", "−")
+           if qoq_incremental is not None else "")
+        + f'同比增量经营利润率 {adjusted_incremental_margin:.1f}%，'
         f'资本开支占收入 {capex_intensity[-1]:.1f}%。</p></article>'
         '</div>'
     )
 
-    parts = ((["上季兑现"] if settled_charts else []) + ["本季重点"]
-             + (["下季跟踪"] if next_charts else []) + ["长期常规"])
+    parts = ["上季兑现", "本季重点", "下季跟踪", "长期常规"]
     notes = [
         f"本页按「{' → '.join(parts)}」{cn_count(len(parts))}段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
     ]
-    if prior_kpi is not None and next_kpi is not None:
-        settled_bar = next(ex for ex in settled_charts if ex["kind"] == "diverging_bars")
-        notes.append(f"Exhibit {settled_bar['n']} 与 Exhibit {next_charts[0]['n']} 的阈值是本地研究设定，"
-                     "不是公司指引，也不构成评级或投资建议；「距阈值余量」统一为正值代表安全侧。")
+    settled_bar = next(ex for ex in settled_charts if ex["kind"] == "diverging_bars")
+    notes.append(f"Exhibit {settled_bar['n']} 与 Exhibit {next_charts[0]['n']} 的阈值是本地研究设定，"
+                 "不是公司指引，也不构成评级或投资建议；「距阈值余量」统一为正值代表落在有利一侧"
+                 "（警示线未触发、目标线已到）。")
     notes += [
         "本页只发布公司披露值、可复算的简单派生值，以及明确标注的市场预期；D 标记代表 Derived / 自算。",
         "市场预期一律标注为「市场预期」并给出取数时点，不写卖方机构名，也不发布评级、目标价或估值。",
     ]
     if one_offs:
         notes.append(f"调整后经营利润 = GAAP 经营利润加回本季{one_off_words_named_first}，是算术加总，"
-                     f"不是公司定义的 non-GAAP 指标；{cn_count(len(one_offs))}笔加回项未按分部披露，因此分部层面的调整后利润率无法拆分。")
+                     "不是公司定义的 non-GAAP 指标；10-Q 只说遣散费分摊在两个分部、没有给分部金额，"
+                     "因此分部层面的调整后利润率无法拆分。")
     notes += [
-        "同比增量经营利润率 = （本季经营利润 − 去年同期经营利润）÷（本季收入 − 去年同期收入），"
-        "用同比而非环比，是因为 Q4 的季节性足以让环比口径每年两次翻转符号。",
+        "增量经营利润率 = 经营利润的变动 ÷ 收入的变动。长期序列用同比口径，因为第四季的季节性足以让环比口径"
+        "每年两次翻转符号；下季阈值按本季分析原文用环比口径，收入环比下降的季度没有环比增量利润率，图上留空。",
         "广告收入 = 总收入 − Reality Labs − FoA Other，三条线始终加回报告总额；"
         "量价乘积为公司披露的曝光与单价同比相乘，与实际广告收入增速的差异来自整数舍入。",
         "自由现金流按公司口径 = 经营现金流 − 购买物业及设备 − 融资租赁本金偿付；资本开支同口径含融资租赁。",
-        "资本开支指引只覆盖进入公司报表的部分；以合资、租赁与残值担保结构取得的算力不进入这条线，"
-        "本页因此把资本强度曲线标注为下界而非全貌。",
+        "公司口径的资本开支（及其指引）含融资租赁本金，但不含经营租赁的租金与不并表合资的建设支出；"
+        "本页因此把资本强度曲线标注为下界而非全貌，已签约未起租的租赁义务单独成图。",
     ]
     if price_high is not None:
         notes.append(f"财报后股价反应各公开来源报价不一致（约 {abs(price_high):.0f}%–{abs(price_low):.0f}%），本页只发布区间，不取单一数值。")
@@ -1947,39 +2054,41 @@ def build_payload(staging: dict) -> dict:
         "以及电话会口径的 Meta AI、business agents、AI 眼镜等运营 KPI（公司仅给相对数）。",
     ]
 
-    sections = []
-    if settled_charts:
-        sections.append({
-            "id": "settled",
-            "title": "一、上季跟踪指标兑现了吗",
-            "description": (
-                "先结算上季留下的东西，再看本季数据——否则页面只会不断累积判断，从不闭环。顺序是："
-                + (f"上季（{closure['set_in']}）分析留下的 {len(closure['items'])} 条待验证问题，照本季分析第 0 节的判定；"
-                   if closure is not None else "")
-                + (f"上季第 8 节 {len(prior_kpi['rows'])} 行阈值逐档拆成 {len(prior_entries)} 条线，读数由本页从申报现算；"
-                   if prior_kpi is not None else "")
-                + "最后是公司自己在每季新闻稿里给的下季收入区间与随后的实际值。"),
-            "exhibits": exhibits[: len(settled_charts)],
-        })
-    sections.append({
+    next_bars = [entry for entry in next_entries if on_bars(entry, "current")]
+    sections = [{
+        "id": "settled",
+        "title": "一、上季跟踪指标兑现了吗",
+        "description": (
+            "先结算上季留下的东西，再看本季数据——否则页面只会不断累积判断，从不闭环。顺序是："
+            f"上季（{closure['set_in']}）分析留下的 {len(closure['items'])} 条待验证问题，照本季分析第 0 节的判定；"
+            f"上季第 8 节 {len(prior_kpi['rows'])} 行阈值逐档拆成 {len(prior_entries)} 条线，读数由本页从申报现算；"
+            "最后是公司自己在每季新闻稿里给的下季收入区间与随后的实际值。"),
+        "exhibits": exhibits[: len(settled_charts)],
+    }, {
         "id": "quarter_highlights",
         "title": "二、本季重点",
-        "description": ("收入与指引、广告的量价拆分"
+        "description": ("本季分析的核心结论里能用申报数画的，一图一个结论：收入"
+                        + ("与对市场预期" if consensus is not None and snapshot is not None else "")
+                        + "、广告的量价拆分"
                         + ("与各区域的收入增速" if geography is not None else "")
                         + ("、一次性项之后的经营利润" if one_offs else "")
-                        + (f"、现金流与资本开支的{cn_count(capex_raises)}次上调。" if capex_raises else "、现金流与资本开支。")),
+                        + "、现金流与资本开支"
+                        + (f"、资本开支指引的{cn_count(capex_raises)}次上调" if capex_raises else "")
+                        + ("与不进资本开支线的租赁和合资承诺" if leases_chart is not None else "")
+                        + "。报告核心矛盾里全年增量经营利润率的区间依赖报告自设的第四季收入假设（公司不给第四季指引），"
+                          "本页不画；第三板块按上半年实际与全年承诺的差距跟踪同一件事。"),
         "exhibits": exhibits[len(settled_charts): len(settled_charts) + len(highlights)],
-    })
-    if next_charts:
-        sections.append({
-            "id": "next_quarter",
-            "title": "三、下季要跟踪什么",
-            "description": "同一套口径向前看：当前值离下季阈值还有多远，统一用「距阈值余量」表示。",
-            "exhibits": exhibits[
-                len(settled_charts) + len(highlights):
-                len(settled_charts) + len(highlights) + len(next_charts)
-            ],
-        })
+    }, {
+        "id": "next_quarter",
+        "title": "三、下季要跟踪什么",
+        "description": (f"本季（{period}）分析第 8 节 {len(next_kpi['rows'])} 行与立场撤销条件，逐档拆成 "
+                        f"{len(next_entries)} 条线：{len(next_bars)} 条有当前读数，进总览柱图并按读数逐张画出历史；"
+                        "其余的（要连续两季的、阈值为 0 的、要等全年或下一次披露的）写在总览图注与核对表。"),
+        "exhibits": exhibits[
+            len(settled_charts) + len(highlights):
+            len(settled_charts) + len(highlights) + len(next_charts)
+        ],
+    }]
     sections.append({
         "id": "routine",
         "title": "四、长期常规跟踪",

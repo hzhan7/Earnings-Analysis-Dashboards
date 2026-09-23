@@ -825,9 +825,11 @@ CONVERTED = {
         "收入指引兑现": "Meta published no quarterly revenue outlook range before the "
                   "2022Q1 release; the record starts where the guidance does.",
         "收入相对指引中值": "the deviation view of the same record, so the same floor.",
-        "FoA Other 单季收入": "segment revenue begins with the 2020Q4 release -- before that "
-                        "the categories did not exist.",
-        "两条非广告收入线": "same segment floor, long-run version.",
+        "两条非广告收入线": "segment revenue begins with the 2020Q4 release -- before that "
+                     "the categories did not exist.",
+        "已签约未起租的租赁义务": "leases signed but not yet commenced are a disclosure ASC 842 "
+                          "introduced from 2019-01-01; the FY2018 10-K has no such figure (it "
+                          "describes build-to-suit arrangements only), so the record starts in 2019Q1.",
         "折旧摊销同比": "a year-on-year line has no denominator for the first four quarters "
                   "of the record, so it starts in 2017Q1.",
     },
@@ -1165,8 +1167,8 @@ FLOOR_KIND = {
     'meta': {
         '收入指引兑现': 'disclosure',
         '收入相对指引中值': 'disclosure',
-        'FoA Other 单季收入': 'disclosure',
         '两条非广告收入线': 'disclosure',
+        '已签约未起租的租赁义务': 'disclosure',
         '折旧摊销同比': 'coverage',
     },
     'axp': {
