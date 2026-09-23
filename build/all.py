@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amd, amzn, arm, avgo, axp, bc, cboe, cdns, cfr, cme, cost, googl, hkex, ibkr, intc, ker, ma, mc, mco,
+    amd, amzn, arm, asml, avgo, axp, bc, cboe, cdns, cfr, cme, cost, googl, hkex, ibkr, intc, ker, ma, mc, mco,
     meta, msci, msft, mu, ndaq, nke, nvda, pm, race, rms, samsung, schw,
     skhynix, snps,
     spgi, tjx, tsm, v, zgn,
@@ -27,6 +27,7 @@ MODULES = {
     "amd": amd,
     "amzn": amzn,
     "arm": arm,
+    "asml": asml,
     "avgo": avgo,
     "axp": axp,
     "bc": bc,
@@ -114,6 +115,17 @@ ENTRIES = [
         "search_text": ("arm arm holdings 安谋 半导体 ip 授权 license royalty 版税 cpu 架构 armv9 "
                         "neoverse css 数据中心 agi cpu 自研芯片 软银 softbank arm china 安谋中国 "
                         "关联方 acv rpo 外国私人发行人 20-f 6-k"),
+    },
+    {
+        "slug": "asml",
+        "ticker": "ASML",
+        "name": "ASML Holding N.V.",
+        "aliases": ["ASML", "阿斯麦", "ASML Holding"],
+        "group": "semiconductor_ai",
+        "cadence_label": "自然年财年；季度结于最接近季末的周日",
+        "search_text": ("asml 阿斯麦 光刻机 光刻 euv high na exe nxe duv 浸没式 immersion arfi krf "
+                        "半导体设备 wfe 装机管理 installed base management 订单 bookings 积压 backlog "
+                        "存储 memory logic 中国大陆 荷兰 外国私人发行人 20-f 6-k us gaap 欧元"),
     },
     {
         "slug": "avgo",

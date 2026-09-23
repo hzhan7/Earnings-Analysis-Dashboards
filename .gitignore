@@ -22,6 +22,7 @@ series/*.json
 !series/amd.json
 !series/amzn.json
 !series/arm.json
+!series/asml.json
 !series/avgo.json
 !series/axp.json
 !series/bc.json
