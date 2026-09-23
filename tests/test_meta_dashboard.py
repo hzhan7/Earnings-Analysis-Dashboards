@@ -315,16 +315,46 @@ class MetaDashboardTest(unittest.TestCase):
                 got, (actual / ((low + high) / 2) - 1) * 100, places=6, msg=quarter
             )
 
+    def test_the_page_has_the_four_sections_in_order(self) -> None:
+        """Every company page carries the same four sections, ids and titles verbatim."""
+        self.assertEqual(
+            [(section["id"], section["title"]) for section in self.payload["sections"]],
+            [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+             ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")],
+        )
+        for section in self.payload["sections"]:
+            self.assertTrue(section["exhibits"], section["id"])
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列", self.payload["notes"][0])
+
+    def test_section_one_settles_before_it_scores_the_guidance(self) -> None:
+        """(a) the follow-up questions, (b) last quarter's thresholds, then (c) the
+        company's own guidance record -- the guidance charts come last."""
+        settled = self.by_section["settled"]
+        kinds = [ex.get("ref") or ex["kind"] for ex in settled]
+        self.assertEqual(kinds[0], "bars_labeled")
+        self.assertIn("待验证问题", settled[0]["title"])
+        self.assertEqual(kinds[-2:], ["meta_revenue_band", "meta_revenue_midpoint"])
+
+    def test_a_one_quarter_snapshot_is_not_filed_as_a_long_series(self) -> None:
+        """The regional chart is one quarter's reading: it belongs with the
+        quarter's findings, not among the long series of section four."""
+        routine_titles = [ex["title"] for ex in self.by_section["routine"]]
+        self.assertFalse(any("区域" in title for title in routine_titles), routine_titles)
+        highlight_titles = [ex["title"] for ex in self.by_section["quarter_highlights"]]
+        self.assertTrue(any("区域" in title for title in highlight_titles), highlight_titles)
+
     def test_section_order_matches_how_the_note_is_used(self) -> None:
         """Section lengths follow the stamped blocks, not a typed 6/6/5/4."""
         prior = self.source["prior_kpi_settlement"]["quantified"]
         nxt = self.source["next_kpi"]["quantified"]
         plotted_prior = [e for e in prior if e["metric"] in ("经营利润率（调整后）", "平均每条广告价格 YoY")]
         plotted_next = [e for e in nxt if "CapEx 指引中点" not in e["metric"]]
+        highlights = (4 + ("quarter_geography" in self.source)
+                      + bool(self.source["quarter_snapshot"]["one_off_items"]))
         self.assertEqual(
             [(section["id"], len(section["exhibits"])) for section in self.payload["sections"]],
-            [("settled", 1 + 1 + 2 + len(plotted_prior)), ("quarter_highlights", 6),
-             ("next_quarter", 1 + len(plotted_next)), ("routine", 4)],
+            [("settled", 1 + 1 + 2 + len(plotted_prior)), ("quarter_highlights", highlights + 1),
+             ("next_quarter", 1 + len(plotted_next)), ("routine", 3)],
         )
 
     def test_headroom_bars_reproduce_the_thresholds(self) -> None:

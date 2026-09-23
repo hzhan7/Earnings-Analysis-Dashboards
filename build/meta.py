@@ -321,6 +321,44 @@ def range_text(low: float, high: float) -> str:
     return f"{one(low)}–{one(high)}"
 
 
+def regional_chart(geography: dict, quarter_revenue: float, period: str) -> dict:
+    """The quarter's revenue growth by region, as the 10-Q prints it.
+
+    A one-quarter reading, so it sits with the quarter's other findings rather
+    than among the long series.
+    """
+    growth = geography["user_geography_yoy_pct"]
+    order = sorted(range(len(growth)), key=lambda i: -growth[i])
+    regions = geography["regions"]
+    share = geography["customer_address_current"][0] / quarter_revenue * 100
+    address_growth = pct_change(geography["customer_address_current"][0],
+                                geography["customer_address_prior_year"][0])
+    return {
+        "kind": "bars_labeled",
+        "title": (f"本季四大区域收入同比：{regions[order[0]]}最快，"
+                  f"{regions[order[-2]]}与{regions[order[-1]]}落在后两位"),
+        "xlabels": regions,
+        "values": growth,
+        "legend": "收入同比",
+        "fmt": "pct1",
+        "yfmt": "pct1",
+        "label_fmt": "pct1",
+        "ylab": "同比增速",
+        "note": (
+            f"{regions[0]}同比 {growth[0]:g}%（公司按用户所在地印的口径）；按收入分解附注的客户所在地口径，"
+            f"它占本季收入 {share:.1f}%、同比 {address_growth:.1f}% —— 两个口径不同，本图画前者。"
+            + geography.get("management_remark", "")
+        ),
+        "src_extra": (
+            f"区域同比取 {period} 10-Q MD&A「revenue by user geography」一段公司印出的整数百分比；"
+            "收入分解附注按客户所在地分区，那张表算出的同比是 "
+            + "、".join(f"{pct_change(c, p):.1f}%" for c, p in
+                       zip(geography["customer_address_current"], geography["customer_address_prior_year"]))
+            + "，口径不同、不混用。公司未按区域披露利润，本页不做区域盈利推断。"
+        ),
+    }
+
+
 def build_payload(staging: dict) -> dict:
     periods = staging["periods"]
     period = periods[-1]
@@ -684,17 +722,10 @@ def build_payload(staging: dict) -> dict:
                 + "下面逐条给出可绘制指标自身完整记录的走势。"
             ),
         ))
-    # META is the only US filer on this site that puts its quarterly guidance in
-    # a filing, so it is the only one that can carry TSMC's guidance record.
-    # Microsoft's own release says guidance is given on the webcast instead, and
-    # Alphabet gives no quarterly number at all -- both are stated on their pages
-    # rather than silently left out.
-    settled_charts += [
-        guidance_band(history["quarters"], history["guide_low_usd_bn"],
-                      history["guide_high_usd_bn"], history["actual_revenue_usd_bn"]),
-        guidance_deviation(history["quarters"], history["guide_low_usd_bn"],
-                           history["guide_high_usd_bn"], history["actual_revenue_usd_bn"]),
-    ]
+    # Section one settles what last quarter left in the order it was left: the
+    # follow-up questions, then the previous analysis's thresholds (overview,
+    # then each line against its own record), and only then the company's own
+    # guidance record.
     if prior_kpi is not None:
         settled_charts += tracking_charts(
             [entry for entry in prior_kpi["quantified"]
@@ -707,6 +738,17 @@ def build_payload(staging: dict) -> dict:
                 f"上季阈值 {unit_text(entry['unit'], entry['threshold'])}"
             ),
         )
+    # META is the only US filer on this site that puts its quarterly guidance in
+    # a filing, so it is the only one that can carry TSMC's guidance record.
+    # Microsoft's own release says guidance is given on the webcast instead, and
+    # Alphabet gives no quarterly number at all -- both are stated on their pages
+    # rather than silently left out.
+    settled_charts += [
+        guidance_band(history["quarters"], history["guide_low_usd_bn"],
+                      history["guide_high_usd_bn"], history["actual_revenue_usd_bn"]),
+        guidance_deviation(history["quarters"], history["guide_low_usd_bn"],
+                           history["guide_high_usd_bn"], history["actual_revenue_usd_bn"]),
+    ]
 
     # ── section two ──────────────────────────────────────────────────────────
     revenue_step = long_revenue_yoy[-1] - long_revenue_yoy[-2]
@@ -832,6 +874,8 @@ def build_payload(staging: dict) -> dict:
             ),
         },
     ]
+    if geography is not None:
+        highlights.append(regional_chart(geography, revenue_shown[-1], period))
     if one_offs:
         highlights.append({
             "kind": "bars_labeled",
@@ -1163,37 +1207,6 @@ def build_payload(staging: dict) -> dict:
             ),
         },
     ]
-    if geography is not None:
-        growth = geography["user_geography_yoy_pct"]
-        order = sorted(range(len(growth)), key=lambda i: -growth[i])
-        regions = geography["regions"]
-        share = geography["customer_address_current"][0] / revenue_shown[-1] * 100
-        address_growth = pct_change(geography["customer_address_current"][0],
-                                    geography["customer_address_prior_year"][0])
-        routine.append({
-            "kind": "bars_labeled",
-            "title": (f"本季四大区域收入同比：{regions[order[0]]}最快，"
-                      f"{regions[order[-2]]}与{regions[order[-1]]}落在后两位"),
-            "xlabels": regions,
-            "values": growth,
-            "legend": "收入同比",
-            "fmt": "pct1",
-            "yfmt": "pct1",
-            "label_fmt": "pct1",
-            "ylab": "同比增速",
-            "note": (
-                f"{regions[0]}同比 {growth[0]:g}%（公司按用户所在地印的口径）；按收入分解附注的客户所在地口径，"
-                f"它占本季收入 {share:.1f}%、同比 {address_growth:.1f}% —— 两个口径不同，本图画前者。"
-                + geography.get("management_remark", "")
-            ),
-            "src_extra": (
-                f"区域同比取 {period} 10-Q MD&A「revenue by user geography」一段公司印出的整数百分比；"
-                "收入分解附注按客户所在地分区，那张表算出的同比是 "
-                + "、".join(f"{pct_change(c, p):.1f}%" for c, p in
-                           zip(geography["customer_address_current"], geography["customer_address_prior_year"]))
-                + "，口径不同、不混用。公司未按区域披露利润，本页不做区域盈利推断。"
-            ),
-        })
 
     exhibits = number_exhibits(settled_charts + highlights + next_charts + routine)
     first_table = len(exhibits) + 2
@@ -1473,6 +1486,7 @@ def build_payload(staging: dict) -> dict:
         "id": "quarter_highlights",
         "title": "二、本季重点",
         "description": ("收入与指引、广告的量价拆分"
+                        + ("与各区域的收入增速" if geography is not None else "")
                         + ("、一次性项之后的经营利润" if one_offs else "")
                         + (f"、现金流与资本开支的{cn_count(capex_raises)}次上调。" if capex_raises else "、现金流与资本开支。")),
         "exhibits": exhibits[len(settled_charts): len(settled_charts) + len(highlights)],
@@ -1490,7 +1504,7 @@ def build_payload(staging: dict) -> dict:
     sections.append({
         "id": "routine",
         "title": "四、长期常规跟踪",
-        "description": "META 专属的常规序列：折旧曲线、现金转换、非广告收入线与区域结构。",
+        "description": "META 专属的常规序列：折旧曲线、现金转换与非广告收入线。",
         "exhibits": exhibits[-len(routine):],
     })
 
