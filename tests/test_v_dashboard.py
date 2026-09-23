@@ -20,8 +20,11 @@ and shows the second as context; the tests pin which series is which and that
 the words follow the sign, whichever way a quarter lands.
 
 A roll edits `series/v.json` and nothing else.  What the quarter's release and
-10-Q printed is asserted from `_checks` (`VChecksTest`); `VRollTest` rolls the
-series a quarter back and two forward and tampers each stamped block; and
+10-Q printed is asserted from `_checks` (`VChecksTest`); what the two reports
+say -- last report's section 8 thresholds, this report's section 0 verdicts --
+from `_checks["note"]` (`VReportTest`); `VRollTest` rolls the series a quarter
+back and two forward, moves this quarter's thresholds into next quarter's
+settlement the way a real roll does, and tampers each stamped block; and
 `VFindingsTest` forces each judgement the page prints true and then false and
 checks that the words follow.  What stays pinned by value is history a roll
 cannot move: the guidance record, its verdicts, where the geography split
@@ -79,6 +82,20 @@ class VDashboardTest(unittest.TestCase):
         cls.lines = cls.source["revenue_lines_usd_m"]
 
     # ── shape ────────────────────────────────────────────────────────────────
+    def test_the_page_has_the_four_sections_in_order(self) -> None:
+        """The owner's four-part format, TSM's titles verbatim (2026-09-23).
+
+        Section one was titled 「一、上季兑现了吗」, which is not the site's
+        title and hid what the section has to settle: the tracking points the
+        last report set, not only the company's own guidance."""
+        self.assertEqual(
+            [(section["id"], section["title"]) for section in self.payload["sections"]],
+            [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+             ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+        for section in self.payload["sections"]:
+            self.assertTrue(section["exhibits"], section["id"])
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列", self.payload["notes"][0])
+
     def test_the_window_is_eight_quarters_and_complete(self) -> None:
         self.assertEqual(len(self.source["periods"]), 8)
         self.assertEqual(len(self.source["period_ends"]), 8)
@@ -466,7 +483,9 @@ class VDashboardTest(unittest.TestCase):
         note = self.by_section["next_quarter"][0]["note"]
         self.assertIn(f"另有{cn_count(len(excluded))}条本页<b>不接入</b>", note)
         for item in excluded:
-            self.assertIn(item, note)
+            # the figures in an item are filled in from the series, so compare the words before them
+            self.assertIn(item.split("{")[0], note)
+        self.assertNotRegex(note, PLACEHOLDER)
 
     # ── payload shape ───────────────────────────────────────────────────────
     def test_exhibits_are_numbered_in_render_order(self) -> None:
@@ -525,9 +544,14 @@ class VDashboardTest(unittest.TestCase):
 
     def test_the_notes_name_what_the_page_does_not_wire(self) -> None:
         notes = " ".join(self.payload["notes"])
-        for term in ("跨境交易额的绝对金额",
-                     "增值服务（VAS）收入（10-Q 按季印着金额，本页尚未接入）", "non-GAAP 营业费用"):
+        for term in ("跨境交易额的绝对金额", "单位跨境交易变现率的水平", "non-GAAP 营业费用"):
             self.assertIn(term, notes)
+        # value-added services revenue is wired now (section one settles last
+        # quarter's threshold on it): the not-wired list must not keep claiming
+        # otherwise, anywhere on the page
+        self.assertNotIn("增值服务（VAS）收入（10-Q 按季印着金额，本页尚未接入）", notes)
+        self.assertNotIn("增值服务收入 10-Q 按季印着金额", own_text(self.payload))
+        self.assertTrue(any(ex["title"].startswith("增值服务收入同比") for ex in self.exhibits))
         # the quarterly nominal payments volume is wired now: the not-wired
         # list must not keep claiming otherwise
         self.assertNotIn("分季名义支付额（10-Q 印着金额，本页尚未接入）", notes)
@@ -643,10 +667,11 @@ class VDashboardTest(unittest.TestCase):
 # ── rolling the series, the way a quarter's roll does ────────────────────────
 QUARTER_END = {1: "03-31", 2: "06-30", 3: "09-30", 4: "12-31"}
 RELEASE_DAY = {1: "04-28", 2: "07-28", 3: "10-27", 4: "01-28"}
-QUARTER_BLOCKS = ("followup_closure", "tracked_metric_verdicts", "next_kpi", "quarter_one_offs",
+QUARTER_BLOCKS = ("followup_closure", "prior_kpi_settlement", "next_kpi", "opex_reconciliation",
                   "quarter_story", "printed_growth_pct")
 LONG_BLOCKS = ("revenue_lines_usd_m", "geography_usd_m", "capital_allocation_usd_m", "litigation",
-               "per_share", "income_long_usd_m")
+               "per_share", "income_long_usd_m", "vas_revenue", "cross_border_growth_pct",
+               "nongaap_opex", "nongaap_recon_usd_m")
 PLACEHOLDER = r"\{[a-z_]+\}"
 
 
@@ -674,7 +699,7 @@ def long_lists(s: dict, fiscal: str = "") -> list[tuple[dict, str]]:
     volumes = s["operating_volumes"]
     for axis in ("payments_volume_quarters", "processed_transactions_quarters"):
         n = len(volumes[axis])
-        keys = ([axis, "nominal_payments_volume_usd_b", "us_usd_b", "international_usd_b"]
+        keys = ([axis, "nominal_payments_volume_usd_b", "us_usd_b", "international_usd_b", "us_prior_year_usd_b"]
                 if axis.startswith("payments") else [axis, "processed_transactions_m"])
         out += [(volumes, key) for key in keys if len(volumes[key]) == n]
     return out
@@ -704,8 +729,15 @@ def rolled_back(staging: dict) -> dict:
 
 def rolled_forward(staging: dict) -> dict:
     """One quarter later with made-up figures that keep the identities: the
-    lines grow 2%, the incentive rate is 28.9%, operating expenses grow 2%."""
+    lines grow 2%, the incentive rate is 28.9%, operating expenses grow 2%.
+
+    The quarter's blocks roll the way a real roll moves them: last quarter's
+    `next_kpi` -- the thresholds its report set -- becomes this quarter's
+    `prior_kpi_settlement`, stamped for the new quarter, and (standing in for
+    the new report's section 8) the same thresholds are carried as the new
+    `next_kpi`. Nothing else stamped survives."""
     s = copy.deepcopy(staging)
+    carried = copy.deepcopy(staging.get("next_kpi"))
     last = s["periods"][-1]
     quarter, year = int(last[1]), int(last[-4:])
     quarter, year = (1, year + 1) if quarter == 4 else (quarter + 1, year)
@@ -714,6 +746,8 @@ def rolled_forward(staging: dict) -> dict:
     release = f"{year + 1 if quarter == 4 else year}-{RELEASE_DAY[quarter]}"
 
     def grown(values: list) -> object:
+        if isinstance(values[-1], str):
+            return values[-1]           # a label column (e.g. which name the release printed)
         return None if values[-1] is None else round(values[-1] * 1.02, 4)
 
     for container, key in window_lists(s):
@@ -757,6 +791,13 @@ def rolled_forward(staging: dict) -> dict:
     geo["international"][-1] = geo["net_revenue"][-1] - geo["us"][-1]
     for key in ("_checks",) + QUARTER_BLOCKS:
         s.pop(key, None)
+    if carried:
+        s["prior_kpi_settlement"] = {
+            "period": label, "set_in": f"上一季（{last}）报告第 8 节",
+            "quantified": [{k: v for k, v in entry.items() if k != "current"}
+                           for entry in carried["quantified"]],
+            "note": "阈值取自上一季报告第 8 节。"}
+        s["next_kpi"] = dict(carried, period=label)
     s["latest"] = {"period": label, "release_date": release, "analysis_date": release,
                    "audit_status": "unaudited"}
     s["sources"] = ([{"label": f"Visa {fiscal[:6]} {fiscal[6:]} 业绩新闻稿（8-K EX-99.1）",
@@ -820,8 +861,18 @@ class VChecksTest(unittest.TestCase):
         prior = c["nominal_payments_volume_prior_quarter_usd_b"]
         self.assertEqual(volumes["payments_volume_quarters"][-1], prior["period"])
         self.assertEqual(volumes["nominal_payments_volume_usd_b"][-1], prior["value"])
-        self.assertEqual(self.staging["quarter_one_offs"]["severance_usd_m"],
-                         c["special_items_usd_m"]["severance"])
+        items = {item["name"]: item["usd_m"] for item in self.staging["opex_reconciliation"]["items"]}
+        self.assertEqual(items["遣散费"], c["special_items_usd_m"]["severance"])
+        self.assertEqual(items["诉讼计提（MDL）"], c["special_items_usd_m"]["litigation_provision_mdl"])
+        recon = self.staging["nongaap_recon_usd_m"]
+        self.assertEqual(recon["quarters"][-1], c["period"])
+        self.assertEqual(recon["nongaap_opex"][-1], c["opex_reconciliation_usd_m"]["nongaap"])
+        self.assertEqual(recon["prior_year_nongaap_opex"][-1], c["opex_reconciliation_usd_m"]["prior_year_nongaap"])
+        self.assertEqual(self.staging["nongaap_opex"]["growth_printed_pct"][-1],
+                         c["opex_reconciliation_usd_m"]["growth_printed_pct"])
+        us = c["us_payments_volume_prior_quarter_usd_b"]
+        self.assertEqual(volumes["us_usd_b"][-1], us["value"])
+        self.assertEqual(volumes["us_prior_year_usd_b"][-1], us["prior_year"])
 
     def test_computed_growth_rounds_to_the_printed_growth(self) -> None:
         """Other printed 45% where 1,496 ÷ 1,028 is 45.5%: the release divides
@@ -883,6 +934,7 @@ class VChecksTest(unittest.TestCase):
         quarter = {key: ytd[check] - sum(capital[series][-n:-1])
                    for key, check, series in (("o", "operating", "operating_cash_flow"), ("c", "capex", "capex"),
                                               ("b", "buyback", "buyback"), ("d", "dividends", "dividends"))}
+        us = c["us_payments_volume_prior_quarter_usd_b"]
         expected = {
             "revenue_lines_usd_m.incentive_rate_pct": -r["client_incentives"] / gross * 100,
             "yoy:revenue_lines_usd_m.international_transaction":
@@ -890,10 +942,13 @@ class VChecksTest(unittest.TestCase):
             "escrow_surplus": c["litigation_usd_m"]["escrow"] - c["litigation_usd_m"]["us_covered"],
             "yoy:financials.net_revenue_usd_m": (r["net_revenue"] / prior["net_revenue_usd_m"] - 1) * 100,
             "payout_to_fcf": -(quarter["b"] + quarter["d"]) / (quarter["o"] + quarter["c"]) * 100,
+            "nongaap_opex_yoy": c["opex_reconciliation_usd_m"]["growth_printed_pct"],
+            "us_payments_yoy": (us["value"] / us["prior_year"] - 1) * 100,
         }
         table = next(t for t in self.payload["tables"] if t["title"].startswith("下季阈值与当前值"))
         rows = {row[0]: row for row in table["rows"]}
-        bars = next(ex for ex in self.exhibits if ex["kind"] == "diverging_bars")
+        bars = next(ex for ex in self.exhibits
+                    if ex["kind"] == "diverging_bars" and ex["title"].startswith("下季"))
         bar = dict(zip(bars["xlabels"], bars["values"]))
         for entry in self.staging["next_kpi"]["quantified"]:
             with self.subTest(metric=entry["metric"]):
@@ -916,9 +971,21 @@ class VChecksTest(unittest.TestCase):
         chart = next(ex for ex in self.exhibits if ex["title"].startswith("托管账户对它真正负责的那笔负债"))
         self.assertIn(f"本季 US${escrow:,.0f}M vs US${covered:,.0f}M", chart["title"])
         wedge = next(ex for ex in self.exhibits if ex["title"].startswith("本季 GAAP 营业费用"))
+        recon = c["opex_reconciliation_usd_m"]
         self.assertIn(f"US${c['total_opex_usd_m']:,.0f}M", wedge["title"])
-        self.assertIn(f"遣散费 US${c['special_items_usd_m']['severance']:,.0f}M", wedge["note"])
-        self.assertIn(f"诉讼计提 US${c['litigation_provision_usd_m']:,.0f}M", wedge["note"])
+        self.assertIn(f"公司口径 US${recon['nongaap']:,.0f}M、同比 {recon['growth_printed_pct']:+d}%", wedge["title"])
+        bars = dict(zip(wedge["xlabels"], wedge["values"]))
+        self.assertEqual(bars["GAAP 营业费用"], recon["gaap"])
+        self.assertEqual(bars["其中：遣散费"], recon["severance"])
+        self.assertEqual(bars["其中：诉讼计提（MDL）"], recon["litigation_provision_mdl"])
+        self.assertEqual(bars["其中：并购无形资产摊销"], recon["amortization"])
+        self.assertEqual(bars["其中：并购相关成本"], recon["acquisition_related"])
+        self.assertEqual(bars["公司口径 non-GAAP"], recon["nongaap"])
+        self.assertIn(f"Litigation provision 行本季是 US${c['litigation_provision_usd_m']:,.0f}M", wedge["note"])
+        # the margin change, recomputed from the checked reconciliation and revenue
+        m1 = (r["net_revenue"] - recon["nongaap"]) / r["net_revenue"] * 100
+        m0 = (c["prior_year"]["net_revenue_usd_m"] - recon["prior_year_nongaap"]) / c["prior_year"]["net_revenue_usd_m"] * 100
+        self.assertIn(f"non-GAAP 营业利润率 {m1:.2f}%，去年同季 {m0:.2f}%，同比 {m1 - m0:+.2f}pp", wedge["note"])
         margin = next(ex for ex in self.exhibits if ex["title"].startswith("GAAP 营业利润率"))
         self.assertIn(f"GAAP 营业利润率 {c['operating_income_usd_m'] / r['net_revenue'] * 100:.1f}%",
                       margin["title"])
@@ -946,12 +1013,138 @@ class VChecksTest(unittest.TestCase):
         self.assertTrue(all(src["url"].startswith("https://") for src in self.staging["sources"]))
 
 
+class VReportTest(unittest.TestCase):
+    """The page against the two reports it answers to, as `_checks["note"]` records them.
+
+    `note` is typed from the Obsidian reports themselves -- this quarter's
+    section 0 verdicts, last report's section 8 thresholds -- separately from
+    the stamped blocks the builder renders, and the builder never reads it. So
+    each assertion is the page against a second record of the report. Readings
+    are recomputed from `_checks`' own figures, never through the builder.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.s = staged()
+        cls.checks = cls.s["_checks"]
+        cls.note = cls.checks["note"]
+        cls.payload = build_payload(cls.s)
+        cls.sections = {section["id"]: section for section in cls.payload["sections"]}
+
+    def test_the_closure_is_section_zero(self) -> None:
+        want = self.note["followup_closure"]
+        chart = self.sections["settled"]["exhibits"][0]
+        # the one filed figure the evidence text names that no series carries
+        self.assertIn(f"non-GAAP 有效税率 {self.checks['nongaap_effective_tax_rate_pct']}%", chart["note"])
+        self.assertEqual(chart["kind"], "bars_labeled")
+        self.assertEqual(dict(zip(chart["xlabels"], chart["values"])), want["counts"])
+        self.assertEqual(sum(chart["values"]), want["total"])
+        self.assertTrue(chart["title"].startswith(f"上季 {want['total']} 条待验证问题："), chart["title"])
+        items = self.s["followup_closure"]["items"]
+        self.assertEqual([item["verdict"] for item in items], want["verdicts"])
+        for verdict in want["verdicts"]:
+            self.assertIn(f"<b>{verdict}</b>", chart["note"])
+        # the rule the bars are counted by is printed where they are
+        self.assertIn("第一个判定词", chart["note"])
+
+    def test_last_report_s_thresholds_are_its_section_eight(self) -> None:
+        block = self.s["prior_kpi_settlement"]
+        want = self.note["prior_thresholds"]
+        self.assertEqual(len(block["quantified"]), len(want))
+        for entry, expected in zip(block["quantified"], want):
+            with self.subTest(metric=entry["metric"]):
+                self.assertEqual((entry["threshold"], entry["direction"], entry["role"]),
+                                 (expected["threshold"], expected["direction"], expected["role"]))
+                self.assertEqual(entry.get("quarters"), expected.get("quarters"))
+        bars = self.sections["settled"]["exhibits"][1]
+        self.assertEqual(bars["kind"], "diverging_bars")
+        self.assertTrue(bars["title"].startswith(f"上季 {len(want)} 条量化阈值："), bars["title"])
+        # the two indicators no filing can settle are named with their reason, not dropped
+        self.assertEqual(len(block["unsettleable"]), len(self.note["prior_unquantified"]))
+        self.assertIn(f"另有{cn_count(len(block['unsettleable']))}条画不成柱", bars["note"])
+        for item in block["unsettleable"]:
+            self.assertIn(item["metric"], bars["note"])
+
+    def test_the_prior_settlement_is_the_filings_recomputed(self) -> None:
+        c = self.checks
+        cb = c["cross_border_ex_intra_europe_pct"]
+        gap_now = cb["constant"] - cb["international_transaction_printed"]
+        gap_prev = cb["prior_quarter_constant"] - cb["prior_quarter_international_transaction_printed"]
+        incentives = (c["revenue_usd_m"]["client_incentives"] / c["prior_year"]["client_incentives_usd_m"] - 1) * 100
+        expected = {
+            "vas_yoy": c["value_added_services"]["growth_printed_pct"],
+            "cross_border_gap": gap_now,
+            "cross_border_gap_min2": min(gap_now, gap_prev),
+            "yoy:revenue_lines_usd_m.client_incentives": incentives,
+        }
+        bars = self.sections["settled"]["exhibits"][1]
+        bar = dict(zip(bars["xlabels"], bars["values"]))
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("上季阈值与本季实际"))
+        rows = {row[0]: row for row in table["rows"]}
+        for entry in self.s["prior_kpi_settlement"]["quantified"]:
+            value = expected[entry["reads"]]
+            room = headroom(entry["direction"], entry["threshold"], value)
+            with self.subTest(metric=entry["metric"]):
+                self.assertEqual(bar[entry["metric"]], round(room, 1))
+                self.assertEqual(rows[entry["metric"]][3], unit_text(entry["unit"], value))
+        self.assertEqual(v.whole_percent(incentives), c["client_incentives_growth_printed_pct"]["this_quarter"])
+
+    def test_the_settlement_names_which_report_last_quarter_s_is(self) -> None:
+        """The report filed as 「Q1 2026」 analysed FY26 Q1, the quarter to 2025-12-31;
+        the quarter between it and this one was never analysed."""
+        description = self.sections["settled"]["description"]
+        prior_date = re.search(r"(\d{4}-\d{2}-\d{2}) VISA", self.note["source"]["prior_quarter"]).group(1)
+        self.assertIn(prior_date, description)
+        for fact in ("FY26 Q1", "2025-12-31", "命名错误", "2026-03-31", "没有分析", "「Q2/Q3 FY26」"):
+            self.assertIn(fact, description)
+
+    def test_next_thresholds_are_this_report_s_section_eight(self) -> None:
+        """Three of the five thresholds section three used to draw were the site's
+        own (incentive rate 29.5%, net revenue +10%, payout 120%); the report's
+        section 8 set none of them. Every quantified one now is the report's, and
+        the ones no filing can read are named where the overview is."""
+        want = [row for row in self.note["next_thresholds"] if row.get("quantified_on_page", True)]
+        got = self.s["next_kpi"]["quantified"]
+        self.assertEqual(len(got), len(want))
+        for entry, row in zip(got, want):
+            with self.subTest(metric=entry["metric"]):
+                self.assertEqual((entry["threshold"], entry["direction"], entry["role"]),
+                                 (row["threshold"], row["direction"], row["role"]))
+                self.assertEqual(entry.get("volume_condition"), row.get("volume_condition"))
+        overview = self.sections["next_quarter"]["exhibits"][0]
+        self.assertTrue(overview["title"].startswith(f"下季 {len(want)} 条阈值"), overview["title"])
+        unread = self.note["next_unquantified"]
+        self.assertEqual(len(self.s["next_kpi"]["excluded"]), len(unread))
+        self.assertIn(f"另有{cn_count(len(unread))}条本页<b>不接入</b>", overview["note"])
+        for gone in ("客户激励率", "净收入同比", "单季股东回报 / 自由现金流"):
+            self.assertNotIn(gone, overview["xlabels"])
+        # every quantified threshold with a series gets its own chart
+        charts = [ex for ex in self.sections["next_quarter"]["exhibits"] if ex["kind"] == "lines"]
+        self.assertEqual(len(charts), len(want))
+
+    def test_the_gap_chart_settles_on_the_report_s_own_basis(self) -> None:
+        """The report that set the gap thresholds read it on constant-dollar
+        volume (its own 11% − 6% = 5pp); this quarter's report moved to nominal.
+        The page settles on the first and prints the second beside it."""
+        cb = self.checks["cross_border_ex_intra_europe_pct"]
+        chart = next(ex for ex in self.sections["settled"]["exhibits"]
+                     if ex["title"].startswith("跨境交易额增速 − 国际交易收入增速"))
+        constant = chart["series"][0]["values"]
+        nominal = chart["series"][1]["values"]
+        self.assertEqual(constant[-2:], [cb["prior_quarter_constant"] - cb["prior_quarter_international_transaction_printed"],
+                                         cb["constant"] - cb["international_transaction_printed"]])
+        self.assertEqual(nominal[-2:], [cb["prior_quarter_nominal"] - cb["prior_quarter_international_transaction_printed"],
+                                        cb["nominal"] - cb["international_transaction_printed"]])
+        self.assertIn("换一个口径判定就不同", chart["note"])
+
+
 class VRollTest(unittest.TestCase):
     """What a roll can change without touching the builder."""
 
-    STORY_ONLY = ("被证伪的那条是把商业支付收入的加速当成结构性变化", "稳定币结算 run rate",
-                  "阈值取的是本季再向上一个季度级别的台阶", "剔除两笔一次性后为",
-                  "员工人数与裁员规模（本季电话会未量化", "公司按未取整的数印的是")
+    STORY_ONLY = ("第 5 条原文是「未达标，且公司已停止披露」", "本季报告第 0 节开头指出了这个命名错误",
+                  "报告据此推算约 +11%", "公司只把其中与交换费多地区诉讼（MDL）相关的",
+                  "员工人数与裁员规模（本季电话会未量化", "公司按未取整的数印的是",
+                  "本季报告里画不出来的", "本季报告的核心矛盾是")
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -996,7 +1189,9 @@ class VRollTest(unittest.TestCase):
         self.assertFalse(any(ex["kind"] == "bars_labeled" for ex in sections["settled"]["exhibits"]))
         self.assertNotIn("先结清上一份笔记留下的问题", sections["settled"]["description"])
         self.assertNotIn("见 Exhibit", text)
-        self.assertIn("GAAP 营业利润率，", sections["quarter_highlights"]["description"])
+        # without the quarter's reconciliation there is no non-GAAP reading to lead with
+        self.assertNotIn("公司口径的营业利润率", sections["quarter_highlights"]["description"])
+        self.assertFalse(any(ex["title"].startswith("本季 GAAP 营业费用") for ex in exhibits_of(payload)))
         self.assertFalse(any(t["title"].startswith("下季阈值") for t in payload["tables"]))
         numbers = [ex["n"] for ex in exhibits_of(payload)]
         self.assertEqual(numbers, list(range(2, 2 + len(numbers))))
@@ -1053,17 +1248,48 @@ class VRollTest(unittest.TestCase):
         self.assertIn(f"起的全部 {len(q4['revenue_lines_usd_m']['quarters']) + 1} 份新闻稿", t4)
         self.assertIn("而同一个比率在其后七年里继续往上走", t4)
 
+    def test_a_later_quarter_without_its_settlement_stops_the_build(self) -> None:
+        """From the quarter after the first settled one, every report before it set
+        section-8 thresholds; a roll that forgot to stamp the settlement would drop
+        them from section one without a word."""
+        s = rolled_forward(self.s)
+        del s["prior_kpi_settlement"]
+        with self.assertRaisesRegex(ValueError, "prior_kpi_settlement"):
+            build_payload(s)
+
+    def test_next_quarter_settles_this_quarter_s_thresholds_from_the_series_alone(self) -> None:
+        """The roll rehearsal. Next quarter, section one settles the thresholds
+        section three sets today; moving the block in the series has to be all it
+        takes -- the same entries, their readings taken from the new quarter, one
+        chart for every series section three draws a chart for."""
+        s = rolled_forward(self.s)
+        payload = build_payload(s)
+        sections = {section["id"]: section for section in payload["sections"]}
+        today = {section["id"]: section for section in self.payload["sections"]}
+        entries = self.s["next_kpi"]["quantified"]
+        bars = next(ex for ex in sections["settled"]["exhibits"] if ex["kind"] == "diverging_bars")
+        self.assertTrue(bars["title"].startswith(f"上季 {len(entries)} 条量化阈值："), bars["title"])
+        self.assertEqual(bars["xlabels"], [entry["metric"] for entry in entries])
+        drawn_today = [ex for ex in today["next_quarter"]["exhibits"] if ex["kind"] == "lines"]
+        settled_next = [ex for ex in sections["settled"]["exhibits"]
+                        if ex["kind"] == "lines" and "上季" in ex["title"]]
+        self.assertEqual(len(settled_next), len(drawn_today))
+        for chart in settled_next:
+            self.assertRegex(chart["title"], r"(守住|击穿)上季")
+        self.assertTrue(any(t["title"].startswith("上季阈值与本季实际") for t in payload["tables"]))
+        self.assertNotRegex(own_text(payload), PLACEHOLDER)
+
     def test_the_spans_in_years_move_with_the_window(self) -> None:
-        """「十年的窗口」「十年抬高了」 were typed; the 2016 window turns eleven years
-        long three quarters from now."""
+        """「十年的窗口」 was typed; the 2016 window turns eleven years long three
+        quarters from now. (「十年抬高了」 was the other one; the self-set incentive
+        threshold chart that printed it is gone.)"""
         s = self.s
         for _ in range(3):
             s = rolled_forward(s)
         s["next_kpi"] = dict(self.s["next_kpi"], period=s["periods"][-1])
         text = own_text(build_payload(s))
         self.assertIn("<b>十一年的窗口里这四条从没有同时为负过</b>", text)
-        self.assertIn("十一年抬高了约", text)
-        self.assertNotIn("十年抬高了", text)
+        self.assertNotIn("<b>十年的窗口里", text)
 
 
 class VFindingsTest(unittest.TestCase):
@@ -1238,12 +1464,12 @@ class VFindingsTest(unittest.TestCase):
         self.assertNotIn("托管账户没有欠资", short)
         self.assertIn("<h4>本季两条主线</h4>", short)
 
-    def test_the_incentive_threshold_note_reads_the_fiscal_years(self) -> None:
-        """「四十二个季度里这条线一路向上」 over a line with 15 quarter-on-quarter falls."""
-        self.assertIn("<b>四十二个季度里这条线的方向是向上的</b>：41 次环比变化里有 15 次是下降，"
-                      "但按财年算每一年都比上一年高", self.clean)
-        self.assertIn("十年抬高了约 11 个百分点", self.clean)
+    def test_the_long_rate_note_still_reads_the_fiscal_years(self) -> None:
+        """「四十二个季度里这条线一路向上」 was printed over a line with 15
+        quarter-on-quarter falls; its chart (a self-set 29.5% threshold) is gone,
+        and the claim it made lives on only as the fiscal-year one in section four."""
         self.assertNotIn("一路向上", self.clean)
+        self.assertNotIn("激励率：越低越安全", self.clean)
 
         def fy2019_dips(s):
             lines = s["revenue_lines_usd_m"]
@@ -1253,7 +1479,6 @@ class VFindingsTest(unittest.TestCase):
                     lines["incentive_rate_pct"][i] = -lines["client_incentives"][i] / lines["gross_revenue"][i] * 100
 
         dipped = self.page(fy2019_dips)
-        self.assertNotIn("的方向是向上的", dipped)
         self.assertNotIn("单向斜坡", dipped)
         self.assertIn("拉到 55 季才看得出它的长期走向", dipped)
 
@@ -1263,7 +1488,57 @@ class VFindingsTest(unittest.TestCase):
         self.assertIn("Q1 2020 到 Q1 2021（公司 FY2020 Q2 至 FY2021 Q2）连续 5 季在阈值之下，"
                       "其中 Q2 2020 到 Q1 2021 这 4 季为负、最低 -44.3%；Q1 2019（+2.5%）也在阈值之下。",
                       self.clean)
-        self.assertIn("它是否还能守住 +4%", self.clean)
+
+    def test_the_intl_trigger_needs_both_of_its_conditions(self) -> None:
+        """The report's sell trigger is revenue below +4% WHILE nominal cross-border
+        volume is still above +12%; the page reads both legs and says which held."""
+        self.assertIn("只有量这一半成立，减仓条件没有触发", self.clean)
+
+        def revenue_breaks(s):
+            del s["printed_growth_pct"]     # the release's +6% would stop the build first
+            lines = s["revenue_lines_usd_m"]
+            lines["international_transaction"][-1] = lines["international_transaction"][-5] * 1.03
+
+        self.assertIn("两件事同时成立，减仓条件触发", self.page(revenue_breaks))
+
+        def both_weak(s):
+            revenue_breaks(s)
+            s["cross_border_growth_pct"]["ex_intra_europe_nominal"][-1] = 9
+
+        weak = self.page(both_weak)
+        self.assertIn("收入跌破了，但量也不强，按报告的定义不算变现率塌陷", weak)
+        self.assertNotIn("减仓条件触发", weak)
+
+    def test_the_margin_run_is_read_off_the_reconciliation(self) -> None:
+        """The report called this quarter's −0.83pp 「四季以来首次同比下滑」; the
+        releases' own reconciliation tables show a fourth quarter running. The
+        count, and the sentence that contradicts the report, follow the data."""
+        self.assertIn("<b>这已是连续第四季同比下降</b>", self.clean)
+        self.assertIn("这两句话不成立", self.clean)
+        self.assertIn("已连续四季下降", self.clean)
+
+        def last_quarter_rose(s):
+            recon = s["nongaap_recon_usd_m"]
+            recon["nongaap_opex"][recon["quarters"].index("Q1 2026")] -= 100
+
+        rose = self.page(last_quarter_rose)
+        self.assertNotIn("连续第四季", rose)
+        self.assertNotIn("这两句话不成立", rose)
+        self.assertNotIn("已连续", rose)
+
+    def test_us_payments_growth_is_read_within_one_filing(self) -> None:
+        """Visa added Visa Direct push volume to payments volume in fiscal 2019
+        and reprinted earlier periods: first prints divided across years overstate
+        U.S. growth by up to 1.4 points (Q2 2019: +10.0% against +8.6%)."""
+        chart = next(ex for ex in exhibits_of(build_payload(copy.deepcopy(self.s)))
+                     if ex["title"].startswith("美国名义支付额同比"))
+        volumes = self.s["operating_volumes"]
+        i = volumes["payments_volume_quarters"].index("Q2 2019")
+        within = (volumes["us_usd_b"][i] / volumes["us_prior_year_usd_b"][i] - 1) * 100
+        across = (volumes["us_usd_b"][i] / volumes["us_usd_b"][i - 4] - 1) * 100
+        self.assertGreater(across - within, 1)
+        drawn = dict(zip(chart["xlabels"], chart["series"][0]["values"]))
+        self.assertAlmostEqual(drawn[compact_period("Q2 2019")], within, places=4)
 
         def q1_2019_fine(s):
             intl = s["revenue_lines_usd_m"]["international_transaction"]
@@ -1373,18 +1648,27 @@ class VFindingsTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "hole"):
             self.page(hole)
 
-    def test_the_closure_note_counts_its_own_items(self) -> None:
-        self.assertIn("仍未披露的四条里有三条是公司从未在申报文件里给过的拆分", self.clean)
-        self.assertIn("上一份笔记留下的 10 条待验问题：3 条已验证、4 条公司仍未披露", self.clean)
+    def test_the_closure_title_counts_its_own_items(self) -> None:
+        """「上一份笔记留下的 10 条待验问题：3 条已验证、4 条公司仍未披露」 put item 5
+        -- 「未达标，且公司已停止披露」 in the report -- under 仍未披露, a verdict the
+        report's section 0 gives to three items only. The counts are now tallied
+        from the items, so a label and its count cannot disagree."""
+        self.assertIn("上季 10 条待验证问题：3 条已验证、2 条部分验证、1 条未达标（公司停披）、"
+                      "3 条仍未披露、1 条被证伪", self.clean)
 
-        def more_open(s):
+        def fold_item_five(s):
             block = s["followup_closure"]
-            block["counts"][block["labels"].index("仍未披露")] = 5
-            block["figures"]["never_filed"] = 2
+            next(item for item in block["items"] if item["n"] == 5)["label"] = "仍未披露"
+            block["labels"].remove("未达标（公司停披）")
 
-        forced = self.page(more_open)
-        self.assertIn("仍未披露的五条里有两条", forced)
-        self.assertIn("上一份笔记留下的 11 条待验问题：3 条已验证、5 条公司仍未披露", forced)
+        self.assertIn("上季 10 条待验证问题：3 条已验证、2 条部分验证、4 条仍未披露、1 条被证伪",
+                      self.page(fold_item_five))
+
+        def orphan_label(s):
+            next(item for item in s["followup_closure"]["items"] if item["n"] == 5)["label"] = "仍未披露"
+
+        with self.assertRaisesRegex(ValueError, "no item carries"):
+            self.page(orphan_label)
 
     def test_the_incentive_effect_is_worded_by_its_sign(self) -> None:
         """「激励率这 -0.58pp 单独让出了约 US$91M 的净收入」 read as a loss when a

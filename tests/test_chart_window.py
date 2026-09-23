@@ -284,7 +284,7 @@ REACH_2016 = {
     "cost": 13, "googl": 11, "hkex": 15, "ibkr": 26, "ker": 11 + _ker_threshold_reach(), "ma": 17, "mc": 9, "mco": 13, "meta": 10,
     "msci": 23, "msft": 8, "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 8, "nvda": 10, "pm": 8,
     "race": 12, "rms": 15, "samsung": 0, "schw": 10, "skhynix": 4, "snps": 8,
-    "spgi": 14, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
+    "spgi": 14, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 17, "zgn": 0,
     "intc": 10 + _intc_threshold_reach(),
     # Not a company page. It is here because the ratchet now walks every
     # published payload rather than `ENTRIES`: a page that was invisible to the
@@ -435,6 +435,30 @@ CONVERTED = {
         "美国以外贡献净收入": "revenue by geography begins with Visa's first ASC 606 "
                        "disaggregation note (10-Q filed 2019-01-31); the earlier "
                        "10-Qs disaggregate long-lived assets, not revenue.",
+        # Value-added services revenue is first printed per quarter in the
+        # 10-Q for the quarter ended 2024-12-31, with a prior-year column, and
+        # its growth rate first in that same filing. The 43 10-Qs and 10-Ks
+        # filed 2015-11-20 to 2024-11-13 were each searched for it and carry
+        # no figure. A fiscal fourth quarter has only the 10-K's full year, so
+        # its growth cell stays empty.
+        "增值服务收入同比": "quarterly value-added services revenue and its growth are first "
+                     "printed in the 10-Q for the quarter ended 2024-12-31; no earlier 10-Q or "
+                     "10-K carries the figure.",
+        "增值服务收入 US$": "the same disclosure floor: the amount's first quarterly print is that "
+                        "10-Q, whose year-ago column (quarter ended 2023-12-31) is where the "
+                        "chart starts.",
+        # Cross-border volume excluding intra-Europe -- the volume that earns
+        # international transaction revenue -- is first printed in the fiscal
+        # 2020 Q3 release (2020-07-28), whose operational table rolls it back
+        # to the quarter ended 2019-06-30; the nominal column starts with the
+        # quarter ended 2020-06-30. Every release from 2016-01-28 to 2020-04-30
+        # prints only total cross-border volume, which after the June 2016
+        # Visa Europe acquisition includes intra-Europe volume, a different
+        # base, so it is not spliced on.
+        "跨境交易额增速 − 国际交易收入增速": "cross-border volume ex intra-Europe is first printed in the "
+                              "fiscal 2020 Q3 release, rolled back to the quarter ended "
+                              "2019-06-30; earlier releases print only a total that includes "
+                              "intra-Europe volume.",
     },
     "googl": {
         # Two floors, both disclosure floors, both stated on the charts they
@@ -1535,6 +1559,9 @@ FLOOR_KIND = {
     },
     'v': {
         '美国以外贡献净收入': 'disclosure',
+        '增值服务收入同比': 'disclosure',
+        '增值服务收入 US$': 'disclosure',
+        '跨境交易额增速 − 国际交易收入增速': 'disclosure',
     },
 }
 
@@ -1638,7 +1665,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 182)
+        self.assertEqual(settled.count("disclosure"), 185)
         self.assertEqual(settled.count("design"), 37)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
