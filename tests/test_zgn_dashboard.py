@@ -917,6 +917,20 @@ class ZgnRollTest(unittest.TestCase):
         self.assertNotIn("全部来自毛利率", rich_ex["EX_MARGIN"]["title"])
         self.assertNotIn("全部来自毛利率", rich["headline"])
         self.assertNotIn("全部来自毛利率", rich["brief"])
+        # ...and the other side of the same condition: €5M less Adjusted EBIT, so
+        # the margin falls while gross margin still rises. The costs-below-gross
+        # leg is then negative, exactly as on the real data, so only the "the
+        # margin rose" half of the condition keeps the sentence off -- the
+        # mutation run found that forcing that half to True went unseen without
+        # this case.
+        poorer = copy.deepcopy(self.source)
+        hh = poorer["half"]
+        hh["adjusted_ebit"][k] -= 5000.0
+        poor = zgn.build_payload(poorer)
+        poor_ex = {ex.get("ref"): ex for sec in poor["sections"] for ex in sec["exhibits"]}
+        self.assertNotIn("全部来自毛利率", poor_ex["EX_MARGIN"]["title"])
+        self.assertNotIn("全部来自毛利率", poor["headline"])
+        self.assertNotIn("全部来自毛利率", poor["brief"])
 
         # 6. "one segment wiped out the Zegna segment's gain": move €5M of the
         # Thom Browne loss into Corporate, so the group total does not change
