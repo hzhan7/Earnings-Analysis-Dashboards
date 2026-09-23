@@ -76,7 +76,251 @@
       "previous_non_gaap_operating_income_midpoint_usd_m": 2717
     },
     "source": "Cadence Q2 2026 业绩 8-K（2026-07-27，acc 0000813672-26-000089）：EX-99.01 新闻稿的 Condensed Consolidated Income Statements（三个月 Total revenue 1,584,451 / 1,275,441，六个月 3,058,671）、Operating Margin Reconciliation（28.4% → 45.5%）、Diluted Net Income Per Share Reconciliation（1.33 → 2.11）与 Net Income Reconciliation 的经营科目（SBC 146,890、无形资产摊销 79,922、并购整合 32,823、重组 (352)、递延薪酬 11,430）；EX-99.02 CFO Commentary 的 Backlog 表（Q2 2026 $8.1）、Free Cash Flow 表（经营现金流 $635）、Share Repurchase 表（$200）、Revenue Mix by Geography（China 15%）、Q3 2026 Outlook（$1.595–1.625 billion，Non-GAAP OM 43.5%–44.5%，Non-GAAP EPS $2.01–2.07，Y/Y 19%–21%，Q/Q 1%–3%）、FY 2026 Outlook 与 Profitability Trends（$6.260–6.340 billion，43.75%–44.75%，$8.05–8.15，Non-GAAP operating income $2,788 at midpoint）；上一版全年指引（$6.125–6.225 billion，$2,717）读自 Q1 2026 CFO Commentary（acc 0000813672-26-000044）。中国收入读自 Q2 2026 10-Q（acc 0000813672-26-000092）收入按地域附注（China 236,207 / 120,717）。",
-    "checked_on": "2026-09-19"
+    "checked_on": "2026-09-19",
+    "note": {
+      "source": {
+        "this_quarter": "2026-07-27 CDNS Q2 2026 vs Q1 2026 Analysis.md：第 0 节「上季 Follow-up 回答」11 行逐条判定（没有统计行）与上季判断记分卡；第 8 节「上季 KPI 校准」5 行、「本季 KPI（5 条）」与「立场撤销条件」3 条",
+        "last_quarter": "2026-04-28 CDNS Q1 2026 vs Q4 2025 Analysis.md：第 8 节「关键观察指标」5 行；第 1 节 A 表（Bull / Base / Bear）的「验证指标」列；文末「Follow-up Questions for Next Quarter (Q2 2026)」11 条"
+      },
+      "checked_on": "2026-09-24",
+      "closure": {
+        "total": 11,
+        "verdicts_verbatim": [
+          "部分验证，量化倒退",
+          "已验证，强反弹",
+          "已验证（定性）",
+          "未披露",
+          "部分验证",
+          "已验证，幅度超预期",
+          "已验证（超出）+ 新增风险",
+          "仍未披露",
+          "判断错误",
+          "已验证",
+          "未验证"
+        ],
+        "counts": {
+          "已验证": 5,
+          "部分验证": 2,
+          "未披露": 2,
+          "未验证": 1,
+          "判断错误": 1
+        }
+      },
+      "prior_rows": 5,
+      "prior_thresholds": [
+        {
+          "row": 1,
+          "metric": "季末 backlog",
+          "kind": "hurdle",
+          "trigger": "≥",
+          "threshold": 8.2,
+          "report": "#1：Q2/Q3 backlog ≥ $8.2B + 单季 book-to-bill ≥ 1.10x = 2027 营收增速底线 13-15% 锚定 → 加仓"
+        },
+        {
+          "row": 1,
+          "metric": "单季 book-to-bill",
+          "kind": "hurdle",
+          "trigger": "≥",
+          "threshold": 1.1,
+          "report": "#1 同一句的后半"
+        },
+        {
+          "row": 1,
+          "metric": "季末 backlog 环比变化",
+          "kind": "guard",
+          "trigger": "≤",
+          "threshold": 0.0,
+          "report": "#1：Q2 backlog 持平/下降或 b2b < 1.0x = 增长动能 inflection → 警示"
+        },
+        {
+          "row": 1,
+          "metric": "单季 book-to-bill",
+          "kind": "guard",
+          "trigger": "<",
+          "threshold": 1.0,
+          "report": "#1 同一句的后半"
+        },
+        {
+          "row": 5,
+          "metric": "单季回购金额",
+          "kind": "hurdle",
+          "trigger": "≥",
+          "threshold": 250.0,
+          "report": "#5：Q2 ≥ $250M = 资本配置回归常态、Hexagon 整合期可控 → 跟踪"
+        },
+        {
+          "row": 5,
+          "metric": "单季回购金额",
+          "kind": "guard",
+          "trigger": "<",
+          "threshold": 200.0,
+          "consecutive": 2,
+          "report": "#5：连续 2 季 < $200M = 整合期长于预期 + 50% FCF 承诺 at risk → 警示"
+        },
+        {
+          "row": null,
+          "metric": "单季经营现金流",
+          "kind": "guard",
+          "trigger": "<",
+          "threshold": 400.0,
+          "report": "第 1 节 A 表 Bear 的验证指标「Q2 OpCF<$400M（YoY 仍负）」；本季第 8 节校准表：Q2 OpCF < $400M = 恶化非一次性"
+        },
+        {
+          "row": null,
+          "metric": "FY2026 非 GAAP EPS 指引中值",
+          "kind": "hurdle",
+          "trigger": "≥",
+          "threshold": 8.0,
+          "report": "第 1 节 A 表 Bull 的验证指标「FY2026 EPS指引上修至$8.00+」；本季第 8 节校准表：= Bull 确认"
+        },
+        {
+          "row": null,
+          "metric": "中国收入占比",
+          "kind": "guard",
+          "trigger": "<",
+          "threshold": 10.0,
+          "report": "第 1 节 A 表 Bear 的验证指标「中国营收占比破 10%」；本季第 8 节校准表：= Bear 信号"
+        }
+      ],
+      "prior_unquantified_rows": {
+        "2": "Hexagon Q2 收入贡献 ≥ $47M（跟踪）/ < $40M（警示）：公司不披露",
+        "3": "Intel 14A IP multi-year 合同 $400–700M：协议已公布、金额未披露",
+        "4": "ChipStack/AgentStack multi-year 大订单 + ARR：没有量化披露，本季第 8 节退役"
+      },
+      "next_rows": 6,
+      "next_thresholds": [
+        {
+          "row": 1,
+          "metric": "中国收入占比",
+          "kind": "guard",
+          "trigger": "<",
+          "threshold": 13.0,
+          "report": "#1 Q3 2026 中国收入占比：< 13%（$209M，同比 −13%）= 政策或需求回落已开始 → 警示（双向：跌破减仓）"
+        },
+        {
+          "row": 1,
+          "metric": "中国收入占比",
+          "kind": "guard",
+          "trigger": "≥",
+          "threshold": 15.0,
+          "report": "#1：≥ 15% = 依赖度升至新高，尾部风险放大 → 警示（冲高则同步收紧仓位约束）"
+        },
+        {
+          "row": 2,
+          "metric": "单季非 GAAP 营业利润率",
+          "kind": "hurdle",
+          "trigger": ">",
+          "threshold": 44.5,
+          "report": "#2 Q3 2026 非 GAAP OpMargin：> 44.5% = H2 让步是 sandbag（Bull）"
+        },
+        {
+          "row": 2,
+          "metric": "单季非 GAAP 营业利润率",
+          "kind": "guard",
+          "trigger": "≤",
+          "threshold": 44.0,
+          "report": "#2：≤ 44.0% = 真实成本上台阶，2027 利润率承诺存疑 → 重新评估；立场撤销条件①同"
+        },
+        {
+          "row": 3,
+          "metric": "Semiconductor IP 同比",
+          "kind": "hurdle",
+          "trigger": "≥",
+          "threshold": 30.0,
+          "report": "#3 Q3 2026 Semiconductor IP 同比：当前 +43%；≥ 30% = 结构性份额（护城河 KPI）"
+        },
+        {
+          "row": 3,
+          "metric": "Semiconductor IP 同比",
+          "kind": "guard",
+          "trigger": "<",
+          "threshold": 20.0,
+          "report": "#3：< 20% = 证实 +43% 属 Intel 确认时点"
+        },
+        {
+          "row": 4,
+          "metric": "季末 backlog",
+          "kind": "guard",
+          "trigger": "<",
+          "threshold": 8.0,
+          "report": "#4 Q3 2026 期末 backlog：< $8.0B = 净消耗恢复、book-to-bill < 1.0x；立场撤销条件③同"
+        },
+        {
+          "row": 4,
+          "metric": "backlog / 过去四季收入",
+          "kind": "guard",
+          "trigger": "<",
+          "threshold": 1.35,
+          "report": "#4：覆盖倍数 < 1.35x = 可见度继续缩短（两者同时触发 = 减仓）"
+        },
+        {
+          "row": 5,
+          "metric": "FY2027 初始指引的非 GAAP 营业利润率",
+          "kind": "guard",
+          "trigger": "≤",
+          "threshold": 44.25,
+          "report": "#5 FY2027 初始指引（2027 年 2 月）非 GAAP OpMargin：Wall 承诺 better operating margins next year（即 > 44.25%）；≤ 44.25% = 承诺失败 → 减仓"
+        },
+        {
+          "row": 6,
+          "metric": "Q3 2026 收入",
+          "kind": "guard",
+          "trigger": "≤",
+          "threshold": 1595.0,
+          "report": "立场撤销条件②：Q3 2026 中国收入占比 < 13% 且 Q3 收入落在指引下限 $1.595B 或以下"
+        }
+      ],
+      "followups_total": 12
+    },
+    "pro_forma_revenue_usd_k": [
+      1584451,
+      1348687
+    ],
+    "dne_consideration": {
+      "shares_m": 3.2,
+      "stock_fair_value_usd_m": 902.2,
+      "long_term_liabilities_assumed_usd_k": 329850
+    },
+    "other_long_term_liabilities_usd_k": {
+      "dates": [
+        "2025-12-31",
+        "2026-06-30"
+      ],
+      "deferred_income_taxes": [
+        47997,
+        349873
+      ],
+      "operating_lease_liabilities": [
+        136289,
+        169159
+      ],
+      "other_accrued_liabilities": [
+        223243,
+        227835
+      ],
+      "total": [
+        407529,
+        746867
+      ],
+      "interim": {
+        "date": "2026-03-31",
+        "deferred_income_taxes": 351475,
+        "operating_lease_liabilities": 177184,
+        "other_accrued_liabilities": 217980,
+        "total": 746639
+      }
+    },
+    "snps_design_ip_usd_k": {
+      "FY2026Q2": [
+        454209,
+        482031
+      ],
+      "FY2026Q3": [
+        473851,
+        427571
+      ]
+    },
+    "source_10q_notes": "Q2 2026 10-Q（acc 0000813672-26-000092）附注 2：Pro forma total revenue 1,584,451 / 1,348,687（三个月），3.2 million shares、$902.2 million、Long-term liabilities 329,850；附注 13：Deferred income taxes 349,873 / 47,997、Operating lease liabilities 169,159 / 136,289、Other accrued liabilities 227,835 / 223,243、合计 746,867 / 407,529；Q1 2026 10-Q（acc 0000813672-26-000047）附注 13 的 2026-03-31 栏：Deferred income taxes 351,475、Operating lease liabilities 177,184、Other accrued liabilities 217,980、合计 746,639。Synopsys 10-Q Note 17：Design IP Revenue 454,209 / 482,031（三个月至 2026-04-30）、473,851 / 427,571（三个月至 2026-07-31）。"
   },
   "period_labelling": {
     "convention": "自然年季度",
@@ -1697,7 +1941,7 @@
     "asc_606_break": {
       "new_quarters": "ASC 605",
       "existing": "ASC 606（2018Q1 起）",
-      "measured": "Cadence 于 2018 财年首日以 modified retrospective 采用 ASC 606，2017 及以前**不重述**。2018Q1 在两套准则下都被披露过，所以这道坎可以直接量：收入 525.457（605）对 517.313（606），差 8.144；GAAP 营业利润率 18.5% 对 16.6%；非 GAAP 营业利润率 29.5% 对 27.8%，差 1.7pp；非 GAAP EPS /bin/zsh.44 对 /bin/zsh.40。来源：2018-04-23 与 2018-07-23 两份 CFO Commentary 同时印了 606 表与 605 五季对照表。",
+      "measured": "Cadence 于 2018 财年首日以 modified retrospective 采用 ASC 606，2017 及以前**不重述**。2018Q1 在两套准则下都被披露过，所以这道坎可以直接量：收入 525.457（605）对 517.313（606），差 8.144；GAAP 营业利润率 18.5% 对 16.6%；非 GAAP 营业利润率 29.5% 对 27.8%，差 1.7pp；非 GAAP EPS $0.44 对 $0.40。来源：2018-04-23 与 2018-07-23 两份 CFO Commentary 同时印了 606 表与 605 五季对照表。",
       "why_one_axis": "本站把两段画在同一根横轴上，但**在图注里标出 2018Q1 那道坎**，不做接缝平滑，也不把 605 的数换算成 606。1.7pp 的利润率差是准则变更，不是经营变化；读者需要知道 2016–2017 那一段与 2018 之后不是同一把尺。",
       "trap": "2018Q1–2018Q3 三份 CFO Commentary 的五季趋势表是 **ASC 605** 口径，而同一份 8-K 的 EX-99.1 损益表是 606。只读趋势表会给 2018 三个季度写进 605 的数，而仓库里已有的是 606 的数。"
     },
@@ -1956,9 +2200,26 @@
       407.529,
       746.867
     ],
+    "other_long_term_liabilities_components": {
+      "deferred_income_taxes": [
+        47.997,
+        349.873
+      ],
+      "operating_lease_liabilities": [
+        136.289,
+        169.159
+      ],
+      "other_accrued_liabilities": [
+        223.243,
+        227.835
+      ]
+    },
     "other_long_term_liabilities_interim": {
       "date": "2026-03-31",
-      "value": 746.639
+      "value": 746.639,
+      "deferred_income_taxes": 351.475,
+      "operating_lease_liabilities": 177.184,
+      "other_accrued_liabilities": 217.98
     },
     "stockholders_equity": [
       5474.181,
@@ -1972,7 +2233,55 @@
       2500.0,
       2500.0
     ],
-    "note": "两栏相隔半年。其他长期负债在这半年里增加 $339.3M（+83.3%），而其中 $339.1M 落在 2026Q1（季末余额 $746.6M）、2026Q2 只增加 $0.2M——即这笔跳升与 Hexagon D&E 并表同季发生。公司未作解释、分析师亦未提问；本页只列示该变动与其发生时点，不对其构成作任何归因"
+    "note": "两栏相隔半年。其他长期负债增加 $339.3M，其中 $339.1M 落在 2026Q1（D&E 并表的那一季）。构成取自 10-Q 附注 13（Balance Sheet Components）：递延所得税负债 $48.0M → $349.9M，经营租赁负债 $136.3M → $169.2M，其他应计负债 $223.2M → $227.8M；10-Q 附注 2 的 D&E 购买价分摊里承接的长期负债是 $329.9M。"
+  },
+  "acquisition_dne": {
+    "shares_issued_m": 3.2,
+    "stock_fair_value_usd_m": 902.2,
+    "long_term_liabilities_assumed_usd_m": 329.85,
+    "source": "Q1 与 Q2 2026 10-Q 附注 2 Acquisitions（acc 0000813672-26-000047、0000813672-26-000092）：aggregate purchase consideration, net of cash acquired of $154.6 million, was $2.9 billion ... $2.2 billion of cash and non-cash consideration of 3.2 million shares ... aggregate acquisition date fair value of $902.2 million；购买价分摊表 Long-term liabilities 329,850（千美元）。"
+  },
+  "pro_forma_revenue_usd_m": {
+    "period": "Q2 2026",
+    "labels": [
+      "Q2 2026",
+      "Q2 2025"
+    ],
+    "three_months": [
+      1584.451,
+      1348.687
+    ],
+    "source": "Q2 2026 10-Q 附注 2 Pro Forma Financial Information（Unaudited）：Pro forma total revenue，假设 D&E 自比较期期初已并入。"
+  },
+  "peer_ip_growth": {
+    "period": "Q2 2026",
+    "peer": "Synopsys",
+    "quarters": [
+      {
+        "label": "Synopsys FY26 Q2",
+        "months": "2–4 月",
+        "period_end": "2026-04-30",
+        "filed_on": "2026-05-27",
+        "design_ip_usd_m": [
+          454.209,
+          482.031
+        ],
+        "analysis_compared": true,
+        "source": "Synopsys FY2026 Q2 10-Q（acc 0000883241-26-000018）Note 17 Segment Disclosure，Design IP Revenue"
+      },
+      {
+        "label": "Synopsys FY26 Q3",
+        "months": "5–7 月",
+        "period_end": "2026-07-31",
+        "filed_on": "2026-08-26",
+        "design_ip_usd_m": [
+          473.851,
+          427.571
+        ],
+        "analysis_compared": false,
+        "source": "Synopsys FY2026 Q3 10-Q（acc 0000883241-26-000025，2026-08-26）Note 17 Segment Disclosure，Design IP Revenue"
+      }
+    ]
   },
   "ytd_cash_bridge_usd_m": {
     "period": "Q2 2026",
@@ -2131,10 +2440,10 @@
       "implied_below_ytd"
     ],
     "headline_lead": "真正变强的不是收入而是订单",
-    "headline_backlog": "但在管理层自己称的「低续约年」里，{ytd_word} backlog 逆季节性净增 {ytd_backlog_add} 到 {backlog}",
+    "headline_backlog": "但在管理层自己称的「低续约年」里，{ytd_word} backlog 仍净增 {ytd_backlog_add} 到 {backlog}",
     "headline_cost": "代价写在下半年",
     "services": "主要来自并表而非主业结构变化",
-    "mix": "IP 是本季最快的一条，也是最该打折的一条：CFO 在电话会上主动设限「IP revenue can be timing dependent from quarter-to-quarter... I wouldn't annualize any one quarter」，而 Intel 协议正是在本季签署。SD&A 的表观增速里超过三分之二来自 Hexagon D&E 并表，不是经营。",
+    "mix": "IP 是本季最快的一条，也是最该打折的一条：CFO 在电话会上主动设限「IP revenue can be timing dependent from quarter-to-quarter... I wouldn't annualize any one quarter」，而 Intel 协议正是在本季签署。SD&A 的 +37% 里有多少是 Hexagon D&E 并表，公司没有披露；电话会上 CFO 说 Hexagon 让经常性收入增速多了约 4 个百分点，本站的季报分析据此估算其中超过三分之二是并表，不是经营。",
     "china": "<b>翻倍几乎全部是基数</b>：去年同期正处在出口管制与调查期的低谷（{china_year_ago}），而本季的绝对额仍低于 {china_peak_quarter}。中国不是在突破，是在高位震荡。麻烦在下一季——{china_peak_quarter} 是全序列最硬的基数，而管理层本季<b>没有重申</b>上季给出的「全年约 13%」口径，15 个分析师问题里中国出现 0 次。全年指引本身则明确建立在「出口管制维持现状」的假设上。",
     "gross_margin_cause": "全部来自 Hexagon D&E 带来的无形资产摊销。",
     "gross_margin_tail": "——在硬件（低毛利）创纪录、并购资产（低毛利）刚并表的一季里仍在扩张。",
@@ -2146,18 +2455,17 @@
     "giveback": "管理层把这笔让步称作「targeted investments」，但没有给出任何金额。",
     "cash_verdict": "上季的现金流质疑被彻底证伪",
     "capex": "自研硬件与数据中心，对一家资产轻的软件公司来说是新出现的一条腿。",
-    "backlog_quote": "管理层自己的说法是「normally, first half, we draw down on our backlog」",
-    "backlog_news": "真正的新信息是：在一个管理层承认的「低续约年」里，{ytd_word} backlog 逆季节性净增 {ytd_backlog_add}。",
+    "backlog_news": "管理层把这当作本季的新变化：在一个他们自称的「低续约年」里，{ytd_word} backlog 净增 {ytd_backlog_add}（原话「normally, first half, we draw down on our backlog, but this year has been good growth」）；申报记录里，上半年 backlog 净增此前也出现过：{half_growth_years}。",
     "buyback": "<b>按公司承诺的「{buyback_policy}」，这笔钱的全部作用是抵消股权激励稀释</b>，并非缩股：",
     "eps_reading": "这与本季收入端「基本符合、EPS 小超」的读数是同一件事的两个切面。",
-    "share_note": "全年股数上升还包含 Hexagon D&E 交易中以股票支付的对价，公司未单独披露其股数。",
+    "share_note": "Hexagon D&E 的对价里有 {dne_shares} 股 Cadence 股票（收购日公允价值 {dne_stock_value}，10-Q 附注 2），全年摊薄股数指引中值比 {fy_prior_label} 年多 {share_guide_increase}。",
     "rnd": "管理层口径的全年研发同比约 +19%（2025 年为 +10%），是下半年利润率让步的主要去向；",
     "margin_promise": "管理层对 2027 年的明示承诺是「better operating margins next year」，即必须高于 {fy_label} 的 {fy_margin_mid}；这是一句可证伪的话。",
     "cards": [
       {
         "tag": "亮点",
-        "title": "低续约年里订单逆季节性净增",
-        "body": "backlog {backlog}{backlog_record}，{ytd_word}逆季节性净增 {ytd_backlog_add}；经营现金流 {ocf}、同比 {ocf_yoy}。"
+        "title": "低续约年里订单仍净增",
+        "body": "backlog {backlog}{backlog_record}，{ytd_word}净增 {ytd_backlog_add}，此前上半年净增的还有 {half_growth_years}；经营现金流 {ocf}、同比 {ocf_yoy}。"
       },
       {
         "tag": "张力",
@@ -2170,7 +2478,8 @@
         "body": "占比 {china_share_exact}、金额 {china_revenue}，{china_vs_peak}；管理层未重申全年口径，问答中零提及。"
       }
     ],
-    "not_tracked": "本页已知未接入：Hexagon D&E 的单季收入贡献与利润率（公司只在 Q1 2026 给过一次全年口径，本季被直接问到未重申）、Intel 协议的金额与年限、下半年「targeted investments」的具体金额、agentic AI 相关的任何收入或 ARR（管理层已说明其在结构上会被吸收进 Core EDA 与经常性收入）、以及其他长期负债 {oltl_jump_quarter} 单季增加 {oltl_jump} 的构成。"
+    "not_tracked": "本页已知未接入：Hexagon D&E 的单季收入贡献与利润率（公司只在 Q1 2026 给过一次全年口径，本季被直接问到未重申，10-Q 也不单列）、Intel 协议的金额与年限、下半年「targeted investments」的具体金额、agentic AI 相关的任何收入或 ARR（管理层已说明其在结构上会被吸收进 Core EDA 与经常性收入）。",
+    "undrawn": "报告另有两条本季结论本页不画：现价隐含的 EPS 复合增速高于管理层自己的三年口径（本站不发布估值），以及问答里「愿意说、不给数」的披露质量评分（只在电话会里，没有申报可核）。"
   },
   "followup_closure": {
     "period": "Q2 2026",
@@ -2179,156 +2488,343 @@
       "已验证",
       "部分验证",
       "未披露",
+      "未验证",
       "判断错误"
     ],
-    "counts": [
-      5,
-      2,
-      3,
-      1
+    "items": [
+      {
+        "question": "Hexagon Q2 收入贡献在哪条轨道？整合费用是否减弱？",
+        "verdict_text": "部分验证，量化倒退",
+        "verdict": "部分验证",
+        "evidence": "管理层只说 Hexagon「按原计划交付」，没有给 Q2 金额，也没有重申 Q1 给过的全年 {hexagon_revenue} 收入 / {hexagon_eps} EPS（电话会）；10-Q 不单列 D&E 的并表收入"
+      },
+      {
+        "question": "Q1 经营现金流同比 −27% 是否反弹？",
+        "verdict_text": "已验证，强反弹",
+        "verdict": "已验证",
+        "evidence": "Q2 经营现金流 {ocf}、同比 {ocf_yoy}；全年经营现金流指引由 {prev_fy_ocf} 上修到{fy_ocf}"
+      },
+      {
+        "question": "Intel 14A 合同是否公布？",
+        "verdict_text": "已验证（定性）",
+        "verdict": "已验证",
+        "evidence": "多年期协议已在本季新闻稿公布，管理层称是「100% incremental」；金额、年限与确认节奏都没有披露"
+      },
+      {
+        "question": "Z4 / X4 硬件路线图是否更新？",
+        "verdict_text": "未披露",
+        "verdict": "未披露",
+        "evidence": "电话会完全没有提；新闻稿只写硬件「another record quarter」、新增 12 个客户"
+      },
+      {
+        "question": "ChipStack / AgentStack 大客户多年签约是否披露？",
+        "verdict_text": "部分验证",
+        "verdict": "部分验证",
+        "evidence": "ChipStack 超过 20 个客户 engagement、ViraStack 超过 25 个（电话会）；没有 ARR、合同金额或客户名"
+      },
+      {
+        "question": "下半年收入指引是否上修？",
+        "verdict_text": "已验证，幅度超预期",
+        "verdict": "已验证",
+        "evidence": "全年收入指引中值上修 {raise_revenue}，公司称全部有机；上季报告预期上修 $50–100M"
+      },
+      {
+        "question": "中国是否触及 13% 上限？",
+        "verdict_text": "已验证（超出）+ 新增风险",
+        "verdict": "已验证",
+        "evidence": "中国占比 {china_share_int}（CFO Commentary 的整数占比；按 10-Q 申报金额是 {china_share_exact}），金额 {china_revenue}、同比 {china_yoy_filed}——报告写的 $237.7M、+107% 是整数占比乘收入的自算值；管理层没有更新全年中国口径，问答里无人问"
+      },
+      {
+        "question": "Hexagon 利润率是否触及 5–10% 区间上沿？",
+        "verdict_text": "仍未披露",
+        "verdict": "未披露",
+        "evidence": "管理层只说并购业务的利润率 2027 年会继续改善，没有数"
+      },
+      {
+        "question": "回购节奏是否回升？",
+        "verdict_text": "判断错误",
+        "verdict": "判断错误",
+        "evidence": "Q2 回购 {buyback}，Q3 指引仍约 {next_buyback}；上季预期 Q2–Q4 平均回升到 {prior_threshold:buyback_hurdle}/季"
+      },
+      {
+        "question": "研发强度是否继续上升？",
+        "verdict_text": "已验证",
+        "verdict": "已验证",
+        "evidence": "研发 {rnd}、同比 {rnd_yoy}；占收入 {rnd_ratio}（上季 {rnd_ratio_prior}）——绝对额加速，占比因收入涨得更快而略降"
+      },
+      {
+        "question": "Physical AI 是否单独分部披露？",
+        "verdict_text": "未验证",
+        "verdict": "未验证",
+        "evidence": "没有：CFO Commentary 的产品线仍是 Core EDA、Semiconductor IP、System Design & Analysis 三类，Physical AI 在 SD&A 里"
+      }
     ],
-    "falsified_item": "判断错误的一条是回购节奏：上季预期 Q2–Q4 平均回升到 {prior_threshold:buyback}/季，实际 Q2 仍是 {buyback}，Q3 指引也仍是 {next_buyback}"
+    "rule": "本季分析第 0 节只有逐条判定、没有统计行。本页按「验证结果」栏的判定词归类：逗号后与括号里的限定语（量化倒退、强反弹、定性、幅度超预期、超出、新增风险）不改变归类；「仍未披露」与「未披露」同为一类（「仍」只是副词）；「未验证」单列——那一条（Physical AI 是否单独披露）有了答案，答案是否定的，不是还没披露。",
+    "calibration": "第 0 节另按方向、幅度、归因、时点给上季判断打分：方向强、归因对，幅度系统性偏保守（全年上修、经营现金流反弹与 IP 增速都低估了），时点两处错（ChipStack ARR 首次披露的窗口、Q2 回购回升）；报告据此把「agentic AI 何时以 ARR 披露」这条跟踪项退役。",
+    "checked": "能用申报核的五条（#2 经营现金流、#6 全年收入指引、#7 中国、#9 回购、#10 研发）已回本季 8-K 与 10-Q 核对，判定与申报一致；#7 的金额与增速按 10-Q 的申报值写，不用报告的整数占比自算值。",
+    "falsified_item": "判断错误的一条是回购节奏：上季预期 Q2–Q4 平均回升到 {prior_threshold:buyback_hurdle}/季，实际 Q2 仍是 {buyback}，Q3 指引也仍是约 {next_buyback}"
   },
   "prior_kpi_settlement": {
     "period": "Q2 2026",
     "set_in": "Q1 2026",
+    "rows": 5,
     "quantified": [
       {
-        "id": "backlog",
+        "id": "backlog_hurdle",
+        "row": 1,
+        "reads": "backlog",
         "metric": "季末 backlog",
-        "direction": "up",
+        "kind": "hurdle",
+        "trigger": "≥",
         "threshold": 8.2,
         "unit": "usd_bn",
-        "chart": true
+        "disposition": "重设：改看 backlog ÷ 过去四季收入的覆盖倍数，而不是绝对值"
       },
       {
-        "id": "ocf",
+        "id": "btb_hurdle",
+        "row": 1,
+        "reads": "book_to_bill",
+        "metric": "单季 book-to-bill",
+        "kind": "hurdle",
+        "trigger": "≥",
+        "threshold": 1.1,
+        "unit": "times"
+      },
+      {
+        "id": "backlog_flat",
+        "row": 1,
+        "reads": "backlog_qoq",
+        "metric": "季末 backlog 环比变化",
+        "kind": "guard",
+        "trigger": "≤",
+        "threshold": 0.0,
+        "unit": "usd_bn_change"
+      },
+      {
+        "id": "btb_floor",
+        "row": 1,
+        "reads": "book_to_bill",
+        "metric": "单季 book-to-bill",
+        "kind": "guard",
+        "trigger": "<",
+        "threshold": 1.0,
+        "unit": "times"
+      },
+      {
+        "id": "buyback_hurdle",
+        "row": 5,
+        "reads": "buyback",
+        "metric": "单季回购金额",
+        "kind": "hurdle",
+        "trigger": "≥",
+        "threshold": 250.0,
+        "unit": "usd_m"
+      },
+      {
+        "id": "buyback_floor",
+        "row": 5,
+        "reads": "buyback",
+        "metric": "单季回购金额",
+        "kind": "guard",
+        "trigger": "<",
+        "threshold": 200.0,
+        "unit": "usd_m",
+        "consecutive": 2
+      },
+      {
+        "id": "ocf_floor",
+        "reads": "ocf",
         "metric": "单季经营现金流",
-        "direction": "up",
+        "kind": "guard",
+        "trigger": "<",
         "threshold": 400.0,
         "unit": "usd_m",
-        "chart": true
+        "disposition": "退役：现金流质疑已被证伪"
       },
       {
-        "id": "buyback",
-        "metric": "单季回购金额",
-        "direction": "up",
-        "threshold": 250.0,
-        "unit": "usd_m",
-        "chart": true
-      },
-      {
-        "id": "eps_guide",
+        "id": "eps_guide_hurdle",
+        "reads": "eps_guide",
         "metric": "FY2026 非 GAAP EPS 指引中值",
-        "direction": "up",
+        "kind": "hurdle",
+        "trigger": "≥",
         "threshold": 8.0,
         "unit": "usd_eps",
-        "chart": false
+        "disposition": "退役：已兑现"
       },
       {
-        "id": "china_share",
+        "id": "china_floor",
+        "reads": "china_share",
         "metric": "中国收入占比",
-        "direction": "up",
+        "kind": "guard",
+        "trigger": "<",
         "threshold": 10.0,
         "unit": "pct",
-        "chart": false
+        "digits": 0,
+        "disposition": "反向重设：风险方向从「跌破」改为「依赖度过高」"
       }
     ],
-    "held": [
-      "ocf",
-      "eps_guide",
-      "china_share"
-    ],
-    "breached": [
-      "backlog",
-      "buyback"
-    ],
-    "breached_summary": "被击穿的全在订单与资本分配上",
-    "note": "经营与现金面超额兑现——经营现金流 {prior_actual:ocf} 是 {prior_threshold:ocf} 阈值的 {prior_multiple:ocf} 倍，中国占比与全年 EPS 指引也都在安全侧。越线的两条是 backlog 没有摸到 {prior_threshold:backlog}、回购没有回到 {prior_threshold:buyback}/季——都不是经营质量问题，但都是上季据以看多的直接依据。",
-    "precision_retired": {
-      "id": "book_to_bill",
-      "metric": "单季 book-to-bill",
-      "direction": "up",
-      "threshold": 1.1,
-      "unit": "times"
-    },
-    "retired": [
-      "「ChipStack / AgentStack 的 ARR 首次披露」已退役：管理层本季说明 agent license 是叠加在既有 EDA 订阅之上的加购，在结构上会被吸收进 Core EDA 与经常性收入，公司没有单独披露的会计必要",
-      "「Hexagon 单季收入贡献 ≥$47M」已退役为披露受限项：Q1 给过全年 {hexagon_revenue} 的口径，本季被直接问到仍不给单季数",
-      "「Intel 14A 合同是否公布」已兑现并转为定性跟踪：协议已签、公司称 100% 增量，但金额、年限与确认节奏全部未披露",
-      "「单季 book-to-bill ≥ 1.10x」已退役为精度受限项：该比率的分子是两个季度 backlog 之差，而 backlog 只披露到 US$0.1B，本季 {backlog_net_add} 的净增因此带 ±$100M 的四舍五入区间，算出来的比率落在 {book_to_bill_range} 之间——恰好横跨 {precision_threshold} 这个阈值，无法判定守住还是击穿"
+    "unsettled": [
+      {
+        "row": 2,
+        "text": "Hexagon Q2 收入贡献：≥ $47M 为跟踪线，< $40M 为警示线",
+        "why": "公司没有披露 D&E 的单季收入——电话会被直接问到不给，10-Q 只给合并后的备考收入，不单列 D&E"
+      },
+      {
+        "row": 3,
+        "text": "Intel 14A 合同公告，上季预估金额 $400–700M",
+        "why": "协议已经公布（本季分析第 0 节判为已验证），但金额、年限与确认节奏都没有披露，金额这一半无从结算"
+      },
+      {
+        "row": 4,
+        "text": "ChipStack / AgentStack 首批多年大订单与 ARR 量化",
+        "why": "没有任何 ARR 或合同金额披露；本季分析说明 agent license 叠加在 EDA 订阅之上、在结构上会被吸收进 Core EDA 与经常性收入，把这条退役"
+      }
     ]
   },
   "next_kpi": {
     "period": "Q2 2026",
     "for_period": "Q3 2026",
+    "set_in": "Q2 2026",
+    "rows": 6,
+    "rows_note": "第 8 节「本季 KPI」五行之后另列三条硬阈值：其中两条（Q3 非 GAAP 营业利润率 ≤ 44.0%、Q3 期末 backlog < $8.0B）与第二、四行的线相同；第三条是「Q3 中国占比 < 13% 且 Q3 收入落在指引下限 $1.595B 或以下」，中国那一半与第一行相同，收入那一半另列一条。",
     "quantified": [
       {
-        "id": "backlog",
-        "metric": "季末 backlog",
-        "direction": "up",
-        "threshold": 8.0,
-        "unit": "usd_bn",
-        "chart": false
-      },
-      {
-        "id": "coverage",
-        "metric": "backlog / 过去四季收入",
-        "direction": "up",
-        "threshold": 1.35,
-        "unit": "times",
-        "chart": true
-      },
-      {
-        "id": "margin",
-        "metric": "单季非 GAAP 营业利润率",
-        "direction": "up",
-        "threshold": 44.0,
-        "unit": "pct",
-        "chart": true
-      },
-      {
-        "id": "china_share",
+        "id": "china_floor",
+        "row": 1,
+        "reads": "china_share",
         "metric": "中国收入占比",
-        "direction": "up",
+        "kind": "guard",
+        "trigger": "<",
         "threshold": 13.0,
         "unit": "pct",
-        "chart": true
+        "digits": 0,
+        "meaning": "政策或需求回落已开始"
       },
       {
-        "id": "ip_yoy",
-        "metric": "Semiconductor IP 同比增速",
-        "direction": "up",
-        "threshold": 30.0,
+        "id": "china_cap",
+        "row": 1,
+        "reads": "china_share",
+        "metric": "中国收入占比",
+        "kind": "guard",
+        "trigger": "≥",
+        "threshold": 15.0,
         "unit": "pct",
-        "chart": false
+        "digits": 0,
+        "meaning": "依赖度升至新高，尾部风险放大"
       },
       {
-        "id": "implied_margin",
-        "metric": "Q4 2026 隐含非 GAAP 营业利润率",
-        "direction": "up",
+        "id": "margin_hurdle",
+        "row": 2,
+        "reads": "margin",
+        "metric": "单季非 GAAP 营业利润率",
+        "kind": "hurdle",
+        "trigger": ">",
+        "threshold": 44.5,
+        "unit": "pct",
+        "digits": 1,
+        "meaning": "下半年的利润率让步只是保守指引"
+      },
+      {
+        "id": "margin_floor",
+        "row": 2,
+        "reads": "margin",
+        "metric": "单季非 GAAP 营业利润率",
+        "kind": "guard",
+        "trigger": "≤",
         "threshold": 44.0,
         "unit": "pct",
-        "chart": false,
-        "short": "公司自己指引出来的 Q4 利润率"
+        "digits": 1,
+        "meaning": "成本真实上了台阶，2027 年利润率更好的承诺存疑"
+      },
+      {
+        "id": "ip_hurdle",
+        "row": 3,
+        "reads": "ip_yoy",
+        "metric": "Semiconductor IP 同比",
+        "kind": "hurdle",
+        "trigger": "≥",
+        "threshold": 30.0,
+        "unit": "pct",
+        "digits": 0,
+        "meaning": "结构性的份额增长"
+      },
+      {
+        "id": "ip_floor",
+        "row": 3,
+        "reads": "ip_yoy",
+        "metric": "Semiconductor IP 同比",
+        "kind": "guard",
+        "trigger": "<",
+        "threshold": 20.0,
+        "unit": "pct",
+        "digits": 0,
+        "meaning": "本季的高增长属于 Intel 合同的确认时点"
+      },
+      {
+        "id": "backlog_floor",
+        "row": 4,
+        "reads": "backlog",
+        "metric": "季末 backlog",
+        "kind": "guard",
+        "trigger": "<",
+        "threshold": 8.0,
+        "unit": "usd_bn",
+        "meaning": "backlog 重新净消耗、book-to-bill 低于 1.0x"
+      },
+      {
+        "id": "coverage_floor",
+        "row": 4,
+        "reads": "coverage",
+        "metric": "backlog / 过去四季收入",
+        "kind": "guard",
+        "trigger": "<",
+        "threshold": 1.35,
+        "unit": "times",
+        "meaning": "可见度继续缩短；与上一条同时触发时，报告的处置更重"
+      },
+      {
+        "id": "fy_margin_floor",
+        "row": 5,
+        "reads": "fy_next_margin_guide",
+        "metric": "FY2027 初始指引的非 GAAP 营业利润率",
+        "kind": "guard",
+        "trigger": "≤",
+        "threshold": 44.25,
+        "unit": "pct",
+        "digits": 2,
+        "meaning": "管理层「better operating margins next year」的承诺落空"
+      },
+      {
+        "id": "revenue_floor",
+        "row": 6,
+        "row_label": "第 8 节末尾硬阈值的第三条",
+        "reads": "revenue",
+        "period": "Q3 2026",
+        "metric": "Q3 2026 收入",
+        "kind": "guard",
+        "trigger": "≤",
+        "threshold": 1595.0,
+        "unit": "usd_m",
+        "meaning": "与中国收入占比 < 13% 同时成立，才是报告说的政策或需求风险兑现"
       }
     ],
-    "breached": [
-      "implied_margin"
+    "followups": [
+      "Q4 2026 的隐含非 GAAP 营业利润率会不会被上修？Q3 财报会同时给出 Q4 指引，这是下季最重要的一条验证。",
+      "下半年的「targeted investments」到底是多少钱？Q3 的营业费用与研发增速能不能给出答案，会不会有分析师追问金额？",
+      "Q3 中国占比是多少？管理层会不会恢复全年中国口径？对 BIS 关联方规则生效前有没有前瞻表述？",
+      "Semiconductor IP 增速会不会回落到 20–30%？仍高于 35% 说明本季不是 Intel 的确认时点，低于 20% 则本季是高点。",
+      "Intel 协议会不会第一次给出金额、年限、2026 / 2027 的确认节奏，以及是否扩展到 14A 之外的节点？",
+      "Hexagon 会不会恢复量化披露：全年收入与 EPS 稀释口径是否仍然有效、2027 年转为增厚的金额、利润率是否脱离 5–10%？",
+      "Q3 期末 backlog 的绝对值与覆盖倍数：绝对值继续增长而覆盖倍数跌破 1.35x 时怎么读？",
+      "剔除并购后的经常性收入增速会不会跳到 25% 以上——那会是 agentic 用量进入数字的第一个可观测证据。",
+      "AuraStack 是否正式上市、定价是否公开？",
+      "其他长期负债半年里多出来的那一笔是什么，有没有未披露的或有对价？",
+      "Q4 回购能不能补足全年「约 50% 自由现金流」的承诺？若 Q4 仍只是 Q3 的水平，现金的优先级已经转向整合与投资。",
+      "2027 年的摊薄股数指引会不会超过 280M？超过则回购已经抵不住股权激励的稀释。"
     ],
-    "note": "经营与订单{next_safe_count}条都还有余量，被击穿的那条不是已经发生的事——是全年指引隐含的 Q4 非 GAAP 营业利润率 {implied_margin}，比阈值低 {next_gap:implied_margin}。换句话说，这一季唯一越线的数字是公司自己指引出来的，不是市场或经营给的。",
-    "disclosure_gated": [
-      "Hexagon 的单季收入贡献与 EPS 稀释：Q1 给过 {hexagon_revenue} / {hexagon_eps} / {hexagon_margin} 利润率，本季被直接问到不再重申",
-      "Intel 14A 协议的金额、年限与 2026 / 2027 的确认节奏：四次被问、四次未给数字",
-      "H2「targeted investments」的具体金额：管理层给了原因没给数，残差测算约 $40M",
-      "其他长期负债 {oltl_jump_quarter} 单季增加 {oltl_jump} 的构成：管理层与分析师均未提及",
-      "AuraStack 的 GA 时点与定价：官方口径为「later in 2026」，2026 年内收入贡献为零"
-    ],
-    "revocation_thresholds": [
-      "Q3 2026 非 GAAP 营业利润率 ≤ 44.0%（未能超越指引中值，说明 H2 成本是结构性的）",
-      "Q3 2026 中国收入占比 < 13% 且当季收入落在指引下限 $1.595B 或以下",
-      "Q3 2026 期末 backlog < $8.0B（订单动能逆转）"
-    ]
+    "answered": {
+      "10": "10-Q 已经拆开：附注 13 里递延所得税负债由 {dtl_start} 升到 {dtl_end}，附注 2 的 D&E 购买价分摊承接长期负债 {dne_ltl}；没有单列或有对价。"
+    }
   },
   "annual_reconciliation_usd_m": {
     "years": [

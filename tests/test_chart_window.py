@@ -415,7 +415,7 @@ def _cost_threshold_reach() -> int:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amd": 15 + _amd_threshold_reach(), "amzn": 9 + _amzn_threshold_reach(), "arm": 0, "asml": 24, "avgo": 16, "axp": 7 + _axp_threshold_reach(), "bc": 3, "cboe": 8 + _cboe_threshold_reach(), "cdns": 10, "cfr": 20, "cme": 13 + _cme_threshold_reach(),
+    "amd": 15 + _amd_threshold_reach(), "amzn": 9 + _amzn_threshold_reach(), "arm": 0, "asml": 24, "avgo": 16, "axp": 7 + _axp_threshold_reach(), "bc": 3, "cboe": 8 + _cboe_threshold_reach(), "cdns": 12, "cfr": 20, "cme": 13 + _cme_threshold_reach(),
     "cost": 11 + _cost_threshold_reach(), "googl": 5 + _googl_threshold_reach(), "hkex": 15, "ibkr": 26, "ker": 11 + _ker_threshold_reach(), "ma": 13 + _ma_threshold_reach(), "mc": 9, "mco": 13, "meta": 5 + _meta_threshold_reach(),
     "msci": 23, "msft": 8, "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 7 + _nke_threshold_reach(), "nvda": 10, "pm": 8,
     "race": 12, "rms": 15, "samsung": 0, "schw": 10, "skhynix": 4, "snps": 8,
@@ -1085,8 +1085,15 @@ CONVERTED = {
                     "performance obligations, which do not exist before 2018Q1; "
                     "the 2017 year-end figure is annual and has no quarterly "
                     "series behind it.",
-        "backlog 创纪录": "same RPO floor.",
+        # Keyed on the words that stay when the quarter's reading changes: the
+        # title says 「创纪录」 only in a record quarter.
+        "US$#B，覆盖倍数": "same RPO floor.",
         "backlog / 过去四季收入": "same RPO floor.",
+        "单季 book-to-bill": "a book-to-bill needs two consecutive quarter-end backlog figures, "
+                            "and Cadence prints backlog each quarter only from the 2020 releases "
+                            "(checked: the 2019-07-22 CFO Commentary and release carry no backlog "
+                            "figure, only the share of revenue from beginning RPO), so the first "
+                            "ratio is 2020Q1.",
         "中国收入 $": "the 2016-2017 geographic disclosure is Americas / Asia / EMEA / "
                  "Japan with the United States singled out; China is not broken "
                  "out at all, so this file carries Asia-ex-Japan instead.",
@@ -1096,12 +1103,10 @@ CONVERTED = {
         "经营现金流 $#M、同比": "same.",
         "单季回购金额": "same.",
         "单季回购 $#M，摊薄股数": "same.",
-        "三条产品线的分化": 'not a floor: Cadence\'s "Revenue Mix by Product Group" table is unchanged in structure back to 2016Q1 -- the same categories this chart plots. The claim that the 2016-2017 releases grouped products differently does not survive reading them. Fetch gap; backfill in flight.',
-        "GAAP 毛利率降到": "gross margin is carried for the reviewed window.",
+        "三条产品线": 'not a floor: Cadence\'s "Revenue Mix by Product Group" table is unchanged in structure back to 2016Q1 -- the same categories this chart plots. The claim that the 2016-2017 releases grouped products differently does not survive reading them. Fetch gap; backfill in flight.',
+        "GAAP 毛利率": "gross margin is carried for the reviewed window.",
         "本季非 GAAP 营业利润率": "this chart pairs the quarterly series with two guided "
                           "points, so it runs on the reviewed window plus two.",
-        "单季非 GAAP 营业利润率": "the threshold view of the same quarterly margin series, "
-                          "which this file carries for the reviewed window.",
     },
     "nke": {
         # Nike's segment revenue and EBIT reach 2016; the currency-neutral growth
@@ -1555,18 +1560,18 @@ FLOOR_KIND = {
         '非 GAAP 营业利润率（本图仅近 20 季）': 'design',
         '非 GAAP EPS（本图仅近 20 季）': 'design',
         '季末 backlog': 'disclosure',
-        'backlog 创纪录': 'disclosure',
+        'US$#B，覆盖倍数': 'disclosure',
         'backlog / 过去四季收入': 'disclosure',
+        '单季 book-to-bill': 'disclosure',
         '中国收入 $': 'disclosure',
         '中国收入占比': 'disclosure',
         '单季经营现金流': 'coverage',
         '经营现金流 $#M、同比': 'coverage',
         '单季回购金额': 'coverage',
         '单季回购 $#M，摊薄股数': 'coverage',
-        '三条产品线的分化': 'coverage',
-        'GAAP 毛利率降到': 'coverage',
+        '三条产品线': 'coverage',
+        'GAAP 毛利率': 'coverage',
         '本季非 GAAP 营业利润率': 'coverage',
-        '单季非 GAAP 营业利润率': 'coverage',
     },
     'cme': {
         '调整后营业费用（除许可费）': 'disclosure',
@@ -1875,7 +1880,7 @@ class ChartWindowTest(unittest.TestCase):
         # (see _AMZN_THRESHOLD_FLOORS); the pins count the rest and add those
         # that are published, the way REACH_2016 does for the same charts.
         amzn = collections.Counter(kind for _, kind in _amzn_threshold_floors().values())
-        self.assertEqual(len(by_kind.get("coverage", [])), 33 + amzn["coverage"],
+        self.assertEqual(len(by_kind.get("coverage", [])), 32 + amzn["coverage"],
                          "charts whose data exists and has not been fetched")
         # Zero, and that is the point: every exemption on this page has now been
         # read against an actual pre-floor filing. The fourteen that had never
@@ -1888,7 +1893,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 184 + amzn["disclosure"])
+        self.assertEqual(settled.count("disclosure"), 185 + amzn["disclosure"])
         self.assertEqual(settled.count("design"), 40 + amzn["design"])
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
@@ -2150,7 +2155,7 @@ UNDERIVABLE_QUARTER_COUNTS = {
                        "自己没有任何地方声明窗口有多长。那 13 个季度本身在本页每一张 42 季图"
                        "上都画着（画的是它们的合计数，减出来的是收入分项），只是没有任何一张"
                        "图把它们单独成组，所以也不是「补集没被画」。"),
-    "cdns Ex11": ([43], "指向完整指引记录的交叉引用；本图只画近 20 季"),
+    "cdns Ex13": ([43], "指向完整指引记录的交叉引用；本图只画近 20 季"),
     **_cme_quarter_pins(),
     "skhynix Ex10": ([22], "这一页此前的窗口长度。图注解释的正是「从 22 季拉到 42 季」"
                           "改变了什么，所以那个 22 指的是旧窗口，不是本图的任何一段"),
