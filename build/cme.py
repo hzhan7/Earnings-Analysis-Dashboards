@@ -67,6 +67,7 @@ from build.board import (  # noqa: E402
     stamped_block,
     threshold_exhibit,
     threshold_table,
+    unit_text,
 )
 from build.page_shell import render_shell  # noqa: E402
 from build.payload_guard import write_dash  # noqa: E402
@@ -745,48 +746,225 @@ def weighted_rpc(lng: dict) -> float:
 
 
 # ── section three: what the next release settles ─────────────────────────────
+#
+# Every threshold here is the local analysis's own: its section 8, keyed into
+# the `next_kpi` block with the clause it came from as `basis`. Every current
+# value is read from the series at build time rather than stored beside the
+# threshold, so a roll cannot leave last quarter's reading under this quarter's
+# line. The two growth lines ("no year-on-year decline", "no sequential
+# decline") are carried as ratios against 1.00 -- their threshold is zero growth,
+# and a percentage headroom against zero is undefined.
 
-def entry_note(entry: dict) -> str:
-    return entry.get("note", "").format(threshold=entry["threshold"])
+KPI_FROM = "2016Q1"
+
+# One chart per metric; a metric with two thresholds (ADV) draws both lines.
+KPI_REFS = {
+    "adj_margin": "EX_MARGIN_LINE",
+    "adv": "EX_ADV_LINE",
+    "rpc": "EX_RPC_LINE",
+    "adj_opex": "EX_OPEX_LINE",
+    "rates_adv_yoy": "EX_RATES_LINE",
+    "market_data_qoq": "EX_MKTDATA_QOQ_LINE",
+}
+
+
+def kpi_history(staging: dict, reads: str) -> tuple[list[str], list[float], dict]:
+    """One threshold metric's own history, ending at this quarter's reading."""
+    fin, lng = staging["financials"], staging["long"]
+    start = lng["quarters"].index(KPI_FROM)
+    long_labels = lng["period_labels"][start:]
+
+    def ratio(values: list[float], lag: int) -> list[float]:
+        return [values[i] / values[i - lag] for i in range(start, len(values))]
+
+    market_data = lng["market_data"]
+    histories = {
+        "adj_margin": (staging["period_labels"], fin["adj_margin_pct"],
+                       {"fmt": "pct1", "ylab": "%", "name": "调整后营业利润率"}),
+        "adj_opex": (staging["period_labels"], fin["adj_opex_ex_license"],
+                     {"fmt": "f0c", "ylab": "US$M", "name": "调整后营业费用（除许可费）"}),
+        "adv": (long_labels, lng["adv_k"][start:],
+                {"fmt": "f0c", "ylab": "千手/日", "name": "季度 ADV"}),
+        "rpc": (long_labels, lng["rpc"][start:],
+                {"fmt": "usd3", "ylab": "US$/手", "name": "平均每手费率 RPC"}),
+        "rates_adv_yoy": (long_labels, ratio(lng["adv_rates"], 4),
+                          {"fmt": "f2", "ylab": "本季 ÷ 去年同季", "name": "利率类 ADV 本季 ÷ 去年同季",
+                           "growth": "同比"}),
+        "market_data_qoq": (long_labels, ratio(market_data, 1),
+                            {"fmt": "f2", "ylab": "本季 ÷ 上季", "name": "行情数据收入本季 ÷ 上季",
+                             "growth": "环比"}),
+        "market_data_yoy": (long_labels,
+                            [pct_change(market_data[i], market_data[i - 4])
+                             for i in range(start, len(market_data))],
+                            {"fmt": "pct1", "ylab": "同比 %", "name": "行情数据收入同比"}),
+    }
+    if reads not in histories:
+        raise ValueError(f"a `next_kpi` entry reads {reads!r}, which build/cme.py does not know")
+    return histories[reads]
+
+
+def kpi_entries(staging: dict, kpi: dict) -> list[dict]:
+    """The block's entries, each with this quarter's reading attached as ``current``."""
+    return [{**entry, "current": kpi_history(staging, entry["reads"])[1][-1]}
+            for entry in kpi["quantified"]]
+
+
+def short_name(entry: dict) -> str:
+    return entry.get("short", entry["metric"])
+
+
+def kpi_label(entry: dict) -> str:
+    """How an entry is named in the threshold table: one that is not settled by
+    the next release says when it is."""
+    return entry["metric"] + (f"（{entry['settles']} 结算）" if entry.get("settles") else "")
+
+
+def basis_text(entry: dict, by_id: dict) -> str:
+    """Which clause of the local analysis a threshold comes from, and its condition."""
+    extra = []
+    if entry.get("joint"):
+        extra.append(f"与 {short_name(by_id[entry['joint']])} 同时")
+    if entry.get("consecutive", 1) > 1:
+        extra.append(f"连续{cn_count(entry['consecutive'])}季")
+    if entry.get("settles"):
+        extra.append(f"{entry['settles']} 结算")
+    return entry["basis"] + (f"（{'，'.join(extra)}）" if extra else "")
+
+
+def breach_run(values: list[float], entry: dict) -> int:
+    """How many quarters in a row, up to this one, sit on the wrong side of the line."""
+    count = 0
+    for value in reversed(values):
+        if headroom(entry["direction"], entry["threshold"], value) >= 0:
+            break
+        count += 1
+    return count
+
+
+def current_text(entry: dict, spec: dict) -> str:
+    text = unit_text(entry["unit"], entry["current"])
+    if entry["unit"] == "times":
+        text += f"（即{spec['growth']} {minus_sign(signed((entry['current'] - 1) * 100))}）"
+    return text
 
 
 def next_section(staging: dict, kpi: dict, context: dict | None) -> list[dict]:
-    fin = staging["financials"]
-    labels = staging["period_labels"]
-    window = cn_count(len(labels))
-    entries = kpi["quantified"]
-    period = labels[-1]
-    breached = [e for e in entries if headroom(e["direction"], e["threshold"], e["current"]) < 0]
-    from_statement = sum(1 for e in entries if e.get("from") == "statement")
-    from_table = sum(1 for e in entries if e.get("from") == "adv_table")
-    house_line = next((e for e in entries if e["metric"] == "调整后营业费用（除许可费）"), None)
+    period = staging["period_labels"][-1]
+    window = cn_count(len(staging["period_labels"]))
+    entries = kpi_entries(staging, kpi)
+    by_id = {entry["id"]: entry for entry in entries}
+    upcoming = [entry for entry in entries if not entry.get("settles")]
+    later = [entry for entry in entries if entry.get("settles")]
+    margin = {entry["id"]: headroom(entry["direction"], entry["threshold"], entry["current"])
+              for entry in entries}
+    breached = [entry for entry in upcoming if margin[entry["id"]] < 0]
+    safe = [entry for entry in upcoming if margin[entry["id"]] >= 0]
+    closest = min(safe, key=lambda entry: margin[entry["id"]]) if safe else None
+    from_statement = sum(1 for entry in upcoming if entry.get("from") == "statement")
+    from_table = sum(1 for entry in upcoming if entry.get("from") == "adv_table")
+    joint = [entry for entry in upcoming if entry.get("joint")]
+    searched = context["searched"] if context else "申报文件"
+
+    def breach_words(entry: dict) -> str:
+        values = kpi_history(staging, entry["reads"])[1]
+        spec = kpi_history(staging, entry["reads"])[2]
+        run, need = breach_run(values, entry), entry.get("consecutive", 1)
+        return (f"{short_name(entry)}本季 {current_text(entry, spec)}，已经越线"
+                + (f"；本地研究的这条线要的是连续{cn_count(need)}季，这是第{cn_ordinal(run)}格"
+                   if run < need else ""))
+
+    not_carried = kpi.get("not_carried", [])
+    excluded = kpi.get("excluded", [])
     bar = headroom_exhibit(
-        "下季阈值：当前值离每条线还有多远",
-        entries, "current",
+        f"下季 {len(upcoming)} 条阈值："
+        + (f"{'、'.join(short_name(entry) for entry in breached)}已越线" if breached else "没有一条越线")
+        + (f"，离线最近的是{short_name(closest)}（{margin[closest['id']]:+.1f}%）" if closest else ""),
+        upcoming, "current",
         note=(
-            f"<b>{cn_count(len(entries))}条线的单位互不相同，所以画的是「距阈值还有百分之几」而不是原值</b>；"
-            "原始单位见核对抽屉里的阈值表。正值在安全侧，负值已经越线 —— "
-            + (f"本季已经越线的是{'、'.join(e.get('short', e['metric']) for e in breached)}。"
-               if breached else "本季没有一条越线。")
-            + (f"{cn_count(len(entries))}条全部可以在下一份业绩新闻稿里直接读到，不需要任何未披露的数据："
+            f"<b>{cn_count(len(upcoming))}条线的单位互不相同，所以画的是「距阈值还有百分之几」而不是原值</b>；"
+            "原始单位见核对抽屉里的阈值表。正值在安全侧，负值已经越线"
+            + ("：" + "；".join(breach_words(entry) for entry in breached) + "。" if breached else "，本季没有一条越线。")
+            + (f"{'、'.join(dict.fromkeys(short_name(entry) for entry in joint))} 的"
+               f"{cn_count(len(joint))}条线要和{short_name(by_id[joint[0]['joint']])} 同时失守才算数 —— "
+               "量少了而费率守住，按分级费率的机制正是常态。" if joint else "")
+            + (f"{cn_count(len(upcoming))}条全部可以在下一份业绩新闻稿里直接读到，不需要任何未披露的数据："
                f"{cn_count(from_statement)}条来自合并损益表与调整对账表，"
                f"{cn_count(from_table)}条来自同一份文件里的 ADV/RPC 五季表。"
-               if from_statement + from_table == len(entries) else "")
-            + ("<b>其中「调整后营业费用（除许可费）」的阈值是本页自己设的警戒线，"
-               "不是公司的指引</b> —— 公司的全年费用指引不在任何申报文件里，本页不接入它，"
-               "所以也不用它反推季度阈值。" if house_line else "")
-            + kpi.get("excluded", "").format(searched=context["searched"] if context else "申报文件")),
-        src_extra=(f"阈值为本页设定；当前值全部取自 {quarter_words(period)}业绩新闻稿"
-                   "（合并损益表、调整对账表与 ADV/RPC 五季表）。"),
+               if from_statement + from_table == len(upcoming) else "")
+            + f"<b>阈值全部取自本地研究（{period} 那一份季报分析的关键观察指标），不是公司指引</b>，"
+            "每条出自哪一句列在阈值表的最后一栏。"
+            + "".join(f"另有一条要到 {entry['settles']} 才结算：{short_name(entry)}不低于 "
+                      f"{unit_text(entry['unit'], entry['threshold'])}（当前 {unit_text(entry['unit'], entry['current'])}），"
+                      "只列在阈值表里，不进这张图。" for entry in later)
+            + (f"关键观察指标里还有{cn_count(len(not_carried))}条本页读不到："
+               + "".join(f"（{i}）{item['text']}" for i, item in enumerate(not_carried, 1))
+               if not_carried else "")
+            + (f"另有{cn_count(len(excluded))}类数据本页<b>不接入</b>，原因各不相同："
+               + "".join(f"（{i}）{text.format(searched=searched)}" for i, text in enumerate(excluded, 1))
+               if excluded else "")),
+        src_extra=(f"阈值取自本地研究（{period} 季报分析），不是公司指引；当前值全部取自 {quarter_words(period)}"
+                   "业绩新闻稿（合并损益表、调整对账表与 ADV/RPC 五季表），同比与环比倍数为本页相除 D。"),
     )
     bar["ref"] = "EX_HEADROOM"
     charts = [bar]
 
-    margin_entry = next((e for e in entries if e["metric"] == "调整后营业利润率"), None)
-    if margin_entry:
-        threshold = margin_entry["threshold"]
-        adj = fin["adj_margin_pct"]
-        below = [(labels[i], value) for i, value in enumerate(adj) if value < threshold]
+    groups: dict[str, list[dict]] = {}
+    for entry in upcoming:
+        groups.setdefault(entry["reads"], []).append(entry)
+    for reads, group in groups.items():
+        xlabels, values, spec = kpi_history(staging, reads)
+        if reads not in KPI_REFS:
+            raise ValueError(f"no threshold chart is defined for `next_kpi` metric {reads!r}")
+        name = spec["name"] if len(group) > 1 else group[0]["metric"]
+        head = group[0]
+        chart = threshold_exhibit(
+            f"{name}：下季阈值 {'与 '.join(unit_text(e['unit'], e['threshold']) for e in group)}，"
+            f"当前 {unit_text(head['unit'], head['current'])}",
+            xlabels, rounded(values), head["threshold"],
+            xstep=LONG_STEP if len(xlabels) > 16 else None,
+            fmt=spec["fmt"], ylab=spec["ylab"],
+            actual_name=spec["name"],
+            threshold_name=threshold_line_name(head, len(group)),
+            note=threshold_note(staging, reads, group, xlabels, values, by_id, window),
+            src_extra=threshold_source(reads, period),
+        )
+        for extra in group[1:]:
+            chart["series"].append({"name": threshold_line_name(extra, len(group)),
+                                    "values": [extra["threshold"]] * len(xlabels), "color": "GOLD"})
+        chart["ref"] = KPI_REFS[reads]
+        charts.append(chart)
+    return charts
+
+
+def threshold_line_name(entry: dict, siblings: int) -> str:
+    side = "上方" if entry["direction"] == "up" else "下方"
+    label = (entry["metric"].split("（", 1)[1].rstrip("）")
+             if siblings > 1 and "（" in entry["metric"] else "下季阈值")
+    return f"{label} {unit_text(entry['unit'], entry['threshold'])}（安全侧在{side}）"
+
+
+def threshold_source(reads: str, period: str) -> str:
+    where = {
+        "adj_margin": "调整后营业利润 ÷ 总收入 D，分子取自各季业绩新闻稿的调整对账表",
+        "adj_opex": "调整后费用合计（调整对账表）减去合并损益表的许可与其他费用协议一行 D",
+        "adv": "各季业绩新闻稿五季表的 ADV 合计行",
+        "rpc": "各季业绩新闻稿五季表的 Average RPC 一行",
+        "rates_adv_yoy": "各季业绩新闻稿五季表的利率类 ADV，本季 ÷ 去年同季 D",
+        "market_data_qoq": "合并损益表的行情数据与信息服务一行，本季 ÷ 上季 D",
+    }[reads]
+    return f"{where}；阈值取自本地研究（{period} 季报分析），不是公司的任何披露。"
+
+
+def threshold_note(staging: dict, reads: str, group: list[dict], xlabels: list[str],
+                   values: list[float], by_id: dict, window: str) -> str:
+    """What one threshold chart says, computed from its own history."""
+    head = group[0]
+    threshold = head["threshold"]
+    lng = staging["long"]
+    labels = staging["period_labels"]
+
+    if reads == "adj_margin":
+        below = [(xlabels[i], value) for i, value in enumerate(values) if value < threshold]
         # The first version said the threshold sat "a little below the window's
         # lowest cell", so that breaking it would be new. The window's lowest is
         # Q4 2024's 65.9% and Q4 2025 was 67.0%: it had been broken twice.
@@ -795,79 +973,123 @@ def next_section(staging: dict, kpi: dict, context: dict | None) -> list[dict]:
                      + "、".join(f"{label} 的 {value:.1f}%" for label, value in below)
                      + f"），所以「跌破」在这{window}个季度里发生过，不是新事。")
         else:
-            where = (f"它低于窗口内最低的一格，因此「跌破」意味着这{window}个季度里没有出现过的事。")
-        margin_line = threshold_exhibit(
-            f"调整后营业利润率对 {threshold:.1f}% 这条线",
-            labels, rounded(adj), threshold,
-            fmt="pct1", ylab="%",
-            actual_name="调整后营业利润率", threshold_name=f"阈值 {threshold:.1f}%",
-            note=(
-                "<b>余量条回答「哪条线破了」，这张回答「它是怎么走到这里的」。</b>"
-                f"{window}个季度里最高的一格是 {labels[adj.index(max(adj))]} 的 "
-                f"{max(adj):.1f}%，最低是 "
-                f"{labels[adj.index(min(adj))]} 的 "
-                f"{min(adj):.1f}%，本季 {adj[-1]:.1f}%。"
-                f"阈值 {threshold:.1f}% 是本页设定的，不是公司的任何披露：" + where
-                + entry_note(margin_entry)
-                + f"<b>这张图停在{window}季，是被披露挡住的</b>：CME 直到 2025-10-22 的"
-                "第三季业绩新闻稿才第一次印出「Reconciliation of Adjusted Operating Income」表，"
-                "而那张表只带一列去年同期，所以调整后营业利润最早只到 2024Q3。"
-                "（那张表的出现本身有出处：SEC 在 2025-09-12 的问询函里要求公司要么量化这个指标"
-                "并附对账、要么不再使用这个词。）"
-                f"分母那条总收入本页有 {len(staging['long']['quarters']) - staging['long']['quarters'].index('2016Q1')} 季，"
-                "但两条腿必须同窗。"
-                "<b>不能拿一直都有的调整后净利润对账表反推</b> —— 公司自己的脚注写明两张表口径不同"
-                "（净利润那张不含递延薪酬、摊销含权益法部分），在两表并存的 2026Q2 实测差 "
-                "US$9.1M，折合利润率约 0.5 个百分点。"),
-            src_extra="调整后营业利润 ÷ 总收入 D，分子取自各季业绩新闻稿的调整对账表。",
-        )
-        margin_line["ref"] = "EX_MARGIN_LINE"
-        charts.append(margin_line)
+            where = f"它低于窗口内最低的一格，因此「跌破」意味着这{window}个季度里没有出现过的事。"
+        return (
+            "<b>余量条回答「哪条线破了」，这张回答「它是怎么走到这里的」。</b>"
+            f"{window}个季度里最高的一格是 {xlabels[values.index(max(values))]} 的 "
+            f"{max(values):.1f}%，最低是 {xlabels[values.index(min(values))]} 的 "
+            f"{min(values):.1f}%，本季 {values[-1]:.1f}%。"
+            f"阈值 {threshold:.1f}% 取自本地研究的{head['basis']}，不是公司的任何披露：" + where
+            + f"<b>这张图停在{window}季，是被披露挡住的</b>：CME 直到 2025-10-22 的"
+            "第三季业绩新闻稿才第一次印出「Reconciliation of Adjusted Operating Income」表，"
+            "而那张表只带一列去年同期，所以调整后营业利润最早只到 2024Q3。"
+            "（那张表的出现本身有出处：SEC 在 2025-09-12 的问询函里要求公司要么量化这个指标"
+            "并附对账、要么不再使用这个词。）"
+            f"分母那条总收入本页有 {len(lng['quarters']) - lng['quarters'].index(KPI_FROM)} 季，"
+            "但两条腿必须同窗。"
+            "<b>不能拿一直都有的调整后净利润对账表反推</b> —— 公司自己的脚注写明两张表口径不同"
+            "（净利润那张不含递延薪酬、摊销含权益法部分），在两表并存的 2026Q2 实测差 "
+            "US$9.1M，折合利润率约 0.5 个百分点。")
 
-    rpc_entry = next((e for e in entries if e["metric"] == "平均每手费率 RPC"), None)
-    if rpc_entry:
-        threshold = rpc_entry["threshold"]
-        lng = staging["long"]
-        rpc_from = lng["quarters"].index("2016Q1")
-        rpc_long = lng["rpc"][rpc_from:]
-        rpc_labels = lng["period_labels"][rpc_from:]
-        below = [i for i, value in enumerate(rpc_long) if value < threshold]
-        recent_below = [rpc_labels[i] for i in below if i >= len(rpc_long) - len(labels)]
-        below_runs = runs([value < threshold for value in rpc_long])
+    if reads == "adv":
+        partner = by_id[head["joint"]]
+        top = max(entry["threshold"] for entry in group)
+        bottom = min(entry["threshold"] for entry in group)
+        clear_top = sum(1 for value in values if value >= top)
+        clear_bottom = [xlabels[i] for i, value in enumerate(values) if value >= bottom]
+        return (
+            f"<b>两条线都要和{short_name(partner)} 跌破 {unit_text(partner['unit'], partner['threshold'])} "
+            "同时发生才算数</b>："
+            + "，".join(f"{unit_text(entry['unit'], entry['threshold'])}那条是本地研究的{entry['basis']}"
+                       for entry in group)
+            + "。量少了而费率守住，按分级费率的机制正是常态，见 Exhibit {EX_ADV_LONG}。"
+            f"<b>这两条线划在{years_of(len(values))}年的高位上</b>：{len(values)} 季里 ADV 不低于 "
+            f"{unit_text(head['unit'], top)}的只有{cn_count(clear_top)}季、不低于 "
+            f"{unit_text(head['unit'], bottom)}的只有{cn_count(len(clear_bottom))}季，"
+            f"最早的一季是 {clear_bottom[0]}。"
+            + (f"去年同一季 {xlabels[-4]} 只有 {unit_text(head['unit'], values[-4])}，比两条线都低。"
+               if values[-4] < bottom else ""))
+
+    if reads == "rpc":
+        below = [i for i, value in enumerate(values) if value < threshold]
+        recent_below = [xlabels[i] for i in below if i >= len(values) - len(labels)]
+        below_runs = runs([value < threshold for value in values])
         longest = max(below_runs, key=lambda span_: (span_[1] - span_[0], span_[0])) if below_runs else None
         adv = lng["adv_k"]
-        mechanical = rpc_long[-1] > rpc_long[-2] and adv[-1] < adv[-2]
+        mechanical = values[-1] > values[-2] and adv[-1] < adv[-2]
+        upside = head.get("upside")
         # The first version called $0.670 "a little below the lowest cell of the
         # eight-quarter window"; Q3 2024 ($0.666) and Q1 2026 ($0.652) are both in
         # that window and both under it. And the long stretch under it is
         # 2021-2023, not "2019-2021".
-        rpc_line = threshold_exhibit(
-            f"平均每手费率对 ${threshold:.3f} 这条线",
-            rpc_labels, rounded(rpc_long), threshold,
-            xstep=LONG_STEP,
-            fmt="usd3", ylab="US$/手",
-            actual_name="平均每手费率 RPC", threshold_name=f"阈值 ${threshold:.3f}",
-            note=(
-                "<b>这条线要和成交量一起读，单独看会给出相反的结论。</b>"
-                f"本季 ${rpc_long[-1]:.3f}，比上季{'高' if rpc_long[-1] >= rpc_long[-2] else '低'} "
-                f"${abs(rpc_long[-1] - rpc_long[-2]):.3f}"
-                + ("，但 Exhibit {EX_ADV_LONG} 说明这个回升是成交量下滑的机械结果。" if mechanical else "。")
-                + f"<b>把窗口拉到 {len(rpc_long)} 季看这条阈值线</b>："
-                f"{rpc_labels[0].split()[1]}{rpc_labels[0].split()[0]} 起有 {len(below)} 个季度落在它下面"
-                + (f"，其中{cn_count(len(recent_below))}季就在最近{window}季里（{'、'.join(recent_below)}）"
-                   if recent_below else "")
-                + f" —— 费率从 {rpc_labels[0]} 的 ${rpc_long[0]:.3f} 一路下行到"
-                f"{years_of(len(rpc_long))}年低点 ${min(rpc_long):.3f}（{rpc_labels[rpc_long.index(min(rpc_long))]}）"
-                "才回升到今天。"
-                + (f"跌破它不是「没出现过的事」，是回到 {rpc_labels[longest[0]].split()[1]}–"
-                   f"{rpc_labels[longest[1] - 1].split()[1]} 年的常态。" if longest else "")
-                + entry_note(rpc_entry)),
-            src_extra=(f"{len(rpc_long)} 季逐季读自各季业绩新闻稿五季表的 Average RPC 一行；"
-                       "阈值为本页设定，不是公司的任何披露。"),
-        )
-        rpc_line["ref"] = "EX_RPC_LINE"
-        charts.append(rpc_line)
-    return charts
+        return (
+            "<b>这条线要和成交量一起读，单独看会给出相反的结论。</b>"
+            f"本季 ${values[-1]:.3f}，比上季{'高' if values[-1] >= values[-2] else '低'} "
+            f"${abs(values[-1] - values[-2]):.3f}"
+            + ("，但 Exhibit {EX_ADV_LONG} 说明这个回升是成交量下滑的机械结果。" if mechanical else "。")
+            + f"<b>把窗口拉到 {len(values)} 季看这条阈值线</b>："
+            f"{xlabels[0].split()[1]}{xlabels[0].split()[0]} 起有 {len(below)} 个季度落在它下面"
+            + (f"，其中{cn_count(len(recent_below))}季就在最近{window}季里（{'、'.join(recent_below)}）"
+               if recent_below else "")
+            + f" —— 费率从 {xlabels[0]} 的 ${values[0]:.3f} 一路下行到"
+            f"{years_of(len(values))}年低点 ${min(values):.3f}（{xlabels[values.index(min(values))]}）"
+            "才回升到今天。"
+            + (f"跌破它不是「没出现过的事」，是回到 {xlabels[longest[0]].split()[1]}–"
+               f"{xlabels[longest[1] - 1].split()[1]} 年的常态。" if longest else "")
+            + f"阈值 {unit_text(head['unit'], threshold)} 取自本地研究的{head['basis']}。"
+            + (f"<b>所以真正有信息量的组合是「量回来了而费率没掉」</b>：若下季 ADV 回到 "
+               f"{unit_text('contracts_k', upside['adv'])}以上而费率仍不低于 "
+               f"{unit_text('usd_rpc', upside['rpc'])}，才说明存在与成交量无关的费率改善"
+               f"（本地研究的{upside['basis']}）；若量价同时落到阈值以下，则说明连分级费率的缓冲也没兜住。"
+               if upside else ""))
+
+    if reads == "adj_opex":
+        upside = head.get("upside")
+        top_two = sorted(range(len(values)), key=lambda i: values[i], reverse=True)[:2]
+        peak = top_two[0]
+        return (
+            f"<b>本地研究的警戒线是 {unit_text(head['unit'], threshold)}：下季超过它，就算费用指引失控</b>"
+            + ((f"；反方向还有一条 {unit_text(head['unit'], upside['below'])} —— 低于它说明全年指引留有余量"
+                + (f"，本季 {unit_text(head['unit'], values[-1])} 已经在它下面" if values[-1] < upside['below'] else ""))
+               if upside else "")
+            + f"。{window}个季度里最高的一格是 {xlabels[peak]} 的 US${values[peak]:,.1f}M"
+            + (f"，离警戒线只差 US${threshold - values[peak]:,.1f}M" if 0 < threshold - values[peak] < 10 else "")
+            + ("；最高的两格都是第四季度（" + "、".join(f"{xlabels[i]} 的 US${values[i]:,.1f}M" for i in top_two) + "）"
+               if all(xlabels[i].startswith("Q4") for i in top_two) else "")
+            + f"，下季的去年同季 {xlabels[-4]} 是 US${values[-4]:,.1f}M。"
+            f"<b>这条线只有{window}季</b>：调整后费用合计是从 2025 年第三季度那期业绩新闻稿起才印的"
+            "（见 Exhibit {EX_OPEX}）。本地研究定这条线时参照的是电话会全年费用指引隐含的下半年节奏；"
+            "本页照录阈值，不接入那条指引本身。")
+
+    if reads in ("rates_adv_yoy", "market_data_qoq"):
+        spec = kpi_history(staging, reads)[2]
+        need = head.get("consecutive", 1)
+        run = breach_run(values, head)
+        negative = [i for i, value in enumerate(values) if value < threshold]
+        streaks = [(a, b) for a, b in runs([value < threshold for value in values]) if b - a >= need]
+        if reads == "rates_adv_yoy":
+            base = (f"下季只要利率 ADV 低于去年同季（{lng['period_labels'][-4]}）的 "
+                    f"{unit_text('contracts_k', lng['adv_rates'][-4])}")
+            tail = ("利率是 FMX 正在挑战的那条产品线（见 Exhibit {EX_CLASS_ADV}）；"
+                    "FMX 自己的成交量本页不发布。")
+        else:
+            base = (f"下季只要行情数据收入低于本季的 US${lng['market_data'][-1]:,.1f}M")
+            tail = head.get("caveat", "")
+        rule = f"本地研究这条线（{head['basis']}）要的是连续{cn_count(need)}季"
+        return (
+            f"<b>本季 {values[-1]:.2f}x，即{spec['growth']} {minus_sign(signed((values[-1] - 1) * 100))}"
+            + (f"：{rule}，这是第{cn_ordinal(run)}格</b>" if 0 < run < need else
+               f"：{rule}，已经触发</b>" if run >= need else
+               f"，在线的安全一侧；{rule}</b>")
+            + (f"。{base}，就是连续第{cn_ordinal(run + 1)}季" if run else f"。{base}，才是第一格")
+            + ("，这条线就触发了。" if run + 1 >= need else "。")
+            + f"{len(values)} 季里{spec['growth']}为负的有 {len(negative)} 季，"
+            + (f"连续{cn_count(need)}季以上的有{cn_count(len(streaks))}段："
+               + "、".join(f"{xlabels[a]}–{xlabels[b - 1]}（{cn_count(b - a)}季）" for a, b in streaks) + "。"
+               if streaks else f"从来没有连续{cn_count(need)}季过。")
+            + tail)
+
+    raise ValueError(f"no threshold note is written for `next_kpi` metric {reads!r}")
 
 
 # ── section four: the long series ────────────────────────────────────────────
@@ -1317,9 +1539,15 @@ def build_payload(staging: dict) -> dict:
                  for i in range(len(coll["quarters"]))],
     })
     if kpi:
-        tables.append(threshold_table(tables[-1]["n"] + 1,
-                                      "下季阈值与当前值（原始单位）",
-                                      kpi["quantified"], "current", "当前值"))
+        entries = kpi_entries(staging, kpi)
+        by_id = {entry["id"]: entry for entry in entries}
+        table = threshold_table(tables[-1]["n"] + 1, "下季阈值与当前值（原始单位）",
+                                [{**entry, "metric": kpi_label(entry)} for entry in entries],
+                                "current", "当前值")
+        table["headers"].append("出处（本地研究）")
+        for row, entry in zip(table["rows"], entries):
+            row.append(basis_text(entry, by_id))
+        tables.append(table)
     tables.append(ai_capex_cycle_table(tables[-1]["n"] + 1))
 
     # ── the sentences the page leads with ───────────────────────────────────
@@ -1420,6 +1648,28 @@ def build_payload(staging: dict) -> dict:
         + (f"，本页逐份检索过 {searched}，一次都没有找到，因此不接入。" if searched else "，因此不接入。")
     )
 
+    if kpi:
+        upcoming = [entry for entry in kpi["quantified"] if not entry.get("settles")]
+        later = [entry for entry in kpi["quantified"] if entry.get("settles")]
+        shared = {}
+        for entry in upcoming:
+            shared.setdefault(entry["reads"], []).append(entry)
+        shared = [group for group in shared.values() if len(group) > 1]
+        not_carried = kpi.get("not_carried", [])
+        next_description = (
+            f"本地研究（{period} 那一份季报分析的关键观察指标）给下季留了{cn_count(len(upcoming))}条阈值，"
+            "全部能在下一份业绩新闻稿里直接读到：先用「距阈值余量」口径放在一张图上，"
+            f"再把它们画回各自的历史，共{cn_count(len(next_block) - 1)}张"
+            + "".join(f"（{short_name(group[0])} 的{cn_count(len(group))}条线画在同一张上）" for group in shared)
+            + "。"
+            + "".join(f"另有一条要到 {entry['settles']} 才结算（{short_name(entry)}），只列在核对抽屉的阈值表里。"
+                      for entry in later)
+            + (f"下一份新闻稿里读不到的{cn_count(len(not_carried))}条（"
+               + "、".join(item["short"] for item in not_carried)
+               + "）和本页一向不接入的几类数据，写在余量图的图注里。" if not_carried else ""))
+    else:
+        next_description = "本季没有设定下季阈值，本节没有图。"
+
     notes = [
         "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
         "CME 财年即自然年，本页季度标注与公司自己的口径一致，无需换算。",
@@ -1501,10 +1751,7 @@ def build_payload(staging: dict) -> dict:
                              "最后是利润率、费用与每股收益。"),
              "exhibits": highlight_ex},
             {"id": "next_quarter", "title": "三、下季要跟踪什么",
-             "description": ((f"{cn_count(len(kpi['quantified']))}条阈值，全部能在下一份业绩新闻稿里直接读到；"
-                              f"统一用「距阈值余量」口径，再把其中{cn_count(len(next_block) - 1)}条画回它们自己的历史。"
-                              + ("不接入的几类数据也写在这里。" if kpi.get("excluded") else ""))
-                             if kpi else "本季没有设定下季阈值，本节没有图。"),
+             "description": next_description,
              "exhibits": next_ex},
             {"id": "routine", "title": "四、长期常规跟踪",
              "description": (f"{cn_count(n)}个季度的量与价、收入对成交量的斜率、清算费里看不见的那一块、"

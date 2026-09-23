@@ -458,16 +458,98 @@ class CmeDashboardTest(unittest.TestCase):
         note = self.exhibit_by_ref("EX_INVEST")["note"]
         self.assertIn("本页不把这两条相减当成利差", note)
 
-    # ── what the page will and will not publish ─────────────────────────────
-    def test_every_quantified_threshold_has_a_headroom_bar(self) -> None:
+    # ── section three: the local analysis's thresholds ──────────────────────
+    def test_the_thresholds_are_the_local_analysis_s_own(self) -> None:
+        """Held to a second keying of the same report section, not to the builder.
+
+        `_checks.local_analysis` is typed separately from the report's section 8
+        (its observation table and its three stance-reversal conditions), the
+        way `_checks` is typed separately from the release. A roll re-keys both;
+        this test does not change.
+        """
+        kpi = self.staging["next_kpi"]
+        local = self.staging["_checks"]["local_analysis"]
+        self.assertEqual(kpi["period"], self.staging["period_labels"][-1])
+        self.assertEqual({entry["id"]: [entry["direction"], entry["threshold"]]
+                          for entry in kpi["quantified"]}, local["thresholds"])
+        upside = {}
+        for entry in kpi["quantified"]:
+            for key, value in entry.get("upside", {}).items():
+                if key != "basis":
+                    upside[f"{entry['id']}_{key}" if key == "below" else key] = value
+        self.assertEqual(upside, local["upside"])
+        self.assertEqual(len(kpi["not_carried"]), local["not_carried"])
+        for entry in kpi["quantified"]:
+            # Nothing the page could go stale on is stored beside a threshold.
+            self.assertNotIn("current", entry, entry["id"])
+            self.assertTrue(entry["basis"], entry["id"])
+
+    @staticmethod
+    def readings(staging: dict) -> dict:
+        """This quarter's value of each tracked metric, computed here from the
+        disclosed lines rather than through the builder's own helpers."""
+        fin, long = staging["financials"], staging["long"]
+        return {
+            "adj_margin": 100 * fin["adj_operating_income"][-1] / fin["total_revenues"][-1],
+            "adj_opex": fin["adj_total_expenses"][-1] - fin["licensing_expense"][-1],
+            "adv": long["adv_k"][-1],
+            "rpc": long["rpc"][-1],
+            "rates_adv_yoy": long["adv_rates"][-1] / long["adv_rates"][-5],
+            "market_data_qoq": long["market_data"][-1] / long["market_data"][-2],
+            "market_data_yoy": 100 * (long["market_data"][-1] / long["market_data"][-5] - 1),
+        }
+
+    def test_every_next_quarter_threshold_has_a_headroom_bar(self) -> None:
         entries = self.staging["next_kpi"]["quantified"]
+        upcoming = [e for e in entries if not e.get("settles")]
+        self.assertLess(len(upcoming), len(entries), "the Q1 2027 line is not a next-quarter bar")
+        now = self.readings(self.staging)
         bar = self.exhibit_by_ref("EX_HEADROOM")
-        self.assertEqual(bar["xlabels"], [e["metric"] for e in entries])
-        for entry, value in zip(entries, bar["values"]):
+        self.assertTrue(bar["title"].startswith(f"下季 {len(upcoming)} 条阈值："))
+        self.assertEqual(bar["xlabels"], [e["metric"] for e in upcoming])
+        for entry, value in zip(upcoming, bar["values"]):
             self.assertNotEqual(entry["threshold"], 0.0, entry["metric"])
-            self.assertAlmostEqual(
-                headroom(entry["direction"], entry["threshold"], entry["current"]),
-                value, places=1, msg=entry["metric"])
+            self.assertAlmostEqual(headroom(entry["direction"], entry["threshold"], now[entry["reads"]]),
+                                   value, places=1, msg=entry["metric"])
+
+    def test_every_next_quarter_threshold_is_drawn_against_its_own_history(self) -> None:
+        """「X：下季阈值 A，当前 B」, one chart per metric, every threshold on it."""
+        section = next(s for s in self.payload["sections"] if s["id"] == "next_quarter")
+        charts = section["exhibits"][1:]
+        upcoming = [e for e in self.staging["next_kpi"]["quantified"] if not e.get("settles")]
+        by_metric = {}
+        for entry in upcoming:
+            by_metric.setdefault(entry["reads"], []).append(entry)
+        self.assertEqual(len(charts), len(by_metric))
+        now = self.readings(self.staging)
+        for chart, (reads, group) in zip(charts, by_metric.items()):
+            with self.subTest(metric=reads):
+                self.assertEqual(chart["kind"], "lines")
+                self.assertIn("：下季阈值 ", chart["title"])
+                self.assertIn("，当前 ", chart["title"])
+                lines = [s["values"] for s in chart["series"][1:]]
+                self.assertEqual([line[0] for line in lines], [e["threshold"] for e in group])
+                self.assertTrue(all(len(set(line)) == 1 for line in lines))
+                self.assertAlmostEqual(chart["series"][0]["values"][-1], now[reads], places=4)
+
+    def test_the_rest_of_section_8_is_named_with_the_reason_it_is_not_drawn(self) -> None:
+        kpi = self.staging["next_kpi"]
+        note = self.exhibit_by_ref("EX_HEADROOM")["note"]
+        for item in kpi["not_carried"]:
+            self.assertIn(item["text"], note)
+        later = [e for e in kpi["quantified"] if e.get("settles")]
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("下季阈值"))
+        self.assertEqual([row[0] for row in table["rows"]],
+                         [e["metric"] + (f"（{e['settles']} 结算）" if e.get("settles") else "")
+                          for e in kpi["quantified"]])
+        self.assertEqual(table["headers"][-1], "出处（本地研究）")
+        for entry in later:
+            self.assertIn(f"另有一条要到 {entry['settles']} 才结算", note)
+        blob = json.dumps(self.payload, ensure_ascii=False)
+        for stale in ("本页设定", "本页自己设的", "阈值为本页"):
+            self.assertNotIn(stale, blob)
+
+    # ── what the page will and will not publish ─────────────────────────────
 
     def test_the_call_only_expense_guidance_is_named_and_not_published(self) -> None:
         notes = " ".join(self.payload["notes"])
@@ -697,6 +779,22 @@ class CmeRollTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "sources"):
             self.rebuilt(lambda s: s.__setitem__(
                 "sources", [x for x in s["sources"] if not x["label"].startswith(label)]))
+
+    def test_the_first_cell_is_counted_not_remembered(self) -> None:
+        """「这是第一格」holds only while the quarter before was on the safe side.
+
+        The local analysis wrote "Q2 已 −6.1%，这是第一格" about rates volume
+        falling year on year; the page prints the same thing from the series.
+        Make Q1 2026 fall too and the line has already been crossed twice.
+        """
+        def previous_quarter_also_down(s):
+            i = s["long"]["quarters"].index("2026Q1")
+            s["long"]["adv_rates"][i] = s["long"]["adv_rates"][i - 4] - 1
+        after = published_text(self.rebuilt(previous_quarter_also_down))
+        self.assertIn("这是第一格", self.text)
+        self.assertNotIn("这是第一格", after)
+        self.assertNotIn("已经触发", self.text)
+        self.assertIn("已经触发", after)
 
     def test_a_later_quarter_must_settle_the_previous_analysis(self) -> None:
         """「第一份分析」is true of one quarter only; after it, section one owes a settlement."""

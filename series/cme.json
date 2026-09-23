@@ -169,6 +169,50 @@
     "performance_bonds_usd_m": 158110.7,
     "adv_rank_printed": 3,
     "market_data_record_printed": true,
+    "local_analysis": {
+      "source": "本地分析稿 2026-07-22 CME Q2 2026 vs Q1 2026 Analysis.md 第 8 节：「关键观察指标」表 #1–#5 与「立场撤销条件」①②③。逐条从报告原文录入，不从 next_kpi 抄。同比、环比两条的阈值是「负增长」，按倍数记为 1.0。",
+      "thresholds": {
+        "adj_margin": [
+          "up",
+          67.5
+        ],
+        "adv_squeeze": [
+          "up",
+          29000.0
+        ],
+        "adv_revoke": [
+          "up",
+          28000.0
+        ],
+        "rpc": [
+          "up",
+          0.67
+        ],
+        "adj_opex": [
+          "down",
+          450.0
+        ],
+        "rates_adv_yoy": [
+          "up",
+          1.0
+        ],
+        "market_data_qoq": [
+          "up",
+          1.0
+        ],
+        "market_data_yoy": [
+          "up",
+          12.0
+        ]
+      },
+      "upside": {
+        "adv": 32000.0,
+        "rpc": 0.675,
+        "adj_opex_below": 415.0
+      },
+      "not_carried": 2,
+      "checked_on": "2026-09-23"
+    },
     "source": "CME Group 2Q26 业绩新闻稿（8-K EX-99.1，2026-07-22，acc 0001156375-26-000042）：电头「CHICAGO, July 22, 2026」；正文「the third highest quarterly ADV reaching 29.8 million contracts」「Market data revenue totaled a record $238 million」；Consolidated Statements of Income 本季与去年同季两栏（Clearing and transaction fees 1,352.5 / 1,388.0 … Diluted 2.88 / 2.81，摊薄股数 361,282 / 360,355）；Reconciliation of Adjusted Operating Income （Adjusted Total Expenses 521.2 / 491.2，Adjusted Operating Income 1,185.0 / 1,200.8）；Reconciliation of Adjusted Net Income（1,081.7 / 1,079.4，Adjusted diluted 2.99 / 2.96）；Quarterly Operating Statistics 五季表（2Q 2026 / 1Q 2026 / 2Q 2025 三列的分品种 ADV、RPC 与交易日 62 / 61 / 62）；资产负债表 Performance bonds and guaranty fund contributions 158,110.7。",
     "checked_on": "2026-09-19"
   },
@@ -3235,59 +3279,127 @@
   },
   "next_kpi": {
     "period": "Q2 2026",
+    "for_period": "Q3 2026",
+    "_note": "阈值与方向逐字取自 2Q26 本地分析稿第 8 节「关键观察指标」：观察指标表 5 行与「立场撤销条件」3 条，basis 写明每条出自哪一条。当前值不存在这里 —— build/cme.py 按 reads 从本 series 现算；同比、环比的阈值写成倍数（本季 ÷ 对比季 ≥ 1.00），因为「同比负增长」的阈值是零，按百分比算的余量没有定义。joint：要与 RPC 那条同时失守才算数；consecutive：要连续这么多季才算数；settles：不是下一季结算的那条，只进阈值表、不进余量图。下一份新闻稿读不到的进 not_carried，连同原因；excluded 是本页一向不接入的几类数据。",
     "quantified": [
       {
+        "id": "adj_margin",
+        "reads": "adj_margin",
         "metric": "调整后营业利润率",
         "direction": "up",
         "threshold": 67.5,
         "unit": "pct",
-        "current": 69.452585,
-        "from": "statement"
+        "from": "statement",
+        "basis": "立场撤销条件①"
       },
       {
-        "metric": "季度平均日成交量 ADV",
+        "id": "adv_squeeze",
+        "reads": "adv",
+        "metric": "季度 ADV（量价双杀线）",
+        "short": "季度 ADV",
+        "direction": "up",
+        "threshold": 29000.0,
+        "unit": "contracts_k",
+        "from": "adv_table",
+        "joint": "rpc",
+        "basis": "观察指标 3"
+      },
+      {
+        "id": "adv_revoke",
+        "reads": "adv",
+        "metric": "季度 ADV（立场撤销线）",
+        "short": "季度 ADV",
         "direction": "up",
         "threshold": 28000.0,
         "unit": "contracts_k",
-        "current": 29843.0,
-        "from": "adv_table"
+        "from": "adv_table",
+        "joint": "rpc",
+        "basis": "立场撤销条件②"
       },
       {
+        "id": "rpc",
+        "reads": "rpc",
         "metric": "平均每手费率 RPC",
         "direction": "up",
         "threshold": 0.67,
         "unit": "usd_rpc",
-        "current": 0.678,
         "from": "adv_table",
-        "note": "<b>所以真正有信息量的组合是「量回来了而费率没掉」</b>：若下季 ADV 回到 32,000 千手以上而费率仍不低于 $0.675，才说明存在与成交量无关的费率改善；若量价同时落到阈值以下，则说明连分级费率的缓冲也没兜住。"
+        "basis": "观察指标 3、立场撤销条件②",
+        "upside": {
+          "adv": 32000.0,
+          "rpc": 0.675,
+          "basis": "观察指标 3"
+        }
       },
       {
+        "id": "adj_opex",
+        "reads": "adj_opex",
         "metric": "调整后营业费用（除许可费）",
         "direction": "down",
         "threshold": 450.0,
         "unit": "usd_m",
-        "current": 412.1,
-        "from": "statement"
+        "from": "statement",
+        "basis": "观察指标 2",
+        "upside": {
+          "below": 415.0,
+          "basis": "观察指标 2"
+        }
       },
       {
-        "metric": "利率类 ADV（对去年同期）",
+        "id": "rates_adv_yoy",
+        "reads": "rates_adv_yoy",
+        "metric": "利率类 ADV 同比（本季 ÷ 去年同季）",
+        "short": "利率类 ADV 同比",
         "direction": "up",
-        "threshold": 15472.0,
-        "unit": "contracts_k",
-        "current": 14532.0,
+        "threshold": 1.0,
+        "unit": "times",
         "from": "adv_table",
-        "short": "利率类 ADV 的同比"
+        "consecutive": 2,
+        "basis": "立场撤销条件③"
       },
       {
-        "metric": "行情数据收入（对上季）",
+        "id": "market_data_qoq",
+        "reads": "market_data_qoq",
+        "metric": "行情数据收入环比（本季 ÷ 上季）",
+        "short": "行情数据收入环比",
         "direction": "up",
-        "threshold": 224.1,
-        "unit": "usd_m",
-        "current": 238.1,
-        "from": "statement"
+        "threshold": 1.0,
+        "unit": "times",
+        "from": "statement",
+        "consecutive": 2,
+        "basis": "观察指标 5",
+        "caveat": "本地研究这一条用的是剔除电话会所说稽查追补之后的收入；追补金额只在电话会上给，本页按报表值读。"
+      },
+      {
+        "id": "market_data_yoy",
+        "reads": "market_data_yoy",
+        "metric": "行情数据收入同比",
+        "direction": "up",
+        "threshold": 12.0,
+        "unit": "pct",
+        "from": "statement",
+        "settles": "Q1 2027",
+        "basis": "观察指标 5"
       }
     ],
-    "excluded": "另有六条本页<b>不接入</b>，原因各不相同：（1）<b>全年调整后营业费用（除许可费）指引</b> —— 这是市场唯一拿来建模 CME 成本的数，但它只出现在业绩电话会上，{searched}里逐字搜过，一次都没有；本页只接申报文件里的指引，所以第一节结清的是资本开支而不是它。（2）<b>市场一致预期</b> —— 没有带日期、可核对的公开来源，本站不发布凭印象填的数。（3）<b>日均保证金效率</b>（本季公司称超过 950 亿美元）—— 只在电话会与新闻稿正文里以「超过」的形式出现，没有逐季序列，也没有定义。（4）<b>未平仓合约 OI</b> —— 公司只在电话会上给同比百分比，申报文件里没有逐季绝对值。（5）<b>事件合约与预测市场的成交与收入</b> —— 累计张数只在电话会上给，且两季的口径（「3 月中以来」与「自上线累计」）不同基数，不能连成一条序列。（6）<b>成交场所拆分</b>（Globex／公开喊价／私下议价）—— CME 在 2013 年第三季度换过一次场所口径，同一个季度按不同新闻稿读出 275 千手或 691 千手，本页不拼接两套基准。"
+    "not_carried": [
+      {
+        "short": "8、9 月的月均 ADV",
+        "text": "<b>8 月与 9 月的月均 ADV</b>（观察指标 1：两个月均值低于 28M 即判为当季明显走弱；另一档是按一致预期倒推的，本页不发布一致预期）—— CME 的月度成交量公告不是申报文件，本页也没有月度序列；下一份业绩新闻稿里读得到的是整季 ADV，就是上面那两条 ADV 线。"
+      },
+      {
+        "short": "FMX 的利率期货成交量",
+        "text": "<b>FMX（BGC 旗下）SOFR 与美债期货的 ADV</b>（观察指标 4，也是立场撤销条件③的前一半：单月超过 150,000 手即重新评估）—— 那是竞争对手在自己季报里给的数，合约口径与本页的合约张数不可比，本页不发布任何竞争对手的成交量。"
+      }
+    ],
+    "excluded": [
+      "<b>全年调整后营业费用（除许可费）指引</b> —— 这是市场唯一拿来建模 CME 成本的数，但它只出现在业绩电话会上，{searched}里逐字搜过，一次都没有；本页只接申报文件里的指引，所以第一节结清的是资本开支而不是它。",
+      "<b>市场一致预期</b> —— 没有带日期、可核对的公开来源，本站不发布凭印象填的数。",
+      "<b>日均保证金效率</b>（本季公司称超过 950 亿美元）—— 只在电话会与新闻稿正文里以「超过」的形式出现，没有逐季序列，也没有定义。",
+      "<b>未平仓合约 OI</b> —— 公司只在电话会上给同比百分比，申报文件里没有逐季绝对值。",
+      "<b>事件合约与预测市场的成交与收入</b> —— 累计张数只在电话会上给，且两季的口径（「3 月中以来」与「自上线累计」）不同基数，不能连成一条序列。",
+      "<b>成交场所拆分</b>（Globex／公开喊价／私下议价）—— CME 在 2013 年第三季度换过一次场所口径，同一个季度按不同新闻稿读出 275 千手或 691 千手，本页不拼接两套基准。"
+    ]
   },
   "quarter_context": {
     "period": "Q2 2026",
