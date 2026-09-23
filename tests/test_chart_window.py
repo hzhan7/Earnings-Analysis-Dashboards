@@ -173,7 +173,7 @@ def _tsm_advanced_count() -> dict:
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
     "amd": 16, "amzn": 13, "arm": 0, "asml": 16, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
-    "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
+    "cost": 14, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
     "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
@@ -484,20 +484,26 @@ CONVERTED = {
                   "(period 2022-11-20, \"93%/90%\") and to one decimal from FY2023 "
                   "Q2 (period 2023-02-12, \"92.6%/90.5%\"). Splicing the two would "
                   "put a step of up to half a point into a series whose whole "
-                  "point is half-point moves.",
+                  "point is half-point moves. The quarter-on-quarter change chart "
+                  "starts one quarter later still: a change needs two one-decimal "
+                  "readings.",
         '每股收益增速拆成四条腿': "a clean year-over-year pair needs both quarters free of "
                        "the noncontrolling-interest line (the Taiwan joint "
                        "venture), which was not fully gone until FY2023 -- so "
                        "the first true pair is FY2024 Q1 against FY2023 Q1.",
-        '客流与客单': "two floors stacked: the supplemental deck that carries traffic and "
-                 "average ticket begins 2024-05-30, and the gasoline-and-FX-adjusted "
-                 "ticket sub-table inside it begins later still, 2025-03-06.",
+        '客流': "two floors stacked: the supplemental deck that carries traffic and "
+              "average ticket -- total and by segment, which is where the US traffic "
+              "line comes from -- begins 2024-05-30, and the gasoline-and-FX-adjusted "
+              "ticket sub-table inside it begins later still, 2025-03-06.",
         '公司自己估的财年末仓库数': "same supplemental deck, first published 2024-05-30. "
                           "Earlier filings give the warehouse count but never the "
                           "company's own forward estimate of the year-end figure.",
         'Executive 会员': "same supplemental deck. Filings before it never quantify the "
-                       "Executive member count or its penetration -- the earlier "
-                       "language is qualitative only.",
+                       "Executive member count by quarter -- the 10-K gives one "
+                       "year-end count (FY2016-FY2020 and FY2022 on, FY2021 in "
+                       "none), no 10-Q gives any -- so the three quarterly "
+                       "Executive charts (count and sales penetration, share of "
+                       "paid members, year-on-year growth) start with the deck.",
         '四条商品线对净销售额增速的贡献': "same supplemental EX-99.2 deck (first "
                             "published 2024-05-30): the four-merchandise-line "
                             "contribution to sales growth is not quantified in any "
@@ -1151,7 +1157,7 @@ FLOOR_KIND = {
     'cost': {
         '会员续费率': 'disclosure',
         '每股收益增速拆成四条腿': 'disclosure',
-        '客流与客单': 'disclosure',
+        '客流': 'disclosure',
         '公司自己估的财年末仓库数': 'disclosure',
         'Executive 会员': 'disclosure',
         '四条商品线对净销售额增速的贡献': 'disclosure',
