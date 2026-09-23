@@ -274,6 +274,19 @@ def _amd_threshold_reach() -> int:
                and (first_year(ex) or TARGET_YEAR + 1) <= TARGET_YEAR)
 
 
+def _amzn_threshold_reach() -> int:
+    """Amazon's threshold-line charts -- the previous analysis's lines settled in
+    section one, this analysis's watched in section three -- are drawn one per
+    reading while the series carries the threshold blocks, and which readings
+    they are changes with every analysis (the page is rolled by editing
+    `series/amzn.json` alone). So the pin counts the permanent charts and adds
+    whichever threshold charts are published and reach 2016."""
+    page = js_payload(ROOT / "data" / "amzn.js", "window.DASH")
+    return sum(1 for section in page["sections"] for ex in section["exhibits"]
+               if re.search(r"风险线|多头确认线", ex["title"])
+               and (first_year(ex) or TARGET_YEAR + 1) <= TARGET_YEAR)
+
+
 def _tsm_advanced_count() -> dict:
     """The process-mix note counts the quarters since 2021Q1 in which the page's
     summed 7nm-and-below line equals TSMC's own aggregate. The count grows by
@@ -346,7 +359,7 @@ def _cost_threshold_reach() -> int:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amd": 15 + _amd_threshold_reach(), "amzn": 13, "arm": 0, "asml": 24, "avgo": 16, "axp": 7 + _axp_threshold_reach(), "bc": 3, "cboe": 8 + _cboe_threshold_reach(), "cdns": 10, "cfr": 20, "cme": 13 + _cme_threshold_reach(),
+    "amd": 15 + _amd_threshold_reach(), "amzn": 9 + _amzn_threshold_reach(), "arm": 0, "asml": 24, "avgo": 16, "axp": 7 + _axp_threshold_reach(), "bc": 3, "cboe": 8 + _cboe_threshold_reach(), "cdns": 10, "cfr": 20, "cme": 13 + _cme_threshold_reach(),
     "cost": 11 + _cost_threshold_reach(), "googl": 11, "hkex": 15, "ibkr": 26, "ker": 11 + _ker_threshold_reach(), "ma": 17, "mc": 9, "mco": 13, "meta": 10,
     "msci": 23, "msft": 8, "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 7 + _nke_threshold_reach(), "nvda": 10, "pm": 8,
     "race": 12, "rms": 15, "samsung": 0, "schw": 10, "skhynix": 4, "snps": 8,
@@ -380,6 +393,32 @@ def key_matches(key: str, title: str) -> bool:
     if "#" not in key:
         return key in title
     return title_shape(key) in title_shape(title)
+
+
+# Amazon's threshold-line charts are drawn one per reading of the lines the page
+# settles (last quarter's analysis) and watches (this quarter's), so which short
+# ones exist changes with every analysis -- and the page is rolled by editing
+# `series/amzn.json` alone. Each floor below applies only while a chart it
+# names is published; a key for a chart that is not on the page would be an
+# unused excuse, and the site totals below count these the same way.
+_AMZN_THRESHOLD_FLOORS = {
+    "AWS backlog 单季净增": ("checked: Amazon has disclosed AWS-related unrecognized customer-contract commitments (original term over one year) in every 10-Q/10-K since the quarter ended 2018-03-31 (Q1 2018 10-Q 0001018724-18-000072: \"$12.4 billion as of March 31, 2018\"); the FY2017 10-K (0001018724-18-000005) and the Q3 2017 10-Q (0001018724-17-000135) print no such figure. All 34 quarters since are in the series, so 2018Q1 is the disclosure floor.", "disclosure"),
+    "AWS backlog 环比增速": ("same disclosure floor as the net-addition chart: the balance is first "
+                         "printed for 2018-03-31, so the first growth rate is 2018Q2.", "disclosure"),
+    "AWS backlog 余额": ("same disclosure floor: the balance is first printed for 2018-03-31.", "disclosure"),
+    "北美分部经营利润率": ("the North America segment table in this file begins 2019Q1.", "coverage"),
+    "单季现金 CapEx（净额": ("the net measure needs proceeds from sales and incentives, which this file "
+                         "carries for the reviewed quarters only.", "coverage"),
+}
+
+
+def _amzn_threshold_floors() -> dict:
+    """The entries of `_AMZN_THRESHOLD_FLOORS` whose chart is published and short."""
+    page = js_payload(ROOT / "data" / "amzn.js", "window.DASH")
+    short = [ex["title"] for section in page["sections"] for ex in section["exhibits"]
+             if (first_year(ex) or TARGET_YEAR) > TARGET_YEAR]
+    return {key: value for key, value in _AMZN_THRESHOLD_FLOORS.items()
+            if any(key_matches(key, title) for title in short)}
 
 
 # Pages whose migration is finished. For these the strict rule applies: every
@@ -568,20 +607,24 @@ CONVERTED = {
                 "quarters.",
     },
     "amzn": {
-        # Two floors: the guidance record and the segment tables. Both are the
-        # earliest quarter the disclosure exists in, not the earliest fetched.
-        "净销售额": "the quarterly outlook record in this file starts with the 2017Q3 "
-                "release.",
-        "经营利润相对指引中值": 'not a floor at all -- checked against the filings: Amazon has guided operating income as a RANGE in every quarterly release since at least 2011. The Q1 2016 release guiding Q2 2016 reads "Operating income is expected to be between $375 million and $975 million" (0001018724-16-000225). This is a fetch gap; the backfill is in flight.',
+        # The guided record itself runs from the Q1 2016 guide (43 guided
+        # quarters, the range bands in section one); only its two deviation
+        # views are cut, on purpose, to the latest twenty finished quarters.
+        "净销售额": "a deliberate twenty-quarter cut (DEVIATION_WINDOW in build/amzn.py): the full "
+                "guided record from 2016Q1 is the range band drawn just above it, and the "
+                "deviation bars keep only the latest twenty so each bar stays readable.",
+        "经营利润相对指引中值": "the same deliberate twenty-quarter cut of the operating-income "
+                       "record, whose full 2016Q1-on range band sits above it. (This used to "
+                       "read as a fetch gap; the backfill to the Q1 2016 guide has landed.)",
         "TTM 自由现金流": "Amazon's own trailing free-cash-flow figure, as the company "
                      "prints it, from the 2019Q1 release on.",
         "三个分部的经营利润率": "the North America and International segment tables begin "
                         "2019Q1; only AWS reaches 2016.",
-        "北美分部经营利润率": "same segment floor.",
         "广告同比": 'verified against the filings and correct: the seven-line revenue disaggregation\'s earliest available quarter is 2020Q3, published retroactively alongside five newer quarters in the 2021Q4 release. Advertising sat inside "Other" before that.',
-        "AWS backlog 单季净增": "checked: Amazon has disclosed AWS-related unrecognized customer-contract commitments (original term over one year) in the commitments note of every 10-Q/10-K since the quarter ended 2018-03-31 -- about 30 quarters, not four. 2016-2017 is genuinely absent, so this chart's honest floor is 2018Q1 rather than 2016Q1. Fetch gap for everything after that.",
-        "单季现金 CapEx（净额": "the net measure needs proceeds from sales and incentives, "
-                          "which this file carries for twelve quarters.",
+        # The threshold-line charts' floors ride on the page (see
+        # _AMZN_THRESHOLD_FLOORS): which of them exist depends on the analyses
+        # the quarter settles and watches.
+        **{key: reason for key, (reason, _) in _amzn_threshold_floors().items()},
         "总收入同比": "a year-on-year line has no base for 2016Q1-Q4; the record starts "
                   "2017Q1.",
         "资本强度": "quarterly *gross* capital expenditure does not exist for 2016 -- "
@@ -1421,14 +1464,12 @@ FLOOR_KIND = {
     #  and  are a to-do list, not an answer. The test below
     # prints them so they cannot quietly become permanent.
     'amzn': {
-        '净销售额': 'coverage',
-        '经营利润相对指引中值': 'coverage',
+        '净销售额': 'design',
+        '经营利润相对指引中值': 'design',
         'TTM 自由现金流': 'coverage',
         '三个分部的经营利润率': 'coverage',
-        '北美分部经营利润率': 'coverage',
         '广告同比': 'disclosure',
-        'AWS backlog 单季净增': 'coverage',
-        '单季现金 CapEx（净额': 'coverage',
+        **{key: kind for key, (_, kind) in _amzn_threshold_floors().items()},
         '总收入同比': 'coverage',
         '资本强度': 'disclosure',
     },
@@ -1759,7 +1800,11 @@ class ChartWindowTest(unittest.TestCase):
         by_kind = {}
         for slug, title, kind in pending:
             by_kind.setdefault(kind, []).append(f"{slug}/{title}")
-        self.assertEqual(len(by_kind.get("coverage", [])), 38,
+        # Amazon's threshold-chart floors come and go with its threshold blocks
+        # (see _AMZN_THRESHOLD_FLOORS); the pins count the rest and add those
+        # that are published, the way REACH_2016 does for the same charts.
+        amzn = collections.Counter(kind for _, kind in _amzn_threshold_floors().values())
+        self.assertEqual(len(by_kind.get("coverage", [])), 33 + amzn["coverage"],
                          "charts whose data exists and has not been fetched")
         # Zero, and that is the point: every exemption on this page has now been
         # read against an actual pre-floor filing. The fourteen that had never
@@ -1772,8 +1817,8 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 182)
-        self.assertEqual(settled.count("design"), 38)
+        self.assertEqual(settled.count("disclosure"), 182 + amzn["disclosure"])
+        self.assertEqual(settled.count("design"), 40 + amzn["design"])
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
         """Every short chart either names its reason or is counted here.
