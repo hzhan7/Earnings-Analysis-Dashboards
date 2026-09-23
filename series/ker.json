@@ -1,5 +1,5 @@
 {
- "_about": "Kering (KER.PA). Built by consolidate/make_series.py from twelve adjudicated ledgers (two blind transcriptions per unit, every disagreement settled against the page). Kering is not an SEC filer; every source is a kering.com download or an AMF OAM filing.",
+ "_about": "Kering (KER.PA). Built by consolidate/make_series.py from twelve adjudicated ledgers (two blind transcriptions per unit, every disagreement settled against the page). Kering is not an SEC filer; every source is a kering.com download or an AMF OAM filing. The blocks new_grid_retail_regions, new_grid_halves, half_cash_bridge, followup_closure, prior_kpi_settlement, next_kpi and report_gaps were keyed by hand on 2026-09-23 (four-section format pass); each carries its sources in its _what, and corpus_audit.single_read names the numeric ones.",
  "latest": {
   "period": "Q2 2026",
   "period_end": "2026-06-30",
@@ -39,110 +39,264 @@
   "net_debt_eur_bn_printed": 3.3,
   "net_debt_change_eur_bn_printed": 4.7,
   "outlook_quote": "its objective remains to return to growth and improve profitability",
-  "source": "Kering「2026 First-Half Results」新闻稿（2026-07-28，kering.com，KER_H1_2026_results_release）：首页要点「Q2 revenue at €3,652 million, +2% on a comparable basis」「recurring operating margin at 12.8% of revenue; €921 million」「Net debt: €3.3 billion reduced by €4.7 billion」；第 2 页 FINANCIAL INDICATORS 表（Revenue 7 220 / 7 439，Recurring operating income 921 / 920，% of revenue 12.8% / 12.4% / +0.4pts）；第 3 页 Revenue 表 Q2 2026 / Q2 2025（Kering Fashion & Leather Goods 2,948 / 2,986 +0%，of which Gucci 1,410 / 1,456 −2%，Kering Jewelry 252 / 219 +18%，Kering Eyewear 476 / 445 +8%，KERING 3,652 / 3,626 +2%；H1 Gucci 2,757）与 Recurring operating income 表（of which Gucci 468）；Gucci 段「Its recurring operating margin was 17.0%」；OUTLOOK 段原话；附录合并损益表 Gross margin 5,170。净负债精确值取自 2026 First Half Report 第 2.3 节「NET DEBT AS OF JUNE 30 3,324」「Net debt as of January 1 8,039」。Gucci 北美零售可比 +9% 取自 H1 2026 业绩演示材料第 36 页「Retail by geography」表 Q2 26 列（North America +9%，Total Retail −2%；新闻稿第 4 页「a 2% decline on a comparable basis」同值）。",
+  "source": "Kering「2026 First-Half Results」新闻稿（2026-07-28，kering.com，KER_H1_2026_results_release）：首页要点「Q2 revenue at €3,652 million, +2% on a comparable basis」「recurring operating margin at 12.8% of revenue; €921 million」「Net debt: €3.3 billion reduced by €4.7 billion」；第 2 页 FINANCIAL INDICATORS 表（Revenue 7 220 / 7 439，Recurring operating income 921 / 920，% of revenue 12.8% / 12.4% / +0.4pts）；第 3 页 Revenue 表 Q2 2026 / Q2 2025（Kering Fashion & Leather Goods 2,948 / 2,986 +0%，of which Gucci 1,410 / 1,456 −2%，Kering Jewelry 252 / 219 +18%，Kering Eyewear 476 / 445 +8%，KERING 3,652 / 3,626 +2%；H1 Gucci 2,757）与 Recurring operating income 表（of which Gucci 468）；Gucci 段「Its recurring operating margin was 17.0%」；OUTLOOK 段原话；附录合并损益表 Gross margin 5,170。净负债精确值取自 2026 First Half Report 第 2.3 节「NET DEBT AS OF JUNE 30 3,324」「Net debt as of January 1 8,039」。Gucci 北美零售可比 +9% 取自 H1 2026 业绩演示材料第 36 页「Retail by geography」表 Q2 26 列（North America +9%，Total Retail −2%；新闻稿第 4 页「a 2% decline on a comparable basis」同值）。眼镜「Its recurring operating margin was 23.0%」（新闻稿第 6 页）；经营现金流 2,324 / 1,472 与营运资金变动 602 / (261) 取自新闻稿第 13 页合并现金流量表，与半年度财务报告 2.3 节同表一致。",
   "checked_on": "2026-09-19",
   "q_gucci_na_retail_comparable_pct": 9,
   "q_gucci_retail_comparable_pct": -2,
-  "report": {
-   "file": "2026-07-28 KER Q2 2026 vs Q1 2026 Analysis.md",
-   "prior_files": [
-    "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis.md",
-    "2026-04-17 KER Q1 2026 vs Q4 2025 Analysis（估值与隐性指引版）.md"
-   ],
-   "followup_counts": {
-    "已闭环": 6,
-    "部分闭环": 6,
-    "上季判断失效": 1,
-    "未回答": 1
+  "note": {
+   "source": "本季：2026-07-28 KER Q2 2026 vs Q1 2026 Analysis.md 第 0.1 节「上季 Follow-up 逐项闭环」14 行的「结论」栏、第 8 节「关键观察指标」20 行的「下一阈值」栏；上季：2026-04-17 KER Q1 2026 vs Q4 2025 Analysis.md 与 2026-04-17 KER Q1 2026 vs Q4 2025 Analysis（估值与隐性指引版）.md 两份的第 8 节「关键观察指标」表。第 0 节没有汇总数，闭环计数是按逐条结论原话归类后清点的。",
+   "checked_on": "2026-09-23",
+   "followup": {
+    "total": 14,
+    "counts": {
+     "已闭环": 6,
+     "部分闭环": 6,
+     "上季判断失效": 1,
+     "未回答": 1
+    }
    },
    "prior_thresholds": [
-    [
-     "half_group_comparable",
-     2,
-     "up",
-     "加仓"
-    ],
-    [
-     "half_group_comparable",
-     -1,
-     "up",
-     "减仓"
-    ],
-    [
-     "half_recurring_margin",
-     12,
-     "up",
-     "加仓"
-    ],
-    [
-     "half_recurring_margin",
-     11.5,
-     "up",
-     "警示"
-    ],
-    [
-     "gucci_comparable",
-     -5,
-     "up",
-     "加仓"
-    ],
-    [
-     "gucci_comparable",
-     -8,
-     "up",
-     "警示"
-    ],
-    [
-     "gucci_na_retail",
-     5,
-     "up",
-     "加仓"
-    ],
-    [
-     "gucci_na_retail",
-     3,
-     "up",
-     "警示"
-    ],
-    [
-     "half_jewelry_comparable",
-     18,
-     "up",
-     "加仓"
-    ],
-    [
-     "jewelry_comparable",
-     15,
-     "up",
-     "加仓"
-    ],
-    [
-     "jewelry_comparable",
-     10,
-     "up",
-     "跟踪"
-    ],
-    [
-     "eyewear_comparable",
-     5,
-     "up",
-     "加仓"
-    ],
-    [
-     "net_debt",
-     3000,
-     "down",
-     "加仓"
-    ],
-    [
-     "net_debt",
-     4000,
-     "down",
-     "跟踪"
-    ]
+    {
+     "metric": "H1 集团可比",
+     "measure": "half_group_comparable",
+     "threshold": 2,
+     "direction": "up",
+     "gate": "加仓"
+    },
+    {
+     "metric": "H1 集团可比",
+     "measure": "half_group_comparable",
+     "threshold": -1,
+     "direction": "up",
+     "gate": "减仓"
+    },
+    {
+     "metric": "H1 利润率",
+     "measure": "half_recurring_margin",
+     "threshold": 12,
+     "direction": "up",
+     "gate": "加仓"
+    },
+    {
+     "metric": "H1 利润率",
+     "measure": "half_recurring_margin",
+     "threshold": 11.5,
+     "direction": "up",
+     "gate": "警示"
+    },
+    {
+     "metric": "Gucci 季度可比",
+     "measure": "gucci_comparable",
+     "threshold": -5,
+     "direction": "up",
+     "gate": "加仓"
+    },
+    {
+     "metric": "Gucci 季度可比",
+     "measure": "gucci_comparable",
+     "threshold": -8,
+     "direction": "up",
+     "gate": "警示"
+    },
+    {
+     "metric": "Gucci 北美零售可比",
+     "measure": "gucci_na_retail",
+     "threshold": 5,
+     "direction": "up",
+     "gate": "加仓"
+    },
+    {
+     "metric": "Gucci 北美零售可比",
+     "measure": "gucci_na_retail",
+     "threshold": 3,
+     "direction": "up",
+     "gate": "警示"
+    },
+    {
+     "metric": "H1 珠宝可比",
+     "measure": "half_jewelry_comparable",
+     "threshold": 18,
+     "direction": "up",
+     "gate": "加仓"
+    },
+    {
+     "metric": "珠宝季度可比",
+     "measure": "jewelry_comparable",
+     "threshold": 15,
+     "direction": "up",
+     "gate": "加仓"
+    },
+    {
+     "metric": "珠宝季度可比",
+     "measure": "jewelry_comparable",
+     "threshold": 10,
+     "direction": "up",
+     "gate": "跟踪"
+    },
+    {
+     "metric": "眼镜季度可比",
+     "measure": "eyewear_comparable",
+     "threshold": 5,
+     "direction": "up",
+     "gate": "加仓"
+    },
+    {
+     "metric": "H1 末净负债",
+     "measure": "net_debt",
+     "threshold": 3000,
+     "direction": "down",
+     "gate": "加仓"
+    },
+    {
+     "metric": "H1 末净负债",
+     "measure": "net_debt",
+     "threshold": 4000,
+     "direction": "down",
+     "gate": "跟踪"
+    }
    ],
-   "source": "2026-07-28 KER Q2 2026 vs Q1 2026 Analysis.md 第 0.1 节「上季 Follow-up 逐项闭环」14 行的「结论」栏；上季两份分析稿第 8 节「关键观察指标」表的阈值原话。分析稿第 0 节没有汇总数，计数按逐条结论原话归类后清点。"
-  }
+   "next_thresholds": [
+    {
+     "row": 1,
+     "metric": "集团季度可比",
+     "measure": "group_comparable",
+     "threshold": 1,
+     "direction": "up",
+     "gate": "加仓"
+    },
+    {
+     "row": 1,
+     "metric": "集团季度可比",
+     "measure": "group_comparable",
+     "threshold": -3,
+     "direction": "up",
+     "gate": "减仓"
+    },
+    {
+     "row": 2,
+     "metric": "Gucci 季度可比",
+     "measure": "gucci_comparable",
+     "threshold": 0,
+     "direction": "up",
+     "gate": "加仓"
+    },
+    {
+     "row": 2,
+     "metric": "Gucci 季度可比",
+     "measure": "gucci_comparable",
+     "threshold": -5,
+     "direction": "up",
+     "gate": "警示"
+    },
+    {
+     "row": 3,
+     "metric": "Gucci 零售可比",
+     "measure": "gucci_retail",
+     "threshold": 0,
+     "direction": "up",
+     "gate": "转正"
+    },
+    {
+     "row": 5,
+     "metric": "Gucci 北美零售可比",
+     "measure": "gucci_na_retail",
+     "threshold": 5,
+     "direction": "up",
+     "gate": "维持"
+    },
+    {
+     "row": 7,
+     "metric": "下半年利润率",
+     "measure": "half_recurring_margin",
+     "threshold": 12.8,
+     "direction": "up",
+     "gate": "必须"
+    },
+    {
+     "row": 7,
+     "metric": "下半年利润率",
+     "measure": "half_recurring_margin",
+     "threshold": 13.5,
+     "direction": "up",
+     "gate": "偏多"
+    },
+    {
+     "row": 8,
+     "metric": "下半年毛利率",
+     "measure": "half_gross_margin",
+     "threshold": "same_half_last_year",
+     "direction": "up",
+     "gate": "同比不降"
+    },
+    {
+     "row": 13,
+     "metric": "年末净负债",
+     "measure": "net_debt",
+     "threshold": 3000,
+     "direction": "down",
+     "gate": "要求"
+    },
+    {
+     "row": 13,
+     "metric": "年末净负债",
+     "measure": "net_debt",
+     "threshold": 4000,
+     "direction": "down",
+     "gate": "警示"
+    },
+    {
+     "row": 15,
+     "metric": "珠宝季度可比",
+     "measure": "jewelry_comparable",
+     "threshold": 15,
+     "direction": "up",
+     "gate": "保持"
+    },
+    {
+     "row": 15,
+     "metric": "珠宝季度可比",
+     "measure": "jewelry_comparable",
+     "threshold": 10,
+     "direction": "up",
+     "gate": "降温"
+    },
+    {
+     "row": 17,
+     "metric": "眼镜季度可比",
+     "measure": "eyewear_comparable",
+     "threshold": 5,
+     "direction": "up",
+     "gate": "要求"
+    },
+    {
+     "row": 17,
+     "metric": "眼镜半年利润率",
+     "measure": "half_eyewear_margin",
+     "threshold": 20,
+     "direction": "up",
+     "gate": "要求"
+    }
+   ],
+   "next_rows_total": 20,
+   "next_rows_not_plotted": [
+    4,
+    6,
+    9,
+    10,
+    11,
+    12,
+    14,
+    16,
+    18,
+    19,
+    20
+   ]
+  },
+  "h_eyewear_recurring_operating_margin_pct": 23.0,
+  "h_net_cash_from_operating_activities_eur_m": 2324,
+  "h_prior_net_cash_from_operating_activities_eur_m": 1472,
+  "h_change_in_working_capital_eur_m": 602,
+  "h_prior_change_in_working_capital_eur_m": -261
  },
  "long_quarters": [
   "2016Q1",
@@ -867,9 +1021,26 @@
  ],
  "corpus_audit": {
   "period": "Q2 2026",
-  "_what": "「本页读过的全部文件」这类普查句的范围：到本季为止的全部来源都经过双人盲读（double_read），三条品牌线的每一次重印都与首次公布对过（reprint_census），例外列在 reprint_exceptions。换季时读完新一季的文件再改戳；没有重新普查就删掉整块，相关句子不出。",
+  "_what": "「本页读过的全部文件」这类普查句的范围：到本季为止的全部来源都经过双人盲读（double_read），三条品牌线的每一次重印都与首次公布对过（reprint_census），例外列在 reprint_exceptions。换季时读完新一季的文件再改戳；没有重新普查就删掉整块，相关句子不出。single_read 列出后来由一人录入、没有进双人盲读的块，以及每一格对过的另一份文件；页面把它们写成那句普查句的例外。",
   "double_read": true,
-  "reprint_census": true
+  "reprint_census": true,
+  "single_read": [
+   {
+    "block": "new_grid_retail_regions",
+    "zh": "Gucci 分地区零售表",
+    "checked_against": "Gucci 分地区零售表 2025 年四季逐格对过各季自己的演示材料，2026 年一季度北美对过收入公告正文，二季度零售合计对过新闻稿"
+   },
+   {
+    "block": "new_grid_halves",
+    "zh": "新分部半年表",
+    "checked_against": "新分部半年表的 H1 2025 对过 2026 上半年新闻稿的比较栏、H1 2026 对过业绩演示材料的同一张表，三个半年的分部收入对过新分部季度表两季之和"
+   },
+   {
+    "block": "half_cash_bridge",
+    "zh": "上半年经营现金流三行",
+    "checked_against": "经营现金流三行对过半年度财务报告 2.3 节的同一张表，剔除房地产与 Gucci Beauty 协议的自由现金流对过财务报告正文给的两项金额"
+   }
+  ]
  },
  "other_houses_perimeter_2016_2018": [
   {
@@ -1154,6 +1325,125 @@
    "KER_FY_2025_segment_reporting_restatement_release",
    "KER_2026Q1_revenue_presentation",
    "KER_H1_2026_presentation"
+  ]
+ },
+ "new_grid_halves": {
+  "_what": "新分部口径的半年收入与经常性营业利润（€M）与公司印出的利润率（%）。H1 2025、H2 2025 取自 2026-03-16 新分部重述公告第 2 页（S1 2025 / S2 2025 两栏，两栏都是印出值，不是全年减上半年）；H1 2026 取自 2026 上半年业绩新闻稿第 3 页，其 H1 2025 比较栏与重述公告逐格相同。利润率存公司印出的一位小数：印出值与两个取整后的金额相除不一定相同（珠宝 H1 2026 印 6.2%，32 ÷ 521 = 6.1%）。换半年时追加一格。",
+  "halves": [
+   "H1 2025",
+   "H2 2025",
+   "H1 2026"
+  ],
+  "flag": [
+   "printed",
+   "printed",
+   "printed"
+  ],
+  "revenue_eur_m": {
+   "fashion_leather_goods": [
+    6115,
+    6094,
+    5800
+   ],
+   "gucci": [
+    3027,
+    2965,
+    2757
+   ],
+   "jewelry": [
+    455,
+    480,
+    521
+   ],
+   "eyewear": [
+    921,
+    671,
+    965
+   ],
+   "corporate_and_other": [
+    71,
+    65,
+    65
+   ],
+   "eliminations": [
+    -123,
+    -74,
+    -131
+   ],
+   "total": [
+    7439,
+    7236,
+    7220
+   ]
+  },
+  "roi_eur_m": {
+   "fashion_leather_goods": [
+    832,
+    792,
+    828
+   ],
+   "gucci": [
+    486,
+    480,
+    468
+   ],
+   "jewelry": [
+    16,
+    15,
+    32
+   ],
+   "eyewear": [
+    186,
+    66,
+    222
+   ],
+   "corporate_and_other": [
+    -111,
+    -163,
+    -152
+   ],
+   "eliminations": [
+    -3,
+    1,
+    -9
+   ],
+   "total": [
+    920,
+    711,
+    921
+   ]
+  },
+  "margin_printed_pct": {
+   "fashion_leather_goods": [
+    13.6,
+    13.0,
+    14.3
+   ],
+   "gucci": [
+    16.0,
+    16.2,
+    17.0
+   ],
+   "jewelry": [
+    3.5,
+    3.3,
+    6.2
+   ],
+   "eyewear": [
+    20.1,
+    9.9,
+    23.0
+   ],
+   "total": [
+    12.4,
+    9.8,
+    12.8
+   ]
+  },
+  "src": [
+   "KER_FY_2025_segment_reporting_restatement_release",
+   "KER_FY_2025_segment_reporting_restatement_release",
+   "KER_H1_2026_results_release"
   ]
  },
  "halves": [
@@ -1775,6 +2065,33 @@
   "headline": "降幅里有 €4.0B 是出售 Kering Beauté 的现金",
   "note": "公司在半年报里写明现金中包含 2026-03-31 完成出售 Kering Beauté 收到的 €4.0 billion。所以这一段下降主要是卖资产，不是经营现金流。"
  },
+ "half_cash_bridge": {
+  "period": "H1 2026",
+  "_what": "本半年与上年同期的经营现金流三行、资本开支两行与自由现金流（€M），公司在同一份新闻稿的合并现金流量表里并排印出（第 13 页；上年同期已剔除 Kering Beauté）。fcf_ex 两栏是演示材料第 28–29 页印的「剔除房地产与 Gucci Beauty 协议」的自由现金流。换到下一个半年时按新一期重录并改戳，拿不到同口径的两期就删掉整块。",
+  "compare": "H1 2025",
+  "doc": "KER_H1_2026_results_release",
+  "fcf_ex_doc": "KER_H1_2026_presentation",
+  "current": {
+   "cash_flow_before_tax_dividends_interest": 1822,
+   "change_in_working_capital": 602,
+   "income_tax_paid": -100,
+   "net_cash_from_operating_activities": 2324,
+   "capex": -419,
+   "disposals": 708,
+   "free_cash_flow_from_operations": 2613,
+   "fcf_ex_real_estate_and_gucci_beauty": 1816
+  },
+  "prior": {
+   "cash_flow_before_tax_dividends_interest": 1895,
+   "change_in_working_capital": -261,
+   "income_tax_paid": -162,
+   "net_cash_from_operating_activities": 1472,
+   "capex": -431,
+   "disposals": 1342,
+   "free_cash_flow_from_operations": 2383,
+   "fcf_ex_real_estate_and_gucci_beauty": 1083
+  }
+ },
  "annual_house": {
   "gucci": {
    "years": [
@@ -2238,65 +2555,303 @@
   "has_figures": false,
   "quote": "its objective remains to return to growth and improve profitability"
  },
+ "report_gaps": {
+  "period": "Q2 2026",
+  "_what": "本季分析稿第 1、7 节里重要、但本页画不出来的本季结论，一句话交代原因。换季时按下一季分析稿重写并改戳，没有就删掉整块。",
+  "text": "分析稿另有两条本季结论这里画不出来：管理层说三季度集团可比「约持平」、被追问时没有再确认「所有品牌全年增长」，都只出现在电话会上，本页不用电话会的数；Gucci 中国是它眼里最大的反证，但公司的分地区表不单列中国大陆。"
+ },
  "next_kpi": {
   "period": "Q2 2026",
-  "_note": "下季阈值是本地研究设定，不是公司指引。当前值由页面按 measure 从序列现算：可比增速读最新一季，半年毛利率与经常性营业利润率读最新半年（利润率取公司印出的一位小数，毛利率公司不印、取自算值），净负债读最新期末。换季时按新一季的本地分析改阈值与理由并改戳。",
+  "_what": "本季本地分析稿（2026-07-28 KER Q2 2026 vs Q1 2026 Analysis.md）第 8 节「关键观察指标」二十行。entries 是能用公司印出的数字量化的行，一行有两条阈值就拆成两条：item 是第 8 节「指标」一栏原话，quote 是「下一阈值」一栏原话（去掉了原文的 Markdown 加粗），why 是「投资动作」一栏原话；rule 与 threshold 取自 quote，gate 是 quote 里给的动作词（没有动作词的记作「要求」，不论本季做没做到）。第 8 行的阈值是「H2 同比不再下降」，没有写数，threshold_rule 让页面用上年同期（H2 2025）的半年毛利率现算。当前值由页面按 measure 从序列现算，不手录。not_plotted 是没有画进图的行与原因。换季时换成下一季分析稿第 8 节并改戳。",
   "entries": [
    {
-    "metric": "集团季度可比增速",
+    "row": 1,
+    "item": "Q3集团 comparable",
     "measure": "group_comparable",
-    "direction": "up",
+    "metric": "集团季度可比",
+    "rule": "≥",
     "threshold": 1,
     "unit": "pct",
-    "why": "本季是 2023 年二季度之后第一次为正；跌回 +1% 以下就回到持平附近，转正不成立。"
+    "signed": true,
+    "gate": "加仓",
+    "quote": "≥+1%加仓；≤-3%减仓",
+    "why": "核验Q2是否真拐点",
+    "direction": "up"
    },
    {
-    "metric": "Gucci 季度可比增速",
+    "row": 1,
+    "item": "Q3集团 comparable",
+    "measure": "group_comparable",
+    "metric": "集团季度可比",
+    "rule": "≤",
+    "threshold": -3,
+    "unit": "pct",
+    "signed": true,
+    "gate": "减仓",
+    "quote": "≥+1%加仓；≤-3%减仓",
+    "why": "核验Q2是否真拐点",
+    "direction": "up"
+   },
+   {
+    "row": 2,
+    "item": "Gucci comparable",
     "measure": "gucci_comparable",
-    "direction": "up",
+    "metric": "Gucci 季度可比",
+    "rule": "≥",
+    "threshold": 0,
+    "unit": "pct",
+    "signed": true,
+    "gate": "加仓",
+    "quote": "Q3 ≥0%加仓；≤-5%警示",
+    "why": "最直接品牌动能",
+    "direction": "up"
+   },
+   {
+    "row": 2,
+    "item": "Gucci comparable",
+    "measure": "gucci_comparable",
+    "metric": "Gucci 季度可比",
+    "rule": "≤",
     "threshold": -5,
     "unit": "pct",
-    "why": "连续为负但在收窄；重新跌破 −5% 意味着收窄趋势中断。"
+    "signed": true,
+    "gate": "警示",
+    "quote": "Q3 ≥0%加仓；≤-5%警示",
+    "why": "最直接品牌动能",
+    "direction": "up"
    },
    {
-    "metric": "珠宝季度可比增速",
-    "measure": "jewelry_comparable",
-    "direction": "up",
-    "threshold": 10,
+    "row": 3,
+    "item": "Gucci retail",
+    "measure": "gucci_retail",
+    "metric": "Gucci 零售可比",
+    "rule": ">",
+    "threshold": 0,
     "unit": "pct",
-    "why": "珠宝是集团转正的主要来源之一；低于两位数说明这条腿在降温。"
+    "signed": true,
+    "gate": "转正",
+    "quote": "Q3转正且traffic改善",
+    "why": "排除只靠ticket/AUR",
+    "direction": "up"
    },
    {
-    "metric": "眼镜季度可比增速",
-    "measure": "eyewear_comparable",
-    "direction": "up",
+    "row": 5,
+    "item": "Gucci North America",
+    "measure": "gucci_na_retail",
+    "metric": "Gucci 北美零售可比",
+    "rule": "≥",
     "threshold": 5,
     "unit": "pct",
-    "why": "眼镜以批发为主、节奏与时装不同；低于 +5% 时它不再能对冲 Gucci。"
+    "signed": true,
+    "gate": "维持",
+    "quote": "维持 ≥+5%",
+    "why": "验证新品/品牌资产",
+    "direction": "up"
    },
    {
-    "metric": "半年毛利率（对上年同期重述值）",
-    "measure": "half_gross_margin",
-    "direction": "up",
-    "threshold": 72.71,
-    "unit": "pct",
-    "why": "上半年利润率的改善全部来自费用率；毛利率回到上年同期以上，才说明产品与渠道本身在修复。"
-   },
-   {
-    "metric": "半年经常性营业利润率（对上年同期重述值）",
+    "row": 7,
+    "item": "H2 recurring margin",
     "measure": "half_recurring_margin",
-    "direction": "up",
-    "threshold": 12.4,
+    "metric": "下半年利润率",
+    "rule": ">",
+    "threshold": 12.8,
     "unit": "pct",
-    "why": "费用压缩能撑多久是下一个半年的问题；跌回上年同期以下说明费用红利已经用完。"
+    "signed": false,
+    "gate": "必须",
+    "quote": "必须 >12.8%；≥13.5%偏多",
+    "why": "管理层硬承诺",
+    "direction": "up"
    },
    {
-    "metric": "期末净负债",
+    "row": 7,
+    "item": "H2 recurring margin",
+    "measure": "half_recurring_margin",
+    "metric": "下半年利润率",
+    "rule": "≥",
+    "threshold": 13.5,
+    "unit": "pct",
+    "signed": false,
+    "gate": "偏多",
+    "quote": "必须 >12.8%；≥13.5%偏多",
+    "why": "管理层硬承诺",
+    "direction": "up"
+   },
+   {
+    "row": 8,
+    "item": "Gross margin",
+    "measure": "half_gross_margin",
+    "metric": "下半年毛利率",
+    "rule": "≥",
+    "unit": "pct",
+    "signed": false,
+    "gate": "同比不降",
+    "quote": "H2同比不再下降",
+    "why": "判断盈利质量",
+    "direction": "up",
+    "threshold_rule": "same_half_last_year"
+   },
+   {
+    "row": 13,
+    "item": "净债务",
     "measure": "net_debt",
-    "direction": "down",
+    "metric": "年末净负债",
+    "rule": "<",
+    "threshold": 3000,
+    "unit": "eur_m",
+    "signed": false,
+    "gate": "要求",
+    "quote": "FY <€3bn；>€4bn警示",
+    "why": "资本纪律",
+    "direction": "down"
+   },
+   {
+    "row": 13,
+    "item": "净债务",
+    "measure": "net_debt",
+    "metric": "年末净负债",
+    "rule": ">",
     "threshold": 4000,
     "unit": "eur_m",
-    "why": "出售 Kering Beauté 之后降到 €3.3B；重新高于 €4B 说明经营现金流没有接上资产出售。"
+    "signed": false,
+    "gate": "警示",
+    "quote": "FY <€3bn；>€4bn警示",
+    "why": "资本纪律",
+    "direction": "down"
+   },
+   {
+    "row": 15,
+    "item": "Jewelry comparable",
+    "measure": "jewelry_comparable",
+    "metric": "珠宝季度可比",
+    "rule": "≥",
+    "threshold": 15,
+    "unit": "pct",
+    "signed": true,
+    "gate": "保持",
+    "quote": "≥+15%保持；<+10%降温",
+    "why": "多引擎持续性",
+    "direction": "up"
+   },
+   {
+    "row": 15,
+    "item": "Jewelry comparable",
+    "measure": "jewelry_comparable",
+    "metric": "珠宝季度可比",
+    "rule": "<",
+    "threshold": 10,
+    "unit": "pct",
+    "signed": true,
+    "gate": "降温",
+    "quote": "≥+15%保持；<+10%降温",
+    "why": "多引擎持续性",
+    "direction": "up"
+   },
+   {
+    "row": 17,
+    "item": "Eyewear comparable/margin",
+    "measure": "eyewear_comparable",
+    "metric": "眼镜季度可比",
+    "rule": "≥",
+    "threshold": 5,
+    "unit": "pct",
+    "signed": true,
+    "gate": "要求",
+    "quote": "增长≥+5%、margin≥20%",
+    "why": "稳定利润池",
+    "direction": "up"
+   },
+   {
+    "row": 17,
+    "item": "Eyewear comparable/margin",
+    "measure": "half_eyewear_margin",
+    "metric": "眼镜半年利润率",
+    "rule": "≥",
+    "threshold": 20,
+    "unit": "pct",
+    "signed": false,
+    "gate": "要求",
+    "quote": "增长≥+5%、margin≥20%",
+    "why": "稳定利润池",
+    "direction": "up"
+   }
+  ],
+  "not_plotted": [
+   {
+    "row": 4,
+    "item": "Gucci China",
+    "quote": "好于-5%加仓；≤-10%减仓",
+    "why_report": "最大估值闸门",
+    "why": "季度公告与演示材料的分地区表不单列中国大陆（它在亚太里），没有数可以对这条线。"
+   },
+   {
+    "row": 6,
+    "item": "Primavera/Core Cruise",
+    "quote": "披露全价sell-through、AUR、缺货率",
+    "why_report": "验证新品质量",
+    "why": "要的是公司披露这几个数本身；本季公告与演示材料里一个都没有。"
+   },
+   {
+    "row": 9,
+    "item": "FY OpEx",
+    "quote": "FY CC下降",
+    "why_report": "验证guide upgrade",
+    "why": "阈值是固定汇率口径的全年费用下降：新闻稿、演示材料与半年度财务报告里只有报告口径（演示材料：H1 集团费用 −5%），分析稿引的固定汇率 −3% 出自电话会；阈值为 0，百分比余量也没有定义。"
+   },
+   {
+    "row": 10,
+    "item": "F&LG库存",
+    "quote": "2026/12完成且不靠off-price",
+    "why_report": "现金与品牌质量",
+    "why": "€1bn 目标只针对时装与皮具；新闻稿与半年度财务报告里的库存只有集团合计，没有时装与皮具这一段。"
+   },
+   {
+    "row": 11,
+    "item": "WCR",
+    "quote": "H2不大幅反转",
+    "why_report": "防止FCF虚高",
+    "why": "「不大幅反转」没有给数值；上半年营运资金的变动见本季重点的经营现金流桥。"
+   },
+   {
+    "row": 12,
+    "item": "FCF ex-real-estate / Beauty proceeds",
+    "quote": "FY ≥€2.5bn且WCR正常化",
+    "why_report": "经营去杠杆",
+    "why": "全年累计阈值，上半年的累计值不能拿来结算；上半年数见本季重点的经营现金流桥。"
+   },
+   {
+    "row": 14,
+    "item": "净关店",
+    "quote": "FY ≥100且销售密度上升",
+    "why_report": "关店质量",
+    "why": "全年累计阈值（公司自己的目标也是全年 100 家），半年结不了；本季公告与演示材料里没有销售密度。"
+   },
+   {
+    "row": 16,
+    "item": "Jewelry margin",
+    "quote": "FY/H2继续提升",
+    "why_report": "规模化验证",
+    "why": "没有给数值，也没说对着上半年还是上年同期提升；珠宝半年利润率见核对表的新分部半年表。"
+   },
+   {
+    "row": 18,
+    "item": "Corporate & Other loss",
+    "quote": "H2不继续恶化",
+    "why_report": "防集团平台吞噬节省",
+    "why": "没有给数值，也没说对着上半年还是上年同期；集团其他的半年亏损见核对表的新分部半年表与本季重点的分部利润桥。"
+   },
+   {
+    "row": 19,
+    "item": "Balenciaga",
+    "quote": "总品牌恢复正增长",
+    "why_report": "非Gucci组合盲点",
+    "why": "Balenciaga 在公告里只有文字描述，没有收入或增速。"
+   },
+   {
+    "row": 20,
+    "item": "Capital allocation",
+    "quote": "维持低杠杆并披露Valentino路径",
+    "why_report": "中期尾部风险",
+    "why": "定性条件，没有数值。"
    }
   ]
  },
