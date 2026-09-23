@@ -48,6 +48,9 @@ from build.board import cn_count, headroom  # noqa: E402
 
 MARKUP = re.compile(r"</?[a-z][a-z0-9]*>", re.I)
 
+FOUR_PARTS = [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+              ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")]
+
 
 def exhibits(payload: dict) -> list[dict]:
     return [ex for section in payload["sections"] for ex in section["exhibits"]]
@@ -500,6 +503,17 @@ class BcDashboardTest(unittest.TestCase):
         self.assertNotIn("同店销售增长率", joined)
 
     # ── publication ─────────────────────────────────────────────────────────
+    def test_the_page_has_the_four_parts_of_the_site_format(self) -> None:
+        """The TSM page's four titles, word for word, on a half-year page too:
+        this page used to call them 「公司的指引，和它没说的口径」「本期重点」
+        「下半年要跟踪什么」, and the structure sentence in the notes named the
+        same private order."""
+        self.assertEqual([(s["id"], s["title"]) for s in self.payload["sections"]], FOUR_PARTS)
+        for section in self.payload["sections"]:
+            self.assertTrue(section["exhibits"], section["id"])
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列",
+                      " ".join(self.payload["notes"]))
+
     def test_the_page_carries_the_cross_page_capex_table(self) -> None:
         titles = [table["title"] for table in self.payload["tables"]]
         self.assertTrue(any("跨页对照" in title for title in titles))
@@ -714,6 +728,8 @@ class BcRollTest(unittest.TestCase):
         self.assertIn(f"{year} 年全年业绩仪表盘", payload["title"])
         self.assertEqual(payload["latest"]["disclosed_period_label"], f"H2 {year}")
         self.assertTrue(payload["headline"].startswith("全年收入"))
+        # a full-year page keeps the same four titles; none of them names a half
+        self.assertEqual([(s["id"], s["title"]) for s in payload["sections"]], FOUR_PARTS)
         text = json.dumps(payload, ensure_ascii=False)
         self.assertNotIn(f"{year + 1} 年上半年", text)
 

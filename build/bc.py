@@ -311,7 +311,8 @@ def guidance_charts(s: dict, view: dict) -> list[dict]:
 
 
 # ── section two: the period just reported ────────────────────────────────────
-def quarter_charts(s: dict, view: dict, story: dict | None) -> list[dict]:
+def quarter_charts(s: dict, view: dict, story: dict | None) -> tuple[list[dict], dict]:
+    """This period's charts, and the multi-year regional chart that goes to the long record."""
     ch = s["channel_h1_eur_k"]
     geo = s["geography_h1_eur_k"]
     this_half = view["is_h1"] and ch["years"][-1] == view["year"]
@@ -464,7 +465,7 @@ def quarter_charts(s: dict, view: dict, story: dict | None) -> list[dict]:
                  + ("精确等于公司印出的总额。" if exact else "与公司印出的总额核对过，差额见核对抽屉。")),
         "src_extra": "口径还原为本页自算（D）；相加校验见核对抽屉。",
     }
-    return [ladder, bridge, mix, region]
+    return [ladder, bridge, mix], region
 
 
 def ifrs16_facts(s: dict) -> dict:
@@ -520,7 +521,11 @@ def next_quarter_charts(s: dict, view: dict, kpi: dict | None) -> list[dict]:
                 if slow else "")),
             "阈值为本地研究设定，不是公司指引；当前值为公司披露值或本页自算（D）。",
         ))
+    return charts
 
+
+def ifrs16_chart(s: dict) -> dict:
+    """The withdrawn lease-adjusted EBITDA: a disclosure record, so a long-run chart."""
     f = ifrs16_facts(s)
     periods, post, ex, shown = f["periods"], f["post"], f["ex"], f["shown"]
     no_bridge, dropped, silent = f["no_bridge"], f["dropped"], f["silent"]
@@ -552,8 +557,7 @@ def next_quarter_charts(s: dict, view: dict, kpi: dict | None) -> list[dict]:
                  "而那个数同样不再披露。"),
         "src_extra": "两个口径的数值与调节表均为公司印出；停止披露的时点以各期报告的替代业绩指标章节为准。",
     }
-    charts.append(ifrs)
-    return charts
+    return ifrs
 
 
 # ── section four: the long record ────────────────────────────────────────────
@@ -753,9 +757,14 @@ def build_payload(staging: dict) -> dict:
         raise ValueError(f"series `sources` has no entry for the {release} release: add it with the roll")
 
     settled = guidance_charts(s, view)
-    highlights = quarter_charts(s, view, story)
-    nxt = next_quarter_charts(s, view, kpi)
-    routine = long_charts(s, view)
+    highlights, region = quarter_charts(s, view, story)
+    quarters, margin, conv, debt = long_charts(s, view)
+    # The core net debt chart is the one line the tracking section settles at
+    # the year end, so it sits there rather than in the long record.
+    nxt = next_quarter_charts(s, view, kpi) + [debt]
+    # The long record: revenue and its growth, how the mix of regions moved,
+    # margin and the lease line that was withdrawn beside it.
+    routine = [quarters, conv, region, margin, ifrs16_chart(s)]
 
     exhibits = number_exhibits(settled + highlights + nxt + routine)
     resolve_exhibit_refs(exhibits)
@@ -870,29 +879,33 @@ def build_payload(staging: dict) -> dict:
             f'批发绝对额一年只多了 €{d_who:,.0f} 千，'
             f'而它此前连续{cn_count(grew)}年增长。</p></article>')
 
+    # The four parts and their titles are the site's format (the TSM page), word
+    # for word, on a half-year page as on a quarterly one: 「下季」 here is the
+    # next disclosure the tracked lines settle on, not a quarter of this issuer's.
     sections = [
-        {"id": "settled", "short": "指引与口径", "title": "公司的指引，和它没说的口径",
+        {"id": "settled", "short": "上季兑现", "title": "上季跟踪指标兑现了吗",
          "description": ("公司每年用同一句话给指引：营收增长「约 10%」。"
                          "这一节先看这句话在报告口径与恒定汇率下会得到相反的结论，"
                          "再看口径这一栏在申报里是什么时候才开始被填上的。"),
          "exhibits": settled_ex},
-        {"id": "quarter_highlights", "short": "本期重点", "title": "本期重点",
-         "description": "增速在哪一段掉下来、收入增量由谁贡献、渠道与区域结构走到了哪里。",
+        {"id": "quarter_highlights", "short": "本季重点", "title": "本季重点",
+         "description": "增速在哪一段掉下来、收入增量由谁贡献、渠道结构走到了哪里。",
          "exhibits": highlight_ex},
     ]
     if kpi is not None:
         breached = sum(1 for e in kpi["quantified"] if headroom(e["direction"], e["threshold"], e["current"]) < 0)
         next_words = (f"{cn_count(len(kpi['quantified']))}条阈值统一用「距阈值余量」口径，"
-                      f"其中{cn_count(breached)}条当前已越线；另有一条公司发布"
-                      f"{cn_count(sum(1 for v in s['ifrs16_disclosure_decay']['both_bases_printed'] if v))}"
-                      "年后停掉的口径，单独列出。")
+                      f"其中{cn_count(breached)}条当前已越线；核心净负债另附走势。")
     else:
-        next_words = (f"一条公司发布{cn_count(sum(1 for v in s['ifrs16_disclosure_decay']['both_bases_printed'] if v))}"
-                      "年后停掉的口径。")
-    sections.append({"id": "next_quarter", "short": f"{ahead}跟踪", "title": f"{ahead}要跟踪什么",
+        next_words = "核心净负债的走势与公司给的年末目标。"
+    sections.append({"id": "next_quarter", "short": "下季跟踪", "title": "下季要跟踪什么",
                      "description": next_words, "exhibits": next_ex})
     sections.append({"id": "routine", "short": "长期常规", "title": "长期常规跟踪",
-                     "description": "季度收入的来源构成、半年利润率的长期路径、增速收敛与净负债。",
+                     "description": ("季度收入的来源构成与增速收敛、区域结构"
+                                     f"{cn_count(len(geo['years']))}年里的变化、半年利润率的长期路径，"
+                                     "以及公司发布"
+                                     f"{cn_count(sum(1 for v in s['ifrs16_disclosure_decay']['both_bases_printed'] if v))}"
+                                     "年后停掉的那条剔除租赁准则的利润率。"),
                      "exhibits": routine_ex})
     for index, section in enumerate(sections, start=1):
         section["title"] = f"{cn_ordinal(index)}、{section['title']}"
