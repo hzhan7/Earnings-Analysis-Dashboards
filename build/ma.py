@@ -711,8 +711,13 @@ def build_payload(staging: dict) -> dict:
             f"上季 {unit_text(entry['unit'], entry['threshold'])} 的阈值"
         ),
     )
+    # The three key drivers are this quarter's reading of volume, not a
+    # threshold last quarter set: last quarter's travel line lives in the
+    # investor deck, not in these three. The chart is drawn among the
+    # quarter's highlights (see where `drivers_chart` is placed below).
     band_low, band_high = min(driver_band), max(driver_band)
-    settled_charts.append({
+    drivers_chart = {
+        "ref": "EX_DRIVERS",
         "kind": "lines",
         "title": (
             "Key Business Drivers 的三条量："
@@ -751,7 +756,7 @@ def build_payload(staging: dict) -> dict:
             "跨境量与换手笔数只披露增速；GDV 另有分地区金额（业绩发布的 Operating Performance 表），见「分地区 GDV」那张图。"
             + fill_story(story.get("drivers_src_tail", ""), figures)
         ),
-    })
+    }
 
     # ── 二、本季重点 ─────────────────────────────────────────────────────────
     cross_cn = cn["cross_border"][latest]
@@ -1003,6 +1008,7 @@ def build_payload(staging: dict) -> dict:
             ),
             "src_extra": source_filings,
         },
+        drivers_chart,
     ]
     conversion_low = min((value, index) for index, value in enumerate(trailing_conversion)
                          if value is not None)
@@ -1632,9 +1638,9 @@ def build_payload(staging: dict) -> dict:
                 "id": "settled",
                 "title": "一、上季跟踪指标兑现了吗",
                 "description": (
-                    "先结算上季留下的问题与阈值，再看本季数据——本季的关键正在于阈值没有覆盖的地方。"
+                    "先结算上季留下的问题与阈值——本季的关键正在于阈值没有覆盖的地方。"
                     if settled_headroom else
-                    "上季没有留下可结算的问题与阈值，这一节只放 Key Business Drivers 的三条量。"
+                    "本季没有上季留下的问题与阈值可结算，本节没有图。"
                 ),
                 "exhibits": exhibits[: len(settled_charts)],
             },

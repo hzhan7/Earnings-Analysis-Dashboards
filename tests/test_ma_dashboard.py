@@ -101,6 +101,26 @@ class MaDashboardTest(unittest.TestCase):
             in zip(cls.gross, cls.pn["payment_network_net_revenue"][cls.dis_from:])
         ]
 
+    def test_the_four_sections_are_the_site_format(self) -> None:
+        """上季兑现 → 本季重点 → 下季跟踪 → 长期常规, ids and titles verbatim.
+
+        Section one holds only what last quarter left behind. The three key
+        drivers used to sit there although no threshold of last quarter's is
+        drawn on them -- last quarter's travel line lives in the investor deck,
+        not in these three -- so they are this quarter's reading and belong to
+        section two."""
+        self.assertEqual(
+            [(section["id"], section["title"]) for section in self.payload["sections"]],
+            [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+             ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+        for section in self.payload["sections"]:
+            self.assertTrue(section["exhibits"], section["id"])
+        for ex in self.by_section["settled"]:
+            self.assertIn("上季", ex["title"])
+        self.assertIn(self.by_ref["EX_DRIVERS"], self.by_section["quarter_highlights"])
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列",
+                      " ".join(self.payload["notes"]))
+
     def test_the_record_starts_2016_and_the_split_starts_2022(self) -> None:
         """Two windows, and which series gets which is a disclosure fact.
 
