@@ -2511,7 +2511,274 @@
     "demand_floor_prior_letter_usd_bn": 2,
     "opportunity_usd_bn": 1,
     "demand_window": "FY27 与 FY28 合计",
-    "source": "Q1 FYE27 股东信：「now exceeds $2 billion across fiscal 2027 and fiscal 2028」、「the $1 billion opportunity we outlined last quarter」；Q4 FYE26 股东信：「more than $2 billion of customer demand across fiscal 2027 and fiscal 2028」"
+    "source": "Q1 FYE27 股东信：「now exceeds $2 billion across fiscal 2027 and fiscal 2028」、「the $1 billion opportunity we outlined last quarter」；Q4 FYE26 股东信：「more than $2 billion of customer demand across fiscal 2027 and fiscal 2028」",
+    "call": {
+      "date": "2026-07-29",
+      "next_quarter_license_yoy": "约 30%",
+      "next_quarter_royalty_yoy": "low teens",
+      "fy_royalty_before": "约 20%",
+      "fy_royalty_now": "更接近 high teens",
+      "softbank_run_rate": "今年余下几季每季约 $200M",
+      "agi_gross_margin": "首代高 30% 到低 40%，几年内做到 50%",
+      "source": "2026-07-29 业绩电话会：CFO 准备稿（下季 license 约 +30%、royalty low teens；软银协议本季 $193M、今年余下每季约 $200M；AGI CPU 在 Q3 业绩时更新）与问答（全年 royalty 增速此前约 20%、现在更接近 high teens；AGI CPU 首代毛利率 high 30% range, maybe low 40s，几年内到 50%）。股东信的指引表只有收入、non-GAAP 运营费用与 EPS 三行。"
+    }
+  },
+  "followup_closure": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "labels": [
+      "已验证",
+      "部分验证",
+      "未兑现"
+    ],
+    "items": [
+      {
+        "n": 1,
+        "id": "royalty_yoy",
+        "question": "royalty 同比能不能回到公司指引的 +20% 左右",
+        "verdict": "已验证",
+        "evidence": "本季 royalty 同比 {royalty_yoy}（上季 {royalty_yoy_prior}）。"
+      },
+      {
+        "n": 2,
+        "id": "agi_demand",
+        "question": "AGI CPU 的 FY27+FY28 客户需求会不会再上调，FY28 芯片收入有没有更确定的指引",
+        "verdict": "未兑现",
+        "evidence": "本季股东信写需求 now exceeds $2 billion，上一封写的是 more than $2 billion，是同一个数；公司据以展望的收入机会仍是 $1 billion，电话会上说到 Q3 FY27 业绩时再更新。"
+      },
+      {
+        "n": 3,
+        "id": "softbank",
+        "question": "软银那份技术授权与设计服务协议每季约 $200M 能不能维持",
+        "verdict": "已验证",
+        "evidence": "中期财务报表附注 14：本季咨询协议收入 {softbank}，上季 {softbank_prior}。"
+      },
+      {
+        "n": 4,
+        "id": "dc_royalty",
+        "question": "数据中心 royalty 是否仍同比翻倍以上，会不会首次披露金额",
+        "verdict": "部分验证",
+        "evidence": "股东信仍写 data center royalties more than doubling，但依旧没有金额。"
+      },
+      {
+        "n": 5,
+        "id": "acv_yoy",
+        "question": "ACV 同比会不会从上季继续回落（渠道冲突的量化迹象）",
+        "verdict": "已验证",
+        "evidence": "ACV 同比上季 {acv_yoy_prior}、本季 {acv_yoy}；分析稿原判「已验证且恶化」。"
+      }
+    ],
+    "scorecard": [
+      {
+        "dimension": "方向",
+        "verdict": "对"
+      },
+      {
+        "dimension": "幅度",
+        "verdict": "低估"
+      },
+      {
+        "dimension": "归因",
+        "verdict": "部分错"
+      },
+      {
+        "dimension": "时点",
+        "verdict": "错一个季度"
+      }
+    ],
+    "_note": "上季（Q1 2026）本地分析稿留下的 5 条待验证问题在本季的闭环，问题与判定逐条取自本季分析稿第 0 节；第 5 条原判为「已验证且恶化」，归入已验证。分析稿第 0 节没有单独的统计行，图上的计数由 items 的 verdict 现算。evidence 里的数字不写死，由 builder 从 series 现算后填入。scorecard 是分析稿对上季判断的自评（方向 / 幅度 / 归因 / 时点）。"
+  },
+  "prior_kpi_settlement": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "quantified": [
+      {
+        "id": "royalty_yoy",
+        "metric": "royalty 同比",
+        "direction": "up",
+        "threshold": 15.0,
+        "unit": "pct",
+        "chart": true,
+        "rule": "Q1 FY27 royalty 同比（公司指引约 +20%）< +15% 即说明高基数解释不充分、royalty 在结构性减速"
+      },
+      {
+        "id": "softbank_consulting",
+        "metric": "软银咨询协议季度收入",
+        "direction": "up",
+        "threshold": 180.0,
+        "unit": "usd_m",
+        "chart": true,
+        "rule": "软银那份技术授权与设计服务协议的季度收入 < $180M（或出现转向下一代定价的措辞）即说明与软银的关系在变"
+      }
+    ],
+    "unsettled": [
+      {
+        "metric": "数据中心 royalty 同比",
+        "rule": "< +50% 为翻倍叙事破裂的警示；连续四季 ≥ +100% 为护城河指标",
+        "status": "无数可结算",
+        "why": "股东信只写 data center royalties more than doubling，从不给金额；按措辞 +50% 这条没有触发，但没有数可以结算或作图"
+      },
+      {
+        "metric": "AGI CPU 的 FY27 Q4 芯片收入",
+        "rule": "指引约 $90M；< $50M 为供应链没有解锁的警示，≥ $120M 为爬坡超预期",
+        "status": "未到期",
+        "why": "FY27 Q4 是 2027 年 1–3 月，要到那一季的业绩才有这个数"
+      },
+      {
+        "metric": "AGI CPU 的 FY27+FY28 累计需求更新",
+        "rule": "≤ $2.0B 为需求见顶；≥ $2.5B 且 FY28 芯片收入上调到 $1.0–1.2B 为里程碑",
+        "status": "未到期",
+        "why": "公司说到 Q3 FY27 业绩时更新；本季股东信写 now exceeds $2 billion，与上一封是同一个数"
+      }
+    ],
+    "_note": "上季（Q1 2026）本地分析稿第 8 节「关键观察指标」的 5 条阈值，数值与方向逐字取自该节。quantified 的实际值不写死，由 builder 从 series 现算（royalty 同比取 quarterly.royalty，软银咨询协议取 related_party.softbank_affiliate）；unsettled 是本季结不了的 3 条及其原因。"
+  },
+  "next_kpi": {
+    "period": "Q2 2026",
+    "for_period": "Q3 2026",
+    "quantified": [
+      {
+        "id": "royalty",
+        "metric": "royalty 收入",
+        "direction": "up",
+        "threshold": 690.0,
+        "unit": "usd_m",
+        "chart": true,
+        "rule": "Q2 FY27 实际 royalty < $690M 即减速超过指引、FY27 royalty 落入 low teens",
+        "upside": "> $740M 即存储涨价对出货的冲击被高估"
+      },
+      {
+        "id": "acv_yoy",
+        "metric": "ACV 同比",
+        "direction": "up",
+        "threshold": 10.0,
+        "unit": "pct",
+        "chart": true,
+        "rule": "< +10% 即 license 端结构性走弱，而 RPO 与许可家数已不在股东信里，无法交叉验证",
+        "upside": "≥ +18% 即渠道冲突的担忧被证伪"
+      },
+      {
+        "id": "fcf",
+        "metric": "自由现金流",
+        "direction": "up",
+        "threshold": 250.0,
+        "unit": "usd_m",
+        "chart": true,
+        "rule": "Q2 FY27 自由现金流 < $250M 即本季的高自由现金流只是营运资本时点",
+        "upside": "≥ $450M 且营运资本贡献 < $100M 即现金生成结构性改善"
+      }
+    ],
+    "disclosure_gated": [
+      {
+        "metric": "Q3 FY27 的 AGI CPU 更新",
+        "rule": "FY28 芯片收入口径仍停在 $1B，或首代毛利率低于「高 30%」，即转型的经济性不及预期；收入 ≥ $1.5B 且毛利率 ≥ 40% 为里程碑",
+        "status": "待披露",
+        "why": "公司说到 Q3 FY27 业绩（2027 年 2 月）时更新，下一季没有这个数"
+      },
+      {
+        "metric": "全球智能手机季度出货同比",
+        "rule": "Q3 2026 同比降幅扩大到 −15% 以上即非数据中心 royalty 转负",
+        "status": "不发布",
+        "why": "这是第三方行业机构的数，不是公司申报；本页只发布公司披露值"
+      }
+    ],
+    "_note": "本季（Q2 2026）本地分析稿第 8 节「关键观察指标」的 5 条：3 条可量化，阈值与方向逐字取自该节，当前值由 builder 从 series 现算（quarterly.royalty、kpi.acv、quarterly.cash.free_cash_flow）；upside 是该节写的上行一侧触发条件；disclosure_gated 是不能作图的 2 条及其原因。"
+  },
+  "current_snapshot": {
+    "period": "Q2 2026",
+    "columns": [
+      "2026Q2",
+      "2025Q2"
+    ],
+    "reconciliation_operating_income": {
+      "share_based_compensation": [
+        343,
+        241
+      ],
+      "employer_taxes_on_sbc_net_of_rd_incentives": [
+        90,
+        54
+      ],
+      "other_operating_and_disposal": [
+        7,
+        3
+      ],
+      "row": "GAAP to Non-GAAP Reconciliation，Operating income (loss) 行的调整列：Share-based compensation cost (equity settled)、Employer taxes related to SBC, net of R&D tax incentives、Other operating income (expenses), net 与 Costs associated with disposal activities（2025 年那一栏是 2 与 1）"
+    },
+    "below_operating_income": {
+      "income_from_equity_investments": [
+        128,
+        4
+      ],
+      "income_tax_benefit_expense": [
+        17,
+        -16
+      ],
+      "row": "Condensed Consolidated Income Statements：Income (loss) from equity investments, net；Income tax benefit (expense)"
+    },
+    "non_cash_adjustments": {
+      "depreciation_and_amortization": [
+        75,
+        60
+      ],
+      "deferred_income_taxes": [
+        -66,
+        -14
+      ],
+      "income_loss_from_equity_investments": [
+        -128,
+        -4
+      ],
+      "share_based_compensation_cost": [
+        343,
+        241
+      ],
+      "operating_lease_expense": [
+        16,
+        13
+      ],
+      "other_non_cash": [
+        3,
+        -5
+      ]
+    },
+    "working_capital_changes": {
+      "accounts_receivable": [
+        181,
+        -208
+      ],
+      "contract_assets": [
+        50,
+        123
+      ],
+      "prepaid_expenses_and_other_assets": [
+        -9,
+        38
+      ],
+      "accrued_compensation_and_benefits": [
+        3,
+        -4
+      ],
+      "contract_liabilities": [
+        -107,
+        90
+      ],
+      "tax_liabilities": [
+        -3,
+        -34
+      ],
+      "operating_lease_liabilities": [
+        -11,
+        -9
+      ],
+      "other_liabilities": [
+        285,
+        -85
+      ]
+    },
+    "letter_words_on_fcf": "benefiting from favorable timing of receivables collections and tax payments",
+    "source": "Q1 FYE27 股东信（6-K EX-99.2，2026-07-29）：GAAP to Non-GAAP Reconciliation（三个月，截至 2026-06-30 与 2025-06-30）、Condensed Consolidated Income Statements、Condensed Consolidated Statements of Cash Flows（Changes in assets and liabilities 八行）与 Q1 FYE27 Financial Overview 的 FCF 一句",
+    "_note": "这一季的对账表、利润表营业利润以下两行与现金流量表营运资本八行，本页只印本季与上年同期，所以按季戳存放、换季整块替换。净利润 + 非现金调整 + 营运资本变动 = 经营现金流，两栏都由测试对 quarterly.cash.operating_cash_flow 核对。"
   },
   "sources": [
     {
@@ -2706,6 +2973,142 @@
     "rpo_within_12_months_pct": 24,
     "contract_assets_current_usd_m": 881,
     "contract_assets_current_related_usd_m": 577,
+    "share_based_compensation_prior_year_usd_m": 241,
+    "income_from_equity_investments_usd_m": 128,
+    "income_from_equity_investments_prior_year_usd_m": 4,
+    "income_tax_benefit_usd_m": 17,
+    "income_tax_benefit_prior_year_usd_m": -16,
+    "working_capital_change_usd_m": 389,
+    "working_capital_change_prior_year_usd_m": -89,
+    "note": {
+      "source": "本季分析稿 2026-07-29 ARM Q2 2026 vs Q1 2026 Analysis.md：第 0 节「上季遗留问题回答」（5 条 follow-up 的验证结果列与「上季判断的方向 / 幅度 / 归因 / 时点记分」）、第 8 节「关键观察指标」的「本季 KPI 表（5 条）」；上季分析稿 2026-05-06 ARM Q1 2026 vs Q4 2025 Analysis.md：第 8 节「关键观察指标」表（5 条）。从两份分析稿原文重读录入，没有从 series 的 followup_closure / prior_kpi_settlement / next_kpi 块抄。",
+      "checked_on": "2026-09-23",
+      "closure_items": 5,
+      "closure": [
+        {
+          "n": 1,
+          "verdict": "已验证",
+          "as_printed": "已验证（正面）"
+        },
+        {
+          "n": 2,
+          "verdict": "未兑现",
+          "as_printed": "未兑现（demand 未上调、firmer guide 明确推迟）"
+        },
+        {
+          "n": 3,
+          "verdict": "已验证",
+          "as_printed": "已验证（维持）"
+        },
+        {
+          "n": 4,
+          "verdict": "部分验证",
+          "as_printed": "部分验证（增速仍成立，绝对值仍未披露）"
+        },
+        {
+          "n": 5,
+          "verdict": "已验证",
+          "as_printed": "已验证且恶化"
+        }
+      ],
+      "closure_counts": {
+        "已验证": 3,
+        "部分验证": 1,
+        "未兑现": 1
+      },
+      "closure_tally_rule": "第 0 节没有单独的统计行；计数按验证结果列逐条归类，#5「已验证且恶化」归入已验证",
+      "scorecard": [
+        {
+          "dimension": "方向",
+          "verdict": "对"
+        },
+        {
+          "dimension": "幅度",
+          "verdict": "低估"
+        },
+        {
+          "dimension": "归因",
+          "verdict": "部分错"
+        },
+        {
+          "dimension": "时点",
+          "verdict": "错一个季度"
+        }
+      ],
+      "prior_thresholds": [
+        {
+          "id": "royalty_yoy",
+          "metric": "Q1 FY27 royalty YoY 增速（管理层 guide +20%）",
+          "threshold": 15.0,
+          "direction": "up",
+          "unit": "pct",
+          "as_printed": "实际 < +15% = MediaTek 高基数解释不充分，underlying 结构性减速 → 减仓（第 8 节指标 1）"
+        },
+        {
+          "id": "softbank_consulting",
+          "metric": "SoftBank technology licensing 季度 NRV",
+          "threshold": 180.0,
+          "direction": "up",
+          "unit": "usd_m",
+          "as_printed": "Q1 FY27 < $180M 或出现 transition to next-generation pricing 措辞 = 关系变化 → 跟踪（第 8 节指标 5）"
+        }
+      ],
+      "prior_unquantified": [
+        {
+          "keyword": "数据中心 royalty",
+          "metric": "数据中心 royalty YoY 增速",
+          "as_printed": "Q1 FY27 < +50% = 翻倍叙事破裂 → 警示；连续 4 季 ≥ +100% = 护城河 KPI 强化（指标 2）"
+        },
+        {
+          "keyword": "FY27 Q4",
+          "metric": "AGI CPU FY27 Q4（即 calendar 2027 Q1）silicon 实际收入",
+          "as_printed": "guide ~$90M-ish；< $50M → 警示；≥ $120M → 加仓（指标 3）"
+        },
+        {
+          "keyword": "FY27+FY28",
+          "metric": "AGI CPU FY27+FY28 累计 demand（管理层秋季 firmer estimate）",
+          "as_printed": "firmer estimate ≤ $2.0B → 重新评估；≥ $2.5B 且 FY28 silicon 上调到 $1.0–1.2B → 多元化里程碑（指标 4）"
+        }
+      ],
+      "next_thresholds": [
+        {
+          "id": "royalty",
+          "metric": "Q2 FY27 实际 royalty 收入",
+          "threshold": 690.0,
+          "direction": "up",
+          "unit": "usd_m",
+          "as_printed": "< $690M = 减速超指引 → 减仓；> $740M = 存储冲击被高估 → 加仓（指标 1）"
+        },
+        {
+          "id": "acv_yoy",
+          "metric": "ACV 同比增速",
+          "threshold": 10.0,
+          "direction": "up",
+          "unit": "pct",
+          "as_printed": "< +10% = license 端结构性走弱 → 减仓；≥ +18% → 重新评估（上修）（指标 2）"
+        },
+        {
+          "id": "fcf",
+          "metric": "可持续自由现金流（剔除营运资本）",
+          "threshold": 250.0,
+          "direction": "up",
+          "unit": "usd_m",
+          "as_printed": "Q2 FY27 FCF < $250M = 本季属纯时点 → 警示；≥ $450M 且营运资本贡献 < $100M → upside（指标 4）"
+        }
+      ],
+      "next_unquantified": [
+        {
+          "keyword": "AGI CPU",
+          "metric": "Q3 FY27（2027-02）的 AGI CPU firmer guide",
+          "as_printed": "收入口径仍停在 $1B 或毛利率低于高 30% → 重新评估；收入 ≥ $1.5B 且毛利率 ≥ 40% → 里程碑（指标 3）"
+        },
+        {
+          "keyword": "智能手机",
+          "metric": "全球智能手机季度出货同比（IDC / Counterpoint）",
+          "as_printed": "Q3 2026 同比降幅扩大到 −15% 以上 → 减仓（指标 5）"
+        }
+      ]
+    },
     "where": {
       "period_end": "Cover/TOC: 'Quarterly report for the three months ended June 30, 2026'",
       "release_date": "EDGAR filing index of the earnings 6-K acc 0001973239-26-000113: Filing Date 2026-07-29, accepted 2026-07-29 16:02:28 (the statements 6-K 0001973239-26-000114 was accepted the same day at 16:05:46; its signature block is dated July 29, 2026). EX-99.2 not read.",
@@ -2736,7 +3139,14 @@
       "rpo_usd_m": "Note 3 - Revenue, 'Remaining Performance Obligations' (p.17): 'aggregate transaction price allocated to remaining performance obligations was $2,122.6 million' as of June 30, 2026",
       "rpo_within_12_months_pct": "Note 3 - Revenue, 'Remaining Performance Obligations': 'approximately 24% ... over the next 12 months, 23% over the subsequent 13- to 24-month period, and the remainder thereafter'",
       "contract_assets_current_usd_m": "Condensed Consolidated Balance Sheets (p.6), row 'Contract assets (including contract assets from related parties of $577 and $646 ...)', June 30, 2026 column (March 31, 2026: 977). Non-current portion printed separately: 366.",
-      "contract_assets_current_related_usd_m": "Same balance-sheet row, parenthetical 'contract assets from related parties of $577' (March 31, 2026: $646). Note 14 attributes $576.1 million current (plus $1.1 million non-current) to an affiliate of SoftBank Group (Consulting Agreement) and $0.5 million current to Ampere."
+      "contract_assets_current_related_usd_m": "Same balance-sheet row, parenthetical 'contract assets from related parties of $577' (March 31, 2026: $646). Note 14 attributes $576.1 million current (plus $1.1 million non-current) to an affiliate of SoftBank Group (Consulting Agreement) and $0.5 million current to Ampere.",
+      "share_based_compensation_prior_year_usd_m": "Condensed Consolidated Statements of Cash Flows (p.9), row 'Share-based compensation cost', 2025 column. Added 2026-09-23 by the four-part format pass, read from arm-20260630.htm, not from the shareholder letter that current_snapshot was keyed from.",
+      "income_from_equity_investments_usd_m": "Condensed Consolidated Income Statements (p.4), row 'Income (loss) from equity investments, net', 2026 column (Note 5: $125.6 million of it is fair-value gains on publicly listed equity investments). Added 2026-09-23, read from arm-20260630.htm.",
+      "income_from_equity_investments_prior_year_usd_m": "Same row, 2025 column. Added 2026-09-23, read from arm-20260630.htm.",
+      "income_tax_benefit_usd_m": "Condensed Consolidated Income Statements (p.4), row 'Income tax benefit (expense)', 2026 column: 17 (a benefit). Added 2026-09-23, read from arm-20260630.htm.",
+      "income_tax_benefit_prior_year_usd_m": "Same row, 2025 column printed (16), an expense. Added 2026-09-23, read from arm-20260630.htm.",
+      "working_capital_change_usd_m": "Condensed Consolidated Statements of Cash Flows (p.9), 'Changes in assets and liabilities', sum of the eight rows for the 2026 column: 181 + 50 + (9) + 3 + (107) + (3) + (11) + 285 = 389. Added 2026-09-23, read from arm-20260630.htm.",
+      "working_capital_change_prior_year_usd_m": "Same eight rows, 2025 column: (208) + 123 + 38 + (4) + 90 + (34) + (9) + (85) = (89). Added 2026-09-23, read from arm-20260630.htm."
     }
   }
 }

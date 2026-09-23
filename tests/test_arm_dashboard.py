@@ -22,6 +22,16 @@ builder:
 
 The page is rolled by editing `series/arm.json` alone (CLAUDE.md §9), so
 nothing below reads a figure out of `build/arm.py`.
+
+The four-part layout adds three more classes. `ArmFourPartTest` pins the
+section ids and titles and the next quarter's thresholds; `ArmSettledTest` pins
+section one's closure and last quarter's thresholds; `ArmHighlightsTest` pins
+the section-two readings the local note's conclusions call for. The thresholds
+and verdicts are the analysis notes' content, re-read from the two note files
+into `_checks["note"]` (which the builder never reads); the payload is compared
+against that block, and every value a threshold is settled on is recomputed
+here from the series. A roll re-keys `_checks` with the new note and edits
+nothing in this file.
 """
 
 from __future__ import annotations
@@ -369,7 +379,10 @@ class ArmPageTest(unittest.TestCase):
         open_row.update(settled_on="2026-11-04", revenue_actual=q["revenue"][-1],
                         eps_actual=q["non_gaap_first_printed"]["diluted_eps"][-1], opex_actual=700)
         rolled["latest"] = dict(rolled["latest"], period="Q3 2026")
-        rolled.pop("quarter_story", None)
+        # every one-quarter block is last quarter's once the arrays move on
+        for block in ("quarter_story", "next_kpi", "followup_closure", "prior_kpi_settlement",
+                      "current_snapshot"):
+            rolled.pop(block, None)
         rolled["sources"] = rolled["sources"] + [
             {"label": "Q2 FYE27 股东信（6-K EX-99.2，2026-11-04）",
              "url": "https://www.sec.gov/Archives/edgar/data/1973239/x/y.htm", "date": "2026-11-04",
@@ -386,6 +399,446 @@ class ArmPageTest(unittest.TestCase):
         rolled_text = json.dumps(payload, ensure_ascii=False)
         self.assertNotIn("本季起", rolled_text)
         self.assertIn("2026Q2 起", rolled_text)
+
+
+FOUR_PARTS = [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+              ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")]
+
+def note_checks(staging: dict, block: str) -> dict:
+    """The analysis notes' facts for the quarter `_checks` was keyed for.
+
+    `_checks["note"]` was re-read from the two note files, not copied from the
+    series blocks the builder reads. It describes the quarter `_checks` names, so
+    a block stamped for any other quarter is being compared with the wrong note.
+    """
+    checks = staging["_checks"]
+    if staging[block]["period"] != checks["period"]:
+        raise AssertionError(f"`{block}` is stamped {staging[block]['period']!r} but `_checks` was keyed "
+                             f"for {checks['period']!r}: re-key `_checks` (and its `note`) with the roll")
+    return checks["note"]
+
+
+def by_id(entries: list[dict]) -> dict:
+    return {e["id"]: (e["threshold"], e["direction"], e["unit"]) for e in entries}
+
+
+def metric_values(st: dict) -> dict:
+    """Every metric a threshold may name, recomputed here from the series (not via the builder)."""
+    q, kpi, rp = st["quarterly"], st["kpi"], st["related_party"]
+    acv = dict(zip(kpi["dates"], kpi["acv"]))
+    end = q["period_ends"][-1]
+    return {"royalty": q["royalty"][-1],
+            "royalty_yoy": (q["royalty"][-1] / q["royalty"][-5] - 1) * 100,
+            "acv_yoy": (acv[end] / acv[f"{int(end[:4]) - 1}{end[4:]}"] - 1) * 100,
+            "fcf": q["cash"]["free_cash_flow"][-1],
+            "softbank_consulting": rp["softbank_affiliate"][-1]}
+
+
+def room(value: float, threshold: float, direction: str) -> float:
+    return (value - threshold) / abs(threshold) * 100 * (1 if direction == "up" else -1)
+
+
+def unit(kind: str, value: float) -> str:
+    return {"pct": f"{value:.1f}%", "usd_m": f"${value:,.0f}M"}[kind]
+
+
+class ArmFourPartTest(unittest.TestCase):
+    """The page is cut into the site's four sections, and each one holds what its title says."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.st = json.loads(arm.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = arm.build_payload(cls.st)
+        cls.sections = {sec["id"]: sec for sec in cls.payload["sections"]}
+
+    def rebuilt(self, edit) -> dict:
+        changed = copy.deepcopy(self.st)
+        edit(changed)
+        self.assertNotEqual(changed, self.st, "the edit changed nothing")
+        return arm.build_payload(changed)
+
+    def test_four_sections_in_order_and_the_page_says_so(self) -> None:
+        self.assertEqual([(sec["id"], sec["title"]) for sec in self.payload["sections"]], FOUR_PARTS)
+        for sec in self.payload["sections"]:
+            self.assertTrue(sec["exhibits"], sec["id"])
+        self.assertTrue(self.payload["notes"][0].startswith(
+            "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列"), self.payload["notes"][0])
+        text = json.dumps(self.payload, ensure_ascii=False)
+        self.assertNotIn("六段", text)
+        numbers = [ex["n"] for sec in self.payload["sections"] for ex in sec["exhibits"]]
+        self.assertEqual(numbers, list(range(2, 2 + len(numbers))))
+        self.assertEqual(self.payload["tables"][0]["n"], numbers[-1] + 1)
+
+    def test_the_guidance_record_sits_in_the_settled_section(self) -> None:
+        """What the company guided last quarter is settled in section one, not called 本季重点."""
+        refs = [ex["ref"] for ex in self.sections["settled"]["exhibits"]]
+        for ref in ("EX_REV_BAND", "EX_EPS_BAND", "EX_ANNUAL"):
+            self.assertIn(ref, refs)
+        routine = [ex["ref"] for ex in self.sections["routine"]["exhibits"]]
+        self.assertIn("EX_MIX", routine)
+        self.assertIn("EX_CENSUS", routine)
+
+    def test_next_quarter_thresholds_are_the_notes(self) -> None:
+        kpi, note = self.st["next_kpi"], note_checks(self.st, "next_kpi")
+        self.assertEqual(kpi["period"], self.payload["latest"]["disclosed_period_label"])
+        last = self.st["quarterly"]["periods"][-1]
+        year, n = int(last[:4]), int(last[5])
+        self.assertEqual(kpi["for_period"], f"Q1 {year + 1}" if n == 4 else f"Q{n + 1} {year}")
+        self.assertEqual(by_id(kpi["quantified"]), by_id(note["next_thresholds"]))
+        for entry in kpi["quantified"]:
+            self.assertNotIn("current", entry, "the current value is computed, never typed")
+        # the payload draws each of the note's thresholds, at its value, on its side
+        ex = by_ref(self.payload)
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("下季阈值"))
+        for fact in note["next_thresholds"]:
+            with self.subTest(threshold=fact["id"]):
+                chart = ex[f"EX_NEXT_{fact['id'].upper()}"]
+                self.assertEqual(set(chart["series"][1]["values"]), {fact["threshold"]})
+                self.assertIn(f"下季阈值 {unit(fact['unit'], fact['threshold'])}", chart["title"])
+                side = "上方" if fact["direction"] == "up" else "下方"
+                self.assertIn(f"安全侧在{side}", chart["series"][1]["name"])
+                row = next(r for r in table["rows"] if r[0] == chart["title"].split("：", 1)[0])
+                self.assertEqual(row[1:3], ["高于阈值为安全" if fact["direction"] == "up" else "低于阈值为安全",
+                                            unit(fact["unit"], fact["threshold"])])
+        # the note's items that cannot be drawn are named on the page, not dropped
+        description = self.sections["next_quarter"]["description"]
+        self.assertEqual(len(kpi["disclosure_gated"]), len(note["next_unquantified"]))
+        for item in note["next_unquantified"]:
+            self.assertIn(item["keyword"], description)
+            self.assertTrue(any(item["keyword"] in row[0] for row in table["rows"]), item["keyword"])
+
+    def test_the_current_values_are_recomputed_from_the_series(self) -> None:
+        q = self.st["quarterly"]
+        values = metric_values(self.st)
+        facts = {fact["id"]: fact for fact in note_checks(self.st, "next_kpi")["next_thresholds"]}
+        bars = next(ex for ex in self.sections["next_quarter"]["exhibits"] if ex["kind"] == "diverging_bars")
+        self.assertTrue(bars["title"].startswith(f"下季 {len(facts)} 条量化阈值："))
+        self.assertEqual(len(bars["values"]), len(facts))
+        for entry, value in zip(self.st["next_kpi"]["quantified"], bars["values"]):
+            fact = facts[entry["id"]]
+            self.assertAlmostEqual(value, round(room(values[entry["id"]], fact["threshold"], fact["direction"]), 1),
+                                   places=6, msg=entry["id"])
+        lines = [ex for ex in self.sections["next_quarter"]["exhibits"] if ex["kind"] == "lines"]
+        self.assertEqual(len(lines), sum(1 for e in self.st["next_kpi"]["quantified"] if e.get("chart")))
+        for ex in lines:
+            self.assertIn("下季阈值", ex["title"])
+            self.assertEqual(ex["xlabels"][-1], q["periods"][-1])
+            threshold = ex["series"][1]["values"]
+            self.assertEqual(len(set(threshold)), 1)
+
+    def test_the_headroom_title_counts_the_breaches(self) -> None:
+        entries = self.st["next_kpi"]["quantified"]
+        values = metric_values(self.st)
+        rooms = {e["id"]: room(values[e["id"]], e["threshold"], e["direction"]) for e in entries}
+        over = [e for e in entries if rooms[e["id"]] < 0]
+        bars = next(ex for ex in self.sections["next_quarter"]["exhibits"] if ex["kind"] == "diverging_bars")
+        self.assertIn(f"{len(entries) - len(over)} 条在安全侧", bars["title"])
+        if not over:
+            closest = min(entries, key=lambda e: rooms[e["id"]])["metric"]
+            gap = " " if closest[0].isascii() and closest[0].isalpha() else ""
+            self.assertIn(f"离阈值最近的是{gap}{closest}", bars["title"])
+        # push the first safe line past today's value: the title must now name it as breached
+        target = next(e for e in entries if rooms[e["id"]] >= 0)
+
+        def breach(s):
+            entry = next(e for e in s["next_kpi"]["quantified"] if e["id"] == target["id"])
+            entry["threshold"] = values[target["id"]] * (1.5 if target["direction"] == "up" else 0.5)
+        payload = self.rebuilt(breach)
+        title = next(ex["title"] for ex in exhibits_of(payload) if ex.get("ref") == "EX_NEXT_HEADROOM")
+        self.assertIn(f"{len(entries) - len(over) - 1} 条在安全侧、{len(over) + 1} 条已越线", title)
+        self.assertIn(target["metric"], title.split("已越线", 1)[1])
+
+    def test_a_threshold_block_that_cannot_be_settled_stops_the_build(self) -> None:
+        cases = (
+            ("typed", lambda s: s["next_kpi"]["quantified"][0].__setitem__("current", 700.0)),
+            ("names no series", lambda s: s["next_kpi"]["quantified"][0].__setitem__("id", "dso")),
+            ("stamped for", lambda s: s["next_kpi"].__setitem__("for_period", "Q1 1999")),
+            ("stamped", lambda s: s["next_kpi"].__setitem__("period", "Q1 1999")),
+        )
+        for message, edit in cases:
+            with self.subTest(case=message):
+                with self.assertRaisesRegex(ValueError, message):
+                    self.rebuilt(edit)
+
+    def test_an_absent_next_block_leaves_the_section_empty_not_stale(self) -> None:
+        payload = self.rebuilt(lambda s: s.pop("next_kpi"))
+        section = next(sec for sec in payload["sections"] if sec["id"] == "next_quarter")
+        self.assertEqual(section["exhibits"], [])
+        self.assertIn("还没有设定", section["description"])
+        rest = {k: v for k, v in payload.items() if k != "sections"}
+        self.assertNotIn("下季阈值", json.dumps(rest, ensure_ascii=False))
+        for sec in payload["sections"]:
+            self.assertNotIn("下季阈值", json.dumps(sec["exhibits"], ensure_ascii=False))
+
+
+class ArmSettledTest(unittest.TestCase):
+    """Section one settles what last quarter left: its questions, then its thresholds."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.st = json.loads(arm.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = arm.build_payload(cls.st)
+        cls.settled = cls.payload["sections"][0]["exhibits"]
+        cls.ex = by_ref(cls.payload)
+
+    def rebuilt(self, edit) -> dict:
+        changed = copy.deepcopy(self.st)
+        edit(changed)
+        self.assertNotEqual(changed, self.st, "the edit changed nothing")
+        return arm.build_payload(changed)
+
+    def test_section_one_opens_with_the_closure_then_the_thresholds(self) -> None:
+        refs = [ex["ref"] for ex in self.settled]
+        lines = [f"EX_PRIOR_{e['id'].upper()}" for e in self.st["prior_kpi_settlement"]["quantified"]
+                 if e.get("chart")]
+        self.assertEqual(refs[:2 + len(lines)], ["EX_CLOSURE", "EX_PRIOR_HEADROOM"] + lines)
+        self.assertEqual(refs[2 + len(lines)], "EX_REV_BAND", "the company's own record comes last")
+
+    def test_the_closure_is_the_notes_section_zero(self) -> None:
+        block, note = self.st["followup_closure"], note_checks(self.st, "followup_closure")
+        self.assertEqual({item["n"]: item["verdict"] for item in block["items"]},
+                         {item["n"]: item["verdict"] for item in note["closure"]})
+        ex = self.ex["EX_CLOSURE"]
+        self.assertEqual(dict(zip(ex["xlabels"], ex["values"])), note["closure_counts"])
+        self.assertEqual(ex["title"], f"上季 {note['closure_items']} 条待验证问题："
+                         + "、".join(f"{n} 条{label}" for label, n in note["closure_counts"].items()))
+        # the note's own verdict for each item is on the page, in the category it was counted in
+        for item in note["closure"]:
+            self.assertIn(f"—— <b>{item['verdict']}</b>", ex["note"])
+            self.assertIn(item["as_printed"].split("（", 1)[0][:2], item["verdict"])
+        # the evidence names numbers the builder computes; recompute them here
+        q, rp, kpi = self.st["quarterly"], self.st["related_party"], self.st["kpi"]
+        acv = dict(zip(kpi["dates"], kpi["acv"]))
+        ends = q["period_ends"]
+        texts = [f"{(q['royalty'][-1] / q['royalty'][-5] - 1) * 100:+.1f}%",
+                 f"{(q['royalty'][-2] / q['royalty'][-6] - 1) * 100:+.1f}%",
+                 f"${rp['softbank_affiliate'][-1]:.1f}M",
+                 f"{(acv[ends[-1]] / acv[ends[-5]] - 1) * 100:+.1f}%",
+                 f"{(acv[ends[-2]] / acv[ends[-6]] - 1) * 100:+.1f}%"]
+        for text in texts:
+            self.assertIn(text.replace("-", "−"), ex["note"])
+        self.assertNotRegex(ex["note"], r"\{[a-z_]+\}", "an evidence placeholder was left unfilled")
+        for d in note["scorecard"]:
+            self.assertIn(d["dimension"] + d["verdict"], ex["note"])
+
+    def test_the_closure_counts_follow_the_items(self) -> None:
+        labels = self.st["followup_closure"]["labels"]
+        target = next(i for i in self.st["followup_closure"]["items"] if i["verdict"] != labels[0])
+
+        def verify(s):
+            next(i for i in s["followup_closure"]["items"] if i["n"] == target["n"])["verdict"] = labels[0]
+        items = [dict(i, verdict=labels[0]) if i["n"] == target["n"] else i
+                 for i in self.st["followup_closure"]["items"]]
+        counts = [(label, sum(1 for i in items if i["verdict"] == label)) for label in labels]
+        title = by_ref(self.rebuilt(verify))["EX_CLOSURE"]["title"]
+        self.assertEqual(title, f"上季 {len(items)} 条待验证问题：" + "、".join(f"{n} 条{l}" for l, n in counts if n))
+
+    def test_prior_thresholds_are_last_quarters_notes(self) -> None:
+        block, note = self.st["prior_kpi_settlement"], note_checks(self.st, "prior_kpi_settlement")
+        self.assertEqual(by_id(block["quantified"]), by_id(note["prior_thresholds"]))
+        for entry in block["quantified"]:
+            self.assertNotIn("actual", entry, "the settled value is computed, never typed")
+        # the payload settles each of the note's thresholds at its value, on its side
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("上季阈值"))
+        for fact in note["prior_thresholds"]:
+            with self.subTest(threshold=fact["id"]):
+                chart = self.ex[f"EX_PRIOR_{fact['id'].upper()}"]
+                self.assertEqual(set(chart["series"][1]["values"]), {fact["threshold"]})
+                self.assertIn(f"上季阈值 {unit(fact['unit'], fact['threshold'])}", chart["title"])
+                side = "上方" if fact["direction"] == "up" else "下方"
+                self.assertIn(f"安全侧在{side}", chart["series"][1]["name"])
+                row = next(r for r in table["rows"] if r[0] == chart["title"].split("：", 1)[0])
+                self.assertEqual(row[1:3], ["高于阈值为安全" if fact["direction"] == "up" else "低于阈值为安全",
+                                            unit(fact["unit"], fact["threshold"])])
+        # the note's section 8 items this quarter cannot settle are named, not dropped
+        self.assertEqual(len(block["unsettled"]), len(note["prior_unquantified"]))
+        description = self.payload["sections"][0]["description"]
+        for item in note["prior_unquantified"]:
+            self.assertIn(item["keyword"], description)
+            self.assertTrue(any(item["keyword"] in row[0] for row in table["rows"]), item["keyword"])
+
+    def test_the_settlement_is_recomputed_from_the_series(self) -> None:
+        entries = self.st["prior_kpi_settlement"]["quantified"]
+        values = metric_values(self.st)
+        rooms = {e["id"]: room(values[e["id"]], e["threshold"], e["direction"]) for e in entries}
+        broken = [e for e in entries if rooms[e["id"]] < 0]
+        bars = self.ex["EX_PRIOR_HEADROOM"]
+        self.assertTrue(bars["title"].startswith(
+            f"上季 {len(entries)} 条量化阈值：{len(entries) - len(broken)} 条守住、{len(broken)} 条被击穿"))
+        for entry, value in zip(entries, bars["values"]):
+            self.assertAlmostEqual(value, round(rooms[entry["id"]], 1))
+        for entry in entries:
+            verdict = "守住" if rooms[entry["id"]] >= 0 else "已击穿"
+            self.assertEqual(self.ex[f"EX_PRIOR_{entry['id'].upper()}"]["title"],
+                             f"{entry['metric']}：{verdict}上季阈值 {unit(entry['unit'], entry['threshold'])}")
+        # the SoftBank line keeps its zeros: the agreement earned nothing before 2024Q3
+        if "EX_PRIOR_SOFTBANK_CONSULTING" in self.ex:
+            ex = self.ex["EX_PRIOR_SOFTBANK_CONSULTING"]
+            line = ex["series"][0]["values"]
+            first = next(k for k, v in enumerate(line) if v)
+            self.assertEqual(ex["xlabels"][first], "2024Q3")
+            self.assertEqual(ex["xlabels"][0], self.st["related_party"]["periods"][0])
+            self.assertTrue(all(v == 0 for v in line[:first]))
+
+    def test_a_breached_threshold_reads_as_breached(self) -> None:
+        entries = self.st["prior_kpi_settlement"]["quantified"]
+        values = metric_values(self.st)
+        target = next(e for e in entries if room(values[e["id"]], e["threshold"], e["direction"]) >= 0)
+
+        def raise_bar(s):
+            entry = next(e for e in s["prior_kpi_settlement"]["quantified"] if e["id"] == target["id"])
+            entry["threshold"] = values[target["id"]] * (1.5 if target["direction"] == "up" else 0.5)
+        ex = by_ref(self.rebuilt(raise_bar))
+        self.assertIn(f"{target['metric']}：已击穿上季阈值", ex[f"EX_PRIOR_{target['id'].upper()}"]["title"])
+        self.assertIn(f"被击穿（{target['metric']}", ex["EX_PRIOR_HEADROOM"]["title"])
+
+    def test_the_notes_point_at_both_threshold_charts(self) -> None:
+        pattern = re.compile(r"Exhibit (\d+) 与 Exhibit (\d+) 的阈值")
+        found = [m.groups() for note in self.payload["notes"] for m in pattern.finditer(note)]
+        self.assertEqual(found, [(str(self.ex["EX_PRIOR_HEADROOM"]["n"]), str(self.ex["EX_NEXT_HEADROOM"]["n"]))])
+
+    def test_a_block_that_settles_another_quarter_stops_the_build(self) -> None:
+        cases = (
+            ("settles what was set in", lambda s: s["followup_closure"].__setitem__("set_in", "Q1 1999")),
+            ("settles what was set in", lambda s: s["prior_kpi_settlement"].__setitem__("set_in", "Q1 1999")),
+            ("not among its labels", lambda s: s["followup_closure"]["items"][0].__setitem__("verdict", "存疑")),
+            ("stamped", lambda s: s["followup_closure"].__setitem__("period", "Q1 1999")),
+            ("typed", lambda s: s["prior_kpi_settlement"]["quantified"][0].__setitem__("actual", 20.0)),
+        )
+        for message, edit in cases:
+            with self.subTest(case=message):
+                with self.assertRaisesRegex(ValueError, message):
+                    self.rebuilt(edit)
+
+    def test_absent_blocks_drop_their_charts_and_the_words_about_them(self) -> None:
+        for key, ref, phrase in (("followup_closure", "EX_CLOSURE", "条待验证问题"),
+                                 ("prior_kpi_settlement", "EX_PRIOR_HEADROOM", "上季阈值")):
+            with self.subTest(block=key):
+                payload = self.rebuilt(lambda s, key=key: s.pop(key))
+                self.assertNotIn(ref, by_ref(payload))
+                self.assertNotIn(phrase, json.dumps(payload, ensure_ascii=False))
+                numbers = [ex["n"] for ex in exhibits_of(payload)]
+                self.assertEqual(numbers, list(range(2, 2 + len(numbers))))
+
+
+class ArmHighlightsTest(unittest.TestCase):
+    """Section two carries the note's conclusions that primary figures can draw."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.st = json.loads(arm.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = arm.build_payload(cls.st)
+        cls.ex = by_ref(cls.payload)
+        cls.q = cls.st["quarterly"]
+
+    def rebuilt(self, edit) -> dict:
+        changed = copy.deepcopy(self.st)
+        edit(changed)
+        self.assertNotEqual(changed, self.st, "the edit changed nothing")
+        return arm.build_payload(changed)
+
+    def test_the_highlights_are_this_quarters_readings(self) -> None:
+        refs = [ex["ref"] for ex in self.payload["sections"][1]["exhibits"]]
+        self.assertEqual(refs, ["EX_YOY", "EX_SOFTBANK", "EX_ACV_RPO", "EX_MARGIN", "EX_CAPEX", "EX_FCF",
+                                "EX_CONTRACT"])
+        for ref in refs:
+            self.assertRegex(self.ex[ref]["title"], r"本季", ref)
+        self.assertEqual(self.payload["brief"].count("<article>"), 4)
+
+    def test_capex_is_the_three_lines_the_fcf_definition_takes_off(self) -> None:
+        q, cash = self.q, self.q["cash"]
+        three = [a + b + c for a, b, c in zip(cash["purchases_of_property_and_equipment"][1:],
+                                               cash["purchases_of_intangible_assets"][1:],
+                                               cash["payments_of_intangible_asset_obligations"][1:])]
+        # the fiscal year that ended with the last fiscal Q4 on the axis, recounted by label
+        last_q4 = max(k for k, label in enumerate(q["fiscal_labels"]) if label.startswith("Q4 "))
+        year = q["fiscal_labels"][last_q4].split()[1]
+        fy = [k for k, label in enumerate(q["fiscal_labels"]) if label.endswith(year)]
+        self.assertEqual(fy, list(range(last_q4 - 3, last_q4 + 1)))
+        fy_share = (sum(three[k - 1] for k in fy) / sum(q["revenue"][k] for k in fy)) * 100
+        now_share = three[-1] / q["revenue"][-1] * 100
+        ex = self.ex["EX_CAPEX"]
+        self.assertEqual(ex["title"], f"资本性支出三项本季 ${three[-1]:,}M、占收入 {now_share:.1f}%；"
+                                      f"FY{year[3:]} 全年 {fy_share:.1f}%")
+        self.assertEqual([sum(v) for v in zip(*(s["values"] for s in ex["stacks"]))], three)
+        self.assertEqual(len(ex["xlabels"]), len(three))
+        # FCF identity: the three lines are exactly OCF minus FCF
+        self.assertEqual(three, [o - f for o, f in zip(cash["operating_cash_flow"][1:], cash["free_cash_flow"][1:])])
+
+    def test_softbank_is_read_against_license(self) -> None:
+        rp, q = self.st["related_party"], self.q
+        lic = dict(zip(q["periods"], q["license"]))
+        share_now = rp["softbank_affiliate"][-1] / lic[rp["periods"][-1]] * 100
+        share_then = rp["softbank_affiliate"][-5] / lic[rp["periods"][-5]] * 100
+        ex = self.ex["EX_SOFTBANK"]
+        self.assertTrue(ex["title"].startswith(
+            f"软银咨询协议本季确认 ${rp['softbank_affiliate'][-1]:.1f}M，占 license and other 的 {share_now:.1f}%；"
+            f"一年前 {share_then:.1f}%"), ex["title"])
+        self.assertEqual(ex["xlabels"], rp["periods"])
+        self.assertEqual(ex["line"]["values"][:9], [0.0] * 9, "the zeros before the agreement are drawn")
+
+    def test_the_snapshot_closes_to_the_series(self) -> None:
+        snap, q = self.st["current_snapshot"], self.q
+        i, j = len(q["periods"]) - 1, q["periods"].index(snap["columns"][1])
+        self.assertEqual(snap["columns"], [q["periods"][i], q["periods"][j]])
+        rec = snap["reconciliation_operating_income"]
+        for col, k in ((0, i), (1, j)):
+            with self.subTest(column=snap["columns"][col]):
+                self.assertEqual(q["gaap"]["operating_income"][k] + sum(v[col] for key, v in rec.items() if key != "row"),
+                                 q["non_gaap"]["operating_income"][k])
+                self.assertEqual(q["gaap"]["net_income"][k]
+                                 + sum(v[col] for v in snap["non_cash_adjustments"].values())
+                                 + sum(v[col] for v in snap["working_capital_changes"].values()),
+                                 q["cash"]["operating_cash_flow"][k])
+
+    def test_the_notes_print_the_snapshot(self) -> None:
+        snap, q = self.st["current_snapshot"], self.q
+        wc = [sum(v[col] for v in snap["working_capital_changes"].values()) for col in (0, 1)]
+        fcf, j = q["cash"]["free_cash_flow"], q["periods"].index(snap["columns"][1])
+        note = self.ex["EX_FCF"]["note"]
+        for text in (arm.usd_m(wc[0]), arm.usd_m(wc[1]), arm.usd_m(fcf[-1] - wc[0]),
+                     arm.usd_m(fcf[-1] - fcf[j]), arm.usd_m(wc[0] - wc[1])):
+            self.assertIn(text, note)
+        below = snap["below_operating_income"]
+        ni = q["gaap"]["net_income"]
+        margin = self.ex["EX_MARGIN"]["note"]
+        sbc = snap["reconciliation_operating_income"]["share_based_compensation"][0]
+        self.assertIn(f"{arm.usd_m(sbc)}（占收入 {sbc / q['revenue'][-1] * 100:.1f}%", margin)
+        self.assertIn(arm.usd_m(ni[-1] - below["income_from_equity_investments"][0]
+                                - below["income_tax_benefit_expense"][0]), margin)
+        self.assertIn(arm.usd_m(ni[j] - below["income_from_equity_investments"][1]
+                                - below["income_tax_benefit_expense"][1]), margin)
+
+    def test_a_snapshot_that_does_not_close_stops_the_build(self) -> None:
+        cases = (
+            ("operating cash flow", lambda s: s["current_snapshot"]["working_capital_changes"]["other_liabilities"]
+             .__setitem__(0, 284)),
+            ("reconciliation does not close", lambda s: s["current_snapshot"]["reconciliation_operating_income"]
+             ["share_based_compensation"].__setitem__(1, 240)),
+            ("columns", lambda s: s["current_snapshot"].__setitem__(
+                "columns", [s["current_snapshot"]["columns"][0], "1999Q1"])),
+            ("stamped", lambda s: s["current_snapshot"].__setitem__("period", "Q1 1999")),
+        )
+        for message, edit in cases:
+            with self.subTest(case=message):
+                with self.assertRaisesRegex(ValueError, message):
+                    self.rebuilt(edit)
+
+    def test_one_quarter_words_leave_with_their_block(self) -> None:
+        text = json.dumps(self.payload, ensure_ascii=False)
+        for phrase in ("营运资本变动贡献", "税前、不含股权投资的利润"):
+            self.assertIn(phrase, text)
+        no_snap = json.dumps(self.rebuilt(lambda s: s.pop("current_snapshot")), ensure_ascii=False)
+        for phrase in ("营运资本变动贡献", "税前、不含股权投资的利润", "<span>现金</span>"):
+            self.assertNotIn(phrase, no_snap)
+        call = self.st["quarter_story"]["call"]
+        words = (f"royalty 同比 {call['next_quarter_royalty_yoy']}", call["fy_royalty_now"],
+                 call["agi_gross_margin"], call["softbank_run_rate"])
+        for word in words:
+            self.assertIn(word, text)
+        no_call = json.dumps(self.rebuilt(lambda s: s["quarter_story"].pop("call")), ensure_ascii=False)
+        for word in words + ("电话会的说法",):
+            self.assertNotIn(word, no_call)
 
 
 class ArmChecksTest(unittest.TestCase):
@@ -468,12 +921,32 @@ class ArmChecksTest(unittest.TestCase):
                                    / c["contract_assets_current_usd_m"] * 100, 1)
         self.assertIn(f"占 {related_ca}%", by_ref(self.payload)["EX_CONTRACT"]["title"])
 
+    def test_the_snapshot_agrees_with_the_statements_reread(self) -> None:
+        """`current_snapshot` was keyed from the shareholder letter; these `_checks` fields were
+        read from the interim statements (arm-20260630.htm). Two documents, one set of numbers."""
+        c, snap = self.c, self.st["current_snapshot"]
+        rec, below = snap["reconciliation_operating_income"], snap["below_operating_income"]
+        self.assertEqual(rec["share_based_compensation"],
+                         [c["share_based_compensation_usd_m"], c["share_based_compensation_prior_year_usd_m"]])
+        self.assertEqual(snap["non_cash_adjustments"]["share_based_compensation_cost"],
+                         rec["share_based_compensation"])
+        self.assertEqual(below["income_from_equity_investments"],
+                         [c["income_from_equity_investments_usd_m"],
+                          c["income_from_equity_investments_prior_year_usd_m"]])
+        self.assertEqual(below["income_tax_benefit_expense"],
+                         [c["income_tax_benefit_usd_m"], c["income_tax_benefit_prior_year_usd_m"]])
+        wc = [sum(values[col] for values in snap["working_capital_changes"].values()) for col in (0, 1)]
+        self.assertEqual(wc, [c["working_capital_change_usd_m"], c["working_capital_change_prior_year_usd_m"]])
+
     def test_the_page_prints_the_checked_figures(self) -> None:
         c, head = self.c, self.payload["headline"]
         self.assertIn(arm.usd_m(c["revenue_usd_m"]), head)
         self.assertIn(arm.usd_m(c["rpo_usd_m"], 1), head)
         ex = by_ref(self.payload)
-        self.assertIn(arm.usd_m(c["purchases_of_property_and_equipment_usd_m"]), ex["EX_CAPEX"]["title"])
+        capex3 = (c["purchases_of_property_and_equipment_usd_m"] + c["purchases_of_intangible_assets_usd_m"]
+                  + c["payments_of_intangible_asset_obligations_usd_m"])
+        self.assertIn(arm.usd_m(capex3), ex["EX_CAPEX"]["title"])
+        self.assertIn(arm.usd_m(c["purchases_of_property_and_equipment_usd_m"]), ex["EX_CAPEX"]["note"])
         self.assertIn(arm.usd_m(c["withholding_tax_on_vested_shares_usd_m"]), ex["EX_FCF"]["title"])
         self.assertIn(arm.usd_m(c["arm_china_revenue_usd_m"], 1), ex["EX_RELATED_SPLIT"]["title"])
         self.assertIn(arm.usd_m(c["softbank_common_control_revenue_usd_m"], 1), ex["EX_RELATED_SPLIT"]["title"])

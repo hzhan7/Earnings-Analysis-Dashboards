@@ -289,8 +289,16 @@ CONVERTED = {
         "的两条收入腿": "the quarterly record starts at the quarter ended 2022-03-31 -- see the "
                    "note above this entry.",
         "两条腿的同比": "a year-on-year line needs four quarters of run-up, so it starts 2023Q1.",
-        "ACV 同比": "RPO is first printed for 2022-09-30 (a letter comparative); the prospectus "
+        "RPO 同比": "RPO is first printed for 2022-09-30 (a letter comparative); the prospectus "
                   "prints it only at 2023-03-31 and 2023-06-30, so the unbroken run starts 2022Q3.",
+        "上季阈值": "each settled threshold is drawn on its metric's own series from its first printed "
+                "point: royalty year on year from 2023Q1 (four quarters after the record's 2022Q1 floor); "
+                "the SoftBank Consulting Agreement line from 2022Q2, where the related-party note begins "
+                "(the agreement itself earns nothing before 2024Q3, and the zeros are drawn).",
+        "下季阈值": "each threshold line plots its metric's own series from its first printed point: "
+                "quarterly royalty from the quarter ended 2022-03-31 (the prospectus table), ACV year on "
+                "year from 2023Q1 (ACV is printed at 2021-03-31 and then quarterly only from 2022-03-31), "
+                "free cash flow from 2022Q2 (the first three-month cash-flow reconciliation, prospectus).",
         "Arm Total Access 授权从": "the licence counts are first printed for 2022-03-31 in the "
                                "prospectus KPI table, and the letters stopped printing them after "
                                "2026-03-31.",
@@ -301,8 +309,11 @@ CONVERTED = {
                     "contract assets, so the unbroken quarterly run starts 2023-12-31.",
         "两者相差": "non-GAAP operating income is first printed for the quarter ended 2022-06-30 "
                 "(prospectus); nothing prints it for January-March 2022.",
-        "购置物业设备本季": "the three-month cash-flow reconciliation is first printed for the "
-                     "quarter ended 2022-06-30 (prospectus).",
+        "资本性支出三项本季": "the three-month cash-flow reconciliation is first printed for the "
+                      "quarter ended 2022-06-30 (prospectus).",
+        "软银咨询协议本季": "revenue from related parties is first split by counterparty for the quarter "
+                     "ended 2022-06-30 (prospectus related-party note); the SoftBank Consulting Agreement "
+                     "itself earns nothing before 2024Q3, and those zeros are drawn.",
         "本季自由现金流": "same cash-flow floor.",
     },
     "v": {
@@ -975,13 +986,16 @@ FLOOR_KIND = {
         'non-GAAP 摊薄 EPS：': 'disclosure',
         '的两条收入腿': 'disclosure',
         '两条腿的同比': 'disclosure',
-        'ACV 同比': 'disclosure',
+        'RPO 同比': 'disclosure',
+        '上季阈值': 'disclosure',
+        '下季阈值': 'disclosure',
         'Arm Total Access 授权从': 'disclosure',
         '、占总收入': 'disclosure',
         '关联方里的两家': 'disclosure',
         '流动合同资产': 'disclosure',
         '两者相差': 'disclosure',
-        '购置物业设备本季': 'disclosure',
+        '资本性支出三项本季': 'disclosure',
+        '软银咨询协议本季': 'disclosure',
         '本季自由现金流': 'disclosure',
     },
     'ker': {
@@ -1391,7 +1405,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 160)
+        self.assertEqual(settled.count("disclosure"), 163)
         self.assertEqual(settled.count("design"), 40)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
