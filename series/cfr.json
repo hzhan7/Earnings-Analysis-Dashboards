@@ -94,28 +94,79 @@
   "checked_on": "2026-09-19",
   "note": {
    "source": "所有者的季报笔记（本地研究）：本季「2026-07-15 CFR Q2 2026 vs Q1 2026 Analysis」第 0 节「上季遗留问题回答」表（6 行的「验证结果」列）与第 8 节两张表；上季「2026-05-22 CFR Q1 2026 vs Q4 2025 Analysis」第 8 节「关键观察指标」表。",
+   "checked_on": "2026-09-23",
+   "followup_total": 6,
    "followup_counts": {
     "已验证": 1,
     "部分验证": 3,
     "仍未披露": 2
    },
    "followup_structural": 3,
-   "prior_quantified": [
-    [
-     "cer_jewellery",
-     "up",
-     12.0
-    ],
-    [
-     "cer_americas",
-     "up",
-     10.0
-    ]
+   "prior_thresholds": [
+    {
+     "id": "cer_jewellery",
+     "metric": "珠宝恒定汇率增速",
+     "direction": "up",
+     "threshold": 12.0
+    },
+    {
+     "id": "cer_americas",
+     "metric": "美洲恒定汇率增速",
+     "direction": "up",
+     "threshold": 10.0
+    }
    ],
-   "prior_pending_settles": [
-    "2026-11-13",
-    "2026-11-13",
-    "2027-05"
+   "prior_pending": [
+    {
+     "metric": "FY27 上半年中国大陆、香港与澳门合计恒定汇率增速",
+     "settles": "2026-11"
+    },
+    {
+     "metric": "FY27 上半年报告毛利率",
+     "settles": "2026-11"
+    },
+    {
+     "metric": "FY27 全年股息（普通 + 特别，瑞郎）",
+     "settles": "2027-05"
+    }
+   ],
+   "next_thresholds": [
+    {
+     "id": "cer_total",
+     "metric": "集团恒定汇率增速",
+     "direction": "up",
+     "threshold": 8.0
+    },
+    {
+     "id": "cer_watchmakers",
+     "metric": "腕表恒定汇率增速",
+     "direction": "up",
+     "threshold": -3.0
+    },
+    {
+     "id": "half_gross_margin",
+     "metric": "半年毛利率",
+     "direction": "up",
+     "threshold": 63.0
+    },
+    {
+     "id": "net_cash",
+     "metric": "季末净现金",
+     "direction": "up",
+     "threshold": 6.8
+    },
+    {
+     "id": "cer_wholesale",
+     "metric": "批发与特许权收入恒定汇率增速",
+     "direction": "up",
+     "threshold": 5.0
+    },
+    {
+     "id": "jewellery_two_year",
+     "metric": "珠宝两年恒定汇率年化",
+     "direction": "up",
+     "threshold": 15.0
+    }
    ]
   }
  },
@@ -8417,52 +8468,82 @@
   ],
   "refuter": "a third agent searched the 45 announcements and 20 call transcripts for any numeric target; the transcripts carry tax-rate ranges, capex as a share of sales and the two margin ranges above, none of them in an announcement"
  },
- "thresholds": {
+ "next_kpi": {
   "period": "Q2 2026",
-  "_note": "本地研究设定的下季阈值，不是公司指引。当前值由页面按 current_key 从序列现算（恒定汇率增速读本季，珠宝两年年化读上年同季与本季，半年毛利率读最新半年，净现金读 net_cash_quarter_end）；换季时按新一季的本地分析改阈值并改戳。",
-  "entries": [
+  "for_period": "Q3 2026",
+  "_what": "本季笔记（2026-07-15 CFR Q2 2026 vs Q1 2026 Analysis）第 8 节「关键观察指标」：新表的 5 条，加上校准表里由上季第 1 条退役后重设的一条。每条的 threshold 取该条第一道警示或减仓线，levels 是该条全部档位的原话；当前值由页面按 id 从序列现算，不在这里写。unquantified 是第 8 节里没有数可画的半条，写进页面的表。下一季换成那一份笔记第 8 节的内容并改戳。",
+  "quantified": [
    {
+    "id": "cer_total",
+    "item": "第 1 条",
     "metric": "集团恒定汇率增速",
     "direction": "up",
     "threshold": 8.0,
     "unit": "pct",
-    "current_key": "cer_total"
+    "levels": "≥+11.6% 运行速率未变（跟踪）；+8% 至 +11.6% 正常减速（跟踪）；<+8% 两年叠加实质性下移（减仓）；<+5% 失速（减仓并下调倍数锚至 25×）"
    },
    {
+    "id": "cer_watchmakers",
+    "item": "第 2 条",
     "metric": "腕表恒定汇率增速",
     "direction": "up",
     "threshold": -3.0,
     "unit": "pct",
-    "current_key": "cer_watchmakers"
+    "levels": "给了 like-for-like 且不含 B&M ≥+6% 底层复苏成立（加仓）；未给口径且印出 +0% 至 +4% 视为噪声、不调仓（跟踪）；未给口径且印出 <−3% 需求确实转弱（警示）；≥+8% 底层强于表观（加仓）"
    },
    {
-    "metric": "批发与特许权收入恒定汇率增速",
-    "direction": "up",
-    "threshold": 5.0,
-    "unit": "pct",
-    "current_key": "cer_wholesale"
-   },
-   {
-    "metric": "珠宝两年恒定汇率年化",
-    "direction": "up",
-    "threshold": 15.0,
-    "unit": "pct",
-    "current_key": "jewellery_two_year"
-   },
-   {
+    "id": "half_gross_margin",
+    "item": "第 3 条",
     "metric": "半年毛利率",
     "direction": "up",
     "threshold": 63.0,
     "unit": "pct",
-    "current_key": "half_gross_margin"
+    "levels": "≥64% 黄金滞后模型被证伪、提价传导有效（加仓）；63.0–64.0% 符合基准（跟踪）；<63% 滞后模型成立（警示）；<62% 提价传导失效（减仓）"
    },
    {
+    "id": "net_cash",
+    "item": "第 4 条",
     "metric": "季末净现金",
     "direction": "up",
     "threshold": 6.8,
     "unit": "eur_bn",
-    "current_key": "net_cash"
+    "levels": "<€6.8bn 且无一次性解释 经营现金生成弱于预期（警示）；>€7.8bn 强于预期（加仓）"
+   },
+   {
+    "id": "cer_wholesale",
+    "item": "第 5 条",
+    "metric": "批发与特许权收入恒定汇率增速",
+    "direction": "up",
+    "threshold": 5.0,
+    "unit": "pct",
+    "levels": ">+12% 渠道补库启动（加仓）；+7% 至 +12% 渠道不跟（跟踪）；<+5% 渠道开始去库（警示）"
+   },
+   {
+    "id": "jewellery_two_year",
+    "item": "校准表第 1 条",
+    "metric": "珠宝两年恒定汇率年化",
+    "direction": "up",
+    "threshold": 15.0,
+    "unit": "pct",
+    "levels": "珠宝两年 CER 叠加年化 ≥ +15%（上季第 1 条「珠宝 >+12%」退役后重设）"
    }
+  ],
+  "unquantified": [
+   {
+    "item": "第 2 条",
+    "text": "公司是否给出不含 Baume & Mercier 的可比口径（like-for-like）",
+    "why": "问的是给不给，不是多少，没有数可画"
+   },
+   {
+    "item": "第 4 条",
+    "text": "FVTOCI 上市股权余额若没有从 €521m 回落到约 €120m 且公司不作解释（警示）",
+    "why": "这个余额只在年报附注里，本页的序列没有它"
+   }
+  ],
+  "revocation_ids": [
+   "cer_total",
+   "half_gross_margin",
+   "net_cash"
   ]
  },
  "followup_closure": {
@@ -8645,6 +8726,7 @@
   "china": "中国的数字在季度公告正文里，口径换过：2022 年 7 月那份给的是中国大陆单独一季 −37%，近两年给的是中国大陆、香港与澳门三地合计（2026 年 1 月那份是 +2%），本季只写「double digits」，没有数字。",
   "watchmaker_maisons_listed": "A. Lange & Söhne, IWC Schaffhausen, Jaeger-LeCoultre, Panerai, Piaget, Roger Dubuis and Vacheron Constantin",
   "baume_mercier_mentions": 0,
+  "undrawn": "本季笔记的另几条结论这里画不出来：对市场预期的超出（预期数来自媒体转述，不是一手数据）；黄金成本进入损益表的时间差（要用外部金价，毛利率要等 {next_date}）；中国大陆单独的增速（季度公告只写中国大陆、香港与澳门合计「double digits」）；Avolta 与 FVTOCI 上市股权（只在年报附注里）；股息占自由现金流（全年数据）。",
   "baume_mercier_brief": "Baume &amp; Mercier {bm_completed} 完成出售，本季的腕表销售仍含它；出表之后腕表的同比怎么列示，要看 {next_month}的中期公告。",
   "baume_mercier_note": "本季公告列出的腕表 Maison 已经没有 Baume & Mercier，全文也没有提到它；公司 {bm_completed} 宣布出售完成，是本季结束后的第一天，所以本季的腕表销售仍含它。它出表之后比较期怎么列示，要看 {next_date} 的中期公告。"
  },
