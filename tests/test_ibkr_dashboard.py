@@ -302,6 +302,23 @@ class IbkrDashboardTest(unittest.TestCase):
                 self.assertAlmostEqual(self.nim[key][-1], this_quarter)
                 self.assertAlmostEqual(self.nim[key][-5], year_ago)
 
+    def test_the_footnote_cells_match_the_release(self) -> None:
+        """The all-in securities-lending figure is one footnote in one release, two cells."""
+        this_quarter, year_ago = self.source["_checks"]["securities_lending_all_in_usd_m"]
+        lending = self.nim["securities_lending_all_in_usd_m"]
+        self.assertEqual(len(lending), len(self.periods))
+        self.assertEqual(lending[-1], this_quarter)
+        self.assertEqual(lending[-5], year_ago)
+
+    def test_the_lines_added_later_say_how_they_were_read(self) -> None:
+        """Customer bad debt and comprehensive income joined the series after the page
+        was built; each names its statement, its fourth-quarter rule and its cross-checks."""
+        for line in ("financials_usd_m.customer_bad_debt",
+                     "financials_usd_m.comprehensive_income_common",
+                     "nim.securities_lending_all_in_usd_m"):
+            with self.subTest(line=line):
+                self.assertTrue(self.source["_line_sources"].get(line))
+
     def test_average_earning_assets_only_ever_grow(self) -> None:
         """A parser that grabbed the wrong row of that table produced dips.
 
@@ -424,87 +441,135 @@ class IbkrDashboardTest(unittest.TestCase):
 
     # ── section three ───────────────────────────────────────────────────────
 
-    def test_headroom_bars_agree_with_the_thresholds_they_draw(self) -> None:
-        entries = (self.source.get("next_kpi") or {}).get("quantified", [])
-        charts = [ex for ex in self.exhibits
-                  if ex["kind"] == "diverging_bars" and ex["title"].startswith("下季")]
-        self.assertEqual(len(charts), 1 if entries else 0)
-        if not entries:
-            return
-        chart = charts[0]
+    def next_section(self, payload: dict | None = None) -> dict:
+        return next(s for s in (payload or self.payload)["sections"] if s["id"] == "next_quarter")
+
+    def expected_readings(self) -> dict:
+        """What each threshold reads, recomputed here from the arrays -- not via the builder."""
+        accounts = self.operating["accounts_thousands"]
+        credits = self.operating["customer_credits_usd_bn"]
+        return {
+            "net_adds": accounts[-1] - accounts[-2],
+            "margin_loans": self.operating["customer_margin_loans_usd_bn"][-1],
+            "nim": self.nim["nim_pct"][-1],
+            "commission_per_order": self.operating["commission_per_order_usd"][-1],
+            "bad_debt": self.financials["customer_bad_debt"][-1],
+            "customer_credits": credits[-1],
+            "credits_to_equity": credits[-1] / self.operating["customer_equity_usd_bn"][-1] * 100,
+            "securities_lending_all_in": self.nim["securities_lending_all_in_usd_m"][-1],
+        }
+
+    def test_the_headroom_bars_are_the_series_against_the_notes_thresholds(self) -> None:
+        """A reading typed into the block could drift from the line drawn beside it;
+        the block carries none, and every bar is the series' last cell."""
+        entries = self.source["next_kpi"]["quantified"]
+        chart = self.next_section()["exhibits"][0]
+        self.assertEqual(chart["kind"], "diverging_bars")
+        self.assertTrue(chart["title"].startswith(f"下季 {len(entries)} 条阈值："))
         self.assertEqual(chart["xlabels"], [entry["metric"] for entry in entries])
+        readings = self.expected_readings()
         for entry, drawn in zip(entries, chart["values"]):
             with self.subTest(metric=entry["metric"]):
+                self.assertNotIn("current", entry)
                 self.assertAlmostEqual(
-                    drawn,
-                    round(headroom(entry["direction"], entry["threshold"],
-                                   entry["current"]), 1),
-                    places=6)
+                    drawn, round(headroom(entry["direction"], entry["threshold"],
+                                          readings[entry["reads"]]), 1), places=6)
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("下季阈值"))
+        self.assertEqual([row[:2] for row in table["rows"]],
+                         [[f"第 {e['row']} 行", e["metric"]] for e in entries])
+        typed = copy.deepcopy(self.source)
+        typed["next_kpi"]["quantified"][0]["current"] = 1.0
+        with self.assertRaisesRegex(ValueError, "typed 'current'"):
+            build_payload(typed)
 
-    def test_every_threshold_current_value_matches_the_series(self) -> None:
-        """A threshold whose `current` drifted from the series it is drawn against
-        would put the bar and the line in different places on the same page."""
-        entries = {entry["metric"]: entry
-                   for entry in (self.source.get("next_kpi") or {}).get("quantified", [])}
-        accounts = self.operating["accounts_thousands"]
-        expected = {
-            "净息差 NIM": self.nim["nim_pct"][-1],
-            "账户数环比增速": (accounts[-1] / accounts[-2] - 1) * 100,
-            "每笔已清算订单佣金": self.operating["commission_per_order_usd"][-1],
-            "非息费用 / 总净收入": (self.financials["total_non_interest_expenses"][-1]
-                            / self.financials["total_net_revenues"][-1] * 100),
-            "少数股东占净利润比": (self.financials["net_income_noncontrolling"][-1]
-                          / self.financials["net_income"][-1] * 100),
-            "客户保证金贷款": self.operating["customer_margin_loans_usd_bn"][-1],
-        }
-        self.assertTrue(set(entries) <= set(expected), set(entries) - set(expected))
-        for metric, entry in entries.items():
-            with self.subTest(metric=metric):
-                self.assertAlmostEqual(entry["current"], expected[metric], places=1)
+    def test_every_series_gets_one_history_chart_with_all_its_lines(self) -> None:
+        """The overview says which line is close; the history says how it got there.
 
-    def test_every_threshold_gets_its_own_history_chart(self) -> None:
-        """The overview bar says which line broke; only the per-metric chart says
-        how it got there. Nothing here is a single unplottable point."""
-        thresholds = {entry["threshold"]
-                      for entry in (self.source.get("next_kpi") or {}).get("quantified", [])}
-        drawn = set()
-        for exhibit in self.exhibits:
-            if exhibit["kind"] != "lines":
-                continue
-            for series in exhibit.get("series", []):
-                values = [value for value in series["values"] if value is not None]
-                if len(set(values)) == 1 and values:
-                    drawn.add(values[0])
-        self.assertTrue(thresholds <= drawn, thresholds - drawn)
+        A series bounded twice -- both sides of the margin book, a warning and a
+        confirmation line on the margin -- carries both lines on one chart. The
+        one threshold whose series has a single filed cell is named in the
+        overview's note and the description instead of being drawn or dropped.
+        """
+        entries = self.source["next_kpi"]["quantified"]
+        charts = self.next_section()["exhibits"][1:]
+        drawn_reads = [reads for reads in dict.fromkeys(e["reads"] for e in entries)
+                       if reads != "securities_lending_all_in"]
+        self.assertEqual(len(charts), len(drawn_reads))
+        for reads, chart in zip(drawn_reads, charts):
+            group = [e for e in entries if e["reads"] == reads]
+            with self.subTest(reads=reads):
+                self.assertEqual([next(iter(set(s["values"]))) for s in chart["series"][1:]],
+                                 [e["threshold"] for e in group])
+                self.assertIn("：下季阈值 ", chart["title"])
+                self.assertIn("，当前 ", chart["title"])
+                self.assertEqual(len(chart["series"][0]["values"]), len(chart["xlabels"]))
+        self.assertIn("全口径证券借贷净利息", self.next_section()["exhibits"][0]["note"])
+        self.assertIn("只进余量图", self.next_section()["description"])
+
+    def test_every_row_of_the_notes_section_eight_is_drawn_or_named(self) -> None:
+        kpi = self.source["next_kpi"]
+        rows = {e["row"] for e in kpi["quantified"]} | {item["row"] for item in kpi["not_tracked"]}
+        self.assertEqual(rows, set(range(1, kpi["rows"] + 1)))
+        description = self.next_section()["description"]
+        for item in kpi["not_tracked"]:
+            with self.subTest(row=item["row"]):
+                self.assertIn(f"第 {item['row']} 行，", description)
+        # The page used to call its own thresholds "本站研究设定"; they are the note's now.
+        self.assertNotIn("本站研究设定", published_text(self.payload))
+        self.assertNotIn("本站的研究设定", published_text(self.payload))
 
     def test_a_threshold_sentence_restates_the_threshold_it_sits_under(self) -> None:
         """The note's words for a threshold are the quarter's, the number is the entry's.
 
-        Where a threshold's reasoning restates the threshold, the series writes a
+        Where a threshold's condition restates the threshold, the series writes a
         placeholder and the builder fills it; move the threshold and every
         sentence that names it must move with it.
         """
         moved = copy.deepcopy(self.source)
-        entry = next(e for e in moved["next_kpi"]["quantified"]
-                     if e["metric"] == "非息费用 / 总净收入")
+        entry = next(e for e in moved["next_kpi"]["quantified"] if e["metric"] == "客户坏账 · 单季线")
         entry["threshold"] = 31.0
         chart = next(ex for section in build_payload(moved)["sections"]
-                     for ex in section["exhibits"] if ex["title"].startswith("非息费用 / 总净收入"))
-        self.assertIn("距 31.0% 的阈值还有", chart["note"])
-        self.assertIn("越过 31% 不必然", chart["note"])
-        self.assertNotIn("25", chart["note"])
+                     for ex in section["exhibits"] if ex["title"].startswith("客户坏账：下季阈值"))
+        self.assertIn("US$31M（单季线）", chart["title"])
+        self.assertIn("单季 > US$31M", chart["note"])
+        self.assertNotIn("US$25M", chart["title"] + chart["note"])
+
+    def test_the_bounded_twice_lines_say_where_the_quarter_stands(self) -> None:
+        """A line that counts only after two quarters in a row says which quarter this is."""
+        charts = {ex["title"].split("：")[0]: ex for ex in self.next_section()["exhibits"][1:]}
+        self.assertIn("企稳线要连续两季 ≥ 1.90% 才算企稳确认：本季是第一季。", charts["净息差 NIM"]["note"])
+        self.assertIn("连续线要连续两季 ≥ US$10M 才触发：本季是第一季。", charts["客户坏账"]["note"])
+        # Had last quarter stayed on the line, the run would reach back as far
+        # as the series stays at or above it -- counted, not assumed to be two.
+        held = copy.deepcopy(self.source)
+        held["nim"]["nim_pct"][-2] = 1.95
+        run = 0
+        for value in reversed(held["nim"]["nim_pct"]):
+            if value < 1.9:
+                break
+            run += 1
+        self.assertGreaterEqual(run, 2)
+        nim_chart = next(ex for ex in self.next_section(build_payload(held))["exhibits"][1:]
+                         if ex["title"].startswith("净息差 NIM"))
+        self.assertIn(f"到本季已连续{cn_count(run)}季", nim_chart["note"])
 
     # ── a roll edits the series and nothing else ────────────────────────────
 
     def test_quarter_blocks_refuse_to_publish_under_another_quarter(self) -> None:
-        """Last quarter's thresholds or settlement under this quarter's label stop the build."""
-        for key in ("next_kpi", "prior_kpi"):
+        """Last quarter's closure, settlement, thresholds or story under this quarter's label stop the build."""
+        for key in ("followup_closure", "prior_kpi_settlement", "next_kpi", "quarter_story"):
             stale = copy.deepcopy(self.source)
-            stale[key] = copy.deepcopy(self.source["next_kpi"])
             stale[key]["period"] = "Q1 1999"
             with self.subTest(block=key):
                 with self.assertRaisesRegex(ValueError, "stamped"):
                     build_payload(stale)
+        # A settlement of some other note than the one right before this quarter.
+        for key in ("followup_closure", "prior_kpi_settlement"):
+            wrong = copy.deepcopy(self.source)
+            wrong[key]["set_in"] = "Q1 1999"
+            with self.subTest(settles=key):
+                with self.assertRaisesRegex(ValueError, "settles the note of"):
+                    build_payload(wrong)
         stale = copy.deepcopy(self.source)
         label = f"IBKR {self.source['_checks']['company_label']} 业绩新闻稿"
         stale["sources"] = [s for s in stale["sources"] if not s["label"].startswith(label)]
@@ -519,41 +584,121 @@ class IbkrDashboardTest(unittest.TestCase):
         payload = build_payload(bare)
         titles = [ex["title"] for s in payload["sections"] for ex in s["exhibits"]]
         self.assertFalse([t for t in titles if t.startswith("下季")])
-        self.assertEqual(len(titles),
-                         len(self.exhibits) - 1 - len(self.source["next_kpi"]["quantified"]))
+        self.assertEqual(len(titles), len(self.exhibits) - len(self.next_section()["exhibits"]))
+        self.assertEqual(self.next_section(payload)["exhibits"], [])
         self.assertEqual(len(payload["tables"]), len(self.payload["tables"]) - 1)
         self.assertEqual([s["id"] for s in payload["sections"]],
                          [s["id"] for s in self.payload["sections"]])
         self.assertNotIn("第一组阈值", published_text(payload))
 
-    def test_a_settlement_block_closes_last_quarters_thresholds(self) -> None:
-        """From the second quarter on, section one settles what section three set.
+    # ── section one: what the previous note left, settled ───────────────────
 
-        Built here from this quarter's own thresholds, re-stamped: the settlement
-        chart comes first, its bars are this quarter's series values against
-        those thresholds, and "first coverage" is gone from every part of the page.
+    def settled_section(self, payload: dict | None = None) -> dict:
+        return next(s for s in (payload or self.payload)["sections"] if s["id"] == "settled")
+
+    def test_section_one_holds_the_closure_and_the_settlement_only(self) -> None:
+        """(a) closure, then (b) the headroom overview, then one history chart per
+        settled series -- and nothing standing in for a settlement.
+
+        The company's consecutive-quarter table and the net-interest-margin
+        record opened this section for a quarter, as a substitute for a
+        settlement the page claimed it could not make. They are records of the
+        whole window and now sit in section four.
         """
-        rolled = copy.deepcopy(self.source)
-        rolled["meta"]["coverage_start"] = "Q1 1999"
-        rolled["prior_kpi"] = {
-            "period": self.periods[-1],
-            "quantified": [{key: entry[key] for key in ("metric", "direction", "threshold", "unit")}
-                           for entry in self.source["next_kpi"]["quantified"]],
-        }
-        payload = build_payload(rolled)
-        settled = next(s for s in payload["sections"] if s["id"] == "settled")
-        first = settled["exhibits"][0]
-        count = len(rolled["prior_kpi"]["quantified"])
-        self.assertTrue(first["title"].startswith(f"上季 {count} 条阈值"))
-        current = {e["metric"]: e["current"] for e in self.source["next_kpi"]["quantified"]}
-        for metric, value in zip(first["xlabels"], first["values"]):
-            entry = next(e for e in rolled["prior_kpi"]["quantified"] if e["metric"] == metric)
-            with self.subTest(metric=metric):
+        exhibits = self.settled_section()["exhibits"]
+        series_read = list(dict.fromkeys(
+            entry["reads"] for entry in self.source["prior_kpi_settlement"]["quantified"]))
+        self.assertEqual([ex["kind"] for ex in exhibits],
+                         ["bars_labeled", "diverging_bars"] + ["lines"] * len(series_read))
+        self.assertTrue(exhibits[0]["title"].startswith("上季 "))
+        self.assertIn("条待验证问题", exhibits[0]["title"])
+        self.assertTrue(exhibits[1]["title"].startswith("上季 "))
+        self.assertIn("条量化阈值", exhibits[1]["title"])
+        routine = next(s for s in self.payload["sections"] if s["id"] == "routine")
+        routine_titles = [ex["title"] for ex in routine["exhibits"]]
+        self.assertTrue(any(t.startswith("公司自印的环比表") for t in routine_titles))
+        self.assertTrue(any(t.startswith("净息差相对一年前") for t in routine_titles))
+
+    def test_the_closure_counts_are_computed_from_the_verdicts(self) -> None:
+        closure = self.source["followup_closure"]
+        chart = self.settled_section()["exhibits"][0]
+        counts = [sum(1 for item in closure["items"] if item["verdict"] == label)
+                  for label in closure["labels"]]
+        self.assertEqual(chart["xlabels"], closure["labels"])
+        self.assertEqual(chart["values"], counts)
+        self.assertEqual(sum(counts), len(closure["items"]))
+        self.assertTrue(chart["title"].startswith(f"上季 {len(closure['items'])} 条待验证问题："))
+        for label, count in zip(closure["labels"], counts):
+            if count:
+                with self.subTest(label=label):
+                    self.assertIn(f"{count} 条{label}", chart["title"])
+        # A verdict outside the labels would otherwise vanish from every count.
+        odd = copy.deepcopy(self.source)
+        odd["followup_closure"]["items"][0]["verdict"] = "悬而未决"
+        with self.assertRaisesRegex(ValueError, "verdicts"):
+            build_payload(odd)
+
+    def test_the_settlement_bars_are_the_series_against_the_thresholds(self) -> None:
+        settlement = self.source["prior_kpi_settlement"]
+        chart = self.settled_section()["exhibits"][1]
+        last = {"customer_credits": self.operating["customer_credits_usd_bn"][-1]}
+        self.assertEqual(chart["xlabels"], [e["metric"] for e in settlement["quantified"]])
+        for entry, drawn in zip(settlement["quantified"], chart["values"]):
+            with self.subTest(metric=entry["metric"]):
                 self.assertAlmostEqual(
-                    value, headroom(entry["direction"], entry["threshold"], current[metric]),
-                    delta=0.15)
-        self.assertNotIn("首次覆盖", published_text(payload))
-        self.assertIn("先结算上一份笔记留下的", settled["description"])
+                    drawn, round(headroom(entry["direction"], entry["threshold"],
+                                          last[entry["reads"]]), 1), places=6)
+        held = sum(1 for e in settlement["quantified"]
+                   if headroom(e["direction"], e["threshold"], last[e["reads"]]) >= 0)
+        self.assertTrue(chart["title"].startswith(f"上季 {len(settlement['quantified'])} 条量化阈值："))
+        if held == len(settlement["quantified"]):
+            self.assertIn("守住", chart["title"])
+            self.assertNotIn("击穿", chart["title"])
+        # Every row of the previous note's section 8 is either on the chart, the
+        # EPS leg settled in words, or named with the reason it is not settled.
+        rows = ({e["row"] for e in settlement["quantified"]} | {settlement["eps_leg"]["row"]}
+                | {item["row"] for item in settlement["not_settled"]})
+        self.assertEqual(rows, set(range(1, settlement["rows"] + 1)))
+        for item in settlement["not_settled"]:
+            with self.subTest(row=item["row"]):
+                self.assertIn(f"第 {item['row']} 行：", chart["note"])
+
+    def test_every_settled_threshold_is_drawn_on_its_history_chart(self) -> None:
+        settlement = self.source["prior_kpi_settlement"]
+        charts = self.settled_section()["exhibits"][2:]
+        drawn = {value for chart in charts for series in chart["series"][1:]
+                 for value in set(series["values"])}
+        self.assertEqual(drawn, {e["threshold"] for e in settlement["quantified"]})
+        for chart in charts:
+            with self.subTest(chart=chart["title"][:20]):
+                self.assertEqual(len(chart["series"][0]["values"]), len(chart["xlabels"]))
+                self.assertIn("上季阈值", chart["title"])
+
+    def test_the_eps_leg_is_settled_in_words_from_one_release(self) -> None:
+        """The note's first row asks for year-on-year growth; a zero threshold
+        has no percentage headroom, so it is settled in the note, not drawn."""
+        eps = self.source["prior_kpi_settlement"]["eps_leg"]["adjusted_diluted_eps_usd"]
+        note = self.settled_section()["exhibits"][1]["note"]
+        growth = (eps["this_quarter"] / eps["year_ago"] - 1) * 100
+        self.assertIn(f"${eps['this_quarter']:.2f}，去年同季 ${eps['year_ago']:.2f}", note)
+        self.assertIn(f"同比 {growth:+.1f}%", note)
+        self.assertIn("成立" if growth > 0 else "没有成立", note)
+
+    def test_a_quarter_whose_previous_note_left_nothing_says_so(self) -> None:
+        bare = copy.deepcopy(self.source)
+        del bare["followup_closure"], bare["prior_kpi_settlement"]
+        settled = self.settled_section(build_payload(bare))
+        self.assertEqual(settled["exhibits"], [])
+        self.assertIn("上一份笔记没有留下可结算的问题或阈值", settled["description"])
+        first = copy.deepcopy(bare)
+        first["meta"]["coverage_start"] = self.periods[-1]
+        self.assertIn(f"本站对 IBKR 的第一份季报分析是 {self.periods[-1]}",
+                      self.settled_section(build_payload(first))["description"])
+        # A first quarter cannot settle a previous note: the two stamps disagree.
+        contradictory = copy.deepcopy(self.source)
+        contradictory["meta"]["coverage_start"] = self.periods[-1]
+        with self.assertRaisesRegex(ValueError, "first quarter covered"):
+            build_payload(contradictory)
 
     def test_the_record_sentences_are_computed_not_remembered(self) -> None:
         """Make the series disagree with each claim; the claim must leave the page."""
@@ -579,16 +724,54 @@ class IbkrDashboardTest(unittest.TestCase):
 
         def one_yield_up(s):
             s["nim"]["yield_credits_pct"][-1] = s["nim"]["yield_credits_pct"][-5] + 0.01
-        without(("全线下行", "无一例外", "四条线没有一条在往上走", "四条利率线没有一条在往上走"),
+        without(("全线下行", "无一例外", "四条线同比没有一条在往上走", "四条利率线同比没有一条在往上走"),
                 one_yield_up)
 
         def slower_darts(s):
             s["operating"]["darts_thousands"][-1] = s["operating"]["darts_thousands"][-5] * 1.05
         without(("客户端每一项都在爆发", "三项同比都在三成以上"), slower_darts)
 
-        def earlier_coverage(s):
-            s["meta"]["coverage_start"] = "Q1 1999"
-        without(("首次覆盖", "第一组阈值"), earlier_coverage)
+        # Section two's readings of this quarter, each a record or a streak.
+        def bigger_past_adds(s):
+            accounts = s["operating"]["accounts_thousands"]
+            for index in range(20, len(accounts)):
+                accounts[index] += 1000
+        without(("41 季里最高",), bigger_past_adds)
+
+        def a_longer_rise_before(s):
+            s["nim"]["nim_pct"][-3] = s["nim"]["nim_pct"][-4] + 0.01
+        without(("是 2025Q3 之后的第一次回升",), a_longer_rise_before)
+
+        def thinner_cushion_before(s):
+            s["operating"]["customer_credits_usd_bn"][-10] = 1.0
+        without(("有这个口径以来最低",), thinner_cushion_before)
+
+        def a_later_bad_debt_spike(s):
+            s["financials_usd_m"]["customer_bad_debt"][-3] = 20.0
+        without(("客户坏账 US$10M，2019Q1 之后最高",), a_later_bad_debt_spike)
+
+        def a_recent_thin_margin(s):
+            financials = s["financials_usd_m"]
+            financials["pretax_income"][-4] = financials["total_net_revenues"][-4] * 0.5
+        without(("已连续七季高于 70%",), a_recent_thin_margin)
+
+        def comprehensive_up_too(s):
+            s["financials_usd_m"]["comprehensive_income_common"][-1] = 400.0
+        without(("本季两条线同比方向相反",), comprehensive_up_too)
+
+        # "First coverage" is true of one quarter only -- the quarter of the
+        # first note in the owner's vault. The page once printed it on a
+        # quarter that already had two notes behind it, so the direction that
+        # matters is the reverse one: absent on this page, present only when
+        # the series says this quarter is the first.
+        first = copy.deepcopy(self.source)
+        first["meta"]["coverage_start"] = self.periods[-1]
+        del first["followup_closure"], first["prior_kpi_settlement"]
+        first_text = published_text(build_payload(first))
+        for claim in ("首次覆盖", "第一组阈值"):
+            with self.subTest(claim=claim):
+                self.assertNotIn(claim, published_text(self.payload))
+                self.assertIn(claim, first_text)
 
     def test_the_crossings_are_counted_from_the_series(self) -> None:
         """The revenue-mix note once said the lines crossed twice; it is recounted here."""
@@ -626,6 +809,15 @@ class IbkrDashboardTest(unittest.TestCase):
 
     # ── payload shape ───────────────────────────────────────────────────────
 
+    def test_the_four_sections_carry_the_house_ids_and_titles(self) -> None:
+        """The four parts, in order, with the titles every company page uses verbatim."""
+        self.assertEqual(
+            [(section["id"], section["title"]) for section in self.payload["sections"]],
+            [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+             ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+        notes = "\n".join(self.payload["notes"])
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列", notes)
+
     def test_exhibit_numbers_follow_render_order(self) -> None:
         numbers = [exhibit["n"] for exhibit in self.exhibits]
         self.assertEqual(numbers, list(range(2, 2 + len(numbers))))
@@ -651,8 +843,9 @@ class IbkrDashboardTest(unittest.TestCase):
 
     def test_labels_are_calendar_quarters(self) -> None:
         self.assertEqual(compact_period("Q2 2026"), "Q2'26")
-        metrics = [entry["metric"] for block in ("next_kpi", "prior_kpi")
+        metrics = [entry["metric"] for block in ("next_kpi", "prior_kpi_settlement")
                    for entry in (self.source.get(block) or {}).get("quantified", [])]
+        metrics += (self.source.get("followup_closure") or {}).get("labels", [])
         for exhibit in self.exhibits:
             for label in exhibit.get("xlabels", []):
                 if re.fullmatch(r"Q[1-4]'\d{2}", label):
@@ -799,10 +992,19 @@ class IbkrChecksTest(unittest.TestCase):
             self.assertEqual(float(match.group(1)), checks["customer_margin_loans_usd_bn"])
             self.assertEqual(round(float(match.group(2))),
                              checks["printed_yoy_pct"]["customer_margin_loans"])
-        growth = next((ex for ex in self.exhibits if ex["title"].startswith("账户数环比增速")), None)
-        if growth is not None:
-            value = float(re.match(r"本季 (\d+\.\d+)%", growth["note"]).group(1))
-            self.assertEqual(round(value), checks["printed_qoq_pct"]["accounts"])
+        # The company prints the sequential account growth in its Consecutive
+        # Quarters table; the page prints it beside the quarter's net adds.
+        adds = next(ex for ex in self.exhibits if ex["title"].startswith("本季净增账户"))
+        accounts = checks["accounts_thousands"]
+        self.assertIn(f"本季净增账户 {accounts['this_quarter'] - accounts['prior_quarter']:,.0f}K",
+                      adds["title"])
+        value = float(re.search(r"环比 ([+−-]\d+\.\d)%", adds["note"]).group(1))
+        self.assertEqual(round(value), checks["printed_qoq_pct"]["accounts"])
+        # The one threshold settled off a single footnote cell prints that cell.
+        overview = next(ex for ex in self.exhibits
+                        if ex["kind"] == "diverging_bars" and ex["title"].startswith("下季"))
+        this_quarter, year_ago = checks["securities_lending_all_in_usd_m"]
+        self.assertIn(f"本季 US${this_quarter:,.0f}M，去年同季 US${year_ago:,.0f}M", overview["note"])
 
     def test_the_card_prints_the_checked_figures(self) -> None:
         checks = self.checks
@@ -812,6 +1014,74 @@ class IbkrChecksTest(unittest.TestCase):
             f"NIM {checks['net_interest_margin_table']['nim_pct'][0]:.2f}%",
             f"账户 {checks['accounts_printed_millions']}M",
         ])
+
+
+class IbkrNoteChecksTest(unittest.TestCase):
+    """The one-quarter blocks against a second reading of the analysis notes.
+
+    `followup_closure`, `prior_kpi_settlement` and `next_kpi` are what the
+    builder reads. `_checks["note"]` is the same two notes typed again, straight
+    from the section-0 statistic sentence and the section-8 threshold cells, and
+    the builder never reads `_checks` (`test_no_builder_reads_its_checks`). The
+    notes decide what to watch, which thresholds and which verdicts; this is
+    where a block that drifted from its note fails, and the expected values are
+    the note's own, read from the series -- rolling a quarter re-keys
+    `_checks["note"]` with the blocks, and this file does not change.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads((ROOT / "series" / "ibkr.json").read_text(encoding="utf-8"))
+        cls.note = cls.source["_checks"]["note"]
+        cls.payload = build_payload(cls.source)
+        cls.sections = {section["id"]: section for section in cls.payload["sections"]}
+
+    def test_the_note_reading_names_its_sources(self) -> None:
+        self.assertTrue(self.note.get("checked_on"))
+        for part in ("第 0 节", "第 8 节", ".md"):
+            with self.subTest(part=part):
+                self.assertIn(part, self.note["source"])
+
+    def test_the_closure_chart_is_the_notes_section_zero_statistic(self) -> None:
+        closure = self.note["closure"]
+        chart = next(ex for ex in self.sections["settled"]["exhibits"] if ex["kind"] == "bars_labeled")
+        drawn = {label: count for label, count in zip(chart["xlabels"], chart["values"]) if count}
+        self.assertEqual(drawn, closure["counts"])
+        self.assertEqual(sum(chart["values"]), closure["total"])
+        self.assertTrue(chart["title"].startswith(f"上季 {closure['total']} 条待验证问题："))
+        self.assertEqual(len(self.source["followup_closure"]["items"]), closure["total"])
+        # The statistic sentence itself carries each count.
+        for count in closure["counts"].values():
+            with self.subTest(count=count):
+                self.assertIn(f"{count} 题", closure["statistic"])
+
+    def test_the_settled_thresholds_are_the_prior_notes_section_eight(self) -> None:
+        prior = self.note["prior_thresholds"]
+        settlement = self.source["prior_kpi_settlement"]
+        self.assertEqual(settlement["rows"], prior["rows"])
+        self.assertEqual([(e["row"], e["threshold"], e["direction"]) for e in settlement["quantified"]],
+                         [(e["row"], e["threshold"], e["direction"]) for e in prior["entries"]])
+        for entry in prior["entries"]:
+            with self.subTest(threshold=entry["threshold"]):
+                self.assertIn(f"{entry['threshold']:g}", prior["row_text"][str(entry["row"])])
+        # And the page draws exactly these lines.
+        charts = [ex for ex in self.sections["settled"]["exhibits"] if ex["kind"] == "lines"]
+        drawn = sorted(next(iter(set(series["values"])))
+                       for chart in charts for series in chart["series"][1:])
+        self.assertEqual(drawn, sorted(entry["threshold"] for entry in prior["entries"]))
+
+    def test_the_next_thresholds_are_this_notes_section_eight(self) -> None:
+        noted = self.note["next_thresholds"]
+        kpi = self.source["next_kpi"]
+        self.assertEqual(kpi["rows"], noted["rows"])
+        self.assertEqual([(e["row"], e["threshold"], e["direction"]) for e in kpi["quantified"]],
+                         [(e["row"], e["threshold"], e["direction"]) for e in noted["entries"]])
+        for entry in noted["entries"]:
+            with self.subTest(row=entry["row"], threshold=entry["threshold"]):
+                self.assertIn(f"{entry['threshold']:g}", noted["row_text"][str(entry["row"])])
+        overview = self.sections["next_quarter"]["exhibits"][0]
+        self.assertEqual(len(overview["values"]), len(noted["entries"]))
+        self.assertTrue(overview["title"].startswith(f"下季 {len(noted['entries'])} 条阈值"))
 
 
 if __name__ == "__main__":

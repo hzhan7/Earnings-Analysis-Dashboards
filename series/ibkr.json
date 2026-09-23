@@ -7,7 +7,7 @@
     "quarter_convention": "自然年季度；公司财年即自然年，无需映射",
     "units": "financials_usd_m 为百万美元；operating 各列单位见键名",
     "built_from": "SEC XBRL companyfacts + 各季业绩 8-K EX-99.1",
-    "coverage_start": "Q2 2026"
+    "coverage_start": "Q4 2025"
   },
   "latest": {
     "period": "Q2 2026",
@@ -57,6 +57,10 @@
         182,
         163
       ],
+      "customer_bad_debt": [
+        10,
+        1
+      ],
       "pretax_income": [
         1456,
         1104
@@ -76,6 +80,10 @@
       "net_income_common": [
         312,
         224
+      ],
+      "comprehensive_income_common": [
+        297,
+        303
       ]
     },
     "pretax_margin_printed_pct": 77,
@@ -133,9 +141,122 @@
         2.64
       ]
     },
+    "securities_lending_all_in_usd_m": [
+      343,
+      251
+    ],
     "_pairs": "两个数的列表是 [本季, 去年同季]，都读自同一份新闻稿的两栏。",
-    "source": "IBKR 2Q2026 业绩新闻稿（8-K EX-99.1，2026-07-21，acc 0001381197-26-000118）：首段「results for the quarter ended June 30, 2026」与电头「GREENWICH, CT, July 21, 2026」；CONSOLIDATED STATEMENTS OF INCOME 三个月两栏（Commissions 673 / 516 … Net income available for common stockholders 312 / 224）；Financial Highlights「Pretax profit margin … was 77%」；Business Highlights「Customer accounts increased 34% to 5.19 million」「Customer equity increased 40% to $930.3 billion」「Total DARTs increased 36% to 4.82 million」「Customer credits increased 27% to $182.4 billion」「Customer margin loans increased 67% to $108.5 billion」；OPERATING DATA, CONTINUED 的 Year over Year 表（Total Accounts 5,185 / 3,866；Customer Equity 930.3 / 664.6；Total Customer DARTs 4,824 / 3,552；Commission per Cleared Commissionable Order 2.64 / 2.65）与 Consecutive Quarters 表（4,754 / 789.4 / 4,368，账户数 9%）；NET INTEREST MARGIN 表三个月两栏（平均生息资产 228,615 / 166,621，NIM 1.93 / 2.07，年化收益率 3.32 / 3.86、4.10 / 4.67、2.23 / 2.64）。",
-    "checked_on": "2026-09-19"
+    "source": "IBKR 2Q2026 业绩新闻稿（8-K EX-99.1，2026-07-21，acc 0001381197-26-000118）：首段「results for the quarter ended June 30, 2026」与电头「GREENWICH, CT, July 21, 2026」；CONSOLIDATED STATEMENTS OF INCOME 三个月两栏（Commissions 673 / 516 … Net income available for common stockholders 312 / 224）；Financial Highlights「Pretax profit margin … was 77%」；Business Highlights「Customer accounts increased 34% to 5.19 million」「Customer equity increased 40% to $930.3 billion」「Total DARTs increased 36% to 4.82 million」「Customer credits increased 27% to $182.4 billion」「Customer margin loans increased 67% to $108.5 billion」；OPERATING DATA, CONTINUED 的 Year over Year 表（Total Accounts 5,185 / 3,866；Customer Equity 930.3 / 664.6；Total Customer DARTs 4,824 / 3,552；Commission per Cleared Commissionable Order 2.64 / 2.65）与 Consecutive Quarters 表（4,754 / 789.4 / 4,368，账户数 9%）；NET INTEREST MARGIN 表三个月两栏（平均生息资产 228,615 / 166,621，NIM 1.93 / 2.07，年化收益率 3.32 / 3.86、4.10 / 4.67、2.23 / 2.64）。2026-09-23 补读三组：CONSOLIDATED STATEMENTS OF INCOME「Customer bad debt 10 / 1」；CONSOLIDATED STATEMENTS OF COMPREHENSIVE INCOME「Comprehensive income available for common stockholders 297 / 303」；NET INTEREST MARGIN 表脚注 3「would have been $343 million ... compared to $251 million」。",
+    "checked_on": "2026-09-19",
+    "note": {
+      "source": "所有者库 5.Earnings Analysis/IBKR，逐字抄录：本季《2026-07-21 IBKR Q2 2026 vs Q1 2026 Analysis.md》第 0 节「上季 Follow-up 回答」首段统计句与判定表、第 8 节「关键观察指标」（14 行）；上季《2026-04-22 IBKR Q1 2026 vs Q4 2025 Analysis.md》第 8 节「关键观察指标」（5 行）。builder 不读 _checks；tests/test_ibkr_dashboard.py 用本块核对 followup_closure、prior_kpi_settlement 与 next_kpi。",
+      "checked_on": "2026-09-23",
+      "closure": {
+        "total": 7,
+        "counts": {
+          "已验证": 2,
+          "被证伪": 1,
+          "部分验证": 3,
+          "仍未披露": 1
+        },
+        "statistic": "上季（2026-04-22 Q1 分析）留下 7 个待验证问题，本季 7 题全部有交代：2 题完全验证、1 题被正面证伪后重大上修（Trust Charter）、3 题部分验证、1 题连续第二季未披露（ForecastEx）。"
+      },
+      "prior_thresholds": {
+        "rows": 5,
+        "entries": [
+          {
+            "row": 5,
+            "metric": "Total client credit balances（利息收入 base）",
+            "threshold": 170.0,
+            "direction": "up"
+          },
+          {
+            "row": 5,
+            "metric": "Total client credit balances（利息收入 base）",
+            "threshold": 155.0,
+            "direction": "up"
+          }
+        ],
+        "row_text": {
+          "1": "Q1 $0.59 vs Q4 包装后 $0.63（剔除 12% 异常税率回 17%，调整后 Q4 ~$0.60-$0.61）；Q2/Q3 调整后 EPS YoY +ve + 全年 EPS ≥ $2.40 = \"Q4 不可持续 + Q1 持平\"叙事兑现 → 跟踪；< $2.20 = 经营动能减弱 → 警示",
+          "5": "Q1 $162.959B；Q2/Q3 ≥ $170B + paying clients YoY +20% = 利息 base 持续扩张 → 加仓；< $155B 或 net outflows = 客户对 2.23% 利率不再 sticky → 警示"
+        }
+      },
+      "next_thresholds": {
+        "rows": 14,
+        "entries": [
+          {
+            "row": 1,
+            "metric": "月度净新增账户",
+            "threshold": 330.0,
+            "direction": "up"
+          },
+          {
+            "row": 2,
+            "metric": "保证金贷款余额（期末）",
+            "threshold": 95.0,
+            "direction": "up"
+          },
+          {
+            "row": 2,
+            "metric": "保证金贷款余额（期末）",
+            "threshold": 125.0,
+            "direction": "down"
+          },
+          {
+            "row": 3,
+            "metric": "NIM（季度年化）",
+            "threshold": 1.8,
+            "direction": "up"
+          },
+          {
+            "row": 3,
+            "metric": "NIM（季度年化）",
+            "threshold": 1.9,
+            "direction": "up"
+          },
+          {
+            "row": 4,
+            "metric": "每单佣金 comm/order",
+            "threshold": 2.55,
+            "direction": "up"
+          },
+          {
+            "row": 5,
+            "metric": "客户坏账",
+            "threshold": 10.0,
+            "direction": "down"
+          },
+          {
+            "row": 5,
+            "metric": "客户坏账",
+            "threshold": 25.0,
+            "direction": "down"
+          },
+          {
+            "row": 6,
+            "metric": "客户信用余额 / 客户权益",
+            "threshold": 18.0,
+            "direction": "up"
+          },
+          {
+            "row": 9,
+            "metric": "全口径证券借贷净收入",
+            "threshold": 275.0,
+            "direction": "up"
+          }
+        ],
+        "row_text": {
+          "1": "单月 <110K（=季度 <330K）",
+          "2": "月度 <$95B（Q3 NII 顺风消失）；>$125B（过热）",
+          "3": "连续两季 ≥1.90% = 企稳确认；单季 <1.80% = Bear 触发",
+          "4": "季度均值 <$2.55（含 SEC）或 ex-SEC <$2.40",
+          "5": "连续两季 ≥$10M，或单季 >$25M",
+          "6": "<18%（客户满仓度极端化）",
+          "9": "Q3 <$275M（QoQ -20%，specials 退坡确认）"
+        }
+      }
+    }
   },
   "periods": [
     "Q1 2016",
@@ -754,6 +875,50 @@
       94.0,
       117.0
     ],
+    "customer_bad_debt": [
+      0.0,
+      3.0,
+      3.0,
+      0.0,
+      1.0,
+      1.0,
+      0.0,
+      0.0,
+      3.0,
+      0.0,
+      -1.0,
+      2.0,
+      43.0,
+      4.0,
+      -2.0,
+      -1.0,
+      7.0,
+      3.0,
+      3.0,
+      0.0,
+      2.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0,
+      1.0,
+      1.0,
+      0.0,
+      3.0,
+      -1.0,
+      0.0,
+      5.0,
+      5.0,
+      2.0,
+      7.0,
+      1.0,
+      1.0,
+      1.0,
+      -2.0,
+      1.0,
+      1.0,
+      10.0
+    ],
     "pretax_income": [
       337.0,
       213.0,
@@ -973,6 +1138,50 @@
       284.0,
       267.0,
       312.0
+    ],
+    "comprehensive_income_common": [
+      39.0,
+      24.0,
+      20.0,
+      -3.0,
+      28.0,
+      29.0,
+      32.0,
+      -2.0,
+      47.0,
+      28.0,
+      38.0,
+      43.0,
+      48.0,
+      36.0,
+      30.0,
+      51.0,
+      39.0,
+      36.0,
+      54.0,
+      92.0,
+      90.0,
+      97.0,
+      33.0,
+      66.0,
+      63.0,
+      48.0,
+      69.0,
+      174.0,
+      153.0,
+      132.0,
+      148.0,
+      197.0,
+      149.0,
+      177.0,
+      223.0,
+      153.0,
+      241.0,
+      303.0,
+      253.0,
+      288.0,
+      246.0,
+      297.0
     ]
   },
   "balance_usd_m": {
@@ -1553,6 +1762,50 @@
       2.23,
       2.23
     ],
+    "securities_lending_all_in_usd_m": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      251.0,
+      null,
+      null,
+      null,
+      343.0
+    ],
     "_conformed_basis_note": "Interactive Brokers recategorised the components of net interest income twice and conformed prior periods in later releases: the 2Q2018 and 4Q2018 EX-99.1s moved negative-interest-rate currency components into 'Customer credit balances, net', and the 3Q2018 EX-99.1 moved U.S. Treasury and reverse-repo components into 'Other net interest income, net'. Until 2026-08-31 this page carried the ORIGINAL figures for the affected quarters and the conformed ones after, so the segregated-funds yield line joined two categorisations at 2018Q2/2018Q3 and average interest-earning assets joined two at 2017Q4/2018Q1, where the 'FDIC sweeps' component enters. Nothing caught it because the recategorisations move dollars BETWEEN components: total net interest income and the overall margin are the same on both bases, so every sum on this page held. The six yield quarters 2017Q1-2018Q2, the four 2017 asset quarters and 2017Q4's margin now carry the conformed figure, each read from the release one year later that reprints it as a prior-year comparative.",
     "_2016_not_confirmed_note": "The four 2016 quarters are NOT confirmed on the conformed basis, and this page cannot confirm them: IBKR's EX-99.1 NET INTEREST MARGIN table did not exist before the 3Q2017 release, so no document reprints 2016 after either recategorisation. There is evidence they may need no change -- the 3Q2018 footnote names the affected quarters explicitly as 1Q2017 through 2Q2018, which excludes 2016 -- but that is the company describing one of the two changes, not a reprint of the numbers. So these four cells are the original figures, kept rather than nulled, with the boundary stated here instead of being left to look continuous. Whoever finds a 2016 reprint should replace them or confirm them."
   },
@@ -1588,59 +1841,284 @@
     "Q1 2026": "2026-04-21",
     "Q2 2026": "2026-07-21"
   },
-  "next_kpi": {
+  "followup_closure": {
     "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "source": "所有者库 5.Earnings Analysis/IBKR：2026-07-21 IBKR Q2 2026 vs Q1 2026 Analysis 第 0 节「上季 Follow-up 回答」，逐条核验 2026-04-22 IBKR Q1 2026 vs Q4 2025 Analysis 文末「Follow-up Questions for Next Quarter」的 7 条",
+    "labels": [
+      "已验证",
+      "部分验证",
+      "被证伪",
+      "仍未披露"
+    ],
+    "items": [
+      {
+        "n": 1,
+        "verdict": "部分验证",
+        "text": "AI 现金比价工具还没有逼任何一家大券商调高现金利率，威胁停在结构层面、没有量化"
+      },
+      {
+        "n": 2,
+        "verdict": "被证伪",
+        "text": "上季把管理层对 Trust Charter 的沉默读成「延期到 2027」，而 OCC 已在 2026-05-05 给出初步有条件批准、管理层重申年底投入运营——判定列写作「已验证（且证伪上季推断）」，报告的统计句把它单列为被证伪，本图照统计句计数"
+      },
+      {
+        "n": 3,
+        "verdict": "仍未披露",
+        "text": "ForecastEx 的合约对数（pairs）新闻稿与电话会连续第二季都没有给"
+      },
+      {
+        "n": 4,
+        "verdict": "已验证",
+        "text": "Schwab、Fidelity、Robinhood 本季都没有调整现金 sweep 利率"
+      },
+      {
+        "n": 5,
+        "verdict": "部分验证",
+        "text": "加密业务在推进（交易扩到欧洲全境），收入仍未单列"
+      },
+      {
+        "n": 6,
+        "verdict": "部分验证",
+        "text": "公众公司调整后税率 Q1 回到常态区间，Q2 又因股价上涨对股权激励的税务效应落到区间之下（管理层电话会口径，申报文件不单列）"
+      },
+      {
+        "n": 7,
+        "verdict": "已验证",
+        "text": "客户基数继续扩张：公司不披露付费客户口径，报告以账户总数作答——本季净增 {net_adds}、客户权益环比 {equity_qoq}"
+      }
+    ],
+    "_note": "counts 由 builder 按 items 的 verdict 现算；报告统计句为「2 题完全验证、1 题被正面证伪后重大上修（Trust Charter）、3 题部分验证、1 题连续第二季未披露」。text 里的 {…} 由 builder 从 series 现算填入。"
+  },
+  "prior_kpi_settlement": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "source": "所有者库 5.Earnings Analysis/IBKR：2026-04-22 IBKR Q1 2026 vs Q4 2025 Analysis 第 8 节「关键观察指标」5 行；阈值数值与方向逐字取自该节",
+    "rows": 5,
     "quantified": [
       {
-        "metric": "净息差 NIM",
+        "row": 5,
+        "metric": "客户贷方余额 · 加仓线",
+        "reads": "customer_credits",
         "direction": "up",
-        "threshold": 1.8,
-        "unit": "pct",
-        "current": 1.93,
-        "note": "阈值取的是本季再向下一个台阶，不是长期趋势的外推：跌破它意味着降息对利差的侵蚀开始快过生息资产的扩张。"
+        "threshold": 170.0,
+        "unit": "usd_bn",
+        "words": "Q2/Q3 ≥ {threshold}（且 paying clients 同比 +20%）= 利息基数继续扩张 → 加仓"
       },
       {
-        "metric": "账户数环比增速",
+        "row": 5,
+        "metric": "客户贷方余额 · 警示线",
+        "reads": "customer_credits",
         "direction": "up",
-        "threshold": 6.0,
-        "unit": "pct",
-        "current": 9.07,
-        "note": "跌破它说明揽客速度回到加息周期之前的水平。"
+        "threshold": 155.0,
+        "unit": "usd_bn",
+        "words": "< {threshold}（或资金净流出）= 客户对 IBKR 的付息不再有黏性 → 警示"
+      }
+    ],
+    "eps_leg": {
+      "row": 1,
+      "words": "Q2/Q3 调整后 EPS 同比为正",
+      "adjusted_diluted_eps_usd": {
+        "this_quarter": 0.69,
+        "year_ago": 0.51
+      },
+      "source": "IBKR 2Q2026 业绩新闻稿（8-K EX-99.1，acc 0001381197-26-000118）首段：「Reported and adjusted diluted earnings per share were both $0.69 for the current quarter. For the year-ago quarter, reported and adjusted diluted earnings per share were both $0.51.」"
+    },
+    "not_settled": [
+      {
+        "row": 1,
+        "text": "全年那一腿（全年调整后 EPS ≥ $2.40，< $2.20 警示）要等 Q4 2026 的全年数，Q3 同比那一腿下季结算"
       },
       {
-        "metric": "每笔已清算订单佣金",
+        "row": 2,
+        "text": "Trust Charter 是定性条件，本季触发的是「监管批准里程碑 = 进度正常」那一支（OCC 2026-05-05 初步有条件批准）"
+      },
+      {
+        "row": 3,
+        "text": "ForecastEx pairs ≥ 200M 无从结算——公司连续第二季不披露，触发的是同一行写好的「连续 2 季不披露 = 平台期延长」"
+      },
+      {
+        "row": 4,
+        "text": "同业 sweep 利率上调 ≥ 100bp 未触发——本季笔记核对为上半年没有一家调整；这是同业数据，不在 IBKR 的申报里，所以不进图"
+      },
+      {
+        "row": 5,
+        "text": "另外两腿无从结算——IBKR 不披露付费客户（paying clients）口径（本季笔记以账户总数同比 {accounts_yoy} 作答），也不披露资金净流出"
+      }
+    ],
+    "report_slip": {
+      "text": "上季笔记这一行写的当前值「$162.959B」是资产负债表 Other payables: Customers 的季末余额（{payables_prev}），不是新闻稿的 Customer credits（{credits_prev}）；本季两个口径都在两条线之上（{credits_now} / {payables_now}），判定不因口径而变",
+      "payables_to_customers_usd_m": {
+        "Q1 2026": 162959.0,
+        "Q2 2026": 176779.0
+      },
+      "source": "IBKR 1Q2026 / 2Q2026 业绩新闻稿（acc 0001381197-26-000078 / -000118）的 CONSOLIDATED STATEMENTS OF FINANCIAL CONDITION：Other payables — Customers 162,959 / 176,779"
+    }
+  },
+  "next_kpi": {
+    "period": "Q2 2026",
+    "rows": 14,
+    "quantified": [
+      {
+        "row": 1,
+        "metric": "季度净增账户",
+        "reads": "net_adds",
         "direction": "up",
-        "threshold": 2.55,
-        "unit": "usd_eps",
-        "current": 2.64,
-        "note": "跌破它意味着单价开始承压，而 IBKR 的佣金增长至今几乎全部来自笔数。"
+        "threshold": 330.0,
+        "unit": "k_accounts",
+        "words": "单月 < 110K（= 季度 < {threshold}）= 加速叙事证伪 → 警示，连续两月 → 减仓"
       },
       {
-        "metric": "非息费用 / 总净收入",
-        "direction": "down",
-        "threshold": 25.0,
-        "unit": "pct",
-        "current": 23.21,
-        "note": "<b>这条阈值天生偏松，说明写在这里而不是藏起来</b>：分母含净利息收入，利率下行会让这条线自己上移，所以越过 {threshold:.0f}% 不必然是费用出了问题。真正要看的是越线时费用的绝对额是否同步跳升。"
-      },
-      {
-        "metric": "少数股东占净利润比",
-        "direction": "down",
-        "threshold": 77.5,
-        "unit": "pct",
-        "current": 76.68,
-        "note": "回到阈值以上意味着上市主体收购 LLC 权益单位的节奏中断，上市公司股东对利润的 claim 停止扩大。"
-      },
-      {
-        "metric": "客户保证金贷款",
+        "row": 2,
+        "metric": "客户保证金贷款 · 顺风线",
+        "reads": "margin_loans",
         "direction": "up",
         "threshold": 95.0,
         "unit": "usd_bn",
-        "current": 108.5
+        "words": "月度 < {threshold} = Q3 NII 顺风消失 → 下修 NII"
+      },
+      {
+        "row": 2,
+        "metric": "客户保证金贷款 · 过热线",
+        "reads": "margin_loans",
+        "direction": "down",
+        "threshold": 125.0,
+        "unit": "usd_bn",
+        "words": "> {threshold} = 过热 → 提高坏账假设"
+      },
+      {
+        "row": 3,
+        "metric": "净息差 NIM · Bear 线",
+        "reads": "nim",
+        "direction": "up",
+        "threshold": 1.8,
+        "unit": "pct2",
+        "words": "单季 < {threshold} = Bear 触发 → 减仓"
+      },
+      {
+        "row": 3,
+        "metric": "净息差 NIM · 企稳线",
+        "reads": "nim",
+        "direction": "up",
+        "threshold": 1.9,
+        "unit": "pct2",
+        "words": "连续两季 ≥ {threshold} = 企稳确认 → 维持",
+        "consecutive": {
+          "quarters": 2,
+          "verb": "算企稳确认"
+        }
+      },
+      {
+        "row": 4,
+        "metric": "每笔已清算订单佣金",
+        "reads": "commission_per_order",
+        "direction": "up",
+        "threshold": 2.55,
+        "unit": "usd_eps",
+        "words": "季度均值 < {threshold}（含 SEC 过手费）= 碎片化开始实质伤及定价 → 警示，重估佣金线"
+      },
+      {
+        "row": 5,
+        "metric": "客户坏账 · 连续线",
+        "reads": "bad_debt",
+        "direction": "down",
+        "threshold": 10.0,
+        "unit": "usd_m",
+        "words": "连续两季 ≥ {threshold} → 警示，坏账运行率上调",
+        "consecutive": {
+          "quarters": 2,
+          "verb": "触发"
+        }
+      },
+      {
+        "row": 5,
+        "metric": "客户坏账 · 单季线",
+        "reads": "bad_debt",
+        "direction": "down",
+        "threshold": 25.0,
+        "unit": "usd_m",
+        "words": "单季 > {threshold} → 警示，坏账运行率上调"
+      },
+      {
+        "row": 6,
+        "metric": "客户贷方余额 / 客户权益",
+        "reads": "credits_to_equity",
+        "direction": "up",
+        "threshold": 18.0,
+        "unit": "pct",
+        "words": "< {threshold} = 客户满仓度极端化 → 警示：回撤放大器上膛"
+      },
+      {
+        "row": 9,
+        "metric": "全口径证券借贷净利息",
+        "reads": "securities_lending_all_in",
+        "direction": "up",
+        "threshold": 275.0,
+        "unit": "usd_m",
+        "words": "Q3 < {threshold}（环比 −20%）= specials 退坡确认 → 正常化水位下调、Q3 NII 下修"
       }
     ],
-    "excluded": "本节{count}条阈值每一条都有自己的历史序列，因此<b>没有一条是「只有一个点、无法作图」而被略去的</b>。真正不接入的是另外三类：（1）<b>公司对下一季的任何数字</b> —— IBKR 从不在申报文件里给季度指引，本页因此没有指引兑现记录，详见第一节与口径说明；（2）<b>分产品、分地区的佣金拆分</b> —— 公司只按地区披露「来自客户合同的收入」，不把佣金按股票 / 期权 / 期货拆成金额，用交易量占比去反推单位费率会把三种完全不同的费率结构混成一个数；（3）<b>客户资产的净流入</b> —— 公司披露的是期末客户权益，而权益变动同时包含净入金与市值波动，两者在申报文件里没有分开，把权益的环比变动读成净流入会把一轮上涨行情记成揽客成果。"
+    "not_tracked": [
+      {
+        "row": 4,
+        "text": "同一行的另一半（剔除 SEC 过手费后低于 $2.40）：剔除后的每单佣金是笔记自算，SEC 过手费的季度总额只在电话会给出，申报里只有同比增量"
+      },
+      {
+        "row": 7,
+        "text": "同业现金付息动作：Schwab、Fidelity 的公告，不在 IBKR 的申报里"
+      },
+      {
+        "row": 8,
+        "text": "Trust Charter 里程碑：年底是否投入运营是定性条件，没有数值序列"
+      },
+      {
+        "row": 10,
+        "text": "利率路径 × 余额增速：复合条件，利率那一腿（累计降息 ≥ 100bp）不是 IBKR 的申报数，余额那一腿按月度口径写"
+      },
+      {
+        "row": 11,
+        "text": "超额资本：电话会口径，而且阈值落在 2026 年底"
+      },
+      {
+        "row": 12,
+        "text": "ForecastEx pairs：公司连续两季不披露"
+      },
+      {
+        "row": 13,
+        "text": "IBKR Connector：等公司给出连接账户数一类的量化口径，是定性条件"
+      },
+      {
+        "row": 14,
+        "text": "Holdings LLC 单位数：阈值是「开始成规模转换或赎回」，没有数值"
+      }
+    ]
   },
+  "quarter_story": {
+    "period": "Q2 2026",
+    "nim_reading": "本季笔记只把它读成单季止跌、不是企稳，企稳要看第三节那条企稳线能不能连守两季",
+    "cushion_reading": "本季笔记在它的十一季窗口里看到两条线同时走到极值——现金垫最薄、杠杆最高——读成回撤放大器已经上膛",
+    "commission_reading": "阈值按含 SEC 过手费的口径写：2Q2026 新闻稿说 SEC Section 31 费率 2026-04-04 上调、监管费同比多了 US$19M，而管理层在电话会上说这笔过手费同时计入佣金收入与执行成本，所以这条线本季比剔除过手费后的单价好看",
+    "commission_source": "SEC Section 31 一句取自 IBKR 2Q2026 业绩新闻稿（8-K EX-99.1，acc 0001381197-26-000118）：「Execution, clearing and distribution fees increased 22% to $142 million, driven by a $19 million increase in regulatory fees, as the SEC Section 31 transaction fee rate increased on April 4, 2026」；过手费同时计入佣金收入与执行成本是管理层电话会的说法。",
+    "bad_debt_cause": "2Q2026 10-Q（2026-08-06 申报）管理层讨论的解释是：本季坏账比去年同季多 {bad_debt_yoy}，主要来自一次公司行动（corporate action）相关的客户损失。本季分析笔记写于 10-Q 申报之前，当时的说法是新闻稿与电话会都没有解释、构成要等 10-Q",
+    "unplotted": [
+      "剔除税率顺风后的可比 EPS（公众公司调整后税率只在电话会口径，本页也不发布每股收益序列）",
+      "剔除 SEC 过手费后的每单佣金（过手费的季度总额只在电话会给出，申报里只有同比增量）",
+      "客户权益增量里市场涨幅占多少（公司不披露净入金，笔记的比例是自算区间）",
+      "Trust Charter 的进展（依据是 OCC 的决定书，不在 IBKR 的申报里）",
+      "全口径证券借贷净利息的走势（2Q2026 新闻稿净息差表的脚注才有这个口径，1Q2026 的还没有；第三节有它的阈值）",
+      "估值与三情景目标价（本站不发布估值）"
+    ],
+    "source": "IBKR 10-Q 截至 2026-06-30（acc 0001381197-26-000147）MD&A「Customer Bad Debt」：「Customer bad debt expense, for the current quarter, increased $9 million compared to the prior-year quarter, to $10 million, mainly due to customer losses related to a corporate action during the current quarter.」"
+  },
+  "release_restated_in_10q": [
+    {
+      "period": "Q3 2024",
+      "release_pretax_income_usd_m": 987.0,
+      "release_pretax_margin_printed_pct": 72,
+      "added_g_and_a_usd_m": 78.0,
+      "source": "3Q2024 业绩新闻稿（8-K EX-99.1，acc 0001381197-24-000135）：「Reported income before income taxes was $987 million」「Pretax profit margin for the current quarter was 72%」；3Q2024 10-Q（acc 0001381197-24-000143）附注 13：新闻稿发出后 IB LLC 达成和解，「The settlement agreements added $78 million to general and administrative expenses for the quarter ended September 30, 2024」，10-Q 的税前利润因此是 $909M。"
+    }
+  ],
   "sources": [
     {
       "label": "IBKR 2Q2026 业绩新闻稿（8-K EX-99.1，运营指标与净息差表的唯一来源）",
@@ -1674,5 +2152,10 @@
     "operating.customer_credits_usd_bn": "公司 1Q2020 才在新闻稿正文里加上「Customer credits ... to $X billion」这句；2016–2019 的新闻稿只印客户权益与 customer debits，没有客户贷方余额的时点数。",
     "operating.commission_per_order_usd": "这 12 季的新闻稿印的是 Commission per DART，仓库这个字段是 1Q2020 启用的 Commission per Cleared Commissionable Order。两者从不同时出现在同一份新闻稿里，没有可拼接的重叠季 —— 正是 commission_metric_from 已经写死的那个断点。",
     "nim.yield_credits_pct": "**这一条是数取到了、但故意不发布。** 客户贷方余额收益率在 2016–2018 有值，但公司此后在同一批季度的对照栏里把它系统性上调过：交叉复核方逐季比对了「当季原报」与「一年后重印」两版，2018 四季分别是 0.42→0.52、0.53→0.68、0.65→0.82、0.77→0.98（+0.10 至 +0.21pp），而同期的平均生息资产与 NIM 两版完全相同。**本站没有独立重读那些对照栏**，所以既不采用重述值、也不把原报值接到 2019Q1 （那一步会被这个未披露的口径差放大约 0.21pp）。这条线因此从 2019Q1 起画，另外两条收益率（隔离资金、保证金贷款）不受影响，全窗口连续。"
+  },
+  "_line_sources": {
+    "financials_usd_m.customer_bad_debt": "各季 10-Q 合并损益表（Statements of Comprehensive Income，R4）的「Customer bad debt」行三个月栏；会计第四季 = 10-K 全年 − 三季 10-Q 九个月栏。空格是申报里的破折号（0）。每个 Q1–Q3 与次年 10-Q 的去年同期栏逐格相同，每个全年与次年 10-K 的上年栏相同，Q1+Q2+Q3 = 九个月栏，四季之和 = 全年，全部 0 差异。",
+    "financials_usd_m.comprehensive_income_common": "同一张 R4 的「Comprehensive income (loss) available for common stockholders」行，取数方式与上一行相同；同样四道核对 0 差异，另与 companyfacts ComprehensiveIncomeNetOfTax 的 32 个三个月期逐格相同。",
+    "nim.securities_lending_all_in_usd_m": "2Q2026 业绩新闻稿（8-K EX-99.1，acc 0001381197-26-000118）NET INTEREST MARGIN 表脚注 3：证券借贷活动的全口径净利息 $343M（本季）/ $251M（去年同季）。1Q2026 的新闻稿没有这个脚注，更早的季度本页没有这个口径。"
   }
 }
