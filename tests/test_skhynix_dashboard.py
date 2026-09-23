@@ -386,6 +386,37 @@ class SkHynixDashboardTest(unittest.TestCase):
 
     # ── structure the renderer will not defend on its own ──────────────────
 
+    def test_the_page_is_in_the_four_part_format(self) -> None:
+        """The site-wide layout, TSM's: settle last quarter, this quarter, what
+        to watch next, the long routine series -- ids and titles verbatim.
+
+        The first section used to be titled after this company's peculiarity
+        (「公司指引了什么，以及为什么这一节结不出别页那种记录」). That told the
+        reader what the section could not do instead of what every first section
+        on the site does, so the title is the shared one and the peculiarity
+        lives in the description.
+        """
+        self.assertEqual(
+            [(s["id"], s["title"]) for s in self.payload["sections"]],
+            [("settled", "一、上季跟踪指标兑现了吗"),
+             ("quarter_highlights", "二、本季重点"),
+             ("next_quarter", "三、下季要跟踪什么"),
+             ("routine", "四、长期常规跟踪")])
+        for section in self.payload["sections"]:
+            self.assertTrue(section["exhibits"], section["id"])
+        layout = [n for n in self.payload["notes"] if n.startswith("本页按")]
+        self.assertEqual(layout, ["本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，"
+                                  "以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。"])
+
+    def test_the_annual_structure_charts_sit_with_the_routine_series(self) -> None:
+        """Product split and customer concentration carry no reading for the
+        quarter -- their latest points are audited years -- so they are long
+        routine series, not the quarter's findings."""
+        routine = next(s for s in self.payload["sections"] if s["id"] == "routine")
+        refs = [e.get("ref") for e in routine["exhibits"]]
+        self.assertIn("EX_MIX", refs)
+        self.assertIn("EX_CUST", refs)
+
     def test_no_exhibit_pins_a_zero_baseline_under_negative_values(self) -> None:
         """Negative values must not reach a kind whose y-floor is fixed at zero.
 

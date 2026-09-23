@@ -656,12 +656,16 @@ def build_payload(staging: dict) -> dict:
         "src_extra": "各季业绩发布；两条率均为本页自算（D）。",
     })
 
+    # ── the annual structure: product split and customer concentration ──────
+    # Neither carries a reading for this quarter, so both belong with the long
+    # routine series in section four rather than with the quarter's findings.
+    structure = []
     annual = [i for i, label in enumerate(labels) if label.startswith("FY")]
     dram_pct = [prod["dram_pct"][i] for i in annual]
     adds_up = all(abs(prod["dram"][i] + prod["nand"][i] + prod["other"][i] - prod["total"][i]) <= 1
                   and prod["total"][i] == ann["revenue"][annual.index(i)]
                   for i in annual)
-    highlights.append({
+    structure.append({
         "ref": "EX_MIX",
         "kind": "grouped_bars",
         "title": (f"分产品收入只有年度披露：DRAM 占比从 {dram_pct[0]:.1f}% "
@@ -692,7 +696,7 @@ def build_payload(staging: dict) -> dict:
     disclosed = [(year, share) for year, share in zip(cust["years"], shares) if share is not None]
     span = int(cust["years"][-1][2:]) - int(cust["years"][0][2:])
     quarter_share = shares[-1] / 100
-    highlights.append({
+    structure.append({
         "ref": "EX_CUST",
         "kind": "grouped_bars",
         "title": ("单一最大客户占收入："
@@ -808,7 +812,7 @@ def build_payload(staging: dict) -> dict:
     only_revenue = [q for q, lines in census["lines_moved"].items() if "revenue" in lines] == [restated_quarter]
     amount_order = abs(delta["operating_profit"]) >= 10 * max(earlier_amounts)
 
-    routine = [
+    routine = structure + [
         {
             "ref": "EX_CAPEX",
             "kind": "grouped_bars",
@@ -1062,25 +1066,24 @@ def build_payload(staging: dict) -> dict:
         "summary": {"blocks": []},
         "guidance": None,
         "sections": [
-            {"id": "settled", "title": "一、公司指引了什么，以及为什么这一节结不出别页那种记录",
-             "description": ("本站其他页的第一节结清「公司给的区间对随后报出来的实际值」。"
-                             "SK hynix 不发布任何财务指引，它公开的量与价都是英文用词，"
-                             "所以这一节能结清的是另一件事：这些词留下了多少不确定，"
-                             "以及为什么指引全部兑现仍然可以对不上收入。"),
+            {"id": "settled", "title": "一、上季跟踪指标兑现了吗",
+             "description": ("SK hynix 不发布任何财务指引——营收、利润率、每股收益都没有区间，季度和年度都没有。"
+                             "它唯一的前瞻披露是电话会上下一季出货量的英文用词，而出货量与售价的实际变化"
+                             "也只以英文用词发布。所以本节结算的是这些用词本身：它们留下了多少不确定，"
+                             "以及为什么出货指引全部兑现、收入仍然可以对不上。"),
              "exhibits": settled_ex},
             {"id": "quarter_highlights", "title": "二、本季重点",
              "description": (f"{len(periods)} 季的营收与利润率"
-                             + ("、净利率越过 100% 的来源" if below is not None and over_hundred else "")
-                             + "，以及两条一年只披露一次、却比任何季度数字都更能说明结构的口径："
-                             "分产品收入与单一客户集中度。"),
+                             + ("，以及净利率越过 100% 的来源" if below is not None and over_hundred else "")
+                             + "。"),
              "exhibits": highlight_ex},
             {"id": "next_quarter", "title": "三、下季要跟踪什么",
              "description": ("当前值离阈值还有多远，统一用「距阈值余量」口径。"
                              "阈值为本地研究设定，不是公司指引，因为公司没有指引。"),
              "exhibits": next_block},
             {"id": "routine", "title": "四、长期常规跟踪",
-             "description": (f"资本强度与折旧的分母效应，以及 {len(census['quarters'])} 次事后改动里"
-                             "唯一动到收入的那一次"
+             "description": ("审计报表附注口径的分产品收入与单一客户集中度、资本强度与折旧的分母效应，"
+                             f"以及 {len(census['quarters'])} 次事后改动里唯一动到收入的那一次"
                              "和本页序列选用的版本。"),
              "exhibits": routine_ex},
         ],
