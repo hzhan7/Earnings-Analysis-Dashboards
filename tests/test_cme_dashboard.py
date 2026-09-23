@@ -129,6 +129,12 @@ class CmeDashboardTest(unittest.TestCase):
         self.assertEqual([ex["ref"] for ex in settled["exhibits"]], ["EX_CAPEX", "EX_CAPEX_DEV"])
         for key in ("followup_closure", "prior_kpi_settlement"):
             self.assertNotIn(key, self.staging)
+        # The capex sentence is not the filings' only target: the FY2025 10-K's
+        # next sentence states the regular-dividend target. The section names it
+        # and says why it is not settled, instead of calling capex the only one.
+        self.assertIn("派息目标", settled["description"])
+        for claim in ("只指引一个数", "唯一的那条指引", "唯一有申报出处的指引"):
+            self.assertNotIn(claim, published_text(self.payload))
 
     def test_each_section_carries_the_charts_that_belong_to_it(self) -> None:
         """Section two is the local analysis's conclusions about this quarter;

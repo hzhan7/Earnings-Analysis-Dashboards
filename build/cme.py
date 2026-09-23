@@ -2,14 +2,17 @@
 
 Three things about this filer decide what the page can be.
 
-**It guides one number, and it is not the one the market models.** Every quarter
-the sell side builds CME's cost line off a full-year "adjusted operating expense
+**The number the market models is not in any filing.** Every quarter the sell
+side builds CME's cost line off a full-year "adjusted operating expense
 excluding license fees" figure. That number is said out loud on the earnings
 call and appears in **no** SEC filing -- the page names the filings it searched
 for it (`quarter_context`). What *is* in a filing, once a year, is a single
 sentence in the 10-K's liquidity section: "In 2026, we expect capital
-expenditures to total approximately $85.0 million." So the first section
-settles capital expenditure, and the record it settles is lopsided in the
+expenditures to total approximately $85.0 million." (The next sentence states a
+regular-dividend target as a share of the prior year's "cash earnings", a
+company-defined measure this page has not reconciled, so it is named in section
+one but not settled.) So the first section settles capital expenditure, and the
+record it settles is lopsided in the
 opposite direction from what a cost guidance usually shows: most finished years
 came in **below** the guidance, and the overshoots cluster in the NEX
 integration and data-centre build years.
@@ -917,7 +920,7 @@ def basis_text(entry: dict, by_id: dict) -> str:
     """Which clause of the local analysis a threshold comes from, and its condition."""
     extra = []
     if entry.get("joint"):
-        extra.append(f"与 {short_name(by_id[entry['joint']])} 同时")
+        extra.append(f"与{short_name(by_id[entry['joint']])} 同时")
     if entry.get("consecutive", 1) > 1:
         extra.append(f"连续{cn_count(entry['consecutive'])}季")
     if entry.get("settles"):
@@ -1425,7 +1428,10 @@ def routine_section(staging: dict) -> list[dict]:
         "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
         "ylab": "千手/日", "xstep": LONG_STEP,
         "note": (
-            "<b>利率是这家公司的主干，也是它唯一一条被点名挑战的产品线。</b>"
+            # It used to say rates was the "only" product line named as under
+            # challenge; the quarter's call spent most of its time on perpetual
+            # futures, which are pitched against equity-index and crypto futures.
+            "<b>利率是这家公司的主干，也是 FMX 正面挑战的那条产品线。</b>"
             f"本季利率 ADV {lng['adv_rates'][-1]:,.0f} 千手、同比 "
             f"{signed(pct_change(lng['adv_rates'][-1], lng['adv_rates'][-5]))}；"
             # "The largest move of the six" was equity's +12.7%; energy's -13.5%
@@ -1710,11 +1716,15 @@ def build_payload(staging: dict) -> dict:
     settled_description = (
         (f"本站对该公司的第一份季报分析是 {period}，没有上季留下的跟踪指标可结算；"
          "本节结算的是公司自己给出、已经到期的指引。" if first_analysis else "")
-        + "CME 在申报文件里只指引一个数：每年 10-K 流动性一节里用一句话给出的全年资本开支，"
+        + "CME 在申报文件里不指引收入、每股收益、利润率，也不指引费用；10-K 流动性一节里有一句全年资本开支的预期，"
         f"{cn_count(len(capex['years']))}年没有断过。它按年到期，所以这里结算的是"
         f"{cn_count(len(finished))}个已完结年度"
         + (f"，FY{pending_years[-1]} 那一格要等该年的 10-K" if pending_years else "")
-        + "。除此之外，它在申报文件里不指引收入、每股收益、利润率，也不指引费用。"
+        # Fixed history, read in the FY2025 10-K: the sentence after the capex
+        # guidance states the regular-dividend target. The page once called the
+        # capex sentence the filings' only guidance; it is not their only target.
+        + "。FY2025 的 10-K 在同一段里还写了一个常规股息的派息目标（按上年「现金收益」的比例给出），"
+        "本节没有结算它：「现金收益」是公司自定义的口径，本页没有逐年核对过它的定义与数值。"
         "市场用来给它建成本模型的那个全年调整后营业费用指引只出现在业绩电话会上"
         + (f"，本页逐份检索过 {searched}，一次都没有找到，因此不接入。" if searched else "，因此不接入。")
     )
