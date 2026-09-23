@@ -2,7 +2,7 @@
 
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Advanced Micro Devices, Alphabet, Amazon,
-American Express, Arm Holdings, Broadcom, Brunello Cucinelli, Cadence, Cboe Global Markets,
+American Express, Arm Holdings, ASML, Broadcom, Brunello Cucinelli, Cadence, Cboe Global Markets,
 Charles Schwab, CME Group, Costco, Ermenegildo Zegna, Ferrari,
 Hermès International,
 Hong Kong Exchanges and Clearing, Intel, Interactive Brokers, Kering, LVMH, Mastercard,
@@ -33,6 +33,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/amd/`
 - `http://127.0.0.1:8765/amzn/`
 - `http://127.0.0.1:8765/arm/`
+- `http://127.0.0.1:8765/asml/`
 - `http://127.0.0.1:8765/avgo/`
 - `http://127.0.0.1:8765/axp/`
 - `http://127.0.0.1:8765/bc/`
@@ -132,7 +133,8 @@ no dependency at all, and is what actually runs on a fresh clone.
 - Amounts are in the currency the filer reports in. Ferrari, Brunello
   Cucinelli, Ermenegildo Zegna, Kering, LVMH, Hermès International and Richemont
   all report under IFRS in
-  euro, so their pages are denominated in EUR and their figures are not addable to the US-dollar pages; SK hynix reports under K-IFRS in won and is denominated
+  euro, so their pages are denominated in EUR and their figures are not addable to the US-dollar pages; ASML
+  reports under US GAAP but also in euro, so the same holds for its page; SK hynix reports under K-IFRS in won and is denominated
   in KRW, quoted in trillions the way the company quotes itself, so it is not
   addable to either. The cross-page capex table stays in US dollars on every
   page, because it compares four filers that all report in that currency.
@@ -268,7 +270,13 @@ Charts are ordered the way the note is actually used:
    rather than on its peaks, the three cash-flow lines whose capital-expenditure
    leg has not yet turned, and the inventory line since late 2021 measured
    against cost of goods sold rather than against a selling price that has
-   multiplied;
+   multiplied; ASML gets every quarter of its own guidance since 2016 settled
+   against what it then reported, the second-half step-up its latest full-year
+   range implies set against the years in which that step-up was simply the
+   shape of the year, EUV's share of system sales read from the slides and
+   reconciled against the euro figures of the annual reports, and a bookings
+   record that ends, with no filing saying why, at the largest quarter it
+   contains;
    Hermès International gets the two growth rates it prints beside every cell
    — the published one and its own constant-currency one — and the wedge
    between them, which the currency swings from one sign to the other and which

@@ -172,7 +172,7 @@ def _tsm_advanced_count() -> dict:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amd": 16, "amzn": 13, "arm": 0, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
+    "amd": 16, "amzn": 13, "arm": 0, "asml": 16, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
     "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
@@ -1650,7 +1650,6 @@ UNDERIVABLE_QUARTER_COUNTS = {
     "cdns Ex11": ([43], "指向完整指引记录的交叉引用；本图只画近 20 季"),
     "cme Ex14":  ([37], "锚是同句里用中文写的「五十四个季度里」，数字形式的锚不存在"),
     "cme Ex21":  ([34], "税改前 7 季 / 之后 34 季的分段均值，两段都短于窗口"),
-    "ibkr Ex9":  ([34], "已由 len(reported) 算出：该行有披露的季度数，非窗口长度"),
     "meta Ex9":  ([13], "价格腿同比为负的季度数，是条件计数"),
     "axp Ex16":  ([16], "两条口径同时被印出来的季度数（16 季），是重叠区间的长度，"
                         "不是该图 42 季的窗口 —— 图注拿它论证两条线不能接成一条"),
@@ -1684,7 +1683,12 @@ class ProseQuarterCountTest(unittest.TestCase):
         # quarter series yields 41 changes and 38 year-on-year comparisons, and
         # notes legitimately say so.
         ok = {n, max(n - 1, 0), max(n - 4, 0)}
-        for key in ("series", "values", "lines", "bars", "stack", "yoy", "line"):
+        # `groups` is `grouped_bars`' own index-addressed series, the same shape
+        # as a `lines` series. Leaving it out made a grouped chart's non-null
+        # count underivable from the chart that draws it: ASML's guidance charts
+        # plot one bar per guided quarter on a 42-quarter axis and say 「27 季里」,
+        # and IBKR Ex9 had to be pinned for exactly that reason ("该行有披露的季度数").
+        for key in ("series", "values", "lines", "bars", "stack", "yoy", "line", "groups"):
             value = exhibit.get(key)
             blocks = []
             if isinstance(value, list) and value:
