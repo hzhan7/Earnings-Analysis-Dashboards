@@ -202,7 +202,7 @@ def _tsm_advanced_count() -> dict:
 REACH_2016 = {
     "amd": 16, "amzn": 13, "arm": 0, "asml": 24, "avgo": 6, "axp": 11, "bc": 3, "cboe": 10, "cdns": 10, "cfr": 20, "cme": 17,
     "cost": 13, "googl": 11, "hkex": 13, "ibkr": 26, "ker": 11 + _ker_threshold_reach(), "ma": 17, "mc": 5, "mco": 13, "meta": 10,
-    "msci": 15, "msft": 8, "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
+    "msci": 15, "msft": 8, "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 8, "nvda": 10, "pm": 8,
     "race": 12, "rms": 15, "samsung": 0, "schw": 10, "skhynix": 4, "snps": 8,
     "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
     "intc": 10 + _intc_threshold_reach(),
@@ -899,8 +899,8 @@ CONVERTED = {
         # and the page will not splice the four geographic segments on.
         "三个报告分部的净收入": "segments recast only as far back as 2023Q1 (8-K of 2026-03-13).",
         "分部调整后毛利率：国际无烟": "same recast floor, adjusted gross margin by segment.",
-        "美国分部调整后毛利率：当前": "threshold line over the same recast segment record.",
-        "国际无烟分部调整后毛利率：当前": "threshold line over the same recast segment record.",
+        "美国分部调整后毛利率：下季阈值": "threshold line over the same recast segment record.",
+        "国际无烟分部调整后毛利率：下季阈值": "threshold line over the same recast segment record.",
     },
     "race": {
         # Ferrari guided only shipments, revenue, adjusted EBITDA and net debt
@@ -1348,8 +1348,8 @@ FLOOR_KIND = {
         '下季指引的偏离，按口径分开': 'disclosure',
         '三个报告分部的净收入': 'disclosure',
         '分部调整后毛利率：国际无烟': 'disclosure',
-        '美国分部调整后毛利率：当前': 'disclosure',
-        '国际无烟分部调整后毛利率：当前': 'disclosure',
+        '美国分部调整后毛利率：下季阈值': 'disclosure',
+        '国际无烟分部调整后毛利率：下季阈值': 'disclosure',
     },
     'race': {
         '调整后 EBITDA': 'disclosure',
