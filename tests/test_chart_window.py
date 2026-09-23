@@ -243,12 +243,44 @@ def _tsm_advanced_count() -> dict:
     return {}
 
 
+def _axp_threshold_reach() -> int:
+    """AXP's threshold-line charts -- last quarter's lines settled in section one,
+    next quarter's in section three -- are drawn while the series carries the
+    period-stamped blocks that set them, and which readings those lines watch (so
+    how many of the charts run the full 42 quarters) is chosen by each quarter's
+    analysis, not by the page. The page is rolled by editing `series/axp.json`
+    alone, so the pin counts the permanent charts and adds these while they are
+    published."""
+    page = js_payload(ROOT / "data" / "axp.js", "window.DASH")
+    return sum(1 for section in page["sections"] if section["id"] in ("settled", "next_quarter")
+               for ex in section["exhibits"]
+               if ex["kind"] == "lines" and ("上季" in ex["title"] or "下季" in ex["title"])
+               and (first_year(ex) or TARGET_YEAR + 1) <= TARGET_YEAR)
+
+
+def _axp_overlap_count() -> dict:
+    """AXP's two section-three credit charts quote the length of the stretch in
+    which both credit bases were printed (2022Q1-2025Q4). That is the overlap, not
+    the chart's 42-quarter window, so the census cannot derive it -- and the
+    charts' exhibit numbers move with section one, whose chart count is set by
+    last quarter's analysis at every roll. So the pins are keyed by the numbers
+    the published page carries, and the count is read from the series, not from
+    the note it checks."""
+    series = json.loads((ROOT / "series" / "axp.json").read_text(encoding="utf-8"))
+    overlap = series["credit_metrics"]["loans_basis"]["overlap_quarters"]
+    page = js_payload(ROOT / "data" / "axp.js", "window.DASH")
+    return {f"axp Ex{ex['n']}": ([overlap], "两条信用口径同时被印出来的季度数，是重叠区间的长度，"
+                                           "不是该图 42 季的窗口 —— 图注拿它论证两条线不能接成一条；按 series 现算")
+            for section in page["sections"] for ex in section["exhibits"]
+            if f"有 {overlap} 季同时被印出来" in (ex.get("note") or "")}
+
+
 # ── the ratchet ──────────────────────────────────────────────────────────────
 # Time-axis exhibits per page whose earliest label is 2016 or earlier. Raise a
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amd": 16, "amzn": 13, "arm": 0, "asml": 24, "avgo": 6, "axp": 11, "bc": 3, "cboe": 10, "cdns": 10, "cfr": 20, "cme": 13 + _cme_threshold_reach(),
+    "amd": 16, "amzn": 13, "arm": 0, "asml": 24, "avgo": 6, "axp": 7 + _axp_threshold_reach(), "bc": 3, "cboe": 10, "cdns": 10, "cfr": 20, "cme": 13 + _cme_threshold_reach(),
     "cost": 13, "googl": 11, "hkex": 15, "ibkr": 26, "ker": 11 + _ker_threshold_reach(), "ma": 17, "mc": 9, "mco": 13, "meta": 10,
     "msci": 23, "msft": 8, "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 8, "nvda": 10, "pm": 8,
     "race": 12, "rms": 15, "samsung": 0, "schw": 10, "skhynix": 4, "snps": 8,
@@ -1871,12 +1903,10 @@ UNDERIVABLE_QUARTER_COUNTS = {
     "cdns Ex11": ([43], "指向完整指引记录的交叉引用；本图只画近 20 季"),
     **_cme_quarter_pins(),
     "meta Ex9":  ([13], "价格腿同比为负的季度数，是条件计数"),
-    "axp Ex16":  ([16], "两条口径同时被印出来的季度数（16 季），是重叠区间的长度，"
-                        "不是该图 42 季的窗口 —— 图注拿它论证两条线不能接成一条"),
-    "axp Ex17":  ([16], "同上，同一句重叠区间长度出现在另一张信用图的图注里"),
     "skhynix Ex10": ([22], "这一页此前的窗口长度。图注解释的正是「从 22 季拉到 42 季」"
                           "改变了什么，所以那个 22 指的是旧窗口，不是本图的任何一段"),
     **_tsm_advanced_count(),
+    **_axp_overlap_count(),
 }
 
 
