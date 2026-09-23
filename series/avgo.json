@@ -166,7 +166,131 @@
         "客户付款逾期披露",
         "MediaTek v8 量产订单 + 份额 <70%"
       ],
-      "_thresholds_note": "direction 是报告原文里触发动作的那一侧（up = 高于阈值触发，down = 低于阈值触发），不是页面图上的「有利一侧」；threshold 以百万美元或百分比记。"
+      "_thresholds_note": "direction 是报告原文里触发动作的那一侧（up = 高于阈值触发，down = 低于阈值触发），不是页面图上的「有利一侧」；threshold 以百万美元或百分比记。",
+      "next_thresholds": [
+        {
+          "metric": "backstop 合计最大敞口",
+          "threshold": 35000.0,
+          "direction": "down",
+          "action": "上调",
+          "_note": "≤$35B 且无新增 tranche（E1）"
+        },
+        {
+          "metric": "backstop 合计最大敞口",
+          "threshold": 50000.0,
+          "direction": "up",
+          "action": "减仓",
+          "_note": ">$50B 或首次 ASC 460 计提（E2 = R1）"
+        },
+        {
+          "metric": "采购承诺 FY27 + FY28",
+          "threshold": 160000.0,
+          "direction": "up",
+          "action": "上调",
+          "_note": ">$160B（E3）；$125–132B 持平（E4）"
+        },
+        {
+          "metric": "采购承诺 FY28 一栏",
+          "threshold": 72870.0,
+          "direction": "down",
+          "action": "警示",
+          "_note": "<$72,870M（E5）"
+        },
+        {
+          "metric": "non-GAAP 营业费用",
+          "threshold": 2200.0,
+          "direction": "down",
+          "action": "上调",
+          "_note": "<$2,200M 强杠杆"
+        },
+        {
+          "metric": "non-GAAP 营业费用",
+          "threshold": 2436.0,
+          "direction": "up",
+          "action": "警示",
+          "_note": ">$2,436M 零杠杆都没守住"
+        },
+        {
+          "metric": "半导体分部毛利率",
+          "threshold": 67.5,
+          "direction": "up",
+          "action": "上调",
+          "_note": "Q4 锚 66.00% + 150bp，连续两季"
+        },
+        {
+          "metric": "半导体分部毛利率",
+          "threshold": 64.5,
+          "direction": "down",
+          "action": "警示",
+          "_note": "Q4 锚 66.00% − 150bp，连续两季"
+        },
+        {
+          "metric": "季度回购",
+          "threshold": 5000.0,
+          "direction": "up",
+          "action": "加仓",
+          "_note": "≥$5B（E8）"
+        },
+        {
+          "metric": "期末现金",
+          "threshold": 30000.0,
+          "direction": "up",
+          "action": "警示",
+          "_note": "连续第三季 $0 且现金 >$30B（E9）"
+        },
+        {
+          "metric": "现金纳税 ÷ non-GAAP 所得税",
+          "threshold": 40.0,
+          "direction": "down",
+          "action": "跟踪",
+          "_note": "维持 <40% = 结构性"
+        },
+        {
+          "metric": "现金纳税 ÷ non-GAAP 所得税",
+          "threshold": 60.0,
+          "direction": "up",
+          "action": "警示",
+          "_note": "连续两季 >60%（E12）"
+        },
+        {
+          "metric": "软件收入",
+          "threshold": 8700.0,
+          "direction": "up",
+          "action": "跟踪",
+          "_note": "Q4 ≥$8.7B 且 ARR ≥15% 且递延收入不降 = 结构性"
+        },
+        {
+          "metric": "软件收入",
+          "threshold": 8500.0,
+          "direction": "down",
+          "action": "警示",
+          "_note": "Q4 <$8.5B 或 ARR <13% 或递延收入环比降 >$1B（E10）"
+        },
+        {
+          "metric": "软件 ARR 增速",
+          "threshold": 15.0,
+          "direction": "up",
+          "action": "跟踪"
+        },
+        {
+          "metric": "软件 ARR 增速",
+          "threshold": 13.0,
+          "direction": "down",
+          "action": "警示"
+        },
+        {
+          "metric": "流动合同负债环比",
+          "threshold": -1000.0,
+          "direction": "down",
+          "action": "警示",
+          "_note": "递延收入环比降 >$1B"
+        }
+      ],
+      "next_unquantified": [
+        "递延收入不降",
+        "K7 第二供应商的形态判据",
+        "R2 / E6 Q1 FY27 AI 指引 ≤$23.5B"
+      ]
     }
   },
   "cik": "0001730168",
@@ -1533,6 +1657,51 @@
     ]
   },
   "segment_cost_note": "分部成本（segments_usd_m 里两条 *_cost_of_revenue）是 ASU 2023-07 之后才有的披露：FY2025 10-K（0001730168-25-000121）第一次给出分部成本，只有全年数（FY2023–FY2025 三年，见 filed_fiscal_years 的两条 *_cost_of_revenue_usd_m）；季度数从 FY2026 的 10-Q 开始，每份 10-Q 的比较列带出上年同季。所以 FY2025 Q1–Q3（本页 Q4 2024–Q2 2025）取自 FY2026 Q1/Q2/Q3 三份 10-Q 的比较列（2,616/504、2,631/462、2,988/465），FY2025 Q4（本页 Q3 2025）= 10-K 全年减前三季（11,740−8,235=3,505；1,902−1,431=471），四季相加逐分对上全年。更早的季度公司没有披露，留空而不是估算。两个分部成本之和逐季等于公司的non-GAAP 营业成本（本季 6,892+508=7,400=29,591−22,191），所以分部毛利率与 non-GAAP 口径一致。",
+  "upfront_license_revenue_usd_m": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    1972.0,
+    1803.0,
+    1916.0,
+    2109.0,
+    1755.0,
+    1964.0,
+    3465.0
+  ],
+  "upfront_license_note": "upfront_license_revenue_usd_m：没有「无理由解约」条款的软件合同，其授权部分在交付时一次性确认，公司称为 upfront license revenue。公司从 FY2025 10-K 起把它从「订阅与服务」重分类进「产品」收入并单独披露金额：FY2025 全年 7,800（10-K，0001730168-25-000121）；季度数来自 FY2026 三份 10-Q 的收入附注 —— 本季列是 FY2026 各季（1,755 / 1,964 / 3,465），比较列是按新口径重分类的 FY2025 同季（1,972 / 1,803 / 1,916），FY2025 Q4 = 全年 7,800 减前三季 5,691 = 2,109。10-Q 的六个月与九个月数（3,719 / 7,184）与各季相加逐分对上。它是软件分部收入的一部分（授权来自软件合同），所以「软件收入减 upfront license」是软件里按期确认的那一块，本页标为自算。更早的季度公司没有拆出来，留空。",
   "cash_flow_usd_m": {
     "operating_cash_flow": [
       622.0,
@@ -3174,59 +3343,282 @@
       "adjusted_ebitda_margin_pct": null,
       "ai_semiconductor_revenue_usd_bn": 21.7,
       "ai_semiconductor_revenue_quote": "to accelerate to $21.7 billion",
-      "note": "正式指引这次只有两条，都在「Fourth Quarter Fiscal Year 2026 Business Outlook」区块里，都是单点（approximately）：收入约 US$34.8B、non-GAAP 营业利润率约为收入的 66%。Adjusted EBITDA 指引消失了——上一份还同时给营业利润率和 EBITDA 两条，这一份只剩前者。第三条 AI 半导体收入 US$21.7B 出自 CEO 引语、不在 Business Outlook 区块内，而且不带 approximately（原文 “to $21.7 billion”），口径级别与前两条不同，本页分开画。"
+      "note": "正式指引这次只有两条，都在「Fourth Quarter Fiscal Year 2026 Business Outlook」区块里，都是单点（approximately）：收入约 US$34.8B、non-GAAP 营业利润率约为收入的 66%。Adjusted EBITDA 指引消失了——上一份还同时给营业利润率和 EBITDA 两条，这一份只剩前者。第三条 AI 半导体收入 US$21.7B 出自 CEO 引语、不在 Business Outlook 区块内，而且不带 approximately（原文 “to $21.7 billion”），口径级别与前两条不同，本页分开画。",
+      "by_line_call": {
+        "given_in": "2026-09-02 业绩电话会（CFO 的指引段）",
+        "semiconductor_usd_bn": 26.1,
+        "non_ai_semiconductor_usd_bn": 4.3,
+        "infrastructure_software_usd_bn": 8.7,
+        "gross_margin_pct": 73.0,
+        "capital_expenditures_usd_bn": 1.4,
+        "_note": "只在电话会上说过、没写进 8-K Business Outlook 区块的四项下季指引，照公司口径记。半导体 26.1 + 软件 8.7 = 34.8，与新闻稿的总收入指引相符；但 AI 21.7 + 非 AI 4.3 = 26.0，比半导体 26.1 少 0.1 —— 公司口头的非 AI 数与「半导体减 AI」不一致，下季结算按业务线拆分时以相减值 4.4 为准，并注明口头说的是 4.3。"
+      }
     }
   },
   "next_kpi": {
     "period": "Q2 2026",
+    "for_period": "Q3 2026",
+    "set_in": "Q2 2026",
+    "_note": "本季（本页 Q2 2026，公司 FY2026 Q3）本地分析稿第 8.2 节「本季关键观察指标（7 条）」；每条的每个数值阈值拆成一条，阈值、比较符与动作逐字取自该节，E / R 编号是第 8.3–8.4 节的事件与撤销条件。字段与 prior_kpi_settlement 相同（kind / op / line / direction / reads 或带出处的 value），所以下一季把这一块原样搬进 prior_kpi_settlement、改戳，就是结算，不用改代码。当前值由 builder 按 reads 从本页序列与 ten_q_notes 现算；K3(b) 的两条是 Q4 锚 66.00% ± 150bp 折成的水平线（报告的判据是「连续两季偏离」）。unquantified 是没有数可画的条目与原因。",
     "quantified": [
       {
-        "metric": "AI 半导体收入（季）",
-        "direction": "up",
-        "threshold": 21700.0,
-        "current": 16700.0,
+        "id": "k1_isolated",
+        "row": "K1",
+        "kind": "gate",
+        "action": "上调",
+        "line": "孤例线",
+        "metric": "backstop 合计最大敞口（孤例线）",
+        "threshold": 35000.0,
+        "op": "≤",
+        "direction": "down",
         "unit": "usd_m",
-        "threshold_kind": "growth",
-        "note": "公司对下季给出 US$21.7B。注意这条出自 CEO 引语、不在 Business Outlook 区块里，且原文<b>不带</b> approximately，与下面两条正式指引不是同一个证据等级。"
+        "reads": "backstop_max",
+        "rule": "10-Q 或有负债节的担保合计 ≤ US$35B 且无新增 tranche = 孤例 → 上调（E1）"
       },
       {
-        "metric": "季度收入",
-        "direction": "up",
-        "threshold": 34800.0,
-        "current": 29591.0,
+        "id": "k1_liability",
+        "row": "K1",
+        "kind": "floor",
+        "action": "减仓",
+        "line": "减仓线",
+        "metric": "backstop 合计最大敞口（减仓线）",
+        "threshold": 50000.0,
+        "op": ">",
+        "direction": "down",
         "unit": "usd_m",
-        "threshold_kind": "growth",
-        "note": "公司对下季给出「约 US$34.8B」的单点指引。这一条接替了退役的 Adjusted EBITDA 利润率：那条线本季起无数可结算，而收入是本份新闻稿里仅有的两条正式指引之一。"
+        "reads": "backstop_max",
+        "rule": "担保合计 > US$50B 或首次按 ASC 460 确认公允价值负债 = 从或有披露变成负债入表 → 减仓（E2 = R1）"
       },
       {
-        "metric": "基础设施软件收入",
+        "id": "k2_new_supply",
+        "row": "K2",
+        "kind": "gate",
+        "action": "上调",
+        "line": "上调线",
+        "metric": "采购承诺 FY27 + FY28（上调线）",
+        "threshold": 160000.0,
+        "op": ">",
         "direction": "up",
-        "threshold": 8752.0,
-        "current": 8752.0,
         "unit": "usd_m",
-        "threshold_kind": "level",
-        "note": "<b>本季新闻稿没有给软件分部的下季指引</b>，上一季那个 US$8.9B 的口径这次没有对应项。所以这里不写公司数，改用本季实际值做持平线：跌破 US$8,752M 即为脉冲回落。阈值是本地设定，不是公司指引。"
+        "reads": "commitments_next_two",
+        "rule": "10-Q Note 10 的 FY27 + FY28 两行 > US$160B = 真为新指引签下了供应 → 上调（E3）；US$125–132B = 持平 → 跟踪（E4）"
       },
       {
-        "metric": "non-GAAP 营业利润率",
+        "id": "k2_fy28",
+        "row": "K2",
+        "kind": "floor",
+        "action": "警示",
+        "line": "警示线",
+        "metric": "采购承诺 FY28 一栏（警示线）",
+        "threshold": 72870.0,
+        "op": "<",
         "direction": "up",
-        "threshold": 66.0,
-        "current": 67.9,
+        "unit": "usd_m",
+        "reads": "commitments_second_fy",
+        "rule": "FY28 一栏 < US$72,870M = 有承诺被取消或重谈 → 警示（E5）"
+      },
+      {
+        "id": "k3a_strong",
+        "row": "K3(a)",
+        "kind": "gate",
+        "action": "上调",
+        "line": "强杠杆线",
+        "metric": "non-GAAP 营业费用（强杠杆线）",
+        "threshold": 2200.0,
+        "op": "<",
+        "direction": "down",
+        "unit": "usd_m",
+        "reads": "ng_opex",
+        "rule": "Q4 non-GAAP 营业费用 < US$2,200M = 费用纪律是结构性的 → 上调（FY27 营业利润率假设上调 100bp）"
+      },
+      {
+        "id": "k3a_zero",
+        "row": "K3(a)",
+        "kind": "floor",
+        "action": "警示",
+        "line": "零杠杆线",
+        "metric": "non-GAAP 营业费用（零杠杆线）",
+        "threshold": 2436.0,
+        "op": ">",
+        "direction": "down",
+        "unit": "usd_m",
+        "reads": "ng_opex",
+        "rule": "Q4 > US$2,436M（指引隐含区间 US$2,088–2,784M 的中值）= 连零杠杆都没守住 → 警示（FY27 营业利润率下调 150bp）；与 Q4 毛利率 ≤ 71.5% 同时出现 = R3"
+      },
+      {
+        "id": "k3b_up",
+        "row": "K3(b)",
+        "kind": "gate",
+        "action": "上调",
+        "line": "上偏线",
+        "metric": "半导体分部毛利率（上偏线）",
+        "threshold": 67.5,
+        "op": "≥",
+        "direction": "up",
         "unit": "pct",
-        "threshold_kind": "level",
-        "note": "下季指引约 66%，比上季给的 67% 低一格。这条指引到本季为止只结算过一次（67.91% vs 67%），历史兑现记录仍然只有一个点。"
+        "reads": "semi_gross_margin",
+        "rule": "Q4 锚 66.00%（指引隐含），连续两季偏离 ≥ +150bp → 上调"
       },
       {
-        "metric": "季度回购",
+        "id": "k3b_down",
+        "row": "K3(b)",
+        "kind": "floor",
+        "action": "警示",
+        "line": "下偏线",
+        "metric": "半导体分部毛利率（下偏线）",
+        "threshold": 64.5,
+        "op": "≤",
         "direction": "up",
-        "threshold": 2000.0,
-        "current": 0.0,
+        "unit": "pct",
+        "reads": "semi_gross_margin",
+        "rule": "Q4 锚 66.00%，连续两季偏离 ≤ −150bp → 警示"
+      },
+      {
+        "id": "k4_add",
+        "row": "K4",
+        "kind": "gate",
+        "action": "加仓",
+        "line": "加仓线",
+        "metric": "季度回购（加仓线）",
+        "threshold": 5000.0,
+        "op": "≥",
+        "direction": "up",
         "unit": "usd_m",
-        "threshold_kind": "level",
-        "note": "本季回购为零，是设定这条线以来离恢复线最远的一次；公司未解释。历史上零回购出现过 15 次，所以零本身不是异常，连续零才是。"
+        "reads": "buyback",
+        "rule": "单季回购 ≥ US$5B = 表外义务尚未扣押资产负债表 → 加仓（E8）"
+      },
+      {
+        "id": "k4_cash",
+        "row": "K4",
+        "kind": "floor",
+        "action": "警示",
+        "line": "警示线",
+        "metric": "期末现金（警示线）",
+        "threshold": 30000.0,
+        "op": ">",
+        "direction": "down",
+        "unit": "usd_m",
+        "reads": "cash",
+        "rule": "回购连续第三季 US$0 且期末现金 > US$30B = 已被扣押 → 警示（E9）"
+      },
+      {
+        "id": "k5_structural",
+        "row": "K5",
+        "kind": "gate",
+        "action": "跟踪",
+        "line": "结构性线",
+        "metric": "现金纳税 ÷ non-GAAP 所得税（结构性线）",
+        "threshold": 40.0,
+        "op": "<",
+        "direction": "down",
+        "unit": "pct",
+        "reads": "cash_tax_ratio_ng",
+        "rule": "现金纳税 ÷ non-GAAP 所得税计提维持 < 40% = 结构性低现金税成立 → 跟踪"
+      },
+      {
+        "id": "k5_payback",
+        "row": "K5",
+        "kind": "floor",
+        "action": "警示",
+        "line": "回补线",
+        "metric": "现金纳税 ÷ non-GAAP 所得税（回补线）",
+        "threshold": 60.0,
+        "op": ">",
+        "direction": "down",
+        "unit": "pct",
+        "reads": "cash_tax_ratio_ng",
+        "rule": "连续两季 > 60% = 时点红利开始回补 → 警示（E12）"
+      },
+      {
+        "id": "k6_revenue_struct",
+        "row": "K6",
+        "kind": "gate",
+        "action": "跟踪",
+        "line": "结构性线",
+        "metric": "软件收入（结构性线）",
+        "threshold": 8700.0,
+        "op": "≥",
+        "direction": "up",
+        "unit": "usd_m",
+        "reads": "software_revenue",
+        "rule": "Q4 软件收入 ≥ US$8.7B 且 ARR ≥ 15% 且递延收入不降 = 结构性 → 跟踪"
+      },
+      {
+        "id": "k6_revenue_warn",
+        "row": "K6",
+        "kind": "floor",
+        "action": "警示",
+        "line": "警示线",
+        "metric": "软件收入（警示线）",
+        "threshold": 8500.0,
+        "op": "<",
+        "direction": "up",
+        "unit": "usd_m",
+        "reads": "software_revenue",
+        "rule": "Q4 软件收入 < US$8.5B 或 ARR < 13% 或 10-Q 递延收入环比降 > US$1B = 一次性 / 降权 → 警示（E10）"
+      },
+      {
+        "id": "k6_arr_struct",
+        "row": "K6",
+        "kind": "gate",
+        "action": "跟踪",
+        "line": "结构性线",
+        "metric": "软件 ARR 增速（结构性线，电话会）",
+        "threshold": 15.0,
+        "op": "≥",
+        "direction": "up",
+        "unit": "pct",
+        "value": 15.0,
+        "value_source": "2026-09-02 业绩电话会：公司称软件 ARR 同比增长 15%；ARR 不在任何申报文件里",
+        "rule": "Q4 软件收入 ≥ US$8.7B 且 ARR ≥ 15% 且递延收入不降 = 结构性 → 跟踪"
+      },
+      {
+        "id": "k6_arr_warn",
+        "row": "K6",
+        "kind": "floor",
+        "action": "警示",
+        "line": "警示线",
+        "metric": "软件 ARR 增速（警示线，电话会）",
+        "threshold": 13.0,
+        "op": "<",
+        "direction": "up",
+        "unit": "pct",
+        "value": 15.0,
+        "value_source": "2026-09-02 业绩电话会：公司称软件 ARR 同比增长 15%；ARR 不在任何申报文件里",
+        "rule": "Q4 软件收入 < US$8.5B 或 ARR < 13% 或 10-Q 递延收入环比降 > US$1B = 一次性 / 降权 → 警示（E10）"
+      },
+      {
+        "id": "k6_deferred",
+        "row": "K6",
+        "kind": "floor",
+        "action": "警示",
+        "line": "警示线",
+        "metric": "流动合同负债环比（警示线）",
+        "threshold": -1000.0,
+        "op": "<",
+        "direction": "up",
+        "unit": "usd_m",
+        "reads": "contract_liabilities_qoq",
+        "rule": "Q4 软件收入 < US$8.5B 或 ARR < 13% 或 10-Q 递延收入环比降 > US$1B = 一次性 / 降权 → 警示（E10）；报告的基线「递延收入 US$10,038M」是 10-Q「其他流动负债」附注里的流动合同负债"
       }
     ],
-    "excluded": "另有三条本页<b>不接入</b>，原因写在这里而不是省略掉：（1）<b>客户租赁 backstop 的实际敞口</b>——10-Q 只披露了最大敞口 US$29B 与增减机制，没有给当前实际敞口、公允价值或计提，只有一个时点、构不成序列；（2）<b>AI networking 占 AI 收入的比例</b>——只在电话会上以「almost 40%」「closer to around 30%」这种精度出现，申报文件里没有；（3）<b>最大客户的份额</b>——公司从不点名客户、也不披露单客户占比，第三方对份额的估计不属于本页可发布的范围（见内容边界）。"
+    "unquantified": [
+      {
+        "row": "K6",
+        "metric": "递延收入不降（结构性一档的第三个条件）",
+        "reason": "阈值是 0，没有「距阈值 %」可算；本季读数写在第三板块的说明里"
+      },
+      {
+        "row": "K7",
+        "metric": "第二供应商的形态判据：任一 hyperscaler 出现「合约级 + 股权 / 预付绑定」的第二供应商证据",
+        "reason": "定性判据，基线是 Marvell 2026-08-19 的 8-K 披露的 Google 认股权证；没有数可画"
+      },
+      {
+        "row": "R2 / E6",
+        "metric": "12/9 给出的 Q1 FY27 AI 指引 ≤ US$23.5B，或拒绝给出 Q1 的 AI 分拆",
+        "reason": "下一次业绩发布才有这个数；本季给的是 Q4 的 AI 指引，不是同一个量，不拿来冒充当前值"
+      }
+    ]
   },
   "sources": [
     {
@@ -3234,11 +3626,15 @@
       "url": "https://www.sec.gov/Archives/edgar/data/1730168/000173016826000076/avgo-08022026x8kxex99.htm"
     },
     {
+      "label": "截至 2026-08-02 的 10-Q（2026-09-10 申报；本季分部营业利润与分部成本、采购承诺、upfront license、合同负债与 backstop 的来源）",
+      "url": "https://www.sec.gov/Archives/edgar/data/1730168/000173016826000080/avgo-20260802.htm"
+    },
+    {
       "label": "FY2026 Q2 业绩新闻稿（8-K EX-99.1，2026-06-03）",
       "url": "https://www.sec.gov/Archives/edgar/data/1730168/000173016826000051/avgo-05032026x8kxex99.htm"
     },
     {
-      "label": "截至 2026-05-03 的 10-Q（2026-06-09 申报；分部营业利润与采购承诺的最后一期来源）",
+      "label": "截至 2026-05-03 的 10-Q（2026-06-09 申报；上季的分部、承诺与合同负债附注）",
       "url": "https://www.sec.gov/Archives/edgar/data/1730168/000173016826000054/avgo-20260503.htm"
     },
     {
@@ -3401,6 +3797,11 @@
     "period": "Q2 2026",
     "buyback_change_explained": false,
     "evidence": "2026-09-02 那份 EX-99.1 里「repurchase」只出现在两处：前瞻性陈述的免责条款，与现金流量表的「Repurchases of common stock - repurchase program」一行（本季 —，上季 (600)）；要点行、正文与 CEO、CFO 两段引语都没有提回购。本页据此写「公司没有解释」，只以业绩新闻稿为据。"
+  },
+  "quarter_story": {
+    "period": "Q2 2026",
+    "not_drawn": "报告另外两条结论本页不画：AI 收入里 XPU 与网络芯片各占多少，公司只在电话会上以占比给出（季报与 10-Q 都不拆），报告据此推出本季 AI 增量几乎全部来自 XPU；bookings、backlog 与库存天数三项本季在电话会上一次都没出现，它们本来就只在电话会上说过，没有可画的申报序列（Adjusted EBITDA 的停披见第一板块）。",
+    "upfront_reading": "本季本地分析稿写于 10-Q 申报之前，它给软件跳升定的裁决线是「本季单季 upfront license 明显高于上季 = 脉冲、明显低于或与去年同季持平 = 结构性」；10-Q 印的是本季 {now}、上季 {prior}，落在「脉冲」那一侧。"
   },
   "window_note_2016_2017": "33 季 → 41 季（2026-08 回填）→ 42 季。前面新增的八季（Q1 2016–Q4 2017，即财政 FY2016 Q2 至 FY2018 Q1）由两条互相独立的路径各取一遍：10-Q/10-K 的 XBRL R 表，与各季业绩 8-K 的 EX-99.1。**48 个两边都有值的格子里只有 1 格不同**，而那一格正是下面记的那次重述。两个申报主体：2018 年 4 月迁册之前是 Broadcom Limited / Broadcom Pte. Ltd.（CIK 1649338），之后是 Broadcom Inc.（CIK 1730168）。财年闭合：FY2016 与 FY2017 的四季之和对 10-K 全年，九条线全部零残差。窗口现为 42 季：2026-09-02 发布的 FY2026 Q3（本站 Q2 2026，截至 2026-08-02）已接入。",
   "q3_2017_restatement": {

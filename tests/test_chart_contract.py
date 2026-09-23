@@ -398,7 +398,7 @@ class ExhibitPayloadContractTest(unittest.TestCase):
         # The same chart as the "AVGO Exhibit 16" above (its purchase-commitments
         # gs_bar); the number moves whenever that page's earlier sections gain or
         # lose charts, so it is re-read from the census, never edited by hand.
-        self.assertEqual(neither, ["avgo Ex20"])
+        self.assertEqual(neither, ["avgo Ex23"])
 
 
 class RenderGateRegexTest(unittest.TestCase):
