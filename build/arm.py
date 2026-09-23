@@ -48,11 +48,16 @@ from build.board import (  # noqa: E402
     cn_ordinal,
     delivery_band,
     display_period,
+    headroom,
+    headroom_exhibit,
     latest_block,
     minus_sign,
     number_exhibits,
     round_half_up,
     stamped_block,
+    threshold_exhibit,
+    threshold_table,
+    unit_text,
 )
 from build.page_shell import render_shell  # noqa: E402
 from build.payload_guard import write_dash  # noqa: E402
@@ -158,6 +163,12 @@ def last_printed(values: list, dates: list[str]) -> str:
 def calendar_of(date: str) -> str:
     """``2026-06-30`` -> ``2026Q2``."""
     return f"{date[:4]}Q{(int(date[5:7]) - 1) // 3 + 1}"
+
+
+def shift(label: str, step: int) -> str:
+    """``2026Q2`` shifted by ``step`` quarters: ``shift('2026Q2', 1)`` -> ``2026Q3``."""
+    index = int(label[:4]) * 4 + int(label[5]) - 1 + step
+    return f"{index // 4}Q{index % 4 + 1}"
 
 
 # ── what 「本期」 means on this page ──────────────────────────────────────────
@@ -746,6 +757,144 @@ def census_groups(rows: list[dict]) -> list[dict]:
     return list(out.values())
 
 
+# ── thresholds: which series a threshold may be set on ──────────────────────
+THRESHOLD_SOURCE = ("阈值与方向逐字取自本地季报分析稿第 8 节「关键观察指标」，是研究设定，不是公司指引；"
+                    "实际值由各季股东信与中期财务报表的数现算。")
+
+
+def acv_yoy_run(s: dict) -> tuple[list[str], list[float]]:
+    """ACV year on year at each quarter-end whose year-ago value is printed.
+
+    Only the trailing unbroken run is returned, so a line never bridges a gap:
+    the prospectus printed ACV at 2021-03-31 but not at the three quarter-ends
+    after it, so 2022Q1 has a year-ago base and 2022Q2-Q4 do not.
+    """
+    kpi = s["kpi"]
+    acv = {calendar_of(d): v for d, v in zip(kpi["dates"], kpi["acv"]) if v is not None}
+    labels, values = [], []
+    for period in s["quarterly"]["periods"]:
+        base = shift(period, -4)
+        if period in acv and base in acv:
+            labels.append(period)
+            values.append(pct(acv[period], acv[base]))
+        else:
+            labels, values = [], []
+    return labels, values
+
+
+def tracked_metric(s: dict, metric_id: str) -> dict:
+    """The series a threshold is drawn against, keyed by the id the series block uses.
+
+    A threshold is settled on the last point of this series, so the headroom bar
+    and the line chart cannot disagree about the value -- and no block types it.
+    """
+    q = s["quarterly"]
+    P = q["periods"]
+    if metric_id == "royalty":
+        labels, values = list(P), list(q["royalty"])
+        spec = {"fmt": "f0c", "ylab": "US$M（单季）", "name": "royalty 收入（单季）"}
+    elif metric_id == "royalty_yoy":
+        labels, values = span([None if k < 4 else pct(q["royalty"][k], q["royalty"][k - 4])
+                               for k in range(len(P))], P)
+        spec = {"fmt": "pct1", "ylab": "同比 %", "name": "royalty 同比"}
+    elif metric_id == "acv_yoy":
+        labels, values = acv_yoy_run(s)
+        spec = {"fmt": "pct1", "ylab": "同比 %", "name": "ACV 同比"}
+    elif metric_id == "fcf":
+        labels, values = span(q["cash"]["free_cash_flow"], P)
+        spec = {"fmt": "f0c", "ylab": "US$M（单季）", "name": "non-GAAP 自由现金流（单季）"}
+    elif metric_id == "softbank_consulting":
+        rp = s["related_party"]
+        start = next(k for k, v in enumerate(rp["softbank_affiliate"]) if v)
+        labels, values = rp["periods"][start:], rp["softbank_affiliate"][start:]
+        spec = {"fmt": "f1", "ylab": "US$M（单季）", "name": "软银咨询协议收入（单季）"}
+    else:
+        raise ValueError(f"threshold `{metric_id}` names no series this page draws")
+    if not labels or labels[-1] != P[-1]:
+        raise ValueError(f"threshold `{metric_id}`: its series does not reach {P[-1]}, "
+                         "so there is nothing to settle it on")
+    return {"labels": list(labels), "values": list(values), **spec}
+
+
+def settle(s: dict, entries: list[dict], key: str) -> list[dict]:
+    """Attach each threshold's value from the series; a typed value is refused."""
+    out = []
+    for entry in entries:
+        if key in entry:
+            raise ValueError(f"threshold `{entry['id']}` carries a typed `{key}`; it is computed "
+                             "from the series -- remove it")
+        out.append({**entry, key: tracked_metric(s, entry["id"])["values"][-1]})
+    return out
+
+
+def room_text(entry: dict, key: str) -> str:
+    return minus_sign(f"{headroom(entry['direction'], entry['threshold'], entry[key]):+.1f}%")
+
+
+def after_cjk(word: str) -> str:
+    """A space before a word that opens with a Latin letter, the way the prose sets them."""
+    return f" {word}" if word[:1].isascii() and word[:1].isalpha() else word
+
+
+def threshold_line_charts(s: dict, entries: list[dict], key: str, prefix: str, word: str,
+                          headline) -> list[dict]:
+    """One line chart per charted threshold: the metric's own series against the line."""
+    charts = []
+    for entry in entries:
+        if not entry.get("chart"):
+            continue
+        m = tracked_metric(s, entry["id"])
+        side = "上方" if entry["direction"] == "up" else "下方"
+        chart = threshold_exhibit(
+            headline(entry), m["labels"], rounded(m["values"], 1), entry["threshold"],
+            fmt=m["fmt"], ylab=m["ylab"], actual_name=m["name"],
+            threshold_name=f"{word}（安全侧在{side}）",
+            note=(f"阈值 {unit_text(entry['unit'], entry['threshold'])}，"
+                  f"{'本季实际' if key == 'actual' else '当前'} {unit_text(entry['unit'], entry[key])}，"
+                  f"余量 {room_text(entry, key)}。分析稿写的是：{entry['rule']}"
+                  + (f"；另一侧：{entry['upside']}" if entry.get("upside") else "") + "。"
+                  + f"本图从这条序列的第一格 {m['labels'][0]} 画起。"),
+            src_extra=THRESHOLD_SOURCE,
+        )
+        chart["ref"] = f"EX_{prefix}_{entry['id'].upper()}"
+        chart["xrot"] = 90
+        charts.append(chart)
+    return charts
+
+
+def next_quarter_charts(s: dict, next_kpi: dict, entries: list[dict]) -> list[dict]:
+    """Section three: how far each of next quarter's thresholds is from today's value."""
+    rooms = {e["id"]: headroom(e["direction"], e["threshold"], e["current"]) for e in entries}
+    over = [e for e in entries if rooms[e["id"]] < 0]
+    title = f"下季 {len(entries)} 条量化阈值：{len(entries) - len(over)} 条在安全侧"
+    if over:
+        title += f"、{len(over)} 条已越线（{'、'.join(e['metric'] for e in over)}）"
+    else:
+        closest = min(entries, key=lambda e: rooms[e["id"]])
+        title += f"，离阈值最近的是{after_cjk(closest['metric'])}（余量 {room_text(closest, 'current')}）"
+    gated = next_kpi.get("disclosure_gated", [])
+    chart = headroom_exhibit(
+        title, entries, "current",
+        ("正值 = 仍在安全侧。当前值是本季实际，阈值说的是下一季（"
+         f"{next_kpi['for_period']}）的数。"
+         + (f"分析稿第 8 节另有{cn_count(len(gated))}条不能作图（"
+            + "、".join(g["metric"] for g in gated) + "），理由见本节说明与核对抽屉。" if gated else "")),
+        THRESHOLD_SOURCE,
+    )
+    chart["ref"] = "EX_NEXT_HEADROOM"
+    return [chart] + threshold_line_charts(
+        s, entries, "current", "NEXT", "下季阈值",
+        lambda e: (f"{e['metric']}：下季阈值 {unit_text(e['unit'], e['threshold'])}，"
+                   f"当前 {unit_text(e['unit'], e['current'])}"))
+
+
+def kpi_table(title: str, entries: list[dict], key: str, head: str, extra: list[dict]) -> dict:
+    """The audit table behind a headroom chart, plus the rows no chart can carry."""
+    table = threshold_table(0, title, entries, key, head)
+    table["rows"] += [[item["metric"], item["status"], item["rule"], item["why"], "—"] for item in extra]
+    return table
+
+
 # ── the page ─────────────────────────────────────────────────────────────────
 def headline_metrics(staging: dict) -> list[str]:
     """The three figures on this company's home-page card, computed from the series."""
@@ -773,30 +922,34 @@ def build_payload(staging: dict) -> dict:
     counts_last = last_printed(kpi["ata_licenses"], kpi["dates"])
     counts_stopped = calendar_of(counts_last) != view["period"]
 
-    sections_raw = [
-        ("period", "本期", f"{quarter_cn(view['period'])}（{fiscal_cn(fiscal)}）：收入落在指引区间的哪里",
-         "公司每季只给下一季的收入与 EPS 区间。本节把每一季的实际值放回当时的区间里，"
-         "再把「高于上沿」拆成超出中值多少与区间有多宽两件事。",
-         guidance_charts(s, view)),
-        ("revenue", "两条收入腿", "royalty 与 license：一条按出货计提，一条按签约确认",
-         "两条线的节奏完全不同，合在一起的收入增速要分开看。",
-         revenue_charts(s, view)),
-        ("visibility", "许可端的可见度", "股东信撤下的三个数",
-         ("ACV、RPO 与两类一揽子授权的家数"
-          + (f" —— 股东信{since(s, rpo_letter_last)}只剩 ACV，RPO 仍在财务报表里。" if rpo_stopped else "。")),
-         visibility_charts(s, view)),
-        ("related", "关联方", "三成收入来自同一个股东圈",
-         "Arm China 与软银控制的公司，以及这部分收入在资产负债表上留下的痕迹。",
-         related_charts(s, view)),
-        ("profit", "利润与现金", "GAAP 与 non-GAAP 之间，以及资本开支",
-         "营业利润率的两个口径、购置物业设备与自由现金流。",
-         profit_charts(s, view)),
-        ("record", "指引与重印", "全年指引的去向，和被重印过的数",
-         "全年指引给过两个财年；同一季度一年后再印一次，有的数变了。",
-         record_charts(s, view)),
-    ]
-    flat = [ex for *_, exs in sections_raw for ex in exs]
-    exhibits = number_exhibits(flat)
+    following = display_period(shift(view["period"], 1))
+    next_kpi = stamped_block(s, "next_kpi", period)
+    if next_kpi is not None and display_period(next_kpi["for_period"]) != following:
+        raise ValueError(f"series block `next_kpi` is stamped for {next_kpi['for_period']!r}, but the "
+                         f"quarter after {period!r} is {following!r}: update it with the roll")
+    next_entries = settle(s, next_kpi["quantified"], "current") if next_kpi else []
+
+    # Every chart the page draws, by ref, then placed into the four sections. A
+    # chart placed twice or not at all stops the build: the sections are the
+    # same charts cut into four, not four lists that could drift apart.
+    charts = {}
+    for ex in (guidance_charts(s, view) + revenue_charts(s, view) + visibility_charts(s, view)
+               + related_charts(s, view) + profit_charts(s, view) + record_charts(s, view)):
+        charts[ex["ref"]] = ex
+    placement = {
+        "settled": ("EX_REV_BAND", "EX_REV_EXCESS", "EX_EPS_BAND", "EX_ANNUAL"),
+        "quarter_highlights": ("EX_YOY", "EX_ACV_RPO", "EX_MARGIN", "EX_CAPEX", "EX_FCF", "EX_CONTRACT"),
+        "routine": ("EX_MIX", "EX_RELATED", "EX_RELATED_SPLIT", "EX_LICENCES", "EX_CENSUS"),
+    }
+    placed = [ref for refs in placement.values() for ref in refs]
+    if sorted(placed) != sorted(charts) or len(set(placed)) != len(placed):
+        raise ValueError(f"every chart goes into exactly one section: placed {sorted(placed)}, "
+                         f"drawn {sorted(charts)}")
+    settled_ex = [charts[ref] for ref in placement["settled"]]
+    highlight_ex = [charts[ref] for ref in placement["quarter_highlights"]]
+    next_ex = next_quarter_charts(s, next_kpi, next_entries) if next_kpi else []
+    routine_ex = [charts[ref] for ref in placement["routine"]]
+    exhibits = number_exhibits(settled_ex + highlight_ex + next_ex + routine_ex)
     resolve_exhibit_refs(exhibits)
 
     q = s["quarterly"]
@@ -806,7 +959,11 @@ def build_payload(staging: dict) -> dict:
     gv = s["guidance"]["quarterly"]
     rp = s["related_party"]
     kpi = s["kpi"]
-    tables = [{
+    tables = []
+    if next_kpi is not None:
+        tables.append(kpi_table("下季阈值与当前值（原单位；取自本季本地分析稿第 8 节）", next_entries,
+                                "current", "当前值", next_kpi.get("disclosure_gated", [])))
+    tables += [{
         "n": first_table,
         "title": "季度损益（公司披露值；non-GAAP 为最新一次印出的口径）",
         "headers": ["期间", "财季", "首次印出", "收入", "License", "Royalty", "GAAP 营业利润",
@@ -855,7 +1012,10 @@ def build_payload(staging: dict) -> dict:
                   kpi["printed_by"][k]]
                  for k, d in enumerate(kpi["dates"])],
     }]
-    tables.append(ai_capex_cycle_table(first_table + len(tables)))
+    tables.append(ai_capex_cycle_table(0))
+    # numbered in the order they are drawn, after the last chart
+    tables = [{"n": first_table + offset, **{k: v for k, v in table.items() if k != "n"}}
+              for offset, table in enumerate(tables)]
 
     rev, rev_prior = view["revenue"], view["revenue_prior"]
     ng_now = q["non_gaap"]["operating_income"][i]
@@ -908,17 +1068,58 @@ def build_payload(staging: dict) -> dict:
         + '</p></article>',
     ]
 
-    sections = []
-    for index, (sid, short, title, desc, exs) in enumerate(sections_raw, start=1):
-        sections.append({"id": sid, "short": short, "title": f"{cn_ordinal(index)}、{title}",
-                         "description": desc, "exhibits": exs})
-    order = " → ".join(section.pop("short") for section in sections)
+    gated = (next_kpi or {}).get("disclosure_gated", [])
+    sections = [
+        {
+            "id": "settled",
+            "title": "一、上季跟踪指标兑现了吗",
+            "description": (
+                "公司自己给的指引兑现记录：每季只给下一季的收入、non-GAAP 运营费用与 EPS 三个数，"
+                "本节把每一季的实际值放回当时的区间里，再把「高于上沿」拆成超出中值多少与区间有多宽两件事；"
+                f"全年指引只给过{cn_count(len(s['guidance']['annual']))}个财年。"),
+            "exhibits": settled_ex,
+        },
+        {
+            "id": "quarter_highlights",
+            "title": "二、本季重点",
+            "description": ("本季读数：royalty 与 license 的同比、ACV 与股东信撤下的 RPO、GAAP 与 non-GAAP 的差距、"
+                            "资本开支与自由现金流、关联方合同资产。"),
+            "exhibits": highlight_ex,
+        },
+        {
+            "id": "next_quarter",
+            "title": "三、下季要跟踪什么",
+            "description": (
+                (f"阈值取自本季本地分析稿第 8 节「关键观察指标」：可量化的{cn_count(len(next_entries))}条"
+                 "画成距阈值余量与逐条走势，当前值是本季实际。"
+                 + (f"另{cn_count(len(gated))}条不在图上：" + "；".join(f"{g['metric']} —— {g['why']}" for g in gated)
+                    + "。" if gated else ""))
+                if next_kpi is not None else "本季还没有设定下季阈值。"),
+            "exhibits": next_ex,
+        },
+        {
+            "id": "routine",
+            "title": "四、长期常规跟踪",
+            "description": (
+                "Arm 专属的常规序列：两条收入腿与 royalty 占比、关联方收入与两个交易对手、"
+                "两类一揽子授权的家数（股东信已停印），以及同一季度被重印时变了没有。"
+                f"季度记录从 {P[0]} 起，不能更早（原因见说明）。"),
+            "exhibits": routine_ex,
+        },
+    ]
 
     derived_rp = [p for p, d in zip(rp["periods"], rp["derived"]) if d]
     gap_k = max(range(len(rp["periods"])), key=lambda k: abs(rp["unattributed"][k]))
     gap_p, gap_v = rp["periods"][gap_k], rp["unattributed"][gap_k]
+    thresholds_note = []
+    if next_ex:
+        thresholds_note = [
+            f"Exhibit {next_ex[0]['n']} 与其后各图的阈值取自本季本地分析稿第 8 节「关键观察指标」，"
+            "是研究设定，不是公司指引，也不构成投资建议；「距阈值余量」正值代表安全侧。"]
     notes = [
-        f"本页按「{order}」{cn_count(len(sections))}段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
+        "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；"
+        "支撑表格收在核对抽屉里。",
+        *thresholds_note,
         "Arm Holdings plc 在英国注册、在纳斯达克上市，按美国 GAAP 以美元列报，财年截至 3 月 31 日。本站按自然年季度标注：FY27 Q1 是 2026 年 4–6 月，记作 2026Q2。它是美国证券法下的外国私人发行人：年报为 20-F，每季在同一天报送两份 6-K —— 一份附股东信（EX-99.2），一份是带 XBRL 的中期简明合并财务报表。",
         f"季度记录的下限是 {P[0]}，而且不能更早：公司自己的文件里最早的季度表是招股书的「Three Months Ended」表，从 2022 年 1–3 月开始。Arm 在 1998–2016 年于伦敦与纳斯达克上市，2016 年 9 月被软银集团私有化，此后到 2023 年 9 月上市前不公布季度数。1999–2016 年在 EDGAR 上报送的 ARM Holdings plc 是另一个申报主体（CIK 1057997，2016-09-13 以 15-12G 注销登记；招股书说它 2018 年更名为 SVF HoldCo (UK) Limited），本页不把它接在同一条轴上。",
         "每封股东信把一年前的同一季并排印出，所以 2022Q3 以后的大多数季度被印过两次。2024 年 11 月起公司把 SBC 相关雇主税从 non-GAAP 里剔除，并在比较栏里重述了两个旧季度；本页的时间序列用最新一次印出的口径，结算指引时用首次印出的口径，两者在最后一节逐行对照。",

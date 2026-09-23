@@ -2513,6 +2513,57 @@
     "demand_window": "FY27 与 FY28 合计",
     "source": "Q1 FYE27 股东信：「now exceeds $2 billion across fiscal 2027 and fiscal 2028」、「the $1 billion opportunity we outlined last quarter」；Q4 FYE26 股东信：「more than $2 billion of customer demand across fiscal 2027 and fiscal 2028」"
   },
+  "next_kpi": {
+    "period": "Q2 2026",
+    "for_period": "Q3 2026",
+    "quantified": [
+      {
+        "id": "royalty",
+        "metric": "royalty 收入",
+        "direction": "up",
+        "threshold": 690.0,
+        "unit": "usd_m",
+        "chart": true,
+        "rule": "Q2 FY27 实际 royalty < $690M 即减速超过指引、FY27 royalty 落入 low teens",
+        "upside": "> $740M 即存储涨价对出货的冲击被高估"
+      },
+      {
+        "id": "acv_yoy",
+        "metric": "ACV 同比",
+        "direction": "up",
+        "threshold": 10.0,
+        "unit": "pct",
+        "chart": true,
+        "rule": "< +10% 即 license 端结构性走弱，而 RPO 与许可家数已不在股东信里，无法交叉验证",
+        "upside": "≥ +18% 即渠道冲突的担忧被证伪"
+      },
+      {
+        "id": "fcf",
+        "metric": "自由现金流",
+        "direction": "up",
+        "threshold": 250.0,
+        "unit": "usd_m",
+        "chart": true,
+        "rule": "Q2 FY27 自由现金流 < $250M 即本季的高自由现金流只是营运资本时点",
+        "upside": "≥ $450M 且营运资本贡献 < $100M 即现金生成结构性改善"
+      }
+    ],
+    "disclosure_gated": [
+      {
+        "metric": "Q3 FY27 的 AGI CPU 更新",
+        "rule": "FY28 芯片收入口径仍停在 $1B，或首代毛利率低于「高 30%」，即转型的经济性不及预期；收入 ≥ $1.5B 且毛利率 ≥ 40% 为里程碑",
+        "status": "待披露",
+        "why": "公司说到 Q3 FY27 业绩（2027 年 2 月）时更新，下一季没有这个数"
+      },
+      {
+        "metric": "全球智能手机季度出货同比",
+        "rule": "Q3 2026 同比降幅扩大到 −15% 以上即非数据中心 royalty 转负",
+        "status": "不发布",
+        "why": "这是第三方行业机构的数，不是公司申报；本页只发布公司披露值"
+      }
+    ],
+    "_note": "本季（Q2 2026）本地分析稿第 8 节「关键观察指标」的 5 条：3 条可量化，阈值与方向逐字取自该节，当前值由 builder 从 series 现算（quarterly.royalty、kpi.acv、quarterly.cash.free_cash_flow）；upside 是该节写的上行一侧触发条件；disclosure_gated 是不能作图的 2 条及其原因。"
+  },
   "sources": [
     {
       "label": "Q2 FYE24 股东信（6-K EX-99.2，2023-11-08）",
