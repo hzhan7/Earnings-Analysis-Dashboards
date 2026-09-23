@@ -51,7 +51,9 @@ from build.board import (  # noqa: E402
     cn_fraction,
     cn_ordinal,
     delivery_band,
+    fill_story,
     headroom,
+    headroom_exhibit,
     latest_block,
     midpoint_deviation,
     number_exhibits,
@@ -269,6 +271,334 @@ def half_and_half(above: int, total: int) -> bool:
     return abs(above - (total - above)) <= max(1, round(total * 0.1))
 
 
+def shift_quarter(period: str, step: int) -> str:
+    """``'Q2 2026'`` moved by ``step`` calendar quarters: ``+1`` → ``'Q3 2026'``."""
+    quarter, year = period.split()
+    index = int(year) * 4 + int(quarter[1]) - 1 + step
+    return f"Q{index % 4 + 1} {index // 4}"
+
+
+def usd_band(value_usd_m: float) -> str:
+    """A guidance half-width the way the release prints it: ``750`` → ``'US$750M'``,
+    ``1000`` → ``'US$1.0B'``."""
+    return f"US${value_usd_m:,.0f}M" if value_usd_m < 1000 else f"US${value_usd_m / 1000:.1f}B"
+
+
+# ── section one, first half: what last quarter left for this one ───────────
+# The owner's local analysis of each quarter ends with follow-up questions and
+# a table of observation metrics with thresholds. The next quarter's analysis
+# closes the questions (its section 0); the thresholds are settled here against
+# this quarter's filed numbers. What was asked and where the line was drawn are
+# facts about that analysis, so they live in two period-stamped series blocks;
+# every reading the settlement names is computed from the arrays below, so a
+# sentence in a block and a number on a chart cannot drift apart.
+CLOSURE_ORDER = ("已验证", "部分验证", "被证伪", "仍未披露")
+
+
+def settlement_blocks(staging: dict) -> tuple[dict | None, dict | None]:
+    """This quarter's follow-up closure and last quarter's thresholds, or None.
+
+    Both describe one quarter and are stamped with it (``board.stamped_block``);
+    both close what was set one quarter earlier, so ``set_in`` has to be the
+    page's previous quarter -- a block carried over from an older roll would
+    otherwise settle another quarter's list under this quarter's label.
+    """
+    periods = staging["periods"]
+    blocks = []
+    for key in ("followup_closure", "prior_kpi_settlement"):
+        block = stamped_block(staging, key, periods[-1])
+        if block is not None and block["set_in"] != periods[-2]:
+            raise ValueError(f"series block `{key}` settles what was set in {block['set_in']!r}, "
+                             f"but the quarter before {periods[-1]!r} is {periods[-2]!r}")
+        blocks.append(block)
+    return blocks[0], blocks[1]
+
+
+def settlement_values(staging: dict, prior: dict | None) -> dict[str, str]:
+    """Every figure the one-quarter settlement sentences cite, from the arrays."""
+    periods = staging["periods"]
+    fin = staging["financials"]
+    record = staging["quarterly_guidance_history"]
+    outlook = staging["next_quarter_guidance"]
+    units = staging["business_units"]
+    following = shift_quarter(periods[-1], 1)
+    if record["quarters"][-1] != following or outlook["period_label"] != following:
+        raise ValueError(f"the guidance record ends at {record['quarters'][-1]!r} and the outlook "
+                         f"is for {outlook['period_label']!r}, but the quarter after "
+                         f"{periods[-1]!r} is {following!r}: add this release's outlook with the roll")
+    if units["quarters"][-1] != periods[-1]:
+        raise ValueError(f"business units end at {units['quarters'][-1]!r}, not {periods[-1]!r}")
+    this = record["quarters"].index(periods[-1])
+    guide_rev = record["guide_non_gaap_revenue_usd_m"][this]
+    guide_gm = record["guide_non_gaap_gross_margin_pct"][this]
+    values = {
+        "revenue": f"US${fin['revenue_usd_m'][-1] / 1000:.2f}B",
+        "margin": f"{fin['non_gaap_gross_margin_pct'][-1]:.1f}%",
+        "prior_guide_revenue": (
+            f"约 US${guide_rev / 1000:.1f}B" if record["guide_non_gaap_revenue_usd_m_is_point"][this]
+            else f"US${guide_rev / 1000:.1f}B ± "
+                 f"{usd_band(record['guide_non_gaap_revenue_usd_m_band'][this])}"),
+        "prior_guide_margin": (
+            f"约 {guide_gm:.0f}%" if record["guide_non_gaap_gross_margin_pct_is_point"][this]
+            else f"{guide_gm:.1f}% ± {record['guide_non_gaap_gross_margin_pct_band'][this]:.1f}%"),
+        "next_guide": (f"US${outlook['revenue_usd_m'] / 1000:.1f}B ± "
+                       f"{usd_band(outlook['revenue_band_usd_m'])}"),
+        "next_guide_qoq": f"{pct_change(outlook['revenue_usd_m'], fin['revenue_usd_m'][-1]):+.1f}%",
+        "cmbu_margin": f"{units['CMBU_gross_margin_pct'][-1]:.0f}%",
+        "cdbu_margin": f"{units['CDBU_gross_margin_pct'][-1]:.0f}%",
+        "cmbu_vs_cdbu": ("低于" if units["CMBU_gross_margin_pct"][-1] < units["CDBU_gross_margin_pct"][-1]
+                         else "高于" if units["CMBU_gross_margin_pct"][-1] > units["CDBU_gross_margin_pct"][-1]
+                         else "等于"),
+        "release": outlook["published_on"],
+        "prior_period": periods[-2],
+    }
+    spoken = stamped_block(staging, "spoken_outlook", periods[-1])
+    if spoken:
+        values["sca_signed"] = str(spoken["supply_agreements_signed"])
+        values["capex_year"] = f"FY{spoken['capex_fiscal_year']}"
+        values["capex_words"] = spoken["capex_words"]
+    asp = worded_move(staging["technology"]["dram_asp_text"][-1])
+    if asp:
+        values["dram_asp_words"] = f"{asp[0]} {'increase' if asp[1] == '上升' else 'decrease'}"
+    for entry in (prior or {}).get("by_words", []):
+        if "prior_count" in entry:
+            values["sca_prior"] = str(entry["prior_count"])
+    return values
+
+
+def prior_actual(staging: dict, entry: dict) -> float:
+    """This quarter's reading of one of last quarter's quantified thresholds.
+
+    Keyed by id and never typed into the series: a hand-keyed reading is where
+    the other pages' settlement blocks went wrong (a rate keyed as 43.4 against
+    a computed 43.3 moved the printed headroom).
+    """
+    if "actual" in entry or "current" in entry:
+        raise ValueError(f"threshold `{entry['id']}` is read from the series; remove its typed value")
+    fin = staging["financials"]
+    known = {
+        "revenue": lambda: fin["revenue_usd_m"][-1] / 1000,
+        "gross_margin": lambda: fin["non_gaap_gross_margin_pct"][-1],
+        # The guided midpoint for the quarter after this one, from the outlook
+        # this quarter's release printed.
+        "next_guide": lambda: staging["next_quarter_guidance"]["revenue_usd_m"] / 1000,
+    }
+    if entry["id"] not in known:
+        raise ValueError(f"threshold `{entry['id']}` has no series on this page: map it in "
+                         "build/mu.py `prior_actual`")
+    return known[entry["id"]]()
+
+
+def worded_verdict(staging: dict, entry: dict) -> tuple[str, bool | None]:
+    """Settle a threshold whose reading is a sentence rather than a number.
+
+    Returns the reading as published and whether the line was crossed (None
+    when the words cannot decide it). Only what the words decide is decided:
+    a capex figure stated as "higher than the mid-40s" is a lower bound, so it
+    can prove a US$40B line crossed but can never prove it held.
+    """
+    periods = staging["periods"]
+    spoken = stamped_block(staging, "spoken_outlook", periods[-1])
+    if spoken is None:
+        return "本季没有可读的公司口径", None
+    if entry["id"] == "second_sca":
+        signed = spoken["supply_agreements_signed"]
+        return (f"已签 {signed} 份（上季 {entry['prior_count']} 份）",
+                signed <= entry["prior_count"])
+    if entry["id"] == "fy27_capex":
+        if spoken["capex_fiscal_year"] != entry["fiscal_year"]:
+            return f"本季没有 FY{entry['fiscal_year']} 的公司口径", None
+        floor = spoken["capex_floor_usd_bn"]
+        # "Higher than X" bounds the figure from below only: it proves a
+        # ceiling crossed when X is already past it, and proves nothing else.
+        if entry["direction"] == "down" and floor >= entry["threshold"]:
+            crossed = True
+        else:
+            crossed = None
+        return (f"管理层称 FY{spoken['capex_fiscal_year']} 资本开支「{spoken['capex_words']}」"
+                "（十亿美元）", crossed)
+    raise ValueError(f"worded threshold `{entry['id']}` has no reading on this page: map it in "
+                     "build/mu.py `worded_verdict`")
+
+
+def settlement_charts(staging: dict, closure: dict | None, prior: dict | None,
+                      values: dict[str, str]) -> tuple[list[dict], list[dict]]:
+    """(a) the follow-up closure and (b) last quarter's thresholds, settled.
+
+    Returns the exhibits (closure bars, the headroom overview, then one
+    threshold line per quantified metric that has a history on this page) and
+    the two audit tables behind them.
+    """
+    periods = staging["periods"]
+    labels = [compact_period(period) for period in periods]
+    fin = staging["financials"]
+    charts: list[dict] = []
+    tables: list[dict] = []
+
+    if closure is not None:
+        verdicts = [item["verdict"] for item in closure["items"]]
+        if closure["labels"] != list(CLOSURE_ORDER) or set(verdicts) - set(CLOSURE_ORDER):
+            raise ValueError("followup_closure: labels must be " + "/".join(CLOSURE_ORDER)
+                             + " and every verdict one of them")
+        counts = [verdicts.count(label) for label in closure["labels"]]
+        by_label = dict(zip(closure["labels"], counts))
+        parts = [f"{count} 条{label}" for label, count in zip(closure["labels"], counts) if count]
+        if not by_label["被证伪"]:
+            parts.append("没有一条被证伪")
+        story = {**values, "verified_n": cn_count(by_label["已验证"]),
+                 "partial_n": cn_count(by_label["部分验证"])}
+        charts.append({
+            "kind": "bars_labeled",
+            "title": f"上季 {len(verdicts)} 条待验证问题：" + "、".join(parts),
+            "xlabels": closure["labels"],
+            "values": counts,
+            "legend": "问题条数",
+            "fmt": "f0",
+            "yfmt": "f0",
+            "label_fmt": "f0",
+            "ylab": "条",
+            "note": fill_story(closure["note"], story),
+            "src_extra": (
+                f"问题清单来自上季（{periods[-2]}）本地分析稿的 follow-up，逐条判定取自本季本地分析稿"
+                f"第 0 节；读数取自本季业绩新闻稿、10-Q 与 {values['release']} 业绩电话会书面发言稿。"
+            ),
+        })
+        tables.append({
+            "title": f"上季 {len(verdicts)} 条待验证问题：逐条闭环",
+            "headers": ["#", "上季问题", "本季读数", "判定"],
+            "rows": [[str(index), fill_story(item["question"], story),
+                      fill_story(item["reading"], story), item["verdict"]]
+                     for index, item in enumerate(closure["items"], 1)],
+        })
+
+    if prior is None:
+        return charts, tables
+
+    entries = [{**entry, "actual": prior_actual(staging, entry)} for entry in prior["quantified"]]
+    story = dict(values)
+
+    def filled(entry: dict, text: str) -> str:
+        """A block sentence with its placeholders, the entry's own lines included."""
+        names = {**story}
+        for key in ("threshold", "lower_threshold"):
+            if key in entry:
+                names[key] = unit_text(entry["unit"], entry[key])
+        return fill_story(text, names)
+
+    def rule_of(entry: dict) -> str:
+        return filled(entry, entry["rule"])
+
+    def crossed(entry: dict) -> bool:
+        broken = headroom(entry["direction"], entry["threshold"], entry["actual"]) < 0
+        # The guide line had a second trigger: a guided sequential decline.
+        if entry["id"] == "next_guide":
+            broken = broken or entry["actual"] * 1000 < fin["revenue_usd_m"][-1]
+        return broken
+
+    broken = [entry for entry in entries if crossed(entry)]
+    worded = [(entry, *worded_verdict(staging, entry)) for entry in prior.get("by_words", [])]
+    worded_broken = [entry for entry, _, hit in worded if hit]
+    total = len(entries) + len(worded) + len(prior.get("unsettled", []))
+
+    title = (f"上季 {len(entries)} 条量化阈值："
+             + ("全部守住" if not broken else
+                f"{len(entries) - len(broken)} 条守住、{len(broken)} 条被击穿")
+             + "".join(f"；{entry['metric']}按公司措辞已越过 "
+                       f"{unit_text(entry['unit'], entry['threshold'])} 线"
+                       for entry in worded_broken))
+    aside = []
+    for entry, reading, hit in worded:
+        aside.append(f"<b>{entry['metric']}</b>（{rule_of(entry)}）：{reading}，"
+                     + ("已越线" if hit else "未触发" if hit is False else "无法判定")
+                     + "；" + filled(entry, entry["why_not_charted"]) + "。")
+    for entry in prior.get("unsettled", []):
+        aside.append(f"<b>{entry['metric']}</b>（{rule_of(entry)}）："
+                     + filled(entry, entry["reason"]) + "。")
+    guide = next((entry for entry in entries if entry["id"] == "next_guide"), None)
+    overview = headroom_exhibit(
+        title,
+        entries,
+        "actual",
+        (
+            f"正值 = 仍在安全侧。上季本地分析稿第 8 节一共{cn_count(total)}条观察指标，"
+            f"能用本季的公司数字结算成一个余量的是这{cn_count(len(entries))}条"
+            + (f"；其中下季收入指引的中值 US${guide['actual']:.1f}B 相对本季收入环比 "
+               f"{values['next_guide_qoq']}，阈值的另一半（「环比下降」）"
+               + ("也没有触发" if guide["actual"] * 1000 >= fin["revenue_usd_m"][-1] else "已经触发")
+               + "，它的逐季走势就是本节后面的收入指引记录（Exhibit {EX_REV_RANGE} 最右一格）"
+               if guide else "")
+            + "。" + (f"另外{cn_count(len(aside))}条不进这张图。" + "".join(aside) if aside else "")
+        ),
+        src_extra=("阈值、方向与触发动作逐字取自上季本地分析稿第 8 节，不是公司指引；"
+                   "本季读数取自业绩新闻稿与 10-Q"
+                   + (f"，按公司措辞结算的{cn_count(len(worded))}条取自 {values['release']} "
+                      "业绩电话会（书面发言稿与问答）" if worded else "")
+                   + "。"),
+    )
+    overview["ref"] = "EX_PRIOR_HEADROOM"
+    charts.append(overview)
+
+    tracked = {
+        "revenue": (labels, rounded([v / 1000 for v in fin["revenue_usd_m"]]), "usd1", "US$B",
+                    "季度收入", values["prior_guide_revenue"]),
+        "gross_margin": (labels, rounded(fin["non_gaap_gross_margin_pct"]), "pct1",
+                         "non-GAAP 毛利率", "non-GAAP 毛利率", values["prior_guide_margin"]),
+    }
+    for entry in entries:
+        if entry["id"] not in tracked:
+            continue
+        xlabels, series, fmt, ylab, actual_name, guided = tracked[entry["id"]]
+        margin = headroom(entry["direction"], entry["threshold"], entry["actual"])
+        safe = ((lambda v: v >= entry["threshold"]) if entry["direction"] == "up"
+                else (lambda v: v <= entry["threshold"]))
+        before = [v for v in series[:-1] if v is not None]
+        unsafe_before = sum(1 for v in before if not safe(v))
+        if unsafe_before == len(before) and safe(series[-1]):
+            record = (f"这条线此前 {len(before)} 季全部落在阈值的不安全一侧，"
+                      f"本季是 {len(series)} 季里第一次站到安全侧。")
+        else:
+            record = f"这条线此前 {len(before)} 季里有 {unsafe_before} 季落在阈值的不安全一侧。"
+        side = "上方" if entry["direction"] == "up" else "下方"
+        charts.append(threshold_exhibit(
+            f"{entry['metric']}：{'守住' if not crossed(entry) else '已击穿'}上季阈值 "
+            f"{unit_text(entry['unit'], entry['threshold'])}",
+            xlabels,
+            series,
+            entry["threshold"],
+            fmt=fmt,
+            ylab=ylab,
+            actual_name=actual_name,
+            threshold_name=f"上季阈值 {unit_text(entry['unit'], entry['threshold'])}（安全侧在{side}）",
+            note=(
+                f"阈值 {unit_text(entry['unit'], entry['threshold'])}，本季 "
+                f"{unit_text(entry['unit'], entry['actual'])}，余量 {margin:+.1f}%。"
+                f"上季给这一季的指引：{guided}。" + record
+                + f"上季的触发条件：{rule_of(entry)}。"
+            ),
+            src_extra=("实际值取自各季业绩 8-K EX-99.1；阈值取自上季本地分析稿第 8 节，不是公司指引。"),
+        ))
+
+    rows = []
+    for entry in entries:
+        rows.append([entry["metric"], rule_of(entry),
+                     "高于阈值为安全" if entry["direction"] == "up" else "低于阈值为安全",
+                     unit_text(entry["unit"], entry["actual"]),
+                     f"{headroom(entry['direction'], entry['threshold'], entry['actual']):+.1f}%",
+                     "已击穿" if crossed(entry) else "守住"])
+    for entry, reading, hit in worded:
+        rows.append([entry["metric"], rule_of(entry), "—", reading, "—",
+                     ("已越线" if hit else "未触发" if hit is False else "无法判定")
+                     + "（不入余量图）"])
+    for entry in prior.get("unsettled", []):
+        rows.append([entry["metric"], rule_of(entry), "—", "—", "—", "无法用一手数据结算"])
+    tables.append({
+        "title": f"上季第 8 节{cn_count(total)}条观察指标：本季结算（原单位）",
+        "headers": ["指标", "上季触发条件", "方向", "本季读数", "余量 D", "结算"],
+        "rows": rows,
+    })
+    return charts, tables
+
+
 # ── section one: the guided record ──────────────────────────────────────────
 def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
     """Four guided numbers, and the two-sided record they leave.
@@ -336,7 +666,17 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         return len(done), above, len(done) - above - below, below
 
     rev_n, rev_above, rev_inside, rev_below = tally(revenue_lo, revenue_hi, revenue_actual)
+    rev_below_labels = [compact_period(quarters[i]) for i in finished
+                        if revenue_lo[i] is not None and revenue_actual[i] < revenue_lo[i]]
+    rev_low_dev, rev_low_index = min((pct_change(revenue_actual[i], revenue_mid[i]), i)
+                                     for i in finished)
     gm_n, gm_above, gm_inside, gm_below = tally(margin_lo, margin_hi, margin_actual)
+    last_eight = finished[-8:]
+    recent_above = sum(1 for i in last_eight if margin_actual[i] > margin_hi[i])
+    recent_run = 0
+    while (recent_run < len(finished)
+           and margin_actual[finished[-1 - recent_run]] > margin_hi[finished[-1 - recent_run]]):
+        recent_run += 1
     eps_n, eps_above, eps_inside, eps_below = tally(eps_lo, eps_hi, eps_actual)
 
     # the single worst quarter of the record, recounted rather than recalled
@@ -383,14 +723,21 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         "EX_REV_DEV", "收入", quarters, revenue_lo, revenue_hi, revenue_actual,
         mode="pct", window=len(finished), label=compact_period, bar_labels=False,
         src_extra=SOURCE_8K + "偏离为实际收入除以指引中值的自算值。",
+        # This note used to say the record was "the opposite of the other
+        # multi-guide pages here" with "long tails on both sides". Neither held:
+        # Intel's revenue record splits 13 above / 14 inside the same way, and
+        # the downside tail is one quarter. So it states only this record.
         extra_note=(
-            f"<b>这是本节最该先读的一张。</b>{rev_n} 个已完结季里，"
+            f"<b>这是这份指引记录里最该先读的一张。</b>{rev_n} 个已完结季里，"
             f"{rev_above} 季高于指引区间上限、{rev_inside} 季落在区间内、{rev_below} 季跌破下限 —— "
-            + ("接近一半一半。" if half_and_half(rev_above, rev_n)
+            + ("高于上限与没有高于上限的接近一半一半，收入指引不是一条每季都被越过的底线。"
+               if half_and_half(rev_above, rev_n)
                else f"高于上限的占 {round(rev_above / rev_n * 100)}%。")
-            + "<b>这与本站其他几家给多项指引的公司正好相反</b>："
-            "那几家的收入指引长期是底线，Micron 的收入指引更接近一份真预测，"
-            "而它两侧的尾巴都很长。"
+            + ((f"跌破下限的只有 {rev_below_labels[0]}（相对中值 {rev_low_dev:+.1f}%）。"
+                if rev_below_labels == [compact_period(quarters[rev_low_index])] else
+                f"跌破下限的是 {'、'.join(rev_below_labels)}；相对中值向下最深的一次是 "
+                f"{compact_period(quarters[rev_low_index])} 的 {rev_low_dev:+.1f}%。")
+               if rev_below_labels else "")
         ),
     )
 
@@ -409,8 +756,12 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
             f"最好的一次是 {compact_period(quarters[best_index])} 的 {signed(best_gap, 1, 'pp')}。"
             f"<b>同一家公司、同一张 Outlook 表、同一种句式，{cn_count(swing_years)}年之内既能差"
             f"{cn_count(round(abs(worst_gap)))}个百分点，"
-            f"也能好{cn_count(round(best_gap))}个百分点。</b>把窗口截到最近八季，看到的会是一家不断超越自己的公司；"
-            "这条完整的线说的是别的事。"
+            f"也能好{cn_count(round(best_gap))}个百分点。</b>"
+            # Counted rather than asserted: two of the last eight were not above.
+            f"只看最近 8 季，{recent_above} 季穿出上限"
+            + (f"、最近{cn_count(recent_run)}季连续穿出" if recent_run >= 2 else "")
+            + ("，看到的会是一家不断超越自己指引的公司" if recent_above * 4 >= len(last_eight) * 3 else "")
+            + "；这条完整的线说的是别的事。"
         ),
     )
     margin_dev_chart = midpoint_deviation(
@@ -423,7 +774,9 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
             "<b>注意纵轴的不对称</b>：向上最大 "
             f"{signed(best_gap, 1, 'pp')}，向下最大 {signed(worst_gap, 1, 'pp')}，"
             f"一根柱子就把其余{cn_count(gm_n - 1)}根压平了。"
-            f"本页据此把下季 non-GAAP 毛利率的警戒线设在 {gm_line:.1f}%（公司指引约 {next_gm:.0f}%），"
+            # The 84% line is the local analysis's, not a figure this page
+            # derived from the chart -- it used to say 「本页据此」.
+            f"本季本地分析稿把下季 non-GAAP 毛利率的警戒线设在 {gm_line:.1f}%（公司指引约 {next_gm:.0f}%），"
             "见 Exhibit {EX_GM_THRESHOLD}。"
         ),
     )
@@ -437,9 +790,8 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         src_extra=SOURCE_8K,
         extra_note=(
             f"完整记录里 {eps_n} 季有 {eps_above} 季高于指引上限、{eps_inside} 季落在区间内、"
-            f"{eps_below} 季跌破下限，是四个指引数字里最偏向一侧的一个 —— "
-            "但它偏向哪一侧几乎完全由毛利率决定，因为收入与费用两条腿的偏离都很小，"
-            f"见 Exhibit {{EX_LEGS}}。同样只画近 {BAND_WINDOW} 季：每股收益在整段记录里从 "
+            f"{eps_below} 季跌破下限，是四个指引数字里最偏向一侧的一个；"
+            f"它偏向哪一侧由哪条腿决定，见 Exhibit {{EX_LEGS}}。同样只画近 {BAND_WINDOW} 季：每股收益在整段记录里从 "
             f"{usd(min(eps_done))} 到 {usd(max(eps_done))}。"
         ),
     )
@@ -467,6 +819,16 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
     ]
     miss_labels = "、".join(leg_labels[index] for index in misses)
     biggest = max(range(len(total)), key=lambda i: abs(total[i]))
+
+    def leading_leg(index: int) -> str:
+        sizes = {"revenue": abs(revenue_leg[index]), "margin": abs(margin_leg[index]),
+                 "opex": abs(opex_leg[index])}
+        return max(sizes, key=sizes.get)
+
+    margin_led = sum(1 for index in range(len(total)) if leading_leg(index) == "margin")
+    revenue_run = 0
+    while revenue_run < len(total) and leading_leg(len(total) - 1 - revenue_run) == "revenue":
+        revenue_run += 1
 
     legs_chart = {
         "ref": "EX_LEGS",
@@ -496,9 +858,16 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
             "毛利率腿 = 实际收入 ×（实际毛利率 − 指引毛利率）；"
             "费用腿 = −（实际费用 − 指引费用）。"
             "<b>读数：</b>浅蓝的费用腿几乎从不重要 —— 这家公司的费用是它最可预测的一条线。"
-            "真正决定这一季是好是坏的是金色的毛利率腿，"
-            f"窗口内最大的一次是 {leg_labels[biggest]} 的 {total[biggest]:+.1f}B，"
-            f"其中毛利率腿 {margin_leg[biggest]:+.1f}B。"
+            # This used to say the margin leg "decides" every quarter and then
+            # cite the biggest one -- whose +7.9B was +6.4B revenue leg. Both
+            # halves are now counted.
+            f"{len(total)} 季里有 {margin_led} 季是金色的毛利率腿最大"
+            + (f"；但最近{cn_count(revenue_run)}季不是 —— 窗口内最大的一次 {leg_labels[biggest]} 的 "
+               f"{total[biggest]:+.1f}B 里，收入腿 {revenue_leg[biggest]:+.1f}B、"
+               f"毛利率腿 {margin_leg[biggest]:+.1f}B，这一轮超额主要是收入超出了指引。"
+               if revenue_run and biggest >= len(total) - revenue_run else
+               f"，窗口内最大的一次是 {leg_labels[biggest]} 的 {total[biggest]:+.1f}B，"
+               f"其中毛利率腿 {margin_leg[biggest]:+.1f}B。")
             + (f"为负的 {len(misses)} 季（{miss_labels}）里，"
                + ("每一季都是金色那条塌下去。"
                   if len(margin_driven) == len(misses)
@@ -528,8 +897,12 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         f"<b>这条记录没有配一张「相对指引中值的偏离」图</b>，"
         f"而收入与毛利率都有 —— 因为本记录里有 {negative_midpoints} 季的每股收益指引中值是<b>负数</b>，"
         "「实际 ÷ 中值 − 1」在跨过零时会翻符号：亏得比指引更多的季度会画成一根正的柱子。"
-        "同一个问题的百分点口径在 Exhibit {EX_GM_DEV} 上，"
-        "而这家公司的每股收益偏离几乎完全由毛利率偏离决定（见 Exhibit {EX_LEGS}）。"
+        "同一个问题的百分点口径在 Exhibit {EX_GM_DEV} 上。"
+        # It used to say the EPS miss or beat is "almost entirely" the margin
+        # leg; the last two quarters are revenue-leg quarters, so it is counted.
+        f"每股收益偏离由哪条腿决定：{len(total)} 季里 {margin_led} 季是毛利率腿最大"
+        + (f"，最近{cn_count(revenue_run)}季是收入腿" if revenue_run else "")
+        + "（见 Exhibit {EX_LEGS}）。"
     )
 
     table = {
@@ -1389,22 +1762,32 @@ def build_payload(staging: dict) -> dict:
     outlook = staging["next_quarter_guidance"]
     annual = staging["annual_cycle"]
 
-    settled_ex, delivery_table, tallies = guidance_delivery_charts(staging)
+    closure, prior = settlement_blocks(staging)
+    settlement_ex, settlement_tables = settlement_charts(
+        staging, closure, prior, settlement_values(staging, prior))
+    guided_ex, delivery_table, tallies = guidance_delivery_charts(staging)
     rev_n, rev_above, rev_inside, rev_below = tallies["revenue"]
     gm_n, gm_above, gm_inside, gm_below = tallies["gross_margin"]
     worst_gap = tallies["worst_gap"]
+    # Section one settles in the order the format asks for: last quarter's
+    # questions, last quarter's thresholds, then the company's own guidance.
+    settled_ex = settlement_ex + guided_ex
     highlight_ex = quarter_charts(staging)
     next_ex = next_quarter_charts(staging)
     routine_ex = routine_charts(staging)
 
-    exhibits = settled_ex + highlight_ex + next_ex + routine_ex
+    groups = [settled_ex, highlight_ex, next_ex, routine_ex]
+    exhibits = [exhibit for group in groups for exhibit in group]
     number_exhibits(exhibits)
     resolve_exhibit_refs(exhibits)
-    settled_ex = exhibits[:len(settled_ex)]
-    highlight_ex = exhibits[len(settled_ex):len(settled_ex) + len(highlight_ex)]
-    next_ex = exhibits[len(settled_ex) + len(highlight_ex):
-                       len(settled_ex) + len(highlight_ex) + len(next_ex)]
-    routine_ex = exhibits[len(settled_ex) + len(highlight_ex) + len(next_ex):]
+    # Sliced by cumulative length, the way the TSM builder does it, so adding a
+    # chart to one section cannot move a chart into its neighbour.
+    cut = []
+    cursor = 0
+    for group in groups:
+        cut.append(exhibits[cursor:cursor + len(group)])
+        cursor += len(group)
+    settled_ex, highlight_ex, next_ex, routine_ex = cut
 
     first_table = exhibits[-1]["n"] + 1
 
@@ -1542,6 +1925,7 @@ def build_payload(staging: dict) -> dict:
         ])
 
     tables = [
+        *({"n": None, **table} for table in settlement_tables),
         {**delivery_table, "n": None},
         {
             "n": None,
@@ -1674,6 +2058,17 @@ def build_payload(staging: dict) -> dict:
     lag_low, lag_high, lag_middle = lag_facts(record)
     words_example = [move[0] for move in (worded_move(tech["dram_asp_text"][-1]),
                                          worded_move(tech["nand_bit_text"][-1])) if move]
+    settle_parts = []
+    if closure is not None:
+        settle_parts.append(f"{cn_count(len(closure['items']))}条待验证问题闭环了几条")
+    if prior is not None:
+        settle_parts.append(f"第 8 节能量化的{cn_count(len(prior['quantified']))}条阈值守住了几条")
+    settle_words = (
+        f"先结算上季（{periods[-2]}）本地分析稿留下的东西：" + "、".join(settle_parts)
+        + "；再看公司自己的指引记录。"
+        if settle_parts else
+        f"本站对该公司的第一份季报分析是 {periods[-1]}，没有上季留下的跟踪指标可结算；"
+        "本节结算的是公司上季给出、本季到期的指引。")
 
     return {
         "schema_version": "quarterly-dashboard/mu-v1",
@@ -1724,7 +2119,8 @@ def build_payload(staging: dict) -> dict:
                 "id": "settled",
                 "title": "一、上季跟踪指标兑现了吗",
                 "description": (
-                    "公司每季在业绩新闻稿的 Business Outlook 表里给出下一季的收入、毛利率、"
+                    settle_words
+                    + "公司每季在业绩新闻稿的 Business Outlook 表里给出下一季的收入、毛利率、"
                     "营业费用与每股收益，GAAP 与 non-GAAP 两栏并列，这份记录能一直回到 "
                     f"{record['quarters'][0].split()[1]} 年。"
                     # Stated from the record's own tallies. It used to call this
@@ -1778,6 +2174,13 @@ def build_payload(staging: dict) -> dict:
             f"本页所有季度按自然年标注。Micron 财年在最接近 8 月 31 日的那个星期四结束，故本页的 {periods[-1]} 是截至 {latest['period_end']} 的季度，公司自己称之为 {fiscal}；映射规则为公司 FY(N) 的 Q1 即本页的 Q4 (N−1)，FY(N) 的 Q2/Q3/Q4 即本页的 Q1/Q2/Q3 (N)。不统一成一种约定，跨公司对照就会把不同的三个月放在一起比较。",
             f"季度数值逐季读自 SEC EDGAR 上 Micron（CIK 723125）的 {staging['quarterly_releases_read']} 份季度业绩 8-K EX-99.1 新闻稿。每份新闻稿并排印出三个季度（本季、上季、去年同季）与三个资产负债表日期，所以除最新一季外的每个季度都被两到三份不同的文件各读了一遍；读数不一致的地方按最新一份为准并已逐条记录，本窗口内的分歧只出现在「其他经营（收益）费用」一行（各期在「重组与资产减值」和「其他经营」两行之间的归类不同）与 FY2021 年报对 FY2020 存货的重分类。",
             "因为上一条，本页不发布「其他经营（收益）费用」这一行本身，只发布它的合计值，且合计值取自恒等式：毛利 − 研发 − 销售管理及行政 − 营业利润。这个合计在每个季度、每份新闻稿里都精确闭合。",
+            *([f"第一节开头的闭环与阈值结算来自本地分析稿："
+               + (f"上季（{periods[-2]}）稿留下的{cn_count(len(closure['items']))}条待验证问题由本季稿第 0 节逐条核验，判定照录；"
+                  if closure is not None else "")
+               + (f"上季稿第 8 节的观察指标，阈值、方向与触发动作照录，本季读数由本页从业绩新闻稿、10-Q 与电话会现算；"
+                  if prior is not None else "")
+               + "「距阈值余量」统一以正值代表安全侧。这些阈值是本地研究设定，不是公司指引，也不构成评级或投资建议。"]
+              if closure is not None or prior is not None else []),
             "第一节的指引兑现组图用的是同一批业绩 8-K：每份 EX-99.1 里那张 Business Outlook 表用同一种句式给出下一季的收入、毛利率、营业费用与每股收益；实际值取自随后一季 8-K 的合并损益表与 GAAP/non-GAAP 对账表。"
             + (f"毛利率与营业费用在最近{cn_count(point_run)}季改为单点数（Approximately），图上按零宽度的区间画，核对表里标注了哪几季是单点。" if point_run else ""),
             f"Micron 的下一季指引随上一季业绩一起发布，而它在季末约四周后发业绩，因此这张 Outlook 表落在它所指引的那个季度之内：本记录里最早第 {lag_low} 天、最晚第 {lag_high} 天、中位数第 {lag_middle} 天。这不是一份事前预测，命中率必须连同这句话一起读。",

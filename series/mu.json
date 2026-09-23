@@ -4477,6 +4477,115 @@
     "diluted_shares_m": 1150.0,
     "note": "毛利率与营业费用是单点数（Approximately），不是区间；收入与每股收益是区间。GAAP 与 non-GAAP 的收入和毛利率指引相同，差异只在费用与每股收益。"
   },
+  "followup_closure": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "_note": "上季（本页 Q1 2026，业绩 2026-03-18 发布）本地分析稿留下的 6 条 follow-up，由本季（业绩 2026-06-24 发布）本地分析稿第 0 节逐条核验。verdict 取自第 0 节的逐条判定列：✅ → 已验证，🟡 部分 → 部分验证；六条的判定与一手申报 / 公司书面发言稿核对过，没有矛盾。第 0 节导语写「6 条里 5 条已被本季财报直接证实/解答」，与它自己的逐条判定（4 条 ✅、2 条 🟡）不一致，本块按逐条判定计数。句子里的数一律是占位符，由 builder 从本页 series 现算。",
+    "labels": [
+      "已验证",
+      "部分验证",
+      "被证伪",
+      "仍未披露"
+    ],
+    "items": [
+      {
+        "id": "quarter_delivery",
+        "question": "本季收入能否达成 {prior_guide_revenue} 的指引，non-GAAP 毛利率能否守住{prior_guide_margin}",
+        "reading": "收入 {revenue}、non-GAAP 毛利率 {margin}，两项都高于指引",
+        "verdict": "已验证"
+      },
+      {
+        "id": "next_guide",
+        "question": "下季指引是否仍给出环比增长，绝对值能否高于 US$35B",
+        "reading": "下季收入指引 {next_guide}，中值环比 {next_guide_qoq}",
+        "verdict": "已验证"
+      },
+      {
+        "id": "second_sca",
+        "question": "第二份五年期长期供货协议能否在六个月内签下，客户是否多元",
+        "reading": "已签 {sca_signed} 份（上季 {sca_prior} 份），客户横跨数据中心、消费与汽车",
+        "verdict": "已验证"
+      },
+      {
+        "id": "fy27_capex",
+        "question": "FY27 资本开支何时给出数字，新增的厂房建设支出是绝对额还是增量",
+        "reading": "{capex_year} 资本开支「{capex_words}」，同比增量过半是厂房建设；公司明说不给具体数字",
+        "verdict": "已验证"
+      },
+      {
+        "id": "hbm_margin",
+        "question": "HBM 单品毛利率是否披露，HBM 占比上升对综合毛利率是增厚还是稀释",
+        "reading": "单品毛利率仍未披露；业务单元口径里 HBM 最重的云内存 CMBU {cmbu_margin}，{cmbu_vs_cdbu}核心数据中心 CDBU {cdbu_margin}",
+        "verdict": "部分验证"
+      },
+      {
+        "id": "china_exposure",
+        "question": "中国国产替代（CXMT / YMTC）何时进入管理层口径，中国敞口何时量化",
+        "reading": "管理层本季在问答里回应了两家的竞争，但仍没有给出 Micron 的中国敞口数字",
+        "verdict": "部分验证"
+      }
+    ],
+    "note": "已验证的{verified_n}条：本季收入 {revenue}、non-GAAP 毛利率 {margin}，都高于上季给这一季的指引（{prior_guide_revenue}、{prior_guide_margin}）；下季收入指引 {next_guide}，中值环比 {next_guide_qoq}；长期供货协议从 {sca_prior} 份增加到 {sca_signed} 份；{capex_year} 资本开支有了措辞（{capex_words}）。部分验证的{partial_n}条：HBM 单品毛利率仍未披露，只有业务单元口径 —— HBM 最重的云内存 CMBU {cmbu_margin}，{cmbu_vs_cdbu}核心数据中心 CDBU {cdbu_margin}（Exhibit {EX_BU_GM}）；中国敞口，管理层回应了国产竞争，但仍没有数字。逐条问题与读数见核对抽屉。"
+  },
+  "prior_kpi_settlement": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "_note": "上季（本页 Q1 2026）本地分析稿第 8 节「关键观察指标」共 6 条；阈值数值、方向与触发动作取自该节原文。本季读数由 builder 从本页 series 现算（收入、non-GAAP 毛利率、下季收入指引、spoken_outlook 里的协议份数与资本开支措辞），本块不存读数。第 8 节 #3 原文标注「(2026-09 报告)」，但 Q4 FY26（本页 Q3 2026）的收入指引随 2026-06-24 的业绩发布给出，本季分析稿第 0 节 #2 也按这份指引结算，这里同样按它结算。prior_count 取自该节 #4 的「当前 1 份」。",
+    "quantified": [
+      {
+        "id": "revenue",
+        "metric": "本季收入",
+        "direction": "up",
+        "threshold": 33.0,
+        "unit": "usd_bn",
+        "rule": "低于 {threshold} 即「加速终止」→ 减仓"
+      },
+      {
+        "id": "gross_margin",
+        "metric": "本季 non-GAAP 毛利率",
+        "direction": "up",
+        "threshold": 79.0,
+        "unit": "pct",
+        "rule": "低于 {threshold} 即「价格弹性已耗尽」→ 警示"
+      },
+      {
+        "id": "next_guide",
+        "metric": "下季收入指引中值",
+        "direction": "up",
+        "threshold": 32.0,
+        "unit": "usd_bn",
+        "rule": "环比下降或低于 {threshold} 即「周期见顶确认」→ 减仓"
+      }
+    ],
+    "by_words": [
+      {
+        "id": "second_sca",
+        "metric": "第二份长期供货协议",
+        "prior_count": 1,
+        "rule": "六个月内无新签即「SCA 模型扩散受阻」→ 警示",
+        "why_not_charted": "这是计数型的里程碑，份数从 {sca_prior} 变成 {sca_signed}，换算成「距阈值 %」是一个没有意义的大数，会把其余几条压扁"
+      },
+      {
+        "id": "fy27_capex",
+        "metric": "FY27 资本开支",
+        "fiscal_year": 2027,
+        "direction": "down",
+        "threshold": 40.0,
+        "lower_threshold": 30.0,
+        "unit": "usd_bn",
+        "rule": "≥ {threshold} 即「过度建产」、≤ {lower_threshold} 即「优化信号」→ 重新评估",
+        "why_not_charted": "公司只给了下限式的措辞，明说不给具体数字；「{capex_words}」无论取哪个数都在 {threshold} 之上，越线的结论不依赖取值，余量却依赖，本页不替公司选一个数"
+      }
+    ],
+    "unsettled": [
+      {
+        "id": "dram_contract_price",
+        "metric": "DRAM 合约价月度环比",
+        "rule": "连续 2 个月 0% 或负值即「价格见顶」→ 减仓",
+        "reason": "这是 DRAMeXchange / TrendForce 的第三方月度报价，不是 Micron 的披露，本页不接；公司 10-Q 只给季度区间措辞（本季 DRAM 售价「{dram_asp_words}」），也不是这条阈值要的月度读数"
+      }
+    ]
+  },
   "next_kpi": {
     "quantified": [
       {
