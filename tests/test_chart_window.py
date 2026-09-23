@@ -162,7 +162,7 @@ def _tsm_advanced_count() -> dict:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amzn": 13, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
+    "amzn": 13, "arm": 0, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
     "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
@@ -237,6 +237,38 @@ CONVERTED = {
         "只按半年印渠道": "Brunello Cucinelli splits retail from wholesale only in the "
                    "half-year report, and the series holds six half-years, so five "
                    "year-on-year readings exist.",
+    },
+    # Arm listed on 2023-09-14 and is a foreign private issuer, so its whole
+    # record is on EDGAR. Its own filings table quarters only from the quarter
+    # ended 31 March 2022: the prospectus's one "Three Months Ended" table (first
+    # printed in the F-1 of 2023-08-21) starts there, and Arm was private under
+    # SoftBank Group from September 2016 until the listing. The ARM Holdings plc
+    # that filed until 2016 (CIK 1057997, deregistered by 15-12G on 2016-09-13)
+    # is a different registrant and is not spliced on. The prospectus was read
+    # for guidance too: it has no outlook and no preliminary results.
+    "arm": {
+        "收入：# 个已完结季": "quarterly revenue guidance begins with the first shareholder "
+                        "letter (2023-11-08), which guided 2023Q4; the prospectus carries no outlook.",
+        "超出指引中值": "same guidance floor, the excess-over-midpoint view of it.",
+        "non-GAAP 摊薄 EPS：": "same guidance floor, EPS instead of revenue.",
+        "的两条收入腿": "the quarterly record starts at the quarter ended 2022-03-31 -- see the "
+                   "note above this entry.",
+        "两条腿的同比": "a year-on-year line needs four quarters of run-up, so it starts 2023Q1.",
+        "ACV 同比": "RPO is first printed for 2022-09-30 (a letter comparative); the prospectus "
+                  "prints it only at 2023-03-31 and 2023-06-30, so the unbroken run starts 2022Q3.",
+        "Arm Total Access 授权从": "the licence counts are first printed for 2022-03-31 in the "
+                               "prospectus KPI table, and the letters stopped printing them after "
+                               "2026-03-31.",
+        "、占总收入": "revenue from related parties is first printed for the quarter ended "
+                  "2022-06-30; the prospectus's January-March 2022 column has no related-party line.",
+        "关联方里的两家": "same related-party floor, the counterparty split of it.",
+        "流动合同资产": "the balance sheet at 2023-09-30 (the first 6-K) does not split related-party "
+                    "contract assets, so the unbroken quarterly run starts 2023-12-31.",
+        "两者相差": "non-GAAP operating income is first printed for the quarter ended 2022-06-30 "
+                "(prospectus); nothing prints it for January-March 2022.",
+        "购置物业设备本季": "the three-month cash-flow reconciliation is first printed for the "
+                     "quarter ended 2022-06-30 (prospectus).",
+        "本季自由现金流": "same cash-flow floor.",
     },
     "v": {
         # Visa adopted ASC 606 with the fiscal 2019 first quarter and published
@@ -873,6 +905,21 @@ FLOOR_KIND = {
         # Brunello Cucinelli splits the channel only in the half-year report.
         '只按半年印渠道': 'disclosure',
     },
+    'arm': {
+        '收入：# 个已完结季': 'disclosure',
+        '超出指引中值': 'disclosure',
+        'non-GAAP 摊薄 EPS：': 'disclosure',
+        '的两条收入腿': 'disclosure',
+        '两条腿的同比': 'disclosure',
+        'ACV 同比': 'disclosure',
+        'Arm Total Access 授权从': 'disclosure',
+        '、占总收入': 'disclosure',
+        '关联方里的两家': 'disclosure',
+        '流动合同资产': 'disclosure',
+        '两者相差': 'disclosure',
+        '购置物业设备本季': 'disclosure',
+        '本季自由现金流': 'disclosure',
+    },
     'ker': {
         '新分部口径下的可比增速': 'disclosure',
     },
@@ -1271,7 +1318,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 138)
+        self.assertEqual(settled.count("disclosure"), 151)
         self.assertEqual(settled.count("design"), 37)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:

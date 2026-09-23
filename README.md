@@ -2,7 +2,7 @@
 
 Static GitHub Pages dashboards for presenting quarterly earnings as concise,
 chart-led research pages. Reviewed pages currently cover Alphabet, Amazon,
-American Express, Broadcom, Brunello Cucinelli, Cadence, Cboe Global Markets,
+American Express, Arm Holdings, Broadcom, Brunello Cucinelli, Cadence, Cboe Global Markets,
 Charles Schwab, CME Group, Costco, Ermenegildo Zegna, Ferrari,
 Hermès International,
 Hong Kong Exchanges and Clearing, Interactive Brokers, Kering, LVMH, Mastercard,
@@ -31,6 +31,7 @@ python3 -m http.server 8765
 Open `http://127.0.0.1:8765/`, then choose:
 
 - `http://127.0.0.1:8765/amzn/`
+- `http://127.0.0.1:8765/arm/`
 - `http://127.0.0.1:8765/avgo/`
 - `http://127.0.0.1:8765/axp/`
 - `http://127.0.0.1:8765/bc/`
@@ -151,7 +152,9 @@ no dependency at all, and is what actually runs on a fresh clone.
   NIKE's ends in May, so a calendar Q2 is its fiscal Q4 — and because that
   year-end sits mid-quarter, the offset is not constant across its own year:
   NIKE's fiscal Q1 and Q2 land in the *previous* calendar year (`Q3` and `Q4`)
-  while its Q3 and Q4 land in the same one; Richemont's ends on 31 March, so a
+  while its Q3 and Q4 land in the same one; Arm's ends on 31 March and it names
+  the year by the March it ends in (`FYE27`), so a calendar Q2 is its fiscal Q1
+  of the year numbered one ahead; Richemont's ends on 31 March, so a
   calendar Q2 is its fiscal Q1 of the year numbered one ahead, and its profit
   exists only for the half-years ending 30 September and 31 March, which that
   page labels by the month each half ends. The mapping is stated as a rule
@@ -314,7 +317,16 @@ Charts are ordered the way the note is actually used:
    is larger than the whole group's because the other two brands and the
    corporate line are negative, and a republication census in which the group
    total came back the same on all twenty-four occasions it was printed again
-   while four of the lines beneath it did not; and Brunello Cucinelli gets the guidance sentence it repeats year
+   while four of the lines beneath it did not; Arm Holdings gets the
+   next-quarter revenue and EPS ranges printed in every shareholder letter settled
+   on the result as first printed — the opening run of quarters above the top of
+   the range ended in the quarter the range doubled in width — the remaining
+   performance obligations its letter stopped printing in fiscal 2027, carried on
+   from the interim financial statements furnished the same day, the related-party
+   revenue that runs through Arm China and companies under SoftBank's control,
+   split from the statements' notes, and a reprint census in which only the
+   non-GAAP lines of the two recast quarters and one corrected licence count came
+   back different; and Brunello Cucinelli gets the guidance sentence it repeats year
    after year — revenue growth of "around 10%" — set against the two
    different answers it produces, because none of the 110 quantified forward
    statements in its results calls before December 2025 says which

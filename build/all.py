@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amzn, avgo, axp, bc, cboe, cdns, cfr, cme, cost, googl, hkex, ibkr, ker, ma, mc, mco,
+    amzn, arm, avgo, axp, bc, cboe, cdns, cfr, cme, cost, googl, hkex, ibkr, ker, ma, mc, mco,
     meta, msci, msft, mu, ndaq, nke, nvda, pm, race, rms, samsung, schw,
     skhynix, snps,
     spgi, tjx, tsm, v, zgn,
@@ -25,6 +25,7 @@ DATA_DIR = ROOT / "data"
 
 MODULES = {
     "amzn": amzn,
+    "arm": arm,
     "avgo": avgo,
     "axp": axp,
     "bc": bc,
@@ -89,6 +90,17 @@ ENTRIES = [
         "group": "internet",
         "cadence_label": "自然年季度；完整披露",
         "search_text": "amzn amazon 亚马逊 aws 云 电商 零售 广告 互联网 trainium prime",
+    },
+    {
+        "slug": "arm",
+        "ticker": "ARM",
+        "name": "Arm Holdings plc",
+        "aliases": ["Arm", "安谋", "ARM Holdings"],
+        "group": "semiconductor_ai",
+        "cadence_label": "3 月底制财年；本站按自然年季度标注",
+        "search_text": ("arm arm holdings 安谋 半导体 ip 授权 license royalty 版税 cpu 架构 armv9 "
+                        "neoverse css 数据中心 agi cpu 自研芯片 软银 softbank arm china 安谋中国 "
+                        "关联方 acv rpo 外国私人发行人 20-f 6-k"),
     },
     {
         "slug": "avgo",
