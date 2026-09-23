@@ -169,20 +169,22 @@ class SkHynixDashboardTest(unittest.TestCase):
             self.assertAlmostEqual(total, product["total"][i], delta=1.0, msg=label)
 
     def test_the_quarter_below_operating_profit_uses_only_printed_lines(self) -> None:
-        """Tax and the non-operating total are differences of two printed rows.
+        """Tax and the non-operating total are differences of two printed rows,
+        and the non-operating total's parts are the semi-annual report's lines.
 
-        The page publishes both, and publishes no component of the non-operating
-        total, because no document read for the page breaks one out. If a
-        component ever appears in the payload, this is the assertion that should
-        have stopped it.
+        For weeks this page published no component at all, because no document
+        read for it broke the total out: the quarter's release stops at net
+        income. The semi-annual report of 2026-08-18 does -- note 24 and the
+        statement of comprehensive income -- so the parts are now published, and
+        what this asserts is that they are the filing's lines (checked against a
+        separate regex reading in `_checks`) and that they add back to the total.
+        Two things stay out: the local analysis's "underlying" net income, which
+        needs an assumed tax rate on the one-off, and any name for the investment
+        the gains came from, which the filing does not give.
         """
         below = self.staging["below_operating_profit_krw_bn"]
         pre_tax, net = below["profit_before_tax"][-1], below["net_income"][-1]
         operating = below["operating_profit"][-1]
-        # The block's last column is the page's quarter, and its operating
-        # profit and net income are the series' own -- the two printed rows the
-        # derived lines are differences of. The quarter's pre-tax figure is
-        # checked against a separate reading in SkHynixChecksTest.
         self.assertEqual(below["periods"][-1], self.staging["periods"][-1])
         self.assertEqual(operating, self.fin["operating_profit"][-1])
         self.assertEqual(net, self.fin["net_income"][-1])
@@ -190,34 +192,62 @@ class SkHynixDashboardTest(unittest.TestCase):
         self.assertIn(f"₩{(pre_tax - operating) / 1000:.2f}T 的营业外净收益", chart["note"])
         self.assertIn(f"₩{(pre_tax - net) / 1000:.2f}T 的所得税", chart["note"])
         self.assertIn(f"有效税率 {(pre_tax - net) / pre_tax * 100:.1f}%", chart["note"])
+        parts = {c["line"]: c["value"] for c in below["components"]}
+        checks = self.staging["_checks"]
+        income = checks["semiannual_q2_income_krw_m"]
+        self.assertAlmostEqual(sum(parts.values()),
+                               (income["profit_before_tax"] - income["operating_profit"]) / 1000, places=3)
+        finance = checks["semiannual_q2_finance_income_krw_m"]
+        self.assertAlmostEqual(parts["金融工具估值收益"], finance["valuation_gain"] / 1000, places=3)
+        self.assertAlmostEqual(parts["股利收入"], finance["dividend_income"] / 1000, places=3)
         blob = json.dumps(self.payload, ensure_ascii=False)
-        for absent in ("63.3", "45.4", "Kioxia", "铠侠"):
+        for absent in ("63.3", "45.4", "Kioxia", "铠侠", "KIOXIA"):
             self.assertNotIn(absent, blob,
-                             "the page must not publish a decomposition of the "
-                             "non-operating total: no source read for it has one")
+                             "no spoken total, no tax-assumed 'underlying' profit, and no "
+                             "investee the filing does not name")
 
-    def test_capital_intensity_is_flat_rather_than_halving(self) -> None:
-        """Pins the correction this page makes to the note that fed it.
+    def test_capital_intensity_flat_through_2025_then_halved_in_2026(self) -> None:
+        """Both halves of the story the filings tell, pinned as numbers.
 
-        The note this page was briefed from put FY2025 capital intensity at 32%
-        and had it halving to about 15%. Both of its inputs were wrong -- capex
-        27,519 not 32,000, revenue 97,147 not 99,000 -- and the filing puts the
-        three years within a four-point band. The numbers are asserted rather
-        than described so the correction cannot rot back into the old story.
+        The note that briefed this page put FY2025 capital intensity at 32% and
+        2026 at about 15%. Its FY2025 inputs were wrong -- capex 27,519 not
+        32,000, revenue 97,147 not 99,000 -- and the three audited years sit in a
+        four-point band. This page used to stop there and title the chart 「不是
+        腰斩」. That answered a claim about 2026 with data that ended in 2025: the
+        semi-annual report puts the first half of 2026 at 13.9%, half of FY2025
+        and half of the same half a year earlier. The analysis had the wrong
+        inputs and the right direction; the page now says both.
         """
         ratios = [c / r * 100.0 for c, r in
                   zip(self.ann["capital_expenditures"], self.ann["revenue"])]
         self.assertAlmostEqual(ratios[0], 25.4, delta=0.1)
         self.assertAlmostEqual(ratios[1], 24.1, delta=0.1)
         self.assertAlmostEqual(ratios[2], 28.3, delta=0.1)
-        # The three audited years of the prospectus are history and stay pinned;
-        # whether a later year keeps the band is the data's to say, and the
-        # caption says 「大体持平」 only while it does (asserted in the roll tests).
-        self.assertLess(max(ratios[:3]) - min(ratios[:3]), 5.0,
-                        "three years inside a five-point band is the finding; a "
-                        "halving would be a different page")
+        self.assertLess(max(ratios[:3]) - min(ratios[:3]), 5.0)
         self.assertEqual(self.ann["capital_expenditures"][2], 27519)
         self.assertEqual(self.ann["revenue"][2], 97147)
+        checks = self.staging["_checks"]
+        capex = checks["semiannual_h1_capex_krw_m"]
+        halves = self.staging["half_year_capex_krw_bn"]
+        self.assertEqual([round(v * 1000) for v in halves["capital_expenditures"]],
+                         [capex["2025H1"], capex["2026H1"]])
+        periods, revenue = self.staging["periods"], self.fin["revenue"]
+        h1_2026 = revenue[periods.index("2026Q1")] + revenue[periods.index("2026Q2")]
+        self.assertAlmostEqual(h1_2026, checks["semiannual_h1_revenue_krw_m"] / 1000, delta=0.1)
+        # 2026H1 is a closed period: its ratio is history, pinned like the years.
+        half_ratio = capex["2026H1"] / checks["semiannual_h1_revenue_krw_m"] * 100
+        self.assertAlmostEqual(half_ratio, 13.9, delta=0.05)
+        self.assertTrue(0.4 <= half_ratio / ratios[2] <= 0.6, "about half of FY2025")
+        # The title names whatever the latest half and year are, and says
+        # "about half" only while the ratio of the two is in that band.
+        chart = next(e for e in self.exhibits() if e.get("ref") == "EX_INTENSITY")
+        drawn = dict(zip(chart["xlabels"], chart["groups"][0]["values"]))
+        latest_half, latest_year = halves["periods"][-1], self.ann["years"][-1]
+        self.assertEqual(("约为" in chart["title"]),
+                         0.4 <= drawn[latest_half] / drawn[latest_year] <= 0.6)
+        self.assertIn(f"{drawn[latest_half]:.1f}%", chart["title"])
+        blob = json.dumps(self.payload, ensure_ascii=False)
+        self.assertNotIn("不是腰斩", blob)
 
     def test_free_cash_flow_is_operating_cash_flow_less_capex(self) -> None:
         for i, year in enumerate(self.ann["years"]):
@@ -385,6 +415,37 @@ class SkHynixDashboardTest(unittest.TestCase):
                             "the chart shows a break that is not there")
 
     # ── structure the renderer will not defend on its own ──────────────────
+
+    def test_the_page_is_in_the_four_part_format(self) -> None:
+        """The site-wide layout, TSM's: settle last quarter, this quarter, what
+        to watch next, the long routine series -- ids and titles verbatim.
+
+        The first section used to be titled after this company's peculiarity
+        (「公司指引了什么，以及为什么这一节结不出别页那种记录」). That told the
+        reader what the section could not do instead of what every first section
+        on the site does, so the title is the shared one and the peculiarity
+        lives in the description.
+        """
+        self.assertEqual(
+            [(s["id"], s["title"]) for s in self.payload["sections"]],
+            [("settled", "一、上季跟踪指标兑现了吗"),
+             ("quarter_highlights", "二、本季重点"),
+             ("next_quarter", "三、下季要跟踪什么"),
+             ("routine", "四、长期常规跟踪")])
+        for section in self.payload["sections"]:
+            self.assertTrue(section["exhibits"], section["id"])
+        layout = [n for n in self.payload["notes"] if n.startswith("本页按")]
+        self.assertEqual(layout, ["本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，"
+                                  "以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。"])
+
+    def test_the_structural_series_sit_with_the_routine_series(self) -> None:
+        """The annual product split and the customer-concentration record are
+        long structural views, not findings of the quarter; the quarter's own
+        product split is a finding and sits in section two."""
+        by_section = {s["id"]: [e.get("ref") for e in s["exhibits"]] for s in self.payload["sections"]}
+        self.assertIn("EX_MIX", by_section["routine"])
+        self.assertIn("EX_CUST", by_section["routine"])
+        self.assertIn("EX_PRODUCT_Q", by_section["quarter_highlights"])
 
     def test_no_exhibit_pins_a_zero_baseline_under_negative_values(self) -> None:
         """Negative values must not reach a kind whose y-floor is fixed at zero.
@@ -606,8 +667,12 @@ class SkHynixRollTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must carry it"):
             skhynix.build_payload(stale)
         stale = copy.deepcopy(self.source)
-        stale["next_kpi"]["entries"][0]["metric"] = "不存在的指标"
+        stale["next_kpi"]["entries"][0]["id"] = "不存在的指标"
         with self.assertRaisesRegex(ValueError, "does not know how to measure"):
+            skhynix.build_payload(stale)
+        stale = copy.deepcopy(self.source)
+        stale["next_kpi"]["for_period"] = "Q2 2026"
+        with self.assertRaisesRegex(ValueError, "next quarter is"):
             skhynix.build_payload(stale)
         stale = copy.deepcopy(self.source)
         stale["sources"] = [item for item in stale["sources"] if " 6-K（" not in item["label"]]
@@ -617,10 +682,13 @@ class SkHynixRollTest(unittest.TestCase):
 
     def test_a_quarter_without_a_story_leaves_it_out(self) -> None:
         cases = {
-            "quarter_story": ("而季度发布里对此一个字都没有", "只出现在向 SEC 报送的 6-K 里",
-                              "口头提过", " 为历史最高", "对这笔钱没有任何拆分"),
+            "quarter_story": ("而季度发布里对此一个字都没有", "印在向 SEC 报送的 6-K 里",
+                              "之后的半年报才拆开", " 为历史最高", "在电话会的精度上正好是 CFO 说的",
+                              "电话会与半年报对同一季 DRAM 用了不同的词", "约 10 家客户的长期协议",
+                              "DRAM “approximately 10%”"),
             "below_operating_profit_krw_bn": ("营业利润、税前利润、净利润", "净利率越过 100% 的来源",
-                                              "不是经营突破", "营业外收益的构成，"),
+                                              "不是经营突破", "税前比营业利润多出的",
+                                              "营业外收益来自哪一笔投资，"),
         }
         for key, texts in cases.items():
             bare = copy.deepcopy(self.source)
@@ -656,8 +724,10 @@ class SkHynixRollTest(unittest.TestCase):
             ann["capital_expenditures"][-1] = ann["revenue"][-1] * 0.6
 
         def chained_answer_outside(d):
+            # The chain scores the latest quarter whose product split is printed.
             prod = d["revenue_by_product_krw_bn"]
-            prod["dram"][prod["labels"].index("2026Q1")] *= 2
+            latest = [label for label in prod["labels"] if re.match(r"^\d{4}Q[1-4]$", label)][-1]
+            prod["dram"][prod["labels"].index(latest)] *= 2
 
         def earlier_revision_as_large(d):
             d["restatement_census"]["lines_moved"]["2019Q4"]["operating_profit"][1] = 236.0 + 150.0
@@ -727,6 +797,313 @@ class SkHynixRollTest(unittest.TestCase):
                     self.assertIn(f"“{phrase}”", nand["note"])
 
 
+class SkHynixSettlementTest(unittest.TestCase):
+    """Section one against the two local analyses it settles.
+
+    The expected values come from `_checks["note"]`, which holds the reports'
+    facts for this quarter -- the verdicts of §0 in the 2026-07-28 analysis
+    (last quarter's six follow-up questions) and the threshold column of §8 in
+    the 2026-04-23 analysis (last quarter's six watch items) -- extracted from
+    the report files mechanically, separately from the series blocks the builder
+    reads, so the comparison is between two readings. The builder never reads
+    `_checks`; a roll replaces the note, not this file.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(skhynix.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.note = cls.staging["_checks"]["note"]
+        cls.payload = skhynix.build_payload(cls.staging)
+        cls.settled = next(s for s in cls.payload["sections"] if s["id"] == "settled")["exhibits"]
+
+    def test_the_note_names_both_reports_and_when_it_was_read(self) -> None:
+        self.assertIn("§0", self.note["source"]["this_quarter"])
+        self.assertIn("§8", self.note["source"]["last_quarter"])
+        self.assertTrue(self.note["checked_on"])
+
+    def test_the_closure_is_the_reports_section_zero(self) -> None:
+        items = self.staging["followup_closure"]["items"]
+        closure = self.note["closure"]
+        self.assertEqual({str(item["n"]): item["verdict"] for item in items}, closure["verdicts"])
+        chart = self.settled[0]
+        self.assertEqual(chart["kind"], "bars_labeled")
+        self.assertEqual(chart["xlabels"], ["已验证", "部分验证", "被证伪", "仍未披露"])
+        self.assertEqual(chart["values"], [closure["counts"][label] for label in chart["xlabels"]])
+        self.assertEqual(sum(chart["values"]), closure["total"])
+        self.assertTrue(chart["title"].startswith(f"上季 {closure['total']} 条待验证问题："), chart["title"])
+        for label, count in closure["counts"].items():
+            if count:
+                self.assertIn(f"{count} 条{label}", chart["title"])
+        self.assertEqual("没有一条完全验证" in chart["title"], closure["counts"]["已验证"] == 0)
+
+    def test_the_closure_note_names_an_answer_that_came_after_the_quarter(self) -> None:
+        """A follow-up open at the release can be answered by a later filing
+        (this quarter: shareholder returns, by the 6-K of 2026-08-19). The count
+        stays as §0 judged it; the note has to say what came later and when."""
+        items = self.staging["followup_closure"]["items"]
+        after = self.staging["quarter_story"].get("shareholder_return_after_quarter")
+        note = self.settled[0]["note"]
+        later = [item for item in items if item.get("answered_after_quarter")]
+        self.assertEqual(bool(later and after), "这里的判定仍按本季业绩发布时的情况" in note)
+        if later and after:
+            self.assertIn(after["filed"], note)
+            self.assertIn(f"₩{after['buyback_krw_bn'] / 1000:.1f}T 的回购注销", note)
+            # The verdict itself is the report's, not rewritten by the later filing.
+            self.assertEqual(later[0]["verdict"], self.note["closure"]["verdicts"][str(later[0]["n"])])
+
+    def test_the_prior_thresholds_are_the_reports_section_eight(self) -> None:
+        entries = self.staging["prior_kpi_settlement"]["entries"]
+        report = self.note["prior_thresholds"]
+        self.assertEqual([e["threshold_text"] for e in entries], [r["threshold"] for r in report])
+        # Where the page settles a row with a number, number and side are the report's.
+        self.assertEqual([(e["direction"], e["threshold"]) for e in entries if "threshold" in e],
+                         [(r["direction"], r["value"]) for r in report if "value" in r])
+        headroom_chart = self.settled[1]
+        self.assertEqual(headroom_chart["kind"], "diverging_bars")
+        self.assertTrue(headroom_chart["title"].startswith(f"上季 {len(report)} 条量化阈值："),
+                        headroom_chart["title"])
+        settled_rows = [r for r in report if "value" in r]
+        self.assertIn(f"{len(report) - len(settled_rows)} 条本季无法结算", headroom_chart["title"])
+        self.assertEqual(len(headroom_chart["values"]), len(settled_rows))
+        line = self.settled[2]
+        value = settled_rows[0]["value"]
+        self.assertEqual(line["title"], f"DRAM 平均售价的环比：守住上季阈值 +{value:.0f}%")
+        self.assertEqual(line["series"][1]["values"], [value] * len(line["xlabels"]))
+        table = next(t for t in self.payload["tables"] if t["title"].startswith(f"上季 {len(report)} 条阈值"))
+        self.assertEqual([row[1] for row in table["rows"]], [r["threshold"] for r in report])
+
+    def test_2q2026_is_the_semiannual_reports_wording(self) -> None:
+        """2Q 2026 is worded by the semi-annual report's Price Trends section,
+        in prose: DRAM ASP 'rose in the mid-30% range'. The call said
+        'approximately 30%'; the filing is what the series carries. A closed
+        period, so it is pinned by its label, not by position."""
+        kpi = self.staging["kpi_phrases"]
+        at = kpi["quarters"].index("2Q 2026")
+        self.assertEqual([kpi[k]["phrases"][at] for k in ("dram_bit_shipment", "dram_asp",
+                                                         "nand_bit_shipment", "nand_asp")],
+                         ["Slight Increase", "Mid-30% Increase", "Mid-teen% Increase", "Mid-50% Increase"])
+        for words in ("increased slightly", "rose in the mid-30% range",
+                      "increased in the mid-10% range", "rose in the mid-50% range"):
+            self.assertIn(words, kpi["_later_quarter_texts"]["2Q 2026"])
+        # Every quarter after the 424B4's table carries the filed words it came from.
+        later = kpi["quarters"][kpi["quarters"].index(skhynix.PROSPECTUS_PHRASES_END) + 1:]
+        self.assertEqual(sorted(kpi["_later_quarter_texts"]), sorted(later))
+
+    def test_the_settled_price_is_the_midpoint_of_the_pages_own_quarter(self) -> None:
+        """The actual that settles last quarter's +15% line is this quarter's
+        filed word, read through the vocabulary -- never an earlier quarter's."""
+        kpi = self.staging["kpi_phrases"]
+        quarter = self.staging["periods"][-1]
+        at = kpi["quarters"].index(f"{quarter[-1]}Q {quarter[:4]}")
+        entry = kpi["phrase_vocabulary"][kpi["dram_asp"]["phrases"][at]]
+        actual = (entry["low"] + entry["high"]) / 2
+        value = next(r["value"] for r in self.note["prior_thresholds"] if "value" in r)
+        self.assertEqual(self.settled[1]["values"], [round((actual - value) / value * 100, 1)])
+
+    def test_the_word_charts_follow_the_settlements(self) -> None:
+        """(c) comes after (a) and (b), and the description counts it."""
+        refs = [e.get("ref") for e in self.settled]
+        self.assertEqual(refs[0], "EX_CLOSURE")
+        start = refs.index("EX_DASP")
+        self.assertTrue(all(ref is None for ref in refs[1:start]), "only (b) sits between (a) and (c)")
+        self.assertEqual(self.settled[1]["kind"], "diverging_bars")
+        self.assertEqual(refs[start:], ["EX_DASP", "EX_NASP", "EX_DRIVER", "EX_NDRIVER", "EX_CHAIN"])
+        description = next(s for s in self.payload["sections"] if s["id"] == "settled")["description"]
+        self.assertIn(f"本节最后{skhynix.cn_count(len(refs) - start)}张图", description)
+
+
+class SkHynixSettlementRollTest(unittest.TestCase):
+    """What section one does when the data moves under it."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads(skhynix.STAGING_PATH.read_text(encoding="utf-8"))
+
+    def build(self, staging: dict) -> dict:
+        return skhynix.build_payload(staging)
+
+    def settled(self, payload: dict) -> list[dict]:
+        return next(s for s in payload["sections"] if s["id"] == "settled")["exhibits"]
+
+    def test_a_settlement_block_from_another_quarter_stops_the_build(self) -> None:
+        for key in ("followup_closure", "prior_kpi_settlement"):
+            with self.subTest(block=key, field="period"):
+                stale = copy.deepcopy(self.source)
+                stale[key]["period"] = "Q1 1999"
+                with self.assertRaisesRegex(ValueError, "stamped"):
+                    self.build(stale)
+            with self.subTest(block=key, field="set_in"):
+                stale = copy.deepcopy(self.source)
+                stale[key]["set_in"] = "Q4 2025"
+                with self.assertRaisesRegex(ValueError, "last quarter was"):
+                    self.build(stale)
+
+    def test_a_verdict_outside_the_four_buckets_stops_the_build(self) -> None:
+        stale = copy.deepcopy(self.source)
+        stale["followup_closure"]["items"][0]["verdict"] = "大致验证"
+        with self.assertRaisesRegex(ValueError, "outside"):
+            self.build(stale)
+
+    def test_nothing_is_settled_against_a_quarter_the_words_do_not_reach(self) -> None:
+        """Drop 2Q 2026 from the phrase series: the DRAM price threshold must
+        become unsettled, not quietly settle against 1Q 2026's word."""
+        short = copy.deepcopy(self.source)
+        kpi = short["kpi_phrases"]
+        kpi["quarters"].pop()
+        for key in ("dram_bit_shipment", "dram_asp", "nand_bit_shipment", "nand_asp"):
+            for field in ("phrases", "low_pct", "high_pct", "midpoint_pct", "one_sided"):
+                kpi[key][field].pop()
+        # The closure's fourth finding quotes this quarter's DRAM price word, so
+        # with the word missing the build must stop rather than quote 1Q 2026's.
+        with self.assertRaisesRegex(KeyError, "dram_asp"):
+            self.build(short)
+        del short["followup_closure"]
+        payload = self.build(short)
+        settled = self.settled(payload)
+        # No settleable threshold left, so no overview with zero bars: the
+        # description carries the six and why each is open.
+        self.assertFalse(any(e["kind"] == "diverging_bars" for e in settled))
+        self.assertFalse(any(e["title"].startswith("DRAM 平均售价的环比：守住") for e in settled))
+        description = next(s for s in payload["sections"] if s["id"] == "settled")["description"]
+        prior_count = len(self.source["_checks"]["note"]["prior_thresholds"])
+        self.assertIn(f"上季 {prior_count} 条量化阈值本季都无法用申报值结算", description)
+        self.assertIn("DRAM 售价（未申报：本季的用词还没有申报）", description)
+        self.assertNotIn("上季电话会给本季的出货指引", description)
+
+    def test_the_guidance_mismatch_sentence_follows_the_words(self) -> None:
+        """The filed DRAM word and the guided one do not overlap this quarter,
+        and the description says so; make them agree and it must say that instead."""
+        now = next(s for s in self.build(self.source)["sections"] if s["id"] == "settled")["description"]
+        self.assertIn("公司两份文件用了互不重叠的词", now)
+        agree = copy.deepcopy(self.source)
+        voc = agree["kpi_phrases"]["phrase_vocabulary"]["High-single% Increase"]
+        block = agree["kpi_phrases"]["dram_bit_shipment"]
+        block["phrases"][-1] = "High-single% Increase"
+        block["low_pct"][-1], block["high_pct"][-1] = voc["low"], voc["high"]
+        block["midpoint_pct"][-1] = (voc["low"] + voc["high"]) / 2
+        after = next(s for s in self.build(agree)["sections"] if s["id"] == "settled")["description"]
+        self.assertNotIn("公司两份文件用了互不重叠的词", after)
+        self.assertIn("半年报的用词与之一致", after)
+
+    def test_a_breached_prior_threshold_is_called_breached(self) -> None:
+        """Push the filed word below +15% and the verdict must flip, in the
+        title of the overview and of the line."""
+        low = copy.deepcopy(self.source)
+        voc = low["kpi_phrases"]["phrase_vocabulary"]["Mid-single% Increase"]
+        block = low["kpi_phrases"]["dram_asp"]
+        block["phrases"][-1] = "Mid-single% Increase"
+        block["low_pct"][-1], block["high_pct"][-1] = voc["low"], voc["high"]
+        block["midpoint_pct"][-1] = (voc["low"] + voc["high"]) / 2
+        settled = self.settled(self.build(low))
+        self.assertIn("已击穿", settled[1]["title"])
+        value = next(r["value"] for r in self.source["_checks"]["note"]["prior_thresholds"] if "value" in r)
+        self.assertTrue(any(e["title"] == f"DRAM 平均售价的环比：击穿上季阈值 +{value:.0f}%" for e in settled))
+
+
+class SkHynixNextQuarterTest(unittest.TestCase):
+    """Section three against this quarter's analysis, §8.
+
+    Expected values come from `_checks["note"]["next_thresholds"]`, extracted
+    from the report file apart from the `next_kpi` block the builder reads.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(skhynix.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.note = cls.staging["_checks"]["note"]
+        cls.payload = skhynix.build_payload(cls.staging)
+        cls.section = next(s for s in cls.payload["sections"] if s["id"] == "next_quarter")
+
+    def test_the_thresholds_are_the_reports_section_eight(self) -> None:
+        entries = self.staging["next_kpi"]["entries"]
+        report = self.note["next_thresholds"]
+        self.assertEqual(len(entries), len(report))
+        for entry, row in zip(entries, report):
+            with self.subTest(metric=entry["metric"]):
+                self.assertEqual(entry["threshold_text"], row["threshold_text"])
+                self.assertEqual(entry["action"], row["action"])
+                if "threshold" in entry:
+                    self.assertEqual((entry["direction"], entry["threshold"]), (row["direction"], row["threshold"]))
+        # No local threshold survives: every drawn line is one of the report's.
+        drawn = self.section["exhibits"][0]
+        self.assertEqual(len(drawn["xlabels"]), sum(1 for e in entries if "threshold" in e))
+        self.assertTrue(drawn["title"].startswith(f"下季 {len(drawn['xlabels'])} 条量化阈值："), drawn["title"])
+        for gone in ("单一最大客户占收入", "DRAM 占收入", "营业外净收益占税前利润", "净现金"):
+            self.assertNotIn(gone, drawn["xlabels"])
+
+    def test_each_measured_threshold_has_its_line_and_the_rest_their_reason(self) -> None:
+        entries = self.staging["next_kpi"]["entries"]
+        lines = self.section["exhibits"][1:]
+        measured = [e for e in entries if "threshold" in e]
+        self.assertEqual(len(lines), len(measured))
+        for entry, line in zip(measured, lines):
+            with self.subTest(metric=entry["metric"]):
+                self.assertTrue(line["title"].startswith(entry["metric"] + "：下季阈值"), line["title"])
+                self.assertEqual(line["series"][1]["values"], [entry["threshold"]] * len(line["xlabels"]))
+        unmeasured = [e for e in entries if "threshold" not in e]
+        for entry in unmeasured:
+            self.assertIn(entry["short"], self.section["description"])
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("下季阈值"))
+        self.assertEqual([row[1] for row in table["rows"]], [e["threshold_text"] for e in entries])
+        for entry in unmeasured:
+            row = next(r for r in table["rows"] if r[0] == entry["metric"])
+            self.assertEqual(row[4], f"{entry['status']}：{entry['why']}")
+
+    def test_the_upgrade_condition_is_the_reports_and_its_second_half_is_met(self) -> None:
+        """§8's reverse condition: Q3 revenue ≥ ₩93T AND a buyback or special
+        dividend of ≥ ₩10T within the year. The 6-K of 2026-08-19 announced
+        about ₩40T; the revenue chart says the second half is met, only while
+        the announced amount clears the bar."""
+        stance = self.staging["next_kpi"]["stance"]
+        text = self.note["stance"][1]
+        self.assertTrue(text.startswith(stance["upgrade_text"]))
+        numbers = [float(n) for n in re.findall(r"≥₩(\d+)T", text)]
+        self.assertEqual(numbers, [stance["upgrade_revenue_krw_tn"], stance["upgrade_return_krw_tn"]])
+        after = self.staging["quarter_story"]["shareholder_return_after_quarter"]
+        chart = next(e for e in self.section["exhibits"] if e["title"].startswith("Q3 营收："))
+        self.assertEqual("后一半已由" in chart["note"],
+                         after["buyback_krw_bn"] / 1000 >= stance["upgrade_return_krw_tn"])
+
+
+class SkHynixLaterFilingsRollTest(unittest.TestCase):
+    """What the page does without the filings that came after the release."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads(skhynix.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.blob = json.dumps(skhynix.build_payload(cls.source), ensure_ascii=False)
+
+    def text(self, staging: dict) -> str:
+        return json.dumps(skhynix.build_payload(staging), ensure_ascii=False)
+
+    def test_without_the_components_the_page_says_nobody_itemised_it(self) -> None:
+        bare = copy.deepcopy(self.source)
+        del bare["below_operating_profit_krw_bn"]["components"]
+        after = self.text(bare)
+        for gone in ("税前比营业利润多出的", "之后的半年报才拆开", "营业外收益来自哪一笔投资，"):
+            self.assertIn(gone, self.blob)
+            self.assertNotIn(gone, after)
+        self.assertIn("本页读过的文件都没有给出它的构成", after)
+
+    def test_without_the_half_year_capex_the_intensity_charts_leave(self) -> None:
+        bare = copy.deepcopy(self.source)
+        del bare["half_year_capex_krw_bn"]
+        payload = skhynix.build_payload(bare)
+        refs = [e.get("ref") for s in payload["sections"] for e in s["exhibits"]]
+        self.assertNotIn("EX_INTENSITY", refs)
+        after = json.dumps(payload, ensure_ascii=False)
+        self.assertNotIn("约减半", after)
+        self.assertNotIn("{EX_", after)
+
+    def test_the_stale_disclosure_claims_stay_gone(self) -> None:
+        """Each of these was printed on this page while the filing that
+        contradicts it was already public or became public; none may return."""
+        for stale in ("季度上没有分产品收入", "在公开披露里不存在", "一年只出现一次", "只有年度披露",
+                      "构成则任何文件都没有", "没有任何书面拆分", "不是腰斩", "本地研究设定的阈值",
+                      "公司唯一披露的那个答案"):
+            self.assertNotIn(stale, self.blob)
+
+
 class SkHynixChecksTest(unittest.TestCase):
     """The page's quarter against a record keyed separately from the series.
 
@@ -794,8 +1171,55 @@ class SkHynixChecksTest(unittest.TestCase):
         table = self.payload["tables"][0]
         self.assertEqual(table["rows"][-1][5], f"{c['operating_margin_pct_printed']}%")
         watch = next(t for t in self.payload["tables"] if t["title"].startswith("下季阈值"))
-        net_cash = next(row for row in watch["rows"] if row[0] == "净现金")
-        self.assertEqual(net_cash[3], f"₩{c['net_cash_krw_tn']:.1f}T")
+        revenue_row = next(row for row in watch["rows"] if row[0] == "Q3 营收")
+        self.assertEqual(revenue_row[3], f"₩{c['revenue_krw_bn'] / 1000:.1f}T")
+        intensity = next(ex for section in self.payload["sections"] for ex in section["exhibits"]
+                         if ex.get("ref") == "EX_INTENSITY")
+        self.assertIn(f"季末净现金 ₩{c['net_cash_krw_tn']:.1f}T", intensity["note"])
+
+    def test_the_semiannual_report_repeats_the_quarter_digit_for_digit(self) -> None:
+        """The subtitle says the quarter's figures are reviewed; that is only
+        true because the reviewed interim statements print the same four lines
+        the preliminary release did, read here by regex from the filing."""
+        income = self.checks["semiannual_q2_income_krw_m"]
+        below = self.staging["below_operating_profit_krw_bn"]
+        self.assertEqual(round(income["revenue"] / 1000, 1), self.fin["revenue"][-1])
+        self.assertEqual(round(income["operating_profit"] / 1000, 1), self.fin["operating_profit"][-1])
+        self.assertEqual(round(income["net_income"] / 1000, 1), self.fin["net_income"][-1])
+        self.assertEqual(round(income["profit_before_tax"] / 1000, 1), below["profit_before_tax"][-1])
+        self.assertIn("中期报表已经外部审阅", self.payload["subtitle"])
+
+    def test_the_quarterly_product_split_is_the_interim_notes(self) -> None:
+        """Q2 cells from note 21(2) of the semi-annual report; and the six-month
+        column less the second quarter gives back the 424B4's first-quarter cells
+        -- two filings, one identity."""
+        prod = self.staging["revenue_by_product_krw_bn"]
+        labels = prod["labels"]
+        q2, h1 = self.checks["semiannual_q2_product_krw_m"], self.checks["semiannual_h1_product_krw_m"]
+        for key in ("dram", "nand", "other"):
+            self.assertEqual(prod[key][labels.index("2026Q2")], round(q2[key] / 1000))
+            self.assertAlmostEqual((h1[key] - q2[key]) / 1000, prod[key][labels.index("2026Q1")], delta=0.5,
+                                   msg=f"H1 less Q2 is not the 424B4's 2026Q1 {key}")
+        self.assertEqual(sum(q2.values()), self.checks["semiannual_q2_income_krw_m"]["revenue"])
+        chart = next(ex for section in self.payload["sections"] for ex in section["exhibits"]
+                     if ex.get("ref") == "EX_PRODUCT_Q")
+        periods = self.staging["periods"]
+        now, before = labels.index(periods[-1]), labels.index(periods[-2])
+        self.assertIn(f"NAND 占收入从 {prod['nand'][before] / prod['total'][before] * 100:.1f}%", chart["title"])
+        self.assertIn(f"{prod['nand'][now] / prod['total'][now] * 100:.1f}%", chart["title"])
+
+    def test_the_half_year_customers_are_the_interim_note(self) -> None:
+        cust = self.staging["customer_concentration"]
+        at = cust["periods"].index("2026H1")
+        h1 = self.checks["semiannual_h1_customers"]
+        self.assertEqual(cust["largest_customer_pct"][at], h1["a_pct"])
+        self.assertEqual(cust["second_customer_pct"][at], h1["b_pct"])
+        self.assertEqual(cust["largest_customer_krw_bn"][at], round(h1["a_krw_m"] / 1000))
+        self.assertEqual(cust["second_customer_krw_bn"][at], round(h1["b_krw_m"] / 1000))
+        chart = next(ex for section in self.payload["sections"] for ex in section["exhibits"]
+                     if ex.get("ref") == "EX_CUST")
+        self.assertEqual(dict(zip(chart["xlabels"], chart["groups"][0]["values"]))["2026H1"], h1["a_pct"])
+        self.assertEqual("第二个客户也超过 10%" in chart["title"], cust["second_customer_pct"][-1] is not None)
 
 
 if __name__ == "__main__":

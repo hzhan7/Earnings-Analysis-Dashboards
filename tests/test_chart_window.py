@@ -203,7 +203,7 @@ REACH_2016 = {
     "amd": 16, "amzn": 13, "arm": 0, "asml": 24, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 20, "cme": 17,
     "cost": 13, "googl": 11, "hkex": 13, "ibkr": 26, "ker": 11 + _ker_threshold_reach(), "ma": 17, "mc": 5, "mco": 13, "meta": 10,
     "msci": 15, "msft": 8, "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
-    "race": 12, "rms": 15, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
+    "race": 12, "rms": 15, "samsung": 0, "schw": 10, "skhynix": 4, "snps": 8,
     "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
     "intc": 10 + _intc_threshold_reach(),
     # Not a company page. It is here because the ratchet now walks every
@@ -646,7 +646,7 @@ CONVERTED = {
     # Verified against the filings, including the repo's own prior claim about
     # the operating-income line, which turned out to be true.
     "skhynix": {
-        "DRAM 平均售价的环比": "the four bucket-word series (DRAM/NAND bit shipment and ASP, quarter on quarter) come from one table that covers 1Q2023-1Q2026 and nothing earlier. Checked rather than assumed, and the first version of this reason was wrong: the table is NOT unique to the 424B4 of 2026-07-10. It appears verbatim in six SEC filings -- the DRS/A of 2026-05-29, two later DRS/A, the F-1, both F-1/A, and the 424B4 -- and every one of them carries the identical thirteen quarters. The earlier DRS (2026-03-24) and the 2026-05-08 DRS/A do not carry it at all. So the limit is not which document you read, it is that no document holds an earlier instance. The vocabulary itself does predate 2023 in SK hynix's earnings calls, but spoken guidance is a different disclosure from this four-series table, not an earlier printing of it. Splicing the pre-2021 practice on is worse: back then the ordinary releases gave EXACT numeric percentages, which is a finer and different regime, with a gap through 2021-2022 where neither appears. That gap was censused rather than assumed: the English releases give all four numeric series through 4Q2020, drop ASP but keep bit shipment at 1Q2021, then say nothing at all for eight straight quarters, 2Q2021 through 1Q2023. One thing this floor could still move on, and has not: the Korean DART quarterly filings carry the same bucket wording in their 가격변동추이 section from 1Q2022, four quarters earlier than the 424B4 table, so the honest floor is 1Q2022 rather than 1Q2023 -- at the cost of a Korean-to-English vocabulary mapping this page does not have. Before 1Q2022 that section is qualitative with no numbers at all, back through FY2015, so it does not reach 2016 either way.",
+        "DRAM 平均售价的环比": "the four bucket-word series (DRAM/NAND bit shipment and ASP, quarter on quarter) come from one table that covers 1Q2023-1Q2026 and nothing earlier; 2Q2026 onward is the same wording carried forward by the periodic reports (the semi-annual 6-K of 2026-08-18, section II.2.B), which extend it forward, never back. This key covers every chart drawn on the DRAM price series -- the band and any threshold line drawn on it -- because the floor is the series', not the chart's. Checked rather than assumed, and the first version of this reason was wrong: the table is NOT unique to the 424B4 of 2026-07-10. It appears verbatim in six SEC filings -- the DRS/A of 2026-05-29, two later DRS/A, the F-1, both F-1/A, and the 424B4 -- and every one of them carries the identical thirteen quarters. The earlier DRS (2026-03-24) and the 2026-05-08 DRS/A do not carry it at all. So the limit is not which document you read, it is that no document holds an earlier instance. The vocabulary itself does predate 2023 in SK hynix's earnings calls, but spoken guidance is a different disclosure from this four-series table, not an earlier printing of it. Splicing the pre-2021 practice on is worse: back then the ordinary releases gave EXACT numeric percentages, which is a finer and different regime, with a gap through 2021-2022 where neither appears. That gap was censused rather than assumed: the English releases give all four numeric series through 4Q2020, drop ASP but keep bit shipment at 1Q2021, then say nothing at all for eight straight quarters, 2Q2021 through 1Q2023. One thing this floor could still move on, and has not: the Korean DART quarterly filings carry the same bucket wording in their 가격변동추이 section from 1Q2022, four quarters earlier than the 424B4 table, so the honest floor is 1Q2022 rather than 1Q2023 -- at the cost of a Korean-to-English vocabulary mapping this page does not have. Before 1Q2022 that section is qualitative with no numbers at all, back through FY2015, so it does not reach 2016 either way.",
         "NAND 平均售价的环比": "same table, same thirteen quarters, same reason as "
                         "the DRAM band above.",
         "DRAM 的量与价": "both legs are read out of the same thirteen-quarter table, "
@@ -1560,7 +1560,7 @@ class ChartWindowTest(unittest.TestCase):
         combined = {slug: SHORT_BY_DESIGN.get(slug, 0) + UNEXPLAINED_LONG.get(slug, 0)
                     for slug in set(SHORT_BY_DESIGN) | set(UNEXPLAINED_LONG)}
         self.assertEqual(by_page, combined)
-        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 57)
+        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 59)
         # Zero, as of the SK hynix backfill. This number is not load-bearing on
         # its own -- an empty dict sums to zero for free -- but `by_length ==
         # UNEXPLAINED_LONG` two lines down is, and that one is what turns red if
@@ -1743,7 +1743,7 @@ SHORT_BY_DESIGN = {
     'nvda': 11,
     'pm': 5,
     'samsung': 21,
-    'skhynix': 5,
+    'skhynix': 7,
 
 }
 
@@ -1790,7 +1790,7 @@ UNDERIVABLE_QUARTER_COUNTS = {
     "axp Ex16":  ([16], "两条口径同时被印出来的季度数（16 季），是重叠区间的长度，"
                         "不是该图 42 季的窗口 —— 图注拿它论证两条线不能接成一条"),
     "axp Ex17":  ([16], "同上，同一句重叠区间长度出现在另一张信用图的图注里"),
-    "skhynix Ex7": ([22], "这一页此前的窗口长度。图注解释的正是「从 22 季拉到 42 季」"
+    "skhynix Ex10": ([22], "这一页此前的窗口长度。图注解释的正是「从 22 季拉到 42 季」"
                           "改变了什么，所以那个 22 指的是旧窗口，不是本图的任何一段"),
     **_tsm_advanced_count(),
 }

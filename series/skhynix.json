@@ -1,5 +1,5 @@
 {
- "_provenance": "Every figure here is printed in a document SK hynix filed or published. Two SEC-hosted filings carry the parts no press release contains: the Form 424B4 prospectus of 2026-07-10 (audited K-IFRS statements for FY2023-FY2025 and Q1, the product-revenue note, the customer-concentration note, capital expenditures, and the thirteen-quarter table of bit-shipment and ASP phrases) and the Form 6-K of 2026-07-29 (the Q2 2026 preliminary results table, which is the only place the quarter's pre-tax profit appears). The 22-quarter revenue / operating profit / net income series comes from each quarter's own newsroom results release. SK hynix is an SEC registrant: CIK 2120882, file number 001-43391, Nasdaq SKHY, annual report on Form 20-F.",
+ "_provenance": "Every figure here is printed in a document SK hynix filed or published. Two SEC-hosted filings carry the parts no press release contains: the Form 424B4 prospectus of 2026-07-10 (audited K-IFRS statements for FY2023-FY2025 and Q1, the product-revenue note, the customer-concentration note, capital expenditures, and the thirteen-quarter table of bit-shipment and ASP phrases) the Form 6-K of 2026-07-29 (the Q2 2026 preliminary results table, the first place the quarter's pre-tax profit appears), and the Form 6-K of 2026-08-18 (the semi-annual report: reviewed interim statements that itemise the quarter's non-operating lines and print its three-month product split, half-year capex, customer concentration and the quarter's bit-shipment and ASP wording). The 22-quarter revenue / operating profit / net income series comes from each quarter's own newsroom results release. SK hynix is an SEC registrant: CIK 2120882, file number 001-43391, Nasdaq SKHY, annual report on Form 20-F.",
  "schema_version": "quarterly-staging/skhynix-v1",
  "company": {
   "ticker": "SKHY",
@@ -16,8 +16,8 @@
   "prior_year_period": "2025Q2",
   "period_end": "2026-06-30",
   "release_date": "2026-07-29",
-  "audit_status": "provisional",
-  "analysis_date": "2026-08-29"
+  "audit_status": "reviewed",
+  "analysis_date": "2026-09-23"
  },
  "_checks": {
   "period": "Q2 2026",
@@ -41,7 +41,145 @@
   "interest_bearing_debt_krw_tn": 18.6,
   "net_cash_krw_tn": 69.4,
   "source": "SK hynix Newsroom「SK hynix Announces 2Q26 Financial Results」（July 29, 2026）首段：营收 79.3187 万亿韩元、营业利润 60.5426 万亿（营业利润率 76%）、净利 93.9226 万亿（净利率 118%），营收与营业利润同比 +257% / +557%；财务段：现金及现金等价物 88 万亿，总借款减少 0.7 万亿至 18.6 万亿，净现金 69.4 万亿；■ 2Q26 Financial Results (K-IFRS, Billion KRW) 表：Revenue 79,318.7 / 52,576.3（QoQ 51%）/ 22,232（YoY 257%），Operating Profit 60,542.6 / 37,610.3 / 9,212.9，Operating Margin 76% / 72% / 41%，Net Income 93,922.6 / 40,345.9 / 6,996.2。税前利润与营业外净额的独立读数来自 2Q26 业绩电话会 CFO 发言（口头给出营业外净收益 ₩62.2T、税前利润 ₩122.7T；按本页规矩转述、不录原话），与 series 里 6-K Preliminary Results 表的 122,708.4 在电话会精度上一致；6-K 原件本机没有，未另行重读。",
-  "checked_on": "2026-09-19"
+  "checked_on": "2026-09-19",
+  "semiannual_q2_product_krw_m": {
+   "dram": 56982743,
+   "nand": 21959898,
+   "other": 376105
+  },
+  "semiannual_h1_product_krw_m": {
+   "dram": 97641379,
+   "nand": 33534133,
+   "other": 719521
+  },
+  "semiannual_h1_capex_krw_m": {
+   "2026H1": 18328836,
+   "2025H1": 10615739
+  },
+  "semiannual_q2_finance_income_krw_m": {
+   "valuation_gain": 53237425,
+   "dividend_income": 10027945
+  },
+  "semiannual_h1_customers": {
+   "a_krw_m": 17608702,
+   "a_pct": 13.35,
+   "b_krw_m": 17187421,
+   "b_pct": 13.03
+  },
+  "semiannual_h1_revenue_krw_m": 131895033,
+  "semiannual_source": "Form 6-K 2026-08-18 (0001193125-26-354777), re-read by regex from the filing text: note 21(2) three- and six-month product rows; cash-flow 'Acquisitions of property, plant and equipment'; note 24 finance income rows; note 4(2) customer sentence; statement of comprehensive income six-month revenue.",
+  "note": {
+   "source": {
+    "this_quarter": "本地季报分析稿 2026-07-28 000660 Q2 2026 vs Q1 2026 Analysis.md：§0「上季遗留问题回答」、§8「关键观察指标」（本季 top 5 跟踪表、立场撤销条件）",
+    "last_quarter": "本地季报分析稿 2026-04-23 000660 Q1 2026 vs Q4 2025 Analysis.md：§8「关键观察指标」"
+   },
+   "checked_on": "2026-09-23",
+   "closure": {
+    "total": 6,
+    "verdicts": {
+     "1": "部分验证",
+     "2": "被证伪",
+     "3": "仍未披露",
+     "4": "部分验证",
+     "5": "仍未披露",
+     "6": "仍未披露"
+    },
+    "counts": {
+     "已验证": 0,
+     "部分验证": 2,
+     "被证伪": 1,
+     "仍未披露": 3
+    }
+   },
+   "prior_thresholds": [
+    {
+     "metric": "Q2/Q3 2026 DRAM ASP QoQ",
+     "threshold": "Q1 +mid-60%；Q2 阈值 ≥ +15% QoQ = 维持 supercycle；< +5% = plateau 前置；< 0% = 周期反转启动",
+     "direction": "up",
+     "value": 15.0
+    },
+    {
+     "metric": "HBM4 NVDA Rubin Ultra 分配 share",
+     "threshold": "当前未披露；2026 H2 阈值 ≥ 55% = 维持领先；40-55% = Samsung 追平；< 40% = 独家溢价消失",
+     "direction": "up"
+    },
+    {
+     "metric": "FY26 capex 实际数字",
+     "threshold": "Q4 旧指引\"mid-30% 营收\"；FY26 阈值 < ₩55T = upside；₩55-65T = 符合预期；> ₩70T = FCF 大幅下修",
+     "direction": "down"
+    },
+    {
+     "metric": "HBM 占 DRAM 收入 % （口径澄清后）",
+     "threshold": "Q1 媒体口径 12%；目标 Q2 IR 澄清；阈值 ≥ 50% = 全 HBM 口径正常",
+     "direction": "up"
+    },
+    {
+     "metric": "FY26 buyback + 分红合计 / 净利润",
+     "threshold": "Q1 PR 弱化股东回报段；阈值 ≥ 50% = 维持承诺；30-50% = 警示；< 30% = capex 全面挤压回报",
+     "direction": "up"
+    },
+    {
+     "metric": "CXMT DDR5 量产时点 / 国产替代率",
+     "threshold": "当前数据隔月通过 TrendForce 跟踪；阈值 中国 server DRAM 国产替代 > 25% = SK Hynix 中国业务大幅下修",
+     "direction": "down"
+    }
+   ],
+   "next_thresholds": [
+    {
+     "metric": "Q3 实际营收（2026-10 下旬）",
+     "threshold_text": "[自算] 锚区间 ₩86–96T；<₩86T = HBM4 递延未回补 + 价格已 plateau",
+     "action": "减仓",
+     "direction": "up",
+     "threshold": 86.0
+    },
+    {
+     "metric": "DRAM ASP 环比（第三方价格指数，月度）",
+     "threshold_text": "本季 +约 30%（Q1 +mid-60%）；Q3 <+10% = 斜率见顶确认；>+20% = 递延回补",
+     "action": "减仓 / 加仓（双向）",
+     "direction": "up",
+     "threshold": 10.0
+    },
+    {
+     "metric": "LTA 签约客户数与覆盖率",
+     "threshold_text": "当前 ~10 家，覆盖率未披露；新增至 15 家以上或披露覆盖率 >25% = 周期 beta 实质下降",
+     "action": "加仓（估值中枢上移）",
+     "direction": "up",
+     "threshold": 15
+    },
+    {
+     "metric": "营业利润率轨迹",
+     "threshold_text": "本季 76%（历史最高）；连续两季 <55% = 正常化启动，快于 Base 假设",
+     "action": "警示（估值重算）",
+     "direction": "up",
+     "threshold": 55.0
+    },
+    {
+     "metric": "2026 CapEx 实际 vs ~₩48T 指引 + 2027 指引（比率）",
+     "threshold_text": "指引 ~₩48T，[自算] capex/营收 ~15%；2027 指引 >₩80T 或比率 >25% = 资本强度担忧重启",
+     "action": "警示",
+     "direction": "down",
+     "threshold": 25.0
+    },
+    {
+     "metric": "2026 CapEx 实际 vs ~₩48T 指引 + 2027 指引（2027 指引）",
+     "threshold_text": "指引 ~₩48T，[自算] capex/营收 ~15%；2027 指引 >₩80T 或比率 >25% = 资本强度担忧重启",
+     "action": "警示",
+     "direction": "down",
+     "threshold": 80.0
+    }
+   ],
+   "stance": [
+    "任一触发即下调立场：①Q3 营收 <₩86T；②DRAM ASP 连续两月环比转负；③2027 CapEx 指引 >₩80T。",
+    "反向（上调至加仓）：Q3 营收 ≥₩93T 且 年内公布规模化股东回报方案（回购或特别股息 ≥₩10T）——业绩兑现与资本返还须同时出现，单独任一不足以对冲 HBM 份额黑箱的估值折价。"
+   ],
+   "stance_redaction": "§8「立场撤销条件」第一句的立场名称是本地研究用语，按仓库的内容边界不录，只录触发条件。"
+  },
+  "semiannual_q2_income_krw_m": {
+   "revenue": 79318746,
+   "operating_profit": 60542608,
+   "profit_before_tax": 122708355,
+   "net_income": 93922593
+  }
  },
  "periods": [
   "2016Q1",
@@ -592,82 +730,143 @@
    41336
   ]
  },
+ "half_year_capex_krw_bn": {
+  "_source": "Form 6-K of 2026-08-18, condensed consolidated interim statements of cash flows, 'Acquisitions of property, plant and equipment', six-month columns (reviewed, not audited). Same definition as annual_audited_krw_bn.capital_expenditures: cash outflow for PP&E, intangibles excluded. The halves' revenue is not stored: it is the sum of the two quarters in financials_krw_bn, which the tests tie to the filing's six-month line.",
+  "periods": [
+   "2025H1",
+   "2026H1"
+  ],
+  "capital_expenditures": [
+   10615.739,
+   18328.836
+  ]
+ },
  "revenue_by_product_krw_bn": {
-  "_source": "Form 424B4 note 24(2) for the years, interim note for the quarters. AUDITED.",
+  "_source": "Form 424B4 note 24(2) for the years and the interim note for 2025Q1 and 2026Q1 (audited years; Q1 interim reviewed). 2025Q2 and 2026Q2: Form 6-K of 2026-08-18, condensed consolidated interim statements note 21(2), three-month columns (reviewed, not audited): DRAM 56,982,743 / NAND Flash 21,959,898 / Others 376,105 and 17,123,990 / 4,727,806 / 380,156, KRW million.",
   "labels": [
    "FY2023",
    "FY2024",
    "FY2025",
    "2025Q1",
-   "2026Q1"
+   "2025Q2",
+   "2026Q1",
+   "2026Q2"
   ],
   "dram": [
    20769,
    44732,
    74904,
    14037,
-   40659
+   17124,
+   40659,
+   56983
   ],
   "nand": [
    9653,
    19274,
    20690,
    3229,
-   11574
+   4728,
+   11574,
+   21960
   ],
   "other": [
    2344,
    2187,
    1552,
    373,
-   343
+   380,
+   343,
+   376
   ],
   "total": [
    32766,
    66193,
    97147,
    17639,
-   52576
+   22232,
+   52576,
+   79319
   ],
   "dram_pct": [
    63.4,
    67.6,
    77.1,
    79.6,
-   77.3
+   77.0,
+   77.3,
+   71.8
   ],
   "nand_pct": [
    29.5,
    29.1,
    21.3,
    18.3,
-   22.0
+   21.3,
+   22.0,
+   27.7
   ],
   "other_pct": [
    7.2,
    3.3,
    1.6,
    2.1,
-   0.7
+   1.7,
+   0.7,
+   0.5
   ],
-  "_note": "This is the only product split SK hynix discloses, and it is annual plus the first quarter. There is no quarterly product split for any other quarter, so a quarterly DRAM or flash revenue series does not exist and is not built here."
+  "_note": "A quarterly product split exists only where an interim statement prints a three-month column: 2025Q1 and 2026Q1 (the 424B4's Q1 interim) and 2025Q2 and 2026Q2 (the semi-annual 6-K). The six-month columns less the second quarter reproduce the 424B4's first-quarter cells (checked in the tests against `_checks`). No SEC-hosted filing read for this page carries 2023-2024 quarters or 2025Q3/Q4.",
+  "_cell_sources": {
+   "2025Q2": "2026-08-18 报送的半年报 6-K 附注 21(2)",
+   "2026Q2": "2026-08-18 报送的半年报 6-K 附注 21(2)"
+  }
  },
  "customer_concentration": {
-  "_source": "Form 424B4 note 4(2). AUDITED.",
-  "years": [
+  "_source": "Form 424B4 note 4(2) for FY2023-FY2025 (audited) and the Q1 interim note 4(2) for 2025Q1 and 2026Q1; Form 6-K of 2026-08-18 note 4(2) for the six months to 2025-06-30 and 2026-06-30 (reviewed). Periods run in order of their end date. Each filing labels its own customers 'A' and 'B' per period, so no line here says two periods' 'A' is one customer.",
+  "periods": [
    "FY2023",
    "FY2024",
-   "FY2025"
+   "2025Q1",
+   "2025H1",
+   "FY2025",
+   "2026Q1",
+   "2026H1"
   ],
   "largest_customer_krw_bn": [
    null,
    10903,
-   23260
+   4786,
+   10891,
+   23260,
+   7781,
+   17609
   ],
   "largest_customer_pct": [
    null,
    16.5,
-   23.9
+   27.13,
+   27.31,
+   23.9,
+   14.8,
+   13.35
+  ],
+  "second_customer_krw_bn": [
+   null,
+   null,
+   null,
+   null,
+   null,
+   6536,
+   17187
+  ],
+  "second_customer_pct": [
+   null,
+   null,
+   null,
+   null,
+   null,
+   12.43,
+   13.03
   ],
   "fy2023_text": "For the year ended December 31, 2023, no revenue derived from a single customer reached over 10% of the Group's revenue."
  },
@@ -707,7 +906,7 @@
  },
  "below_operating_profit_krw_bn": {
   "period": "Q2 2026",
-  "_source": "Form 6-K filed 2026-07-29. The quarter's newsroom release stops at net income.",
+  "_source": "Form 6-K filed 2026-07-29 (preliminary results table) for the three rows; the components are from the Form 6-K of 2026-08-18 (semi-annual report): consolidated interim statement of comprehensive income, note 24 (finance income and expenses) and note 25 (other income and expenses), three-month columns. The quarter's newsroom release stops at net income.",
   "periods": [
    "2026Q1",
    "2026Q2"
@@ -724,72 +923,272 @@
    40345.9,
    93922.6
   ],
-  "_derived_note": "Income tax and the non-operating total are differences between two printed lines: tax is pre-tax profit less profit for the period, and the non-operating total is pre-tax profit less operating profit. Nothing below operating profit is broken out into components in any written SK hynix release or filing read for this page; the CFO named two components orally on the 2Q26 call (see quarter_story._call_breakdown_note). No component is published here."
+  "_derived_note": "Tax and the non-operating total are differences between two printed lines. The components are the semi-annual report's own lines for the quarter; four are nets of a printed income line and a printed expense line (marked derived). They add to pre-tax less operating profit to the million won. The report does not say which investment the valuation gain and the dividend came from, and none is named here.",
+  "components_printed_in": "2026-08-18 报送的半年报 6-K（合并中期损益表与附注 24、25）",
+  "components": [
+   {
+    "line": "金融工具估值收益",
+    "value": 53237.425,
+    "from": "note 24 finance income: gain on valuation of financial instruments"
+   },
+   {
+    "line": "股利收入",
+    "value": 10027.945,
+    "from": "note 24 finance income: dividend income"
+   },
+   {
+    "line": "汇兑差额净额",
+    "value": 1147.209,
+    "derived": true,
+    "from": "note 24: foreign exchange differences 2,149,342 in income less 1,002,133 in expenses"
+   },
+   {
+    "line": "衍生品损失",
+    "value": -2479.736,
+    "from": "note 24 finance expenses: loss on derivatives"
+   },
+   {
+    "line": "利息净收入",
+    "value": 150.144,
+    "derived": true,
+    "from": "note 24: interest income 304,478 less interest expenses 154,334"
+   },
+   {
+    "line": "其他金融收支净额",
+    "value": 134.924,
+    "derived": true,
+    "from": "note 24: other finance income 139,624 less other finance expenses 4,700"
+   },
+   {
+    "line": "权益法投资损益",
+    "value": -20.122,
+    "from": "statement of comprehensive income: share of loss of equity-accounted investees"
+   },
+   {
+    "line": "其他收益减其他费用",
+    "value": -32.042,
+    "derived": true,
+    "from": "note 25: other income 13,838 less other expenses 45,880"
+   }
+  ]
  },
  "quarter_story": {
   "period": "Q2 2026",
   "_note": "只属于这一季的披露事实与口径：季度业绩发布印到哪一行为止、税前利润印在哪份文件里、营业外收益的构成有没有书面拆分、公司是否自称纪录。换季时换成新一季的内容，没有这件事的字段就删掉；整块缺席时页面对应句子整句不出。",
-  "source": "2Q26 Newsroom 业绩发布（2026-07-29）、Form 6-K（2026-07-29）Preliminary Results 表、2Q26 业绩电话会",
+  "source": "2Q26 Newsroom 业绩发布（2026-07-29）、Form 6-K（2026-07-29）Preliminary Results 表、2Q26 业绩电话会、Form 6-K（2026-08-18）半年报、Form 6-K（2026-08-19）回购与回报政策",
   "release_stops_at_net_income": true,
-  "pretax_printed_only_in": "向 SEC 报送的 6-K",
-  "non_operating_breakdown_in_writing": false,
+  "non_operating_breakdown_in_writing": true,
   "non_operating_breakdown_spoken": true,
-  "_call_breakdown_note": "电话会 CFO 口头给过营业外净收益 ₩62.2T 里的两项：汇率相关净收益约 ₩1.1T、投资资产出售与估值收益约 ₩63.3T（转述，不录原话）。页面按既定口径不发布构成（tests 里有一条专门守着），这里只记下它在哪里说过，供 brief 那句按事实措辞。",
-  "record_margin_claimed": true
+  "_call_breakdown_note": "电话会 CFO 口头给过营业外净收益 ₩62.2T 里的两项：汇率相关净收益约 ₩1.1T、投资资产出售与估值收益约 ₩63.3T（转述，不录原话）。三周后的半年报附注 24 把后者印成两行：金融工具估值收益 53,237,425 与股利收入 10,027,945（百万韩元）。页面按申报行发布，不发布口头的合计，也不替申报补上是哪一笔投资。",
+  "record_margin_claimed": true,
+  "shipment_guidance_for_quarter": {
+   "dram": "High-single% Increase",
+   "nand": "Mid-teen% Increase",
+   "_source": "given on the 1Q26 call for 2Q26; the 2Q26 call (2026-07-29) restates both as delivered 'in line with our guidance'"
+  },
+  "shipment_delivered_per_call": true,
+  "call_words": {
+   "dram_bit": "high single-digit",
+   "dram_asp": "approximately 30%",
+   "nand_bit": "mid-teen",
+   "nand_asp": "mid-50%",
+   "_source": "2Q26 earnings call prepared remarks, 2026-07-29"
+  },
+  "capex_2026_spoken": "high KRW 40 trillion range",
+  "shareholder_return_after_quarter": {
+   "filed": "2026-08-19",
+   "buyback_krw_bn": 40004.34,
+   "policy": "2025–2027 年回报累计自由现金流的 50% 以上",
+   "_source": "Form 6-K 2026-08-19 'Decision on Acquisition of Treasury Shares' (24,070,000 common shares, Won 40,004,340,000,000, 2026-08-20 to 2026-11-19, for cancellation) and 'Shareholder Return Policy (Fair Disclosure)' (return over 50% of cumulative Free Cash Flow for 2025-2027). Filed after the quarter's release and after the local analysis was written; it answers follow-up 6 for the NEXT closure, not this one."
+  },
+  "pretax_printed_in": "向 SEC 报送的 6-K",
+  "non_operating_breakdown_printed_in": "2026-08-18 报送的半年报 6-K",
+  "lta": {
+   "customers_printed": "around 10 customers",
+   "printed_in": "2Q26 业绩发布",
+   "terms_spoken": "期限通常约 5 年、含保证金（deposits）",
+   "filing_line": "there is no order backlog based on long term supply contracts",
+   "filing_line_in": "2026-08-18 报送的半年报 6-K（第 II 节 5.B Order Status）"
+  },
+  "next_shipment_guidance": {
+   "dram": "approximately 10%",
+   "nand": "low single-digit percent",
+   "_source": "2Q26 earnings call prepared remarks, 2026-07-29"
+  },
+  "spoken_investment_gain_krw_tn": 63.3
+ },
+ "followup_closure": {
+  "period": "Q2 2026",
+  "set_in": "Q1 2026",
+  "_source": "本季本地分析（2026-07-28 000660 Q2 2026 vs Q1 2026 Analysis.md）第 0 节「上季遗留问题回答」：上季（2026-04-23 那份）Follow-up Questions 6 条逐条判定。判定逐字取自该节；finding 是本页按申报核过的一句话证据，数字用占位符由 builder 从 series 填入。",
+  "items": [
+   {
+    "n": 1,
+    "topic": "HBM4 能否通过客户速度测试、在 Rubin Ultra 拿到多少份额",
+    "verdict": "部分验证",
+    "finding": "业绩发布写明 HBM4 达到客户要求的速度、第二季开始量产出货，份额一个数都没有"
+   },
+   {
+    "n": 2,
+    "topic": "FY26 资本开支会不会落在 ₩60–70T 甚至更高",
+    "verdict": "被证伪",
+    "finding": "电话会给的 2026 年全年口径是 “high KRW 40 trillion range”（₩40 万亿区间的高段），远在 ₩60T 之下"
+   },
+   {
+    "n": 3,
+    "topic": "HBM 占 DRAM 收入的口径",
+    "verdict": "仍未披露",
+    "finding": "没有任何文件量化过 HBM 收入"
+   },
+   {
+    "n": 4,
+    "topic": "下半年 DRAM / NAND 售价会不会进入平台期",
+    "verdict": "部分验证",
+    "finding": "DRAM 售价环比从 {dram_asp_prev} 放缓到 {dram_asp_now}，在减速、还没到平台期"
+   },
+   {
+    "n": 5,
+    "topic": "Samsung HBM4 抢走多少份额",
+    "verdict": "仍未披露",
+    "finding": "公司没有给任何份额数字"
+   },
+   {
+    "n": 6,
+    "topic": "FY26 股东回报合计与优先级",
+    "verdict": "仍未披露",
+    "finding": "本季只说受 ADR 发行程序限制、年内公布",
+    "answered_after_quarter": true
+   }
+  ]
+ },
+ "prior_kpi_settlement": {
+  "period": "Q2 2026",
+  "set_in": "Q1 2026",
+  "_source": "上季本地分析（2026-04-23 000660 Q1 2026 vs Q4 2025 Analysis.md）第 8 节「关键观察指标」6 条，threshold_text 逐字抄录「当前 / 阈值」一栏。能用本季一手数据结算的写 direction / threshold / unit；其余写 status 与 why。",
+  "entries": [
+   {
+    "id": "dram_asp",
+    "metric": "DRAM 平均售价的环比",
+    "short": "DRAM 售价",
+    "threshold_text": "Q1 +mid-60%；Q2 阈值 ≥ +15% QoQ = 维持 supercycle；< +5% = plateau 前置；< 0% = 周期反转启动",
+    "direction": "up",
+    "threshold": 15.0,
+    "unit": "pct"
+   },
+   {
+    "id": "hbm4_share",
+    "metric": "HBM4 在 NVDA Rubin Ultra 的分配份额",
+    "short": "HBM4 份额",
+    "threshold_text": "当前未披露；2026 H2 阈值 ≥ 55% = 维持领先；40-55% = Samsung 追平；< 40% = 独家溢价消失",
+    "status": "未披露",
+    "why": "公司从未披露任何客户的份额"
+   },
+   {
+    "id": "fy26_capex",
+    "metric": "FY26 资本开支",
+    "short": "FY26 资本开支",
+    "threshold_text": "Q4 旧指引\"mid-30% 营收\"；FY26 阈值 < ₩55T = upside；₩55-65T = 符合预期；> ₩70T = FCF 大幅下修",
+    "status": "未到期",
+    "why": "全年实际要等 FY2026 年报"
+   },
+   {
+    "id": "hbm_dram_share",
+    "metric": "HBM 占 DRAM 收入",
+    "short": "HBM 占 DRAM",
+    "threshold_text": "Q1 媒体口径 12%；目标 Q2 IR 澄清；阈值 ≥ 50% = 全 HBM 口径正常",
+    "status": "未披露",
+    "why": "公司从未量化 HBM 收入"
+   },
+   {
+    "id": "fy26_return",
+    "metric": "FY26 回购 + 分红 / 净利润",
+    "short": "FY26 回报率",
+    "threshold_text": "Q1 PR 弱化股东回报段；阈值 ≥ 50% = 维持承诺；30-50% = 警示；< 30% = capex 全面挤压回报",
+    "status": "未到期",
+    "why": "全年回报与全年净利润都要到年底"
+   },
+   {
+    "id": "cxmt",
+    "metric": "CXMT 国产替代率",
+    "short": "CXMT 替代率",
+    "threshold_text": "当前数据隔月通过 TrendForce 跟踪；阈值 中国 server DRAM 国产替代 > 25% = SK Hynix 中国业务大幅下修",
+    "status": "第三方数据",
+    "why": "只有第三方口径，本页只用公司申报"
+   }
+  ]
  },
  "next_kpi": {
   "period": "Q2 2026",
-  "_note": "下季阈值是本地研究设定，不是公司指引（公司不发布任何财务指引）。当前值由页面从各自的序列现算：quarterly 的读最新一季，annual 的读最近一个审计年度。换季时按新一季的本地分析改阈值并改戳。",
+  "for_period": "Q3 2026",
+  "_note": "本季本地分析（2026-07-28 000660 Q2 2026 vs Q1 2026 Analysis.md）第 8 节「本季 top 5 跟踪表」与「立场撤销条件」。threshold_text 是该表「当前 / 阈值」一栏去掉加粗后的原文；direction / threshold 是对原文的转写。能用申报序列量的写数值，量不了的写 status 与 why。换季时换成新一季的第 8 节并改戳。",
   "entries": [
    {
-    "metric": "营业利润率",
-    "short": "营业利润率",
+    "id": "q3_revenue",
+    "metric": "Q3 营收",
+    "short": "Q3 营收",
+    "threshold_text": "[自算] 锚区间 ₩86–96T；<₩86T = HBM4 递延未回补 + 价格已 plateau",
+    "action": "减仓",
     "direction": "up",
-    "threshold": 55.0,
-    "unit": "pct",
-    "basis": "quarterly"
+    "threshold": 86.0,
+    "unit": "krw_tn",
+    "anchor_high": 96.0
    },
    {
-    "metric": "资本开支占收入",
-    "short": "资本强度",
-    "direction": "down",
-    "threshold": 35.0,
-    "unit": "pct",
-    "basis": "annual"
-   },
-   {
-    "metric": "单一最大客户占收入",
-    "short": "客户集中度",
-    "direction": "down",
-    "threshold": 30.0,
-    "unit": "pct",
-    "basis": "annual"
-   },
-   {
-    "metric": "DRAM 占收入",
-    "short": "DRAM 占比",
-    "direction": "down",
-    "threshold": 85.0,
-    "unit": "pct",
-    "basis": "annual"
-   },
-   {
-    "metric": "营业外净收益占税前利润",
-    "short": "营业外占比",
-    "direction": "down",
+    "id": "dram_asp",
+    "metric": "DRAM 平均售价的环比",
+    "short": "DRAM 售价",
+    "threshold_text": "本季 +约 30%（Q1 +mid-60%）；Q3 <+10% = 斜率见顶确认；>+20% = 递延回补",
+    "action": "减仓 / 加仓（双向）",
+    "direction": "up",
     "threshold": 10.0,
     "unit": "pct",
-    "basis": "quarterly"
+    "upper_trigger": 20.0,
+    "report_source": "第三方价格指数（月度）"
    },
    {
-    "metric": "净现金",
-    "short": "净现金",
+    "id": "lta",
+    "metric": "LTA 签约客户数与覆盖率",
+    "short": "LTA",
+    "threshold_text": "当前 ~10 家，覆盖率未披露；新增至 15 家以上或披露覆盖率 >25% = 周期 beta 实质下降",
+    "action": "加仓（估值中枢上移）",
+    "status": "无序列",
+    "why": "业绩发布只印了「around 10 customers」这一个约数，是第一次披露；覆盖率没有披露"
+   },
+   {
+    "id": "opm",
+    "metric": "营业利润率",
+    "short": "营业利润率",
+    "threshold_text": "本季 76%（历史最高）；连续两季 <55% = 正常化启动，快于 Base 假设",
+    "action": "警示（估值重算）",
     "direction": "up",
-    "threshold": 20.0,
-    "unit": "krw_tn",
-    "basis": "quarterly"
+    "threshold": 55.0,
+    "unit": "pct"
+   },
+   {
+    "id": "capex_ratio",
+    "metric": "资本开支占收入",
+    "short": "资本强度",
+    "threshold_text": "指引 ~₩48T，[自算] capex/营收 ~15%；2027 指引 >₩80T 或比率 >25% = 资本强度担忧重启",
+    "action": "警示",
+    "direction": "down",
+    "threshold": 25.0,
+    "unit": "pct"
+   },
+   {
+    "id": "capex_2027",
+    "metric": "2027 年资本开支指引",
+    "short": "2027 资本开支指引",
+    "threshold_text": "指引 ~₩48T，[自算] capex/营收 ~15%；2027 指引 >₩80T 或比率 >25% = 资本强度担忧重启",
+    "action": "警示",
+    "status": "未给出",
+    "why": "公司还没有给 2027 年的资本开支口径"
    }
-  ]
+  ],
+  "stance": {
+   "upgrade_text": "反向（上调至加仓）：Q3 营收 ≥₩93T 且 年内公布规模化股东回报方案（回购或特别股息 ≥₩10T）",
+   "upgrade_revenue_krw_tn": 93.0,
+   "upgrade_return_krw_tn": 10.0
+  }
  },
  "balance_sheet_krw_bn": {
   "_source": "quarterly newsroom releases; only the quarters that print it",
@@ -828,7 +1227,7 @@
   "_gap": "The FY2025 annual release prints no balance-sheet figure at all, though the three quarters before it did. There is therefore no year-end 2025 cash or debt figure in any company release, and none is invented here."
  },
  "kpi_phrases": {
-  "_source": "Form 424B4. Thirteen quarters, 1Q 2023 to 1Q 2026.",
+  "_source": "Form 424B4 (2026-07-10): thirteen quarters, 1Q 2023 to 1Q 2026, as a table. 2Q 2026: the Form 6-K of 2026-08-18 (semi-annual business report for January-June 2026, section II.2.B 'Price Trends for Major Products'), which states the same four quarter-on-quarter changes in prose -- see _later_quarter_texts for the words and how each was entered in the table's vocabulary.",
   "_asp_currency": "USD",
   "_the_finding": "These are the two quantities whose product is revenue, and SK hynix publishes both of them as English adjectives. It did so in its registration statement, in the same document that reports revenue to the million won.",
   "quarters": [
@@ -844,7 +1243,8 @@
    "2Q 2025",
    "3Q 2025",
    "4Q 2025",
-   "1Q 2026"
+   "1Q 2026",
+   "2Q 2026"
   ],
   "dram_bit_shipment": {
    "phrases": [
@@ -860,7 +1260,8 @@
     "Mid-20% Increase",
     "High-single% Increase",
     "Low-single% Increase",
-    "Flat"
+    "Flat",
+    "Slight Increase"
    ],
    "low_pct": [
     -22.0,
@@ -875,7 +1276,8 @@
     23.0,
     7.0,
     1.0,
-    -1.0
+    -1.0,
+    1.0
    ],
    "high_pct": [
     -18.0,
@@ -890,7 +1292,8 @@
     27.0,
     9.0,
     3.0,
-    1.0
+    1.0,
+    3.0
    ],
    "midpoint_pct": [
     -20.0,
@@ -905,9 +1308,11 @@
     25.0,
     8.0,
     2.0,
-    0.0
+    0.0,
+    2.0
    ],
    "one_sided": [
+    false,
     false,
     false,
     false,
@@ -937,7 +1342,8 @@
     "Low-single% Increase",
     "Mid-single% Increase",
     "Mid-20% Increase",
-    "Mid-60% Increase"
+    "Mid-60% Increase",
+    "Mid-30% Increase"
    ],
    "low_pct": [
     -19.0,
@@ -952,7 +1358,8 @@
     1.0,
     4.0,
     23.0,
-    63.0
+    63.0,
+    33.0
    ],
    "high_pct": [
     -17.0,
@@ -967,7 +1374,8 @@
     3.0,
     6.0,
     27.0,
-    67.0
+    67.0,
+    37.0
    ],
    "midpoint_pct": [
     -18.0,
@@ -982,7 +1390,8 @@
     2.0,
     5.0,
     25.0,
-    65.0
+    65.0,
+    35.0
    ],
    "one_sided": [
     false,
@@ -990,6 +1399,7 @@
     false,
     false,
     true,
+    false,
     false,
     false,
     false,
@@ -1014,7 +1424,8 @@
     "Over 70% Increase",
     "Mid-single% Decrease",
     "Around 10% Increase",
-    "Around 10% Decrease"
+    "Around 10% Decrease",
+    "Mid-teen% Increase"
    ],
    "low_pct": [
     -16.0,
@@ -1029,7 +1440,8 @@
     70.0,
     -6.0,
     9.0,
-    -11.0
+    -11.0,
+    14.0
    ],
    "high_pct": [
     -14.0,
@@ -1044,7 +1456,8 @@
     80.0,
     -4.0,
     11.0,
-    -9.0
+    -9.0,
+    16.0
    ],
    "midpoint_pct": [
     -15.0,
@@ -1059,7 +1472,8 @@
     75.0,
     -5.0,
     10.0,
-    -10.0
+    -10.0,
+    15.0
    ],
    "one_sided": [
     false,
@@ -1072,6 +1486,7 @@
     false,
     false,
     true,
+    false,
     false,
     false,
     false
@@ -1091,7 +1506,8 @@
     "High-single% Decrease",
     "Low-teen% Increase",
     "Low 30% Increase",
-    "Mid 70% Increase"
+    "Mid 70% Increase",
+    "Mid-50% Increase"
    ],
    "low_pct": [
     -11.0,
@@ -1106,7 +1522,8 @@
     -9.0,
     11.0,
     30.0,
-    73.0
+    73.0,
+    53.0
    ],
    "high_pct": [
     -9.0,
@@ -1121,7 +1538,8 @@
     -7.0,
     13.0,
     33.0,
-    77.0
+    77.0,
+    57.0
    ],
    "midpoint_pct": [
     -10.0,
@@ -1136,7 +1554,8 @@
     -8.0,
     12.0,
     31.5,
-    75.0
+    75.0,
+    55.0
    ],
    "one_sided": [
     false,
@@ -1144,6 +1563,7 @@
     false,
     true,
     true,
+    false,
     false,
     false,
     false,
@@ -1163,6 +1583,11 @@
    "Slight Decrease": {
     "low": -3.0,
     "high": -1.0,
+    "one_sided": false
+   },
+   "Slight Increase": {
+    "low": 1.0,
+    "high": 3.0,
     "one_sided": false
    },
    "Low-single% Increase": {
@@ -1280,6 +1705,11 @@
     "high": 67.0,
     "one_sided": false
    },
+   "Mid-50% Increase": {
+    "low": 53.0,
+    "high": 57.0,
+    "one_sided": false
+   },
    "Over 20% Increase": {
     "low": 20.0,
     "high": 30.0,
@@ -1301,7 +1731,10 @@
     "one_sided": true
    }
   },
-  "_mapping_status": "The interval assigned to each phrase is this page's reading, not a company number. Four phrases are one-sided in the filing -- Over 20%, Over 30%, Over 40% and Over 70% -- and have no upper bound at all; each is capped ten points above its floor here so that it can be drawn, and the cap is a drawing convention, not a disclosure."
+  "_mapping_status": "The interval assigned to each phrase is this page's reading, not a company number. Four phrases are one-sided in the filing -- Over 20%, Over 30%, Over 40% and Over 70% -- and have no upper bound at all; each is capped ten points above its floor here so that it can be drawn, and the cap is a drawing convention, not a disclosure.",
+  "_later_quarter_texts": {
+   "2Q 2026": "Filed wording (6-K 2026-08-18, II.2.B): 'DRAM shipment volume increased slightly as sales expanded centered on HBM3E and AI-oriented server DRAM products, and average selling price (“ASP”) rose in the mid-30% range due to the continuation of strong pricing for general DRAM. NAND shipment volume increased in the mid-10% range compared to the previous quarter due to the base effect from the decline in shipments in the first quarter and the impact of expanded eSSD sales, and ASP rose in the mid-50% range compared to the previous quarter due to the effect of price increases across all products.' Entered as: increased slightly -> Slight Increase; mid-30% range -> Mid-30% Increase; mid-10% range -> Mid-teen% Increase (the 424B4 table's spelling of the same Korean bucket); mid-50% range -> Mid-50% Increase. The 2Q26 earnings call (2026-07-29) worded two of the four differently -- DRAM bit shipments 'high single-digit', DRAM ASP 'approximately 30%' -- see quarter_story.call_words. The filed text is the one the series carries."
+  }
  },
  "sources": [
   {
@@ -1311,6 +1744,18 @@
   {
    "label": "SK hynix Form 424B4 招股说明书（2026-07-10，含审计财务报表、分产品收入、客户集中度与十三季量价用词表）",
    "url": "https://www.sec.gov/Archives/edgar/data/2120882/000119312526299963/d32785d424b4.htm"
+  },
+  {
+   "label": "SK hynix 2026 年半年报 6-K（2026-08-18，含经外部审阅的合并中期财务报表：分产品收入、营业外明细、现金流量、主要客户与量价用词）",
+   "url": "https://www.sec.gov/Archives/edgar/data/2120882/000119312526354777/d147827d6k.htm"
+  },
+  {
+   "label": "SK hynix 股东回报政策 6-K（2026-08-19）",
+   "url": "https://www.sec.gov/Archives/edgar/data/2120882/000119312526356139/d425596d6k.htm"
+  },
+  {
+   "label": "SK hynix 回购注销决议 6-K（2026-08-19）",
+   "url": "https://www.sec.gov/Archives/edgar/data/2120882/000119312526356133/d428222d6k.htm"
   },
   {
    "label": "SK hynix 在 SEC EDGAR 的全部申报（CIK 2120882）",
