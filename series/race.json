@@ -2779,6 +2779,128 @@
       }
     }
   },
+  "followup_closure": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "labels": [
+      "已验证",
+      "部分验证",
+      "被证伪",
+      "仍未披露"
+    ],
+    "items": [
+      {
+        "topic": "Luce 发布后的订单转化、价格区间与等待名单",
+        "verdict": "仍未披露",
+        "evidence": "公司明确不披露任何单车型的数量，这一条结构性地不会有答案，本季报告因此不再把 Luce 当作可量化的催化剂"
+      },
+      {
+        "topic": "二季度能否印证上下半年的利润率更均衡，还是一季度提前用掉了下半年的 mix",
+        "verdict": "已验证",
+        "evidence": "上半年 EBIT 利润率 {first_half_margin}，按本季修订后的全年指引下限，下半年隐含 {second_half_implied_margin}；管理层把两者的差归因于下半年 D&A、研发与销售管理费用的上升，而不是 mix"
+      },
+      {
+        "topic": "新车型的全球交付能否撑起下半年的 mix",
+        "verdict": "已验证",
+        "evidence": "单台车与零件收入环比 {unit_revenue_qoq}、同比 {unit_revenue_yoy}，管理层对下半年单车价值的口径比上季略好"
+      },
+      {
+        "topic": "一季度的工业自由现金流有多少在二季度的股息、回购与营运资本里回吐",
+        "verdict": "已验证",
+        "evidence": "工业自由现金流从一季度的 {ifcf_prev} 回到 {ifcf_now}，净工业头寸从{nid_prev} 变为{nid_now}"
+      },
+      {
+        "topic": "美国若加征关税，公司用价格、配置、区域分配还是利润率来吸收",
+        "verdict": "仍未披露",
+        "evidence": "本季没有新增关税，电话会上也没有人问；一季度的 EBIT 桥还把美国进口关税列为拖累项，本季不再提"
+      },
+      {
+        "topic": "中东的试驾能否转成订单，区域订单簿有没有异常取消",
+        "verdict": "部分验证",
+        "evidence": "含中东的 EMEA 出货同比 {emea_yoy}；转化率公司没有给数"
+      }
+    ],
+    "scorecard": [
+      {
+        "text": "一季度的强 mix 会透支下半年",
+        "right": false
+      },
+      {
+        "text": "一季度的工业自由现金流是时点因素、不能年化",
+        "right": true
+      },
+      {
+        "text": "Luce 是下一个估值分叉点",
+        "right": false
+      },
+      {
+        "text": "全年指引偏保守、缺口要靠后续验证补回",
+        "right": true
+      }
+    ],
+    "source": "问题：2026-05-05 RACE Q1 2026 vs Q4 2025 Analysis「Follow-up Questions for Next Quarter」6 条；判定与记分卡：2026-07-30 RACE Q2 2026 vs Q1 2026 Analysis 第 0 节（逐条判定表、「上季判断记分卡」的方向列）"
+  },
+  "prior_kpi_settlement": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "quantified": [
+      {
+        "id": "h1_ebit_margin",
+        "name": "H1 EBIT 利润率",
+        "metric": "H1 EBIT 利润率",
+        "kind": "guard",
+        "direction": "up",
+        "threshold": 29.0,
+        "unit": "pct",
+        "measure": "h1_ebit_margin",
+        "rule": "上季规则：上半年与下半年都 ≥29% = 两个半年均衡兑现 → 跟踪；下半年 <28% = 一季度的 mix 提前透支 → 警示"
+      },
+      {
+        "id": "h1_ifcf_add",
+        "name": "H1 工业自由现金流",
+        "line": "加仓线",
+        "metric": "H1 工业自由现金流（加仓线）",
+        "kind": "trigger",
+        "direction": "up",
+        "threshold": 1000.0,
+        "unit": "eur_m",
+        "measure": "h1_ifcf",
+        "rule": "上半年累计 ≥ €1.0B 且第三季单季 ≥ €350M = 现金流强劲而非时点扰动 → 加仓"
+      },
+      {
+        "id": "h1_ifcf_track",
+        "name": "H1 工业自由现金流",
+        "line": "跟踪线",
+        "metric": "H1 工业自由现金流（跟踪线）",
+        "kind": "guard",
+        "direction": "up",
+        "threshold": 800.0,
+        "unit": "eur_m",
+        "measure": "h1_ifcf",
+        "rule": "上季规则：上半年累计 < €800M = 一季度只是时点异常 → 跟踪"
+      }
+    ],
+    "calibration": {
+      "h1_ebit_margin": "未触发，但这条线分不清「D&A 正常化」与「mix 退潮」，已改成季度口径、并对照去年同季",
+      "h1_ifcf": "落在两条线之间，那一段没有定义任何动作，判为指标设计失效并退役，改看对全年指引的完成度"
+    },
+    "not_settled": [
+      {
+        "name": "Luce 订单（≥200 台加仓 / <100 台减仓）",
+        "why": "公司明确不披露任何单车型的数量，本季报告判为指标设计失效并退役"
+      },
+      {
+        "name": "个性化率（下半年 ≥19%、全年 ≥19.5% 为护城河指标；<18% 警示）",
+        "why": "下半年与全年要到年报才到期；本季业绩演示稿印「>20%」，本季报告据此判为正向触发，保留并把阈值上移"
+      },
+      {
+        "name": "美国额外关税与汇率定价传导（定价抵消 ≥ €100M 加仓；利润率受压 ≥ 150bps 减仓）",
+        "why": "本季没有新增关税，汇率反而转为顺风，前提不成立，本季报告判为退役重构"
+      }
+    ],
+    "not_due": "上半年利润率那条的「下半年 ≥29% / <28%」与现金流那条的「第三季单季 ≥ €350M」要到后续季度才到期。",
+    "source": "阈值与规则：2026-05-05 RACE Q1 2026 vs Q4 2025 Analysis 第 8 节「关键观察指标」；判定：2026-07-30 RACE Q2 2026 vs Q1 2026 Analysis 第 8 节「先校准上季 5 条指标」；个性化率「>20%」：Ferrari Q2 2026 业绩演示稿第 4 页「Q2 2026 HIGHLIGHTS」（公司 IR 文件，未随 6-K 提交；新闻稿只写 personalizations 强于预期、是上调指引的理由之一）"
+  },
   "next_kpi": {
     "period": "Q2 2026",
     "quantified": [
@@ -3104,6 +3226,8 @@
     "prior_quarter_ebitda_margin_pct_printed": 39.1,
     "da_eur_m": 150,
     "six_month_da_eur_m": 324,
+    "six_month_ebit_margin_pct_printed": 30.5,
+    "prior_year_six_month_ebit_margin_pct_printed": 30.6,
     "net_profit_eur_m": 463,
     "diluted_eps_eur": 2.62,
     "industrial_fcf_eur_m": 276,
@@ -3150,7 +3274,7 @@
       ]
     },
     "guidance_layout": "first",
-    "source": "Ferrari N.V. 6-K（0001648416-26-000106）EX-99.1「PERSONALIZATIONS AND MIX CONTINUE TO DRIVE STRONG RESULTS AND 2026 GUIDANCE RAISE」，正文日期行「Maranello (Italy), July 30, 2026」：首页摘要表（Net revenues 1,938 / 1,787；Operating profit (EBIT) 605、margin 31.2%；Net profit 463；Diluted EPS 2.62；EBITDA 755、margin 39.0%；Free Cash Flow from Industrial Activities 276 / 198 (2)、六个月 929）；脚注 2 与 16（Q2 2025 工业自由现金流剔除 €34M 预扣税后重列）；Total net revenues 表（1,629 / 1,507、8%；209 / 205、2%；100 / 75、31%；合计 8%）；Shipments 表（EMEA 1,856 / 1,646，Americas 787 / 993，Mainland China, Hong Kong and Taiwan 185 / 274，Rest of APAC 538 / 581，Total 3,366）；EBITDA 还原表（Amortization and depreciation 150、六个月 324）；Capex and R&D 表（236；of which capitalized development costs 122）；现金流表（Cash flow from operating activities 437 / 395）；Net Industrial (Debt)/Cash 表（Jun. 30, 2026 (131)）；展望表「UPWARD REVISED 2026 GUIDANCE | PREVIOUS 2026 GUIDANCE | 2025」（~7.60、≥2.97、≥2.26、≥9.68、≥1.55，指引列在最左）。上一季利润率取 2026-05-05 的 Q1 2026 新闻稿（0001648416-26-000062）摘要表：Operating profit (EBIT) margin 29.7%，EBITDA margin 39.1%。",
+    "source": "Ferrari N.V. 6-K（0001648416-26-000106）EX-99.1「PERSONALIZATIONS AND MIX CONTINUE TO DRIVE STRONG RESULTS AND 2026 GUIDANCE RAISE」，正文日期行「Maranello (Italy), July 30, 2026」：首页摘要表（Net revenues 1,938 / 1,787；Operating profit (EBIT) 605、margin 31.2%；六个月栏 Operating profit (EBIT) margin 30.5% / 30.6%（2026-09-23 补读）；Net profit 463；Diluted EPS 2.62；EBITDA 755、margin 39.0%；Free Cash Flow from Industrial Activities 276 / 198 (2)、六个月 929）；脚注 2 与 16（Q2 2025 工业自由现金流剔除 €34M 预扣税后重列）；Total net revenues 表（1,629 / 1,507、8%；209 / 205、2%；100 / 75、31%；合计 8%）；Shipments 表（EMEA 1,856 / 1,646，Americas 787 / 993，Mainland China, Hong Kong and Taiwan 185 / 274，Rest of APAC 538 / 581，Total 3,366）；EBITDA 还原表（Amortization and depreciation 150、六个月 324）；Capex and R&D 表（236；of which capitalized development costs 122）；现金流表（Cash flow from operating activities 437 / 395）；Net Industrial (Debt)/Cash 表（Jun. 30, 2026 (131)）；展望表「UPWARD REVISED 2026 GUIDANCE | PREVIOUS 2026 GUIDANCE | 2025」（~7.60、≥2.97、≥2.26、≥9.68、≥1.55，指引列在最左）。上一季利润率取 2026-05-05 的 Q1 2026 新闻稿（0001648416-26-000062）摘要表：Operating profit (EBIT) margin 29.7%，EBITDA margin 39.1%。",
     "checked_on": "2026-09-19"
   }
 }

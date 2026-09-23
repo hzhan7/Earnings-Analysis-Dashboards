@@ -517,6 +517,85 @@ class RaceDashboardTest(unittest.TestCase):
             self.assertIn(str(wanted[-1]), text, slot)
         self.assertIn(f"四档分别发布于当年的 {months}", exhibits_of(self.payload)["EX_EBITDA"]["note"])
 
+    # ── what last quarter's analysis left to settle ─────────────────────────
+    # The literals below are facts about the owner's two reports, not filing
+    # figures: the verdicts of section 0 of 2026-07-30 RACE Q2 2026 vs Q1 2026
+    # Analysis, and the thresholds of section 8 of 2026-05-05 RACE Q1 2026 vs
+    # Q4 2025 Analysis. A roll replaces both blocks, and with them these pins.
+    REPORT_CLOSURE = {"已验证": 3, "部分验证": 1, "被证伪": 0, "仍未披露": 2}
+    REPORT_PRIOR_THRESHOLDS = [("H1 EBIT 利润率", "up", 29.0),
+                               ("H1 工业自由现金流（加仓线）", "up", 1000.0),
+                               ("H1 工业自由现金流（跟踪线）", "up", 800.0)]
+
+    def section_one(self) -> dict:
+        return {ex.get("ref"): ex for ex in self.payload["sections"][0]["exhibits"]}
+
+    def test_the_followup_closure_is_the_reports_section_zero(self) -> None:
+        block = self.staging["followup_closure"]
+        self.assertEqual((block["period"], block["set_in"]), ("Q2 2026", "Q1 2026"),
+                         "these literals are the Q2 2026 report's section 0; a roll replaces them")
+        tally = {label: sum(1 for item in block["items"] if item["verdict"] == label)
+                 for label in block["labels"]}
+        self.assertEqual(tally, self.REPORT_CLOSURE)
+        chart = self.section_one()["EX_CLOSURE"]
+        self.assertEqual(chart["kind"], "bars_labeled")
+        self.assertEqual(dict(zip(chart["xlabels"], chart["values"])), self.REPORT_CLOSURE)
+        self.assertEqual(chart["title"], "上季 6 条待验证问题：3 条已验证、1 条部分验证、2 条仍未披露，没有一条被证伪")
+        # the scorecard: four judgments, two wrong in direction
+        self.assertIn("上季报告的四条关键判断里，两条方向错了", chart["note"])
+        # every evidence sentence was filled from the series
+        self.assertNotRegex(chart["note"], r"\{[a-z_0-9]+\}")
+        long = self.long
+        self.assertIn(f"€{long['industrial_fcf_eur_m'][-2]:,.0f}M 回到 €{long['industrial_fcf_eur_m'][-1]:,.0f}M",
+                      chart["note"])
+
+    def test_the_prior_thresholds_are_the_previous_reports_section_eight(self) -> None:
+        block = self.staging["prior_kpi_settlement"]
+        self.assertEqual((block["period"], block["set_in"]), ("Q2 2026", "Q1 2026"),
+                         "these literals are the Q1 2026 report's section 8; a roll replaces them")
+        self.assertEqual([(e["metric"], e["direction"], e["threshold"]) for e in block["quantified"]],
+                         self.REPORT_PRIOR_THRESHOLDS)
+        names = " ".join(x["name"] for x in block["not_settled"])
+        for term in ("Luce", "个性化率", "关税"):
+            self.assertIn(term, names)
+        chart = self.section_one()["EX_PRIOR"]
+        self.assertEqual(chart["kind"], "diverging_bars")
+        self.assertTrue(chart["title"].startswith("上季 3 条量化阈值："))
+        self.assertEqual(chart["xlabels"], [metric for metric, _, _ in self.REPORT_PRIOR_THRESHOLDS])
+
+    def test_the_first_half_is_settled_from_the_quarters_it_adds_up(self) -> None:
+        """Recomputed here, not borrowed from the builder: the first half is the
+        year's first two quarters, and its margin is their EBIT over their revenue."""
+        long = self.long
+        year = race.qparts(long["quarters"][-1])[0]
+        at = [long["quarters"].index(f"Q{k} {year}") for k in (1, 2)]
+        margin = sum(long["ebit_eur_m"][i] for i in at) / sum(long["net_revenues_eur_m"][i] for i in at) * 100
+        cash = sum(long["industrial_fcf_eur_m"][i] for i in at)
+        actual = {"h1_ebit_margin": margin, "h1_ifcf": cash}
+        chart = self.section_one()["EX_PRIOR"]
+        for entry, value in zip(self.staging["prior_kpi_settlement"]["quantified"], chart["values"]):
+            self.assertAlmostEqual(headroom(entry["direction"], entry["threshold"], actual[entry["measure"]]),
+                                   value, places=1, msg=entry["metric"])
+        margin_chart = self.section_one()["EX_PRIOR_MARGIN"]
+        self.assertEqual(margin_chart["xlabels"][0], f"{race.qparts(long['quarters'][0])[0]}H1")
+        self.assertEqual(margin_chart["xlabels"][-1], f"{year}H1")
+        self.assertAlmostEqual(margin_chart["series"][0]["values"][-1], margin, places=5)
+        self.assertEqual(margin_chart["series"][1]["values"], [29.0] * len(margin_chart["xlabels"]))
+        self.assertTrue(margin_chart["title"].startswith(f"H1 EBIT 利润率 {margin:.1f}%：守住上季阈值 29.0%"))
+        cash_chart = self.section_one()["EX_PRIOR_CASH"]
+        self.assertEqual(cash_chart["series"][0]["values"][-1], cash)
+        self.assertEqual(sorted(s["values"][0] for s in cash_chart["series"][1:]), [800.0, 1000.0])
+        self.assertIn(f"€{cash:,.0f}M", cash_chart["title"])
+        # the audit table says a trigger line is a trigger, not a safety line
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("上季阈值"))
+        self.assertEqual([row[1] for row in table["rows"]], ["高于阈值为安全", "高于阈值即触发", "高于阈值为安全"])
+
+    def test_section_one_settles_last_quarter_before_the_company_guidance(self) -> None:
+        refs = [ex.get("ref") for ex in self.payload["sections"][0]["exhibits"]]
+        self.assertEqual(refs[:4], ["EX_CLOSURE", "EX_PRIOR", "EX_PRIOR_MARGIN", "EX_PRIOR_CASH"])
+        self.assertEqual(refs[4:], ["EX_FORM", "EX_EBITDA", "EX_EPS", "EX_IFCF", "EX_CONVERGE"])
+        self.assertTrue(self.payload["sections"][0]["description"].startswith("先结算上季（"))
+
     # ── thresholds ──────────────────────────────────────────────────────────
     def test_every_quantified_threshold_has_a_headroom_bar(self) -> None:
         _, entries = race.kpi_entries(self.staging)
@@ -801,6 +880,10 @@ def roll_forward(source: dict) -> dict:
     st["next_kpi"]["period"] = new
     st.pop("quarter_story", None)
     st.pop("printed_yoy_pct", None)
+    # what the previous quarter's analysis left is settled by the next analysis,
+    # which a shape test does not have
+    st.pop("followup_closure", None)
+    st.pop("prior_kpi_settlement", None)
     return st
 
 
@@ -822,12 +905,33 @@ class RaceRollTest(unittest.TestCase):
         cls.blob = text_of(cls.payload)
 
     def test_a_block_stamped_with_another_quarter_stops_the_build(self) -> None:
-        for key in ("next_kpi", "quarter_story", "printed_yoy_pct"):
+        for key in ("next_kpi", "quarter_story", "printed_yoy_pct", "followup_closure", "prior_kpi_settlement"):
             stale = copy.deepcopy(self.full)
             stale[key]["period"] = "Q1 1999"
             with self.subTest(block=key):
                 with self.assertRaisesRegex(ValueError, "stamped"):
                     race.build_payload(stale)
+        for key in ("followup_closure", "prior_kpi_settlement"):
+            misdated = copy.deepcopy(self.full)
+            misdated[key]["set_in"] = misdated["periods"][-1]
+            with self.subTest(set_in=key):
+                with self.assertRaisesRegex(ValueError, "settles what was set in"):
+                    race.build_payload(misdated)
+        unmeasured = copy.deepcopy(self.full)
+        unmeasured["prior_kpi_settlement"]["quantified"][0]["measure"] = "not_a_measure"
+        with self.assertRaisesRegex(ValueError, "does not know how to measure"):
+            race.build_payload(unmeasured)
+        # a placeholder the builder cannot fill must stop the build, not print braces
+        for spelling in ("{not_a_value}", "{h1_margin}"):
+            unfilled = copy.deepcopy(self.full)
+            unfilled["followup_closure"]["items"][0]["evidence"] += spelling
+            with self.subTest(placeholder=spelling):
+                with self.assertRaises((KeyError, ValueError)):
+                    race.build_payload(unfilled)
+        unknown_verdict = copy.deepcopy(self.full)
+        unknown_verdict["followup_closure"]["items"][0]["verdict"] = "不知道"
+        with self.assertRaisesRegex(ValueError, "not among its labels"):
+            race.build_payload(unknown_verdict)
         bare = copy.deepcopy(self.full)
         del bare["next_kpi"]
         with self.assertRaisesRegex(ValueError, "`next_kpi` is missing"):
@@ -880,6 +984,21 @@ class RaceRollTest(unittest.TestCase):
                 self.assertEqual(len(chart["series"]), 1)
             numbers = [ex["n"] for section in payload["sections"] for ex in section["exhibits"]]
             self.assertEqual(numbers, list(range(2, 2 + len(numbers))))
+
+    def test_a_quarter_without_a_settlement_leaves_section_one_to_the_guidance(self) -> None:
+        """Both settlement blocks are optional one-quarter blocks: absent, their
+        charts and their table go, and section one says what it still settles."""
+        bare = copy.deepcopy(self.full)
+        del bare["followup_closure"], bare["prior_kpi_settlement"]
+        payload = race.build_payload(bare)
+        refs = [ex.get("ref") for ex in payload["sections"][0]["exhibits"]]
+        self.assertEqual(refs, ["EX_FORM", "EX_EBITDA", "EX_EPS", "EX_IFCF", "EX_CONVERGE"])
+        self.assertTrue(payload["sections"][0]["description"].startswith("本季没有录入上季跟踪指标的结算"))
+        self.assertFalse(any(t["title"].startswith("上季阈值") for t in payload["tables"]))
+        numbers = [ex["n"] for section in payload["sections"] for ex in section["exhibits"]]
+        self.assertEqual(numbers, list(range(2, 2 + len(numbers))))
+        last = numbers[-1]
+        self.assertEqual([t["n"] for t in payload["tables"]], list(range(last + 1, last + 1 + len(payload["tables"]))))
 
     def test_the_record_sentences_are_computed_not_remembered(self) -> None:
         """Make each "record / only / every / usually" claim true in the data, then
@@ -1188,6 +1307,19 @@ class RaceChecksTest(unittest.TestCase):
                 item = record["items"][metric]
                 self.assertEqual(item["form"][last], form)
                 self.assertEqual(item["hi"][last], value)
+
+    def test_the_first_half_figures_are_the_ones_the_release_printed(self) -> None:
+        """Section one settles last quarter's first-half thresholds on the page's
+        own sums; the release's six-month column is the separate reading."""
+        c = self.c
+        section = {ex.get("ref"): ex for ex in self.payload["sections"][0]["exhibits"]}
+        margin = section["EX_PRIOR_MARGIN"]
+        self.assertTrue(margin["title"].startswith(f"H1 EBIT 利润率 {c['six_month_ebit_margin_pct_printed']:.1f}%"))
+        halves = dict(zip(margin["xlabels"], margin["series"][0]["values"]))
+        year = race.qparts(c["period"])[0]
+        self.assertEqual(round_half_up(halves[f"{year - 1}H1"], 1),
+                         f"{c['prior_year_six_month_ebit_margin_pct_printed']:.1f}")
+        self.assertIn(f"€{c['six_month_industrial_fcf_eur_m']:,}M", section["EX_PRIOR_CASH"]["title"])
 
     def test_the_rounding_the_page_uses_is_the_companys(self) -> None:
         c, long = self.c, self.long
