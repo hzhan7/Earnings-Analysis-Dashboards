@@ -676,36 +676,57 @@ class MuExhibitContractTest(unittest.TestCase):
         table = next(item for item in self.payload["tables"]
                      if item["title"].startswith("下季阈值"))
         quantified = self.staging["next_kpi"]["quantified"]
-        charted = [row for row in table["rows"] if row[5] == "本页作图"]
+        charted = [row for row in table["rows"] if row[5].startswith("作图")]
         self.assertEqual(len(charted), len(quantified))
+        fin, bal = self.staging["financials"], self.staging["balance_sheet"]
+        readings = {"gross_margin": fin["non_gaap_gross_margin_pct"][-1],
+                    "dso": bal["dso_days"][-1]}
+        numbers = {exhibit["n"]: exhibit for exhibit in self.exhibits}
         for row, entry in zip(charted, quantified):
             self.assertEqual(row[0], entry["metric"])
             self.assertEqual(
                 row[4],
-                f"{headroom(entry['direction'], entry['threshold'], entry['current']):+.1f}%")
-        excluded = [row for row in table["rows"] if row[5] != "本页作图"]
+                f"{headroom(entry['direction'], entry['threshold'], readings[entry['id']]):+.1f}%")
+            drawn = int(re.search(r"Exhibit (\d+)", row[5]).group(1))
+            self.assertTrue(numbers[drawn]["title"].startswith(entry["metric"] + "："),
+                            "the row names the wrong chart")
+        excluded = [row for row in table["rows"] if not row[5].startswith("作图")]
         self.assertEqual(len(excluded), len(self.staging["next_kpi"]["excluded"]))
 
-    def test_the_filed_and_spoken_agreement_figures_stay_apart(self) -> None:
+    def test_the_quarter_end_and_all_signed_agreement_figures_stay_apart(self) -> None:
         """The page's most easily blurred distinction, pinned.
 
         The supply agreements are US$5.0B of remaining performance obligation in
-        the 10-Q and US$100B on the call. Publishing either alone misleads, and
-        publishing their difference would invent a number neither source states.
-        So: both are on the chart, the filed one is labelled with the document it
-        came from, and no arithmetic joins them.
+        the 10-Q's note and US$100B in the prepared remarks; US$0.422B of
+        contract liabilities in the note and US$22B of expected deposits and
+        commitments. Publishing either side alone misleads, and publishing their
+        difference would invent a number neither source states.
+
+        It used to be pinned as "filed versus spoken", with the right-hand side
+        asserted to carry no 10-Q -- and the US$22B deposit figure is printed in
+        that same 10-Q's liquidity section. The real split is quarter end versus
+        every agreement signed to date, and each right-hand figure names its own
+        source, which is what is asserted now.
         """
         exhibit = next(e for e in self.exhibits
                        if e["title"].startswith("长期供货协议"))
-        filed, spoken = exhibit["groups"]
-        self.assertIn("10-Q", filed["name"])
-        self.assertNotIn("10-Q", spoken["name"])
-        items = self.staging["filed_vs_spoken"]["items"]
+        quarter_end, all_signed = exhibit["groups"]
+        self.assertIn("10-Q", quarter_end["name"])
+        self.assertIn("季末", quarter_end["name"])
+        self.assertIn("季末后", all_signed["name"])
+        items = self.staging["supply_agreements"]["items"]
+        self.assertNotIn("filed_vs_spoken", self.staging)
         for index, item in enumerate(items):
-            self.assertAlmostEqual(filed["values"][index], item["filed_usd_m"] / 1000, places=6)
-            self.assertAlmostEqual(spoken["values"][index], item["spoken_usd_m"] / 1000, places=6)
-            self.assertIn("10-Q", item["filed_source"])
-            self.assertLess(item["filed_usd_m"], item["spoken_usd_m"])
+            with self.subTest(item=item["metric"]):
+                self.assertAlmostEqual(quarter_end["values"][index],
+                                       item["quarter_end_usd_m"] / 1000, places=6)
+                self.assertAlmostEqual(all_signed["values"][index],
+                                       item["company_usd_m"] / 1000, places=6)
+                self.assertIn("10-Q", item["quarter_end_source"])
+                self.assertIn(item["company_source"], exhibit["src_extra"])
+                self.assertLess(item["quarter_end_usd_m"], item["company_usd_m"])
+        deposits = next(item for item in items if "存款" in item["metric"])
+        self.assertIn("10-Q", deposits["company_source"])
 
     def test_no_number_in_the_payload_came_from_a_qualitative_bucket(self) -> None:
         """Micron states price and volume only in words; the page keeps them words.
@@ -726,6 +747,321 @@ class MuExhibitContractTest(unittest.TestCase):
         table = next(item for item in self.payload["tables"]
                      if "公司对价与量的原始措辞" in item["title"])
         self.assertTrue(any("range" in cell for row in table["rows"] for cell in row))
+
+
+class MuFourPartFormatTest(unittest.TestCase):
+    """The site-wide four-part layout (TSM is the reference), by id and title."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(mu.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = mu.build_payload(cls.staging)
+        cls.sections = {section["id"]: section for section in cls.payload["sections"]}
+
+    def test_the_sections_are_the_four_parts_in_order(self) -> None:
+        self.assertEqual(
+            [(section["id"], section["title"]) for section in self.payload["sections"]],
+            [("settled", "一、上季跟踪指标兑现了吗"),
+             ("quarter_highlights", "二、本季重点"),
+             ("next_quarter", "三、下季要跟踪什么"),
+             ("routine", "四、长期常规跟踪")])
+        for section in self.payload["sections"]:
+            with self.subTest(section=section["id"]):
+                self.assertTrue(section["exhibits"])
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列",
+                      self.payload["notes"][0])
+
+    def test_the_quarter_findings_are_not_filed_under_next_quarter(self) -> None:
+        """The supply agreements and the net-cash chart are this quarter's
+        findings, not thresholds; they sat in section three until the format
+        pass, which made that section promise more tracking than it has."""
+        highlight = [exhibit["title"] for exhibit in self.sections["quarter_highlights"]["exhibits"]]
+        tracked = [exhibit["title"] for exhibit in self.sections["next_quarter"]["exhibits"]]
+        for word in ("长期供货协议", "净现金"):
+            with self.subTest(chart=word):
+                self.assertTrue(any(word in title for title in highlight))
+                self.assertFalse(any(word in title for title in tracked))
+        # Section three is thresholds only: an overview and one line per level.
+        for exhibit in self.sections["next_quarter"]["exhibits"]:
+            with self.subTest(chart=exhibit["title"]):
+                self.assertTrue(exhibit["title"].startswith("下季 ") or "：下季阈值 " in exhibit["title"],
+                                exhibit["title"])
+
+
+class MuSettlementTest(unittest.TestCase):
+    """Section one settles what the owner's previous analysis left for this quarter.
+
+    Pinned against the two analyses, not against the builder. What the
+    analyses say -- how many questions, which verdict each got, where each line
+    was drawn -- is transcribed a second time into `_checks["note"]` in the
+    series file, independently of the blocks the builder reads (the builder
+    never reads `_checks`). Every reading those lines are settled against is
+    recomputed here from the arrays, never read back from the builder's helpers.
+    Rolling a quarter re-keys `_checks`; this file does not change.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(mu.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.note = cls.staging["_checks"]["note"]
+        cls.payload = mu.build_payload(cls.staging)
+        cls.settled = cls.payload["sections"][0]["exhibits"]
+        cls.period = cls.staging["periods"][-1]
+
+    def test_the_blocks_settle_last_quarter_for_this_quarter(self) -> None:
+        self.assertEqual(self.staging["_checks"]["period"], self.period)
+        for key in ("followup_closure", "prior_kpi_settlement"):
+            with self.subTest(block=key):
+                self.assertEqual(self.staging[key]["period"], self.period)
+                self.assertEqual(self.staging[key]["set_in"], self.staging["periods"][-2])
+        stale = json.loads(json.dumps(self.staging))
+        stale["prior_kpi_settlement"]["set_in"] = self.staging["periods"][-3]
+        with self.assertRaisesRegex(ValueError, "settles what was set in"):
+            mu.build_payload(stale)
+
+    def test_the_closure_counts_are_the_analysis_verdicts(self) -> None:
+        expected = self.note["followup_closure"]
+        chart = self.settled[0]
+        self.assertEqual(chart["kind"], "bars_labeled")
+        self.assertEqual(dict(zip(chart["xlabels"], chart["values"])), expected["counts"])
+        self.assertEqual(sum(chart["values"]), expected["total"])
+        counts = expected["counts"]
+        self.assertTrue(chart["title"].startswith(
+            f"上季 {expected['total']} 条待验证问题：{counts['已验证']} 条已验证、"
+            f"{counts['部分验证']} 条部分验证"), chart["title"])
+        self.assertEqual(len(self.staging["followup_closure"]["items"]), expected["total"])
+        table = next(item for item in self.payload["tables"]
+                     if item["title"].startswith("上季") and "待验证问题" in item["title"])
+        self.assertEqual([row[3] for row in table["rows"]],
+                         [item["verdict"] for item in self.staging["followup_closure"]["items"]])
+        for row in table["rows"]:
+            self.assertNotIn("{", "".join(row), "an unfilled placeholder was published")
+
+    def test_the_prior_thresholds_are_the_analysis_section_eight(self) -> None:
+        expected = {item["metric"]: item for item in self.note["prior_thresholds"]}
+        block = self.staging["prior_kpi_settlement"]
+        entries = block["quantified"] + block["by_words"] + block["unsettled"]
+        self.assertEqual(sorted(entry["metric"] for entry in entries), sorted(expected))
+        for entry in block["quantified"]:
+            with self.subTest(metric=entry["metric"]):
+                self.assertEqual((entry["direction"], entry["threshold"]),
+                                 (expected[entry["metric"]]["direction"],
+                                  expected[entry["metric"]]["threshold"]))
+        for entry in block["by_words"]:
+            with self.subTest(metric=entry["metric"]):
+                if "prior_count" in entry:
+                    self.assertEqual(entry["prior_count"], expected[entry["metric"]]["threshold"])
+                else:
+                    self.assertEqual((entry["direction"], entry["threshold"]),
+                                     (expected[entry["metric"]]["direction"],
+                                      expected[entry["metric"]]["threshold"]))
+        # No reading is typed into the block: every one is computed.
+        for group in ("quantified", "by_words"):
+            for entry in block[group]:
+                self.assertNotIn("actual", entry)
+                self.assertNotIn("current", entry)
+
+    def test_the_settlement_readings_recompute_from_the_arrays(self) -> None:
+        fin = self.staging["financials"]
+        readings = {
+            "本季收入": fin["revenue_usd_m"][-1] / 1000,
+            "本季 non-GAAP 毛利率": fin["non_gaap_gross_margin_pct"][-1],
+            "下季收入指引中值": self.staging["next_quarter_guidance"]["revenue_usd_m"] / 1000,
+        }
+        expected = {item["metric"]: item for item in self.note["prior_thresholds"]}
+        chart = self.settled[1]
+        self.assertEqual(chart["kind"], "diverging_bars")
+        self.assertEqual(sorted(chart["xlabels"]), sorted(readings))
+        margins = []
+        for metric, drawn in zip(chart["xlabels"], chart["values"]):
+            line = expected[metric]
+            sign = 1 if line["direction"] == "up" else -1
+            margin = sign * (readings[metric] - line["threshold"]) / abs(line["threshold"]) * 100
+            margins.append(margin)
+            with self.subTest(metric=metric):
+                self.assertAlmostEqual(drawn, margin, delta=0.051)
+        # The guide line had a second trigger, a guided sequential decline.
+        self.assertGreater(readings["下季收入指引中值"] * 1000, fin["revenue_usd_m"][-1])
+        self.assertEqual(all(margin >= 0 for margin in margins), "全部守住" in chart["title"])
+        self.assertTrue(chart["title"].startswith(f"上季 {len(readings)} 条量化阈值："))
+        # The one line crossed this quarter is settled by the company's words:
+        # "higher than the mid-40s" (US$B) against the analysis's ceiling.
+        capex = expected["FY27 资本开支"]
+        self.assertGreaterEqual(self.staging["spoken_outlook"]["capex_floor_usd_bn"], capex["threshold"])
+        self.assertIn("FY27 资本开支按公司措辞已越过", chart["title"])
+        self.assertNotIn("FY27 资本开支", chart["xlabels"])
+
+    def test_every_prior_level_with_a_history_is_drawn_against_its_line(self) -> None:
+        fin = self.staging["financials"]
+        expected = {item["metric"]: item for item in self.note["prior_thresholds"]}
+        lines = {exhibit["title"].split("：")[0]: exhibit for exhibit in self.settled
+                 if exhibit["kind"] == "lines" and "上季阈值" in exhibit["title"]}
+        histories = {"本季收入": [v / 1000 for v in fin["revenue_usd_m"]],
+                     "本季 non-GAAP 毛利率": fin["non_gaap_gross_margin_pct"]}
+        self.assertEqual(sorted(lines), sorted(histories))
+        for name, series in histories.items():
+            chart = lines[name]
+            line = expected[name]
+            sign = 1 if line["direction"] == "up" else -1
+            held = sign * (series[-1] - line["threshold"]) >= 0
+            with self.subTest(chart=name):
+                self.assertIn(f"：{'守住' if held else '已击穿'}上季阈值", chart["title"])
+                actual, drawn_line = chart["series"]
+                self.assertEqual(len(actual["values"]), len(self.staging["periods"]))
+                for drawn, value in zip(actual["values"], series):
+                    self.assertAlmostEqual(drawn, value, places=5)
+                self.assertEqual(set(drawn_line["values"]), {line["threshold"]})
+
+    def test_next_quarters_levels_settle_with_a_series_edit_only(self) -> None:
+        """What section three sets this quarter, section one settles next quarter.
+
+        The owner's rule is that a roll edits the series file only, so both of
+        this quarter's levels must already be mapped in the settlement code. The
+        blocks are rolled here the way a roll would roll them -- next_kpi's lines
+        copied into prior_kpi_settlement -- and the page must settle them.
+        """
+        rolled = json.loads(json.dumps(self.staging))
+        rolled["prior_kpi_settlement"]["quantified"] = [
+            dict(entry) for entry in self.staging["next_kpi"]["quantified"]]
+        section = mu.build_payload(rolled)["sections"][0]
+        titles = [exhibit["title"] for exhibit in section["exhibits"]]
+        for entry in self.staging["next_kpi"]["quantified"]:
+            with self.subTest(metric=entry["metric"]):
+                self.assertTrue(any(title.startswith(entry["metric"] + "：") and "上季阈值" in title
+                                    for title in titles), titles)
+        self.assertEqual(re.findall(r"\{[a-z_]+\}", json.dumps(section, ensure_ascii=False)), [],
+                         "a placeholder was left unfilled")
+
+    def test_section_one_is_closure_then_thresholds_then_the_guided_record(self) -> None:
+        kinds = [exhibit["kind"] for exhibit in self.settled]
+        self.assertEqual(kinds[:4], ["bars_labeled", "diverging_bars", "lines", "lines"])
+        self.assertEqual(kinds[4], "range_band")
+        self.assertTrue(all(kind not in ("bars_labeled", "diverging_bars") for kind in kinds[4:]))
+
+
+class MuNextQuarterTest(unittest.TestCase):
+    """Section three is this quarter's analysis's section 8, and nothing else."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(mu.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.note = cls.staging["_checks"]["note"]
+        cls.payload = mu.build_payload(cls.staging)
+        cls.tracked = cls.payload["sections"][2]["exhibits"]
+
+    def current(self, metric: str) -> float:
+        """Where a line stands now, recomputed here from the arrays."""
+        if metric == "non-GAAP 毛利率":
+            return self.staging["financials"]["non_gaap_gross_margin_pct"][-1]
+        if metric.startswith("应收账款周转天数"):
+            bal = self.staging["balance_sheet"]
+            return (bal["receivables_usd_m"][-1] / self.staging["financials"]["revenue_usd_m"][-1]
+                    * bal["days_in_quarter"][-1])
+        raise KeyError(metric)
+
+    def test_the_block_is_stamped_for_the_quarter_it_tracks(self) -> None:
+        block = self.staging["next_kpi"]
+        self.assertEqual(block["period"], self.staging["periods"][-1])
+        self.assertEqual(block["for_period"], self.staging["next_quarter_guidance"]["period_label"])
+        stale = json.loads(json.dumps(self.staging))
+        stale["next_kpi"]["period"] = self.staging["periods"][-2]
+        with self.assertRaisesRegex(ValueError, "stamped"):
+            mu.build_payload(stale)
+
+    def test_the_lines_are_the_analysis_section_eight(self) -> None:
+        expected = self.note["next_thresholds"]
+        block = self.staging["next_kpi"]
+        self.assertEqual(len(block["quantified"]) + len(block["excluded"]), len(expected))
+        by_metric = {item["metric"]: item for item in expected}
+        self.assertEqual(sorted(entry["metric"] for entry in block["quantified"] + block["excluded"]),
+                         sorted(by_metric))
+        for entry in block["quantified"]:
+            with self.subTest(metric=entry["metric"]):
+                self.assertEqual((entry["direction"], entry["threshold"]),
+                                 (by_metric[entry["metric"]]["direction"],
+                                  by_metric[entry["metric"]]["threshold"]))
+                self.assertNotIn("current", entry)
+
+    def test_section_three_is_the_overview_then_one_line_per_level(self) -> None:
+        block = self.staging["next_kpi"]
+        overview, *lines = self.tracked
+        self.assertEqual(overview["kind"], "diverging_bars")
+        self.assertTrue(overview["title"].startswith(f"下季 {len(block['quantified'])} 条阈值："))
+        expected = {item["metric"]: item for item in self.note["next_thresholds"]}
+        for metric, drawn in zip(overview["xlabels"], overview["values"]):
+            line = expected[metric]
+            sign = 1 if line["direction"] == "up" else -1
+            with self.subTest(metric=metric):
+                self.assertAlmostEqual(
+                    drawn, sign * (self.current(metric) - line["threshold"]) / line["threshold"] * 100,
+                    delta=0.051)
+        self.assertEqual([exhibit["kind"] for exhibit in lines], ["lines"] * len(block["quantified"]))
+        for exhibit, entry in zip(lines, block["quantified"]):
+            with self.subTest(chart=entry["metric"]):
+                self.assertTrue(exhibit["title"].startswith(f"{entry['metric']}：下季阈值 "),
+                                exhibit["title"])
+                self.assertIn("，当前 ", exhibit["title"])
+                self.assertEqual(set(exhibit["series"][1]["values"]), {entry["threshold"]})
+
+    def test_every_line_not_drawn_says_why_in_the_drawer(self) -> None:
+        """The table used to print the metric name beside 「原因见左」 with the
+        reason cut off at the first bracket, so no reason was published."""
+        table = next(item for item in self.payload["tables"] if item["title"].startswith("下季阈值"))
+        block = self.staging["next_kpi"]
+        self.assertEqual(len(table["rows"]), len(block["quantified"]) + len(block["excluded"]))
+        for row in table["rows"]:
+            with self.subTest(metric=row[0]):
+                self.assertNotIn("原因见左", row[5])
+                self.assertNotIn("{", "".join(row), "an unfilled placeholder was published")
+                self.assertTrue(row[1], "the trigger is missing")
+        excluded = [row for row in table["rows"] if row[5].startswith("不作图：")]
+        self.assertEqual(len(excluded), len(block["excluded"]))
+        for row in excluded:
+            self.assertGreater(len(row[5]), len("不作图：") + 10)
+
+
+class MuQuarterHighlightsTest(unittest.TestCase):
+    """What section two added from this quarter's analysis, pinned to the arrays."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(mu.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = mu.build_payload(cls.staging)
+        cls.highlights = cls.payload["sections"][1]["exhibits"]
+        cls.exhibits = [exhibit for section in cls.payload["sections"]
+                        for exhibit in section["exhibits"]]
+
+    def test_the_guided_margin_step_stands_beside_the_steps_actually_taken(self) -> None:
+        """The analysis reads this quarter as the price move's second derivative
+        turning. The guided step is the one bar that is not an actual, so it is
+        the hatched one, and it is the guide minus this quarter -- not a figure
+        from the call."""
+        margin = self.staging["financials"]["non_gaap_gross_margin_pct"]
+        guide = self.staging["next_quarter_guidance"]["non_gaap_gross_margin_pct"]
+        chart = next(e for e in self.highlights if e["title"].startswith("毛利率环比"))
+        periods = len(self.staging["periods"])
+        self.assertEqual(len(chart["xlabels"]), periods + 1)
+        self.assertEqual(len(chart["values"]), periods + 1)
+        self.assertEqual(chart["bar_marks"], [periods])
+        self.assertTrue(chart["xlabels"][-1].endswith("指引"))
+        self.assertIsNone(chart["values"][0])
+        for index in range(1, periods):
+            self.assertAlmostEqual(chart["values"][index], margin[index] - margin[index - 1], places=5)
+        self.assertAlmostEqual(chart["values"][-1], guide - margin[-1], places=5)
+        self.assertIn(f"下季指引只隐含 {guide - margin[-1]:+.1f}pp", chart["title"])
+
+    def test_the_inventory_title_prints_the_company_days(self) -> None:
+        """Official figures win: the prepared remarks say 120 days, this page's
+        own arithmetic says 122, and the title used to print the 122."""
+        chart = next(e for e in self.exhibits if e["title"].startswith("存货 US$"))
+        stated = self.staging["_checks"]["days_of_inventory"]
+        self.assertIn(f"存货天数 {stated} 天（公司口径）", chart["title"])
+        computed = self.staging["balance_sheet"]["dio_days"][-1]
+        caveat = f"现在是 {computed:.0f} 天（本页自算"
+        if round(computed) != stated:
+            self.assertIn(caveat, chart["note"])
+        else:
+            self.assertNotIn(caveat, chart["note"])
 
 
 class MuPublishedArtefactTest(unittest.TestCase):
