@@ -169,5 +169,39 @@ class ExhibitReferenceTest(unittest.TestCase):
         self.assertGreaterEqual(seen, 5)
 
 
+
+class FillStoryTest(unittest.TestCase):
+    """A story placeholder is either filled or refused -- never printed.
+
+    `board.fill_story` used to recognise only names made of lower-case letters
+    and underscores. `{h1_margin}` has a digit, so it was neither filled nor
+    reported: the braces went to the reader. CDNS (`{h1_years}`), NKE, SAMSUNG
+    (`{buyback_h1}`) and the luxury page (`{ac4}` in a headline) each met it and
+    each added a scan to its own tests; the rule now lives in the shared helper,
+    and the scan below covers every page, including one added tomorrow.
+    """
+
+    def test_a_name_with_a_digit_is_filled(self) -> None:
+        from build.board import fill_story
+        self.assertEqual(fill_story("上半年 {h1_margin}", {"h1_margin": "30.5%"}), "上半年 30.5%")
+
+    def test_a_name_with_a_digit_and_no_value_is_refused(self) -> None:
+        from build.board import fill_story
+        with self.assertRaises(KeyError):
+            fill_story("第二季 {q2_rev}", {})
+
+    def test_cross_references_resolved_later_pass_through(self) -> None:
+        from build.board import fill_story
+        self.assertEqual(fill_story("见 {EX_12} 与 {TBL_3}", {}), "见 {EX_12} 与 {TBL_3}")
+
+    def test_no_published_page_prints_a_placeholder(self) -> None:
+        pages = build_all()
+        self.assertGreaterEqual(len(pages), len(ENTRIES))
+        for slug, payload in sorted(pages.items()):
+            with self.subTest(slug=slug):
+                text = json.dumps(payload, ensure_ascii=False)
+                self.assertEqual(re.findall(r"\{[a-z][a-z0-9_:]*\}", text), [])
+
+
 if __name__ == "__main__":
     unittest.main()

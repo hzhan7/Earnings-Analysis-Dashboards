@@ -1012,10 +1012,12 @@ class AsmlRollTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "outside its labels"):
             asml.build_payload(misfiled)
 
-        # a sentence that names a figure the builder does not compute cannot print
+        # a sentence that names a figure the builder does not compute cannot print;
+        # the shared `fill_story` refuses it by name (it used to skip names with a
+        # digit, which is why `filled` grew a second check of its own)
         unfilled = copy.deepcopy(self.source)
         unfilled["followup_closure"]["items"][0]["evidence"] += "{sales2}"
-        with self.assertRaisesRegex(ValueError, "unfilled placeholder"):
+        with self.assertRaisesRegex(KeyError, "sales2"):
             asml.build_payload(unfilled)
 
     def test_a_quarter_with_nothing_to_settle_says_so(self) -> None:

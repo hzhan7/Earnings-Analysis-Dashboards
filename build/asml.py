@@ -1475,8 +1475,10 @@ UNFILLED = re.compile(r"\{[a-z][a-z_0-9]*")
 def filled(text: str, values: dict[str, str]) -> str:
     """`board.fill_story`, then refuse any brace it did not recognise as a placeholder.
 
-    Its pattern reads lower-case letters and underscores only, so a name with a
-    digit in it would pass through as literal braces instead of raising.
+    `fill_story` itself refuses (KeyError) a lower-case name it has no value for --
+    digits included since 2026-09-24, when its pattern stopped skipping them.
+    Whatever braces it still leaves are refused here, so a one-quarter sentence
+    never prints them.
     """
     out = fill_story(text, values)
     if UNFILLED.search(out):

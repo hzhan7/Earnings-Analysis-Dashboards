@@ -691,7 +691,7 @@ def ai_capex_cycle_table(n: int) -> dict:
     }
 
 
-_STORY_FIELD = re.compile(r"\{([a-z][a-z_]*(?::[a-z0-9_]+)?)\}")
+_STORY_FIELD = re.compile(r"\{([a-z][a-z0-9_]*(?::[a-z0-9_]+)?)\}")
 
 
 def fill_story(text: str, values: dict[str, str]) -> str:
@@ -703,9 +703,13 @@ def fill_story(text: str, values: dict[str, str]) -> str:
     into that sentence as well: the two would be free to disagree. So the sentence
     names the number (``{now:wines_spirits}``) and the builder supplies it.
 
-    Only lower-case names are placeholders, so the ``{EX_…}`` / ``{TBL_…}``
-    references resolved after numbering pass through untouched. A name the builder
-    did not compute raises instead of printing the braces.
+    A placeholder is a name that starts with a lower-case letter, so the
+    ``{EX_…}`` / ``{TBL_…}`` references resolved after numbering pass through
+    untouched. A name the builder did not compute raises instead of printing the
+    braces -- digits included: the pattern used to stop at letters and underscores,
+    so ``{h1_margin}`` was neither filled nor reported but printed as-is, and four
+    pages (CDNS, NKE, SAMSUNG, LUXURY) each shipped or nearly shipped one before
+    adding a page-level scan for it.
     """
     def swap(match: re.Match) -> str:
         name = match.group(1)
