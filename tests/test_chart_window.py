@@ -172,7 +172,7 @@ def _tsm_advanced_count() -> dict:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amd": 16, "amzn": 13, "arm": 0, "asml": 16, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
+    "amd": 16, "amzn": 13, "arm": 0, "asml": 16, "avgo": 8, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
     "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
@@ -772,6 +772,12 @@ CONVERTED = {
                           "the 2024-06-12 release; before that there is nothing "
                           "to plot.",
         "AI 半导体收入（季）": "same floor.",
+        "AI 半导体收入 US$#M：": "the previous report's AI thresholds settled on the same "
+                          "quarterly AI figure, which starts with the 2024-06-12 release.",
+        "半导体分部毛利率 #%：": "segment cost of revenue is an ASU 2023-07 disclosure: the "
+                        "FY2025 10-K gives the year, and the FY2026 10-Qs give each "
+                        "quarter with the prior-year quarter beside it, so the first "
+                        "quarter any filing covers is FY2025 Q1 (Q4 2024 here).",
         "基础设施软件收入": "same segment floor.",
         "营运资本随 AI 放量变重": "inventory and receivables do reach 2016; this chart pairs "
                         "them with the AI-era commentary and runs on the "
@@ -1024,6 +1030,8 @@ FLOOR_KIND = {
         '两个分部的申报营业利润': 'disclosure',
         'AI 半导体收入：公司口头指引': 'disclosure',
         'AI 半导体收入（季）': 'disclosure',
+        'AI 半导体收入 US$#M：': 'disclosure',
+        '半导体分部毛利率 #%：': 'disclosure',
         '基础设施软件收入': 'disclosure',
         '营运资本随 AI 放量变重': 'coverage',
         '季度收入：阈值': 'disclosure',
@@ -1391,7 +1399,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 160)
+        self.assertEqual(settled.count("disclosure"), 162)
         self.assertEqual(settled.count("design"), 40)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:

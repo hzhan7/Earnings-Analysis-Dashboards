@@ -43,6 +43,7 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from build import avgo  # noqa: E402
 from build.all import ENTRIES, build_all, roster_payload  # noqa: E402
 from build.board import headroom  # noqa: E402
 from build.avgo import build_payload, headline_metrics  # noqa: E402
@@ -297,15 +298,56 @@ class AvgoDashboardTest(unittest.TestCase):
                 self.assertIsNone(self.seg["semiconductor_revenue"][index])
                 self.assertIsNone(self.seg["infrastructure_software_revenue"][index])
 
-    def test_segment_gross_margin_is_not_published(self) -> None:
-        """Segment cost of revenue was first disclosed under ASU 2023-07 in the
-        FY2025 10-K, so it exists for two quarters and cannot carry a series.
-        The page reports the threshold that needed it as unsettleable; if the
-        data ever became long enough this test is the reminder to revisit."""
-        disclosed = [v for v in self.seg["semiconductor_cost_of_revenue"] if v is not None]
-        self.assertLessEqual(len(disclosed), 4)
-        self.assertNotIn("分部毛利率", " ".join(
-            ex.get("title", "") for ex in self.exhibits))
+    def test_segment_gross_margin_rests_on_filed_segment_cost(self) -> None:
+        """Segment cost exists only since ASU 2023-07, and it is now long enough to draw.
+
+        This test used to assert the opposite: two quarters of segment cost, so
+        no segment gross margin anywhere on the page. That was right while the
+        FY2026 10-Qs were the only source. They carry the prior year's quarter
+        in their comparative columns, and the FY2025 10-K gives the year, so
+        FY2025 Q1-Q4 exist too -- and the previous report settled a threshold
+        on exactly this ratio (「半导体分部 GM <68%」). The report read it off a
+        rounded call figure and a software-margin assumption (67.01%); the page
+        reads the filed segment cost.
+
+        Pinned: the fiscal quarters close on the 10-K year; the two segments'
+        costs add to the company's non-GAAP cost of revenue (revenue less the
+        release's non-GAAP gross margin), which is what licenses calling this a
+        non-GAAP segment margin; nothing before the disclosure starts is filled.
+        """
+        cost = self.seg["semiconductor_cost_of_revenue"]
+        soft = self.seg["infrastructure_software_cost_of_revenue"]
+        filled = [i for i, v in enumerate(cost) if v is not None]
+        self.assertEqual(filled, list(range(filled[0], len(cost))), "a hole inside the run")
+        self.assertEqual([i for i, v in enumerate(soft) if v is not None], filled)
+        first_end = self.ends[filled[0]]
+        self.assertEqual(first_end, "2025-02-02", "FY2025 Q1 is the first quarter a filing covers")
+        years = self.years
+        closed = 0
+        for index, year_end in enumerate(years["fiscal_year_ends"]):
+            quarters = [i for i, end in enumerate(self.ends) if end <= year_end][-4:]
+            if len(quarters) < 4 or any(cost[i] is None for i in quarters):
+                continue
+            with self.subTest(fiscal_year_end=year_end):
+                self.assertEqual(sum(cost[i] for i in quarters),
+                                 years["semiconductor_cost_of_revenue_usd_m"][index])
+                self.assertEqual(sum(soft[i] for i in quarters),
+                                 years["infrastructure_software_cost_of_revenue_usd_m"][index])
+                closed += 1
+        self.assertGreaterEqual(closed, 1)
+        recon = self.source["release_reconciliation_usd_m"]
+        for i in filled:
+            with self.subTest(period_end=self.ends[i]):
+                self.assertAlmostEqual(cost[i] + soft[i],
+                                       self.fin["revenue"][i] - recon["non_gaap_gross_margin"][i],
+                                       delta=0.5)
+        chart = next(ex for ex in self.by_section["settled"]
+                     if ex["title"].startswith("半导体分部毛利率"))
+        margins = [(self.seg["semiconductor_revenue"][i] - cost[i])
+                   / self.seg["semiconductor_revenue"][i] * 100 for i in filled]
+        self.assertEqual(len(chart["xlabels"]), len(filled))
+        for drawn, expected in zip(chart["series"][0]["values"], margins):
+            self.assertAlmostEqual(drawn, expected, places=5)
 
     # ── the guided record ────────────────────────────────────────────────────
     def test_guidance_record_is_paired_on_the_guided_quarter(self) -> None:
@@ -497,13 +539,15 @@ class AvgoDashboardTest(unittest.TestCase):
     def test_quarter_blocks_refuse_to_publish_under_another_quarter(self) -> None:
         """What only one quarter has must say which quarter, and a stale one stops the build.
 
-        The follow-up closure, the verdicts, the next-quarter thresholds and the
-        buyback story carry the quarter they describe; the outlook and the AI
-        guide carry the release they came from; the release itself must be in
-        the source list. Each is tampered alone here and each must stop the
-        build with a message that names the stamp.
+        The follow-up closure, the prior thresholds' settlement, the guidance by
+        line, the next-quarter thresholds and the buyback story carry the quarter
+        they describe; the outlook and the AI guide carry the release they came
+        from; the release itself must be in the source list. Each is tampered
+        alone here and each must stop the build with a message that names the
+        stamp.
         """
-        stamped = ("followup_closure", "tracked_metric_verdicts", "next_kpi", "capital_return_story")
+        stamped = ("followup_closure", "prior_kpi_settlement", "guidance_by_line", "next_kpi",
+                   "capital_return_story")
         for key in stamped:
             stale = copy.deepcopy(self.source)
             stale[key]["period"] = "Q1 1999"
@@ -526,15 +570,39 @@ class AvgoDashboardTest(unittest.TestCase):
             build_payload(stale)
 
     def test_a_quarter_without_a_story_leaves_it_out(self) -> None:
-        """Absent, a one-quarter block drops its charts rather than borrowing last quarter's."""
+        """Absent, an optional one-quarter block drops its chart rather than borrowing last quarter's."""
         bare = copy.deepcopy(self.source)
-        for key in ("followup_closure", "tracked_metric_verdicts", "capital_return_story"):
+        for key in ("guidance_by_line", "capital_return_story"):
             del bare[key]
         payload = build_payload(bare)
         titles = [ex["title"] for s in payload["sections"] for ex in s["exhibits"]]
-        self.assertFalse([t for t in titles if t.startswith("上季 ")])
+        self.assertFalse([t for t in titles if "按业务线拆开" in t])
         self.assertNotIn("公司没有解释", payload["headline"])
-        self.assertEqual(len(titles), len(self.exhibits) - 2)
+        self.assertEqual(len(titles), len(self.exhibits) - 1)
+
+    def test_a_quarter_after_the_first_report_must_settle_it(self) -> None:
+        """The settlement blocks are not optional once a report precedes the quarter.
+
+        Dropping one used to drop its chart silently, which is how this page came
+        to settle six questions and five thresholds of its own instead of the
+        report's. After the first local report, a quarter without both blocks
+        stops the build and says which block and which quarter.
+        """
+        for key in ("followup_closure", "prior_kpi_settlement"):
+            bare = copy.deepcopy(self.source)
+            del bare[key]
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "followup_closure.*prior_kpi_settlement"):
+                    build_payload(bare)
+
+    def test_the_first_report_quarter_settles_nothing_and_says_so(self) -> None:
+        """The quarter of the site's first AVGO analysis has nothing before it to settle."""
+        first = {"periods": ["Q3 2025", avgo.FIRST_REPORT_PERIOD]}
+        charts, tables, facts = avgo.settle_prior(first, {}, {})
+        self.assertEqual((charts, tables), ([], []))
+        self.assertTrue(facts["first"])
+        with self.assertRaisesRegex(ValueError, "nothing"):
+            avgo.settle_prior({**first, "followup_closure": {"period": avgo.FIRST_REPORT_PERIOD}}, {}, {})
 
     def test_the_record_sentences_are_computed_not_remembered(self) -> None:
         """Make one finished point quarter miss its guide: every sentence that says
@@ -587,8 +655,15 @@ class AvgoDashboardTest(unittest.TestCase):
         chart = next(ex for ex in self.by_section["quarter_highlights"] if "AI 半导体收入" in ex["title"])
         self.assertIn("不是", chart["note"])
         self.assertIn("引语", chart["note"] + chart["src_extra"])
+        # The formal guidance record never mixes the AI quote in. Section one
+        # does settle the previous report's AI thresholds and the call-level
+        # split of the guide, and every such chart names the quote as its source.
         self.assertNotIn("AI", " ".join(
-            ex.get("title", "") for ex in self.by_section["settled"]))
+            ex.get("title", "") for ex in self.by_section["settled"][-6:]))
+        for exhibit in self.by_section["settled"]:
+            if "AI" in exhibit["title"]:
+                with self.subTest(exhibit=exhibit["title"][:30]):
+                    self.assertIn("引语", exhibit["src_extra"])
 
     def test_the_ai_note_counts_its_pairs_and_names_its_holes(self) -> None:
         """This series is three-quarters holes and one-quarter numbers, so what
@@ -704,8 +779,42 @@ class AvgoDashboardTest(unittest.TestCase):
                 for row in table["rows"]:
                     self.assertEqual(len(row), len(table["headers"]))
 
+    def test_every_series_backed_prior_threshold_has_its_own_line(self) -> None:
+        """A threshold whose metric has a time series is drawn against it, not only summarised."""
+        entries = self.source["prior_kpi_settlement"]["quantified"]
+        lines = [ex for ex in self.by_section["settled"] if ex["kind"] == "lines"]
+        backed = [e for e in entries if e.get("reads") in
+                  ("ai_revenue", "semi_gross_margin", "software_revenue", "buyback")]
+        self.assertGreaterEqual(len(backed), 6)
+        for entry in backed:
+            with self.subTest(threshold=entry["id"]):
+                flat = [chart for chart in lines for series in chart["series"][1:]
+                        if set(series["values"]) == {entry["threshold"]}]
+                self.assertEqual(len(flat), 1, "exactly one chart draws this line")
+                self.assertIn(entry["line"], flat[0]["title"])
+        # call-only readings have no series and so no line -- they are in the
+        # overview and the table, named as call statements
+        for entry in entries:
+            if "reads" not in entry:
+                self.assertIn("电话会", entry["metric"])
+                self.assertIn("电话会", entry["value_source"])
+
+    def test_the_guidance_split_by_line_adds_up(self) -> None:
+        """AI above its guide, the other two lines below theirs, and nothing left over."""
+        chart = next(ex for ex in self.by_section["settled"] if "按业务线拆开" in ex["title"])
+        legs, total = chart["values"][:-1], chart["values"][-1]
+        self.assertAlmostEqual(sum(legs), total, places=6)
+        guide = self.guide["guide_revenue_usd_m"][self.guide["periods"].index(self.source["periods"][-1])]
+        self.assertAlmostEqual(total, self.fin["revenue"][-1] - guide, places=6)
+        ai = self.source["ai_semiconductor_disclosures"]
+        at = ai["periods"].index(self.source["periods"][-1])
+        self.assertAlmostEqual(legs[0], (ai["actual_usd_bn"][at] - ai["guided_usd_bn"][at]) * 1000, places=6)
+        self.assertAlmostEqual(
+            legs[2], self.seg["infrastructure_software_revenue"][-1]
+            - self.source["guidance_by_line"]["infrastructure_software_usd_m"], places=6)
+
     def test_guidance_record_table_covers_every_guided_quarter(self) -> None:
-        table = self.payload["tables"][0]
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("指引兑现全表"))
         self.assertEqual(len(table["rows"]), len(self.guide["period_ends"]))
         verdicts = {row[7] for row in table["rows"]}
         self.assertNotIn("低于下限", verdicts)
@@ -931,6 +1040,102 @@ class AvgoChecksTest(unittest.TestCase):
                          outlook["non_gaap_operating_margin_pct"])
         self.assertEqual(self.source["ai_semiconductor_disclosures"]["next_quarter_guide_usd_bn"],
                          outlook["ai_semiconductor_revenue_usd_bn"])
+
+    def test_the_series_carries_the_checked_10q(self) -> None:
+        """The 10-Q the report was written without, read twice: into the series, and into `_checks`.
+
+        The report's section 0 and its data-gap list were written on 2026-09-03,
+        before the FY2026 Q3 10-Q was filed on 2026-09-10; the page said 「本季
+        10-Q 尚未申报」 in four places. The filing is on EDGAR, so the page now
+        carries its figures, and they must be the ones the filing prints.
+        """
+        tq = self.checks["ten_q"]
+        source = self.source
+        self.assertEqual(tq["period_end"], source["period_ends"][-1])
+        reports = {row["period_end"]: row for row in source["periodic_reports_filed"]["reports"]}
+        self.assertEqual(reports[tq["period_end"]]["filed"], tq["filed"])
+        self.assertEqual(reports[tq["period_end"]]["accession"], tq["accession"])
+        seg = source["segments_usd_m"]
+        self.assertEqual(seg["semiconductor_operating_income"][-1], tq["semiconductor_operating_income_usd_m"])
+        self.assertEqual(seg["infrastructure_software_operating_income"][-1],
+                         tq["infrastructure_software_operating_income_usd_m"])
+        self.assertEqual(seg["semiconductor_cost_of_revenue"][-1], tq["semiconductor_cost_of_revenue_usd_m"])
+        self.assertEqual(seg["infrastructure_software_cost_of_revenue"][-1],
+                         tq["infrastructure_software_cost_of_revenue_usd_m"])
+        pc = source["purchase_commitments_usd_m"]
+        self.assertEqual(pc["total"][-1], tq["purchase_commitments_total_usd_m"])
+        self.assertEqual(pc["due_within_one_year"][-1], tq["purchase_commitments_fy2027_usd_m"])
+        self.assertEqual(pc["due_in_year_two"][-1], tq["purchase_commitments_fy2028_usd_m"])
+        notes = source["ten_q_notes"]["by_period_end"][tq["period_end"]]
+        self.assertEqual(notes["backstop_max_usd_m"], tq["backstop_maximum_usd_m"])
+        self.assertEqual(notes["accession"], tq["accession"])
+        # The report's own diagnosis still says its answers were held up by a
+        # 10-Q 「当时尚未申报」 -- true of the report. What must be gone is the
+        # page asserting that this quarter's filing is still missing.
+        published = json.dumps(self.payload, ensure_ascii=False)
+        self.assertNotRegex(published, r"本季 10-[QK][^。]{0,12}尚未申报")
+
+    def test_section_one_opens_with_the_reports_follow_ups(self) -> None:
+        """Last quarter's questions, judged as this quarter's report judged them.
+
+        The counts come from `_checks["note"]`, keyed from the report's section 0
+        separately from the series block the builder reads: the page used to
+        settle six questions of its own here, not the report's five.
+        """
+        note = self.checks["note"]["followup_closure"]
+        settled = self.payload["sections"][0]["exhibits"]
+        closure = settled[0]
+        self.assertTrue(closure["title"].startswith(f"上季 {note['questions']} 条待验证问题"))
+        self.assertEqual(dict(zip(closure["xlabels"], closure["values"])), note["counts"])
+        self.assertEqual(sum(closure["values"]), note["judgements"])
+        self.assertIn(f"{note['judgements']} 项判定", closure["title"])
+        table = next(t for t in self.payload["tables"] if "条待验证问题" in t["title"])
+        self.assertEqual(len(table["rows"]), note["questions"])
+
+    def test_section_one_settles_every_threshold_of_the_prior_section_8(self) -> None:
+        """Every numeric threshold of the previous report's section 8, and only those.
+
+        The page's five 「上季跟踪线」 were thresholds this page had set itself
+        (US$16,000M AI, 67% margin, US$8,900M software, US$2,000M buyback, 68%
+        EBITDA). The report's were different lines on partly different metrics.
+        Each entry must be one the report wrote, at the value and on the side it
+        wrote it, and the report's rows that cannot be settled must be named.
+        """
+        note = self.checks["note"]
+        expected = note["prior_thresholds"]
+        block = self.source["prior_kpi_settlement"]
+        entries = block["quantified"]
+        self.assertEqual(len(entries), len(expected))
+        for entry, want in zip(entries, expected):
+            with self.subTest(metric=entry["metric"]):
+                self.assertTrue(entry["metric"].startswith(want["metric"]))
+                self.assertEqual(entry["threshold"], want["threshold"])
+                self.assertEqual(entry["op"] in ("≥", ">"), want["direction"] == "up")
+                # the chart's favourable side: a gate is favourable when it fires,
+                # a floor when it does not
+                fires_up = want["direction"] == "up"
+                favourable_up = fires_up if entry["kind"] == "gate" else not fires_up
+                self.assertEqual(entry["direction"], "up" if favourable_up else "down")
+        chart = self.payload["sections"][0]["exhibits"][1]
+        self.assertTrue(chart["title"].startswith(f"上季 {len(expected)} 条量化阈值"))
+        self.assertEqual(chart["kind"], "diverging_bars")
+        self.assertEqual(chart["xlabels"], [e["metric"] for e in entries])
+        self.assertEqual(len(block["unsettled"]), len(note["prior_unquantified"]))
+        for item in block["unsettled"]:
+            self.assertIn(item["metric"], chart["note"])
+
+    def test_the_prior_settlement_reads_the_filed_figures(self) -> None:
+        """The readings in the settlement table are this quarter's filed numbers."""
+        table = next(t for t in self.payload["tables"] if "条量化阈值的结算" in t["title"])
+        by_metric = {row[1]: row for row in table["rows"]}
+        checks = self.checks
+        self.assertEqual(by_metric["软件收入（警示线）"][4],
+                         f"US${checks['infrastructure_software_revenue_usd_m']:,}M")
+        self.assertEqual(by_metric["季度回购（辅助信号）"][4], f"US${checks['share_repurchases_usd_m']:,}M")
+        self.assertEqual(by_metric["Q3 AI 半导体收入（加仓线）"][4],
+                         f"US${checks['ai_semiconductor_revenue_usd_bn'] * 1000:,.0f}M")
+        self.assertEqual(by_metric["Q4 AI 收入（减仓线）"][4],
+                         f"US${checks['next_quarter']['ai_semiconductor_revenue_usd_bn'] * 1000:,.0f}M")
 
     def test_the_page_prints_the_checked_figures(self) -> None:
         checks, outlook = self.checks, self.checks["next_quarter"]
