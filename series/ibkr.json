@@ -137,6 +137,37 @@
     "source": "IBKR 2Q2026 业绩新闻稿（8-K EX-99.1，2026-07-21，acc 0001381197-26-000118）：首段「results for the quarter ended June 30, 2026」与电头「GREENWICH, CT, July 21, 2026」；CONSOLIDATED STATEMENTS OF INCOME 三个月两栏（Commissions 673 / 516 … Net income available for common stockholders 312 / 224）；Financial Highlights「Pretax profit margin … was 77%」；Business Highlights「Customer accounts increased 34% to 5.19 million」「Customer equity increased 40% to $930.3 billion」「Total DARTs increased 36% to 4.82 million」「Customer credits increased 27% to $182.4 billion」「Customer margin loans increased 67% to $108.5 billion」；OPERATING DATA, CONTINUED 的 Year over Year 表（Total Accounts 5,185 / 3,866；Customer Equity 930.3 / 664.6；Total Customer DARTs 4,824 / 3,552；Commission per Cleared Commissionable Order 2.64 / 2.65）与 Consecutive Quarters 表（4,754 / 789.4 / 4,368，账户数 9%）；NET INTEREST MARGIN 表三个月两栏（平均生息资产 228,615 / 166,621，NIM 1.93 / 2.07，年化收益率 3.32 / 3.86、4.10 / 4.67、2.23 / 2.64）。",
     "checked_on": "2026-09-19"
   },
+  "_note_checks": {
+    "period": "Q2 2026",
+    "source": "所有者库 5.Earnings Analysis/IBKR 的两份分析笔记，逐字抄录：本季 2026-07-21 IBKR Q2 2026 vs Q1 2026 Analysis（第 0 节「上季 Follow-up 回答」首段统计句与判定表），上季 2026-04-22 IBKR Q1 2026 vs Q4 2025 Analysis（第 8 节「关键观察指标」表）。builder 不读本块；tests/test_ibkr_dashboard.py 用它核对 followup_closure 与 prior_kpi_settlement。",
+    "section0": {
+      "questions": 7,
+      "statistic": "上季（2026-04-22 Q1 分析）留下 7 个待验证问题，本季 7 题全部有交代：2 题完全验证、1 题被正面证伪后重大上修（Trust Charter）、3 题部分验证、1 题连续第二季未披露（ForecastEx）。",
+      "counts": {
+        "已验证": 2,
+        "被证伪": 1,
+        "部分验证": 3,
+        "仍未披露": 1
+      }
+    },
+    "prior_section8": {
+      "rows": 5,
+      "row1": "Q1 $0.59 vs Q4 包装后 $0.63（剔除 12% 异常税率回 17%，调整后 Q4 ~$0.60-$0.61）；Q2/Q3 调整后 EPS YoY +ve + 全年 EPS ≥ $2.40 = \"Q4 不可持续 + Q1 持平\"叙事兑现 → 跟踪；< $2.20 = 经营动能减弱 → 警示",
+      "row5": "Q1 $162.959B；Q2/Q3 ≥ $170B + paying clients YoY +20% = 利息 base 持续扩张 → 加仓；< $155B 或 net outflows = 客户对 2.23% 利率不再 sticky → 警示",
+      "thresholds": [
+        {
+          "row": 5,
+          "threshold": 170.0,
+          "direction": "up"
+        },
+        {
+          "row": 5,
+          "threshold": 155.0,
+          "direction": "up"
+        }
+      ]
+    }
+  },
   "periods": [
     "Q1 2016",
     "Q2 2016",
@@ -1587,6 +1618,120 @@
     "Q4 2025": "2026-01-20",
     "Q1 2026": "2026-04-21",
     "Q2 2026": "2026-07-21"
+  },
+  "followup_closure": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "source": "所有者库 5.Earnings Analysis/IBKR：2026-07-21 IBKR Q2 2026 vs Q1 2026 Analysis 第 0 节「上季 Follow-up 回答」，逐条核验 2026-04-22 IBKR Q1 2026 vs Q4 2025 Analysis 文末「Follow-up Questions for Next Quarter」的 7 条",
+    "labels": [
+      "已验证",
+      "部分验证",
+      "被证伪",
+      "仍未披露"
+    ],
+    "items": [
+      {
+        "n": 1,
+        "verdict": "部分验证",
+        "text": "AI 现金比价工具还没有逼任何一家大券商调高现金利率，威胁停在结构层面、没有量化"
+      },
+      {
+        "n": 2,
+        "verdict": "被证伪",
+        "text": "上季把管理层对 Trust Charter 的沉默读成「延期到 2027」，而 OCC 已在 2026-05-05 给出初步有条件批准、管理层重申年底投入运营——判定列写作「已验证（且证伪上季推断）」，报告的统计句把它单列为被证伪，本图照统计句计数"
+      },
+      {
+        "n": 3,
+        "verdict": "仍未披露",
+        "text": "ForecastEx 的合约对数（pairs）新闻稿与电话会连续第二季都没有给"
+      },
+      {
+        "n": 4,
+        "verdict": "已验证",
+        "text": "Schwab、Fidelity、Robinhood 本季都没有调整现金 sweep 利率"
+      },
+      {
+        "n": 5,
+        "verdict": "部分验证",
+        "text": "加密业务在推进（交易扩到欧洲全境），收入仍未单列"
+      },
+      {
+        "n": 6,
+        "verdict": "部分验证",
+        "text": "公众公司调整后税率 Q1 回到常态区间，Q2 又因股价上涨对股权激励的税务效应落到区间之下（管理层电话会口径，申报文件不单列）"
+      },
+      {
+        "n": 7,
+        "verdict": "已验证",
+        "text": "客户基数继续扩张：公司不披露付费客户口径，报告以账户总数作答——本季净增 {net_adds}、客户权益环比 {equity_qoq}"
+      }
+    ],
+    "_note": "counts 由 builder 按 items 的 verdict 现算；报告统计句为「2 题完全验证、1 题被正面证伪后重大上修（Trust Charter）、3 题部分验证、1 题连续第二季未披露」。text 里的 {…} 由 builder 从 series 现算填入。"
+  },
+  "prior_kpi_settlement": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "source": "所有者库 5.Earnings Analysis/IBKR：2026-04-22 IBKR Q1 2026 vs Q4 2025 Analysis 第 8 节「关键观察指标」5 行；阈值数值与方向逐字取自该节",
+    "rows": 5,
+    "quantified": [
+      {
+        "row": 5,
+        "metric": "客户贷方余额 · 加仓线",
+        "reads": "customer_credits",
+        "direction": "up",
+        "threshold": 170.0,
+        "unit": "usd_bn",
+        "words": "Q2/Q3 ≥ {threshold}（且 paying clients 同比 +20%）= 利息基数继续扩张 → 加仓"
+      },
+      {
+        "row": 5,
+        "metric": "客户贷方余额 · 警示线",
+        "reads": "customer_credits",
+        "direction": "up",
+        "threshold": 155.0,
+        "unit": "usd_bn",
+        "words": "< {threshold}（或资金净流出）= 客户对 IBKR 的付息不再有黏性 → 警示"
+      }
+    ],
+    "eps_leg": {
+      "row": 1,
+      "words": "Q2/Q3 调整后 EPS 同比为正",
+      "adjusted_diluted_eps_usd": {
+        "this_quarter": 0.69,
+        "year_ago": 0.51
+      },
+      "source": "IBKR 2Q2026 业绩新闻稿（8-K EX-99.1，acc 0001381197-26-000118）首段：「Reported and adjusted diluted earnings per share were both $0.69 for the current quarter. For the year-ago quarter, reported and adjusted diluted earnings per share were both $0.51.」"
+    },
+    "not_settled": [
+      {
+        "row": 1,
+        "text": "全年那一腿（全年调整后 EPS ≥ $2.40，< $2.20 警示）要等 Q4 2026 的全年数，Q3 同比那一腿下季结算"
+      },
+      {
+        "row": 2,
+        "text": "Trust Charter 是定性条件，本季触发的是「监管批准里程碑 = 进度正常」那一支（OCC 2026-05-05 初步有条件批准）"
+      },
+      {
+        "row": 3,
+        "text": "ForecastEx pairs ≥ 200M 无从结算——公司连续第二季不披露，触发的是同一行写好的「连续 2 季不披露 = 平台期延长」"
+      },
+      {
+        "row": 4,
+        "text": "同业 sweep 利率上调 ≥ 100bp 未触发——本季笔记核对为上半年没有一家调整；这是同业数据，不在 IBKR 的申报里，所以不进图"
+      },
+      {
+        "row": 5,
+        "text": "另外两腿无从结算——IBKR 不披露付费客户（paying clients）口径（本季笔记以账户总数同比 {accounts_yoy} 作答），也不披露资金净流出"
+      }
+    ],
+    "report_slip": {
+      "text": "上季笔记这一行写的当前值「$162.959B」是资产负债表 Other payables: Customers 的季末余额（{payables_prev}），不是新闻稿的 Customer credits（{credits_prev}）；本季两个口径都在两条线之上（{credits_now} / {payables_now}），判定不因口径而变",
+      "payables_to_customers_usd_m": {
+        "Q1 2026": 162959.0,
+        "Q2 2026": 176779.0
+      },
+      "source": "IBKR 1Q2026 / 2Q2026 业绩新闻稿（acc 0001381197-26-000078 / -000118）的 CONSOLIDATED STATEMENTS OF FINANCIAL CONDITION：Other payables — Customers 162,959 / 176,779"
+    }
   },
   "next_kpi": {
     "period": "Q2 2026",

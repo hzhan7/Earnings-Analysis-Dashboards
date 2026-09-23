@@ -10,31 +10,39 @@ quarter the company calls 2Q2026.
 Every period, date, count and figure printed here is computed from the series;
 every sentence that states a record, a streak or an "all of them" is printed
 only while the series still says so, and switches to a sentence that is true
-when it stops. What belongs to one quarter only -- the thresholds section three
-sets (`next_kpi`) and, from the page's second quarter on, the settlement of the
-previous quarter's thresholds (`prior_kpi`) -- carries a ``period`` stamp and is
-read through `board.stamped_block`: a block stamped for another quarter stops
-the build, an absent block leaves its charts out. `_checks` in the series is a
-separate reading of the quarter's release that the tests hold the page to; this
-builder never reads it.
+when it stops. What belongs to one quarter only -- the previous note's
+follow-up questions as this quarter's note closes them (`followup_closure`),
+the previous note's section-8 thresholds settled against this quarter
+(`prior_kpi_settlement`), and this quarter's note's section-8 thresholds
+(`next_kpi`) -- carries a ``period`` stamp and is read through
+`board.stamped_block`: a block stamped for another quarter stops the build, an
+absent block leaves its charts out. `_checks` in the series is a separate
+reading of the quarter's release that the tests hold the page to; this builder
+never reads it.
+
+Section one settles what the previous note left and nothing else: (a) its
+follow-up questions, counted by the verdicts this quarter's note gives them in
+its section 0; (b) the thresholds in its section 8 that a filed figure can
+settle, each against the same series its history chart draws. The company's own
+charts that used to stand in for a settlement (its consecutive-quarter table and
+the net-interest-margin record) are long records, not settlements, and live in
+section four.
 
 Three things make this page different from the ones built before it.
 
 **No guidance record, and it is a sourcing limit rather than an editorial
 choice.**  IBKR has never put a numeric quarterly outlook in a filing -- no
 revenue range, no EPS range, no margin range, in any earnings 8-K in the
-archive.  The object the Amazon, Cadence, Synopsys, NVIDIA, TSMC and Meta pages
-are built on simply does not exist here, the same way it does not exist for
-Microsoft, Alphabet and Visa.  Transcribing forward-looking remarks off a
-webcast that cannot be checked against a second source is the failure this repo
-exists to avoid, so section one carries what the company *does* publish about
-its own prior quarter instead.
+archive -- so part (c) of section one, a company guidance record, has nothing
+to draw. Transcribing forward-looking remarks off a webcast that cannot be
+checked against a second source is the failure this repo exists to avoid. (The
+page used to name other pages that lack a guidance record too; by the time it
+was re-read one of them had gained one, so it no longer speaks for them.)
 
 **Coverage began with `meta.coverage_start`** -- the quarter of the first
 analysis note on this company in the owner's vault (Q4 2025, 2026-03-05). On
-that quarter there are no thresholds set by a previous note to settle and
-section one says so; from then on the loop closes through `prior_kpi`. The page
-once stamped its own first quarter here and printed "first coverage" on a
+that quarter there is no previous note to settle and section one says so. The
+page once stamped its own first quarter here and printed "first coverage" on a
 quarter that already had two notes behind it.
 
 **The operating metrics are not XBRL facts.**  Accounts, customer equity, DARTs,
@@ -77,6 +85,8 @@ from build.board import (  # noqa: E402
     ai_capex_cycle_table,
     cn_count,
     cn_ordinal,
+    fill_story,
+    headroom,
     headroom_exhibit,
     latest_block,
     number_exhibits,
@@ -84,6 +94,7 @@ from build.board import (  # noqa: E402
     stamped_block,
     threshold_exhibit,
     threshold_table,
+    unit_text,
 )
 from build.page_shell import render_shell  # noqa: E402
 from build.payload_guard import write_dash  # noqa: E402
@@ -111,9 +122,9 @@ ZERO_RATE_YEARS = ("2020", "2021")
 RETAIL_WAVE_YEAR = "2021"
 
 NO_GUIDANCE_NOTE = (
-    "<b>IBKR 从不在申报文件里给季度数字指引</b>，所以本页没有逐季的指引兑现记录。"
+    "<b>IBKR 从不在申报文件里给季度数字指引</b>，所以本节没有公司指引的兑现记录。"
     "这是取数限制而不是编辑取舍：翻遍档案里的历次业绩 8-K，公司没有给过下一季的收入区间、"
-    "EPS 区间或利润率区间中的任何一个。微软、Alphabet 与 Visa 三页出于同样的理由也没有这类记录。"
+    "EPS 区间或利润率区间中的任何一个。"
 )
 
 
@@ -263,13 +274,208 @@ def is_first_coverage(staging: dict) -> bool:
 
 # ── section one ─────────────────────────────────────────────────────────────
 
-def consecutive_record(staging: dict, thresholds_set: bool) -> dict:
+def closure_values(staging: dict) -> dict[str, str]:
+    """Numbers a `followup_closure` / `prior_kpi_settlement` sentence may name.
+
+    The sentences belong to one quarter and live in the series; the figures in
+    them are the arrays' and are filled here, so the two cannot disagree.
+    """
+    operating = staging["operating"]
+    accounts = operating["accounts_thousands"]
+    equity = operating["customer_equity_usd_bn"]
+    credits = operating["customer_credits_usd_bn"]
+    return {
+        "net_adds": f"{accounts[-1] - accounts[-2]:,.0f}K",
+        "equity_qoq": signed(pct_change(equity[-1], equity[-2])),
+        "accounts_yoy": signed(pct_change(accounts[-1], accounts[-5])),
+        "credits_now": f"US${credits[-1]:,.1f}B",
+        "credits_prev": f"US${credits[-2]:,.1f}B",
+    }
+
+
+def closure_exhibit(staging: dict, closure: dict) -> dict:
+    """(a) The previous note's follow-up questions, as this quarter's note closes them.
+
+    The counts are the verdicts of the note's section 0, counted here from the
+    per-question verdicts rather than typed, so the title cannot drift from the
+    list it summarises.
+    """
+    labels = closure["labels"]
+    items = closure["items"]
+    unknown = sorted({item["verdict"] for item in items} - set(labels))
+    if unknown:
+        raise ValueError(f"series block `followup_closure` has verdicts {unknown} "
+                         f"that are not among its labels {labels}")
+    counts = [sum(1 for item in items if item["verdict"] == label) for label in labels]
+    values = closure_values(staging)
+    groups = []
+    for label, count in zip(labels, counts):
+        if count:
+            texts = [fill_story(item["text"], values) for item in items if item["verdict"] == label]
+            groups.append(f"{label}的{cn_count(count)}条：" + "；".join(texts) + "。")
+    return {
+        "kind": "bars_labeled",
+        "title": (f"上季 {len(items)} 条待验证问题：" + "、".join(
+            f"{count} 条{label}" for label, count in zip(labels, counts) if count)),
+        "xlabels": list(labels),
+        "values": counts,
+        "legend": "问题条数",
+        "fmt": "f0",
+        "yfmt": "f0",
+        "label_fmt": "f0",
+        "ylab": "条",
+        "note": "".join(groups),
+        "src_extra": ("问题清单是上季（" + closure["set_in"] + "）分析笔记文末的 Follow-up，"
+                      "判定取自本季分析笔记第 0 节；数字一律按本季新闻稿与申报现算。"),
+    }
+
+
+def settlement_registry(staging: dict) -> dict:
+    """Series a `prior_kpi_settlement` entry can be settled against, by `reads`."""
+    credits = staging["operating"]["customer_credits_usd_bn"]
+    start = next(index for index, value in enumerate(credits) if value is not None)
+    return {
+        "customer_credits": {
+            "values": credits, "fmt": "f0c", "ylab": "US$B", "noun": "客户贷方余额",
+            "note": lambda: (
+                f"本季 US${credits[-1]:,.1f}B，环比 {signed(pct_change(credits[-1], credits[-2]))}、"
+                f"同比 {signed(pct_change(credits[-1], credits[-5]))}。"
+                f"这条线从 {key_period(staging['periods'][start])} 起算："
+                "公司在此之前不在业绩新闻稿里按季给这个期末余额。"),
+            "src_extra": RELEASE_SOURCE,
+        },
+    }
+
+
+def prior_entries(staging: dict, settlement: dict) -> list[dict]:
+    """The settled thresholds, each with its actual read off the series it names.
+
+    The actual is the last cell of the same series the history chart draws, so
+    the settlement bar and the line cannot disagree about where the quarter
+    landed.
+    """
+    registry = settlement_registry(staging)
+    entries = []
+    for entry in settlement["quantified"]:
+        if entry["reads"] not in registry:
+            raise ValueError(f"prior_kpi_settlement entry {entry['metric']!r} reads "
+                             f"{entry['reads']!r}, which build/ibkr.py cannot settle")
+        entries.append({**entry, "actual": registry[entry["reads"]]["values"][-1]})
+    return entries
+
+
+def settlement_exhibits(staging: dict, settlement: dict) -> list[dict]:
+    """(b) The previous note's section-8 thresholds against this quarter's figures.
+
+    Only rows a filed figure can settle go on the headroom chart; every other
+    row of that section is named in the note with the reason it is not there,
+    so a row that could not be settled is never silently dropped.
+    """
+    registry = settlement_registry(staging)
+    entries = prior_entries(staging, settlement)
+    held = [entry for entry in entries
+            if headroom(entry["direction"], entry["threshold"], entry["actual"]) >= 0]
+    values = closure_values(staging)
+    eps = settlement["eps_leg"]["adjusted_diluted_eps_usd"]
+    eps_growth = pct_change(eps["this_quarter"], eps["year_ago"])
+    eps_words = (
+        f"第 {settlement['eps_leg']['row']} 行「{settlement['eps_leg']['words']}」的 Q2 那一腿"
+        + ("成立" if eps_growth > 0 else "没有成立")
+        + f"：调整后摊薄 EPS ${eps['this_quarter']:.2f}，去年同季 ${eps['year_ago']:.2f}，"
+        f"同比 {signed(eps_growth)}。它的阈值落在零上，「距阈值 %」没有定义，所以不进这张图。"
+    )
+    rows_in_chart = sorted({entry["row"] for entry in entries})
+    note = (
+        "正值 = 仍在安全侧。"
+        f"上季笔记第 8 节共 {settlement['rows']} 行，能用本季申报数结算的是第 "
+        + "、".join(str(row) for row in rows_in_chart)
+        + f" 行的这{cn_count(len(entries))}条线。"
+        + eps_words
+        + "其余各行——"
+        + "；".join(f"第 {item['row']} 行：{fill_story(item['text'], values)}"
+                   for item in settlement["not_settled"])
+        + "。"
+    )
+    if len(held) == len(entries):
+        verdict = f"{cn_count(len(entries))}条都守住" if len(entries) > 1 else "守住"
+    else:
+        verdict = f"{len(held)} 条守住、{len(entries) - len(held)} 条被击穿"
+    charts = [{
+        **headroom_exhibit(
+            f"上季 {len(entries)} 条量化阈值：{verdict}",
+            entries, "actual", note=note,
+            src_extra=("阈值逐字取自上季（" + settlement["set_in"] + "）分析笔记第 8 节，不是公司指引；"
+                       "实际值取自本页各条序列的最后一格。"),
+        ),
+        "ref": "EX_PRIOR",
+    }]
+    slip = settlement.get("report_slip")
+    for reads in dict.fromkeys(entry["reads"] for entry in entries):
+        spec = registry[reads]
+        group = [entry for entry in entries if entry["reads"] == reads]
+        lines = "、".join(f"{entry['metric'].split(' · ')[-1]} {unit_text(entry['unit'], entry['threshold'])}"
+                         for entry in group)
+        kept = all(headroom(e["direction"], e["threshold"], e["actual"]) >= 0 for e in group)
+        broke = all(headroom(e["direction"], e["threshold"], e["actual"]) < 0 for e in group)
+        word = "守住" if kept else "击穿" if broke else "守住一部分"
+        chart = multi_threshold_exhibit(
+            f"{spec['noun']} {unit_text(group[0]['unit'], group[0]['actual'])}："
+            f"{word}上季阈值（{lines}）",
+            staging, spec, group, threshold_label="上季阈值",
+            note=(spec["note"]()
+                  + "上季笔记的条件：" + "；".join(
+                      fill_story(entry["words"], {"threshold": unit_text(entry["unit"], entry["threshold"])})
+                      for entry in group) + "。"),
+        )
+        if slip and reads == "customer_credits":
+            payables = slip["payables_to_customers_usd_m"]
+            prev_period, now_period = staging["periods"][-2], staging["periods"][-1]
+            chart["src_extra"] += fill_story(slip["text"], {
+                **values,
+                "payables_prev": f"US${payables[prev_period] / 1000:,.1f}B",
+                "payables_now": f"US${payables[now_period] / 1000:,.1f}B",
+            }) + "。"
+        charts.append(chart)
+    return charts
+
+
+def multi_threshold_exhibit(title: str, staging: dict, spec: dict, entries: list[dict], *,
+                            threshold_label: str, note: str) -> dict:
+    """One series against every threshold set on it, each as its own flat line.
+
+    `board.threshold_exhibit` draws one threshold; a metric the note bounds from
+    both sides (or with a warning line under a confirmation line) needs each of
+    them on the same axis, or the reader sees half of what was set.
+    """
+    labels = [compact_period(period) for period in staging["periods"]]
+    first, *rest = entries
+    chart = threshold_exhibit(
+        title, labels, rounded(spec["values"]), first["threshold"],
+        fmt=spec["fmt"], xstep=LONG_STEP, ylab=spec["ylab"], actual_name=spec["noun"],
+        threshold_name=(f"{threshold_label}：{first['metric'].split(' · ')[-1]} "
+                        f"{unit_text(first['unit'], first['threshold'])}"),
+        note=note, src_extra=spec["src_extra"],
+    )
+    for entry, color in zip(rest, ("GOLD", "GRAY", "MBLUE")):
+        chart["series"].append({
+            "name": (f"{threshold_label}：{entry['metric'].split(' · ')[-1]} "
+                     f"{unit_text(entry['unit'], entry['threshold'])}"),
+            "values": [entry["threshold"]] * len(labels),
+            "color": color,
+        })
+    return chart
+
+
+# ── section four: the company's own records ────────────────────────────────
+
+def consecutive_record(staging: dict) -> dict:
     """The company's own sequential comparison, carried across the whole record.
 
     IBKR prints a "Consecutive Quarters" table in every release -- this quarter
     against the one before it -- so the sequential move is the company's own
     published object rather than something this page invents. One quarter of it
-    says nothing; the full run says whether a negative quarter is normal.
+    says nothing; the full run says whether a negative quarter is normal. It
+    used to open section one as a stand-in for a settlement; it is a record.
     """
     periods = staging["periods"]
     operating = staging["operating"]
@@ -279,12 +485,7 @@ def consecutive_record(staging: dict, thresholds_set: bool) -> dict:
     finished = [value for value in accounts if value is not None]
     negative_equity = sum(1 for value in equity[1:] if value is not None and value < 0)
     negative_accounts = sum(1 for value in finished if value < 0)
-    if is_first_coverage(staging):
-        opening = ("<b>本页首次覆盖，第一节没有本站上季阈值可结算</b>"
-                   + (" —— 阈值从第三节开始设，闭环从下一季起。" if thresholds_set else "。")
-                   + "能结算的是公司自己每季都印的那张环比表：本图把它拉成完整记录。")
-    else:
-        opening = "公司自己每季都印一张环比表：本图把它拉成完整记录。"
+    opening = "公司自己每季都印一张环比表：本图把它拉成完整记录。"
     # "Almost never" is a claim about the count, so the count decides the words.
     if negative_accounts == 0:
         accounts_words = f"账户数从未环比下滑（{len(finished)} 季里没有一季为负）"
@@ -401,31 +602,6 @@ def volume_up_price_down(staging: dict) -> bool:
 
 def is_record(values: list[float | None]) -> bool:
     return values[-1] == max(value for value in values if value is not None)
-
-
-def prior_settlement(staging: dict, prior: dict, registry: dict) -> dict:
-    """The previous note's thresholds against this quarter's actuals.
-
-    The actual is read off the same series the threshold chart draws, so the
-    settlement bar and the history line cannot disagree about where the quarter
-    landed.
-    """
-    entries = []
-    for entry in prior["quantified"]:
-        if entry["metric"] not in registry:
-            raise ValueError(f"prior_kpi metric {entry['metric']!r} has no series on this "
-                             "page: map it in build/ibkr.py threshold_registry")
-        entries.append({**entry, "actual": registry[entry["metric"]]["values"][-1]})
-    return {
-        "ref": "EX_PRIOR",
-        **headroom_exhibit(
-            f"上季 {len(entries)} 条阈值：本季实际离阈值的余量",
-            entries, "actual",
-            note=("正值表示仍在安全侧。阈值是<b>本站的研究设定</b>，不是公司指引 —— "
-                  "IBKR 不发布季度指引，本页也不会替它编一个。" + prior.get("excluded", "")),
-            src_extra="本季实际值取自本页各条序列的最后一格；阈值为本站研究设定。",
-        ),
-    }
 
 
 # ── section two ─────────────────────────────────────────────────────────────
@@ -1350,9 +1526,17 @@ def build_payload(staging: dict) -> dict:
 
     latest = latest_block(staging, period=period,
                           release_date=staging["release_dates"][period])
-    prior = stamped_block(staging, "prior_kpi", period)
+    closure = stamped_block(staging, "followup_closure", period)
+    prior = stamped_block(staging, "prior_kpi_settlement", period)
     kpi = stamped_block(staging, "next_kpi", period)
     first_coverage = is_first_coverage(staging)
+    if first_coverage and (closure or prior):
+        raise ValueError(f"series says {period} is the first quarter covered "
+                         "(meta.coverage_start), yet carries a block settling a previous note")
+    for block in (closure, prior):
+        if block and block["set_in"] != previous_period(period):
+            raise ValueError(f"a section-one block settles the note of {block['set_in']!r}, "
+                             f"but the quarter before {period!r} is {previous_period(period)!r}")
     release = release_source(staging)
     fourth = period.startswith("Q4")
     filing = (f"{period[-4:]} 年度 10-K" if fourth else f"截至 {latest['period_end']} 的 10-Q")
@@ -1372,8 +1556,11 @@ def build_payload(staging: dict) -> dict:
     thesis = volume_up_price_down(staging)
     registry = threshold_registry(staging)
 
-    settled_ex = ([prior_settlement(staging, prior, registry)] if prior else [])
-    settled_ex += [consecutive_record(staging, kpi is not None), nim_record(staging)]
+    # Section one settles the previous note and nothing else: (a) its follow-up
+    # questions, (b) its section-8 thresholds. (c), a company guidance record,
+    # does not exist for this filer and the description says so.
+    settled_ex = ([closure_exhibit(staging, closure)] if closure else [])
+    settled_ex += (settlement_exhibits(staging, prior) if prior else [])
 
     highlight_ex = [
         revenue_quarter(staging),
@@ -1389,11 +1576,16 @@ def build_payload(staging: dict) -> dict:
 
     # The other-income chart states a range over the whole record and no
     # reading of this quarter, so it is routine tracking, not a highlight.
+    # So do the company's own consecutive-quarter table and the net interest
+    # margin against a year earlier: records of the whole window, which used to
+    # open section one in place of a settlement.
     routine_ex = [
         revenue_mix_long(staging),
         other_income_swing(staging),
         nim_long(staging),
+        nim_record(staging),
         scale_long(staging),
+        consecutive_record(staging),
         upc_long(staging),
         operating_leverage_long(staging),
         commission_long(staging),
@@ -1450,8 +1642,11 @@ def build_payload(staging: dict) -> dict:
         for index in range(len(periods))
     ]
 
-    tables = ([threshold_table(first_table, "下季阈值与当前值（原单位）",
-                               quantified, "current", "当前值")] if kpi else [])
+    tables = ([threshold_table(first_table, "上季阈值与本季实际（原单位）",
+                               prior_entries(staging, prior), "actual", "本季实际")]
+              if prior else [])
+    tables += ([threshold_table(first_table + len(tables), "下季阈值与当前值（原单位）",
+                                quantified, "current", "当前值")] if kpi else [])
     table_n = first_table + len(tables)
     tables += [
         {
@@ -1550,16 +1745,25 @@ def build_payload(staging: dict) -> dict:
     )
 
     # ── section descriptions and notes ──────────────────────────────────────
-    if first_coverage:
-        settled_lead = ("本页首次覆盖，没有上一份笔记留下的阈值可结算"
-                        + ("，本站自己的闭环从下一季开始。" if kpi else "。"))
-        settled_tail = "这一节因此改为结算公司自己每季都印的那两个对照对象："
-    elif prior:
-        settled_lead = (f"本节先结算上一份笔记留下的{cn_count(len(prior['quantified']))}条阈值。")
-        settled_tail = "这一节另外结算公司自己每季都印的那两个对照对象："
+    # What section one settles is read off the blocks it draws, so a quarter
+    # whose previous note left nothing says so instead of borrowing a chart.
+    settled_parts = []
+    if closure:
+        settled_parts.append(f"（a）上一份笔记（{closure['set_in']}）留下的"
+                             f"{cn_count(len(closure['items']))}条待验证问题，"
+                             "按本季笔记第 0 节的判定计数；")
+    if prior:
+        settled_parts.append(f"（b）上一份笔记第 8 节的{cn_count(prior['rows'])}行关键观察指标，"
+                             f"其中能用本季申报数结算的{cn_count(len(prior['quantified']))}条阈值"
+                             "先上余量图、再画进它们所在序列的历史线，其余各行在图注里写明为什么结算不了；")
+    if settled_parts:
+        settled_lead = "本节结算上一季留下、本季到期的东西：" + "".join(settled_parts)
+        settled_lead += "（c）"
+    elif first_coverage:
+        settled_lead = (f"本站对 IBKR 的第一份季报分析是 {periods[-1]}，"
+                        "没有上季留下的跟踪指标可结算；")
     else:
-        settled_lead = ""
-        settled_tail = "这一节结算公司自己每季都印的那两个对照对象："
+        settled_lead = "上一份笔记没有留下可结算的问题或阈值；"
     tracked = [
         entry["metric"] for entry in quantified
     ]
@@ -1593,7 +1797,8 @@ def build_payload(staging: dict) -> dict:
         threshold_note = (f"本页首次覆盖，第三节的{cn_count(len(quantified))}条是第一组阈值，"
                           "第一节的闭环从下一季开始。")
     elif prior and quantified:
-        threshold_note = (f"第一节结算上一份笔记留下的{cn_count(len(prior['quantified']))}条，"
+        threshold_note = (f"第一节结算上一份笔记第 8 节里能用申报数结算的"
+                          f"{cn_count(len(prior['quantified']))}条，"
                           f"第三节的{cn_count(len(quantified))}条留到下一季结算。")
     elif quantified:
         threshold_note = f"第三节的{cn_count(len(quantified))}条留到下一季结算。"
@@ -1607,9 +1812,7 @@ def build_payload(staging: dict) -> dict:
             "description": plain_text(
                 settled_lead
                 + NO_GUIDANCE_NOTE
-                + settled_tail
-                + "「Consecutive Quarters」环比表，以及净息差表 —— "
-                "两者都拉成完整记录，因为一个季度的环比说明不了任何事。"
+                + "公司自己每季都印的环比表与净息差表是长期记录，不是结算，放在第四节。"
             ),
             "exhibits": settled_ex,
         },
@@ -1644,7 +1847,8 @@ def build_payload(staging: dict) -> dict:
         "description": plain_text(
             f"IBKR 专属的常规序列，窗口{cn_count(len(periods))}季而不是八季，"
             "因为其中几条要走完一整轮利率周期才显形："
-            "收入结构的迁移、「其他收入」里的货币头寸摆动、净息差与生息资产、账户与户均权益、"
+            "收入结构的迁移、「其他收入」里的货币头寸摆动、净息差与生息资产、"
+            "净息差相对一年前的逐季变化、账户与户均权益、公司自印环比表的完整记录、"
             "Up-C 楔子、经营杠杆，以及每笔订单的佣金单价。"
         ),
         "exhibits": routine_ex,
@@ -1692,8 +1896,7 @@ def build_payload(staging: dict) -> dict:
             "本站的微软、新思与 Visa 三页需要映射，本页不需要。",
             "<b>IBKR 从不在申报文件里给季度数字指引，因此本页没有逐季的指引兑现记录。</b>"
             "这是取数限制而不是编辑取舍：档案里的历次业绩 8-K 都没有给过下一季的收入区间、"
-            "EPS 区间或利润率区间。微软、Alphabet 与 Visa 三页出于同样的理由也没有这类记录；"
-            "亚马逊、Cadence、新思、NVIDIA、台积电与 Meta 六页有，是因为那六家把区间写进了申报文件。"
+            "EPS 区间或利润率区间。"
             "把电话会上的前瞻措辞翻译成数字再画成兑现图，正是本仓库要避免的失败。",
             "损益表口径：会计 Q1–Q3 直接取自各季 10-Q 自己印的三个月栏，无需差分；"
             "会计 Q4 没有 10-Q，其各行为 10-K 全年数减去第三季 10-Q 的九个月栏，"
