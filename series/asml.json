@@ -7891,11 +7891,13 @@
   "2025": {
    "total": 7.5,
    "components": "3 x interim 1.60 (Aug 2025, Nov 2025, Feb 2026) + final 2.70 (Q2 2026)",
-   "components_sum_check": 7.5
+   "components_sum_check": 7.5,
+   "interim": 1.6
   },
   "2026": {
    "total": null,
-   "components": "first interim 1.88 payable Aug 5, 2026; rest not yet declared"
+   "components": "first interim 1.88 payable Aug 5, 2026; rest not yet declared",
+   "interim": 1.88
   }
  },
  "quarter_story": {
@@ -7919,6 +7921,106 @@
   ],
   "verbatim": "we are planning to add 30% to our 2026 low NA EUV capacity of around 65 for 2027, and we are investigating to increase capacity with another 30% for 2028. Similarly, we plan to add 30% to our 2026 DUV immersion capacity of around 130 for 2027, and we are investigating to increase capacity with another 30% in 2028.",
   "source": "2026-07-15 6-K EX-99.1 pressreleasefinancialresul.htm, CEO statement and outlook"
+ },
+ "followup_closure": {
+  "period": "Q2 2026",
+  "set_in": "Q1 2026",
+  "_note": "上季（Q1 2026）本地分析稿文末 5 条 Follow-up；判定逐字取自本季（Q2 2026）本地分析稿第 0 节。evidence 只写本季 6-K 里核得到的部分，series 里有的数一律写成占位符，由 builder 现算填入。",
+  "labels": [
+   "完全解答",
+   "部分解答",
+   "未解答"
+  ],
+  "items": [
+   {
+    "question": "下半年能否提速：Q2 实际对 €8.4–9.0B 指引，下半年每季能否到 €10B 以上",
+    "verdict": "完全解答",
+    "evidence": "本季总净销售 {sales}，高于 {sales_guide} 指引的上限；同一份新闻稿给 {next_quarter} 的指引是 {next_guide}，并把全年指引从 {fy_before} 上调到 {fy_now}。"
+   },
+   {
+    "question": "季度订单是否恢复披露，Q2 的净订单是多少",
+    "verdict": "部分解答",
+    "evidence": "定量没有恢复：本季新闻稿、演示、报表附件与法定中期报告里都没有订单数，新闻稿只说上半年订单「依然极强」，季度订单仍停在 {last_booking}。报告判为部分解答，依据是电话会上的定性说法（下一年的低数值孔径 EUV 已接近全部被订单覆盖），电话会不在 EDGAR 上。"
+   },
+   {
+    "question": "High NA 的第二家量产客户：TSMC、SK hynix、Samsung 任一家的量产验收",
+    "verdict": "部分解答",
+    "evidence": "没有第二家：本季演示第 6 页写的是同一家客户（Intel 18A 的部分层）进入大批量生产。"
+   },
+   {
+    "question": "中国实际占比对全年约 20% 的口径，以及出口管制有无新动作",
+    "verdict": "部分解答",
+    "evidence": "法定中期报告：上半年中国大陆占总净销售 {china_half}（{china_half_eur}），仍在这个口径之下。出口管制：上一份新闻稿那句「全年区间能容纳出口管制讨论的潜在结果」本季没有再写，申报里也没有新的内容。"
+   },
+   {
+    "question": "浸没式的反转能否持续：非 EUV 由「持平」改为「增长」是不是一次性的",
+    "verdict": "完全解答",
+    "evidence": "新闻稿写明 {next_year} 年在 {this_year} 年约 {immersion_capacity} 台的 DUV 浸没式产能上再加 {capacity_add}，{year_after} 年研究再加 {capacity_add_later}。"
+   }
+  ],
+  "note": "两条完全解答都是上修的信号；仍悬而未决的三条是订单的定量披露、High NA 的第二家量产客户，以及上半年中国占比与全年口径之间的距离。"
+ },
+ "prior_kpi_settlement": {
+  "period": "Q2 2026",
+  "set_in": "Q1 2026",
+  "_note": "上季（Q1 2026）本地分析稿「关键观察指标」5 条里本季到期、能量化的阈值，逐字抄自报告；兑现线是报告「兑现」一档，警戒线是「警示」一档，kpi 是报告里的序号。实际值由 build/asml.py 从 series 现算。",
+  "quantified": [
+   {
+    "kpi": 5,
+    "measure": "h1_buyback",
+    "line": "兑现线",
+    "direction": "up",
+    "threshold": 4000.0
+   },
+   {
+    "kpi": 5,
+    "measure": "h1_buyback",
+    "line": "警戒线",
+    "direction": "up",
+    "threshold": 2000.0
+   },
+   {
+    "kpi": 5,
+    "measure": "interim_dividend_growth",
+    "line": "兑现线",
+    "direction": "up",
+    "threshold": 17.0
+   },
+   {
+    "kpi": 3,
+    "measure": "china_system_share",
+    "line": "兑现线",
+    "direction": "down",
+    "threshold": 25.0
+   },
+   {
+    "kpi": 3,
+    "measure": "china_system_share",
+    "line": "警戒线",
+    "direction": "down",
+    "threshold": 30.0
+   }
+  ],
+  "not_settled": [
+   {
+    "kpi": 1,
+    "metric": "下半年系统收入节奏",
+    "condition": "Q3 系统收入 ≥ €8B 且 Q4 ≥ €9B 为兑现；Q3 < €7B 为警示",
+    "why": "到期在 2026Q3、2026Q4，本季不结算"
+   },
+   {
+    "kpi": 2,
+    "metric": "High NA 新增量产客户",
+    "condition": "2026 年下半年至少一家新的量产客户公告",
+    "why": "到期在 2026 年下半年，而且是事件不是数值"
+   },
+   {
+    "kpi": 4,
+    "metric": "订单披露",
+    "condition": "下半年公布的半年订单 ≥ €15B 且有细分为兑现；披露仍模糊为跟踪",
+    "why": "本季新闻稿、演示、报表附件与法定中期报告都没有订单数，没有值可结算，按报告的另一档「披露仍模糊」处理"
+   }
+  ]
  },
  "next_kpi": {
   "period": "Q2 2026",

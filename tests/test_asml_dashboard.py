@@ -99,12 +99,39 @@ REPORT_NEXT_THRESHOLDS = {
 }
 
 
+# Last quarter's local report (2026-04-30 ASML Q1 2026 vs Q4 2025 Analysis) left
+# five follow-up questions; this quarter's report (section 0) answered them:
+#   1 H2 ramp ✅ 完全 · 2 bookings ⚠️ 部分 · 3 High NA 2nd HVM ⚠️ 部分 ·
+#   4 China vs 20% ⚠️ 部分 · 5 immersion ✅ 完全
+REPORT_FOLLOWUP_VERDICTS = ["完全解答", "部分解答", "部分解答", "部分解答", "完全解答"]
+# ...and its watch list, of which these fell due in Q2 and carry a number:
+#   #3 H1 占比逐季下行至 < 25% = 兑现；占比维持 30%+ = 警示   (China systems revenue)
+#   #5 H1 累计回购 ≥ €4B + 股息维持 17% 增速 = 兑现；H1 回购 < €2B = 跟踪
+# #1 (Q3/Q4 systems) and #2 (High NA in H2) fall due later; #4 (半年 booking ≥ €15B)
+# has no disclosed figure to settle against.
+REPORT_PRIOR_KPIS = 5
+REPORT_PRIOR_THRESHOLDS = {
+    ("h1_buyback", "兑现线"): ("up", 4000.0),
+    ("h1_buyback", "警戒线"): ("up", 2000.0),
+    ("interim_dividend_growth", "兑现线"): ("up", 17.0),
+    ("china_system_share", "兑现线"): ("down", 25.0),
+    ("china_system_share", "警戒线"): ("down", 30.0),
+}
+
+
 def recomputed_measure(s: dict, key: str) -> float:
     """The value a threshold is judged against, recomputed without the builder."""
     q = s["quarterly"]
     P = q["periods"]
     year = int(P[-1][:4])
     this_year = [P.index(f"{year}Q{n}") for n in range(1, 5) if f"{year}Q{n}" in P]
+    if key == "h1_buyback":
+        return -(q["share_buybacks"][P.index(f"{year}Q1")] + q["share_buybacks"][P.index(f"{year}Q2")])
+    if key == "interim_dividend_growth":
+        d = s["dividends_per_share_by_year"]
+        return (d[str(year)]["interim"] / d[str(year - 1)]["interim"] - 1) * 100
+    if key == "china_system_share":
+        return s["deck_mix"]["china_pct"][-1]
     if key == "total_net_sales":
         return q["total_net_sales"][-1]
     if key == "gross_margin":
@@ -623,6 +650,92 @@ class AsmlFourSectionTest(unittest.TestCase):
         self.assertTrue(routine <= set(refs("routine")))
         self.assertFalse(routine & set(refs("quarter_highlights")))
 
+    # ── section one: what last quarter's report left to settle ───────────────
+    def test_section_one_settles_questions_then_thresholds_then_guidance(self) -> None:
+        refs = [ex.get("ref") for ex in self.section["settled"]["exhibits"]]
+        self.assertEqual(refs[:2], ["EX_CLOSURE", "EX_PRIOR"])
+        self.assertEqual(refs[-3:], ["EX_SALESDEV", "EX_GMDEV", "EX_IBMDEV"])
+        # between them, one threshold chart per settled measure that has a history
+        between = self.section["settled"]["exhibits"][2:-3]
+        self.assertEqual([ex["kind"] for ex in between], ["lines"] * len(between))
+        self.assertEqual(len(between), len({"h1_buyback", "china_system_share"}))
+
+    def test_the_follow_up_closure_is_the_reports_verdicts(self) -> None:
+        block = self.st["followup_closure"]
+        self.assertEqual([item["verdict"] for item in block["items"]], REPORT_FOLLOWUP_VERDICTS)
+        self.assertEqual(asml.display_period(block["set_in"]),
+                         asml.display_period(asml.shift_quarter(self.P[-1], -1)))
+        chart = self.section["settled"]["exhibits"][0]
+        counts = {label: REPORT_FOLLOWUP_VERDICTS.count(label) for label in chart["xlabels"]}
+        self.assertEqual(chart["values"], [counts[label] for label in chart["xlabels"]])
+        self.assertEqual(sum(chart["values"]), 5)
+        self.assertTrue(chart["title"].startswith("上季 5 条待验证问题：2 条完全解答、3 条部分解答"))
+        self.assertIn("没有一条未解答", chart["title"])
+        for item in block["items"]:
+            self.assertIn(item["question"], chart["note"])
+
+    def test_the_closure_evidence_cites_the_series_not_typed_figures(self) -> None:
+        note = self.section["settled"]["exhibits"][0]["note"]
+        self.assertNotRegex(note, r"\{[a-z]")
+        half = self.st["h1_mix"][self.P[-1][:4]]
+        share = half["region_eur_m"]["China"] / half["total_net_sales"] * 100
+        self.assertIn(f"上半年中国大陆占总净销售 {share:.1f}%", note)
+        self.assertIn(f"本季总净销售 {asml.eur_m(self.q['total_net_sales'][-1])}", note)
+        # the evidence sentences carry no figure of their own that the series holds
+        for item in self.st["followup_closure"]["items"]:
+            self.assertNotIn(asml.eur_m(self.q["total_net_sales"][-1]), item["evidence"])
+            self.assertNotRegex(item["evidence"], r"\d+\.\d%")
+
+    def test_the_prior_thresholds_are_the_reports(self) -> None:
+        block = self.st["prior_kpi_settlement"]
+        got = {(e["measure"], e["line"]): (e["direction"], e["threshold"]) for e in block["quantified"]}
+        self.assertEqual(got, REPORT_PRIOR_THRESHOLDS)
+        numbers = {e["kpi"] for e in block["quantified"] + block["not_settled"]}
+        self.assertEqual(numbers, set(range(1, REPORT_PRIOR_KPIS + 1)))
+        for entry in block["quantified"]:
+            self.assertFalse({"current", "actual", "metric", "unit"} & set(entry))
+
+    def test_each_prior_threshold_is_settled_from_the_series(self) -> None:
+        block = self.st["prior_kpi_settlement"]
+        chart = self.section["settled"]["exhibits"][1]
+        self.assertEqual(chart["kind"], "diverging_bars")
+        heads = [round(headroom_of(e["direction"], e["threshold"], recomputed_measure(self.st, e["measure"])), 1)
+                 for e in block["quantified"]]
+        for got, want in zip(chart["values"], heads):
+            self.assertAlmostEqual(got, want, places=6)
+        # the verdict words, recounted by line kind
+        guards = [h for e, h in zip(block["quantified"], heads) if e["line"] == "警戒线"]
+        targets = [h for e, h in zip(block["quantified"], heads) if e["line"] == "兑现线"]
+        self.assertTrue(all(h >= 0 for h in guards))
+        self.assertIn(f"{asml.cn_count(len(guards))}条警戒线都守住", chart["title"])
+        reached = sum(1 for h in targets if h >= 0)
+        self.assertIn(f"{asml.cn_count(len(targets))}条兑现线里{asml.cn_count(reached)}条达到", chart["title"])
+        spent = recomputed_measure(self.st, "h1_buyback")
+        self.assertIn(f"未达的是上半年回购（{asml.eur_m(spent)}，兑现线 €4B）", chart["title"])
+
+    def test_the_china_condition_is_quarter_by_quarter_decline(self) -> None:
+        """「H1 占比逐季下行至 < 25%」is two conditions; the note states the second."""
+        chart = next(ex for ex in self.section["settled"]["exhibits"]
+                     if ex["title"].startswith("中国大陆占净系统销售"))
+        china = self.st["deck_mix"]["china_pct"]
+        window = list(range(len(self.P) - 3, len(self.P)))
+        self.assertIn(" → ".join(f"{self.P[i]} {china[i]}%" for i in window), chart["note"])
+        falling = china[window[0]] > china[window[1]] > china[window[2]]
+        self.assertIn("，逐季下行" if falling else "，并不是逐季下行", chart["note"])
+
+    def test_the_threshold_note_names_both_overviews(self) -> None:
+        prior = self.section["settled"]["exhibits"][1]["n"]
+        nxt = self.section["next_quarter"]["exhibits"][0]["n"]
+        self.assertTrue(any(f"Exhibit {prior} 与 Exhibit {nxt} 的阈值" in note for note in self.payload["notes"]))
+
+    def test_what_last_report_left_unsettled_is_listed_with_a_reason(self) -> None:
+        block = self.st["prior_kpi_settlement"]
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("上季阈值"))
+        reasons = [row for row in table["rows"] if str(row[-1]).startswith("不结算：")]
+        self.assertEqual(len(reasons), len(block["not_settled"]))
+        self.assertIn(f"另有{asml.cn_count(len(block['not_settled']))}条本季不结算",
+                      self.section["settled"]["description"])
+
     # ── section three: the current report's watch list ───────────────────────
     def test_the_next_quarter_thresholds_are_the_reports(self) -> None:
         got = {(e["measure"], e["line"]): (e["direction"], e["threshold"]) for e in self.kpi["quantified"]}
@@ -765,10 +878,54 @@ class AsmlRollTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown threshold measure"):
             asml.build_payload(unknown)
 
+    def test_what_last_quarter_set_up_must_come_from_last_quarter(self) -> None:
+        for key in ("followup_closure", "prior_kpi_settlement"):
+            with self.subTest(block=key):
+                stale = copy.deepcopy(self.source)
+                stale[key]["period"] = "Q1 1999"
+                with self.assertRaisesRegex(ValueError, "stamped"):
+                    asml.build_payload(stale)
+                skipped = copy.deepcopy(self.source)
+                skipped[key]["set_in"] = "Q4 2025"
+                with self.assertRaisesRegex(ValueError, "settles what"):
+                    asml.build_payload(skipped)
+
+        typed = copy.deepcopy(self.source)
+        typed["prior_kpi_settlement"]["quantified"][0]["actual"] = 4000.0
+        with self.assertRaisesRegex(ValueError, "typed"):
+            asml.build_payload(typed)
+
+        misfiled = copy.deepcopy(self.source)
+        misfiled["followup_closure"]["items"][0]["verdict"] = "已验证"
+        with self.assertRaisesRegex(ValueError, "outside its labels"):
+            asml.build_payload(misfiled)
+
+        # a sentence that names a figure the builder does not compute cannot print
+        unfilled = copy.deepcopy(self.source)
+        unfilled["followup_closure"]["items"][0]["evidence"] += "{sales2}"
+        with self.assertRaisesRegex(ValueError, "unfilled placeholder"):
+            asml.build_payload(unfilled)
+
+    def test_a_quarter_with_nothing_to_settle_says_so(self) -> None:
+        bare = {k: v for k, v in self.source.items() if k not in ("followup_closure", "prior_kpi_settlement")}
+        payload = asml.build_payload(bare)
+        settled = payload["sections"][0]
+        self.assertEqual(settled["id"], "settled")
+        self.assertTrue(settled["description"].startswith("本季没有上季留下的跟踪指标可结算"))
+        self.assertEqual([ex.get("ref") for ex in settled["exhibits"]], ["EX_SALESDEV", "EX_GMDEV", "EX_IBMDEV"])
+        self.assertFalse(any("与 Exhibit" in note for note in payload["notes"]))
+
     def test_a_quarter_without_its_story_leaves_the_capacity_bars_out(self) -> None:
-        bare = asml.build_payload({k: v for k, v in self.source.items() if k != "quarter_story"})
+        # the follow-up evidence cites the story's capacity figures, so it cannot
+        # stay behind when the story goes
+        with self.assertRaises(KeyError):
+            asml.build_payload({k: v for k, v in self.source.items() if k != "quarter_story"})
+        bare = asml.build_payload({k: v for k, v in self.source.items()
+                                   if k not in ("quarter_story", "followup_closure")})
         full_ex, bare_ex = exhibits_of(self.payload), exhibits_of(bare)
-        self.assertEqual(len(bare_ex), len(full_ex))
+        # the capacity bars stay a chart; only the closure chart goes with its block
+        self.assertEqual([ex.get("ref") for ex in bare_ex],
+                         [ex.get("ref") for ex in full_ex if ex.get("ref") != "EX_CLOSURE"])
         units = by_ref(bare)["EX_UNITSY"]
         self.assertFalse(any("产能" in label or "计划" in label for label in units["xlabels"]))
         self.assertNotIn("产能", units["title"])
@@ -856,6 +1013,12 @@ class AsmlRollTest(unittest.TestCase):
             "flags": []})
         rolled["latest"] = dict(rolled["latest"], period="Q3 2026")
         rolled.pop("quarter_story")
+        # last quarter's watch list becomes this quarter's settlement; its follow-up
+        # list is the next report's to judge, so this synthetic roll has none
+        rolled.pop("followup_closure")
+        rolled["prior_kpi_settlement"] = {
+            "period": "Q3 2026", "set_in": "Q2 2026",
+            "quantified": copy.deepcopy(self.source["next_kpi"]["quantified"]), "not_settled": []}
         # the next report's watch list: a roll carries one, stamped for this quarter
         rolled["next_kpi"] = {
             "period": "Q3 2026", "for_period": "Q4 2026",
@@ -882,6 +1045,17 @@ class AsmlRollTest(unittest.TestCase):
         self.assertTrue(nxt["title"].startswith("下季 2 条阈值"))
         self.assertIn("2026Q4 总净销售（警戒线）", nxt["xlabels"])
         self.assertIn(round(headroom_of("up", 13000.0, q["total_net_sales"][-1]), 1), nxt["values"])
+        # ...and section one settles the Q2 report's thresholds with Q3's readings
+        prior = ref["EX_PRIOR"]
+        self.assertTrue(prior["title"].startswith(f"上季 {len(self.source['next_kpi']['quantified'])} 条量化阈值"))
+        self.assertIn("2026Q3 总净销售（兑现线）", prior["xlabels"])
+        at = prior["xlabels"].index("2026Q3 总净销售（兑现线）")
+        self.assertEqual(prior["values"][at], round(headroom_of("up", 11500.0, q["total_net_sales"][-1]), 1))
+        # the fourth quarter now has a guide of its own, so nothing is backed out
+        q4 = prior["xlabels"].index("2026Q4 收入指引（兑现线）")
+        self.assertEqual(prior["values"][q4], round(headroom_of("up", 14000.0, 13500.0), 1))
+        self.assertTrue(payload["sections"][0]["description"].startswith(
+            f"先看上季本地分析稿的 {len(self.source['next_kpi']['quantified'])} 条本季到期的量化阈值"))
 
 
 class AsmlChecksTest(unittest.TestCase):
