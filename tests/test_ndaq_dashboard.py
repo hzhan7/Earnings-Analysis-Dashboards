@@ -62,6 +62,43 @@ class NdaqDashboardTest(unittest.TestCase):
         cls.staging = json.loads(ndaq.STAGING_PATH.read_text(encoding="utf-8"))
         cls.payload = ndaq.build_payload(cls.staging)
 
+    # ── the four sections ───────────────────────────────────────────────────
+    def test_the_page_has_the_four_sections_in_order(self) -> None:
+        self.assertEqual([(s["id"], s["title"]) for s in self.payload["sections"]],
+                         [("settled", "一、上季跟踪指标兑现了吗"),
+                          ("quarter_highlights", "二、本季重点"),
+                          ("next_quarter", "三、下季要跟踪什么"),
+                          ("routine", "四、长期常规跟踪")])
+        for section in self.payload["sections"]:
+            self.assertTrue(section["exhibits"], section["id"])
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列",
+                      " ".join(self.payload["notes"]))
+
+    def test_section_one_says_there_was_no_prior_report_and_invents_nothing(self) -> None:
+        """The site's first NDAQ analysis is the Q2 2026 one, and its section 0 found
+        no earlier questions. So section one settles no follow-up list and no
+        thresholds -- it says why -- and carries the company's own guidance record."""
+        settled = self.payload["sections"][0]
+        self.assertIn("本站对纳斯达克的第一份季报分析是 Q2 2026", settled["description"])
+        self.assertIn("没有上季留下的跟踪指标可结算", settled["description"])
+        for exhibit in settled["exhibits"]:
+            self.assertFalse(exhibit["title"].startswith("上季"), exhibit["title"])
+        self.assertEqual({ex["ref"] for ex in settled["exhibits"]},
+                         {"EX_OPEX_LAST", "EX_OPEX_FIRST", "EX_OPEX_DEV", "EX_TAX"})
+        # A settlement block stamped for the first-report quarter is a contradiction.
+        changed = copy.deepcopy(self.staging)
+        changed["prior_kpi_settlement"] = {"period": "Q2 2026", "quantified": []}
+        with self.assertRaisesRegex(ValueError, "nothing"):
+            ndaq.build_payload(changed)
+
+    def test_the_open_year_and_the_gross_net_structure_sit_where_they_belong(self) -> None:
+        """A year still running settles nothing (it is this quarter's news), and the
+        gross-to-net split argues the same structural point every quarter."""
+        by_section = {ex.get("ref"): section["id"] for section in self.payload["sections"]
+                      for ex in section["exhibits"]}
+        self.assertEqual(by_section["EX_FY26"], "quarter_highlights")
+        self.assertEqual(by_section["EX_GROSSNET"], "routine")
+
     # ── the short window ────────────────────────────────────────────────────
     def test_the_short_window_starts_in_2024q3_and_is_complete(self) -> None:
         """It grows by one quarter a roll; what stays true is where it starts."""
@@ -849,13 +886,28 @@ class NdaqRollTest(unittest.TestCase):
             tax = s["annual_guidance_history"]["tax_rate"]["by_year"]["2026"]
             tax["releases"].append("2026-10-22")
             tax["guided"].append([22.5, 23.5, "2026-10-22"])
-        payload = self.rebuilt(third_quarter)
+
+        # The Q2 2026 report set thresholds, so a Q3 page that settles none of them
+        # does not build: that is the roll guard on section one.
+        with self.assertRaisesRegex(ValueError, "prior_kpi_settlement"):
+            self.rebuilt(third_quarter)
+
+        def settled_third_quarter(s):
+            third_quarter(s)
+            s["prior_kpi_settlement"] = {
+                "period": "Q3 2026", "set_in": "Q2 2026",
+                "quantified": [{"metric": "期末 ETP AUM", "direction": "up", "threshold": 950.0,
+                                "unit": "usd_bn", "actual": 1114.0}]}
+        payload = self.rebuilt(settled_third_quarter)
         text = published_text(payload)
         self.assertIn("Q3 2026", payload["title"])
         self.assertIn("前三季已发生的非 GAAP 营业费用", text)
         self.assertIn("第四季度还剩", text)
         self.assertNotIn("上半年已发生", text)
         self.assertIn("FY2026 费用指引的四次发布", text)
+        settled = payload["sections"][0]
+        self.assertTrue(settled["exhibits"][0]["title"].startswith("上季 1 条量化阈值"))
+        self.assertNotIn("第一份季报分析", settled["description"])
 
 
 if __name__ == "__main__":

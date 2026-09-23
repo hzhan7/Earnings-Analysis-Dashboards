@@ -60,6 +60,7 @@ from build.board import (  # noqa: E402
     cn_ordinal,
     delivery_band,
     fill_story,
+    headroom,
     headroom_exhibit,
     latest_block,
     number_exhibits,
@@ -95,6 +96,11 @@ FY2020_PREANNOUNCED_ON = "2021-01-12"
 TAX_RECOMPUTED_YEARS = tuple(range(2019, 2026))
 # Adenza closed on 2023-11-01; the FinTech sub-lines step there.
 ADENZA_QUARTER = "2023Q4"
+# The quarter the site's first NDAQ analysis covers (the 2026-07-23 release; the
+# owner's vault holds no earlier NDAQ report, and that report's section 0 says so).
+# Fixed history: only this quarter may say there is nothing from last quarter to
+# settle. Every later quarter settles what the report before it set.
+FIRST_REPORT_PERIOD = "Q2 2026"
 
 
 def pct_change(current: float, comparison: float) -> float:
@@ -445,8 +451,6 @@ def guidance_section(staging: dict) -> tuple[list[dict], list[dict]]:
                    "一节印出的 Non-GAAP effective tax rate，业绩新闻稿从不印这个数。"),
     ))
 
-    charts.append(open_year_chart(staging, opex, years))
-
     tables.append({
         "title": "全年非 GAAP 营业费用：年初指引、年末指引与实际（US$M）",
         "headers": ["年度", "指引次数", "年初第一次", "当年最后一次", "全年实际",
@@ -489,7 +493,13 @@ _SPENT_WORDS = {1: ("第一季度", "后三季"), 2: ("上半年", "下半年"),
 
 
 def open_year_chart(staging: dict, opex: dict, finished: list[int]) -> dict:
-    """The year still running: each release's range, and what is left of it."""
+    """The year still running: each release's range, and what is left of it.
+
+    It sits in the quarter's section, not in the settled one: a year that has not
+    ended settles nothing, and what the latest release did to the range -- raise
+    it, cut it, leave it -- is news about this quarter. So the title leads with
+    that last move, read off the vintages, and names the release that made it.
+    """
     open_year = max(opex["years"])
     guided = [g for g in opex["by_year"][str(open_year)]["guided"] if g]
     moves = [(g[2], mid(g[0], g[1])) for g in guided]
@@ -499,12 +509,22 @@ def open_year_chart(staging: dict, opex: dict, finished: list[int]) -> dict:
     falling = all(b[1] < a[1] for a, b in zip(moves, moves[1:]))
 
     if len(moves) == 1:
-        title = (f"FY{open_year} 费用指引：年初区间 US${guided[0][0]:,.0f}–{guided[0][1]:,.0f}M，"
+        title = (f"FY{open_year} 费用指引的{count}次发布：年初区间 US${guided[0][0]:,.0f}–{guided[0][1]:,.0f}M，"
                  f"中值 US${moves[0][1]:,.0f}M")
     else:
-        verb = "抬到" if moves[-1][1] > moves[0][1] else ("降到" if moves[-1][1] < moves[0][1] else "停在")
-        title = (f"FY{open_year} 费用指引的{count}次发布：中值从 US${moves[0][1]:,.0f}M {verb}"
-                 f" US${moves[-1][1]:,.0f}M，{signed(pct_change(moves[-1][1], moves[0][1]))}")
+        step = moves[-1][1] - moves[-2][1]
+        who = ("本季" if moves[-1][0] == staging["latest"]["release_date"]
+               else f"{moves[-1][0]} 那次")
+        if step > 0:
+            change = (f"{who}把中值从 US${moves[-2][1]:,.0f}M 抬到 US${moves[-1][1]:,.0f}M"
+                      f"（+US${step:,.0f}M）")
+        elif step < 0:
+            change = (f"{who}把中值从 US${moves[-2][1]:,.0f}M 降到 US${moves[-1][1]:,.0f}M"
+                      f"（−US${-step:,.0f}M）")
+        else:
+            change = f"{who}维持中值 US${moves[-1][1]:,.0f}M"
+        title = (f"FY{open_year} 费用指引的{count}次发布：{change}，"
+                 f"年初那次的中值是 US${moves[0][1]:,.0f}M")
 
     only_open = len(open_years(opex)) == 1
     lead = f"FY{open_year} 是唯一还没结清的年度" if only_open else f"FY{open_year} 还没结清"
@@ -618,7 +638,6 @@ def quarter_section(staging: dict, year_ago: YearAgo, context: dict | None) -> l
     """What moved this quarter, and the pass-through the gross line hides."""
     s31 = staging["section_31"]
     seg = staging["segments"]
-    lng = staging["long"]
     arr = staging["arr"]
     aum = staging["etp_aum"]
     fees = s31["fees_usd_m"]
@@ -644,14 +663,6 @@ def quarter_section(staging: dict, year_ago: YearAgo, context: dict | None) -> l
     else:
         back = f"，本季 US${story['now']:,.0f}M。"
 
-    capture = _retained_capture(staging)
-    peak = capture.index(max(capture))
-    capture_words = (f"{len(capture)} 个季度里它从 {capture[0]:.1f}% 走到 "
-                     f"{max(capture):.1f}% 的高点，本季 {capture[-1]:.1f}%。"
-                     if peak != len(capture) - 1 else
-                     f"{len(capture)} 个季度里它从 {capture[0]:.1f}% 走到本季 {capture[-1]:.1f}% 的高点。")
-    basis = staging["ms_reclassification"]
-    old_basis = lng["ms_net"][lng["quarters"].index(basis["quarter"])]
     n_seg = len(seg["quarters"])
 
     legs = [year_ago.growth(key, seg[key]) for key in ("cap", "fin", "ms_net")]
@@ -725,38 +736,6 @@ def quarter_section(staging: dict, year_ago: YearAgo, context: dict | None) -> l
                       "（U.S. Equity Derivative Trading 与 Cash Equity Trading 两块相加）；"
                       "该行总额取自各季业绩 8-K EX-99.1 的合并损益表；"
                       "其余经纪与清算费用为两者之差（D）。各年第四季由 10-K 全年数减前三季得到。"),
-    }, {
-        "ref": "EX_GROSSNET",
-        "kind": "stacked_dual",
-        "title": (f"Market Services 毛收入的去向：本季毛 US${seg['ms_gross'][-1]:,.0f}M，"
-                  f"留在公司的净收入 US${seg['ms_net'][-1]:,.0f}M（{100 * seg['ms_net'][-1] / seg['ms_gross'][-1]:.1f}%）"),
-        "xlabels": seg["period_labels"],
-        "stacks": [
-            {"name": "交易返点（付给流动性提供方）", "color": "BLUE",
-             "values": rounded(_seg_rebates(staging))},
-            {"name": "经纪、清算与交易所费用（近全部为 SEC 规费）", "color": "GOLD",
-             "values": rounded(_seg_bcef(staging))},
-            {"name": "Market Services 净收入", "color": "NAVY",
-             "values": rounded(seg["ms_net"])},
-        ],
-        "line": {"name": "返点 ÷（毛收入 − 规费）(RHS)", "color": "RED",
-                 "yfmt": "pct1", "ymax": 100,
-                 "values": rounded(capture)},
-        "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
-        "ylab": "US$M", "ylab2": "返点占比",
-        "note": (
-            f"<b>交易所毛收入线里，只有约{cn_fraction(seg['ms_net'][-1] / seg['ms_gross'][-1])}留在公司。</b>"
-            "三段自下而上是付给做市商与流动性提供方的返点、上一张图那笔 SEC 规费，"
-            "以及公司真正留下的净收入。"
-            f"<b>窗口只画 {seg['quarters'][0]} 之后的 {n_seg} 个季度，是因为再往前不是同一个口径</b>："
-            "2022 年那次重组把不产生交易性支出的 Trade Management Services 移出了 Market Services，"
-            f"分母因此变窄 —— 同一个 {basis['quarter']}，旧口径净收入 US${old_basis:,.0f}M、"
-            f"新口径 US${basis['new_usd_m']:,.0f}M，"
-            "拿旧口径的比例和新口径连成一条线，会把一次重分类读成过路成本的上升。"
-            "红线是剥掉规费之后的返点占比，规费的开关动不了它："
-            + capture_words + "这条线才是量与价的真实变化。"),
-        "src_extra": ("毛收入、返点与经纪清算费均取自各季 EX-99.1 合并损益表与 Revenue Detail 表；"
-                      f"三段相加等于毛收入，{n_seg} 个季度逐季核对无差。红线为本页自算（D）。"),
     }, {
         "ref": "EX_SEG",
         "kind": "grouped_bars",
@@ -941,6 +920,60 @@ def next_section(staging: dict, kpi: dict, context: dict | None) -> list[dict]:
     return exhibits
 
 
+def gross_to_net_chart(staging: dict) -> dict:
+    """Where the Market Services gross line goes: a structural chart, not a quarter's news.
+
+    It used to sit in the quarter's section, but what it argues -- that only about
+    a quarter of the exchange's gross revenue stays with the company, and that the
+    rebate share net of the SEC fee is the real volume-and-price signal -- is the
+    same argument every quarter. So it belongs with the long-run series.
+    """
+    seg = staging["segments"]
+    lng = staging["long"]
+    capture = _retained_capture(staging)
+    peak = capture.index(max(capture))
+    capture_words = (f"{len(capture)} 个季度里它从 {capture[0]:.1f}% 走到 "
+                     f"{max(capture):.1f}% 的高点，本季 {capture[-1]:.1f}%。"
+                     if peak != len(capture) - 1 else
+                     f"{len(capture)} 个季度里它从 {capture[0]:.1f}% 走到本季 {capture[-1]:.1f}% 的高点。")
+    basis = staging["ms_reclassification"]
+    old_basis = lng["ms_net"][lng["quarters"].index(basis["quarter"])]
+    n_seg = len(seg["quarters"])
+    return {
+        "ref": "EX_GROSSNET",
+        "kind": "stacked_dual",
+        "title": (f"Market Services 毛收入的去向：本季毛 US${seg['ms_gross'][-1]:,.0f}M，"
+                  f"留在公司的净收入 US${seg['ms_net'][-1]:,.0f}M（{100 * seg['ms_net'][-1] / seg['ms_gross'][-1]:.1f}%）"),
+        "xlabels": seg["period_labels"],
+        "stacks": [
+            {"name": "交易返点（付给流动性提供方）", "color": "BLUE",
+             "values": rounded(_seg_rebates(staging))},
+            {"name": "经纪、清算与交易所费用（近全部为 SEC 规费）", "color": "GOLD",
+             "values": rounded(_seg_bcef(staging))},
+            {"name": "Market Services 净收入", "color": "NAVY",
+             "values": rounded(seg["ms_net"])},
+        ],
+        "line": {"name": "返点 ÷（毛收入 − 规费）(RHS)", "color": "RED",
+                 "yfmt": "pct1", "ymax": 100,
+                 "values": rounded(capture)},
+        "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
+        "ylab": "US$M", "ylab2": "返点占比",
+        "note": (
+            f"<b>交易所毛收入线里，只有约{cn_fraction(seg['ms_net'][-1] / seg['ms_gross'][-1])}留在公司。</b>"
+            "三段自下而上是付给做市商与流动性提供方的返点、Exhibit {EX_S31} 拆出来的那笔 SEC 规费，"
+            "以及公司真正留下的净收入。"
+            f"<b>窗口只画 {seg['quarters'][0]} 之后的 {n_seg} 个季度，是因为再往前不是同一个口径</b>："
+            "2022 年那次重组把不产生交易性支出的 Trade Management Services 移出了 Market Services，"
+            f"分母因此变窄 —— 同一个 {basis['quarter']}，旧口径净收入 US${old_basis:,.0f}M、"
+            f"新口径 US${basis['new_usd_m']:,.0f}M，"
+            "拿旧口径的比例和新口径连成一条线，会把一次重分类读成过路成本的上升。"
+            "红线是剥掉规费之后的返点占比，规费的开关动不了它："
+            + capture_words + "这条线才是量与价的真实变化。"),
+        "src_extra": ("毛收入、返点与经纪清算费均取自各季 EX-99.1 合并损益表与 Revenue Detail 表；"
+                      f"三段相加等于毛收入，{n_seg} 个季度逐季核对无差。红线为本页自算（D）。"),
+    }
+
+
 def routine_section(staging: dict) -> list[dict]:
     lng = staging["long"]
     aum = staging["etp_aum"]
@@ -1047,6 +1080,50 @@ def headline_metrics(staging: dict) -> list[str]:
             f"Non-GAAP OpM {fin['nongaap_margin_pct'][-1]:.1f}%"]
 
 
+def settlement_lead(staging: dict, period: str) -> tuple[list[dict], str]:
+    """Section one's opening: what last quarter's report left, settled -- or why nothing is.
+
+    The first NDAQ analysis on this site covers `FIRST_REPORT_PERIOD`, so that
+    quarter has no follow-up list and no thresholds to settle, and the section
+    says so instead of inventing either. From the next quarter on, the report
+    before it did set thresholds (its section 8), and a page that quietly
+    dropped them would be the stale-prose failure in a new place: the build
+    stops until `prior_kpi_settlement` is stamped for the quarter.
+    """
+    closure = stamped_block(staging, "followup_closure", period)
+    prior = stamped_block(staging, "prior_kpi_settlement", period)
+    if period == FIRST_REPORT_PERIOD:
+        if closure or prior:
+            raise ValueError(f"no NDAQ report precedes {FIRST_REPORT_PERIOD}: there is nothing "
+                             "for `followup_closure` / `prior_kpi_settlement` to settle")
+        return [], (f"本站对纳斯达克的第一份季报分析是 {FIRST_REPORT_PERIOD}，"
+                    "没有上季留下的跟踪指标可结算（那份分析的第 0 节也写明没有上季问题可回看）；"
+                    "本节结算的是公司自己给出的指引。")
+    if prior is None:
+        raise ValueError(f"the report before {period} set thresholds in its section 8: stamp "
+                         f"`prior_kpi_settlement` (and `followup_closure`) for {period}")
+    charts: list[dict] = []
+    if closure:
+        counts = dict(zip(closure["labels"], closure["counts"]))
+        charts.append({
+            "kind": "bars_labeled",
+            "title": (f"上季 {sum(closure['counts'])} 条待验证问题："
+                      + "、".join(f"{count} 条{label}" for label, count in counts.items())),
+            "xlabels": closure["labels"], "values": closure["counts"],
+            "legend": "问题条数", "fmt": "f0", "yfmt": "f0", "label_fmt": "f0", "ylab": "条",
+            "note": closure.get("note", "逐条判定见上季报告的 Follow-up Questions 与本季报告第 0 节。"),
+            "src_extra": f"问题清单来自 {closure.get('set_in', '上季')} 的本地分析稿；判定依据本季新闻稿与 10-Q。",
+        })
+    entries = prior["quantified"]
+    held = sum(1 for e in entries if headroom(e["direction"], e["threshold"], e["actual"]) >= 0)
+    charts.append(headroom_exhibit(
+        f"上季 {len(entries)} 条量化阈值：{held} 条守住、{len(entries) - held} 条击穿",
+        entries, "actual",
+        "正值 = 守住上季报告第 8 节设的阈值，负值 = 击穿。阈值逐字取自上季报告，实际值取自本季申报。",
+        f"阈值：{prior.get('set_in', '上季')} 的本地分析稿第 8 节；实际值：{period} 申报。"))
+    return charts, "先结算上季报告留下的问题与阈值，再看公司自己给出的指引。"
+
+
 def accelerating(now: float, before: float) -> bool:
     return now > before
 
@@ -1074,10 +1151,15 @@ def build_payload(staging: dict) -> dict:
     year_ago = YearAgo(stamped_block(staging, "year_ago_reprinted", period))
     release = release_source(staging)
 
-    settled, settled_tables = guidance_section(staging)
-    highlights = quarter_section(staging, year_ago, context)
+    lead, settled_opening = settlement_lead(staging, period)
+    guidance_charts, settled_tables = guidance_section(staging)
+    settled = lead + guidance_charts
+    opex_record = hist["operating_expense"]
+    highlights = quarter_section(staging, year_ago, context) + [
+        open_year_chart(staging, opex_record, finished_years(opex_record))]
     next_block = next_section(staging, kpi, context) if kpi else []
     routine = routine_section(staging)
+    routine.insert(2, gross_to_net_chart(staging))
 
     exhibits = number_exhibits(settled + highlights + next_block + routine)
     resolve_exhibit_refs(exhibits)
@@ -1086,6 +1168,7 @@ def build_payload(staging: dict) -> dict:
     highlight_ex = exhibits[n1:n1 + n2]
     next_ex = exhibits[n1 + n2:n1 + n2 + n3]
     routine_ex = exhibits[n1 + n2 + n3:]
+    open_year_n = next(ex["n"] for ex in highlight_ex if ex.get("ref") == "EX_FY26")
 
     first_table = exhibits[-1]["n"] + 1
     tables = [{**t, "n": first_table + i} for i, t in enumerate(settled_tables)]
@@ -1256,15 +1339,20 @@ def build_payload(staging: dict) -> dict:
         "summary": {"blocks": []},
         "guidance": None,
         "sections": [
-            {"id": "settled", "title": "一、公司自己的指引兑现了吗",
-             "description": ("纳斯达克只指引两个数：全年非 GAAP 营业费用与全年非 GAAP 有效税率，"
-                             "两者都是年度的，都在每季业绩新闻稿里更新一次。"
+            {"id": "settled", "title": "一、上季跟踪指标兑现了吗",
+             "description": (settled_opening
+                             + "纳斯达克只指引两个数：全年非 GAAP 营业费用与全年非 GAAP 有效税率，"
+                             "两者都是年度的，都在每季业绩新闻稿里更新一次；"
                              "它从不指引收入、每股收益或利润率，也从不提供任何 GAAP 口径的指引。"
-                             "所以这一节结清的是公司自己的预算，不是它对业务的预测；"
-                             "并且把「年初那次」与「当年最后一次」分开算，因为两者的答案不一样。"),
+                             f"所以能结清的只有已经过完的年度（FY{finished_years(opex_record)[0]} 至 "
+                             f"FY{finished_years(opex_record)[-1]}），结清的是公司自己的预算，不是它对业务的预测；"
+                             f"FY{max(opex_record['years'])} 还没过完，它这一年的几次发布是本季的事，"
+                             f"放在第二节（Exhibit {open_year_n}）。"
+                             "「年初那次」与「当年最后一次」分开算，因为两者的答案不一样。"),
              "exhibits": settled_ex},
             {"id": "quarter_highlights", "title": "二、本季重点",
-             "description": ("先把毛收入里那笔代收代付的 SEC 规费剥掉，再看三个分部与两条 ARR；"
+             "description": ("先把毛收入里那笔代收代付的 SEC 规费剥掉，再看三个分部与两条 ARR，"
+                             "最后是本季对全年费用指引的更新；"
                              + highlight_words),
              "exhibits": highlight_ex},
             {"id": "next_quarter", "title": "三、下季要跟踪什么",
@@ -1273,7 +1361,8 @@ def build_payload(staging: dict) -> dict:
             {"id": "routine", "title": "四、长期常规跟踪",
              "description": (f"纳斯达克专属的常规序列：{len(staging['long']['quarters'])} 季两条利润率"
                              "与它们的调整缺口、"
-                             f"交易业务在净收入里退到{cn_count(math.ceil(ms_share / 10))}成以下的过程，"
+                             f"交易业务在净收入里退到{cn_count(math.ceil(ms_share / 10))}成以下的过程、"
+                             "Market Services 毛收入里真正留在公司的那一截，"
                              f"以及指数资产{cn_count(aum_years)}年{cn_count(aum_times)}倍的曲线。"),
              "exhibits": routine_ex},
         ],
