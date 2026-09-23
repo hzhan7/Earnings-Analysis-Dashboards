@@ -34,7 +34,147 @@
   "fiscal_year_gross_margin_pct": 42.9,
   "fiscal_year_ebit_margin_pct": 8.3,
   "source": "NIKE FY2026 Q4 业绩新闻稿（8-K EX-99.1，2026-06-30，acc 0000320187-26-000076）：首段「fourth quarter and full year ended May 31, 2026」、要点「Gross margin for the fourth quarter increased 890 basis points to 49.2 percent, including an approximately 900 basis point benefit」、CONSOLIDATED STATEMENTS OF INCOME（Revenues 10,972 / 46,398；Gross margin 49.2% / 42.9%；Diluted EPS 0.72）、DIVISIONAL REVENUES（北美 +3%/+3%，大中华区 −12%/−17%）、EBIT 表（North America 2,000；EBIT margin FY 8.3%）；退款 986 另见 FY2026 10-K OTHER MATTERS。",
-  "checked_on": "2026-09-19"
+  "checked_on": "2026-09-19",
+  "note": {
+   "source": {
+    "this_quarter": "2026-06-30 NKE Q2 2026 vs Q1 2026 Analysis.md：第 0 节「上季遗留问题回答」（7 条）、第 8 节「关键观察指标」（5 条）",
+    "previous_quarter": "2026-04-03 NKE Q3 FY2026 vs Q2 FY2026 Analysis.md：第 8 节「关键观察指标」（5 条）、文末 Follow-up Questions（7 条）"
+   },
+   "checked_on": "2026-09-24",
+   "followup_closure": {
+    "total": 7,
+    "counts": {
+     "已验证": 3,
+     "部分验证": 3,
+     "被证伪": 1
+    },
+    "_rule": "第 0 节没有统计行：#1 #4 #5 写「已验证」，#2 #3 #7 写「部分验证」，#6 写「被证伪」"
+   },
+   "prior_thresholds": [
+    {
+     "id": "na_add",
+     "item": 1,
+     "threshold": 5.0,
+     "direction": "up",
+     "gate": "加仓",
+     "unit": "pct"
+    },
+    {
+     "id": "na_track",
+     "item": 1,
+     "threshold": 1.0,
+     "direction": "up",
+     "gate": "跟踪",
+     "unit": "pct"
+    },
+    {
+     "id": "gc_add",
+     "item": 2,
+     "threshold": -15.0,
+     "direction": "up",
+     "gate": "加仓",
+     "unit": "pct"
+    },
+    {
+     "id": "gc_cut",
+     "item": 2,
+     "threshold": -25.0,
+     "direction": "up",
+     "gate": "减仓",
+     "unit": "pct"
+    },
+    {
+     "id": "h1_gm_add",
+     "item": 3,
+     "threshold": -100.0,
+     "direction": "up",
+     "gate": "加仓",
+     "unit": "bps"
+    },
+    {
+     "id": "q2_gm_positive",
+     "item": 3,
+     "threshold": 0.0,
+     "direction": "up",
+     "gate": "加仓",
+     "unit": "bps"
+    },
+    {
+     "id": "h1_gm_review",
+     "item": 3,
+     "threshold": -300.0,
+     "direction": "up",
+     "gate": "重新评估",
+     "unit": "bps"
+    },
+    {
+     "id": "h1_overhead_add",
+     "item": 5,
+     "threshold": 0.0,
+     "direction": "down",
+     "gate": "加仓",
+     "unit": "pct"
+    },
+    {
+     "id": "h1_overhead_warn",
+     "item": 5,
+     "threshold": 5.0,
+     "direction": "down",
+     "gate": "警示",
+     "unit": "pct"
+    },
+    {
+     "id": "charges_add",
+     "item": 5,
+     "threshold": 100.0,
+     "direction": "down",
+     "gate": "加仓",
+     "unit": "usd_m"
+    },
+    {
+     "id": "charges_warn",
+     "item": 5,
+     "threshold": 300.0,
+     "direction": "down",
+     "gate": "警示",
+     "unit": "usd_m"
+    }
+   ],
+   "prior_not_quantified": {
+    "count": 2,
+    "_what": "#1 的北美毛利率 −250bp / −400bp（不披露）；#4 投资者日（事件）"
+   },
+   "prior_call_guidance": {
+    "_source": "2026-03-31 FY2026 Q3 电话会 CFO 展望段原话，另见上季报告第 2 节 B「未来指引」",
+    "numeric": [
+     {
+      "reads": "total_cn",
+      "low": -4.0,
+      "high": -2.0
+     },
+     {
+      "reads": "gc_cn",
+      "low": -20.0,
+      "high": -20.0
+     },
+     {
+      "reads": "gm_change_ex_bp",
+      "low": -75.0,
+      "high": -25.0
+     },
+     {
+      "reads": "fx_points",
+      "low": 2.0,
+      "high": 2.0
+     },
+     {
+      "reads": "other_net_expense",
+      "low": 15.0,
+      "high": 25.0
+     }
+    ]
+   }
+  }
  },
  "periods": [
   "Q3 2024",
@@ -320,10 +460,11 @@
   "severance_q4_operating_overhead": -23,
   "supreme_court_ruling_date": "2026-02-20",
   "tenk_release_date": "2026-07-15",
-  "prior_note_date": "2026-07-06",
-  "prior_note_receivable_estimate_usd_m": 686.0,
-  "prior_note_ex_both_gm_yoy_pp": 1.4,
-  "_source_note": "退款金额、地域拆分、收现与应收取自 FY2026 10-K 的 OTHER MATTERS（2026-07-15）；prior_note_* 两项是上季本地分析稿自己的推算值，页面拿它们与申报值对照，不作为数据发布。",
+  "report_date": "2026-07-06",
+  "report_receivable_estimate_usd_m": 686.0,
+  "report_ex_both_gm_yoy_pp": 1.4,
+  "report_severance_q4_estimate_usd_m": 170.0,
+  "_source_note": "退款金额、地域拆分、收现与应收取自 FY2026 10-K 的 OTHER MATTERS（2026-07-15）；report_* 三项是本季报告（2026-06-30 NKE Q2 2026 vs Q1 2026 Analysis.md，2026-07-06 写成）自己的推算值，页面拿它们与申报值对照，不作为数据发布。",
   "tenk_quote": "Subsequent to May 31, 2026, we received substantially all of the remaining IEEPA tariff receivable",
   "src_extra": "退款金额与科目见 FY2026 10-K 的 OTHER MATTERS 与附注一；遣散费用见 10-K 附注十八与 FY2026 Q3 的 10-Q 附注十三，季度值为两者之差。",
   "receivable_src_extra": "应收账款为各季资产负债表申报值；退款应收金额与收现表述见 FY2026 10-K 的 OTHER MATTERS。"
@@ -682,6 +823,49 @@
    0.0,
    -3.0,
    -4.0
+  ]
+ },
+ "release_changes": {
+  "_note": "八份业绩新闻稿（8-K EX-99.1）Income Statement Review 一段印出的同比变化，逐季照录：Gross margin increased/decreased N basis points；Operating overhead expense … up/down N percent（flat 记 0）。剔除退款的毛利率变化只在有退款的那一季与报表值不同：FY2026 Q4 印的是 +890bp、其中退款约 900bp，CFO 在电话会上说剔除后 down 10 basis points。自算值与这些印出值差在四舍五入之内（毛利率 ±5bp）。",
+  "source": [
+   "FY2025 Q1 https://www.sec.gov/Archives/edgar/data/320187/000032018724000062/q1fy25exhibit991er.htm",
+   "FY2025 Q2 https://www.sec.gov/Archives/edgar/data/320187/000032018724000069/q2fy25exhibit991er.htm",
+   "FY2025 Q3 https://www.sec.gov/Archives/edgar/data/320187/000032018725000011/q3fy25exhibit991er.htm",
+   "FY2025 Q4 https://www.sec.gov/Archives/edgar/data/320187/000032018725000034/q4fy25exhibit991er.htm",
+   "FY2026 Q1 https://www.sec.gov/Archives/edgar/data/320187/000032018725000091/q1fy26exhibit991er.htm",
+   "FY2026 Q2 https://www.sec.gov/Archives/edgar/data/320187/000032018725000138/q2fy26exhibit991er.htm",
+   "FY2026 Q3 https://www.sec.gov/Archives/edgar/data/320187/000032018726000026/q3fy26exhibit991er.htm",
+   "FY2026 Q4 https://www.sec.gov/Archives/edgar/data/320187/000032018726000076/q4fy26exhibit991er.htm"
+  ],
+  "gross_margin_change_bp": [
+   120.0,
+   -100.0,
+   -330.0,
+   -440.0,
+   -320.0,
+   -300.0,
+   -130.0,
+   890.0
+  ],
+  "gross_margin_change_ex_refund_bp": [
+   120.0,
+   -100.0,
+   -330.0,
+   -440.0,
+   -320.0,
+   -300.0,
+   -130.0,
+   -10.0
+  ],
+  "operating_overhead_change_pct": [
+   -7.0,
+   -5.0,
+   -13.0,
+   -3.0,
+   0.0,
+   -4.0,
+   3.0,
+   -1.0
   ]
  },
  "channels_usd_m": {
@@ -2713,7 +2897,7 @@
   }
  },
  "severance": {
-  "_note": "公司按季度与年初至今披露遣散费用，会计季 Q4 是两者之差。把 FY2026 Q3 的「三个月 230」当成年初至今会把 Q4 算成约 170，而申报的九个月数是 304，全年 385，所以 Q4 是 81。",
+  "_note": "公司按季度与年初至今披露遣散费用，会计季 Q4 是全年数减九个月数。FY2026 Q3 的 10-Q 印的是「三个月 230、九个月 304」，10-K 的全年是 385，所以 Q4 是 81；把三个月数当成年初至今会得到 155，本季报告用电话会的「近 4 亿美元」去减，得到约 170。",
   "interim_fiscal_year": 2026,
   "fiscal_years": [
    2024,
@@ -2746,7 +2930,6 @@
   "q3_quarter_total_usd_m": 230.0,
   "remaining_accrual_usd_m": 243.0,
   "remaining_accrual_as_of": "2026-05-31",
-  "prior_note_misread_q4_usd_m": 170.0,
   "src_extra": "FY2026 10-K 附注十八与 FY2024 10-K 的重组附注，均为申报值。"
  },
  "buyback_programme": {
@@ -2780,61 +2963,290 @@
   "term_years": 4,
   "reapproved_month": "2026 年 6 月"
  },
- "prior_kpi_settlement": [
-  {
-   "metric": "北美收入同比（固定汇率）vs 加仓门槛 +5%",
-   "direction": "up",
-   "threshold": 5.0,
-   "unit": "pct",
-   "actual": 3.0
-  },
-  {
-   "metric": "北美收入同比（固定汇率）vs 跟踪门槛 +1%",
-   "direction": "up",
-   "threshold": 1.0,
-   "unit": "pct",
-   "actual": 3.0
-  },
-  {
-   "metric": "大中华区收入同比（固定汇率）vs 加仓门槛 −15%",
-   "direction": "up",
-   "threshold": -15.0,
-   "unit": "pct",
-   "actual": -17.0
-  },
-  {
-   "metric": "大中华区收入同比（固定汇率）vs 减仓门槛 −25%",
-   "direction": "up",
-   "threshold": -25.0,
-   "unit": "pct",
-   "actual": -17.0
-  }
- ],
- "prior_kpi_unsettleable": [
-  {
-   "metric": "北美的毛利率同比（阈值 −250bp / −400bp）",
-   "reason": "NIKE 不按地域披露毛利率，任何一份申报文件里都没有这条数。最接近的可比项是北美 EBIT：报表值 +91%，剔除 965 的关税退款后 −1%（公司自己在新闻稿脚注里给了这个口径）。",
-   "kind": "not_disclosed",
-   "needs": "按地域拆的毛利率"
-  },
-  {
-   "metric": "FY2027 上半年毛利率同比（阈值 −100bp / −300bp）",
-   "reason": "阈值窗口整个落在未来。且管理层已把拐点时点从 FY2027 Q2 提前到 Q1，阈值所指的那个季度不再是第一次检验。",
-   "kind": "future_window",
-   "window_fiscal_year": 2027
-  },
-  {
-   "metric": "投资者日的内容（阈值：给出 FY2027–28 收入增速与毛利率目标）",
-   "reason": "日期这一半已结清 —— 定在 2026-11-16/17，没有推迟到 FY2027 下半年；内容要等事件本身。",
-   "kind": "partly_settled"
-  },
-  {
-   "metric": "FY2027 上半年 operating overhead 增速（阈值 0% / +5%）",
-   "reason": "窗口在未来。公司只给了方向：自 FY2027 Q1 起同比下降。",
-   "kind": "future_window",
-   "window_fiscal_year": 2027
-  }
- ],
+ "followup_closure": {
+  "period": "Q2 2026",
+  "set_in": "Q1 2026",
+  "_note": "问题清单是上季报告（2026-04-03 NKE Q3 FY2026 vs Q2 FY2026 Analysis.md）文末 Follow-up Questions 的 7 条；判定照录本季报告（2026-06-30 NKE Q2 2026 vs Q1 2026 Analysis.md）第 0 节「验证结果」一列。第 0 节没有统计行，labels 是按原文措辞归的类。evidence 里的数用 {占位名} 写，由 builder 从 series 现算后填入；电话会口径的内容照录并注明。判定与一手申报矛盾时以申报为准并在 evidence 里写明 —— 本季第 5 条的金额即如此。",
+  "labels": [
+   "已验证",
+   "部分验证",
+   "被证伪"
+  ],
+  "items": [
+   {
+    "short": "Q4 收入与大中华区指引",
+    "question": "Q4 实际收入落在 −2%~−4% 区间的哪里？大中华区是否如指引 −20%？",
+    "verdict": "已验证",
+    "evidence": "收入 {revenue}：固定汇率 {total_cn}、报表 {total_rep}；大中华区固定汇率 {gc_cn}、报表 {gc_rep}。与上季电话会指引的逐条对照见本节「上季电话会给的本季指引」一图。"
+   },
+   {
+    "short": "世界杯对 Football 的收入贡献",
+    "question": "世界杯对 Football 品类的具体收入贡献是多少？",
+    "verdict": "部分验证",
+    "evidence": "公司没有给金额，申报文件也不按品类披露收入。电话会给的是量与热度：开赛前国家队球衣已售出2022 年世界杯同期的 2.5 倍，新款 Mercurial 是 NIKE Direct 史上 24 小时卖得最快的足球鞋，6 月看到世界杯带来的动销回升。本季报告据此判为部分验证（未量化）。"
+   },
+   {
+    "short": "EMEA 年末库存与清理计划",
+    "question": "EMEA 年末库存水平与 FY2027 上半年的清理计划？",
+    "verdict": "部分验证",
+    "evidence": "申报文件不按地域披露库存金额：合并库存 {inventory}，同比 {inventory_yoy}。电话会口径：EMEA 库存美元额同比上升 low double digits，off-price 收入下降一半以上、全价实现率提高 15 个百分点，已收紧订货、下调近期 sell-in。EMEA 收入固定汇率 {emea_cn}，EBIT {emea_ebit}（同比 {emea_ebit_yoy}）。"
+   },
+   {
+    "short": "投资者日日期与框架",
+    "question": "投资者日的具体日期与内容框架？",
+    "verdict": "已验证",
+    "evidence": "定于 {investor_day}（2026-06-30 电话会）。公司上季说投资者日将恢复给出全年与长期指引，本季说届时公布下一阶段增长战略。"
+   },
+   {
+    "short": "$230M 之外的 Q4 重组费用",
+    "question": "$230M 之外，Q4 是否还有额外的重组费用？",
+    "verdict": "已验证",
+    "evidence": "有，但金额以申报为准：FY2026 Q3 的 10-Q 印的是「三个月 {severance_third}、九个月 {severance_nine_months}」，10-K 的全年是 {severance_fy}，所以 Q4 新增 {severance_fourth}（销货成本 {severance_fourth_cogs}、经营费用 {severance_fourth_overhead}，后者是一笔冲回）。本季报告推算的约 {report_severance} 是拿电话会说的「近 4 亿美元」减 Q3 那一季的 {severance_third} —— 把三个月数当成了年初至今。",
+    "correction": "「$230M 之外的 Q4 重组费用」一条判定照录，金额以申报为准：Q4 新增 {severance_fourth}，不是本季报告推算的约 {report_severance}。"
+   },
+   {
+    "short": "Sportswear 是否环比收窄",
+    "question": "Sportswear 整体增速是否比 Q3 的 low double digit decline 环比改善？",
+    "verdict": "被证伪",
+    "evidence": "申报文件不披露 Sportswear 的收入。电话会口径：Q3 是 declined low double digits，Q4 是 declined double digits、零售销售同步下滑，4 月中旬起的动销减速对 Sportswear 与 Jordan Streetwear 冲击最大；公司预计两者 FY2027 仍为负、下半年才改善。"
+   },
+   {
+    "short": "Converse 的剥离或授权",
+    "question": "Converse 是否在评估剥离、授权等长期战略选项？",
+    "verdict": "部分验证",
+    "evidence": "申报文件里没有任何剥离或授权动作，电话会讲的是战略收敛（聚焦创作者与生活方式定位）。Converse 本季收入 {converse_rev}（固定汇率 {converse_cn}）、EBIT {converse_ebit}，其中 {converse_refund} 是关税退款，剔除后 {converse_ex}。"
+   }
+  ]
+ },
+ "prior_kpi_settlement": {
+  "period": "Q2 2026",
+  "set_in": "Q1 2026",
+  "_note": "上季报告（2026-04-03 NKE Q3 FY2026 vs Q2 FY2026 Analysis.md）第 8 节五条关键观察指标里写成数的阈值，数值与方向逐字取自报告。reads 指向本季读数的名字，builder 从 series 现算，这里不存实际值；alt_reads 是报告没写口径时的另一口径。settles 缺省即本季到期；gate 是报告写的触发动作；joint 是加仓还要同时满足的另一半，either 是减仓/跟踪的另一种触发方式。not_quantified 是写不成数、或申报不披露的部分。",
+  "quantified": [
+   {
+    "id": "na_add",
+    "item": 1,
+    "metric": "北美收入同比（固定汇率）",
+    "gate": "加仓",
+    "direction": "up",
+    "threshold": 5.0,
+    "unit": "pct",
+    "reads": "na_cn",
+    "alt_reads": "na_rep",
+    "joint": "北美毛利率同比收窄到 −250bp 以内（申报不披露，本季电话会也没给数）"
+   },
+   {
+    "id": "na_track",
+    "item": 1,
+    "metric": "北美收入同比（固定汇率）",
+    "gate": "跟踪",
+    "direction": "up",
+    "threshold": 1.0,
+    "unit": "pct",
+    "reads": "na_cn",
+    "alt_reads": "na_rep",
+    "either": "北美毛利率同比仍在 −400bp（申报不披露，读不到）"
+   },
+   {
+    "id": "gc_add",
+    "item": 2,
+    "metric": "大中华区收入同比（固定汇率）",
+    "gate": "加仓",
+    "direction": "up",
+    "threshold": -15.0,
+    "unit": "pct",
+    "reads": "gc_cn",
+    "alt_reads": "gc_rep",
+    "joint": "FY2027 Q1 环比改善（下一季才读得到）",
+    "basis": "报告没写口径；它写阈值时引用的当前读数与公司指引都是固定汇率口径，本页按固定汇率结算"
+   },
+   {
+    "id": "gc_cut",
+    "item": 2,
+    "metric": "大中华区收入同比（固定汇率）",
+    "gate": "减仓",
+    "direction": "up",
+    "threshold": -25.0,
+    "unit": "pct",
+    "reads": "gc_cn",
+    "alt_reads": "gc_rep",
+    "either": "FY2027 Q1 仍是 −mid teens（下一季才读得到）",
+    "basis": "同上"
+   },
+   {
+    "id": "h1_gm_add",
+    "item": 3,
+    "metric": "FY2027 上半年毛利率同比",
+    "gate": "加仓",
+    "direction": "up",
+    "threshold": -100.0,
+    "unit": "bps",
+    "settles": "Q4 2026",
+    "joint": "FY2027 Q2 毛利率同比转正"
+   },
+   {
+    "id": "q2_gm_positive",
+    "item": 3,
+    "metric": "FY2027 Q2 毛利率同比",
+    "gate": "加仓",
+    "direction": "up",
+    "threshold": 0.0,
+    "unit": "bps",
+    "settles": "Q4 2026",
+    "joint": "FY2027 上半年毛利率同比不低于 −100bp"
+   },
+   {
+    "id": "h1_gm_review",
+    "item": 3,
+    "metric": "FY2027 上半年毛利率同比",
+    "gate": "重新评估",
+    "direction": "up",
+    "threshold": -300.0,
+    "unit": "bps",
+    "settles": "Q4 2026"
+   },
+   {
+    "id": "h1_overhead_add",
+    "item": 5,
+    "metric": "FY2027 上半年经营费用同比",
+    "gate": "加仓",
+    "direction": "down",
+    "threshold": 0.0,
+    "unit": "pct",
+    "settles": "Q4 2026",
+    "joint": "$230M 之外的额外重组费用不超过 $100M"
+   },
+   {
+    "id": "h1_overhead_warn",
+    "item": 5,
+    "metric": "FY2027 上半年经营费用同比",
+    "gate": "警示",
+    "direction": "down",
+    "threshold": 5.0,
+    "unit": "pct",
+    "settles": "Q4 2026"
+   },
+   {
+    "id": "charges_add",
+    "item": 5,
+    "metric": "$230M 之外的额外重组费用",
+    "gate": "加仓",
+    "direction": "down",
+    "threshold": 100.0,
+    "unit": "usd_m",
+    "settles": "Q4 2026",
+    "joint": "FY2027 上半年经营费用同比不高于 0%"
+   },
+   {
+    "id": "charges_warn",
+    "item": 5,
+    "metric": "$230M 之外的额外重组费用",
+    "gate": "警示",
+    "direction": "down",
+    "threshold": 300.0,
+    "unit": "usd_m",
+    "settles": "Q4 2026"
+   }
+  ],
+  "not_quantified": [
+   {
+    "item": 1,
+    "metric": "北美毛利率同比（阈值 −250bp / −400bp）",
+    "reason": "NIKE 不按地域披露毛利率，申报文件里没有这条数；上季电话会口头给过 −360bp，本季电话会只说剔除退款后北美 underlying 毛利率同比继续改善，没有给数。"
+   },
+   {
+    "item": 4,
+    "metric": "投资者日（召开并给出 FY27–28 收入增速、毛利率目标与 Converse 战略 → 加仓；推迟到 FY2027 下半年或只给定性方向 → 跟踪）",
+    "reason": "日期这一半已结清：定在 {investor_day}，落在 FY2027 上半年，没有推迟；内容要等事件本身。"
+   }
+  ]
+ },
+ "prior_call_guidance": {
+  "period": "Q2 2026",
+  "set_in": "Q1 2026",
+  "source": "2026-03-31 FY2026 Q3 业绩电话会的 CFO 展望段，非申报值",
+  "_note": "上季电话会给本季（FY2026 Q4）的指引，words 是原话。low/high 只在原话是数字时才有；词不换算成端点。chart 为真的几条画成「实际减指引中值」的百分点柱；unit 为 bps 的按 100 换成百分点。reads 指向本季读数，builder 从 series 现算。退款不在当初的指引里（2026-06-23 的 8-K EX-99.1 与本季电话会都这么说），所以毛利率按剔除退款的口径结算。",
+  "filed_note": "2026-06-23 的 8-K（Item 2.02）EX-99.1 写明：这笔退款不在此前给出的指引里，剔除它，第四季业绩预计 generally in line with previously provided guidance。",
+  "report_remark": "本季报告第 0 节写「reported 因 FX 转顺风好于区间」，是拿报表读数去对固定汇率的区间。",
+  "items": [
+   {
+    "metric": "收入同比（固定汇率）",
+    "words": "revenues in Q4 to be down 2% to 4%",
+    "low": -4.0,
+    "high": -2.0,
+    "unit": "pct",
+    "reads": "total_cn",
+    "chart": true,
+    "short": "收入（固定汇率）"
+   },
+   {
+    "metric": "大中华区收入同比（固定汇率）",
+    "words": "Greater China to be down approximately 20%",
+    "low": -20.0,
+    "high": -20.0,
+    "unit": "pct",
+    "reads": "gc_cn",
+    "chart": true,
+    "short": "大中华区"
+   },
+   {
+    "metric": "毛利率同比（剔除关税退款）",
+    "words": "Q4 down approximately 25 to 75 basis points, including 250 basis points due to higher tariffs",
+    "low": -75.0,
+    "high": -25.0,
+    "unit": "bps",
+    "reads": "gm_change_ex_bp",
+    "chart": true,
+    "short": "毛利率（剔除退款）"
+   },
+   {
+    "metric": "汇率对收入增速的贡献",
+    "words": "a 2-point benefit from foreign exchange",
+    "low": 2.0,
+    "high": 2.0,
+    "unit": "pp",
+    "reads": "fx_points",
+    "chart": false,
+    "why": "读数是报表与固定汇率两个整数增速之差，误差可达 1 个百分点，不画成柱",
+    "short": "汇率"
+   },
+   {
+    "metric": "利息与其他收支净额（费用为正）",
+    "words": "an expense of $15 million to $25 million",
+    "low": 15.0,
+    "high": 25.0,
+    "unit": "usd_m",
+    "reads": "other_net_expense",
+    "chart": false,
+    "why": "金额不是百分点，不与上面几条共用一根轴",
+    "short": "利息与其他收支"
+   },
+   {
+    "metric": "北美收入",
+    "words": "modest growth in North America",
+    "unit": "pct",
+    "reads": "na_cn",
+    "chart": false,
+    "short": "北美"
+   },
+   {
+    "metric": "销售与管理费用（美元额）同比",
+    "words": "Q4 SG&A dollars to be flat to down slightly",
+    "unit": "pct",
+    "reads": "sga_change_pct",
+    "chart": false,
+    "short": "销售与管理费用"
+   },
+   {
+    "metric": "全年有效税率",
+    "words": "full year tax rate to be in the low 20% range",
+    "unit": "pct",
+    "reads": "fy_tax_rate",
+    "chart": false,
+    "short": "全年税率"
+   }
+  ]
+ },
  "next_kpi": [
   {
    "metric": "毛利率同比（剔除关税退款）vs 加仓门槛 +50bp",
@@ -2879,48 +3291,6 @@
    "metric": "FY2027 operating overhead 同比增速",
    "reason": "阈值是「不高于 0%」，零阈值没有百分比余量可算；本页只在核对表里记录它的触发状态。",
    "summary": "经营费用增速的阈值是「不高于 0%」，零阈值没有百分比余量可算"
-  }
- ],
- "followup_closure": [
-  {
-   "question": "Q4 收入落在 −2%~−4% 区间的哪里？大中华区是否如指引 −20%？",
-   "evidence": "收入 10,972，报表 −1%、固定汇率 −4%（贴区间下限）；大中华区固定汇率 −17%，好于 −20% 的指引 3 个百分点。",
-   "verdict": "已结清"
-  },
-  {
-   "question": "世界杯对 Football 品类的收入贡献是多少？",
-   "evidence": "公司没有给过任何数字。NIKE 不按品类披露收入，Football 在任何一份申报文件里都没有金额。",
-   "verdict": "无法结清（无披露）"
-  },
-  {
-   "question": "EMEA 年末库存与 FY2027 上半年的清理计划？",
-   "evidence": "公司不按地域披露库存金额。合并库存 7,501，同比 +0.2%；EMEA 收入固定汇率 −6%，EBIT 434（−8%）。",
-   "verdict": "部分结清（地域库存无披露）"
-  },
-  {
-   "question": "投资者日的日期与内容框架？",
-   "evidence": "定于 2026 年 11 月 16–17 日，公司公告将给出 FY2027 全年指引与更新后的长期财务目标。",
-   "verdict": "已结清"
-  },
-  {
-   "question": "$230M 之外，Q4 是否还有额外的重组费用？",
-   "evidence": "有，但不是本地笔记推算的约 170。10-Q 印出的是「三个月 230、九个月 304」，10-K 的全年是 385，所以 Q4 新增 81 —— 其中销货成本 +104、经营费用 −23（一笔冲回）。",
-   "verdict": "已结清，并更正"
-  },
-  {
-   "question": "Sportswear 的降幅是否环比收窄？",
-   "evidence": "公司不披露 Sportswear 的收入。可披露的最接近项是品类线：鞋 7,103（固定汇率 −4%）、服装 3,046（−1%）、器材 551（−5%）。",
-   "verdict": "无法结清（无披露）"
-  },
-  {
-   "question": "Converse 是否在评估剥离或授权？",
-   "evidence": "申报文件里没有任何剥离或授权动作。Converse 本季收入 244（固定汇率 −34%）、EBIT 23，其中 21 是关税退款，剔除后 2。",
-   "verdict": "已结清"
-  },
-  {
-   "question": "$686M 的关税退款应收何时收现？10-K 是否出现减值准备？",
-   "evidence": "应收的申报数是 684 不是 686；已收现 302。10-K（2026-07-15 报出，比上季笔记晚九天）写明年末之后已收到剩余退款应收的绝大部分，且没有计提任何减值准备。",
-   "verdict": "已结清，并更正"
   }
  ],
  "guidance": {
@@ -2987,15 +3357,10 @@
  "spoken": {
   "period": "Q2 2026",
   "source": "2026-06-30 业绩电话会（非申报值）",
-  "prior_greater_china_cn_guide_pct": -20.0,
   "greater_china_quote": "profitability will bottom before sales",
   "gross_margin_turn_from": "FY2027 Q2",
   "gross_margin_turn_to": "FY2027 Q1",
-  "gross_margin_turn_words": "slightly positive",
-  "quarter_gross_margin_guide_bp": [
-   -75,
-   -25
-  ]
+  "gross_margin_turn_words": "slightly positive"
  },
  "annual_story": {
   "fiscal_year": 2026,
