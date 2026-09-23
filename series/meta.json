@@ -78,7 +78,116 @@
       "其他地区": 36
     },
     "source": "Meta Q2 2026 业绩新闻稿（8-K EX-99.1，acc 0001628280-26-050596，2026-07-29）逐项读取：首段「quarter ended June 30, 2026」与发布日 July 29, 2026；Financial Highlights 表（Revenue 60,801 / 47,516、28%；Costs and expenses 42,026；Income from operations 18,775 / 20,441；Operating margin 31%；Diluted EPS 6.18）；Operational Highlights（DAP 3.60 billion；Ad impressions +14%；Average price per ad +12%；$2.40 billion legal proceedings 与 $1.18 billion severance；Headcount 75,472）；CFO Outlook Commentary（third quarter $61-64 billion；expenses $165-169 billion；capital expenditures $130-145 billion, narrowed from $125-145 billion；tax rate 15-17%, from 13-16%）；现金流量表（operating activities 31,862；Purchases of property and equipment (30,116)；Principal payments on finance leases (962)；Depreciation and amortization 6,356；Share-based compensation 7,658；Repurchases —；Proceeds from issuance of long-term debt, net 24,910）；分部表（Advertising 59,363 / 46,563；Other revenue 1,007；Reality Labs 431；FoA 23,394；RL (4,619)）；Reconciliation 表（advertising +27%；Free cash flow 784）。区域同比取同季 10-Q（acc 0001628280-26-050705）MD&A「revenue increased by 32% in United States & Canada, 24% in Europe, 19% in Asia-Pacific, and 36% in Rest of World」。",
-    "checked_on": "2026-09-19"
+    "checked_on": "2026-09-19",
+    "note": {
+      "source": {
+        "this_quarter": "2026-07-29 META Q2 2026 vs Q1 2026 Analysis.md：第 0 节「上季 Follow-up 回答」6 条逐条判定（没有统计行）；第 8 节「先校准上季 5 条指标」与「本季 5 条指标」、立场撤销条件 ①–③",
+        "previous_quarter": "2026-04-30 META Q1 2026 vs Q4 2025 Analysis.md：第 8 节「关键观察指标」5 行；文末 Follow-up Questions for Next Quarter 6 条"
+      },
+      "checked_on": "2026-09-24",
+      "report": {
+        "period_end": "2026-06-30",
+        "release_date": "2026-07-29"
+      },
+      "last_report": {
+        "period_end": "2026-03-31",
+        "release_date": "2026-04-29"
+      },
+      "followup_closure": {
+        "total": 6,
+        "wordings": [
+          "部分验证 —— 没有第三次大幅上修，但下限被抬高，方向仍向上",
+          "已验证（价格站住）——但结论方向被误导",
+          "仍未披露（口径从 sessions per user 换成\"interacting people +60%\"，仍是相对数）",
+          "部分验证：模式说清了，量化被抽走",
+          "被证伪（不但没下调，还上调）",
+          "部分验证：youth 侧已货币化，EU 侧叙事消失且仍未量化"
+        ],
+        "counts": {
+          "已验证": 1,
+          "部分验证": 3,
+          "被证伪": 1,
+          "仍未披露": 1
+        }
+      },
+      "prior_rows": 5,
+      "prior_thresholds": [
+        {
+          "row": 1,
+          "text": "H2 第三次上修到 ≥ $145B midpoint → 减仓",
+          "fires": "≥",
+          "threshold": 145.0
+        },
+        {
+          "row": 1,
+          "text": "FY2027 guide 首次给出 ≥ $160B → 减仓",
+          "fires": "≥",
+          "threshold": 160.0
+        },
+        {
+          "row": 1,
+          "text": "维持 $135B + ROIC 证据出现 → 加仓",
+          "fires": "≤",
+          "threshold": 135.0
+        },
+        {
+          "row": 2,
+          "text": "Q2/Q3 ≥ +8% YoY → 加仓",
+          "fires": "≥",
+          "threshold": 8.0
+        },
+        {
+          "row": 2,
+          "text": "Q2 ≤ +3% YoY → 警示",
+          "fires": "≤",
+          "threshold": 3.0
+        },
+        {
+          "row": 3,
+          "text": "Q2/Q3 RL revenue ≥ $500M + AI glasses ≥ 100% YoY → 跟踪",
+          "fires": "≥",
+          "threshold": 500.0
+        },
+        {
+          "row": 3,
+          "text": "连续 2 季 RL revenue YoY 转负 → 警示",
+          "fires": "<",
+          "threshold": 0.0,
+          "consecutive": 2
+        },
+        {
+          "row": 4,
+          "text": "Q2/Q3 FoA Other ≥ +60% YoY + WhatsApp ≥ $5B run rate → 加仓",
+          "fires": "≥",
+          "threshold": 60.0
+        },
+        {
+          "row": 4,
+          "text": "增速回落到 < +40% YoY → 跟踪",
+          "fires": "<",
+          "threshold": 40.0
+        },
+        {
+          "row": 5,
+          "text": "Q2/Q3 ≥ 39% → 加仓",
+          "fires": "≥",
+          "threshold": 39.0
+        },
+        {
+          "row": 5,
+          "text": "< 37% → 警示",
+          "fires": "<",
+          "threshold": 37.0
+        },
+        {
+          "row": 5,
+          "text": "连续 2 季下行 ≥ 2pp → 警示",
+          "fires": "≤",
+          "threshold": -2.0,
+          "consecutive": 2
+        }
+      ]
+    }
   },
   "periods": [
     "Q3 2023",
@@ -385,19 +494,26 @@
       77986,
       75945
     ],
-    "one_off_items": [
-      {
-        "name": "法律计提",
-        "usd_m": 2400
-      },
-      {
-        "name": "遣散费",
-        "usd_m": 1180
-      }
-    ],
     "workforce_reduction_positions": 8000,
     "net_debt_issuance_usd_m": 24910,
-    "sources": "Q2 2026 EX-99.1（分部表、每股收益、要点行的 headcount 与「approximately 8,000 employees」、费用行的 $2.40B 与 $1.18B、现金流量表「Proceeds from issuance of long-term debt, net」24,910）；Q2 2026 10-Q（「Property and equipment in accounts payable ...」19,502 / 10,618；受限现金 13,107 / 1,662）；Q1 2026 EX-99.1（分部经营利润 26,900 / (4,028)、稀释 EPS 10.44、headcount 77,986）。"
+    "sources": "Q2 2026 EX-99.1（分部表、每股收益、要点行的 headcount 与「approximately 8,000 employees」、现金流量表「Proceeds from issuance of long-term debt, net」24,910）；Q2 2026 10-Q（「Property and equipment in accounts payable ...」19,502 / 10,618；受限现金 13,107 / 1,662）；Q1 2026 EX-99.1（分部经营利润 26,900 / (4,028)、稀释 EPS 10.44、headcount 77,986）。"
+  },
+  "operating_income_one_offs": {
+    "why": "报告按季加回的经营利润一次性项：只列有加回的季度，金额取当季新闻稿单列的数（Q2 2026：EX-99.1 「Costs and expenses」一条写明含 $2.40 billion legal proceedings 与 $1.18 billion severance；10-Q 分部附注注明遣散费分摊在 FoA 与 RL 两个分部、未给分部金额）。没有列出的季度按 GAAP。调整后经营利润 = GAAP 经营利润 + 该季各项之和，是算术加总，不是公司定义的 non-GAAP 指标。换季时有一次性项就按季度加一行，没有就不动。",
+    "by_period": {
+      "Q2 2026": [
+        {
+          "name": "法律计提",
+          "key": "legal",
+          "usd_m": 2400
+        },
+        {
+          "name": "遣散费",
+          "key": "severance",
+          "usd_m": 1180
+        }
+      ]
+    }
   },
   "annual_actuals_usd_m": {
     "2025": {
@@ -451,64 +567,252 @@
       "被证伪",
       "仍未披露"
     ],
-    "counts": [
-      1,
-      3,
-      1,
-      1
-    ],
-    "note": "被证伪的是「裁员会带来费用指引下调」——裁员约 {positions} 人、遣散费 {severance}，全年费用指引反而把下限抬高了 {expense_low_raise}；{partial}条部分验证全部因为公司换掉了原来的披露口径。"
+    "rule": "本季分析第 0 节逐条写判定、没有统计行：本页按每条判定原文开头的措辞归类（「已验证」「部分验证」「被证伪」「仍未披露」），开头之后的限定语照录在核对表里，本页不改判。",
+    "items": [
+      {
+        "n": 1,
+        "short": "CapEx 区间",
+        "question": "CapEx 是否继续维持在 $125-145B，还是 Q2/Q3 再次上修？",
+        "wording": "部分验证 —— 没有第三次大幅上修，但下限被抬高，方向仍向上",
+        "verdict": "部分验证",
+        "evidence": "全年资本开支指引由 {capex_before} 改为 {capex_now}（{capex_bounds_move}），中点 {capex_mid_before} → {capex_mid_now}"
+      },
+      {
+        "n": 2,
+        "short": "广告单价",
+        "question": "Q2 advertising price growth 是否还能维持高个位数或双位数，还是 Q1 的 +12% 只是宏观/FX 高点？",
+        "wording": "已验证（价格站住）——但结论方向被误导",
+        "verdict": "已验证",
+        "evidence": "单价同比 {price_now}（上季 {price_before}）；同期曝光同比 {impressions_before} → {impressions_now}，广告收入同比 {ads_before} → {ads_now}"
+      },
+      {
+        "n": 3,
+        "short": "Meta AI 用量",
+        "question": "Muse Spark / Meta AI 是否开始披露 DAU、retention、queries/session 或 paid conversion，而不只是 sessions per user？",
+        "wording": "仍未披露（口径从 sessions per user 换成\"interacting people +60%\"，仍是相对数）",
+        "verdict": "仍未披露",
+        "evidence": "新闻稿与 10-Q 没有 Meta AI 的用量数；电话会只给相对数（与助手日常交互的人数 +60%）"
+      },
+      {
+        "n": 4,
+        "short": "Business AIs",
+        "question": "Business AIs weekly conversations 是否继续从 10M 扩张，并出现明确 monetization model？",
+        "wording": "部分验证：模式说清了，量化被抽走",
+        "verdict": "部分验证",
+        "evidence": "电话会把「每周 10M 次对话」换成「超过 1M 家企业每周使用 business agents」，两个数不可环比；收费方式（订阅、按用量、最终按结果付费）本季电话会讲了，仍没有收入数"
+      },
+      {
+        "n": 5,
+        "short": "裁员与费用指引",
+        "question": "May workforce reduction 是否带来费用指引下调，还是完全被 infrastructure/talent cost 吃掉？",
+        "wording": "被证伪（不但没下调，还上调）",
+        "verdict": "被证伪",
+        "evidence": "裁员约 {positions} 人、遣散费 {severance}，全年总费用指引由 {expense_before} 改为 {expense_now}（{expense_bounds_move}；新闻稿写明抬高下限是为吸收本季 {legal} 的法律计提）"
+      },
+      {
+        "n": 6,
+        "short": "EU 与 youth 诉讼",
+        "question": "EU less-personalized ads 与 US youth trials 是否出现可量化收入/费用影响？",
+        "wording": "部分验证：youth 侧已货币化，EU 侧叙事消失且仍未量化",
+        "verdict": "部分验证",
+        "evidence": "本季一般及行政费用含 {legal} 法律计提，新闻稿仍写 youth 相关审判「may ultimately result in a material loss」；上季新闻稿「headwinds in the EU」一句本季不再出现，EU 影响仍无金额"
+      }
+    ]
   },
   "prior_kpi_settlement": {
     "period": "Q2 2026",
     "set_in": "Q1 2026",
-    "lead": "广告价格以 {price_margin} 的余量「达标」，但同一季广告收入减速 {ad_slowdown}——这条阈值本身已被证明会给出方向相反的信号，本季退役。",
-    "quantified": [
+    "_note": "上季（Q1 2026）本地分析第 8 节「关键观察指标」5 行在本季的结算。rows 是逐字的原文与本季分析「先校准上季 5 条指标」对每一行的读法（report_reading）与处理（handling）；quantified 是从原文拆出的每一档线：measure、fires（原文的比较符）、threshold、kind（target = 触发是好事，warn = 触发是警示）逐字取自原文，读数不在这里存，由 build/meta.py 按 measure 从本文件的序列现算；consecutive 是原文要求连续几季，also 是同一档里不进数值比较的另一半及其本季证据，year 是全年量所指的年份。text_legs 是整行里只能按文字结算的条件（{…} 由 builder 现算填入）。换季时整块换成上一季 next_kpi 的 rows 与 quantified（原样搬过来），再补上新一季报告的读法与处理，并改戳。",
+    "rows": [
       {
-        "metric": "FY2026 CapEx 指引中点",
-        "direction": "down",
-        "threshold": 145.0,
-        "actual": 137.5,
-        "unit": "usd_bn",
-        "area": "资本开支"
+        "row": 1,
+        "metric": "FY2026 CapEx midpoint（最大估值压力点）",
+        "text": "第二次上修后 $125-145B（midpoint $135B，+86.9% YoY）；Q2/Q3 维持区间 = capital intensity 锁定 → 跟踪；H2 第三次上修到 ≥ $145B midpoint 或 FY2027 guide 首次给出 ≥ $160B = 估值乘数从 25x → 20x 区间压缩、FCF haircut 折价加深 → 减仓；维持 $135B + ROIC 证据出现 = 重新评估 → 加仓",
+        "action": "跟踪 / 减仓 / 加仓",
+        "report_reading": "未触发，但阈值设计失效",
+        "handling": "重设：只盯 capex 线会漏掉 El Paso 式表外算力，改为「capex + 表外义务」合并口径"
       },
       {
-        "metric": "平均每条广告价格 YoY",
-        "direction": "up",
-        "threshold": 8.0,
-        "actual": 12.0,
-        "unit": "pct",
-        "area": "广告价格"
+        "row": 2,
+        "metric": "Average price per ad YoY（广告 AI 兑现 vs 周期性涨价见顶）",
+        "text": "Q1 +12% YoY（vs Q4 +6%，加速 +6pp，是 Q1 +33% 收入增长主要 driver）；Q2/Q3 ≥ +8% YoY = AI 性能驱动持续兑现（Lattice/GEM/Adaptive Ranking 效率传导）→ 加仓；Q2 ≤ +3% YoY = 涨价周期见顶、增长依赖 impressions → 警示（impressions +19% 已是高位）",
+        "action": "加仓 / 警示",
+        "report_reading": "指标设计失效（给出错误信号）：形式上触发「加仓」",
+        "handling": "退役：价格达标而广告收入减速，单看价格会误导，替换为「量价联合桥」"
       },
       {
-        "metric": "Reality Labs 单季收入",
-        "direction": "up",
-        "threshold": 500.0,
-        "actual": 431.0,
-        "unit": "usd_m",
-        "area": "新硬件"
+        "row": 3,
+        "metric": "Reality Labs 季度收入 + 亏损（AI glasses vs Quest lap）",
+        "text": "Q1 RL revenue $402M（-2% YoY），Q4 $955M（季节性）；Q2/Q3 RL revenue ≥ $500M + 管理层确认 AI glasses 增长 ≥ 100% YoY = AI glasses 撑住 Quest lap → 跟踪；连续 2 季 RL revenue YoY 转负 = AI glasses ramp 不及预期 → 警示（且 RL 亏损 ~$5B/Q 持续吞噬）",
+        "action": "跟踪 / 警示",
+        "report_reading": "未触发",
+        "handling": "降级为纯观察项，不占用 5 个名额：RL 连续多季稳定拖累约 -$4.5B/季，边际信息量低"
       },
       {
-        "metric": "FoA Other 收入 YoY",
-        "direction": "up",
-        "threshold": 60.0,
-        "actual": 72.7,
-        "unit": "pct",
-        "area": "非广告收入"
+        "row": 4,
+        "metric": "FoA Other revenue + WhatsApp paid messaging run rate（Insight 3 — 被低估的变现入口）",
+        "text": "Q1 FoA Other $885M（+74% YoY、+10.5% QoQ），年化 ~$3.54B（vs Q4 末公布 $2B，半年 +77%）；Q2/Q3 FoA Other ≥ +60% YoY + WhatsApp 单独披露 ≥ $5B run rate = 第二变现引擎确认 → 加仓 + 多元化里程碑；增速回落到 < +40% YoY = 早期 base effect 退潮 → 跟踪",
+        "action": "加仓 / 多元化里程碑 / 跟踪",
+        "report_reading": "已触发（加仓 / 多元化里程碑）",
+        "handling": "保留、上调阈值：从「增速」转向「绝对额 + 增速」双轨"
       },
       {
-        "metric": "经营利润率（调整后）",
-        "direction": "up",
-        "threshold": 37.0,
-        "actual": 36.77,
-        "unit": "pct",
-        "area": "利润率",
-        "basis": "adjusted"
+        "row": 5,
+        "metric": "Operating margin（41% 是否守住 vs compute / depreciation 压力）",
+        "text": "Q1/Q4 均为 41%；Q2/Q3 ≥ 39% = compute efficiency 改进消化 CapEx 折旧 → 加仓；< 37% 或连续 2 季下行 ≥ 2pp = depreciation step-up 超 efficiency gains → 警示（CapEx +87% YoY 将于 2027 H1 开始进入完整折旧周期）",
+        "action": "加仓 / 警示",
+        "report_reading": "已触发（警示）：GAAP 与调整后两种口径均低于 37%",
+        "handling": "保留但升级：静态利润率已确认转折，下一阶段改看增量利润率"
       }
     ],
-    "retired": [
-      "「平均每条广告价格」单独成线已退役：本季价格达标而广告收入减速 5.4pp，单看价格给出方向相反的信号",
-      "「Reality Labs 单季收入」降级为观察项：连续多季稳定拖累约 -$4.5B，边际信息量低"
+    "quantified": [
+      {
+        "id": "capex_mid_cut",
+        "row": 1,
+        "line": "减仓线",
+        "measure": "capex_guide_mid",
+        "year": "2026",
+        "fires": "≥",
+        "threshold": 145.0,
+        "kind": "warn",
+        "unit": "usd_bn"
+      },
+      {
+        "id": "capex_mid_hold",
+        "row": 1,
+        "line": "加仓线",
+        "measure": "capex_guide_mid",
+        "year": "2026",
+        "fires": "≤",
+        "threshold": 135.0,
+        "kind": "target",
+        "unit": "usd_bn",
+        "reads_as": "原文「维持 $135B」按中点不高于 $135B 结算",
+        "also": {
+          "text": "ROIC 证据出现",
+          "reading": "电话会上分析师直接问可量化的 ROIC，管理层没有给任何回报数字（电话会口径）"
+        }
+      },
+      {
+        "id": "fy2027_first_cut",
+        "row": 1,
+        "line": "减仓线",
+        "measure": "capex_guide_first_mid",
+        "year": "2027",
+        "fires": "≥",
+        "threshold": 160.0,
+        "kind": "warn",
+        "unit": "usd_bn",
+        "unread": "公司还没有给出 FY2027 资本开支指引：本季新闻稿 Outlook 段只给 2026 年，电话会上明确不提供 2027 年的数"
+      },
+      {
+        "id": "price_add",
+        "row": 2,
+        "line": "加仓线",
+        "measure": "price_per_ad_yoy",
+        "fires": "≥",
+        "threshold": 8.0,
+        "kind": "target",
+        "unit": "pct"
+      },
+      {
+        "id": "price_warn",
+        "row": 2,
+        "line": "警示线",
+        "measure": "price_per_ad_yoy",
+        "fires": "≤",
+        "threshold": 3.0,
+        "kind": "warn",
+        "unit": "pct"
+      },
+      {
+        "id": "rl_track",
+        "row": 3,
+        "line": "跟踪线",
+        "measure": "reality_labs_revenue",
+        "fires": "≥",
+        "threshold": 500.0,
+        "kind": "target",
+        "unit": "usd_m",
+        "also": {
+          "text": "管理层确认 AI glasses 增长 ≥ 100% YoY",
+          "reading": "新闻稿与 10-Q 只说 RL 收入增长来自 AI 眼镜、被 Quest 销量下滑部分抵消，没有给 AI 眼镜的增速"
+        }
+      },
+      {
+        "id": "rl_yoy_warn",
+        "row": 3,
+        "line": "警示线",
+        "measure": "reality_labs_revenue_yoy",
+        "fires": "<",
+        "threshold": 0.0,
+        "kind": "warn",
+        "unit": "pct",
+        "consecutive": 2
+      },
+      {
+        "id": "foa_add",
+        "row": 4,
+        "line": "加仓线",
+        "measure": "foa_other_revenue_yoy",
+        "fires": "≥",
+        "threshold": 60.0,
+        "kind": "target",
+        "unit": "pct",
+        "also": {
+          "text": "WhatsApp 单独披露 ≥ $5B run rate",
+          "reading": "10-Q 只说 FoA 其他收入的增长主要来自 WhatsApp 付费消息与订阅，没有单独披露 WhatsApp 的金额或 run rate"
+        }
+      },
+      {
+        "id": "foa_track",
+        "row": 4,
+        "line": "跟踪线",
+        "measure": "foa_other_revenue_yoy",
+        "fires": "<",
+        "threshold": 40.0,
+        "kind": "warn",
+        "unit": "pct"
+      },
+      {
+        "id": "margin_add",
+        "row": 5,
+        "line": "加仓线",
+        "measure": "operating_margin_adjusted",
+        "fires": "≥",
+        "threshold": 39.0,
+        "kind": "target",
+        "unit": "pct"
+      },
+      {
+        "id": "margin_warn",
+        "row": 5,
+        "line": "警示线",
+        "measure": "operating_margin_adjusted",
+        "fires": "<",
+        "threshold": 37.0,
+        "kind": "warn",
+        "unit": "pct"
+      },
+      {
+        "id": "margin_slide",
+        "row": 5,
+        "line": "警示线",
+        "measure": "operating_margin_adjusted_qoq_pp",
+        "fires": "≤",
+        "threshold": -2.0,
+        "kind": "warn",
+        "unit": "pp",
+        "consecutive": 2,
+        "reads_as": "原文「连续 2 季下行 ≥ 2pp」按环比变动不高于 −2pp、连续两季结算"
+      }
+    ],
+    "text_legs": [
+      {
+        "row": 1,
+        "text": "Q2/Q3 维持区间 = capital intensity 锁定 → 跟踪",
+        "reading": "全年指引由 {capex_before} 改为 {capex_now}，区间{capex_range_held}"
+      }
     ]
   },
   "next_kpi": {

@@ -148,6 +148,36 @@ def _intc_threshold_reach() -> int:
                if "警戒线" in ex["title"])
 
 
+def _meta_threshold_reach() -> int:
+    """META settles last quarter's section-8 lines and places this quarter's, one
+    chart per reading that has a record, each on the full 42-quarter axis. Which
+    readings the two reports chose changes every roll -- the page is rolled by
+    editing `series/meta.json` alone -- so the pin counts the permanent charts
+    and adds the threshold charts that reach 2016 while they are published (a
+    threshold chart is one that draws a 「上季…」/「下季…」 line)."""
+    page = js_payload(ROOT / "data" / "meta.js", "window.DASH")
+    return sum(1 for section in page["sections"] for ex in section["exhibits"]
+               if ex["kind"] == "lines"
+               and any(s["name"].startswith(("上季", "下季")) for s in ex.get("series", []))
+               and (first_year(ex) or TARGET_YEAR + 1) <= TARGET_YEAR)
+
+
+def _meta_price_dips() -> dict:
+    """The ad chart counts the quarters in which price per ad fell year on year --
+    a conditional count, not a window. Pinned at the series' own count, and at
+    the chart's number as the page prints it, since that moves whenever a chart
+    before it comes or goes."""
+    series = json.loads((ROOT / "series" / "meta.json").read_text(encoding="utf-8"))
+    negative = sum(1 for v in series["long_history"]["price_per_ad_yoy_pct"] if v is not None and v < 0)
+    page = js_payload(ROOT / "data" / "meta.js", "window.DASH")
+    for section in page["sections"]:
+        for ex in section["exhibits"]:
+            names = [s["name"] for s in ex.get("series", [])]
+            if names[1:] == ["广告曝光 YoY", "平均每条广告价格 YoY"]:
+                return {f"meta Ex{ex['n']}": ([negative], "价格腿同比为负的季度数，是条件计数")}
+    return {}
+
+
 def _tsm_advanced_count() -> dict:
     """The process-mix note counts the quarters since 2021Q1 in which the page's
     summed 7nm-and-below line equals TSMC's own aggregate. The count grows by
@@ -173,7 +203,8 @@ def _tsm_advanced_count() -> dict:
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
     "amd": 16, "amzn": 13, "arm": 0, "asml": 16, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
-    "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
+    "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7,
+    "meta": 5 + _meta_threshold_reach(),
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
     "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
@@ -1650,7 +1681,6 @@ UNDERIVABLE_QUARTER_COUNTS = {
     "cdns Ex11": ([43], "指向完整指引记录的交叉引用；本图只画近 20 季"),
     "cme Ex14":  ([37], "锚是同句里用中文写的「五十四个季度里」，数字形式的锚不存在"),
     "cme Ex21":  ([34], "税改前 7 季 / 之后 34 季的分段均值，两段都短于窗口"),
-    "meta Ex9":  ([13], "价格腿同比为负的季度数，是条件计数"),
     "axp Ex16":  ([16], "两条口径同时被印出来的季度数（16 季），是重叠区间的长度，"
                         "不是该图 42 季的窗口 —— 图注拿它论证两条线不能接成一条"),
     "axp Ex17":  ([16], "同上，同一句重叠区间长度出现在另一张信用图的图注里"),
@@ -1661,6 +1691,7 @@ UNDERIVABLE_QUARTER_COUNTS = {
                        "本来的样子。同句里的「三十八季」是印出增速的季度数（42 季轴上有 4 季"
                        "只有欧元金额、没有增速），用中文数字写，所以不进这个正则"),
     **_tsm_advanced_count(),
+    **_meta_price_dips(),
 }
 
 

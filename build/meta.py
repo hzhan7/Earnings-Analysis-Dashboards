@@ -44,6 +44,7 @@ from build.board import (  # noqa: E402
     ai_capex_cycle_table,
     cn_count,
     cn_ordinal,
+    fill_story,
     headroom,
     headroom_exhibit,
     latest_block,
@@ -321,6 +322,493 @@ def range_text(low: float, high: float) -> str:
     return f"{one(low)}–{one(high)}"
 
 
+def html_text(text: str) -> str:
+    """Prose that goes into an exhibit note (rendered as HTML): escape what the
+    report wrote literally -- its comparators -- so a `<` is never read as markup."""
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+# ── thresholds: the two reports' section 8, line by line ─────────────────────
+# A report writes each line as the condition that fires it -- 「≥ +8% = 加仓」,
+# 「< 37% = 警示」 -- so an entry carries that comparator as written (`fires`) and
+# whether firing is good news or a warning (`kind`: target / warn). Which side
+# of the line is favourable follows from the two, and it is the comparator, not
+# the sign of a headroom, that decides a reading landing exactly on an inclusive
+# line. Readings are never typed into the series: an entry names a `measure`
+# and the reading is computed here from the series, so next quarter's list can
+# be moved into `prior_kpi_settlement` as it stands and settled with no code
+# change.
+OPERATORS = {"≥": lambda value, line: value >= line, ">": lambda value, line: value > line,
+             "≤": lambda value, line: value <= line, "<": lambda value, line: value < line}
+
+# page name, short name for a bar label, unit, how a reading prints, and the
+# chart spec when the measure is a quarterly series (`point` ones are not).
+MEASURES = {
+    "price_per_ad_yoy": {"name": "平均每条广告价格同比", "short": "单价同比", "unit": "pct",
+                         "reading": "{:+.0f}%", "fmt": "pct0", "ylab": "同比增速"},
+    "ad_impressions_yoy": {"name": "广告曝光同比", "short": "曝光同比", "unit": "pct",
+                           "reading": "{:+.0f}%", "fmt": "pct0", "ylab": "同比增速"},
+    "reality_labs_revenue": {"name": "Reality Labs 单季收入", "short": "RL 收入", "unit": "usd_m",
+                             "reading": "${:,.0f}M", "fmt": "f0c", "ylab": "$M"},
+    "reality_labs_revenue_yoy": {"name": "Reality Labs 收入同比", "short": "RL 收入同比", "unit": "pct",
+                                 "reading": "{:+.1f}%", "chart": False},
+    "foa_other_revenue": {"name": "FoA Other 单季收入", "short": "FoA Other 收入", "unit": "usd_m",
+                          "reading": "${:,.0f}M", "fmt": "f0c", "ylab": "$M"},
+    "foa_other_revenue_yoy": {"name": "FoA Other 收入同比", "short": "FoA Other 同比", "unit": "pct",
+                              "reading": "{:+.1f}%", "fmt": "pct1", "ylab": "同比增速"},
+    "operating_margin_adjusted": {"name": "经营利润率（调整后）", "short": "经营利润率",
+                                  "unit": "pct", "reading": "{:.2f}%", "fmt": "pct1", "ylab": "经营利润率"},
+    "operating_margin_adjusted_qoq_pp": {"name": "经营利润率环比变动（调整后）", "short": "利润率环比",
+                                         "unit": "pp", "reading": "{:+.2f}pp", "chart": False},
+    "incremental_margin_qoq_adjusted": {"name": "调整后环比增量经营利润率", "short": "环比增量利润率",
+                                        "unit": "pct", "reading": "{:+.1f}%", "fmt": "pct1",
+                                        "ylab": "ΔOI / ΔRevenue"},
+    "operating_income": {"name": "单季经营利润（GAAP）", "short": "单季经营利润", "unit": "usd_m",
+                         "reading": "${:,.0f}M", "fmt": "f0c", "ylab": "$M"},
+    "capex_guide_mid": {"name": "CapEx 指引中点", "short": "CapEx 指引中点", "unit": "usd_bn",
+                        "reading": "US${:g}B", "point": True},
+    "capex_guide_first_mid": {"name": "首次 CapEx 指引中点", "short": "首次 CapEx 指引", "unit": "usd_bn",
+                              "reading": "US${:g}B", "point": True},
+    "fy_capex": {"name": "全年 CapEx", "short": "全年 CapEx", "unit": "usd_bn",
+                 "reading": "US${:g}B", "point": True},
+    "fy_operating_income": {"name": "全年经营利润", "short": "全年经营利润", "unit": "usd_m",
+                            "reading": "${:,.0f}M", "point": True},
+    "cumulative_rvg": {"name": "累计残值担保敞口", "short": "累计残值担保", "unit": "usd_bn",
+                       "reading": "约 US${:g}B", "point": True},
+}
+
+LINE_WORDS = {"加仓线": "加仓", "减仓线": "减仓", "警示线": "警示", "跟踪线": "跟踪"}
+
+
+def threshold_direction(entry: dict) -> str:
+    rising = entry["fires"] in ("≥", ">")
+    return "up" if rising == (entry["kind"] == "target") else "down"
+
+
+def measure_name(entry: dict, short: bool = False) -> str:
+    spec = MEASURES[entry["measure"]]
+    name = spec["short" if short else "name"]
+    return f"FY{entry['year']} {name}" if entry.get("year") else name
+
+
+def reading_words(entry: dict, value: float) -> str:
+    """A reading the way the page prints it; money keeps its sign outside the symbol."""
+    fmt = MEASURES[entry["measure"]]["reading"]
+    if "$" in fmt:
+        text = fmt.format(abs(value))
+        return "−" + text if value < 0 else text
+    return fmt.format(value).replace("-", "−")
+
+
+def threshold_words(entry: dict) -> str:
+    value, unit = entry["threshold"], entry["unit"]
+    text = {"pct": f"{value:g}%", "pp": f"{value:g}pp", "usd_m": f"${value:,.0f}M",
+            "usd_bn": f"${value:g}B"}[unit]
+    return text.replace("-", "−")
+
+
+def line_label(entry: dict) -> str:
+    """The bar label: which reading, the report's comparator and line, and what firing means."""
+    return f"{measure_name(entry, short=True)} {entry['fires']}{threshold_words(entry)} {LINE_WORDS.get(entry['line'], entry['line'])}"
+
+
+def one_off_record(staging: dict) -> dict[str, list[dict]]:
+    """Per quarter, the charges the report adds back to operating income."""
+    return (staging.get("operating_income_one_offs") or {}).get("by_period", {})
+
+
+def measure_series(staging: dict) -> dict[str, list[float | None]]:
+    """Every quarterly reading a threshold can be settled on, aligned with `long_history.quarters`."""
+    long = staging["long_history"]
+    quarters = long["quarters"]
+    revenue, operating = long["revenue_usd_m"], long["operating_income_usd_m"]
+    record = one_off_record(staging)
+    adjusted = [income + sum(item["usd_m"] for item in record.get(period_of(quarter), []))
+                for quarter, income in zip(quarters, operating)]
+
+    def year_on_year(values: list) -> list[float | None]:
+        return [None] * 4 + [None if now is None or not before else (now / before - 1) * 100
+                             for before, now in zip(values, values[4:])]
+
+    margin = [income / sales * 100 for income, sales in zip(adjusted, revenue)]
+    return {
+        "price_per_ad_yoy": [None if v is None else float(v) for v in long["price_per_ad_yoy_pct"]],
+        "ad_impressions_yoy": [None if v is None else float(v) for v in long["ad_impressions_yoy_pct"]],
+        "reality_labs_revenue": list(long["reality_labs_revenue_usd_m"]),
+        "reality_labs_revenue_yoy": year_on_year(long["reality_labs_revenue_usd_m"]),
+        "foa_other_revenue": list(long["foa_other_revenue_usd_m"]),
+        "foa_other_revenue_yoy": year_on_year(long["foa_other_revenue_usd_m"]),
+        "operating_margin_adjusted": margin,
+        "operating_margin_adjusted_qoq_pp": [None] + [now - before for before, now in zip(margin, margin[1:])],
+        # A quarter whose revenue fell has no incremental margin: ΔOI / ΔRevenue
+        # with a negative denominator reads as a margin and is not one.
+        "incremental_margin_qoq_adjusted": [None] + [
+            None if sales_now - sales_before <= 0 else (now - before) / (sales_now - sales_before) * 100
+            for before, now, sales_before, sales_now in zip(adjusted, adjusted[1:], revenue, revenue[1:])],
+        "operating_income": [float(v) for v in operating],
+    }
+
+
+def point_reading(staging: dict, entry: dict, period: str) -> float | None:
+    """A reading that is not a quarterly series, as of the page's quarter."""
+    name, year = entry["measure"], entry.get("year")
+    released = staging["latest"]["release_date"]
+    calls = [call for call in guided_calls(staging["quarterly_guidance_history"]["capex_guidance_calls"], year or "")
+             if call["filed"] <= released]
+    if name == "capex_guide_mid":
+        return (calls[-1]["low"] + calls[-1]["high"]) / 2 if calls else None
+    if name == "capex_guide_first_mid":
+        return (calls[0]["low"] + calls[0]["high"]) / 2 if calls else None
+    annual = staging["annual_actuals_usd_m"].get(year) if year else None
+    if name == "fy_capex":
+        # The year's filed total once the 10-K is in; until then the latest guided midpoint.
+        if annual:
+            return (annual["purchases_of_property_and_equipment"] + annual["finance_lease_principal"]) / 1000
+        return (calls[-1]["low"] + calls[-1]["high"]) / 2 if calls else None
+    if name == "fy_operating_income":
+        return float(annual["operating_income"]) if annual else None
+    if name == "cumulative_rvg":
+        block = stamped_block(staging, "off_balance_sheet", period)
+        if block is None:
+            raise ValueError("a threshold measures `cumulative_rvg`: stamp the quarter's `off_balance_sheet` "
+                             "block with the residual value guarantees its 10-Q discloses")
+        return float(sum(item["usd_bn"] for item in block["residual_value_guarantees"]))
+    raise ValueError(f"this page does not know how to measure {name!r}")
+
+
+def evaluate(staging: dict, block: dict, value_key: str, period: str) -> list[dict]:
+    """A threshold block's lines, each read now and settled by its own comparator.
+
+    `consecutive: n` fires only if the last n readings all fire. A line with no
+    reading has to say why (`unread`) or when it settles (`settles`) -- a line
+    that silently drops out is the failure this section exists to prevent.
+    """
+    series = measure_series(staging)
+    entries = []
+    for entry in block["quantified"]:
+        name = entry["measure"]
+        if name not in MEASURES:
+            raise ValueError(f"threshold {entry['id']!r} measures {name!r}, which build/meta.py does not know")
+        if entry["fires"] not in OPERATORS or entry["kind"] not in ("warn", "target"):
+            raise ValueError(f"threshold {entry['id']!r}: fires must be one of {''.join(OPERATORS)} "
+                             "and kind warn or target")
+        need = entry.get("consecutive", 1)
+        values = series.get(name)
+        if values is None:
+            if need > 1:
+                raise ValueError(f"threshold {entry['id']!r}: a point reading cannot be consecutive")
+            value, run = point_reading(staging, entry, period), None
+        else:
+            value, run = values[-1], values[-need:]
+        item = {**entry, "direction": threshold_direction(entry), value_key: value}
+        if value is None:
+            if not (entry.get("unread") or entry.get("settles")):
+                raise ValueError(f"threshold {entry['id']!r} has no reading for {period}: say why in "
+                                 "`unread`, or when it settles in `settles`")
+            entries.append({**item, "fired": None, "favourable": None, "run": []})
+            continue
+        run = run if run is not None else [value]
+        fire = OPERATORS[entry["fires"]]
+        fired = all(v is not None and fire(round(v, 6), entry["threshold"]) for v in run)
+        streak = 0
+        for v in reversed(values if values is not None else [value]):
+            if v is None or not fire(round(v, 6), entry["threshold"]):
+                break
+            streak += 1
+        entries.append({**item, "fired": fired, "run": run, "streak": streak,
+                        "favourable": fired if entry["kind"] == "target" else not fired})
+    return entries
+
+
+def on_bars(entry: dict, value_key: str) -> bool:
+    """A line whose bar means its verdict: read now, a single reading, a line away from zero
+    (a percentage distance from zero does not exist)."""
+    return entry[value_key] is not None and entry["threshold"] != 0 and entry.get("consecutive", 1) == 1
+
+
+def settle_words(entry: dict, lead: str = "上季") -> str:
+    """How one line settled: 「守住上季警示线 3%」「未达到上季加仓线 39%」."""
+    line = f"{lead}{entry['line']} {entry['fires']}{threshold_words(entry)}"
+    on_line = round(entry["actual"], 6) == entry["threshold"]
+    if entry["kind"] == "warn":
+        return ("压线触发" if on_line and entry["fired"] else "击穿" if entry["fired"] else "守住") + line
+    return ("压线达到" if on_line and entry["fired"] else "达到" if entry["fired"] else "未达到") + line
+
+
+def run_words(entry: dict, value_key: str) -> str:
+    """A consecutive line in words: the readings it needs and where the run stands."""
+    need = entry["consecutive"]
+    readings = " 与 ".join("—" if v is None else reading_words(entry, v) for v in entry["run"])
+    verdict = ("触发" if entry["fired"] else "未触发") if value_key == "actual" else (
+        "已满足" if entry["fired"] else f"本季是连续第{cn_ordinal(entry['streak'])}季" if entry["streak"] else "本季不在线上")
+    return (f"「{measure_name(entry)} {entry['fires']}{threshold_words(entry)}」要连续{cn_count(need)}季才算"
+            f"（{LINE_WORDS.get(entry['line'], entry['line'])}）：最近{cn_count(need)}季 {readings}，{verdict}")
+
+
+def plot_spec(staging: dict, measure: str) -> tuple[list[dict], str]:
+    """What a threshold chart draws under its lines, on the full record, and where it comes from.
+
+    Every threshold chart runs the whole record from the first quarter of
+    `long_history`, holes where the measure did not exist yet: which charts a
+    quarter's thresholds call for changes with each roll, and a fixed axis keeps
+    that from changing what the rest of the site's census counts.
+    """
+    long = staging["long_history"]
+    quarters = long["quarters"]
+    record = one_off_record(staging)
+    series = measure_series(staging)
+    revenue, operating = long["revenue_usd_m"], long["operating_income_usd_m"]
+    adjusted_at = [bool(record.get(period_of(quarter))) for quarter in quarters]
+
+    def rounded(values: list) -> list:
+        return [None if v is None else round(v, 2) for v in values]
+
+    def tail(values: list, marks: list[bool]) -> list:
+        """The adjusted line only where it differs, plus the point before it so it joins."""
+        keep = [marks[i] or (i + 1 < len(marks) and marks[i + 1]) for i in range(len(marks))]
+        return rounded([v if k else None for v, k in zip(values, keep)])
+
+    if measure == "operating_margin_adjusted":
+        gaap = [income / sales * 100 for income, sales in zip(operating, revenue)]
+        lines = [{"name": "经营利润率（GAAP）", "values": rounded(gaap), "color": "NAVY"}]
+        if any(adjusted_at):
+            lines.append({"name": "调整后（加回一次性项）D", "values": tail(series[measure], adjusted_at),
+                          "color": "GOLD"})
+        return lines, "经营利润与收入逐季来自各期 10-Q / 10-K 与当季新闻稿；利润率为自算，调整后加回项见核对表。"
+    if measure == "incremental_margin_qoq_adjusted":
+        gaap = [None] + [None if s1 - s0 <= 0 else (o1 - o0) / (s1 - s0) * 100
+                         for o0, o1, s0, s1 in zip(operating, operating[1:], revenue, revenue[1:])]
+        marks = [adjusted_at[i] or (i > 0 and adjusted_at[i - 1]) for i in range(len(quarters))]
+        lines = [{"name": "环比增量经营利润率（GAAP）D", "values": rounded(gaap), "color": "NAVY"}]
+        if any(marks):
+            lines.append({"name": "调整后 D", "values": tail(series[measure], marks), "color": "GOLD"})
+        return lines, ("环比增量经营利润率 = 经营利润环比变动 ÷ 收入环比变动（自算）；收入环比下降的季度"
+                       "（多数第一季）没有增量利润率可言，图上留空。")
+    names = {
+        "price_per_ad_yoy": ("平均每条广告价格同比", "公司披露的同比百分比，逐季读自 10-Q MD&A 与业绩新闻稿；"
+                             "2016–2020 年的第四季公司只给全年变动，留空。"),
+        "ad_impressions_yoy": ("广告曝光同比", "公司披露的同比百分比，逐季读自 10-Q MD&A 与业绩新闻稿；"
+                               "2016–2020 年的第四季公司只给全年变动，留空。"),
+        "reality_labs_revenue": ("Reality Labs 收入", "分部收入逐季来自 10-Q / 10-K 与 Q4 新闻稿；"
+                                 f"{long['segment_first_reported']} 起才按分部披露，之前留空。"),
+        "foa_other_revenue": ("FoA Other 收入", "分部收入逐季来自 10-Q / 10-K 与 Q4 新闻稿；"
+                              f"{long['segment_first_reported']} 起才按分部披露，之前留空。"),
+        "foa_other_revenue_yoy": ("FoA Other 收入同比 D", "分部收入逐季来自 10-Q / 10-K 与 Q4 新闻稿，同比为自算；"
+                                  f"分部自 {long['segment_first_reported']} 起披露，同比要再晚四季。"),
+        "operating_income": ("单季经营利润（GAAP）", "经营利润逐季来自各期 10-Q / 10-K 与当季新闻稿。"),
+    }
+    name, source = names[measure]
+    return [{"name": name, "values": rounded(series[measure]), "color": "NAVY"}], source
+
+
+def threshold_line_charts(staging: dict, block: dict, entries: list[dict], value_key: str) -> list[dict]:
+    """One chart per measure that has a record: the reading's whole history under every line
+    the report drew on it."""
+    lead = "上季" if value_key == "actual" else "下季"
+    rows = {row["row"]: row for row in block.get("rows", [])}
+    long_labels = [quarter_label(quarter) for quarter in staging["long_history"]["quarters"]]
+    charts = []
+    order: list[str] = []
+    for entry in entries:
+        if entry[value_key] is not None and MEASURES[entry["measure"]].get("chart", True) \
+                and not MEASURES[entry["measure"]].get("point") and entry["measure"] not in order:
+            order.append(entry["measure"])
+    for measure in order:
+        group = [entry for entry in entries if entry["measure"] == measure and entry[value_key] is not None]
+        spec = MEASURES[measure]
+        now = reading_words(group[0], group[0][value_key])
+        lines, source = plot_spec(staging, measure)
+        thresholds = [{"name": f"{lead}{entry['line']} {entry['fires']}{threshold_words(entry)}",
+                       "values": [entry["threshold"]] * len(long_labels),
+                       "color": "RED" if entry["kind"] == "warn" else "GREEN"} for entry in group]
+        if value_key == "actual":
+            title = f"{measure_name(group[0])} {now}：" + "，".join(settle_words(entry) for entry in group)
+        else:
+            title = (f"{measure_name(group[0])}：下季阈值 "
+                     + " / ".join(f"{entry['fires']}{threshold_words(entry)}（{entry['line']}）" for entry in group)
+                     + f"，当前 {now}")
+        seen_rows = sorted({entry["row"] for entry in group}, key=str)
+        note = "".join(f"{'上季' if value_key == 'actual' else '本季'}分析第 8 节第 {row} 行原文：{html_text(rows[row]['text'])}。"
+                       for row in seen_rows if row in rows)
+        for entry in group:
+            room = headroom(entry["direction"], entry["threshold"], entry[value_key])
+            if entry.get("consecutive", 1) > 1:
+                note += html_text(run_words(entry, value_key)) + "。"
+            elif value_key == "actual":
+                note += f"{html_text(settle_words(entry))}（余量 {room:+.1f}%）。"
+            else:
+                note += (f"{entry['line']} {html_text(entry['fires'] + threshold_words(entry))}：当前"
+                         f"{'在有利一侧' if entry['favourable'] else '在不利一侧'}（余量 {room:+.1f}%）。")
+            if entry.get("reads_as"):
+                note += html_text(entry["reads_as"]) + "。"
+            if entry.get("also"):
+                note += (f"这一档还要「{html_text(entry['also']['text'])}」"
+                         + (f"：{html_text(entry['also']['reading'])}" if entry["also"].get("reading") else "")
+                         + "。")
+        if value_key == "actual":
+            note += "".join(f"本季分析对这一行的读法：{html_text(rows[row]['report_reading'])}；处理：{html_text(rows[row]['handling'])}。"
+                            for row in seen_rows if rows.get(row, {}).get("report_reading"))
+        chart = {
+            "kind": "lines",
+            "title": title,
+            "xlabels": long_labels,
+            "xstep": LONG_STEP,
+            "series": lines + thresholds,
+            "fmt": spec["fmt"],
+            "yfmt": spec["fmt"],
+            "label_fmt": spec["fmt"],
+            "end_label": True,
+            "ylab": spec["ylab"],
+            "note": note,
+            "src_extra": source + ("阈值为上季本地研究设定，不是公司指引。" if value_key == "actual"
+                                   else "阈值为本季本地研究设定，不是公司指引。"),
+        }
+        charts.append(chart)
+    return charts
+
+
+def rule_sentences(block: dict, entries: list[dict], value_key: str, values: dict) -> str:
+    """What the bars cannot show: joint halves, runs, zero lines, lines with no reading, word-only legs."""
+    words = []
+    for entry in entries:
+        if entry.get("also"):
+            words.append(f"{line_label(entry)}这一档还要「{entry['also']['text']}」"
+                         + (f"：{entry['also']['reading']}" if entry["also"].get("reading") else "，要等披露")
+                         + "。")
+    for entry in entries:
+        if entry[value_key] is not None and entry.get("consecutive", 1) > 1:
+            words.append(run_words(entry, value_key) + "。")
+        elif entry[value_key] is not None and entry["threshold"] == 0:
+            verdict = ("触发" if entry["fired"] else "未触发") if value_key == "actual" else (
+                "当前在有利一侧" if entry["favourable"] else "当前在不利一侧")
+            words.append(f"{line_label(entry)}的阈值是 0，没有百分比余量、不进柱图：本季 "
+                         f"{reading_words(entry, entry[value_key])}，{verdict}。")
+    for entry in entries:
+        if entry[value_key] is None:
+            words.append(f"「{measure_name(entry)} {entry['fires']}{threshold_words(entry)}」"
+                         f"（{LINE_WORDS.get(entry['line'], entry['line'])}）本季没有读数："
+                         + (fill_story(entry["unread"], values) if entry.get("unread")
+                            else f"它结算的是 {entry['settles']} 才有的数")
+                         + "。")
+    for leg in block.get("text_legs", []):
+        words.append(f"第 {leg['row']} 行还有一条只能按文字结算的条件「{leg['text']}」"
+                     + (f"：{fill_story(leg['reading'], values)}" if leg.get("reading") else "")
+                     + "。")
+    return html_text("".join(words))
+
+
+def prior_overview(block: dict, entries: list[dict], values: dict, basis_words: str) -> dict:
+    """(b) Last quarter's section 8, every line with a single reading on one headroom axis."""
+    bars = [entry for entry in entries if on_bars(entry, "actual")]
+    warn = [entry for entry in bars if entry["kind"] == "warn"]
+    target = [entry for entry in bars if entry["kind"] == "target"]
+    broken = [entry for entry in warn if entry["fired"]]
+    reached = [entry for entry in target if entry["fired"]]
+    parts = []
+    if warn:
+        parts.append(f"{len(warn)} 条警示线"
+                     + (f"击穿 {len(broken)} 条（" + "、".join(f"{measure_name(entry, short=True)} "
+                                                              f"{entry['fires']}{threshold_words(entry)}"
+                                                              for entry in broken) + "）"
+                        if broken else "全部守住"))
+    if target:
+        parts.append(f"{len(target)} 条目标线" + (f"达到 {len(reached)} 条" if reached else "一条都未达到"))
+    exhibit = headroom_exhibit(
+        f"上季 {len(bars)} 条量化阈值：" + "，".join(parts),
+        [{**entry, "metric": line_label(entry)} for entry in bars],
+        "actual",
+        ("正值 = 落在这条线的有利一侧（警示线守住、目标线达到），负值 = 不利一侧（警示线击穿、目标线未达到）；"
+         "恰好压在线上的一格余量为 0，算不算触发由原文的比较符决定。"
+         + rule_sentences(block, entries, "actual", values) + html_text(basis_words)),
+        src_extra=(f"阈值与比较符逐字取自上季（{block['set_in']}）本地分析第 8 节「关键观察指标」，是研究设定，"
+                   "不是公司指引；实际值由本页从序列现算（新闻稿、10-Q、10-K）。每行原文与本季分析的读法、处理见核对抽屉。"),
+    )
+    exhibit["positive_label"] = "落在有利一侧"
+    exhibit["negative_label"] = "落在不利一侧"
+    return exhibit
+
+
+def settlement_table(title: str, entries: list[dict], value_key: str, value_head: str, values: dict) -> dict:
+    """Every line of a section-8 block in its own units, with the comparator the report wrote."""
+    rows = []
+    for entry in entries:
+        value = entry[value_key]
+        if value is None:
+            verdict = ("读不到：" + fill_story(entry["unread"], values) if entry.get("unread")
+                       else f"待 {entry['settles']} 结算")
+        elif entry.get("consecutive", 1) > 1:
+            verdict = run_words(entry, value_key)
+        elif value_key == "actual":
+            verdict = settle_words(entry)
+        else:
+            verdict = "当前在有利一侧" if entry["favourable"] else "当前在不利一侧"
+        rows.append([
+            f"第 {entry['row']} 行",
+            f"{measure_name(entry)}（{entry['line']}）",
+            f"{entry['fires']}{threshold_words(entry)}",
+            "—" if value is None else reading_words(entry, value),
+            "—" if value is None or entry["threshold"] == 0
+            else f"{headroom(entry['direction'], entry['threshold'], value):+.1f}%",
+            verdict,
+        ])
+    return {"n": 0, "title": title,
+            "headers": ["行", "这条线", "比较符与阈值", value_head, "余量 D", "判定"], "rows": rows}
+
+
+def prior_row_table(block: dict) -> dict:
+    """The previous report's rows as written, and how this quarter's report read and handled them."""
+    return {
+        "n": 0,
+        "title": f"上季（{block['set_in']}）第 8 节原文，与本季分析「先校准上季指标」的读法和处理",
+        "headers": ["行", "指标", "原文", "触发动作", "本季分析的读法", "处理"],
+        "rows": [[f"第 {row['row']} 行", row["metric"], row["text"], row["action"],
+                  row.get("report_reading", "—"), row.get("handling", "—")] for row in block["rows"]],
+    }
+
+
+def closure_exhibit(closure: dict, values: dict) -> tuple[dict, dict]:
+    """(a) Last quarter's follow-up questions as this quarter's section 0 judged them,
+    and the table that lists them one by one."""
+    labels, items = closure["labels"], closure["items"]
+    unknown = sorted({item["verdict"] for item in items} - set(labels))
+    if unknown:
+        raise ValueError(f"`followup_closure` items carry verdicts that are not labels: {unknown}")
+    for item in items:
+        if not item["wording"].startswith(item["verdict"]):
+            raise ValueError(f"`followup_closure` item {item['n']}: verdict {item['verdict']!r} is not how "
+                             f"the report's wording {item['wording']!r} begins")
+    counts = [sum(1 for item in items if item["verdict"] == label) for label in labels]
+    groups = [(label, [item for item in items if item["verdict"] == label]) for label in labels]
+    detail = "；".join(f"{label}的{cn_count(len(group))}条是" + "、".join(f"「{item['short']}」" for item in group)
+                      for label, group in groups if group)
+    chart = {
+        "kind": "bars_labeled",
+        "title": (f"上季 {len(items)} 条待验证问题："
+                  + "、".join(f"{count} 条{label}" for label, count in zip(labels, counts))),
+        "xlabels": list(labels),
+        "values": counts,
+        "legend": "问题条数",
+        "fmt": "f0",
+        "yfmt": "f0",
+        "label_fmt": "f0",
+        "ylab": "条",
+        "note": (f"上季（{closure['set_in']}）的本地分析在文末留下 {len(items)} 条待验证问题，本季那一份在第 0 节"
+                 f"逐条判定。{html_text(closure['rule'])}{detail}。"
+                 + "".join(f"被证伪的「{item['short']}」：{html_text(fill_story(item['evidence'], values))}。"
+                           for item in items if item["verdict"] == "被证伪")),
+        "src_extra": (f"问题清单来自上季（{closure['set_in']}）本地分析稿的 Follow-up Questions；判定照录本季本地分析稿"
+                      "第 0 节。证据里的数由本页从本季新闻稿与 10-Q 现算，电话会的说法注明为电话会。逐条见核对抽屉。"),
+    }
+    table = {
+        "n": 0,
+        "title": f"上季（{closure['set_in']}）留下的 {len(items)} 条待验证问题：本季第 0 节逐条判定",
+        "headers": ["#", "问题（上季原文）", "判定（本季第 0 节原文）", "归类", "本季证据"],
+        "rows": [[str(item["n"]), item["question"], item["wording"], item["verdict"],
+                  fill_story(item["evidence"], values)] for item in items],
+    }
+    return chart, table
+
+
 def regional_chart(geography: dict, quarter_revenue: float, period: str) -> dict:
     """The quarter's revenue growth by region, as the 10-Q prints it.
 
@@ -411,7 +899,7 @@ def build_payload(staging: dict) -> dict:
         for operating, capex in zip(q["operating_cash_flow"], capex_total)
     ]
 
-    one_offs = (snapshot or {}).get("one_off_items", [])
+    one_offs = one_off_record(staging).get(period, [])
     one_off_total = sum(item["usd_m"] for item in one_offs)
     one_off_words = "与 ".join(f"${item['usd_m']:,}M {item['name']}" for item in one_offs)
     one_off_words_named_first = " 与".join(f"{item['name']} ${item['usd_m']:,}M" for item in one_offs)
@@ -654,90 +1142,72 @@ def build_payload(staging: dict) -> dict:
     def margin_of(entry: dict, value_key: str) -> float:
         return headroom(entry["direction"], entry["threshold"], entry[value_key])
 
-    # ── section one ──────────────────────────────────────────────────────────
-    settled_charts: list[dict] = []
-    expense_raise = None
-    if len(expense_calls) >= 2:
-        expense_raise = expense_calls[-1]["low"] - expense_calls[-2]["low"]
-    if closure is not None:
-        counts = dict(zip(closure["labels"], closure["counts"]))
-        settled_charts.append({
-            "kind": "bars_labeled",
-            "title": (
-                f"上季 {sum(closure['counts'])} 条待验证问题：{counts.get('已验证', 0)} 条已验证、"
-                f"{counts.get('被证伪', 0)} 条被证伪、{counts.get('部分验证', 0)} 条只做到部分验证"
-            ),
-            "xlabels": closure["labels"],
-            "values": closure["counts"],
-            "legend": "问题条数",
-            "fmt": "f0",
-            "yfmt": "f0",
-            "label_fmt": "f0",
-            "ylab": "条",
-            "note": closure["note"].format(
-                positions=f"{(snapshot or {}).get('workforce_reduction_positions', 0):,}",
-                severance=next((f"${item['usd_m']:,}M" for item in one_offs if item["name"] == "遣散费"), ""),
-                expense_low_raise=f"${expense_raise:g}B" if expense_raise is not None else "",
-                partial=cn_count(counts.get("部分验证", 0)),
-            ),
-            "src_extra": (
-                "问题清单来自上季本地分析稿的 follow-up；验证结果依据本季 earnings release、"
-                f"电话会与 {period} 10-Q。"
-            ),
+    # Numbers the quarter's story blocks name ({capex_now}, {positions} ...):
+    # computed here from the arrays, never typed into the series beside them.
+    advertising_yoy_all = yoy(advertising)
+    story = {
+        "price_now": f"{long_price[-1]:+.0f}%", "price_before": f"{long_price[-2]:+.0f}%",
+        "impressions_now": f"{long_impressions[-1]:+.0f}%",
+        "impressions_before": f"{long_impressions[-2]:+.0f}%",
+        "ads_now": f"{advertising_yoy_all[-1]:+.1f}%", "ads_before": f"{advertising_yoy_all[-2]:+.1f}%",
+    }
+    def bounds_move(before_call: dict, now_call: dict) -> str:
+        words = []
+        for bound, name in (("low", "下限"), ("high", "上限")):
+            change = now_call[bound] - before_call[bound]
+            words.append(f"{name}不变" if change == 0 else
+                         f"{name}{'抬高' if change > 0 else '下调'} US${abs(change):g}B")
+        return "、".join(words)
+
+    if len(capex_calls) >= 2:
+        before_call, now_call = capex_calls[-2], capex_calls[-1]
+        story.update({
+            "capex_before": f"US${range_text(before_call['low'], before_call['high'])}B",
+            "capex_now": f"US${range_text(now_call['low'], now_call['high'])}B",
+            "capex_bounds_move": bounds_move(before_call, now_call),
+            "capex_mid_before": f"US${(before_call['low'] + before_call['high']) / 2:g}B",
+            "capex_mid_now": f"US${(now_call['low'] + now_call['high']) / 2:g}B",
+            "capex_range_held": ("维持" if (now_call["low"], now_call["high"])
+                                 == (before_call["low"], before_call["high"]) else "没有维持"),
         })
+    if len(expense_calls) >= 2:
+        before_call, now_call = expense_calls[-2], expense_calls[-1]
+        story.update({
+            "expense_before": f"US${range_text(before_call['low'], before_call['high'])}B",
+            "expense_now": f"US${range_text(now_call['low'], now_call['high'])}B",
+            "expense_bounds_move": bounds_move(before_call, now_call),
+        })
+    if snapshot and snapshot.get("workforce_reduction_positions"):
+        story["positions"] = f"{snapshot['workforce_reduction_positions']:,}"
+    for item in one_offs:
+        if item.get("key"):
+            story[item["key"]] = f"${item['usd_m']:,}M"
+
+    # ── section one ──────────────────────────────────────────────────────────
+    # What last quarter left, in the order it was left: (a) the follow-up
+    # questions, (b) the previous analysis's section-8 lines -- overview, then
+    # each reading against its own record -- and (c) only then the company's
+    # own guidance record.
+    settled_charts: list[dict] = []
+    closure_table = None
+    if closure is not None:
+        closure_chart, closure_table = closure_exhibit(closure, story)
+        settled_charts.append(closure_chart)
+    prior_entries: list[dict] = []
     if prior_kpi is not None:
-        entries = prior_kpi["quantified"]
-        # Listed closest breach first: a line that missed by a whisker and one
-        # that missed by a mile are different news.
-        broken = sorted((entry for entry in entries if margin_of(entry, "actual") < 0),
-                        key=lambda entry: -margin_of(entry, "actual"))
-        held = len(entries) - len(broken)
-        if not broken:
-            verdict = "全部守住"
-        elif len(broken) == 1:
-            verdict = f"{cn_count(held)}条守住，被击穿的一条在{broken[0]['area']}"
-        else:
-            verdict = (f"{cn_count(held)}条守住，被击穿的{cn_count(len(broken))}条"
-                       + "、".join(f"一条在{entry['area']}" for entry in broken))
-        price_entry = next((entry for entry in entries if entry["metric"].startswith("平均每条广告价格")), None)
-        ad_slowdown = (yoy(advertising)[-2] or 0) - (yoy(advertising)[-1] or 0)
-        adjusted_entry = next((entry for entry in entries if entry.get("basis") == "adjusted"), None)
-        gaap_margin = operating_income[-1] / revenue[-1] * 100
-        lead = prior_kpi.get("lead", "")
-        if price_entry and lead:
-            lead = lead.format(price_margin=f"{margin_of(price_entry, 'actual'):+.0f}%",
-                               ad_slowdown=f"{ad_slowdown:.1f}pp")
-        settled_charts.append(headroom_exhibit(
-            f"上季 {len(entries)} 条量化阈值：{verdict}",
-            entries,
-            "actual",
-            "正值 = 仍在安全侧。" + lead,
-            src_extra=(
-                f"阈值为上季本地研究设定，不是公司指引；实际值为 {period} 披露值。"
-                + (f"经营利润率一条按剔除 {one_off_words}后的 {adjusted_entry['actual']:.2f}% 结算，"
-                   + (f"GAAP 口径的 {gaap_margin:.2f}% 击穿得更深。"
-                      if gaap_margin < adjusted_entry["actual"] < adjusted_entry["threshold"] else
-                      f"GAAP 口径是 {gaap_margin:.2f}%。")
-                   if adjusted_entry and one_offs else "")
-                + "下面逐条给出可绘制指标自身完整记录的走势。"
-            ),
-        ))
-    # Section one settles what last quarter left in the order it was left: the
-    # follow-up questions, then the previous analysis's thresholds (overview,
-    # then each line against its own record), and only then the company's own
-    # guidance record.
-    if prior_kpi is not None:
-        settled_charts += tracking_charts(
-            [entry for entry in prior_kpi["quantified"]
-             if entry["metric"] in ("经营利润率（调整后）", "平均每条广告价格 YoY")],
-            "actual",
-            "上季阈值",
-            lambda entry: (
-                f"{entry['metric']}："
-                f"{'守住' if margin_of(entry, 'actual') >= 0 else '已击穿'}"
-                f"上季阈值 {unit_text(entry['unit'], entry['threshold'])}"
-            ),
-        )
+        prior_entries = evaluate(staging, prior_kpi, "actual", period)
+        basis_words = ""
+        margin_lines = [entry for entry in prior_entries
+                        if entry["measure"] == "operating_margin_adjusted" and entry["actual"] is not None]
+        if margin_lines and one_offs:
+            gaap_margin = operating_income[-1] / revenue[-1] * 100
+            same = all(OPERATORS[entry["fires"]](round(gaap_margin, 6), entry["threshold"]) == entry["fired"]
+                       for entry in margin_lines)
+            basis_words = (f"原文没有写经营利润率用哪个口径，两个都算：按调整后（加回本季{one_off_words_named_first}）"
+                           f"结算为 {margin_lines[0]['actual']:.2f}%，GAAP 口径 {gaap_margin:.2f}%，"
+                           + ("两个口径在这几条线上的判定相同。" if same else "两个口径的判定不同，以核对表为准。"))
+        settled_charts.append(prior_overview(prior_kpi, prior_entries, story, basis_words))
+        settled_charts += threshold_line_charts(staging, prior_kpi, prior_entries, "actual")
     # META is the only US filer on this site that puts its quarterly guidance in
     # a filing, so it is the only one that can carry TSMC's guidance record.
     # Microsoft's own release says guidance is given on the webcast instead, and
@@ -1351,9 +1821,12 @@ def build_payload(staging: dict) -> dict:
              outlook["fy2027_capex"], outlook["fy2027_capex_remark"]])
 
     tables = []
+    if closure_table is not None:
+        tables.append(closure_table)
     if prior_kpi is not None:
-        tables.append(threshold_table(0, "上季阈值与本季实际（原单位）",
-                                      prior_kpi["quantified"], "actual", f"{period} 实际"))
+        tables.append(settlement_table(f"上季（{prior_kpi['set_in']}）第 8 节逐档结算（原单位）", prior_entries,
+                                       "actual", f"{period} 实际", story))
+        tables.append(prior_row_table(prior_kpi))
     if next_kpi is not None:
         tables.append(threshold_table(0, "下季阈值与当前值（原单位）",
                                       next_kpi["quantified"], "current", "当前值"))
@@ -1479,7 +1952,13 @@ def build_payload(staging: dict) -> dict:
         sections.append({
             "id": "settled",
             "title": "一、上季跟踪指标兑现了吗",
-            "description": "先结算上季留下的问题与阈值，再看本季数据——否则页面只会不断累积判断，从不闭环。",
+            "description": (
+                "先结算上季留下的东西，再看本季数据——否则页面只会不断累积判断，从不闭环。顺序是："
+                + (f"上季（{closure['set_in']}）分析留下的 {len(closure['items'])} 条待验证问题，照本季分析第 0 节的判定；"
+                   if closure is not None else "")
+                + (f"上季第 8 节 {len(prior_kpi['rows'])} 行阈值逐档拆成 {len(prior_entries)} 条线，读数由本页从申报现算；"
+                   if prior_kpi is not None else "")
+                + "最后是公司自己在每季新闻稿里给的下季收入区间与随后的实际值。"),
             "exhibits": exhibits[: len(settled_charts)],
         })
     sections.append({
