@@ -79,6 +79,20 @@ class VDashboardTest(unittest.TestCase):
         cls.lines = cls.source["revenue_lines_usd_m"]
 
     # ── shape ────────────────────────────────────────────────────────────────
+    def test_the_page_has_the_four_sections_in_order(self) -> None:
+        """The owner's four-part format, TSM's titles verbatim (2026-09-23).
+
+        Section one was titled 「一、上季兑现了吗」, which is not the site's
+        title and hid what the section has to settle: the tracking points the
+        last report set, not only the company's own guidance."""
+        self.assertEqual(
+            [(section["id"], section["title"]) for section in self.payload["sections"]],
+            [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+             ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+        for section in self.payload["sections"]:
+            self.assertTrue(section["exhibits"], section["id"])
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列", self.payload["notes"][0])
+
     def test_the_window_is_eight_quarters_and_complete(self) -> None:
         self.assertEqual(len(self.source["periods"]), 8)
         self.assertEqual(len(self.source["period_ends"]), 8)

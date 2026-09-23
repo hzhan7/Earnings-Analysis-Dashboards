@@ -1496,7 +1496,7 @@ def build_payload(staging: dict) -> dict:
         "sections": [
             {
                 "id": "settled",
-                "title": "一、上季兑现了吗",
+                "title": "一、上季跟踪指标兑现了吗",
                 "description": plain_text(
                     ("先结清上一份笔记留下的问题，再看新数字。" if closure or verdicts else "")
                     + "这一节和本站其他几页不一样。"
