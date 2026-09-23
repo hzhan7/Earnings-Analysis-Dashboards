@@ -894,6 +894,8 @@ def build_payload(staging: dict) -> dict:
                                          ecom_end, mmx_low))
     settled_ex.append(gross_margin_chart(staging, by_measure(settled, "gross_margin_adjusted"),
                                          labels, gross_settled, one_off))
+    # Last quarter's inventory warning is settled here, beside the other lines it set.
+    settled_ex.append(inventory_chart(staging, labels, inventory_yoy, prior_kpi))
     guided_charts, delivery_table = guidance_delivery_charts(staging)
     settled_ex.extend(guided_charts)
 
@@ -906,7 +908,8 @@ def build_payload(staging: dict) -> dict:
         highlight_ex.append(outlook_chart["exhibit"])
         values["raise"] = outlook_chart["raise"]
     highlight_ex.append(corporate_expense_chart(staging, labels, ytd))
-    highlight_ex.append(inventory_chart(staging, labels, inventory_yoy, prior_kpi))
+    # The year to date's cash uses are this quarter's reading, not a threshold line.
+    highlight_ex.append(capital_intensity_chart(staging, ytd, store_plan, raised_today))
 
     # ── section 3: what to track next ───────────────────────────────────────
     next_ex = []
@@ -931,7 +934,6 @@ def build_payload(staging: dict) -> dict:
         ))
     next_ex.append(homegoods_chart(staging, by_measure(forward, "homegoods_margin_adjusted"),
                                    labels, adj_seg))
-    next_ex.append(capital_intensity_chart(staging, ytd, store_plan, raised_today))
 
     # ── section 4: the long routine ─────────────────────────────────────────
     routine_ex = long_charts(staging, ytd_long, store_plan, raised_today)
@@ -1097,8 +1099,9 @@ def build_payload(staging: dict) -> dict:
         highlight_parts.append(f"{pair}之间那道 {outlook_chart['gap']:.0f} 个百分点的斜率断崖")
     highlight_description = (
         "、".join(highlight_parts)
-        + (f"，以及一条只能按{ytd_short}读的公司费用线。" if fq > 1
-           else "，以及一条单季摆动很大的公司费用线。")
+        + (f"，一条只能按{ytd_short}读的公司费用线" if fq > 1
+           else "，一条单季摆动很大的公司费用线")
+        + f"，以及{ytd_long}的资本强度。"
     )
     not_plotted_next = next_kpi.get("not_plotted", []) if next_kpi else []
 
@@ -1162,7 +1165,7 @@ def build_payload(staging: dict) -> dict:
         "sections": [
             {
                 "id": "settled",
-                "title": "一、上季兑现与指引记录",
+                "title": "一、上季跟踪指标兑现了吗",
                 "description": (
                     ("先结清上季设下的阈值，再看新数字。" if prior_kpi is not None else "")
                     + "公司在业绩新闻稿末尾的 Outlook 段里给出下一季的指引 —— "
@@ -1186,7 +1189,7 @@ def build_payload(staging: dict) -> dict:
                      + (f"；不接入的{cn_count(len(not_plotted_next))}条也写在这里。"
                         if not_plotted_next else "。"))
                     if next_kpi is not None else
-                    f"本季没有设下季阈值；这一节只跟 HomeGoods 分部利润率与{ytd_long}的资本强度。"
+                    "本季没有设下季阈值；这一节只跟 HomeGoods 分部利润率。"
                 ),
                 "exhibits": next_ex,
             },
