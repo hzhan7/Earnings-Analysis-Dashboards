@@ -36,8 +36,12 @@ hundreds. The balance is a period-end number and the page says so.
 what goes in them.** Section one settles what the previous local analysis left
 open; the first CME analysis covers Q2 2026 (`analysis_record`) and left
 nothing, so that quarter's section one says so and settles only the company's
-own guidance -- and any later quarter without a settlement block stops the
-build. Section two draws that quarter's analysis's conclusions that a filing
+own guidance. From the next quarter on it opens with the follow-up tally
+(`followup_closure`) and the previous thresholds (`prior_kpi_settlement` --
+last quarter's `next_kpi` list moved as it stood, settled against this
+quarter's readings), and a later quarter with neither block stops the build.
+`tests/test_cme_dashboard.py` rolls the series forward three quarters in
+memory to prove none of that needs a code change. Section two draws that quarter's analysis's conclusions that a filing
 can show and names the ones it cannot (`quarter_context.undrawn`). Section three
 is the analysis's section 8, threshold by threshold (`next_kpi`), with every
 current value computed here from the series. Section four is the long record.
@@ -441,8 +445,8 @@ def quarter_section(staging: dict, context: dict | None) -> list[dict]:
              f"{minus_sign(signed(clearing_yoy))}：行情数据一条线多出 {signed_usd(market_change)}，"
              f"比全公司的 {signed_usd(total_change)} 还多"
              if market_change >= total_change > 0 > clearing_change else
-             f"总收入同比 {minus_sign(signed(total_yoy))}：清算与交易费 US${fin['clearing_fees'][-1]:,.1f}M、"
-             f"同比 {minus_sign(signed(clearing_yoy))}，占总收入 {share[-1]:.1f}%")),
+             f"总收入同比 {minus_sign(signed(total_yoy))}、清算与交易费同比 {minus_sign(signed(clearing_yoy))}："
+             f"清算与交易费 US${fin['clearing_fees'][-1]:,.1f}M，占总收入 {share[-1]:.1f}%")),
         "xlabels": long_labels,
         "xstep": LONG_STEP,
         "stacks": [
@@ -643,7 +647,7 @@ def quarter_section(staging: dict, context: dict | None) -> list[dict]:
             "「许可与其他费用协议」一行，两个数都是披露值；但公司对它的<b>全年指引</b>只在"
             "业绩电话会上给"
             + (f"，{searched}逐字搜过，一次都没有出现。" if searched else "。")
-            + "<b>所以第一节结清的是资本开支，不是它。</b>"
+            + "<b>所以第一节结清的公司指引是资本开支，不是它的全年指引。</b>"
             "把许可费单画一条是因为它跟着股指成交量走而不是跟着成本走："
             f"本季许可费同比 "
             f"{signed(pct_change(fin['licensing_expense'][-1], fin['licensing_expense'][-5]))}，"
@@ -862,6 +866,9 @@ KPI_REFS = {
     "adj_opex": "EX_OPEX_LINE",
     "rates_adv_yoy": "EX_RATES_LINE",
     "market_data_qoq": "EX_MKTDATA_QOQ_LINE",
+    # Due only in the quarter its `settles` names (Q1 2027 for the Q2 2026
+    # analysis); until then it sits in the threshold table, not on a chart.
+    "market_data_yoy": "EX_MKTDATA_YOY_LINE",
 }
 
 
@@ -898,6 +905,24 @@ def kpi_history(staging: dict, reads: str) -> tuple[list[str], list[float], dict
     if reads not in histories:
         raise ValueError(f"a `next_kpi` entry reads {reads!r}, which build/cme.py does not know")
     return histories[reads]
+
+
+def next_split(kpi: dict, period: str) -> tuple[list[dict], list[dict]]:
+    """(upcoming, later): the lines the next release settles, and those that settle after it.
+
+    A line with no `settles` is due next quarter; one whose `settles` names the
+    next quarter is due then too, so a roll does not have to delete the key when
+    the date arrives. One whose date has passed was carried forward by mistake.
+    """
+    following = next_period(period)
+    upcoming, later = [], []
+    for entry in kpi["quantified"]:
+        settles = entry.get("settles")
+        if settles and quarter_order(settles) < quarter_order(following):
+            raise ValueError(f"next-quarter threshold {entry['id']!r} settles in {settles}, "
+                             "which has passed: the roll should have dropped it")
+        (later if settles and quarter_order(settles) > quarter_order(following) else upcoming).append(entry)
+    return upcoming, later
 
 
 def kpi_entries(staging: dict, kpi: dict) -> list[dict]:
@@ -950,8 +975,9 @@ def next_section(staging: dict, kpi: dict, context: dict | None) -> list[dict]:
     window = cn_count(len(staging["period_labels"]))
     entries = kpi_entries(staging, kpi)
     by_id = {entry["id"]: entry for entry in entries}
-    upcoming = [entry for entry in entries if not entry.get("settles")]
-    later = [entry for entry in entries if entry.get("settles")]
+    upcoming_ids = {entry["id"] for entry in next_split(kpi, period)[0]}
+    upcoming = [entry for entry in entries if entry["id"] in upcoming_ids]
+    later = [entry for entry in entries if entry["id"] not in upcoming_ids]
     margin = {entry["id"]: headroom(entry["direction"], entry["threshold"], entry["current"])
               for entry in entries}
     breached = [entry for entry in upcoming if margin[entry["id"]] < 0]
@@ -1033,10 +1059,10 @@ def next_section(staging: dict, kpi: dict, context: dict | None) -> list[dict]:
     return charts
 
 
-def threshold_line_name(entry: dict, siblings: int) -> str:
+def threshold_line_name(entry: dict, siblings: int, label: str = "下季阈值") -> str:
     side = "上方" if entry["direction"] == "up" else "下方"
     label = (entry["metric"].split("（", 1)[1].rstrip("）")
-             if siblings > 1 and "（" in entry["metric"] else "下季阈值")
+             if siblings > 1 and "（" in entry["metric"] else label)
     return f"{label} {unit_text(entry['unit'], entry['threshold'])}（安全侧在{side}）"
 
 
@@ -1048,6 +1074,7 @@ def threshold_source(reads: str, period: str) -> str:
         "rpc": "各季业绩新闻稿五季表的 Average RPC 一行",
         "rates_adv_yoy": "各季业绩新闻稿五季表的利率类 ADV，本季 ÷ 去年同季 D",
         "market_data_qoq": "合并损益表的行情数据与信息服务一行，本季 ÷ 上季 D",
+        "market_data_yoy": "合并损益表的行情数据与信息服务一行，本季对去年同季的增速 D",
     }[reads]
     return f"{where}；阈值取自本地研究（{period} 季报分析），不是公司的任何披露。"
 
@@ -1185,6 +1212,14 @@ def threshold_note(staging: dict, reads: str, group: list[dict], xlabels: list[s
                + "、".join(f"{xlabels[a]}–{xlabels[b - 1]}（{cn_count(b - a)}季）" for a, b in streaks) + "。"
                if streaks else f"从来没有连续{cn_count(need)}季过。")
             + tail)
+
+    if reads == "market_data_yoy":
+        side = [value for value in values if headroom(head["direction"], threshold, value) < 0]
+        return (f"<b>本季同比 {minus_sign(signed(values[-1]))}，本地研究这条线（{head['basis']}）是 "
+                f"{unit_text(head['unit'], threshold)}</b>"
+                + (f"，它在 {head['settles']} 结算" if head.get("settles") else "")
+                + f"。{len(values)} 季里同比落在这条线{'下方' if head['direction'] == 'up' else '上方'}"
+                f"的有 {len(side)} 季。")
 
     raise ValueError(f"no threshold note is written for `next_kpi` metric {reads!r}")
 
@@ -1437,7 +1472,8 @@ def routine_section(staging: dict) -> list[dict]:
             # "The largest move of the six" was equity's +12.7%; energy's -13.5%
             # is larger. The sentence now names the largest *rise*, and says so.
             + (f"{top_riser}同比 {signed(class_yoy[top_riser])}，是本季六个品种里同比涨得最多的一条。"
-               if class_yoy[top_riser] > 0 else "六个品种同比全部下降。")
+               if class_yoy[top_riser] > 0 else
+               "六个品种同比全部下降。" if class_yoy[top_riser] < 0 else "六个品种同比没有一个上涨。")
             + f"窗口内利率 ADV 的最高一季是 {labels[lng['adv_rates'].index(max(lng['adv_rates']))]} 的 "
             f"{max(lng['adv_rates']):,.0f} 千手。"
             "<b>本页不发布任何竞争对手的成交量</b>：那些数字来自对手方的季报与新闻稿，"
@@ -1491,31 +1527,274 @@ def release_source(staging: dict) -> dict:
     return found
 
 
-def settles_nothing_yet(staging: dict, period: str) -> bool:
-    """True in the quarter of the first local analysis, which left nothing to settle.
+def quarter_order(label: str) -> tuple[int, int]:
+    """``'Q3 2026'`` / ``'2026Q3'`` → ``(2026, 3)``, so two quarter labels can be compared."""
+    quarter, year = display_period(label).split()
+    return int(year), int(quarter[1])
+
+
+def settlement_blocks(staging: dict, period: str) -> tuple[bool, dict | None, dict | None]:
+    """Whether this is the first local analysis, and what the previous one left open.
 
     Section one is 「上季跟踪指标兑现了吗」: it settles the previous analysis's
-    follow-up questions and thresholds, then the company's own guidance. The
-    first CME analysis covers Q2 2026 and says it has no previous one, so that
-    quarter settles only the guidance -- and says why. Any later quarter has a
-    previous analysis by construction, so a roll that leaves both settlement
-    blocks out would publish a section one that silently skipped it; that
-    stops the build instead.
+    follow-up questions (`followup_closure`) and thresholds
+    (`prior_kpi_settlement`), then the company's own guidance. The first CME
+    analysis covers Q2 2026 and says it has no previous one, so that quarter
+    settles only the guidance -- and says why. Any later quarter has a previous
+    analysis by construction, so a roll that leaves both blocks out would publish
+    a section one that silently skipped it; that stops the build instead.
     """
     record = staging.get("analysis_record")
     first = record is not None and display_period(record["first_period"]) == display_period(period)
-    blocks = [key for key in ("followup_closure", "prior_kpi_settlement")
-              if stamped_block(staging, key, period) is not None]
-    if first and blocks:
+    closure = stamped_block(staging, "followup_closure", period)
+    prior = stamped_block(staging, "prior_kpi_settlement", period)
+    present = [key for key, block in (("followup_closure", closure), ("prior_kpi_settlement", prior))
+               if block is not None]
+    if first and present:
         raise ValueError(f"{period} is the first CME analysis, so there is nothing for "
-                         f"{', '.join(blocks)} to settle")
-    if not first and not blocks:
+                         f"{', '.join(present)} to settle")
+    if not first and not present:
         raise ValueError(f"{period} is not the first CME analysis: section one must settle the "
                          "previous one -- add `followup_closure` (its section 0) and "
                          "`prior_kpi_settlement` (its section 8 thresholds) to the series")
-    if blocks:
-        raise ValueError("this builder does not draw `followup_closure` / `prior_kpi_settlement` yet")
-    return first
+    set_in = {block["set_in"] for block in (closure, prior) if block is not None}
+    if len(set_in) > 1:
+        raise ValueError(f"`followup_closure` and `prior_kpi_settlement` name different analyses: {sorted(set_in)}")
+    if set_in and quarter_order(next(iter(set_in))) >= quarter_order(period):
+        raise ValueError(f"the settlement blocks say they were set in {next(iter(set_in))!r}, "
+                         f"which is not before {period!r}")
+    return first, closure, prior
+
+
+# ── section one (a)(b): what the previous local analysis left open ───────────
+#
+# From the second analysis on, section one opens with what the previous one
+# asked and set. `prior_kpi_settlement.quantified` is the previous quarter's
+# `next_kpi.quantified`, moved as it stood -- same ids, `reads`, directions and
+# qualifiers -- so a roll copies it rather than re-keys it, and every reading it
+# is settled against is taken here from the series.
+
+def closure_counts(closure: dict) -> list[int]:
+    """The count per verdict, from the block's own items when it lists them."""
+    labels = closure["labels"]
+    items = closure.get("items")
+    if items is None:
+        if len(closure["counts"]) != len(labels):
+            raise ValueError("`followup_closure` has a count for every label or it is not a tally")
+        return list(closure["counts"])
+    unknown = sorted({item["verdict"] for item in items} - set(labels))
+    if unknown:
+        raise ValueError(f"`followup_closure` items carry verdicts that are not labels: {unknown}")
+    counted = [sum(1 for item in items if item["verdict"] == label) for label in labels]
+    if "counts" in closure and list(closure["counts"]) != counted:
+        raise ValueError(f"`followup_closure.counts` {closure['counts']} disagrees with its own items {counted}")
+    return counted
+
+
+def closure_exhibit(closure: dict) -> dict:
+    counts = closure_counts(closure)
+    total = sum(counts)
+    items = closure.get("items") or []
+    groups = [(label, [item for item in items if item["verdict"] == label])
+              for label in closure["labels"][1:]]
+    detail = "；".join(f"{label}的{cn_count(len(group))}条是"
+                      + "、".join(f"「{item.get('short', item['question'])}」" for item in group)
+                      for label, group in groups if group)
+    return {
+        "ref": "EX_CLOSURE",
+        "kind": "bars_labeled",
+        "title": (f"上季 {total} 条待验证问题："
+                  + "、".join(f"{count} 条{label}" for label, count in zip(closure["labels"], counts))),
+        "xlabels": list(closure["labels"]),
+        "values": counts,
+        "legend": "问题条数",
+        "fmt": "f0", "yfmt": "f0", "label_fmt": "f0",
+        "ylab": "条",
+        "note": (f"上季（{closure['set_in']}）那一份本地分析在文末留下 {total} 条待验证问题，"
+                 "本季那一份在第 0 节逐条判定。" + (detail + "。" if detail else "")),
+        "src_extra": (f"问题清单来自上季（{closure['set_in']}）本地分析稿的 Follow-up Questions；"
+                      "判定照录本季本地分析稿第 0 节，本页不改判"
+                      + ("，逐条见核对抽屉。" if items else "。")),
+    }
+
+
+def closure_table(closure: dict) -> dict | None:
+    items = closure.get("items")
+    if not items:
+        return None
+    return {
+        "n": 0,
+        "title": f"上季（{closure['set_in']}）留下的待验证问题：本季逐条判定",
+        "headers": ["#", "问题", "判定", "依据"],
+        "rows": [[str(i), item["question"], item["verdict"], item.get("evidence", "—")]
+                 for i, item in enumerate(items, 1)],
+    }
+
+
+def settlement_entries(staging: dict, prior: dict, period: str) -> tuple[list[dict], list[dict]]:
+    """(due, later): the previous analysis's thresholds with this quarter's reading as ``actual``."""
+    due, later = [], []
+    for entry in prior["quantified"]:
+        settles = entry.get("settles")
+        if settles and quarter_order(settles) < quarter_order(period):
+            raise ValueError(f"prior threshold {entry['id']!r} was due in {settles}, before {period}: "
+                             "it should have been settled then, or dropped")
+        target = later if settles and quarter_order(settles) > quarter_order(period) else due
+        target.append({**entry, "actual": kpi_history(staging, entry["reads"])[1][-1]})
+    return due, later
+
+
+def settlement_verdicts(staging: dict, due: list[dict], every: list[dict]) -> dict[str, dict]:
+    """Per threshold: did the reading cross the line, and did the analysis's own
+    trigger fire -- which for a joint line needs its partner to cross too, and
+    for a consecutive line needs the run of crossed quarters to be long enough."""
+    by_id = {entry["id"]: entry for entry in every}
+    verdicts = {}
+    for entry in due:
+        values = kpi_history(staging, entry["reads"])[1]
+        crossed = headroom(entry["direction"], entry["threshold"], entry["actual"]) < 0
+        if entry.get("joint") and entry["joint"] not in by_id:
+            raise ValueError(f"prior threshold {entry['id']!r} is joint with {entry['joint']!r}, "
+                             "which the block does not carry")
+        partners = ([by_id[entry["joint"]]] if entry.get("joint") else
+                    [other for other in every if other.get("joint") == entry["id"]])
+        partners_crossed = [other for other in partners
+                            if headroom(other["direction"], other["threshold"],
+                                        kpi_history(staging, other["reads"])[1][-1]) < 0]
+        run, need = breach_run(values, entry), entry.get("consecutive", 1)
+        verdicts[entry["id"]] = {
+            "crossed": crossed, "run": run, "need": need,
+            "partners": partners, "partners_crossed": partners_crossed,
+            "triggered": crossed and run >= need and (not partners or bool(partners_crossed)),
+        }
+    return verdicts
+
+
+def value_text(entry: dict, value: float, spec: dict) -> str:
+    text = unit_text(entry["unit"], value)
+    if entry["unit"] == "times":
+        text += f"（即{spec['growth']} {minus_sign(signed((value - 1) * 100))}）"
+    return text
+
+
+def settlement_line_note(staging: dict, entry: dict, verdict: dict, by_id: dict) -> str:
+    xlabels, values, spec = kpi_history(staging, entry["reads"])
+    up = entry["direction"] == "up"
+    words = (f"{basis_text(entry, by_id)}：{'不低于' if up else '不高于'} "
+             f"{unit_text(entry['unit'], entry['threshold'])}；本季 {value_text(entry, entry['actual'], spec)}，"
+             f"{'越线' if verdict['crossed'] else '守住'}（余量 "
+             f"{headroom(entry['direction'], entry['threshold'], entry['actual']):+.1f}%）")
+    if verdict["crossed"] and verdict["partners"]:
+        names = "、".join(dict.fromkeys(short_name(other) for other in verdict["partners"]))
+        words += (f"。这条要和{names} 同时失守才算触发："
+                  + (f"{names} 本季也越线，所以触发" if verdict["partners_crossed"] else
+                     f"{names} 本季守住了，所以没有触发"))
+    if verdict["need"] > 1:
+        words += (f"。这条要连续{cn_count(verdict['need'])}季越线才算触发："
+                  + (f"本季已是连续第{cn_ordinal(verdict['run'])}季，触发" if verdict["run"] >= verdict["need"] else
+                     f"本季是连续第{cn_ordinal(verdict['run'])}季，还不够" if verdict["run"] else
+                     "本季没有越线，连续计数归零"))
+    upside = entry.get("upside") or {}
+    if "below" in upside:
+        words += (f"。反方向那条 {unit_text(entry['unit'], upside['below'])}（{upside['basis']}：低于它说明留有余量），"
+                  f"本季{'在它下面' if entry['actual'] < upside['below'] else '没有到它下面'}")
+    if "adv" in upside and "rpc" in upside:
+        adv, rpc = staging["long"]["adv_k"][-1], staging["long"]["rpc"][-1]
+        hit = adv >= upside["adv"] and rpc >= upside["rpc"]
+        words += (f"。上行那一组（{upside['basis']}：ADV 不低于 {unit_text('contracts_k', upside['adv'])}"
+                  f"而 RPC 不低于 {unit_text('usd_rpc', upside['rpc'])}）本季"
+                  f"{'成立' if hit else '不成立'}：ADV {unit_text('contracts_k', adv)}、RPC {unit_text('usd_rpc', rpc)}")
+    side = [value for value in values if headroom(entry["direction"], entry["threshold"], value) < 0]
+    return words + f"。{len(values)} 季里落在这条线{'下方' if up else '上方'}的有 {len(side)} 季。"
+
+
+def settlement_section(staging: dict, period: str, closure: dict | None,
+                       prior: dict | None) -> tuple[list[dict], list[dict], dict]:
+    """Section one's (a) and (b): the charts, the drawer tables, and the counts the prose names."""
+    charts, tables, counts = [], [], {}
+    if closure is not None:
+        charts.append(closure_exhibit(closure))
+        table = closure_table(closure)
+        if table:
+            tables.append(table)
+        counts["questions"] = sum(closure_counts(closure))
+    if prior is None:
+        return charts, tables, counts
+
+    set_in = prior["set_in"]
+    due, later = settlement_entries(staging, prior, period)
+    every = due + later
+    by_id = {entry["id"]: entry for entry in every}
+    verdicts = settlement_verdicts(staging, due, every)
+    crossed = [entry for entry in due if verdicts[entry["id"]]["crossed"]]
+    triggered = [entry for entry in due if verdicts[entry["id"]]["triggered"]]
+    counts["thresholds"] = len(due)
+    not_carried = prior.get("not_carried", [])
+    overview = headroom_exhibit(
+        # Most of CME's lines fire only jointly or after a run, so whenever a line
+        # is crossed the title also says how many actually fired.
+        f"上季 {len(due)} 条量化阈值：{len(due) - len(crossed)} 条守住、{len(crossed)} 条越线"
+        + ("" if not crossed else
+           "，按触发条件一条都没有触发" if not triggered else
+           f"，按触发条件触发 {len(triggered)} 条"),
+        due, "actual",
+        note=(
+            f"正值 = 仍在安全侧。阈值是上季（{set_in}）那一份本地分析在关键观察指标里设的，"
+            f"本季读数取自 {quarter_words(period)}业绩新闻稿。"
+            + ("越线的是 —— " + "；".join(
+                f"{entry['metric']}：本季 {value_text(entry, entry['actual'], kpi_history(staging, entry['reads'])[2])}，"
+                f"{'触发' if verdicts[entry['id']]['triggered'] else '未触发'}" for entry in crossed) + "。"
+               if crossed else "")
+            + ("有的线要与另一条同时失守、或者连续几季越线才算触发，逐条判定写在各自的历史图下。"
+               if len(triggered) != len(crossed) else "")
+            + "".join(f"另有一条要到 {entry['settles']} 才结算：{short_name(entry)}（当前 "
+                      f"{unit_text(entry['unit'], entry['actual'])}），不进这张图。" for entry in later)
+            + (f"上季还有{cn_count(len(not_carried))}条本页读不到（"
+               + "、".join(item["short"] for item in not_carried) + "），本页照旧不结算。"
+               if not_carried else "")),
+        src_extra=(f"阈值取自上季本地研究（{set_in} 季报分析），不是公司指引；本季读数全部取自 "
+                   f"{quarter_words(period)}业绩新闻稿，同比与环比倍数为本页相除 D。"),
+    )
+    overview["ref"] = "EX_PRIOR_HEADROOM"
+    charts.append(overview)
+
+    groups: dict[str, list[dict]] = {}
+    for entry in due:
+        groups.setdefault(entry["reads"], []).append(entry)
+    for reads, group in groups.items():
+        xlabels, values, spec = kpi_history(staging, reads)
+        marks = ["击穿" if verdicts[entry["id"]]["crossed"] else "守住" for entry in group]
+        if len(set(marks)) == 1:
+            head = f"{marks[0]}上季阈值 " + "与 ".join(unit_text(e["unit"], e["threshold"]) for e in group)
+        else:
+            head = "；".join(f"{mark}上季阈值 {unit_text(e['unit'], e['threshold'])}"
+                            for mark, e in zip(marks, group))
+        chart = threshold_exhibit(
+            f"{spec['name'] if len(group) > 1 else group[0]['metric']}：{head}",
+            xlabels, rounded(values), group[0]["threshold"],
+            xstep=LONG_STEP if len(xlabels) > 16 else None,
+            fmt=spec["fmt"], ylab=spec["ylab"], actual_name=spec["name"],
+            threshold_name=threshold_line_name(group[0], len(group), "上季阈值"),
+            note="".join(settlement_line_note(staging, entry, verdicts[entry["id"]], by_id) for entry in group),
+            src_extra=threshold_source(reads, set_in),
+        )
+        for extra in group[1:]:
+            chart["series"].append({"name": threshold_line_name(extra, len(group), "上季阈值"),
+                                    "values": [extra["threshold"]] * len(xlabels), "color": "GOLD"})
+        chart["ref"] = f"EX_PRIOR_{reads.upper()}"
+        charts.append(chart)
+
+    table = threshold_table(0, f"上季（{set_in}）阈值与本季读数（原始单位）",
+                            [{**entry, "metric": kpi_label(entry)} for entry in every],
+                            "actual", "本季读数")
+    table["headers"] += ["出处（上季本地研究）", "判定"]
+    for row, entry in zip(table["rows"], every):
+        verdict = verdicts.get(entry["id"])
+        row += [basis_text(entry, by_id),
+                "未到期" if verdict is None else
+                ("触发" if verdict["triggered"] else "越线未触发" if verdict["crossed"] else "守住")]
+    tables.append(table)
+    return charts, tables, counts
 
 
 def build_payload(staging: dict) -> dict:
@@ -1529,9 +1808,12 @@ def build_payload(staging: dict) -> dict:
     kpi = stamped_block(staging, "next_kpi", period)
     context = stamped_block(staging, "quarter_context", period)
     release = release_source(staging)
-    first_analysis = settles_nothing_yet(staging, period)
+    first_analysis, closure, prior = settlement_blocks(staging, period)
 
-    settled, settled_tables = capex_section(staging)
+    story, story_tables, settled_counts = settlement_section(staging, period, closure, prior)
+    capex_charts, capex_tables = capex_section(staging)
+    settled = story + capex_charts
+    settled_tables = story_tables + capex_tables
     highlights = quarter_section(staging, context)
     next_block = next_section(staging, kpi, context) if kpi else []
     routine = routine_section(staging)
@@ -1713,9 +1995,15 @@ def build_payload(staging: dict) -> dict:
     # quarter" does not describe it; what section one settles for CME is every
     # guided year that has ended.
     pending_years = [y for y in capex["years"] if capex["by_year"][y]["actual"] is None]
+    settled_from = (closure or prior or {}).get("set_in")
+    settled_parts = [f"{settled_counts['questions']} 条待验证问题的判定" if "questions" in settled_counts else "",
+                     f"{settled_counts['thresholds']} 条量化阈值的本季读数" if "thresholds" in settled_counts else ""]
     settled_description = (
         (f"本站对该公司的第一份季报分析是 {period}，没有上季留下的跟踪指标可结算；"
-         "本节结算的是公司自己给出、已经到期的指引。" if first_analysis else "")
+         "本节结算的是公司自己给出、已经到期的指引。" if first_analysis else
+         f"先结清上季（{settled_from} 那一份季报分析）留下的 "
+         + "与 ".join(part for part in settled_parts if part)
+         + "，再结算公司自己给出、已经到期的指引。")
         + "CME 在申报文件里不指引收入、每股收益、利润率，也不指引费用；10-K 流动性一节里有一句全年资本开支的预期，"
         f"{cn_count(len(capex['years']))}年没有断过。它按年到期，所以这里结算的是"
         f"{cn_count(len(finished))}个已完结年度"
@@ -1732,8 +2020,7 @@ def build_payload(staging: dict) -> dict:
     undrawn = context.get("undrawn", []) if context else []
 
     if kpi:
-        upcoming = [entry for entry in kpi["quantified"] if not entry.get("settles")]
-        later = [entry for entry in kpi["quantified"] if entry.get("settles")]
+        upcoming, later = next_split(kpi, period)
         shared = {}
         for entry in upcoming:
             shared.setdefault(entry["reads"], []).append(entry)
@@ -1756,7 +2043,7 @@ def build_payload(staging: dict) -> dict:
     notes = [
         "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
         "CME 财年即自然年，本页季度标注与公司自己的口径一致，无需换算。",
-        ("第一节结清的是资本开支，不是费用。市场给 CME 建成本模型用的是「全年调整后营业费用（除许可费）」"
+        ("第一节结清的公司指引是资本开支，不是费用。市场给 CME 建成本模型用的是「全年调整后营业费用（除许可费）」"
          + (f"，{guidance['fiscal_year']} 年的口径是约 {guidance['adj_opex_ex_license_usd_m'] / 100:.2f} 亿美元；"
             "这个数只在业绩电话会上出现。" if guidance else "，这个数只在业绩电话会上出现。")
          + (f"本页逐字检索过 {searched}，其中没有任何一处给出全年费用指引，8-K 正文同样没有。"

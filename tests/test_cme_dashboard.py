@@ -54,7 +54,8 @@ sys.path.insert(0, str(ROOT))
 
 from build import cme  # noqa: E402
 from build.all import ENTRIES, GROUPS, build_all, roster_payload  # noqa: E402
-from build.board import cn_count, cn_ordinal, headroom  # noqa: E402
+from build.board import cn_count, cn_ordinal, display_period, headroom  # noqa: E402
+from build.payload_guard import check as guard_payload  # noqa: E402
 
 CLASS_KEYS = ("rates", "equity", "fx", "energy", "ags", "metals")
 
@@ -90,6 +91,166 @@ def js_payload(path: Path, marker: str) -> dict:
     return json.loads(body)
 
 
+QUARTER_END = {1: "03-31", 2: "06-30", 3: "09-30", 4: "12-31"}
+
+# Rates, ratios, day counts and share counts: carried over unscaled when the
+# rehearsal grows a quarter, so every product and ratio identity still holds.
+UNSCALED = {"gaap_margin_pct", "adj_margin_pct", "effective_tax_pct", "diluted_shares_k", "rpc",
+            "trading_days", "gross_bp", "retained_bp", "retained_pct_of_gross",
+            *(f"rpc_{key}" for key in CLASS_KEYS)}
+
+
+def rolled_forward(staging: dict, growth: float = 1.0) -> dict:
+    """The series as a data-only roll to the next quarter would leave it, in memory.
+
+    Every aligned array gains one cell: the same quarter a year earlier, with
+    its flows scaled by ``growth`` and its rates, ratios and counts kept -- so
+    every identity the real quarters satisfy still holds, and the rehearsal
+    tests the mechanics, not invented figures. `_checks` is re-keyed from those
+    cells (a rehearsal has no release to read). The one-quarter blocks go the
+    way a roll takes them: the previous `next_kpi` list moves, as it stood, into
+    `prior_kpi_settlement`; a `followup_closure` judges five follow-up
+    questions; `next_kpi` and `quarter_context` are re-stamped, the latter
+    without this quarter's list of undrawable conclusions. Nothing here is
+    written to disk.
+    """
+    def cell(name: str, value):
+        return value if value is None or name in UNSCALED else value * growth
+
+    s = copy.deepcopy(staging)
+    period = s["period_labels"][-1]
+    new = cme.next_period(period)
+    quarter, year = new.split()
+    key = f"{year}{quarter}"
+    s["periods"].append(key)
+    s["period_labels"].append(new)
+    s["period_ends"].append(f"{year}-{QUARTER_END[int(quarter[1])]}")
+    for name, values in s["financials"].items():
+        values.append(cell(name, values[-4]))
+    long = s["long"]
+    width = len(long["quarters"])
+    for name, values in long.items():
+        if isinstance(values, list) and name not in ("quarters", "period_labels") and len(values) == width:
+            values.append(cell(name, values[-4]))
+    long["quarters"].append(key)
+    long["period_labels"].append(new)
+    # The collateral series has no fourth quarters (those come only as full-year
+    # prose), so it gains a cell only where it has the same quarter a year back.
+    coll = s["collateral"]
+    if f"{int(year) - 1}{quarter}" in coll["quarters"]:
+        year_ago = coll["quarters"].index(f"{int(year) - 1}{quarter}")
+        width = len(coll["quarters"])
+        for name, values in coll.items():
+            if isinstance(values, list) and name not in ("quarters", "period_labels") and len(values) == width:
+                values.append(cell(name, values[year_ago]))
+        coll["quarters"].append(key)
+        coll["period_labels"].append(new)
+    s["window_collateral_balance_usd_m"].append(s["window_collateral_balance_usd_m"][-4] * growth)
+    s["sources"].insert(0, {"label": f"CME Group {cme.quarter_words(new)}业绩新闻稿（换季演练）",
+                            "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=1156375&type=8-K"})
+    end_month = int(QUARTER_END[int(quarter[1])][:2])
+    release = f"{int(year) + 1}-01-21" if end_month == 12 else f"{year}-{end_month + 1:02d}-21"
+    s["latest"] = {**s["latest"], "period": new, "release_date": release}
+
+    checks = s["_checks"]
+    fin = s["financials"]
+    checks.update({
+        "period": new, "period_end": s["period_ends"][-1], "release_date": release,
+        "income_statement_usd_m": {k: [long[k][-1], long[k][-5]] for k in checks["income_statement_usd_m"]},
+        "adjusted_usd_m": {k: [fin[k][-1], fin[k][-5]] for k in checks["adjusted_usd_m"]},
+        "adv_k": {k: [long["adv_k" if k == "total" else f"adv_{k}"][i] for i in (-1, -2, -5)]
+                  for k in checks["adv_k"]},
+        "rpc": {k: [long["rpc" if k == "total" else f"rpc_{k}"][i] for i in (-1, -2, -5)] for k in checks["rpc"]},
+        "trading_days": [long["trading_days"][i] for i in (-1, -2, -5)],
+        "performance_bonds_usd_m": s["window_collateral_balance_usd_m"][-1],
+        "adv_rank_printed": sorted(long["adv_k"], reverse=True).index(long["adv_k"][-1]) + 1,
+        "market_data_record_printed": long["market_data"][-1] == max(long["market_data"]),
+        "source": "换季演练：各格取自去年同季，不是申报读数",
+    })
+
+    kpi = s["next_kpi"]
+    labels = ["已验证", "部分验证", "被证伪", "仍未披露"]
+    items = [{"question": f"演练问题 {i}", "verdict": verdict}
+             for i, verdict in enumerate(["已验证", "已验证", "部分验证", "仍未披露", "被证伪"], 1)]
+    s["followup_closure"] = {"period": new, "set_in": period, "labels": labels, "items": items}
+    s["prior_kpi_settlement"] = {"period": new, "set_in": period,
+                                 "quantified": copy.deepcopy(kpi["quantified"]),
+                                 "not_carried": copy.deepcopy(kpi.get("not_carried", []))}
+    # A line whose date has come is settled this quarter, so a roll does not carry it forward.
+    def open_after(entry: dict) -> bool:
+        if not entry.get("settles"):
+            return True
+        q, y = display_period(entry["settles"]).split()
+        return (int(y), int(q[1])) > (int(year), int(quarter[1]))
+    s["next_kpi"] = {**kpi, "period": new, "for_period": cme.next_period(new),
+                     "quantified": [e for e in kpi["quantified"] if open_after(e)]}
+    if s.get("quarter_context"):
+        s["quarter_context"] = {**{k: v for k, v in s["quarter_context"].items() if k != "undrawn"},
+                                "period": new}
+    note = checks["note"]
+    checks["note"] = {
+        **note,
+        "source": {"this_quarter": "换季演练", "previous_quarter": note["source"]["this_quarter"]},
+        "followup_closure": {"total": len(items),
+                             "counts": {label: sum(1 for item in items if item["verdict"] == label)
+                                        for label in labels}},
+        "prior_thresholds": copy.deepcopy(note["next_thresholds"]),
+        "next_thresholds": [t for t in note["next_thresholds"]
+                            if t["id"] in {e["id"] for e in s["next_kpi"]["quantified"]}],
+    }
+    return s
+
+
+def check_section_one(test: unittest.TestCase, staging: dict, payload: dict) -> None:
+    """Section one against `_checks["note"]`, in whichever state the quarter is.
+
+    The note is keyed from the quarter's local analysis: its source names the
+    previous analysis (or none), its section 0 tally and the previous section 8
+    thresholds. A first analysis settles only the company's guidance and says
+    why; any later one opens with the follow-up tally and the threshold
+    overview. Nothing here names a quarter, so a roll does not edit this.
+    """
+    note = staging["_checks"]["note"]
+    period = staging["period_labels"][-1]
+    settled = next(section for section in payload["sections"] if section["id"] == "settled")
+    exhibits = settled["exhibits"]
+    test.assertEqual([ex.get("ref") for ex in exhibits[-2:]], ["EX_CAPEX", "EX_CAPEX_DEV"])
+    first = note["source"]["previous_quarter"] is None
+    record = staging.get("analysis_record", {})
+    test.assertEqual(first, display_period(record.get("first_period", "")) == display_period(period))
+    if first:
+        test.assertTrue(settled["description"].startswith(
+            f"本站对该公司的第一份季报分析是 {period}，没有上季留下的跟踪指标可结算；"))
+        test.assertEqual(len(exhibits), 2)
+        test.assertEqual(note["followup_closure"]["total"], 0)
+        test.assertEqual(note["prior_thresholds"], [])
+        for key in ("followup_closure", "prior_kpi_settlement"):
+            test.assertNotIn(key, staging)
+        return
+    test.assertNotIn("第一份季报分析", settled["description"])
+    story = exhibits[:-2]
+    closure = note["followup_closure"]
+    if closure["total"]:
+        chart = story.pop(0)
+        test.assertEqual(chart["kind"], "bars_labeled")
+        test.assertTrue(chart["title"].startswith(f"上季 {closure['total']} 条待验证问题："), chart["title"])
+        test.assertEqual(dict(zip(chart["xlabels"], chart["values"])), closure["counts"])
+    prior = staging.get("prior_kpi_settlement", {}).get("quantified", [])
+    test.assertEqual([(e["id"], e["metric"], e["direction"], e["threshold"]) for e in prior],
+                     [(t["id"], t["metric"], t["direction"], t["threshold"]) for t in note["prior_thresholds"]])
+    if prior:
+        due = [e for e in prior if not e.get("settles") or display_period(e["settles"]) == period]
+        overview = story.pop(0)
+        test.assertEqual(overview["kind"], "diverging_bars")
+        test.assertTrue(overview["title"].startswith(f"上季 {len(due)} 条量化阈值："), overview["title"])
+        test.assertEqual(overview["xlabels"], [e["metric"] for e in due])
+        test.assertEqual(len(story), len({e["reads"] for e in due}))
+        for chart in story:
+            test.assertEqual(chart["kind"], "lines")
+            test.assertRegex(chart["title"], r"：(守住|击穿)上季阈值 ")
+    test.assertTrue(closure["total"] or prior, "a later quarter settles something")
+
+
 class CmeDashboardTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -106,29 +267,17 @@ class CmeDashboardTest(unittest.TestCase):
         self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列",
                       self.payload["notes"][0])
 
-    def test_the_first_analysis_settles_only_the_company_s_guidance_and_says_so(self) -> None:
-        """The local analysis of Q2 2026 is the first one on CME.
+    def test_section_one_settles_what_the_local_analysis_left_open(self) -> None:
+        """Held to `_checks["note"]`, whichever state the quarter is in.
 
-        Its section 0 reads "未找到上季遗留问题" and its section 8 "首次覆盖，无上季
-        KPI 可校准", so there is no follow-up list and no threshold to settle:
-        section one carries the capital-expenditure record alone and has to say
-        why, rather than look like a section that forgot its first half.
+        The Q2 2026 local analysis is the first one on CME: its section 0 reads
+        "未找到上季遗留问题" and its section 8 "首次覆盖，无上季 KPI 可校准", so that
+        quarter's section one carries the capital-expenditure record alone and
+        says why. From the next analysis on it opens with the follow-up tally and
+        the previous thresholds (`CmeRollRehearsalTest` builds that state).
         """
-        # What the report says about itself lives in `_checks["note"]`, keyed
-        # from the report; the series' own record has to agree with it.
-        note = self.staging["_checks"]["note"]
-        period = self.staging["period_labels"][-1]
-        first = note["source"]["previous_quarter"] is None
-        self.assertEqual(first, self.staging["analysis_record"]["first_period"] == period)
-        self.assertTrue(first, "this quarter's analysis has a previous one: section one must settle it")
-        self.assertEqual(note["followup_closure"]["total"], 0)
-        self.assertEqual(note["prior_thresholds"], [])
+        check_section_one(self, self.staging, self.payload)
         settled = next(s for s in self.payload["sections"] if s["id"] == "settled")
-        self.assertTrue(settled["description"].startswith(
-            f"本站对该公司的第一份季报分析是 {period}，没有上季留下的跟踪指标可结算；"))
-        self.assertEqual([ex["ref"] for ex in settled["exhibits"]], ["EX_CAPEX", "EX_CAPEX_DEV"])
-        for key in ("followup_closure", "prior_kpi_settlement"):
-            self.assertNotIn(key, self.staging)
         # The capex sentence is not the filings' only target: the FY2025 10-K's
         # next sentence states the regular-dividend target. The section names it
         # and says why it is not settled, instead of calling capex the only one.
@@ -170,8 +319,14 @@ class CmeDashboardTest(unittest.TestCase):
         spread = self.exhibit_by_ref("EX_SPREAD")["title"]
         self.assertIn(f"同比 {(coll['net'][-1] / coll['net'][prior] - 1) * 100:+.1f}%".replace("-", "−"),
                       spread)
+        # The gross line is named beside it only while the two moved apart: gross
+        # investment income down, what CME keeps up, because the distribution fell more.
         income = self.staging["long"]["investment_income"]
-        self.assertIn(f"投资收益同比 {(income[-1] / income[-5] - 1) * 100:+.1f}%".replace("-", "−"), spread)
+        apart = (income[-1] - income[-5] < 0 < coll["net"][-1] - coll["net"][prior]
+                 and coll["distribution"][-1] - coll["distribution"][prior]
+                 < coll["earnings"][-1] - coll["earnings"][prior] < 0)
+        self.assertEqual(
+            f"投资收益同比 {(income[-1] / income[-5] - 1) * 100:+.1f}%".replace("-", "−") in spread, apart)
 
     def test_the_brief_leads_with_the_quarter_not_the_capex_record(self) -> None:
         """「本季三条主线」: the first used to be the sixteen-year capex record."""
@@ -186,9 +341,12 @@ class CmeDashboardTest(unittest.TestCase):
             self.assertIn(f"{name} {'−' if change < 0 else '+'}US${abs(change):,.1f}M", first)
 
     def test_section_two_names_what_it_cannot_draw(self) -> None:
-        undrawn = self.staging["quarter_context"]["undrawn"]
+        undrawn = (self.staging.get("quarter_context") or {}).get("undrawn", [])
         highlights = next(s for s in self.payload["sections"] if s["id"] == "quarter_highlights")
-        self.assertIn(f"另有{cn_count(len(undrawn))}条画不了：", highlights["description"])
+        if not undrawn:
+            self.assertNotIn("条画不了", highlights["description"])
+        else:
+            self.assertIn(f"另有{cn_count(len(undrawn))}条画不了：", highlights["description"])
         for item in undrawn:
             self.assertIn(item, highlights["description"])
 
@@ -274,7 +432,9 @@ class CmeDashboardTest(unittest.TestCase):
     def test_the_window_is_the_tail_of_the_long_series(self) -> None:
         """The two windows must not disagree about an overlapping quarter."""
         long = self.staging["long"]
-        self.assertEqual(long["quarters"][-8:], self.staging["periods"])
+        # The short window grows from 2024Q3 (the test above), so its length is
+        # its own, not a typed 8 -- which the next roll would have broken.
+        self.assertEqual(long["quarters"][-len(self.staging["periods"]):], self.staging["periods"])
         for offset, quarter in enumerate(self.staging["periods"]):
             index = long["quarters"].index(quarter)
             for key in ("total_revenues", "clearing_fees", "market_data"):
@@ -545,12 +705,18 @@ class CmeDashboardTest(unittest.TestCase):
             for key, value in entry.get("upside", {}).items():
                 if key != "basis":
                     upside[f"{entry['id']}_{key}" if key == "below" else key] = value
-        self.assertEqual(upside, {k: v for k, v in note["next_upside"].items() if not k.startswith("_")})
-        self.assertEqual(len(kpi["not_carried"]), note["next_not_carried"]["count"])
+        self.assertEqual(upside, {k: v for k, v in note.get("next_upside", {}).items() if not k.startswith("_")})
+        self.assertEqual(len(kpi.get("not_carried", [])), note.get("next_not_carried", {}).get("count", 0))
         for entry in kpi["quantified"]:
             # Nothing the page could go stale on is stored beside a threshold.
             self.assertNotIn("current", entry, entry["id"])
             self.assertTrue(entry["basis"], entry["id"])
+
+    def due_next(self, entry: dict) -> bool:
+        """Settled by the next release: no date, or the date is the next quarter."""
+        quarter, year = self.staging["period_labels"][-1].split()
+        following = f"Q1 {int(year) + 1}" if quarter == "Q4" else f"Q{int(quarter[1]) + 1} {year}"
+        return not entry.get("settles") or display_period(entry["settles"]) == following
 
     @staticmethod
     def readings(staging: dict) -> dict:
@@ -569,8 +735,7 @@ class CmeDashboardTest(unittest.TestCase):
 
     def test_every_next_quarter_threshold_has_a_headroom_bar(self) -> None:
         entries = self.staging["next_kpi"]["quantified"]
-        upcoming = [e for e in entries if not e.get("settles")]
-        self.assertLess(len(upcoming), len(entries), "the Q1 2027 line is not a next-quarter bar")
+        upcoming = [e for e in entries if self.due_next(e)]
         now = self.readings(self.staging)
         bar = self.exhibit_by_ref("EX_HEADROOM")
         self.assertTrue(bar["title"].startswith(f"下季 {len(upcoming)} 条阈值："))
@@ -584,7 +749,7 @@ class CmeDashboardTest(unittest.TestCase):
         """「X：下季阈值 A，当前 B」, one chart per metric, every threshold on it."""
         section = next(s for s in self.payload["sections"] if s["id"] == "next_quarter")
         charts = section["exhibits"][1:]
-        upcoming = [e for e in self.staging["next_kpi"]["quantified"] if not e.get("settles")]
+        upcoming = [e for e in self.staging["next_kpi"]["quantified"] if self.due_next(e)]
         by_metric = {}
         for entry in upcoming:
             by_metric.setdefault(entry["reads"], []).append(entry)
@@ -603,9 +768,9 @@ class CmeDashboardTest(unittest.TestCase):
     def test_the_rest_of_section_8_is_named_with_the_reason_it_is_not_drawn(self) -> None:
         kpi = self.staging["next_kpi"]
         note = self.exhibit_by_ref("EX_HEADROOM")["note"]
-        for item in kpi["not_carried"]:
+        for item in kpi.get("not_carried", []):
             self.assertIn(item["text"], note)
-        later = [e for e in kpi["quantified"] if e.get("settles")]
+        later = [e for e in kpi["quantified"] if not self.due_next(e)]
         table = next(t for t in self.payload["tables"] if t["title"].startswith("下季阈值"))
         self.assertEqual([row[0] for row in table["rows"]],
                          [e["metric"] + (f"（{e['settles']} 结算）" if e.get("settles") else "")
@@ -838,7 +1003,9 @@ class CmeRollTest(unittest.TestCase):
         return cme.build_payload(changed)
 
     def test_quarter_blocks_refuse_to_publish_under_another_quarter(self) -> None:
-        for key in ("next_kpi", "quarter_context"):
+        blocks = ["next_kpi", "quarter_context"] + [key for key in ("followup_closure", "prior_kpi_settlement")
+                                                   if key in self.staging]
+        for key in blocks:
             with self.subTest(block=key):
                 with self.assertRaisesRegex(ValueError, "stamped"):
                     self.rebuilt(lambda s, key=key: s[key].__setitem__("period", "Q1 1999"))
@@ -863,8 +1030,11 @@ class CmeRollTest(unittest.TestCase):
                     i = len(rates) - back
                     rates[i] = rates[i - 4] + (-1 if back <= quarters else 1)
             return edit
-        once = published_text(self.rebuilt(rates_down_for(1)))
-        twice = published_text(self.rebuilt(rates_down_for(2)))
+        def rates_note(edit) -> str:
+            # Scoped to the rates line: another line can be in its own first cell.
+            return next(ex for section in self.rebuilt(edit)["sections"] for ex in section["exhibits"]
+                        if ex.get("ref") == "EX_RATES_LINE")["note"]
+        once, twice = rates_note(rates_down_for(1)), rates_note(rates_down_for(2))
         self.assertIn("这是第一格", once)
         self.assertNotIn("已经触发", once)
         self.assertNotIn("这是第一格", twice)
@@ -911,11 +1081,44 @@ class CmeRollTest(unittest.TestCase):
         self.assertIn("偏离了这条长期关系", off_line)
 
     def test_a_later_quarter_must_settle_the_previous_analysis(self) -> None:
-        """「第一份分析」is true of one quarter only; after it, section one owes a settlement."""
-        with self.assertRaisesRegex(ValueError, "prior_kpi_settlement"):
-            self.rebuilt(lambda s: s["analysis_record"].__setitem__("first_period", "Q1 2026"))
+        """「第一份分析」is true of one quarter only; after it, section one owes a settlement.
+
+        Both states are built here, so this holds whichever one the series is in.
+        """
+        period = self.staging["period_labels"][-1]
+
+        def later_without_blocks(s):
+            s["analysis_record"]["first_period"] = "Q1 1999"
+            s.pop("followup_closure", None)
+            s.pop("prior_kpi_settlement", None)
         with self.assertRaisesRegex(ValueError, "not the first CME analysis"):
-            self.rebuilt(lambda s: s.pop("analysis_record"))
+            self.rebuilt(later_without_blocks)
+        with self.assertRaisesRegex(ValueError, "prior_kpi_settlement"):
+            self.rebuilt(lambda s: (later_without_blocks(s), s.pop("analysis_record")))
+
+        def first_with_a_block(s):
+            s["analysis_record"]["first_period"] = period
+            s["followup_closure"] = {"period": period, "set_in": "Q1 1999", "labels": ["已验证"], "counts": [1]}
+        with self.assertRaisesRegex(ValueError, "first CME analysis, so there is nothing"):
+            self.rebuilt(first_with_a_block)
+
+    def test_the_settlement_blocks_are_checked_against_themselves(self) -> None:
+        """A tally that disagrees with its own items, or a threshold whose date has
+        passed unsettled, stops the build rather than print a wrong count."""
+        rolled = rolled_forward(self.staging)
+        cme.build_payload(rolled)
+
+        def edited(edit):
+            changed = copy.deepcopy(rolled)
+            edit(changed)
+            return cme.build_payload(changed)
+        with self.assertRaisesRegex(ValueError, "disagrees with its own items"):
+            edited(lambda s: s["followup_closure"].__setitem__(
+                "counts", [c + 1 for c in cme.closure_counts(s["followup_closure"])]))
+        with self.assertRaisesRegex(ValueError, "was due in"):
+            edited(lambda s: s["prior_kpi_settlement"]["quantified"][0].__setitem__("settles", "Q1 1999"))
+        with self.assertRaisesRegex(ValueError, "name different analyses"):
+            edited(lambda s: s["followup_closure"].__setitem__("set_in", "Q1 2026"))
 
     def test_a_quarter_without_its_blocks_leaves_them_out(self) -> None:
         def strip(s):
@@ -926,36 +1129,79 @@ class CmeRollTest(unittest.TestCase):
         self.assertEqual(sections["next_quarter"]["exhibits"], [])
         self.assertEqual(len(payload["tables"]), len(self.payload["tables"]) - 1)
         text = published_text(payload)
-        for gone in ("逐字检索过", "逐份检索过", "逐字搜过", "亿美元；", "本页数据截至", "条画不了"):
+        gone_words = ["逐字检索过", "逐份检索过", "逐字搜过", "亿美元；", "本页数据截至"]
+        if self.staging["quarter_context"].get("undrawn"):
+            gone_words.append("条画不了")
+        for gone in gone_words:
             with self.subTest(gone=gone):
                 self.assertIn(gone, self.text)
                 self.assertNotIn(gone, text)
 
     def test_the_record_sentences_are_computed_not_remembered(self) -> None:
-        def moves(claims, edit, present_before=True):
-            after = published_text(self.rebuilt(edit))
-            for claim in claims:
-                with self.subTest(claim=claim):
-                    self.assertEqual(claim in self.text, present_before)
-                    self.assertEqual(claim in after, not present_before)
+        """A first, a second, an 「all six」: each is built in both states here.
 
-        # The clearing line's earlier negative quarter is what makes this one the second.
-        def earlier_quarter_positive(s):
-            i = s["periods"].index("2025Q3")
-            s["financials"]["clearing_fees"][i] = s["financials"]["clearing_fees"][i - 4] + 1
-        moves(("第二次同比转负", "第二次转负"), earlier_quarter_positive)
-        moves(("是本窗口内第一次转负",), earlier_quarter_positive, present_before=False)
+        This used to flip one fact of Q2 2026 (its clearing line was the window's
+        second negative quarter, agricultural volume rose with its rate, market
+        data had carried the growth once before in 2018Q3) and assert the
+        sentence moved -- which held only while the current quarter was in that
+        state. The next roll would have had to edit this file.
+        """
+        def text_of(edit) -> str:
+            return published_text(self.rebuilt(edit))
 
-        # Agricultural ADV rose with its rate; make it fall and all six move against rate.
-        def ags_down(s):
-            s["long"]["adv_ags"][-1] = s["long"]["adv_ags"][-2] - 100
-        moves(("六个品种的量与价同时反向",), ags_down, present_before=False)
+        # The clearing line's year-on-year turns inside the short window.
+        def clearing_negative(back: set[int]):
+            def edit(s):
+                fees = s["financials"]["clearing_fees"]
+                for i in range(4, len(fees)):
+                    fees[i] = fees[i - 4] * (0.97 if len(fees) - 1 - i in back else 1.03)
+            return edit
+        once, twice = text_of(clearing_negative({0})), text_of(clearing_negative({0, 2}))
+        for claim in ("第二次同比转负", "第二次转负"):
+            with self.subTest(claim=claim):
+                self.assertIn(claim, twice)
+                self.assertNotIn(claim, once)
+        self.assertIn("是本窗口内第一次转负", once)
+        self.assertNotIn("是本窗口内第一次转负", twice)
 
-        # The market-data line has carried all the growth once before (2018Q3).
-        def not_before(s):
-            i = s["long"]["quarters"].index("2018Q3")
-            s["long"]["total_revenues"][i] = s["long"]["total_revenues"][i - 4] + 100
-        moves(("第一次单独扛起全公司的同比增长",), not_before, present_before=False)
+        # 「六个品种的量与价同时反向」: every class's volume against its rate, or all but one.
+        def classes(all_six: bool):
+            def edit(s):
+                long = s["long"]
+                for j, key in enumerate(CLASS_KEYS):
+                    long[f"adv_{key}"][-1] = long[f"adv_{key}"][-2] * 0.9
+                    long[f"rpc_{key}"][-1] = long[f"rpc_{key}"][-2] * (1.05 if all_six or j else 0.95)
+            return edit
+        self.assertIn("六个品种的量与价同时反向", text_of(classes(True)))
+        self.assertNotIn("六个品种的量与价同时反向", text_of(classes(False)))
+
+        # 「第 N 次单独扛起全公司的同比增长」: the ordinal is the count, in two states
+        # with different histories -- every earlier carrying quarter kept, or none.
+        def carried_now(s):
+            long = s["long"]
+            long["total_revenues"][-1] = long["total_revenues"][-5] + 10
+            long["market_data"][-1] = long["market_data"][-5] + 20
+
+        def only_now(s):
+            md, total = s["long"]["market_data"], s["long"]["total_revenues"]
+            for i in range(4, len(total) - 1):
+                if md[i] - md[i - 4] >= total[i] - total[i - 4] > 0:
+                    total[i] = total[i - 4] + (md[i] - md[i - 4]) + 1
+            carried_now(s)
+        for edit in (carried_now, only_now):
+            with self.subTest(history=edit.__name__):
+                changed = copy.deepcopy(self.staging)
+                edit(changed)
+                long = changed["long"]
+                carried = [long["quarters"][i] for i in range(4, len(long["quarters"]))
+                           if long["market_data"][i] - long["market_data"][i - 4]
+                           >= long["total_revenues"][i] - long["total_revenues"][i - 4] > 0]
+                self.assertEqual(carried[-1], long["quarters"][-1])
+                self.assertIn("第一次单独扛起全公司的同比增长" if len(carried) == 1 else
+                              f"第{cn_ordinal(len(carried))}次单独扛起全公司的同比增长（上一次是 {carried[-2]}）",
+                              published_text(cme.build_payload(changed)))
+        self.assertNotIn("单独扛起全公司的同比增长", text_of(
+            lambda s: s["long"]["market_data"].__setitem__(-1, s["long"]["market_data"][-5] - 1)))
 
     def test_the_rankings_and_counts_are_recounted_here(self) -> None:
         staging, text = self.staging, self.text
@@ -964,7 +1210,8 @@ class CmeRollTest(unittest.TestCase):
         under = sum(1 for y in finished if capex["by_year"][y]["actual"]
                     < cme.mid(capex["by_year"][y]["low"], capex["by_year"][y]["high"]))
         deviation = next(ex for ex in self.exhibits if ex.get("ref") == "EX_CAPEX_DEV")
-        self.assertIn(f"{cn_count(len(finished))}年里有{cn_count(under)}年往同一个方向不准", deviation["note"])
+        self.assertIn(f"{cn_count(len(finished))}年里有{cn_count(under)}年往同一个方向不准"
+                      if under * 2 > len(finished) else "往哪个方向不准", deviation["note"])
         self.assertNotIn("一直偏高", text)
         self.assertNotIn("一直往同一个方向不准", text)
         # The EPS gap: the tax-reform quarter is the narrowest, not the widest.
@@ -978,28 +1225,274 @@ class CmeRollTest(unittest.TestCase):
         income = long["investment_income"]
         invest = next(ex for ex in self.exhibits if "投资收益与利息分配支出" in ex["title"])
         self.assertIn(f"US${max(income):,.0f}M", invest["title"])
-        # The biggest riser among the six classes is named, not the biggest mover.
+        # The biggest riser among the six classes is named, not the biggest mover
+        # -- and when none rose, the sentence says which of the two that means.
         yoy = {name: long[f"adv_{key}"][-1] / long[f"adv_{key}"][-5] - 1 for key, name, _ in cme.CLASSES}
         riser = max(yoy, key=yoy.get)
-        self.assertIn(f"{riser}同比", text)
-        self.assertIn("同比涨得最多的一条", text)
+        if yoy[riser] > 0:
+            self.assertIn(f"{riser}同比", text)
+            self.assertIn("同比涨得最多的一条", text)
+        else:
+            self.assertIn("六个品种同比全部下降" if yoy[riser] < 0 else "六个品种同比没有一个上涨", text)
         self.assertNotIn("同比幅度最大的一条", text)
-        # The margin threshold has been broken inside the window.
-        entry = next(e for e in staging["next_kpi"]["quantified"] if e["metric"] == "调整后营业利润率")
-        below = sum(1 for v in fin["adj_margin_pct"] if v < entry["threshold"])
-        self.assertIn(f"窗口里有{cn_count(below)}季低于它", text)
+        # Whether the margin threshold has been broken inside the window is counted.
+        entries = {e["metric"]: e for e in staging["next_kpi"]["quantified"]}
+        entry = entries.get("调整后营业利润率")
+        if entry:
+            below = sum(1 for v in fin["adj_margin_pct"] if v < entry["threshold"])
+            self.assertIn(f"窗口里有{cn_count(below)}季低于它" if below else "它低于窗口内最低的一格", text)
         self.assertNotIn("最低的一格再往下一点", text)
-        # The run of quarters under the RPC line is 2021-2023.
-        rpc_entry = next(e for e in staging["next_kpi"]["quantified"] if e["metric"] == "平均每手费率 RPC")
+        # The longest run under the RPC line is found here, not remembered
+        # (it was 2021-2023 when this was written; the first draft said 2019-2021).
         self.assertNotIn("2019–2021 年的常态", text)
-        rpc = long["rpc"][start:]
-        years = sorted({long["quarters"][start + i][:4] for i, v in enumerate(rpc) if v < rpc_entry["threshold"]})
-        self.assertTrue(set(years) >= {"2021", "2022", "2023"})
+        rpc_entry = entries.get("平均每手费率 RPC")
+        if rpc_entry:
+            rpc, quarters = long["rpc"][start:], long["quarters"][start:]
+            spans, begin = [], None
+            for i, value in enumerate(rpc + [rpc_entry["threshold"]]):
+                if value < rpc_entry["threshold"] and begin is None:
+                    begin = i
+                elif value >= rpc_entry["threshold"] and begin is not None:
+                    spans.append((begin, i))
+                    begin = None
+            if spans:
+                first, stop = max(spans, key=lambda span: (span[1] - span[0], span[0]))
+                self.assertIn(f"是回到 {quarters[first][:4]}–{quarters[stop - 1][:4]} 年的常态", text)
         # Every count of filings searched is the same count everywhere.
-        searched = staging["quarter_context"]["searched"]
-        self.assertEqual(text.count(searched), 4)
+        searched = (staging.get("quarter_context") or {}).get("searched")
+        if searched:
+            self.assertEqual(text.count(searched), 4)
         for stale in ("三份 10-Q", "两份 10-Q"):
             self.assertNotIn(stale, text)
+
+
+class CmeRollRehearsalTest(unittest.TestCase):
+    """The next quarter, rolled in memory by editing the series alone (CLAUDE.md §9).
+
+    `rolled_forward` appends a quarter to every aligned array, re-stamps
+    `latest`, `_checks` and the one-quarter blocks, and adds the two settlement
+    blocks a second local analysis brings. The builder must take that without a
+    code change; section one must open with the follow-up tally and the previous
+    thresholds instead of the first-analysis sentence; and the shared window
+    census must still hold, because section one's new charts move every exhibit
+    number after them.
+    """
+
+    # A flat quarter (the year-ago cells as they were), a growing one, and a
+    # stressed one in which the analysis's joint and consecutive triggers fire.
+    GROWTH = (1.0, 1.03)
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(cme.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.variants = []
+        for growth in cls.GROWTH:
+            rolled = rolled_forward(cls.staging, growth)
+            cls.variants.append((f"growth {growth}", rolled, cme.build_payload(rolled)))
+        # The stress sets every condition itself, so the triggers fire whatever
+        # state the base quarter is in: volume under every volume line, the rate
+        # under its line, and two year-on-year declines in a row in rates volume.
+        stressed = rolled_forward(cls.staging)
+        long = stressed["long"]
+        prior = stressed["prior_kpi_settlement"]["quantified"]
+        volume_lines = [e["threshold"] for e in prior if e["reads"] == "adv"]
+        if volume_lines:
+            long["adv_k"][-1] = min(volume_lines) * 0.9
+        for entry in prior:
+            if entry["reads"] == "rpc":
+                long["rpc"][-1] = entry["threshold"] - 0.01
+            if entry["reads"] == "rates_adv_yoy":
+                for back in (1, 2):
+                    long["adv_rates"][-back] = long["adv_rates"][-back - 4] * 0.95
+        cls.variants.append(("stressed", stressed, cme.build_payload(stressed)))
+
+    def test_the_next_quarter_builds_from_the_series_alone(self) -> None:
+        for growth, rolled, payload in self.variants:
+            with self.subTest(growth=growth):
+                guard_payload(payload)
+                exhibits = [ex for section in payload["sections"] for ex in section["exhibits"]]
+                period = rolled["period_labels"][-1]
+                self.assertEqual(period, cme.next_period(self.staging["period_labels"][-1]))
+                self.assertIn(period, payload["title"])
+                self.assertEqual([section["id"] for section in payload["sections"]],
+                                 ["settled", "quarter_highlights", "next_quarter", "routine"])
+                self.assertTrue(all(section["exhibits"] for section in payload["sections"]))
+                self.assertEqual([ex["n"] for ex in exhibits], list(range(2, 2 + len(exhibits))))
+                for ex in exhibits:
+                    for key in ("title", "note", "src_extra"):
+                        self.assertNotIn("{EX_", ex.get(key) or "", ex["title"])
+                    blocks = [ex.get("values")]
+                    for key in ("bar", "line", "yoy", "actual", "lo", "hi", "net"):
+                        block = ex.get(key)
+                        blocks.append(block.get("values") if isinstance(block, dict) else block)
+                    for key in ("series", "groups", "stacks"):
+                        blocks.extend(item.get("values") for item in ex.get(key) or [])
+                    for values in blocks:
+                        if values is not None:
+                            self.assertEqual(len(values), len(ex["xlabels"]), ex["title"])
+                # ...and the builder still never reads `_checks`.
+                self.assertEqual(cme.build_payload({k: v for k, v in rolled.items() if k != "_checks"}),
+                                 payload)
+
+    def test_section_one_opens_with_what_the_previous_analysis_left(self) -> None:
+        for growth, rolled, payload in self.variants:
+            with self.subTest(growth=growth):
+                check_section_one(self, rolled, payload)
+                settled = payload["sections"][0]
+                self.assertNotIn("第一份季报分析", settled["description"])
+                closure, overview = settled["exhibits"][:2]
+                self.assertTrue(closure["title"].startswith(
+                    f"上季 {len(rolled['followup_closure']['items'])} 条待验证问题："))
+                # Settled against this quarter's readings, computed here from the
+                # rolled series -- the block carries no reading of its own.
+                now = CmeDashboardTest.readings(rolled)
+                period = rolled["period_labels"][-1]
+                due = [e for e in rolled["prior_kpi_settlement"]["quantified"]
+                       if not e.get("settles") or display_period(e["settles"]) == period]
+                for entry in due:
+                    self.assertNotIn("actual", entry)
+                for entry, value in zip(due, overview["values"]):
+                    self.assertAlmostEqual(headroom(entry["direction"], entry["threshold"], now[entry["reads"]]),
+                                           value, places=1, msg=entry["id"])
+                titles = [table["title"] for table in payload["tables"]]
+                self.assertTrue(any(t.startswith("上季（") and "待验证问题" in t for t in titles))
+                self.assertTrue(any(t.startswith("上季（") and "阈值与本季读数" in t for t in titles))
+                # The verdicts, with the analysis's own trigger rules applied here:
+                # a joint line needs its partner crossed too, a consecutive line
+                # needs the run -- counted on the ratio series built from the
+                # disclosed lines, not through the builder.
+                long = rolled["long"]
+                history = {
+                    "rates_adv_yoy": [long["adv_rates"][i] / long["adv_rates"][i - 4]
+                                      for i in range(4, len(long["adv_rates"]))],
+                    "market_data_qoq": [long["market_data"][i] / long["market_data"][i - 1]
+                                        for i in range(1, len(long["market_data"]))],
+                }
+                entries = rolled["prior_kpi_settlement"]["quantified"]
+                by_id = {e["id"]: e for e in entries}
+
+                def crossed(entry, value=None) -> bool:
+                    value = now[entry["reads"]] if value is None else value
+                    return headroom(entry["direction"], entry["threshold"], value) < 0
+
+                expected = []
+                for entry in entries:
+                    if entry not in due:
+                        expected.append("未到期")
+                        continue
+                    partners = ([by_id[entry["joint"]]] if entry.get("joint") else
+                                [e for e in entries if e.get("joint") == entry["id"]])
+                    run = 0
+                    for value in reversed(history.get(entry["reads"], [now[entry["reads"]]])):
+                        if not crossed(entry, value):
+                            break
+                        run += 1
+                    fired = (crossed(entry) and run >= entry.get("consecutive", 1)
+                             and (not partners or any(crossed(p) for p in partners)))
+                    expected.append("触发" if fired else "越线未触发" if crossed(entry) else "守住")
+                table = next(t for t in payload["tables"] if t["title"].startswith("上季（") and "阈值" in t["title"])
+                self.assertEqual([row[-1] for row in table["rows"]], expected)
+                fired, crossed_lines = expected.count("触发"), expected.count("触发") + expected.count("越线未触发")
+                self.assertIn(f"{crossed_lines} 条越线", overview["title"])
+                if crossed_lines:
+                    self.assertIn(f"按触发条件触发 {fired} 条" if fired else "按触发条件一条都没有触发",
+                                  overview["title"])
+                else:
+                    self.assertNotIn("按触发条件", overview["title"])
+                if growth == "stressed":
+                    self.assertIn("触发", expected)
+
+    def test_three_rolls_reach_the_quarter_the_dated_line_settles_in(self) -> None:
+        """Three quarters, each rolled from the last by data alone.
+
+        From Q2 2026 that is Q3 2026, Q4 2026 (no collateral cell; the 10-K rather
+        than a 10-Q) and Q1 2027, the quarter the analysis's one dated line
+        settles in: it becomes a next-quarter line one quarter early and is
+        settled in section one on the day. The builder used to have no chart,
+        note or source line for that metric, so those two rolls would have
+        needed a code change. From any other quarter, a dated line three
+        quarters out is added here, so the walk tests the same thing.
+        """
+        staging = copy.deepcopy(self.staging)
+        target = staging["period_labels"][-1]
+        for _ in range(3):
+            target = cme.next_period(target)
+        dated = [e for e in staging["next_kpi"]["quantified"]
+                 if e.get("settles") and display_period(e["settles"]) == target]
+        if not dated:
+            entry = {"id": "rehearsal_dated", "reads": "market_data_yoy", "metric": "行情数据收入同比（演练）",
+                     "direction": "up", "threshold": 12.0, "unit": "pct", "from": "statement",
+                     "basis": "换季演练", "settles": target}
+            staging["next_kpi"]["quantified"].append(entry)
+            staging["_checks"]["note"]["next_thresholds"].append(
+                {key: entry[key] for key in ("id", "metric", "threshold", "direction")})
+            dated = [entry]
+        for _ in range(3):
+            staging = rolled_forward(staging)
+            payload = cme.build_payload(staging)
+            period = staging["period_labels"][-1]
+            with self.subTest(period=period):
+                guard_payload(payload)
+                check_section_one(self, staging, payload)
+                self.assert_window_census(staging, payload)
+                sections = {section["id"]: section for section in payload["sections"]}
+                next_titles = [ex["title"] for ex in sections["next_quarter"]["exhibits"]]
+                settled_titles = [ex["title"] for ex in sections["settled"]["exhibits"]]
+                for entry in dated:
+                    self.assertEqual(any(t.startswith(f"{entry['metric']}：下季阈值 ") for t in next_titles),
+                                     display_period(entry["settles"]) == cme.next_period(period))
+                    self.assertEqual(any(t.startswith(f"{entry['metric']}：") and "上季阈值" in t
+                                         for t in settled_titles),
+                                     display_period(entry["settles"]) == period)
+        self.assertEqual(period, target)
+
+    def assert_window_census(self, rolled: dict, payload: dict) -> None:
+        """What `test_chart_window` would say of a rolled page, run on it here --
+        its ratchet, its short-axis exemptions and its prose quarter counts."""
+        import tests.test_chart_window as window   # a module, so no TestCase is re-collected
+
+        published = js_payload(ROOT / "data" / "cme.js", "window.DASH")
+        exhibits = [ex for section in payload["sections"] for ex in section["exhibits"]]
+        timed = [(ex, window.first_year(ex)) for ex in exhibits]
+        timed = [(ex, year) for ex, year in timed if year is not None]
+        reached = sum(1 for _, year in timed if year <= window.TARGET_YEAR)
+        self.assertEqual(reached, window.REACH_2016["cme"] - window.cme_threshold_reach(published)
+                         + window.cme_threshold_reach(payload))
+        for ex, year in timed:
+            if year > window.TARGET_YEAR:
+                matched = [key for key in window.CONVERTED["cme"] if window.key_matches(key, ex["title"])]
+                self.assertEqual(len(matched), 1, ex["title"])
+        census = window.ProseQuarterCountTest
+        page_ok = set()
+        for ex in exhibits:
+            page_ok |= census._derivable(ex)[1]
+        found = {}
+        for ex in exhibits:
+            n, ok = census._derivable(ex)
+            if n < 12:
+                continue
+            ok |= page_ok
+            prose = " ".join(ex.get(field) or "" for field in ("title", "note", "subtitle")
+                             if isinstance(ex.get(field), str))
+            if {int(m.group(1)) for m in census.ANCHOR.finditer(prose)} & ok:
+                continue
+            loose = sorted({int(m.group(1)) for m in census.COUNT.finditer(prose)
+                            if int(m.group(1)) >= 12} - ok)
+            if loose:
+                found[f"cme Ex{ex['n']}"] = loose
+        self.assertEqual(found, {key: value[0] for key, value in
+                                 window.cme_quarter_pins(payload, rolled).items()})
+
+    def test_the_rolled_page_keeps_the_shared_window_census_green(self) -> None:
+        import tests.test_chart_window as window
+
+        for growth, rolled, payload in self.variants:
+            with self.subTest(growth=growth):
+                # Section one's settled lines are among the ones the ratchet adds.
+                settled = payload["sections"][0]["exhibits"]
+                self.assertTrue(any("上季阈值" in ex["title"] and (window.first_year(ex) or 9999) <= 2016
+                                    for ex in settled))
+                self.assert_window_census(rolled, payload)
 
 
 if __name__ == "__main__":
