@@ -66,7 +66,7 @@ from build.board import (  # noqa: E402
     number_exhibits,
     stamped_block,
     threshold_exhibit,
-    threshold_table,
+    unit_text,
 )
 from build.page_shell import render_shell  # noqa: E402
 from build.payload_guard import write_dash  # noqa: E402
@@ -482,17 +482,32 @@ def verdict(low, high, actual):
     return {"inside": "区间内", "above": "高于上限", "below": "低于下限"}[verdict_of(low, high, actual)]
 
 
-def spent_in_year(staging: dict, year: int) -> tuple[float, int]:
-    """Non-GAAP operating expense already spent in ``year``, US$M, and over how many quarters."""
+def spent_in_year(staging: dict, year: int, context: dict | None = None) -> tuple[float, int, bool]:
+    """Non-GAAP operating expense already spent in ``year``, US$M, over how many
+    quarters, and whether that is the figure the company printed for the year to date.
+
+    Each release prints a year-to-date column and that column is the official
+    figure: every quarter is rounded on its own, so adding the quarters can miss
+    it by one (Q1 2026's 608 plus Q2's 641 is 1,249; the Q2 release prints six
+    months as 1,250). The printed figure is used when this quarter's stamped
+    `quarter_context` carries it; the sum stands in otherwise.
+    """
     spent = [v for p, v in zip(staging["periods"], staging["financials"]["nongaap_opex"])
              if p.startswith(str(year))]
-    return sum(spent), len(spent)
+    printed = (context or {}).get("nongaap_opex_ytd_usd_m")
+    if printed is not None and staging["periods"][-1].startswith(str(year)):
+        if abs(printed - sum(spent)) > len(spent):
+            raise ValueError(f"printed year-to-date opex {printed} is not the quarters' "
+                             f"{sum(spent)} within rounding: one of them is on another basis")
+        return float(printed), len(spent), True
+    return sum(spent), len(spent), False
 
 
 _SPENT_WORDS = {1: ("第一季度", "后三季"), 2: ("上半年", "下半年"), 3: ("前三季", "第四季度")}
 
 
-def open_year_chart(staging: dict, opex: dict, finished: list[int]) -> dict:
+def open_year_chart(staging: dict, opex: dict, finished: list[int],
+                    context: dict | None = None, opex_threshold: dict | None = None) -> dict:
     """The year still running: each release's range, and what is left of it.
 
     It sits in the quarter's section, not in the settled one: a year that has not
@@ -557,13 +572,19 @@ def open_year_chart(staging: dict, opex: dict, finished: list[int]) -> dict:
         else:
             note += "。"
 
-    spent, quarters = spent_in_year(staging, open_year)
+    spent, quarters, printed = spent_in_year(staging, open_year, context)
     if quarters in _SPENT_WORDS:
         done_words, left_words = _SPENT_WORDS[quarters]
         left = guided[-1][1] - spent
-        note += (f"{done_words}已发生的非 GAAP 营业费用是 US${spent:,.0f}M，"
-                 f"按最新指引上限倒推，{left_words}还剩 US${left:,.0f}M 的额度"
-                 + (f"，折合每季 US${left / (4 - quarters):,.1f}M。" if 4 - quarters > 1 else "。"))
+        per_quarter = left / (4 - quarters)
+        note += (f"{done_words}已发生的非 GAAP 营业费用是 US${spent:,.0f}M"
+                 + ("（公司印的年初至今数）" if printed else "")
+                 + f"，按最新指引上限倒推，{left_words}还剩 US${left:,.0f}M 的额度"
+                 + ((f"，折合每季 US${per_quarter:,.0f}M" if per_quarter == round(per_quarter)
+                     else f"，折合每季 US${per_quarter:,.1f}M") if 4 - quarters > 1 else "")
+                 + ("，也就是本季报告第 8 节那条下半年费用阈值（Exhibit {EX_T_OPEX}）。"
+                    if opex_threshold and abs(opex_threshold.get("half_year", 0) - left) < 0.5
+                    else "。"))
     note += (f"这一年怎么结清，要等 {open_year + 1} 年 1 月那期新闻稿，届时会并入 "
              "Exhibit {EX_OPEX_LAST}。")
     return {
@@ -852,72 +873,296 @@ def quarter_section(staging: dict, year_ago: YearAgo, context: dict | None) -> l
     return charts
 
 
-def kpi_entry(kpi: dict, metric: str) -> dict | None:
-    return next((entry for entry in kpi["quantified"] if entry["metric"] == metric), None)
+def section8_readings(staging: dict, context: dict | None) -> dict[str, float]:
+    """This quarter's value of every metric the report's section 8 tracks, read off the series.
+
+    The thresholds are the report's; the readings are the filings'. Each entry of
+    `next_kpi` names the reading it is scored against, so a threshold cannot be
+    scored against a number typed beside it -- and a block a roll forgets to
+    append to fails here instead of publishing last quarter's rate as this one's.
+    """
+    period = staging["periods"][-1]
+    printed = staging["yoy_printed"]
+    aum = staging["etp_aum"]
+    for name, block in (("yoy_printed", printed), ("etp_aum", aum)):
+        if block["quarters"][-1] != period:
+            raise ValueError(f"series `{name}` ends at {block['quarters'][-1]} but the page is {period}")
+    sol_now, sol_ago = printed["solutions_usd_m"][-1]
+    idx_now, idx_ago = printed["index_usd_m"][-1]
+    readings = {
+        "arr_organic_pct": printed["arr_organic_pct"][-1],
+        "fin_organic_pct": printed["fin_organic_pct"][-1],
+        "cmt_organic_pct": printed["cmt_organic_pct"][-1],
+        "etp_aum_period_end": aum["period_end_usd_b"][-1],
+        "net_inflows": aum["net_inflows_usd_b"][-1],
+        "nongaap_opex": staging["financials"]["nongaap_opex"][-1],
+        "ex_index_solutions_yoy": pct_change(sol_now - idx_now, sol_ago - idx_ago),
+    }
+    arr_printed = (context or {}).get("arr_printed") or {}
+    if "fin_organic_pct" in arr_printed:
+        readings["fin_arr_organic_pct"] = arr_printed["fin_organic_pct"]
+    return readings
 
 
-def next_section(staging: dict, kpi: dict, context: dict | None) -> list[dict]:
+def runs_below(labels: list[str], values: list, threshold: float, length: int) -> list[list[str]]:
+    """Stretches of at least ``length`` consecutive periods strictly below ``threshold``."""
+    runs, current = [], []
+    for label, value in zip(labels, values):
+        if value is not None and value < threshold:
+            current.append(label)
+            continue
+        if len(current) >= length:
+            runs.append(current)
+        current = []
+    if len(current) >= length:
+        runs.append(current)
+    return runs
+
+
+def listed(labels: list[str], values: list, unit: str = "%") -> str:
+    return "、".join(f"{label} {value:g}{unit}" for label, value in zip(labels, values))
+
+
+def next_section(staging: dict, kpi: dict, context: dict | None) -> tuple[list[dict], dict]:
+    """Section three: the report's section 8, threshold by threshold.
+
+    Five thresholds carry a percentage headroom and go into the overview bar. The
+    quarterly net-outflow line sits at zero, which has no percentage headroom, so
+    it gets its own chart and stays out of the bar. The Section 31-adjusted
+    free-cash-flow conversion cannot be recomputed from any filing and is named
+    rather than drawn. The report's three upside conditions are not safety lines;
+    they are listed, with this quarter's reading, in the audit table.
+    """
+    read = section8_readings(staging, context)
+    printed = staging["yoy_printed"]
+    aum = staging["etp_aum"]
     lng = staging["long"]
-    fin = staging["financials"]
     story = s31_story(staging)
+    cash = (context or {}).get("cash_flow") or {}
+    entries = [{**entry, "current": read[entry["reads"]]} for entry in kpi["quantified"]]
+    by_reads = {entry["reads"]: entry for entry in entries}
+    heads = [headroom(e["direction"], e["threshold"], e["current"]) for e in entries]
+    breached = [e["metric"] for e, h in zip(entries, heads) if h < 0]
+    tightest = min(range(len(entries)), key=lambda i: heads[i])
+    lead = (f"{len(breached)} 条已越过（{'、'.join(breached)}）" if breached else
+            f"全部在安全侧，余量最小的是「{entries[tightest]['metric']}」，{heads[tightest]:+.1f}%")
+
+    def why(item: dict) -> str:
+        return fill_story(item["why"], {
+            "cfo": f"US${cash['cfo_usd_m']:,.0f}M" if cash else "未录入",
+            "fee_payable": (f"+US${cash['s31_payable_ytd_change_usd_m']:,.0f}M" if cash else "未录入"),
+        })
+
+    def reading(unit: str, value: float) -> str:
+        """A reading at the precision it was published: printed rates are whole numbers."""
+        if unit == "pct":
+            return f"{value:g}%" if value == round(value) else f"{value:.1f}%"
+        if unit == "usd_bn":
+            return f"US${value:,.0f}B"
+        return unit_text(unit, value)
+
+    upside = []
+    arr_entry = by_reads.get("arr_organic_pct")
+    if arr_entry and arr_entry.get("upside") is not None:
+        upside.append(f"{arr_entry['metric']}不低于 {arr_entry['upside']:g}%（连续两季）")
+    upside += [f"{item['metric']}不低于 {item['threshold']:g}%" for item in kpi.get("upside", [])]
     excluded = fill_story(kpi.get("excluded", ""), {
         "fee_now": f"US${story['now']:,.0f}M",
         "fee_prior": f"US${story['prior']:,.0f}M",
     })
-    exhibits = [headroom_exhibit(
-        f"下季 {len(kpi['quantified'])} 条阈值：当前值离阈值的余量",
-        kpi["quantified"], "current",
-        ("正值表示仍在安全侧。阈值为本地研究设定，<b>不是公司指引</b> —— "
-         "纳斯达克只指引全年非 GAAP 营业费用与非 GAAP 有效税率两个数，"
-         "从不指引收入、每股收益或利润率，见第一节。"
+    exhibits = [{**headroom_exhibit(
+        f"下季 {len(entries)} 条阈值：{lead}",
+        entries, "current",
+        ("阈值逐字取自本季报告第 8 节「关键观察指标」，<b>不是公司指引</b>；当前值取自本季申报，"
+         "有机增速是公司自己印的整数。正值 = 仍在安全侧。"
+         + ("第 8 节还有两条不进这张图：季度净流出的阈值是零，没有百分比余量，单独画在 Exhibit {EX_T_FLOWS}；"
+            if "zero_line" in kpi else "")
+         + "".join(f"{item['metric']}：{why(item)}。" for item in kpi.get("not_connected", []))
+         + (f"报告还写了{cn_count(len(upside))}条上行条件（{'；'.join(upside)}），它们回答的是何时转向更积极，"
+            "不是安全线，本季读数逐条列在核对抽屉的第 8 节表里。" if upside else "")
+         + "纳斯达克只指引全年非 GAAP 营业费用与非 GAAP 有效税率两个数，从不指引收入、每股收益或利润率，见第一节。"
          + excluded),
-        f"当前值为 {staging['periods'][-1]} 披露值或本页自算；阈值为本地研究设定。")]
+        f"阈值：{kpi['set_in']}；当前值：{staging['period_labels'][-1]} 业绩新闻稿与 10-Q。"), "ref": "EX_T_OVERVIEW"}]
 
-    margin = kpi_entry(kpi, "非 GAAP 经营利润率")
-    if margin:
-        values = lng["nongaap_margin_pct"]
-        falls = sum(1 for a, b in zip(values, values[1:]) if b < a)
-        direction = "向上" if values[-1] > values[0] else "向下"
-        # "Almost monotone" was the original word; 17 of the 45 quarter-on-quarter
-        # changes are falls, so the page counts them instead.
-        shape = (f"几乎单调{direction}" if falls <= (len(values) - 1) // 10
-                 else f"总体{direction}（{len(values) - 1} 次环比里 {falls} 次回落）")
-        exhibits.append(threshold_exhibit(
-            "非 GAAP 经营利润率：当前 "
-            f"{fin['nongaap_margin_pct'][-1]:.1f}%，阈值 {margin['threshold']:.1f}%",
-            lng["period_labels"], rounded(values), margin["threshold"],
-            fmt="pct1", ylab="%",
-            actual_name="非 GAAP 经营利润率", threshold_name="本地阈值",
-            note=("红线是本地研究设定的阈值，不是公司指引 —— 公司从不指引利润率。"
-                  f"{len(values)} 个季度里这条线从 {values[0]:.1f}% 走到 "
-                  f"{values[-1]:.1f}%，{shape}；"
-                  "分母是净收入（已扣除交易性支出），所以上一节那笔 SEC 规费的开关不影响它。"),
-            src_extra="各季业绩 8-K EX-99.1 的非 GAAP 经营利润调节表；分母为净收入。"))
-        exhibits[-1]["xstep"] = LONG_STEP
+    labels = printed["period_labels"]
+    n = len(labels)
+    floor_words = (f"从 {printed['quarters'][0]} 起画：" + printed["floor"].split("：", 1)[-1]
+                   if "floor" in printed else "")
 
-    aum = staging["etp_aum"]
-    aum_entry = kpi_entry(kpi, "期末 ETP AUM")
-    if aum_entry:
+    entry = by_reads.get("arr_organic_pct")
+    if entry:
+        values, thr, up = printed["arr_organic_pct"], entry["threshold"], entry.get("upside")
+        below = [(l, v) for l, v in zip(labels, values) if v < thr]
+        reached = [(l, v) for l, v in zip(labels, values) if up is not None and v >= up]
+        arr_printed = (context or {}).get("arr_printed") or {}
+        note = (f"阈值来自本季报告第 8 节：低于 {thr:g}% 算 thesis 失效、要重新评估"
+                + (f"；不低于 {up:g}% 且连续两季算结构加速、加仓（绿线）" if up is not None else "") + "。"
+                + (f"本图 {n} 个季度里没有一季低于 {thr:g}%" if not below else
+                   f"本图 {n} 个季度里有 {len(below)} 季低于 {thr:g}%（{listed(*zip(*below))}）")
+                + ("" if up is None else
+                   (f"，也还没有一季达到 {up:g}%" if not reached else
+                    f"，达到 {up:g}% 的是 {listed(*zip(*reached))}"))
+                + f"；本季 {entry['current']:g}%。"
+                + (f"同一份新闻稿印的报告口径是 {arr_printed['total_reported_pct']:g}%：有机口径剔除汇率与收购、剥离"
+                   "的影响，第 8 节用的是有机口径。"
+                   if arr_printed.get("total_reported_pct") not in (None, entry["current"]) else ""))
+        chart = threshold_exhibit(
+            f"{entry['metric']}：下季阈值 {thr:g}%，当前 {entry['current']:g}%",
+            labels, values, thr, fmt="pct0", ylab="%",
+            actual_name="总 ARR 有机同比（公司印的整数）",
+            threshold_name=f"下季阈值 {thr:g}%（低于即越线）",
+            note=note,
+            src_extra=("各季业绩 8-K EX-99.1 首页要点与 FINANCIAL REVIEW 里「or X% on an organic basis」那一句；"
+                       + floor_words))
+        if up is not None:
+            chart["series"].append({"name": f"加仓线 {up:g}%（须连续两季）", "values": [up] * n,
+                                    "color": "GREEN"})
+        exhibits.append({**chart, "ref": "EX_T_ARR"})
+
+    entry = by_reads.get("fin_organic_pct")
+    if entry:
+        values, thr = printed["fin_organic_pct"], entry["threshold"]
+        k = entry.get("consecutive", 1)
+        runs = runs_below(labels, values, thr, k)
+        note = (f"阈值来自本季报告第 8 节：Financial Technology 有机收入增速连续{cn_count(k)}季低于 {thr:g}% "
+                "算执行转弱（警示，达到硬阈值则减仓）；它与下一张的 CMT 条件是「或」的关系。"
+                + ("按这条规则，本图里 " + "；".join(f"{run[0]}–{run[-1]} 连续{cn_count(len(run))}季低于 {thr:g}%"
+                                              for run in runs) + "，当时已经触发"
+                   if runs else f"本图 {n} 个季度里没有连续{cn_count(k)}季低于 {thr:g}% 的时候")
+                + f"；本季 {values[-1]:g}%、上季 {values[-2]:g}%。")
+        exhibits.append({**threshold_exhibit(
+            f"{entry['metric']}：下季阈值 {thr:g}%，当前 {entry['current']:g}%",
+            labels, values, thr, fmt="pct0", ylab="%",
+            actual_name="Financial Technology 有机收入同比",
+            threshold_name=f"下季阈值 {thr:g}%（连续{cn_count(k)}季低于即越线）",
+            note=note,
+            src_extra=("各季业绩 8-K EX-99.1「Reconciliation of (Adjusted and) Organic Impacts」表 Total Financial "
+                       "Technology revenues 行的有机增速（按表头对列）；" + floor_words)), "ref": "EX_T_FIN"})
+
+    entry = by_reads.get("cmt_organic_pct")
+    if entry:
+        values, thr = printed["cmt_organic_pct"], entry["threshold"]
+        below = [(l, v) for l, v in zip(labels, values) if v < thr]
+        note = (f"阈值来自本季报告第 8 节：Capital Markets Technology 有机收入增速低于 {thr:g}% 算执行转弱。"
+                + (f"本图 {n} 个季度里有 {len(below)} 季低于 {thr:g}%（{listed(*zip(*below))}）" if below else
+                   f"本图 {n} 个季度里没有一季低于 {thr:g}%")
+                + f"；本季 {values[-1]:g}%、上季 {values[-2]:g}%。")
+        exhibits.append({**threshold_exhibit(
+            f"{entry['metric']}：下季阈值 {thr:g}%，当前 {entry['current']:g}%",
+            labels, values, thr, fmt="pct0", ylab="%",
+            actual_name="Capital Markets Technology 有机收入同比",
+            threshold_name=f"下季阈值 {thr:g}%（低于即越线）",
+            note=note,
+            src_extra=("各季业绩 8-K EX-99.1「Reconciliation of (Adjusted and) Organic Impacts」表 Capital Markets "
+                       "Technology revenues 行的有机增速（按表头对列）；" + floor_words)), "ref": "EX_T_CMT"})
+
+    entry = by_reads.get("etp_aum_period_end")
+    if entry:
+        values, thr = aum["period_end_usd_b"], entry["threshold"]
+        above = [label for label, value in zip(aum["period_labels"], values) if value >= thr]
         ttm = (context or {}).get("aum_ttm_usd_b")
+        market = ""
         if ttm:
             bigger = "净增值大于净流入" if ttm["net_appreciation"] > ttm["net_inflows"] else "净流入大于净增值"
-            market = ("它同时是市场涨跌的读数而不只是经营的读数："
-                      f"公司自己披露的滚动十二个月数据里，增量中{bigger}。")
-        else:
-            market = "它同时是市场涨跌的读数而不只是经营的读数。"
-        exhibits.append(threshold_exhibit(
-            f"期末 ETP AUM：当前 US${aum['period_end_usd_b'][-1]:,.0f}B，"
-            f"阈值 US${aum_entry['threshold']:,.0f}B",
-            aum["period_labels"], rounded(aum["period_end_usd_b"]), aum_entry["threshold"],
-            fmt="f0c", ylab="US$B",
-            actual_name="期末 ETP AUM", threshold_name="本地阈值",
-            note=("红线是本地研究设定的阈值，不是公司指引 —— 公司从不指引 AUM。"
-                  + ("本季是这条序列首次站上一万亿美元，" if aum_first_trillion(staging) else "")
-                  + aum_entry.get("why", "")
-                  + market),
-            src_extra="各季业绩 8-K EX-99.1 的 Key Drivers 表；公司披露值。"))
-        exhibits[-1]["xstep"] = LONG_STEP
-    return exhibits
+            market = f"它同时是市场涨跌的读数：公司披露的滚动十二个月数据里，增量中{bigger}。"
+        note = (f"阈值来自本季报告第 8 节：期末 AUM 跌破 US${thr:,.0f}B 算 beta 反转（下行、重新评估 Capital Access 模型）。"
+                + (f"{len(values)} 个季度里只有本季站在这条线之上，上一季期末还是 US${values[-2]:,.0f}B。"
+                   if above == [aum["period_labels"][-1]] else
+                   f"{len(values)} 个季度里有 {len(above)} 季在这条线之上。")
+                + ("本季是这条序列首次站上一万亿美元。" if aum_first_trillion(staging) else "")
+                + market)
+        chart = threshold_exhibit(
+            f"{entry['metric']}：下季阈值 US${thr:,.0f}B，当前 US${entry['current']:,.0f}B",
+            aum["period_labels"], rounded(values), thr, fmt="f0c", ylab="US$B",
+            actual_name="期末 ETP AUM", threshold_name=f"下季阈值 US${thr:,.0f}B（跌破即越线）",
+            note=note, src_extra="各季业绩 8-K EX-99.1 的 Key Drivers 表；公司披露值。", xstep=LONG_STEP)
+        exhibits.append({**chart, "ref": "EX_T_AUM"})
+
+    zero = kpi.get("zero_line")
+    if zero:
+        flows = aum["net_inflows_usd_b"]
+        first = next(i for i, value in enumerate(flows) if value is not None)
+        flow_labels, flow_values = aum["period_labels"][first:], flows[first:]
+        outflows = [(l, v) for l, v in zip(flow_labels, flow_values) if v < 0]
+        low = min(range(len(flow_values)), key=lambda i: flow_values[i])
+        ttm = (context or {}).get("aum_ttm_usd_b")
+        last_four = sum(flow_values[-4:])
+        note = ("阈值来自本季报告第 8 节：出现季度净流出算 beta 反转，与上一张的 AUM 条件是「或」的关系。"
+                "阈值是零，没有百分比余量，所以不进 Exhibit {EX_T_OVERVIEW} 的余量图。"
+                + (f"本图 {len(flow_values)} 个季度全是净流入，最少的是 {flow_labels[low]} 的 US${flow_values[low]:,.0f}B"
+                   if not outflows else
+                   f"本图 {len(flow_values)} 个季度里有 {len(outflows)} 季净流出（{listed(*zip(*outflows), unit='B')}）")
+                + (f"；最近四季相加 US${last_four:,.0f}B，正是公司印的滚动十二个月净流入。"
+                   if ttm and last_four == ttm["net_inflows"] else "。"))
+        exhibits.append({**threshold_exhibit(
+            f"{zero['metric']}：下季阈值 0（净流出即越线），当前 US${read[zero['reads']]:,.0f}B",
+            flow_labels, flow_values, 0.0, fmt="f0c", ylab="US$B",
+            actual_name="当季 ETP 净流入", threshold_name="下季阈值 0（低于即净流出）",
+            note=note,
+            src_extra=aum.get("net_inflows_source", "各季业绩 8-K EX-99.1 正文里的当季净流入。")), "ref": "EX_T_FLOWS"})
+
+    entry = by_reads.get("nongaap_opex")
+    if entry:
+        values, thr, half = lng["nongaap_opex"], entry["threshold"], entry["half_year"]
+        opex_record = staging["annual_guidance_history"]["operating_expense"]
+        open_year = max(opex_record["years"])
+        high = [g for g in opex_record["by_year"][str(open_year)]["guided"] if g][-1][1]
+        spent, quarters, printed_ytd = spent_in_year(staging, open_year, context)
+        # The report's number is the guide's top less the year to date. If a later
+        # release moves either one, the block has to be re-keyed, not re-read.
+        if abs((high - spent) - half) > 0.5 or abs(half / (4 - quarters) - thr) > 0.05:
+            raise ValueError(f"next_kpi opex threshold {half}/{thr} is not FY{open_year} guide top {high} "
+                             f"less year-to-date {spent} over {4 - quarters} quarters")
+        diffs = []
+        for year in finished_years(opex_record):
+            quarter_sum = sum(v for q, v in zip(lng["quarters"], values) if q.startswith(str(year)))
+            diffs.append(abs(quarter_sum - opex_record["by_year"][str(year)]["actual"]))
+        note = (f"第 8 节写的是下半年累计 US${half:,.0f}M —— FY{open_year} 指引上限 US${high:,.0f}M 减去"
+                + ("公司印的上半年 " if printed_ytd else "上半年 ")
+                + f"US${spent:,.0f}M；本图按两季平均画成每季 US${thr:,.0f}M。"
+                "越线的定义是下半年累计超过它，或者单季超支且全年指引再上调（警示）。"
+                + (f"本季 US${entry['current']:,.0f}M 是 {len(values)} 个季度里最高的一季，" if entry["current"] == max(values)
+                   else f"本季 US${entry['current']:,.0f}M，")
+                + f"比这条线低 US${thr - entry['current']:,.0f}M。"
+                f"长序列是各季首次披露的非 GAAP 营业费用，逐年四季相加与公司印的全年实际最多相差 US${max(diffs):,.0f}M。")
+        exhibits.append({**threshold_exhibit(
+            f"{entry['metric']}：下季阈值 US${thr:,.0f}M，当前 US${entry['current']:,.0f}M",
+            lng["period_labels"], rounded(values), thr, fmt="f0c", ylab="US$M",
+            actual_name="单季非 GAAP 营业费用", threshold_name=f"下季阈值 US${thr:,.0f}M（下半年季均）",
+            note=note,
+            src_extra=("各季业绩 8-K EX-99.1 的非 GAAP 营业费用调节表（首次披露值）；上半年数取 2Q26 新闻稿六个月列。"
+                       "阈值为本季报告第 8 节。"),
+            xstep=LONG_STEP), "ref": "EX_T_OPEX"})
+
+    rows = []
+    places = {"arr_organic_pct": "EX_T_ARR", "fin_organic_pct": "EX_T_FIN", "cmt_organic_pct": "EX_T_CMT",
+              "etp_aum_period_end": "EX_T_AUM", "nongaap_opex": "EX_T_OPEX"}
+    for e, h in zip(entries, heads):
+        rows.append([e["metric"], e["report"], e["action"], reading(e["unit"], e["current"]),
+                     f"{h:+.1f}%", "Exhibit {EX_T_OVERVIEW} 与 Exhibit {" + places[e["reads"]] + "}"])
+    if zero:
+        rows.append([zero["metric"], zero["report"], zero["action"],
+                     reading(zero["unit"], read[zero["reads"]]), "阈值为零，无百分比余量",
+                     "Exhibit {EX_T_FLOWS}"])
+    if arr_entry and arr_entry.get("upside") is not None:
+        up = arr_entry["upside"]
+        rows.append([f"{arr_entry['metric']}（上行条件）", arr_entry["report"], arr_entry["action"],
+                     reading("pct", arr_entry["current"]),
+                     f"{headroom('up', up, arr_entry['current']):+.1f}%（负值 = 尚未达到）",
+                     "Exhibit {EX_T_ARR} 的绿线"])
+    for item in kpi.get("upside", []):
+        value = read.get(item["reads"])
+        rows.append([f"{item['metric']}（上行条件）", item["report"], "三条同时出现则撤回谨慎判断、转向更积极",
+                     "未录入" if value is None else reading(item["unit"], value),
+                     "—" if value is None else f"{headroom('up', item['threshold'], value):+.1f}%（负值 = 尚未达到）",
+                     "只列在本表"])
+    for item in kpi.get("not_connected", []):
+        rows.append([item["metric"], item["report"], item["action"], "未接入", "—",
+                     "未接入：申报文件里没有公司口径的剔除 Section 31 自由现金流"])
+    table = {"title": "第 8 节关键观察指标：阈值原文、本季读数与本页处理",
+             "headers": ["指标", "第 8 节阈值（原文）", "触发动作（原文）", "本季读数", "距阈值 D", "本页"],
+             "rows": rows}
+    return exhibits, table
 
 
 def gross_to_net_chart(staging: dict) -> dict:
@@ -980,6 +1225,15 @@ def routine_section(staging: dict) -> list[dict]:
     n = len(lng["quarters"])
     gap = [None if None in (a, b) else a - b
            for a, b in zip(lng["nongaap_margin_pct"], lng["gaap_margin_pct"])]
+    margins = lng["nongaap_margin_pct"]
+    falls = sum(1 for a, b in zip(margins, margins[1:]) if b < a)
+    direction = "向上" if margins[-1] > margins[0] else "向下"
+    # "Almost monotone" was the original word; 17 of the 45 quarter-on-quarter
+    # changes are falls, so the page counts them instead. (This sentence moved
+    # here from the old local-threshold margin chart, which section 8 of the
+    # report never asked for.)
+    margin_shape = (f"几乎单调{direction}" if falls <= (len(margins) - 1) // 10
+                    else f"总体{direction}（{len(margins) - 1} 次环比里 {falls} 次回落）")
     share_first = 100 * lng["ms_net"][0] / lng["net_revenue"][0]
     share_now = 100 * lng["ms_net"][-1] / lng["net_revenue"][-1]
     basis = staging["ms_reclassification"]
@@ -1013,6 +1267,7 @@ def routine_section(staging: dict) -> list[dict]:
         "fmt": "pct1", "yfmt": "pct1", "label_fmt": "pct1", "end_label": True,
         "ylab": "%", "xstep": LONG_STEP,
         "note": (
+            f"非 GAAP 那条线 {n} 个季度里从 {margins[0]:.1f}% 走到 {margins[-1]:.1f}%，{margin_shape}。"
             "两条线的<b>缺口</b>就是被调整掉的成本 —— 主要是收购无形资产摊销，"
             f"其次是重组与并购费用。缺口在 {n} 个季度里从 {gap[0]:.1f}pp 走到 {gap[-1]:.1f}pp，"
             "2023Q4 Adenza 交割后明显走阔，因为摊销基数一次性变大。"
@@ -1155,14 +1410,17 @@ def build_payload(staging: dict) -> dict:
     guidance_charts, settled_tables = guidance_section(staging)
     settled = lead + guidance_charts
     opex_record = hist["operating_expense"]
+    opex_threshold = (next((e for e in kpi["quantified"] if e.get("reads") == "nongaap_opex"), None)
+                      if kpi else None)
     highlights = quarter_section(staging, year_ago, context) + [
-        open_year_chart(staging, opex_record, finished_years(opex_record))]
-    next_block = next_section(staging, kpi, context) if kpi else []
+        open_year_chart(staging, opex_record, finished_years(opex_record), context, opex_threshold)]
+    next_block, kpi_table = next_section(staging, kpi, context) if kpi else ([], None)
     routine = routine_section(staging)
     routine.insert(2, gross_to_net_chart(staging))
 
     exhibits = number_exhibits(settled + highlights + next_block + routine)
     resolve_exhibit_refs(exhibits)
+    numbers = {ex["ref"]: ex["n"] for ex in exhibits if "ref" in ex}
     n1, n2, n3 = len(settled), len(highlights), len(next_block)
     settled_ex = exhibits[:n1]
     highlight_ex = exhibits[n1:n1 + n2]
@@ -1204,10 +1462,14 @@ def build_payload(staging: dict) -> dict:
                   f"{100 * staging['section_31']['fees_usd_m'][i] / staging['section_31']['bcef_usd_m'][i]:.1f}%"]
                  for i in range(len(staging["section_31"]["quarters"]))],
     })
-    if kpi:
-        tables.append(threshold_table(tables[-1]["n"] + 1,
-                                      "下季阈值与当前值（原始单位）",
-                                      kpi["quantified"], "current", "当前值"))
+    if kpi_table:
+        def cite(cell: str) -> str:
+            for ref, number in numbers.items():
+                cell = cell.replace("{" + ref + "}", str(number))
+            return cell
+        tables.append({"n": tables[-1]["n"] + 1, "title": kpi_table["title"],
+                       "headers": kpi_table["headers"],
+                       "rows": [[cite(cell) for cell in row] for row in kpi_table["rows"]]})
     tables.append(ai_capex_cycle_table(tables[-1]["n"] + 1))
 
     opex = hist["operating_expense"]
@@ -1356,7 +1618,14 @@ def build_payload(staging: dict) -> dict:
                              + highlight_words),
              "exhibits": highlight_ex},
             {"id": "next_quarter", "title": "三、下季要跟踪什么",
-             "description": "当前值离下季阈值还有多远，统一用「距阈值余量」口径；不接入的几条也写在这里。",
+             "description": (
+                 "阈值逐字取自本季报告第 8 节「关键观察指标」，本季读数取自申报："
+                 f"先看 {len(kpi['quantified']) if kpi else 0} 条可量化的阈值离越线还有多远（统一用「距阈值余量」口径），"
+                 "再逐条看它们是怎么走到今天的。"
+                 + ("季度净流出那一条的阈值是零，没有百分比余量，单独成图。" if kpi and kpi.get("zero_line") else "")
+                 + "".join(f"{item['metric']}那一条在申报文件里无法复算，本页不接入，原因写在第一张图的图注与核对抽屉里。"
+                           for item in (kpi or {}).get("not_connected", []))
+                 + "报告的上行条件不是安全线，只列在核对抽屉。"),
              "exhibits": next_ex},
             {"id": "routine", "title": "四、长期常规跟踪",
              "description": (f"纳斯达克专属的常规序列：{len(staging['long']['quarters'])} 季两条利润率"
