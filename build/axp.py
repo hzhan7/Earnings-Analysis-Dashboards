@@ -943,7 +943,19 @@ def quarter_charts(staging: dict, next_entries: list[dict]) -> list[dict]:
                if faster == ["VCE"] else "")),
         "src_extra": "收入与总费用均为申报值，两个增速之差为本页自算（D）。",
     }
+    return [decomposition, vce_chart, jaws_chart]
 
+
+# ── section four: the long structural series ─────────────────────────────────
+def structure_charts(staging: dict) -> list[dict]:
+    """The four revenue legs over the record and the four segments' margins.
+
+    Neither carries a finding about the quarter: one is a 42-quarter structure,
+    the other a 26-quarter margin record. They sit with the routine series.
+    """
+    fin = staging["financials"]
+    labels = staging["period_labels"]
+    revenue = fin["revenue_usd_m"]
     discount = fin["discount_revenue_usd_m"]
     card_fees = fin["net_card_fees_usd_m"]
     other = fin["other_non_interest_revenue_usd_m"]
@@ -1033,7 +1045,7 @@ def quarter_charts(staging: dict, next_entries: list[dict]) -> list[dict]:
                "两者都没有单独披露金额，所以本页不做还原，只在这里说明它是什么。" if spike else "")),
         "src_extra": "各季业绩 8-K EX-99.2 的四张分部页；利润率 = 分部税前利润 ÷ 分部收入（D）。",
     }
-    return [decomposition, vce_chart, jaws_chart, mix, seg_chart]
+    return [mix, seg_chart]
 
 
 # ── section three: the thresholds pointed forward ────────────────────────────
@@ -1483,7 +1495,8 @@ def build_payload(staging: dict) -> dict:
     next_entries = kpi_entries(next_block, "current", staging) if next_block else []
     settled_entries = kpi_entries(settled_block, "actual", staging) if settled_block else []
 
-    settled, settled_tables = guidance_charts(staging, facts)
+    guidance, settled_tables = guidance_charts(staging, facts)
+    settled = []
     if settled_entries:
         settled.append(headroom_exhibit(
             f"上季那份分析立的阈值里，能结清的 {len(settled_entries)} 条",
@@ -1492,10 +1505,13 @@ def build_payload(staging: dict) -> dict:
              + settled_words(settled_block)
              + fill_story(settled_block.get("breach_story", ""), block_values(staging, settled_block))),
             f"实际值为 {staging['periods'][-1]} 的申报值；阈值为上季本地研究设定。"))
+    settled += guidance
 
     highlights = quarter_charts(staging, next_entries)
     next_charts = next_quarter_charts(staging, next_entries, next_block)
-    routine = routine_charts(staging)
+    price, share, rate, buyback = routine_charts(staging)
+    mix, seg = structure_charts(staging)
+    routine = [price, mix, share, rate, seg, buyback]
 
     exhibits = number_exhibits(settled + highlights + next_charts + routine)
     resolve_exhibit_refs(exhibits)
@@ -1712,25 +1728,24 @@ def build_payload(staging: dict) -> dict:
         "summary": {"blocks": []},
         "guidance": None,
         "sections": [
-            {"id": "settled", "title": "一、上季兑现了吗",
+            {"id": "settled", "title": "一、上季跟踪指标兑现了吗",
              "description": plain_text(
-                 ("这一节结清两样东西，而第一样在本站是头一回结不出一个数。" if settled_block else
+                 (f"这一节先结清上季那份本地分析立的{cn_count(total_kpis)}条阈值，再结清公司自己的全年指引，"
+                  "而后者在本站是头一回结不出一个数。" if settled_block else
                   "这一节结清的是公司自己的全年指引，而它在本站是头一回结不出一个数。")
                  + "美国运通的全年展望写在业绩 8-K 的 EX-99.1 里 —— 摊薄 EPS，"
                  f"FY{first_revenue_year} 起再加收入增速 —— 年初给一次、当年后三期各更新一次，"
                  f"{years_n}个财年一共 {facts['n']} 档，其中 {blank_n} 档一个数都没印。"
                  f"但这份记录不能当成一条连续的序列读：口径改过{cn_count(basis_changes)}次、"
                  f"撤回过{cn_count(withdrawn_n)}次、还有{cn_count(never_n)}整年从头到尾没给。"
-                 "所以这一节先说清哪些年份能结清、哪些不能，再结清能结的。"
-                 + (f"第二样是上季那份本地分析立的{cn_count(total_kpis)}条阈值。" if settled_block else "")),
+                 "所以先说清哪些年份能结清、哪些不能，再结清能结的。"),
              "exhibits": settled_ex},
             {"id": "quarter_highlights", "title": "二、本季重点",
              "description": plain_text(
                  "本季的核心张力是「利润从哪来」：税前利润同比增量拆成经营与拨备两条腿，"
                  "这是一个由申报值构成的恒等式，不含任何估计。"
-                 f"其余{cn_count(highlights_n - 1)}张分别是压住经营腿的那条费用（VCE）、"
-                 + ("它造成的负 jaws" if jaws < 0 else "jaws 的走向")
-                 + "、四条收入腿的结构，以及四个分部的税前利润率。"),
+                 f"其余{cn_count(highlights_n - 1)}张分别是压住经营腿的那条费用（VCE）与"
+                 + ("它造成的负 jaws。" if jaws < 0 else "jaws 的走向。")),
              "exhibits": highlight_ex},
             {"id": "next_quarter", "title": "三、下季要跟踪什么",
              "description": plain_text(
@@ -1741,8 +1756,9 @@ def build_payload(staging: dict) -> dict:
              "exhibits": next_ex},
             {"id": "routine", "title": "四、长期常规跟踪",
              "description": plain_text(
-                 "美国运通专属的常规序列：卡费这台涨价机器的量价两条腿、"
-                 "持卡人与商户两侧价格的反向移动、公司自己停掉的那条折扣率，以及净利润与每股收益之间那道回购缺口。"),
+                 "美国运通专属的常规序列：卡费这台涨价机器的量价两条腿、四条收入腿的长期结构、"
+                 "持卡人与商户两侧价格的反向移动、公司自己停掉的那条折扣率、四个分部的税前利润率，"
+                 "以及净利润与每股收益之间那道回购缺口。"),
              "exhibits": routine_ex},
         ],
         "tables": tables,

@@ -673,6 +673,25 @@ class AxpDashboardTest(unittest.TestCase):
             self.assertNotIn(banned, blob.replace("不发布评级、目标价与估值", "")
                              .replace("不放评级、目标价", ""))
 
+    # ── the four sections ───────────────────────────────────────────────────
+    FOUR_PARTS = [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+                  ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")]
+
+    def test_the_four_sections_carry_the_four_titles(self) -> None:
+        self.assertEqual([(s["id"], s["title"]) for s in self.payload["sections"]], self.FOUR_PARTS)
+        for section in self.payload["sections"]:
+            self.assertTrue(section["exhibits"], section["id"])
+            self.assertTrue(section["description"].strip(), section["id"])
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列", self.payload["notes"][0])
+
+    def test_the_long_structure_charts_sit_with_the_routine_series(self) -> None:
+        """A 42-quarter revenue-leg structure and a 26-quarter margin record carry no
+        finding about the quarter, so they are routine, not this quarter's highlights."""
+        refs = {s["id"]: [ex.get("ref") for ex in s["exhibits"]] for s in self.payload["sections"]}
+        for ref in ("EX_MIX", "EX_SEG"):
+            self.assertIn(ref, refs["routine"])
+            self.assertNotIn(ref, refs["quarter_highlights"])
+
     # ── renderer contract ───────────────────────────────────────────────────
     def test_exhibits_are_numbered_in_render_order_and_refs_resolve(self) -> None:
         numbers = [ex["n"] for ex in self.exhibits]
