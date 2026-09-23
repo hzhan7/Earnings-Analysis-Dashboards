@@ -49,7 +49,7 @@ Published figures are company-reported or transparent arithmetic. The company
 issues no sales or growth guidance; the only numbers it has given about its own
 future results are listed in the audit drawer with what followed. The margin
 ranges in section one were stated by the CFO on results calls and are marked as
-such. Thresholds in section five are local research settings.
+such. Thresholds in section three are local research settings.
 
 Rolling the page is a data edit (CLAUDE.md §9). Every quarter appends one
 column; the interim and the annual results announcement add a half-year as well
@@ -331,7 +331,7 @@ def band_state(value: float, low: float, high: float) -> str:
     return "below" if value < low else "above" if value > high else "inside"
 
 
-# ── section one: the numbers the company did give ───────────────────────────
+# ── section one (c): the numbers the company did give ───────────────────────
 def said_section(s: dict, hv: dict) -> list[dict]:
     labels = hv["labels"]
     n = len(labels)
@@ -707,15 +707,24 @@ def quarter_section(s: dict, qv: dict) -> list[dict]:
             "本页把它并回批发，让这一行在窗口里只有一个定义。"),
         "src_extra": f"{fy_now} {head}与 {fy_ago} {head}{tail}的渠道表。",
     }
+    return [sales, region_now, area, increment, channel]
 
-    gap_now = qv["fx_gap"][last]
-    fx = {
+
+def fx_chart(s: dict, qv: dict) -> dict:
+    """Constant-rate minus actual-rate growth over the whole record: a routine series.
+
+    The quarter's own currency story is the region whose two rates differ most,
+    told under the regional chart in section two; this chart is the long record.
+    """
+    q = s["quarters"]
+    gap_now = qv["fx_gap"][qv["last"]]
+    return {
         "ref": "EX_FX_GAP",
         "kind": "diverging_bars",
-        "title": ((f"汇率：本季恒定汇率比实际汇率{'高' if gap_now > 0 else '低'} {abs(gap_now):.0f}pp"
-                   if gap_now else "汇率：本季恒定汇率与实际汇率相同")
-                  + f"；两个增速都被印出的 {len(qv['fx_both'])} 个季度里，"
-                  f"{sum(1 for v in qv['fx_both'] if v > 0)} 个是汇率拖累"),
+        "title": (f"恒定汇率减实际汇率：两个增速都被印出的 {len(qv['fx_both'])} 个季度里，"
+                  f"{sum(1 for v in qv['fx_both'] if v > 0)} 个是汇率拖累；"
+                  + (f"本季恒定汇率比实际汇率{'高' if gap_now > 0 else '低'} {abs(gap_now):.0f}pp"
+                     if gap_now else "本季两者相同")),
         "xlabels": list(q),
         "xrot": 90,
         "xstep": LONG_STEP,
@@ -731,10 +740,9 @@ def quarter_section(s: dict, qv: dict) -> list[dict]:
             "恒定汇率增速用上一个完整财年的平均汇率同时折算本期与比较期，所以基准汇率每年换一次。"),
         "src_extra": "各季度公告与业绩公告附录里公司印出的两个增速。",
     }
-    return [sales, region_now, area, increment, channel, fx]
 
 
-# ── section three: the half-years ────────────────────────────────────────────
+# ── section four: the half-years (profit comes only by the half) ─────────────
 def half_section(s: dict, hv: dict) -> list[dict]:
     labels = hv["labels"]
     halves = hv["halves"]
@@ -824,7 +832,8 @@ def half_section(s: dict, hv: dict) -> list[dict]:
 
 
 # ── section four: the long record ────────────────────────────────────────────
-def long_section(s: dict, qv: dict) -> list[dict]:
+def long_section(s: dict, qv: dict) -> tuple[list[dict], list[dict]]:
+    """The quarterly structure charts, and the disclosure-lag chart kept for the end of the part."""
     q = s["quarters"]
     e = s["quarterly_eur_m"]
     last = qv["last"]
@@ -947,10 +956,10 @@ def long_section(s: dict, qv: dict) -> list[dict]:
             f"其中 {len(qv['derived'])} 个本页减得出来，{len(qv['missing'])} 个谁也拆不出来。"),
         "src_extra": "每一格是季末日到最早印出该季度合计销售的那份公告发布日的日历天数；发布日取自各份公告首页。",
     }
-    return [mix, region, dtc, lag]
+    return [mix, region, dtc], [lag]
 
 
-# ── section five: next quarter ───────────────────────────────────────────────
+# ── section three: next quarter ──────────────────────────────────────────────
 def thresholds_block(s: dict) -> dict:
     block = stamped_block(s, "thresholds", display_period(s["quarters"][-1]))
     if block is None:
@@ -1178,7 +1187,7 @@ def audit_tables(s: dict, qv: dict, hv: dict, entries: list[dict], first: int) -
             "rows": prior_rows,
         })
 
-    tables.append(threshold_table(first + len(tables), f"第五节{cn_count(len(entries))}条本地阈值的原始单位",
+    tables.append(threshold_table(first + len(tables), f"第三节{cn_count(len(entries))}条本地阈值的原始单位",
                                   entries, "current", "当前值"))
     tables.append(ai_capex_cycle_table(first + len(tables)))
     return tables
@@ -1207,12 +1216,16 @@ def build_payload(staging: dict) -> dict:
     period = display_period(q[-1])
     doc = latest_document(s)
 
-    said_ex = said_section(s, hv)
+    # The four parts, in the site's order: what last quarter left to settle, the
+    # quarter, what to watch next, and the long record. Richemont's profit comes
+    # only by the half, so the half-year charts are routine series here -- the
+    # quarter itself carries sales and nothing else.
+    settled_ex = said_section(s, hv)
     quarter_ex = quarter_section(s, qv)
-    half_ex = half_section(s, hv)
-    long_ex = long_section(s, qv)
     track_ex, entries = tracking_section(s, qv, hv)
-    exhibits = number_exhibits(said_ex + quarter_ex + half_ex + long_ex + track_ex, start=1)
+    mix_ex, lag_ex = long_section(s, qv)
+    routine_ex = mix_ex + half_section(s, hv) + [fx_chart(s, qv)] + lag_ex
+    exhibits = number_exhibits(settled_ex + quarter_ex + track_ex + routine_ex, start=1)
     tables = audit_tables(s, qv, hv, entries, len(exhibits) + 1)
 
     jm = hv["margin"]["jewellery_maisons"]
@@ -1311,7 +1324,7 @@ def build_payload(staging: dict) -> dict:
     fallback = [fy for fy, v in s["half_sources"].items()
                 if v["mode"] == "own_year" and fy != list(s["half_sources"])[-1]]
     notes = [
-        "本页按「公司说过的数字 → 本季重点 → 半年利润 → 长期记录 → 下季跟踪」五段排列，以图为主，"
+        "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，"
         "每张图下一到两句解释；支撑表格收在核对抽屉里。",
         "Richemont 的财年截至 3 月 31 日。本页按自然年季度标注：公司的第一财季（4–6 月）是本页的 Q2，"
         "第二财季（7–9 月）是 Q3，第三财季（10–12 月）是 Q4，第四财季（1–3 月）是下一年的 Q1。"
@@ -1336,7 +1349,7 @@ def build_payload(staging: dict) -> dict:
     if story and story.get("baume_mercier_note"):
         notes.append(story_text(s, story, "baume_mercier_note"))
     notes += [
-        "本页不发布评级、目标价、估值与任何券商共识。第五节的阈值是本地研究设定，不是公司指引。"
+        "本页不发布评级、目标价、估值与任何券商共识。第三节的阈值是本地研究设定，不是公司指引。"
         f"在 {census['documents']} 份公告里，带数字的前瞻表述共 {census['forward_statements_with_a_number']} 处，"
         "没有一处是销售额或增速的数字。",
         "本页跨页对照表与其他公司页逐字相同，Richemont 本身不在那张表的任何一列里 —— "
@@ -1381,29 +1394,30 @@ def build_payload(staging: dict) -> dict:
         "summary": {"blocks": []},
         "guidance": None,
         "sections": [
-            {"id": "said", "title": "一、CFO 说过的利润区间，后来怎样",
+            {"id": "settled", "title": "一、上季跟踪指标兑现了吗",
              "description": (
-                 "Richemont 不给销售或增速指引。但 CFO 在电话会上给过利润率区间，本节画其中能用半年数据结算的两个。"
-                 "本节两张图各画一个区间和它说出之后的每一个半年；税率、关税与 2016 年那次利润预警的结算放在核对抽屉。"),
-             "exhibits": said_ex},
-            {"id": "quarter", "title": f"二、本季重点：{fy_now} 第{cn_ordinal(number)}季（{q[-1][:4]} 年 {m1}–{m2} 月）",
+                 f"Richemont 不给销售或增速指引：{census['documents']} 份公告里带数字的前瞻表述 "
+                 f"{census['forward_statements_with_a_number']} 处，没有一处是销售额或增速。"
+                 "CFO 在电话会上给过利润率区间，本节画其中能用半年数据结算的两个，各画一个区间和它说出之后的每一个半年；"
+                 "税率、关税与 2016 年那次利润预警的结算放在核对抽屉。"),
+             "exhibits": settled_ex},
+            {"id": "quarter_highlights", "title": "二、本季重点",
              "description": (
-                 f"{cn_count(len(quarter_ex))}张图：集团销售与它的来历、各地区与各渠道和上年同季的对照、三块业务的增速、增量的地区构成、汇率。"
+                 f"{fy_now} 第{cn_ordinal(number)}季（{q[-1][:4]} 年 {m1}–{m2} 月）。"
+                 f"{cn_count(len(quarter_ex))}张图：集团销售与它的来历、各地区与各渠道和上年同季的对照、三块业务的增速、增量的地区构成。"
                  "这一季只有销售，没有任何利润数。"),
              "exhibits": quarter_ex},
-            {"id": "half", "title": "三、利润只有半年：4–9 月与 10–3 月",
-             "description": (
-                 f"{cn_count(len(half_ex))}张图，横轴是半年的最后一个月。下半年由全年减上半年得到，全部标 D。"
-                 "集团利润率跨过两道口径断点，珠宝与腕表的分部利润率不跨。"),
-             "exhibits": half_ex},
-            {"id": "long", "title": f"四、{cn_count(len(q))}季的长期记录",
-             "description": (
-                 f"{cn_count(len(long_ex))}张图：业务结构、地区结构、渠道结构，以及每个季度隔多久才第一次被印成单独的季度。"
-                 "空格是公司从来没印过的季度，不是本页漏取。"),
-             "exhibits": long_ex},
-            {"id": "track", "title": "五、下季跟踪",
+            {"id": "next_quarter", "title": "三、下季要跟踪什么",
              "description": track_description,
              "exhibits": track_ex},
+            {"id": "routine", "title": "四、长期常规跟踪",
+             "description": (
+                 f"{cn_count(len(routine_ex))}张图：业务、地区与渠道结构（{cn_count(len(q))}个季度），"
+                 "半年利润率、珠宝对集团利润的占比、半年末净现金与库存，恒定汇率与实际汇率之差，"
+                 "以及每个季度隔多久才第一次被印成单独的季度。季度图上的空格是公司从来没印过的季度，不是本页漏取；"
+                 "半年图的横轴是半年的最后一个月，下半年由全年减上半年得到，全部标 D，"
+                 "集团利润率跨过两道口径断点，珠宝与腕表的分部利润率不跨。"),
+             "exhibits": routine_ex},
         ],
         "tables": tables,
         "notes": notes,

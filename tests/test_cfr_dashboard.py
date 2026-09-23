@@ -317,6 +317,32 @@ class CfrPayloadTest(unittest.TestCase):
     def quarterly(self) -> list[dict]:
         return [ex for ex in self.exhibits if ex.get("xlabels") == self.s["quarters"]]
 
+    def test_the_page_is_in_the_four_part_format(self) -> None:
+        """The site's four parts, in order, with their exact titles, none empty; and
+        the page's own sentence about its layout says the same thing."""
+        self.assertEqual([(s["id"], s["title"]) for s in self.payload["sections"]],
+                         [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+                          ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+        for section in self.payload["sections"]:
+            self.assertTrue(section["exhibits"], section["id"])
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列", self.payload["notes"][0])
+        self.assertNotIn("五段", text_of(self.payload))
+        self.assertNotIn("第五节", text_of(self.payload))
+
+    def test_the_long_records_sit_in_the_routine_part(self) -> None:
+        """The quarter's part carries the quarter. The half-year profit record, the
+        structure shares, the currency gap and the disclosure lag are routine series:
+        Richemont publishes no profit for a sales-only quarter, so a half-year chart
+        in the highlights would present last half's profit as this quarter's news."""
+        by_section = {s["id"]: s["exhibits"] for s in self.payload["sections"]}
+        routine = [ex["ref"] for ex in by_section["routine"]]
+        for ref in ("EX_AREA_MIX", "EX_REGION_MIX", "EX_DTC", "EX_MARGINS", "EX_JEWEL_OP", "EX_CASH",
+                    "EX_FX_GAP", "EX_LAG"):
+            self.assertIn(ref, routine)
+        for exhibit in by_section["quarter_highlights"]:
+            self.assertFalse(re.fullmatch(r"\d{4}-\d{2}", str(exhibit["xlabels"][0])), exhibit["title"])
+            self.assertNotIn("利润", exhibit["title"], exhibit["title"])
+
     def test_exhibits_are_numbered_from_one_and_tables_follow(self) -> None:
         self.assertEqual([ex["n"] for ex in self.exhibits], list(range(1, len(self.exhibits) + 1)))
         self.assertEqual([t["n"] for t in self.payload["tables"]],
