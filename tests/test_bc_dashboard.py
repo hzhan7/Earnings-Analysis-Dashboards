@@ -341,7 +341,8 @@ class BcDashboardTest(unittest.TestCase):
 
     def test_the_headroom_bars_agree_with_the_audit_table(self) -> None:
         entries = self.s["next_kpi"]["quantified"]
-        chart = next(ex for ex in exhibits(self.payload) if ex["kind"] == "diverging_bars")
+        tracking = next(s for s in self.payload["sections"] if s["id"] == "next_quarter")
+        chart = next(ex for ex in tracking["exhibits"] if ex["kind"] == "diverging_bars")
         for entry, value in zip(entries, chart["values"]):
             self.assertAlmostEqual(
                 value, round(headroom(entry["direction"], entry["threshold"], entry["current"]), 1),
@@ -625,6 +626,126 @@ class BcChecksTest(unittest.TestCase):
                                 f"EBIT 利润率 {checks['ebit_margin_pct']:.1f}%"])
 
 
+class BcSettlementTest(unittest.TestCase):
+    """Section one's first half: what the last analysis left, settled on this half.
+
+    What the analyses themselves say -- how many follow-ups there were and how
+    each closed, which thresholds were set and on which side -- is read from
+    `_checks["note"]`, typed from the two reports and never read by the builder.
+    The actuals are recomputed here from the series, not taken from the builder.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.s = json.loads(bc.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.note = cls.s["_checks"]["note"]
+        cls.payload = bc.build_payload(json.loads(bc.STAGING_PATH.read_text(encoding="utf-8")))
+        cls.by_ref = {ex["ref"]: ex for ex in exhibits(cls.payload) if "ref" in ex}
+
+    def test_section_one_settles_before_it_shows_the_guidance_record(self) -> None:
+        refs = [ex.get("ref") for ex in self.payload["sections"][0]["exhibits"]]
+        self.assertEqual(refs, ["EX_CLOSURE", "EX_PRIOR", "EX_PRIOR_MARGIN",
+                                "EX_STRADDLE", "EX_BASIS", "EX_JUDGE"])
+
+    def test_the_closure_counts_are_the_analysis_own(self) -> None:
+        expected = self.note["followup_closure"]
+        chart = self.by_ref["EX_CLOSURE"]
+        self.assertEqual(dict(zip(chart["xlabels"], chart["values"])), expected["counts"])
+        self.assertEqual(sum(chart["values"]), expected["total"])
+        self.assertTrue(chart["title"].startswith(f"上季 {expected['total']} 条待验证问题："))
+        for label, count in expected["counts"].items():
+            self.assertIn(f"{count} 条{label}", chart["title"])
+        self.assertNotRegex(chart["note"], r"\{[a-z_]+\}")
+
+    def test_the_settled_thresholds_are_the_analysis_own(self) -> None:
+        expected = self.note["prior_thresholds"]
+        entries = {e["id"]: e for e in self.s["prior_kpi_settlement"]["quantified"]}
+        self.assertEqual(sorted(entries), sorted(want["id"] for want in expected))
+        for want in expected:
+            entry = entries[want["id"]]
+            self.assertEqual(entry["direction"], want["direction"], want["id"])
+            if want["threshold"] == "同比降低":
+                self.assertEqual(entry.get("threshold_from"), "same_date_last_year")
+            else:
+                self.assertEqual(entry["threshold"], want["threshold"], want["id"])
+        chart = self.by_ref["EX_PRIOR"]
+        self.assertEqual(len(chart["values"]), len(expected))
+        held = sum(1 for value in chart["values"] if value >= 0)
+        self.assertEqual(chart["title"], f"上季 {len(expected)} 条量化阈值：{held} 条守住、"
+                                         f"{len(expected) - held} 条被击穿")
+        # the ones the analysis could not quantify are named, not dropped
+        unsettled = self.s["prior_kpi_settlement"]["unsettled"]
+        self.assertEqual(len(unsettled), len(self.note["prior_unquantified"]))
+        description = self.payload["sections"][0]["description"]
+        for item in unsettled:
+            self.assertIn(item["topic"], description)
+            self.assertIn(item["why"], description)
+
+    def test_the_settled_actuals_are_read_from_the_filings(self) -> None:
+        detail, dr = self.s["half_detail"], self.s["doubtful_receivables"]
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("上季量化阈值"))
+        rows = {row[0]: row for row in table["rows"]}
+        h = self.s["half"]
+        now, prior = len(h["periods"]) - 1, h["periods"].index(f"{int(h['periods'][-1][:4]) - 1}H1")
+        bp = (h["ebit_eur_k"][now] / h["revenue_eur_k"][now]
+              - h["ebit_eur_k"][prior] / h["revenue_eur_k"][prior]) * 10000
+        self.assertEqual(rows["上半年 EBIT 利润率同比"][3], f"{bp:+.0f}bp")
+        self.assertEqual(rows["上半年零售渠道恒定汇率增速"][3], f"{self.s['_checks']['retail_growth_cfx_pct']:.1f}%")
+        # 「同比降低」 is measured against the same date a year earlier
+        self.assertEqual(rows["应收账款同比降低"][2], f"€{detail['trade_receivables_eur_k'][1] / 1000:,.0f}M")
+        self.assertEqual(rows["应收账款同比降低"][3], f"€{detail['trade_receivables_eur_k'][0] / 1000:,.0f}M")
+        # the allowance table closes without a release line, so nothing was released
+        self.assertEqual(dr["opening_eur_k"] + dr["allocations_eur_k"] + dr["uses_eur_k"]
+                         + dr["reclassifications_eur_k"] + dr["exchange_eur_k"], dr["closing_eur_k"])
+        self.assertNotIn("releases_eur_k", dr)
+        self.assertEqual(rows["坏账准备回拨"][3], "€0M")
+        self.assertIn("没有一笔转回", self.by_ref["EX_CLOSURE"]["note"])
+
+    def test_the_margin_chart_compares_like_with_like(self) -> None:
+        """2018 against the IFRS 15 restated 2017, 2019 on the ex-IFRS 16 column."""
+        h = self.s["half"]
+        like = {(r["half"], r["side"]): r for r in self.s["h1_like_for_like"]["records"]}
+        chart = self.by_ref["EX_PRIOR_MARGIN"]
+        self.assertEqual(chart["xlabels"], [p for p in h["periods"] if p.endswith("H1")])
+        for half, value in zip(chart["xlabels"], chart["series"][0]["values"]):
+            i = h["periods"].index(half)
+            current = like.get((half, "current")) or {"revenue_eur_k": h["revenue_eur_k"][i],
+                                                      "ebit_eur_k": h["ebit_eur_k"][i]}
+            base = like.get((half, "prior"))
+            if base is None:
+                j = h["periods"].index(f"{int(half[:4]) - 1}H1")
+                base = {"revenue_eur_k": h["revenue_eur_k"][j], "ebit_eur_k": h["ebit_eur_k"][j]}
+            bp = (current["ebit_eur_k"] / current["revenue_eur_k"]
+                  - base["ebit_eur_k"] / base["revenue_eur_k"]) * 10000
+            if value is None:
+                # not drawn, but named with its value in the note
+                self.assertIn(half, bc.PANDEMIC_HALVES)
+                self.assertIn(f"{half} 的 {bp:+,.0f}bp", chart["note"])
+            else:
+                self.assertAlmostEqual(value, round(bp, 1), places=6, msg=half)
+        # each correction is a real one: the series itself carries a different figure
+        restated = like[("2018H1", "prior")]
+        self.assertNotEqual(restated["revenue_eur_k"], h["revenue_eur_k"][h["periods"].index("2017H1")])
+        self.assertEqual(restated["ebit_eur_k"], h["ebit_eur_k"][h["periods"].index("2017H1")])
+        ex_lease = like[("2019H1", "current")]
+        self.assertLess(ex_lease["ebit_eur_k"], h["ebit_eur_k"][h["periods"].index("2019H1")])
+        self.assertNotIn("2015H1", h["periods"])
+
+    def test_questions_set_in_another_quarter_stop_the_build(self) -> None:
+        for key in ("followup_closure", "prior_kpi_settlement"):
+            stale = copy.deepcopy(self.s)
+            stale[key]["set_in"] = "Q4 2025"
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "analysis before this half"):
+                    bc.build_payload(stale)
+
+    def test_an_allowance_table_that_does_not_close_stops_the_build(self) -> None:
+        broken = copy.deepcopy(self.s)
+        broken["doubtful_receivables"]["closing_eur_k"] += 1
+        with self.assertRaisesRegex(ValueError, "does not close"):
+            bc.build_payload(broken)
+
+
 def roll_back_to_full_year(staging: dict) -> dict:
     """The series as it stood on the full-year release before this half.
 
@@ -660,7 +781,8 @@ def roll_back_to_full_year(staging: dict) -> dict:
     j = g["target_years"].index(year)
     for key in [k for k, v in g.items() if isinstance(v, list)]:
         del g[key][j]
-    for key in ("next_kpi", "half_story", "company_targets", "_checks"):
+    for key in ("next_kpi", "half_story", "company_targets", "_checks", "followup_closure",
+                "prior_kpi_settlement", "half_detail", "doubtful_receivables"):
         s.pop(key, None)
     s["latest"] = {"period": f"H2 {year - 1}", "period_end": f"{year - 1}-12-31",
                    "release_date": f"{year}-02-18", "analysis_date": f"{year}-03-01",
@@ -675,7 +797,10 @@ class BcRollTest(unittest.TestCase):
     """What a roll can change without touching the builder."""
 
     STORY_ONLY = ("本期跳升不是零售突然加速", "隐含下半年要压到", "两家券商",
-                  "年指引：约", "而公司给的年末目标是收入的")
+                  "年指引：约", "而公司给的年末目标是收入的", "条待验证问题", "条量化阈值",
+                  "上一份季报分析写于")
+    HALF_BLOCKS = ("next_kpi", "half_story", "company_targets", "followup_closure",
+                   "prior_kpi_settlement", "half_detail", "doubtful_receivables")
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -684,7 +809,8 @@ class BcRollTest(unittest.TestCase):
         cls.text = json.dumps(cls.payload, ensure_ascii=False)
 
     def test_a_block_stamped_for_another_half_stops_the_build(self) -> None:
-        for key in ("next_kpi", "half_story"):
+        for key in ("next_kpi", "half_story", "followup_closure", "prior_kpi_settlement",
+                    "half_detail", "doubtful_receivables"):
             stale = copy.deepcopy(self.s)
             stale[key]["period"] = "H1 1999"
             with self.subTest(block=key):
@@ -701,6 +827,12 @@ class BcRollTest(unittest.TestCase):
     def test_targets_are_published_only_in_their_own_year(self) -> None:
         other = copy.deepcopy(self.s)
         other["company_targets"]["year"] -= 1
+        # This half's closure names this year's capex target, so it refuses to
+        # build against targets for another year (asserted below); the chart
+        # and note wording is what this test is about, so the closure goes too.
+        with self.assertRaisesRegex(ValueError, "capex target"):
+            bc.build_payload(other)
+        del other["followup_closure"]
         text = json.dumps(bc.build_payload(other), ensure_ascii=False)
         self.assertIn("而公司给的年末目标是收入的", self.text)
         self.assertNotIn("而公司给的年末目标是收入的", text)
@@ -708,7 +840,7 @@ class BcRollTest(unittest.TestCase):
 
     def test_a_half_without_its_story_leaves_it_out(self) -> None:
         bare = copy.deepcopy(self.s)
-        for key in ("next_kpi", "half_story", "company_targets"):
+        for key in self.HALF_BLOCKS:
             del bare[key]
         payload = bc.build_payload(bare)
         text = json.dumps(payload, ensure_ascii=False)
@@ -761,6 +893,11 @@ class BcRollTest(unittest.TestCase):
         s = copy.deepcopy(self.s)
         s["guidance_basis_census"]["lease_basis_stated"] = 1
         cases.append((s, "一次都没有</b>被说明过"))
+        # the verb that settles last quarter's wrong call is read off the allowance table
+        s = copy.deepcopy(self.s)
+        s["doubtful_receivables"]["releases_eur_k"] = -3500
+        s["doubtful_receivables"]["closing_eur_k"] -= 3500
+        cases.append((s, "没有一笔转回"))
         for staging, phrase in cases:
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, self.text)

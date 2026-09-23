@@ -63,12 +63,15 @@ from build.board import (  # noqa: E402
     cn_count,
     cn_ordinal,
     display_period,
+    fill_story,
     headroom,
     headroom_exhibit,
     latest_block,
     number_exhibits,
     stamped_block,
+    threshold_exhibit,
     threshold_table,
+    unit_text,
 )
 from build.page_shell import render_shell  # noqa: E402
 from build.payload_guard import write_dash  # noqa: E402
@@ -83,6 +86,13 @@ SOURCE_RELEASES = ("各期数字逐一取自公司自己的年度财务报告、
 # next half the series moves sideways. That is a reading of the record up to
 # the date it was written, not something a roll changes.
 FLAT_FROM = "2023H2"
+
+# Fixed history. The first half of 2020 is the lockdown half (EBIT went negative)
+# and the first half of 2021 is the rebound from it; their year-on-year margin
+# changes are thirty-odd percentage points either way. Plotted, they flatten the
+# other nine halves into one line at zero, so the margin-change chart names them
+# in its note and prints them in the audit table instead of drawing them.
+PANDEMIC_HALVES = ("2020H1", "2021H1")
 
 
 def pct(current: float, base: float) -> float:
@@ -201,7 +211,199 @@ def relation(value: float, low: float, high: float) -> str:
     return f"落在全年指引 {pp(low)}%–{pp(high)}% 之内"
 
 
-# ── section one: the guidance and the basis it was never given on ────────────
+# ── section one (a)(b): what the last analysis left to settle ────────────────
+def quarter_before(half: str) -> str:
+    """``2026H1`` -> ``Q1 2026``: the quarter before the last one a half closes.
+
+    The owner's analyses are written every quarter while this page moves every
+    half, so what a half settles was set by the analysis of the quarter just
+    before its last one: the first-quarter revenue update for an H1 page, the
+    nine-month update for a full-year page.
+    """
+    return f"Q{1 if half.endswith('H1') else 3} {half[:4]}"
+
+
+def quarter_words(label: str) -> str:
+    """``Q1 2026`` -> ``2026 年第一季度``."""
+    quarter, year = label.split()
+    return f"{year} 年第{cn_ordinal(int(quarter[1]))}季度"
+
+
+def eur_k(value: float) -> str:
+    return f"€{value:,.0f} 千"
+
+
+def h1_margin_changes(s: dict) -> list[dict]:
+    """First-half EBIT margin against the same half a year earlier, on one basis.
+
+    The half series keeps every half as it was first printed, so three first
+    halves would otherwise be compared across a change the company itself
+    bridged in the same table: 2016 has no 2015 in the series, IFRS 15 restated
+    the 2017 comparative that the 2018 report printed, and IFRS 16 arrived in
+    2019 without restating 2018 -- that year the report printed the current half
+    both ways. `h1_like_for_like` records the column the company printed.
+    """
+    h = s["half"]
+    like = {(r["half"], r["side"]): r for r in s["h1_like_for_like"]["records"]}
+    rows = []
+    for i, period in enumerate(h["periods"]):
+        if not period.endswith("H1"):
+            continue
+        current = like.get((period, "current"))
+        rev, ebit = ((current["revenue_eur_k"], current["ebit_eur_k"]) if current
+                     else (h["revenue_eur_k"][i], h["ebit_eur_k"][i]))
+        prior = like.get((period, "prior"))
+        base = f"{int(period[:4]) - 1}H1"
+        if prior is not None:
+            prior_rev, prior_ebit = prior["revenue_eur_k"], prior["ebit_eur_k"]
+        elif base in h["periods"]:
+            j = h["periods"].index(base)
+            prior_rev, prior_ebit = h["revenue_eur_k"][j], h["ebit_eur_k"][j]
+        else:
+            raise ValueError(f"{period}: no same-half base in the series or in `h1_like_for_like`")
+        margin, prior_margin = ebit / rev * 100, prior_ebit / prior_rev * 100
+        rows.append({"half": period, "margin": margin, "prior_margin": prior_margin,
+                     "bp": (margin - prior_margin) * 100,
+                     "basis": (current or prior or {}).get("why", "")})
+    return rows
+
+
+def allowance_release(dr: dict) -> float:
+    """The release the allowance table shows, in EUR thousand, after checking it closes.
+
+    The table's lines have to take the opening balance to the closing one. A
+    release is a line of its own (`releases_eur_k`, negative); if the lines the
+    series carries do not close, a movement is missing and the page would be
+    about to say "nothing was released" about a table it did not read whole.
+    """
+    moved = (dr["opening_eur_k"] + dr["allocations_eur_k"] + dr["uses_eur_k"]
+             + dr["reclassifications_eur_k"] + dr["exchange_eur_k"] + dr.get("releases_eur_k", 0))
+    if moved != dr["closing_eur_k"]:
+        raise ValueError(f"`doubtful_receivables` does not close: {moved} against {dr['closing_eur_k']}")
+    return -dr.get("releases_eur_k", 0)
+
+
+def settled_entries(s: dict, prior: dict, detail: dict, dr: dict, margins: list[dict]) -> list[dict]:
+    """Last analysis' quantified thresholds with this half's actual beside each.
+
+    Thresholds and directions are the analysis' own; every actual is read from
+    the series or a block stamped for this half, never typed into the entry.
+    """
+    actual = {
+        "retail_cfx": lambda: detail["retail_cfx_pct"],
+        "ebit_margin_yoy": lambda: margins[-1]["bp"],
+        "receivables": lambda: detail["trade_receivables_eur_k"][0] / 1000,
+        "allowance_release": lambda: allowance_release(dr) / 1000,
+        "allowance_charge": lambda: dr["allocations_eur_k"] / 1000,
+    }
+    base = {"receivables": lambda: detail["trade_receivables_eur_k"][1] / 1000}
+    entries = []
+    for entry in prior["quantified"]:
+        if entry["id"] not in actual:
+            raise ValueError(f"prior threshold `{entry['id']}` has no way to read its actual")
+        threshold = (base[entry["id"]]() if entry.get("threshold_from") == "same_date_last_year"
+                     else entry["threshold"])
+        entries.append({**entry, "threshold": threshold, "actual": actual[entry["id"]]()})
+    return entries
+
+
+def settled_charts(s: dict, view: dict, closure: dict | None, prior: dict | None,
+                   detail: dict | None, dr: dict | None) -> tuple[list[dict], list[dict]]:
+    """(a) the follow-up closure, (b) the threshold settlement; and the entries (b) settled."""
+    charts, entries = [], []
+    margins = h1_margin_changes(s)
+    if closure is not None:
+        if closure["set_in"] != quarter_before(view["half"]):
+            raise ValueError(f"series block `followup_closure` closes questions set in {closure['set_in']!r}, "
+                             f"but the analysis before this half is {quarter_before(view['half'])!r}")
+        items = closure["items"]
+        labels = list(dict.fromkeys(item["verdict"] for item in items))
+        counts = [sum(1 for item in items if item["verdict"] == label) for label in labels]
+        stores = s["store_network"]
+        if stores["periods"][-1] != s["latest"]["period_end"]:
+            raise ValueError("series block `store_network` does not end on this half's period end")
+        target = targets_for(s, view["year"])
+        if target is None:
+            raise ValueError("the closure note names the year's capex target: `company_targets` is missing")
+        released = allowance_release(dr)
+        by_verdict = dict(zip(labels, counts))
+        values = {
+            "partial_count": cn_count(by_verdict.get("部分闭环", 0)),
+            "complete_count": cn_count(by_verdict.get("完整闭环", 0)),
+            "adverse_count": cn_count(sum(1 for item in items if item.get("adverse"))),
+            "retail_cfx": f"{detail['retail_cfx_pct']:+.1f}%",
+            "retail_last_quarter_cfx": f"{detail['retail_q2_cfx_pct']:+.1f}%",
+            "dos_open": str(stores["dos"][0]), "dos_close": str(stores["dos"][-1]),
+            "ebit_bp": f"{margins[-1]['bp']:+.0f}bp",
+            "capex_pct": f"{detail['investments_eur_m'][0] * 1000 / view['revenue'] * 100:.1f}%",
+            "capex_target": target["capex_words"],
+            # The sentence the analysis got wrong last quarter is the one the
+            # table settles, so its verb is read off the table, not typed.
+            "release_words": "没有一笔转回" if released == 0 else f"转回了 {eur_k(released)}",
+            "allowance_uses": eur_k(-dr["uses_eur_k"]),
+            "allowance_open": eur_k(dr["opening_eur_k"]), "allowance_close": eur_k(dr["closing_eur_k"]),
+        }
+        charts.append({
+            "ref": "EX_CLOSURE",
+            "kind": "bars_labeled",
+            "title": (f"上季 {len(items)} 条待验证问题："
+                      + "、".join(f"{count} 条{label}" for label, count in zip(labels, counts))),
+            "xlabels": labels,
+            "values": counts,
+            "legend": "问题条数",
+            "fmt": "f0", "yfmt": "f0", "label_fmt": "f0",
+            "ylab": "条",
+            "note": fill_story(closure["note"], values),
+            "src_extra": ("问题清单与每条的判定取自本季分析稿第 0 节（逐条核验上一份分析稿留下的问题）；"
+                          "数字取自本期新闻稿与半年报。"),
+        })
+    if prior is not None:
+        if prior["set_in"] != quarter_before(view["half"]):
+            raise ValueError(f"series block `prior_kpi_settlement` settles thresholds set in {prior['set_in']!r}, "
+                             f"but the analysis before this half is {quarter_before(view['half'])!r}")
+        entries = settled_entries(s, prior, detail, dr, margins)
+        held = [e for e in entries if headroom(e["direction"], e["threshold"], e["actual"]) >= 0]
+        broken = [e for e in entries if headroom(e["direction"], e["threshold"], e["actual"]) < 0]
+        charts.append({**headroom_exhibit(
+            f"上季 {len(entries)} 条量化阈值：{len(held)} 条守住、{len(broken)} 条被击穿",
+            entries, "actual",
+            ("正值 = 仍在安全侧。守住的是" + "、".join(e["metric"] for e in held)
+             + ("；被击穿的是" + "、".join(e["metric"] for e in broken) if broken else "")
+             + "。每条的阈值与上季写下的触发动作列在核对抽屉里。"),
+            "阈值为上一份分析稿的本地研究设定，不是公司指引；实际值为本期新闻稿与半年报的披露值或据其自算（D）。",
+        ), "ref": "EX_PRIOR"})
+        for entry in entries:
+            if not entry.get("chart"):
+                continue
+            if entry["id"] != "ebit_margin_yoy":
+                raise ValueError(f"prior threshold `{entry['id']}` asks for a chart this page does not draw")
+            shown = [None if r["half"] in PANDEMIC_HALVES else round(r["bp"], 1) for r in margins]
+            skipped = [r for r in margins if r["half"] in PANDEMIC_HALVES]
+            below = [r["half"] for r in margins[:-1]
+                     if r["half"] not in PANDEMIC_HALVES and r["bp"] < entry["threshold"]]
+            verdict = "守住" if headroom(entry["direction"], entry["threshold"], entry["actual"]) >= 0 else "击穿"
+            charts.append({**threshold_exhibit(
+                (f"{entry['metric']} {entry['actual']:+.0f}bp：{verdict}上季阈值 "
+                 f"{unit_text(entry['unit'], entry['threshold'])}"),
+                [r["half"] for r in margins], shown, entry["threshold"],
+                fmt="f0", ylab="较上年同期 bp", actual_name="上半年 EBIT 利润率同比",
+                threshold_name="上季阈值（安全侧在上方）",
+                note=(f"阈值 {unit_text(entry['unit'], entry['threshold'])}，本期 "
+                      f"{margins[-1]['prior_margin']:.2f}% → {margins[-1]['margin']:.2f}%，"
+                      f"余量 {headroom(entry['direction'], entry['threshold'], entry['actual']):+.1f}%。"
+                      f"此前图上画出的{cn_count(len(margins) - 1 - len(skipped))}个上半年里有"
+                      f"{cn_count(len(below))}个低于这条线（{'、'.join(below)}）。"
+                      + "、".join(f"{r['half']} 的 {r['bp']:+,.0f}bp" for r in skipped)
+                      + " 是停摆与反弹，不画在图上 —— 画上去其余各格都会被压成零线上的一条线；"
+                      "逐格数值（含这两格）见核对抽屉。每格按公司当年并排印出的同一口径比较："
+                      + "；".join(f"{r['half']}：{r['basis']}" for r in margins if r["basis"]) + "。"),
+                src_extra=("利润率为 EBIT（Operating income）除以收入，公司印出值计算（D）；"
+                           "阈值为上一份分析稿的本地研究设定，不是公司指引。"),
+            ), "ref": "EX_PRIOR_MARGIN"})
+    return charts, entries
+
+
+# ── section one (c): the guidance and the basis it was never given on ─────────
 def guidance_charts(s: dict, view: dict) -> list[dict]:
     g = s["annual_revenue_guidance"]
     cen = s["guidance_basis_census"]
@@ -756,7 +958,15 @@ def build_payload(staging: dict) -> dict:
     if not any(source["label"].startswith(release) for source in s["sources"]):
         raise ValueError(f"series `sources` has no entry for the {release} release: add it with the roll")
 
-    settled = guidance_charts(s, view)
+    closure = stamped_block(s, "followup_closure", period)
+    prior = stamped_block(s, "prior_kpi_settlement", period)
+    detail = stamped_block(s, "half_detail", period)
+    dr = stamped_block(s, "doubtful_receivables", period)
+    if (closure or prior) and (detail is None or dr is None):
+        raise ValueError("settling last analysis' questions needs this half's `half_detail` and "
+                         "`doubtful_receivables` blocks")
+    settled_lead, prior_entries = settled_charts(s, view, closure, prior, detail, dr)
+    settled = settled_lead + guidance_charts(s, view)
     highlights, region = quarter_charts(s, view, story)
     quarters, margin, conv, debt = long_charts(s, view)
     # The core net debt chart is the one line the tracking section settles at
@@ -815,6 +1025,21 @@ def build_payload(staging: dict) -> dict:
                   "—" if y not in gr["years"] else f"{gr['cfx'][gr['years'].index(y)]:+.1f}%"]
                  for i, y in enumerate(ch["years"])],
     }]
+    if prior_entries:
+        tables.append({
+            "n": first_table + len(tables),
+            "title": "上半年 EBIT 利润率同比（按公司当年并排印出的同一口径）",
+            "headers": ["期间", "本期利润率 D", "上年同期利润率 D", "同比 D", "口径说明"],
+            "rows": [[r["half"], f"{r['margin']:.2f}%", f"{r['prior_margin']:.2f}%", f"{r['bp']:+,.0f}bp",
+                      r["basis"] or "与本页半年序列相同"]
+                     for r in h1_margin_changes(s)],
+        })
+        settle = threshold_table(first_table + len(tables), "上季量化阈值与本期实际（原始单位）",
+                                 prior_entries, "actual", "本期实际")
+        settle["headers"].append("上季写下的阈值与动作")
+        for row, entry in zip(settle["rows"], prior_entries):
+            row.append(entry["rule"])
+        tables.append(settle)
     ahead = "下半年" if view["is_h1"] else "明年上半年"
     if kpi is not None:
         tables.append(threshold_table(first_table + len(tables), f"{ahead}阈值与当前值（原始单位）",
@@ -882,11 +1107,28 @@ def build_payload(staging: dict) -> dict:
     # The four parts and their titles are the site's format (the TSM page), word
     # for word, on a half-year page as on a quarterly one: 「下季」 here is the
     # next disclosure the tracked lines settle on, not a quarter of this issuer's.
+    guidance_words = (f"公司每年用同一句话给指引：营收增长「约 10%」。{'最后' if settled_lead else ''}"
+                      f"{cn_count(len(settled) - len(settled_lead))}张图先看这句话在报告口径与恒定汇率下"
+                      "会得到相反的结论，再看口径这一栏在申报里是什么时候才开始被填上的。")
+    if closure is not None or prior is not None:
+        before = quarter_words(quarter_before(half))
+        settled_words = f"上一份季报分析写于 {before}营收公告之后。"
+        if closure is not None:
+            settled_words += f"它留下的{cn_count(len(closure['items']))}条待验证问题，按本季分析的逐条核验结算；"
+        if prior is not None:
+            gone = prior.get("unsettled", [])
+            settled_words += (f"它第 8 节的观察指标里能量化的{cn_count(len(prior_entries))}条阈值，用本期申报逐条结算"
+                              + ("；另有" + "、".join(u["topic"] for u in gone)
+                                 + f"这{cn_count(len(gone))}项结算不了 —— "
+                                 + "；".join(u["why"] for u in gone) if gone else "")
+                              + "。")
+        settled_words += guidance_words
+    else:
+        settled_words = (f"本站对该公司没有上一份季报分析留下的跟踪指标可结算；本节结算的是公司自己给出、"
+                         "本期到期的指引。" + guidance_words)
     sections = [
         {"id": "settled", "short": "上季兑现", "title": "上季跟踪指标兑现了吗",
-         "description": ("公司每年用同一句话给指引：营收增长「约 10%」。"
-                         "这一节先看这句话在报告口径与恒定汇率下会得到相反的结论，"
-                         "再看口径这一栏在申报里是什么时候才开始被填上的。"),
+         "description": settled_words,
          "exhibits": settled_ex},
         {"id": "quarter_highlights", "short": "本季重点", "title": "本季重点",
          "description": "增速在哪一段掉下来、收入增量由谁贡献、渠道结构走到了哪里。",
@@ -938,7 +1180,7 @@ def build_payload(staging: dict) -> dict:
         "披露节奏是本页所有图表形状的来源：收入一年公布四次（第一季度、半年、九个月、全年），完整损益表一年只有两次（半年与全年）。公司从未把第二、第三、第四季度或下半年作为独立期间公布过，它印出来的每一个数都是「截至某日累计」。"
         f"因此本页 {len(q['periods'])} 个季度里只有 {printed_q} 个是公司印出的，{len(h['periods'])} 个半年里只有 {printed_h} 个是公司印出的，其余由相邻两次累计披露相减得到，图与表中逐格标明。",
         f"相减这件事只有一处可以外部验证：公司在正文叙述里{cn_count(len(quoted))}次提到过单季第三季度的规模，而 9M 减 H1 的结果与这{cn_count(len(quoted))}次逐一吻合（{quoted_text}，单位百万欧元）。「四个季度相加等于全年」不构成验证，因为第四季度本来就是用全年减九个月得到的 —— 一个从被检查对象推导出自己期望值的检查不可能失败，本页不把它算作证据。",
-        f"指引口径是本页第一节的主题。{cn_count(cen['calls_covered'])}场业绩会里共 {cen['quantified_rows']} 条带数字的前瞻表述，其中 {cen['fx_basis_unstated']} 条没有说明汇率口径；说明了的 {cen['fx_basis_stated']} 条全部发布于 {first[:4]} 年 {int(first[5:7])} 月 {int(first[8:10])} 日或之后。"
+        f"指引口径是本页第一节{'后半部分' if settled_lead else ''}的主题。{cn_count(cen['calls_covered'])}场业绩会里共 {cen['quantified_rows']} 条带数字的前瞻表述，其中 {cen['fx_basis_unstated']} 条没有说明汇率口径；说明了的 {cen['fx_basis_stated']} 条全部发布于 {first[:4]} 年 {int(first[5:7])} 月 {int(first[8:10])} 日或之后。"
         + (f"租赁准则口径与并购口径在这 {cen['quantified_rows']} 条里一次都没有被说明过。"
            if cen["lease_basis_stated"] == 0 and cen["perimeter_basis_stated"] == 0 else "")
         + "同一批文件在公布结果时几乎每次都同时给出报告口径与恒定汇率两个数，只在给出目标时把口径省略。",

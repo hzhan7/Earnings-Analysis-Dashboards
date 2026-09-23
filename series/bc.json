@@ -50,7 +50,54 @@
     "guidance_cfx_low_pct": 10.0,
     "guidance_cfx_high_pct": 11.0,
     "source": "Brunello Cucinelli 2026 年半年报新闻稿（「the Board of Directors approved the 2026 Half-Year Financial Report」，正文落款 Solomeo, 30 July 2026）：首页要点（Revenues as at 30 June 2026 €749.4 million, +13.3% constant / +9.5% current；Retail +19.3% constant；Ebit €128.2 million +12.6%, margin 17.1% vs 16.6%；Net profit €78.2 million +2.0%；Investments €57.2 million, incidence 7.6%；Net financial debt for the core business €225.1 million vs €197.2 million；2026 growth at constant exchange rates between +10% and +11%）、第 5–6 页 Revenues by Geographical Area 与 by Distribution Channel 两表（255,582 / 278,671 / 215,158；Retail 499,765 = 66.7%、Wholesale 249,646 = 33.3%，上年同期 435,837 / 248,298）、第 12 页合并损益表（Operating Income 128,199 / 113,837；Net profit 78,169 / 76,650）与现金流量表（Depreciation and amortization 98,343）。上年末核心净负债取自 2025 年年报新闻稿（Solomeo, 18 February 2026：net financial debt for the core business of €198.4 million as at 31 December 2025）。",
-    "checked_on": "2026-09-19"
+    "checked_on": "2026-09-19",
+    "note": {
+      "source": "所有者的季报分析稿（5.Earnings Analysis/BC/）：本季「2026-07-30 BC Q2 2026 vs Q1 2026 Analysis.md」第 0 节（上季遗留问题回答）与第 8 节（关键观察指标）；上季「2026-04-09 BC Q1 2026 vs Q4 2025 Analysis.md」第 8 节（关键观察指标）。本季报告的 Q2 2026 与页面的 H1 2026 是同一次披露：期末 2026-06-30、发布 2026-07-30。",
+      "checked_on": "2026-09-23",
+      "followup_closure": {
+        "total": 5,
+        "counts": {
+          "完整闭环": 4,
+          "部分闭环": 1
+        }
+      },
+      "prior_thresholds": [
+        {
+          "id": "retail_cfx",
+          "report_words": "#1：H1 retail ≥ +17% CER + 4 月 / 5 月 / 6 月趋势延续 = 上沿兑现 → 加仓；H1 retail < +13% = momentum 减速 → 警示",
+          "threshold": 17.0,
+          "direction": "up"
+        },
+        {
+          "id": "ebit_margin_yoy",
+          "report_words": "#2：H1 2026 EBIT margin ≥ +30bps YoY → 加仓；持平 → 跟踪；下行 ≥ -50bps = 警示",
+          "threshold": 30.0,
+          "direction": "up"
+        },
+        {
+          "id": "receivables",
+          "report_words": "#3：H1 receivables 同比降低 + 任何金额回拨（≥€3M）→ 加仓",
+          "threshold": "同比降低",
+          "direction": "down"
+        },
+        {
+          "id": "allowance_release",
+          "report_words": "#3：H1 receivables 同比降低 + 任何金额回拨（≥€3M）→ 加仓；持平无回拨 = 跟踪",
+          "threshold": 3.0,
+          "direction": "up"
+        },
+        {
+          "id": "allowance_charge",
+          "report_words": "#3：新增 ≥ €5M 拨备 = 警示",
+          "threshold": 5.0,
+          "direction": "down"
+        }
+      ],
+      "prior_unquantified": [
+        "中东战争状态 + 该地区收入贡献",
+        "Callimachus 商业化首次披露"
+      ]
+    }
   },
   "disclosure_regime": {
     "printed_periods": [
@@ -883,13 +930,171 @@
     "breach_note": "资本开支上半年跑到 7.6%，隐含下半年要压到 4% 出头才够得着全年约 6%；净负债则同时高于上年末与上年同期；报告口径的半年收入增速也低于 10% 这条线。",
     "unconnected": "同店销售（like-for-like）与新增零售面积的贡献 —— 公司从未披露，两家券商在 2026 年 7 月 30 日的业绩会上先后追问均未获得数字，因此零售增长中「开店」与「同店」两部分无法拆分；零售面积与批发单品牌门店数（2025 年起不再出现在营收更新中）；分产品线收入（只在完整半年报与年报中披露，2026 年的半年新闻稿没有）；恒定汇率口径的分区域完整历史（公司自 2025 年第三季度起才逐区给出）；"
   },
+  "followup_closure": {
+    "period": "H1 2026",
+    "set_in": "Q1 2026",
+    "report": "本季分析稿（2026-07-30 BC Q2 2026 vs Q1 2026 Analysis）第 0 节：逐条核验上一份分析稿（2026-04-09 BC Q1 2026 vs Q4 2025 Analysis）留下的 Follow-up Questions",
+    "items": [
+      {
+        "question": "上半年零售渠道恒定汇率增速是否 ≥ +17%",
+        "verdict": "完整闭环",
+        "reading": "超预期"
+      },
+      {
+        "question": "上半年 EBIT 利润率同比，以及资本开支占收入对约 6% 的全年目标",
+        "verdict": "完整闭环",
+        "reading": "利润达标、资本开支节奏不达标",
+        "adverse": true
+      },
+      {
+        "question": "Saks Global 应收余额的变化，以及坏账拨备是新增还是回拨",
+        "verdict": "完整闭环",
+        "reading": "上季的时点与量级判断错误",
+        "adverse": true
+      },
+      {
+        "question": "Callimacus 的线上转化率、GMV 或对外授权是否首次披露",
+        "verdict": "完整闭环",
+        "reading": "Salesforce 入股 Solomei AI 已公告；金额、估值、股比未披露"
+      },
+      {
+        "question": "上半年中东的收入贡献，以及第二季度门店客流恢复到什么程度",
+        "verdict": "部分闭环",
+        "reading": "只有定性描述"
+      }
+    ],
+    "note": "部分闭环的{partial_count}条是中东：新闻稿与半年报都只写了第二季度逐步改善，没有给中东的收入或客流数字。完整闭环的{complete_count}条里，零售一条跑过了线（上半年 {retail_cfx}，其中第二季度单季 {retail_last_quarter_cfx}；直营门店从 {dos_open} 家增到 {dos_close} 家）；{adverse_count}条结算出的是坏消息 —— 利润率同比 {ebit_bp} 达标，但上半年投资占收入 {capex_pct}，高于公司自己给的全年{capex_target}，公司的解释是全年投资计划的大部分放在了上半年；Saks 一条上季判断会有拨备回拨，半年报附注里的坏账准备上半年{release_words}，动用了 {allowance_uses}，余额从 {allowance_open}降到 {allowance_close}（同一份半年报写明已与 Saks 就其申请破产保护之日的欠款达成和解）。Callimacus 一条闭环靠的是 Salesforce 入股 Solomei AI 这件事本身，本期新闻稿与半年报里都没有线上转化率或 GMV。"
+  },
+  "prior_kpi_settlement": {
+    "period": "H1 2026",
+    "set_in": "Q1 2026",
+    "report": "上一份分析稿（2026-04-09 BC Q1 2026 vs Q4 2025 Analysis）第 8 节关键观察指标",
+    "quantified": [
+      {
+        "id": "retail_cfx",
+        "metric": "上半年零售渠道恒定汇率增速",
+        "direction": "up",
+        "threshold": 17.0,
+        "unit": "pct",
+        "chart": false,
+        "rule": "上半年零售恒定汇率增速 ≥ +17% → 加仓；< +13% → 警示"
+      },
+      {
+        "id": "ebit_margin_yoy",
+        "metric": "上半年 EBIT 利润率同比",
+        "direction": "up",
+        "threshold": 30.0,
+        "unit": "bps",
+        "chart": true,
+        "rule": "上半年 EBIT 利润率同比 ≥ +30bp → 加仓；持平 → 跟踪；下行 ≥ 50bp → 警示"
+      },
+      {
+        "id": "receivables",
+        "metric": "应收账款同比降低",
+        "direction": "down",
+        "threshold_from": "same_date_last_year",
+        "unit": "eur_m",
+        "chart": false,
+        "rule": "上半年应收同比降低，且拨备回拨 ≥ €3M → 加仓（两个条件同时成立）"
+      },
+      {
+        "id": "allowance_release",
+        "metric": "坏账准备回拨",
+        "direction": "up",
+        "threshold": 3.0,
+        "unit": "eur_m",
+        "chart": false,
+        "rule": "同上，加仓条件的另一半；持平且无回拨 → 跟踪"
+      },
+      {
+        "id": "allowance_charge",
+        "metric": "新增坏账计提（警示线）",
+        "direction": "down",
+        "threshold": 5.0,
+        "unit": "eur_m",
+        "chart": false,
+        "rule": "新增拨备 ≥ €5M → 警示"
+      }
+    ],
+    "unsettled": [
+      {
+        "topic": "中东战事与该地区的收入贡献",
+        "rule": "第二季度中东客流恢复到 −20% 以内 → 恢复跟踪；全月 −50% 以上 → 第二季度影响扩大到 −1.5%，警示",
+        "why": "新闻稿与半年报都没有给中东的收入或客流数字，只写了第二季度逐步改善"
+      },
+      {
+        "topic": "Callimacus 商业化",
+        "rule": "线上转化率同比 ≥ +30% 或 GMV ≥ €30M → 加仓；首次披露对外授权 → 重估",
+        "why": "本期新闻稿与半年报里都没有线上转化率或 GMV；管理层只在电话会上口头给过一个比例，本页不把电话会上的数当申报值"
+      }
+    ]
+  },
+  "half_detail": {
+    "period": "H1 2026",
+    "dates": [
+      "2026-06-30",
+      "2025-06-30"
+    ],
+    "retail_cfx_pct": 19.3,
+    "retail_q2_cfx_pct": 18.6,
+    "trade_receivables_eur_k": [
+      110720,
+      103606
+    ],
+    "investments_eur_m": [
+      57.2,
+      63.5
+    ],
+    "source": "2026 年半年报新闻稿（Solomeo, 30 July 2026）：首页要点 Retail channel up +19.3% at constant exchange rates ... a very positive second quarter (+18.6% at constant exchange rates)；Investments equalling €57.2 million ... compared to the €63.5 million at 30 June 2025；第 11 页合并资产负债表 Trade receivables 110,720（June 30, 2026）/ 103,606（June 30, 2025）"
+  },
+  "doubtful_receivables": {
+    "period": "H1 2026",
+    "opening_eur_k": 13744,
+    "allocations_eur_k": 1822,
+    "uses_eur_k": -7161,
+    "reclassifications_eur_k": 0,
+    "exchange_eur_k": 156,
+    "closing_eur_k": 8561,
+    "source": "2026 年半年报（Half-Year Financial Report as at 30 June 2026）附注 8 Trade receivables 的 Changes in the allowance for doubtful receivables 表：Value at 1 January 13,744；Allocations 1,822；Uses (7,161)；Reclassifications –；Exchange differences 156；Value at the end of the period 8,561。表里没有转回（release）这一行；同一附注写明上半年计入损益的应收损失为 €12 千。该报告 2026-07-30 董事会批准，报告写成时尚未公开，后在公司网站 Financial Reports 栏目发布。"
+  },
+  "h1_like_for_like": {
+    "note": "上半年 EBIT 利润率的同比要在同一个会计口径上比。本页半年序列按各期原始印出值排列，在三处与公司当年并排印出的可比口径不同，下面三条记录的是公司当年印在同一张表上的那一列。",
+    "records": [
+      {
+        "half": "2016H1",
+        "side": "prior",
+        "revenue_eur_k": 200332,
+        "ebit_eur_k": 24852,
+        "why": "2015 年上半年不在本页半年序列里，取 2016 年半年报并排印出的上年同期列",
+        "source": "2016 年半年报合并损益表，1st half 2015 列：Net revenues 200,332；Operating profit 24,852"
+      },
+      {
+        "half": "2018H1",
+        "side": "prior",
+        "revenue_eur_k": 247238,
+        "ebit_eur_k": 31025,
+        "why": "IFRS 15 自 2018-01-01 起全面追溯：2017 年上半年收入重述为 247,238（原 243,327），EBIT 不变；本页半年序列保留原值",
+        "source": "2018 年半年报 Summarized consolidated income statement 与正文：30th June 2017 (restated) 247,238，Operating profit 31,025"
+      },
+      {
+        "half": "2019H1",
+        "side": "current",
+        "revenue_eur_k": 291413,
+        "ebit_eur_k": 35926,
+        "why": "IFRS 16 自 2019-01-01 起采用、不重述 2018 年；公司当年另印了剔除 IFRS 16 的本期列，与 2018 年上半年同口径",
+        "source": "2019 年半年报 Summarized consolidated income statement：2019 (excluding IFRS 16) 列 Net revenues 291,413；Operating profit 35,926"
+      }
+    ]
+  },
   "company_targets": {
     "year": 2026,
     "ebit_margin_pct": 17.0,
     "ebit_margin_words": "约 17%",
     "net_debt_pct_of_revenue_low": 11.0,
     "net_debt_pct_of_revenue_high": 12.0,
-    "_note": "公司为 2026 年给的三个经营目标（EBIT 利润率约 17%、资本开支约占收入 6%、年末核心净负债占收入 11–12%），本页原先写在 builder 里，迁入时照搬、未另行回原文重核；只在它描述的那一年发布。"
+    "_note": "公司为 2026 年给的三个经营目标：EBIT 利润率约 17%、投资约占收入 6%、年末核心净金融负债约占收入 11–12%（2025 年为 14%）。2026-09 回原文核过：三条都出自 2026-07-30 业绩电话会上管理层的 2026 年展望，新闻稿与半年报正文都没有写这三个数（两份文件只写了「年末核心净负债较 2025 年末明显下降」与「2026 年投资回到常规水平」）。只在它描述的那一年发布。",
+    "capex_pct_of_revenue": 6.0,
+    "capex_words": "约 6%"
   },
   "half_story": {
     "period": "H1 2026",
