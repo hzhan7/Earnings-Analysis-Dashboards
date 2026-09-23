@@ -119,8 +119,9 @@ class TsmDashboardTest(unittest.TestCase):
         tracked = {"毛利率", "库存天数", "HPC 占比（集中度）", "2nm 占晶圆收入", "单季 CapEx"}
         expected = [
             ("settled", ("followup_closure" in source) + ("guidance_delivery" in source)
-             + ("market_expectation" in source) + 7 + (falsified.get("metric") == "库存天数")),
+             + 7 + (falsified.get("metric") == "库存天数")),
             ("quarter_highlights", 3 + ("capex_guidance_history" in source)
+             + ("market_expectation" in source)
              + ("net_income_bridge" in source and "market_expectation" in source) + 2),
             ("next_quarter", 1 + len(tracked & {e["metric"] for e in source["next_kpi"]["quantified"]})),
             ("routine", 4),
@@ -129,6 +130,38 @@ class TsmDashboardTest(unittest.TestCase):
             [(section["id"], len(section["exhibits"])) for section in self.payload["sections"]],
             expected,
         )
+
+    def test_section_one_settles_only_what_last_quarter_left(self) -> None:
+        """Section one is 「上季跟踪指标兑现了吗」: the follow-up closure first,
+        then the falsified call drawn against its own record, then the company's
+        own guidance. The market's expectation is a reading of this quarter, not
+        something last quarter left to settle -- it lives in section two, beside
+        the net-income bridge it explains."""
+        settled = self.by_section["settled"]
+        highlights = self.by_section["quarter_highlights"]
+        self.assertEqual(
+            [section["title"] for section in self.payload["sections"]],
+            ["一、上季跟踪指标兑现了吗", "二、本季重点", "三、下季要跟踪什么", "四、长期常规跟踪"])
+        self.assertEqual([section["id"] for section in self.payload["sections"]],
+                         ["settled", "quarter_highlights", "next_quarter", "routine"])
+        self.assertFalse([ex for ex in settled if "对市场预期" in ex["title"]])
+        if "market_expectation" in self.source:
+            expectation = next(i for i, ex in enumerate(highlights) if ex["title"].startswith("对市场预期"))
+            if "net_income_bridge" in self.source:
+                self.assertTrue(highlights[expectation + 1]["title"].startswith("净利"),
+                                "the market's bar sits right before the bridge it explains")
+        lead = [ex["title"] for ex in settled]
+        if "followup_closure" in self.source:
+            self.assertTrue(lead.pop(0).startswith("上季 "))
+            falsified = self.source["followup_closure"].get("falsified") or {}
+            if falsified.get("metric") == "库存天数":
+                self.assertTrue(lead.pop(0).startswith("上季判断"))
+        # Everything after the settlement is the company's own guidance record.
+        bands = [ex for ex in settled if ex["kind"] == "range_band"]
+        first_band = next(i for i, ex in enumerate(settled) if ex["kind"] == "range_band")
+        self.assertEqual(len(bands), 3)
+        self.assertTrue(all(ex["kind"] in ("range_band", "grouped_bars", "diverging_bars")
+                            for ex in settled[first_band:]))
 
     def test_the_page_carries_no_monthly_series(self) -> None:
         """The guidance charts were ported from a monthly-cadence dashboard.
@@ -264,7 +297,7 @@ class TsmDashboardTest(unittest.TestCase):
         depending on the profit line, so both must be plotted from the same
         consensus figure and the core one must be the smaller."""
         chart = next(
-            ex for ex in self.by_section["settled"] if "对市场预期" in ex["title"]
+            ex for ex in self.by_section["quarter_highlights"] if "对市场预期" in ex["title"]
         )
         values = dict(zip(chart["xlabels"], chart["values"]))
         self.assertEqual(chart["kind"], "diverging_bars")

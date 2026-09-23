@@ -809,13 +809,13 @@ def build_payload(staging: dict) -> dict:
                         "落指引上端" if revenue_now == rev_high else
                         "落在指引区间内" if revenue_now >= rev_low else "低于指引下限")
 
-    story_charts = []
+    closure_charts = []
     if closure is not None:
         labels_count = dict(zip(closure["labels"], closure["counts"]))
         total = sum(closure["counts"])
         falsified = closure.get("falsified")
         undisclosed = closure["undisclosed_topics"]
-        story_charts.append({
+        closure_charts.append({
             "kind": "bars_labeled",
             "title": (f"上季 {total} 条待验证问题：{labels_count['已验证']} 条已验证、"
                       f"{labels_count['被证伪']} 条被证伪、{labels_count['仍未披露']} 条仍未披露"),
@@ -836,12 +836,13 @@ def build_payload(staging: dict) -> dict:
             "src_extra": (f"问题清单来自上季本地分析稿的 follow-up；验证结果依据 {deck_short(period)} "
                           "earnings conference 与 management report。"),
         })
+    delivery_lead = []
     if delivery is not None:
         items = delivery["items"]
         fx_item = next(item for item in items if "汇率" in item["metric"])
         others_better = all(item["value"] > 0 for item in items if item is not fx_item)
         fx_headwind = fx_item["value"] < 0
-        story_charts.append({
+        delivery_lead.append({
             "kind": "diverging_bars",
             "title": (f"{quarter_word(period)} 全线优于自身指引中值，只有汇率是逆风"
                       if others_better and fx_headwind else
@@ -868,7 +869,6 @@ def build_payload(staging: dict) -> dict:
                 "只用于比较方向与相对幅度；原值见核对表。"
             ),
         })
-    settled_lead = story_charts
 
     # ── Section two ───────────────────────────────────────────────────────────
     next_guide = guidance["next_guide"] if guidance else None
@@ -1329,10 +1329,17 @@ def build_payload(staging: dict) -> dict:
                           + ("；稀释幅度为管理层在电话会上的量化口径。" if dilution else "。")),
         },
     ]
-    if capex_chart:
-        highlight.append(capex_chart)
+    # Section two follows the quarter's analysis in its own order: growth
+    # (revenue, volume against price), profit quality (the margin, the market's
+    # bar and the one-off inside net income), then capital intensity (the
+    # budget, the cash). The market's bar is a reading of this quarter, not
+    # something last quarter left to settle, so it sits here and not in section one.
+    if consensus:
+        highlight.append(expectation_chart(staging, consensus, snapshot, net_income_bridge))
     if bridge_chart:
         highlight.append(bridge_chart)
+    if capex_chart:
+        highlight.append(capex_chart)
     highlight.append(cash_chart)
 
     # The check tables run on the same window as the charts they back. An
@@ -1506,16 +1513,16 @@ def build_payload(staging: dict) -> dict:
         ),
     }
 
-    # Section one carries the whole "did the quarter clear the bar" story in one
-    # place: the follow-up list and this quarter against its own guide, then the
-    # market's bar, then the company's three guided metrics over the full guided
-    # record, then the one falsified call that has a long series behind it.
+    # Section one settles what last quarter left, in the order it was left: the
+    # follow-up list and the one falsified call that has a long series behind
+    # it, then this quarter against the company's own guide and the company's
+    # three guided metrics over the full guided record.
     delivery_charts, delivery_table = guidance_delivery_charts(staging, guidance)
     settled_charts = (
-        settled_lead
-        + ([expectation_chart(staging, consensus, snapshot, net_income_bridge)] if consensus else [])
-        + delivery_charts
+        closure_charts
         + ([inventory_expectation] if inventory_expectation else [])
+        + delivery_lead
+        + delivery_charts
     )
     highlights = highlight + [growth_crossover_chart]
     next_charts = [headroom_chart] + tracking_charts(
@@ -1673,7 +1680,7 @@ def build_payload(staging: dict) -> dict:
         + (f"，与本页 financials 的{cn_count(len(periods))}季逐季对到小数点后一位。" if margins_match else "。")
         + "指引区间与实际值一律按公司发布的一位小数比较：区间本身只印到 0.1pp，用比它更细的精度裁定越界，等于让第二次取整决定结论 —— 本页上一版正是这样把 2024Q1 与 2025Q1 两季判成了「超出上限」，而按公司自己的口径它们恰好落在上限上。")
     if net_income_bridge is not None and consensus is not None:
-        expectation_n = next(ex["n"] for ex in settled_ex if ex["title"].startswith("对市场预期"))
+        expectation_n = next(ex["n"] for ex in highlight_ex if ex["title"].startswith("对市场预期"))
         notes.append(
             f"Exhibit {expectation_n} 的「核心」口径是报告净利减 {net_income_bridge['one_off_short']} "
             "税前一次性收益的算术差，未做税务调整；核心 EPS 按核心 / 报告净利之比折算报告 EPS。"
@@ -1728,12 +1735,12 @@ def build_payload(staging: dict) -> dict:
                 "title": "一、上季跟踪指标兑现了吗",
                 "description": (
                     "先看"
-                    + ("上季留的问题闭环了几条、" if closure is not None else "")
-                    + "这一季对公司自己的指引"
-                    + ("和对市场预期各" if consensus is not None else "")
-                    + "兑现到什么程度，"
-                    "再谈本季。公司每季指引三个数——收入、毛利率、营业利润率——三张图各给一条完整记录，"
-                    "最后拆开超额里经营与汇率各占多少。"
+                    + ("上季留的问题闭环了几条" if closure is not None else "")
+                    + ("（被证伪的那条连同它的长序列一起画出）" if inventory_expectation else "")
+                    + ("、" if closure is not None else "")
+                    + "这一季对公司自己的指引兑现到什么程度，再谈本季。"
+                    "公司每季指引三个数——收入、毛利率、营业利润率——三张图各给一条完整记录，"
+                    "收入那条后面紧跟超额里经营与汇率两条腿的拆分。"
                     f"这条记录是 {guided[0]} 起的 {finished_count} 个已完结季，不是最近{cn_count(len(periods))}季"
                     + ("：只看最近那一段，三条指引都像「从不被打破的底线」；整段记录里三条各自都被打破过。"
                        if recent_clean and all_broken else "。")
@@ -1746,9 +1753,11 @@ def build_payload(staging: dict) -> dict:
                 "description": (
                     "收入与指引、量价拆分、"
                     + ("毛利率拐点" if next_gm_mid is not None and next_gm_mid < gm_levels[-1] else "毛利率")
-                    + (("、资本开支上调" if capex_raised else "、资本开支") if capex_chart else "")
-                    + ("，以及净利里的一次性成分" if bridge_chart else "")
-                    + "。"
+                    + ("，对市场预期" if consensus is not None else "")
+                    + ("与净利里的一次性成分" if bridge_chart and consensus is not None else
+                       "，净利里的一次性成分" if bridge_chart else "")
+                    + (("，资本开支上调" if capex_raised else "，资本开支") if capex_chart else "")
+                    + "与现金流。"
                 ),
                 "exhibits": highlight_ex,
             },
@@ -1761,7 +1770,7 @@ def build_payload(staging: dict) -> dict:
             {
                 "id": "routine",
                 "title": "四、长期常规跟踪",
-                "description": "TSM 专属的常规序列：制程世代迁移、平台结构与营运资金。",
+                "description": "TSM 专属的常规序列：制程世代迁移、平台结构、营运资金与资本强度。",
                 "exhibits": routine_ex,
             },
         ],
