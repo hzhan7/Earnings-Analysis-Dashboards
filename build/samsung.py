@@ -2,8 +2,18 @@
 """Build the Samsung Electronics quarterly-results page.
 
 Same four-part, chart-led shape as the other pages (上季兑现 → 本季重点 →
-下季跟踪 → 长期常规), but the first section has to be built differently here,
-because Samsung guides almost nothing a reader would expect.
+下季跟踪 → 长期常规). Section one settles what last quarter left, in the
+owner's order: (a) the last report's follow-up questions, closed against this
+quarter's sources, and this report's own §0 scorecard of management's
+statements; (b) the last report's §8 thresholds, settled against this quarter;
+(c) the company's own guidance record -- which for Samsung is almost nothing a
+reader would expect.
+
+The two reports arrived out of order, and the page says so rather than hiding
+it: the 1Q26 report is a backfill written after the 2Q26 one, so the 2Q26
+report's §0 calls itself first coverage and never closes the 1Q26 questions.
+Those verdicts are therefore the page's, each with its evidence and source in
+the `followup_closure` block (one of them from DART, not from either call).
 
 Two facts drive the whole layout:
 
@@ -48,6 +58,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import sys
 from pathlib import Path
 
@@ -59,6 +70,8 @@ from build.board import (  # noqa: E402
     cn_count,
     cn_ordinal,
     delivery_band,
+    fill_story,
+    headroom,
     headroom_exhibit,
     latest_block,
     minus_sign,
@@ -66,6 +79,7 @@ from build.board import (  # noqa: E402
     stamped_block,
     threshold_exhibit,
     threshold_table,
+    unit_text,
 )
 from build.page_shell import render_shell  # noqa: E402
 from build.payload_guard import write_dash  # noqa: E402
@@ -299,6 +313,9 @@ def derived(staging: dict) -> dict:
         "ds_margin": [o / r * 100 for o, r in zip(seg_op["ds"], seg_rev["ds"])],
         "sdc_margin": [o / r * 100 for o, r in zip(seg_op["sdc"], seg_rev["sdc"])],
         "fcf": [c - k for c, k in zip(cash["operating"], cash["capex_ppe"])],
+        # Free cash flow over revenue, the cash-flow-statement basis the last
+        # report's threshold names: operating cash flow less purchases of PP&E.
+        "fcf_margin": [(c - k) / r * 100 for c, k, r in zip(cash["operating"], cash["capex_ppe"], rev_tn)],
         "capex_to_cfo": [k / c * 100 for k, c in zip(cash["capex_ppe"], cash["operating"])],
         "inventory_days": [
             bs["inventories"][i] / 1000 / cogs_tn[i] * quarter_days[i] for i in range(len(rev_tn))
@@ -468,6 +485,298 @@ def bit_delivery_charts(staging: dict, facts: dict, guidance: dict | None) -> li
         "src_extra": SRC_CALL + "逐季原话见数据核对抽屉的量价对照表。",
     }
     return [dram, price]
+
+
+# ── Section 1 (a)(b): what last quarter's report left to be settled ──────────
+CLOSURE_LABELS = ("已验证", "部分验证", "被证伪", "仍未披露")
+GRADES = ("对", "部分", "错")
+
+
+def one_quarter_values(staging: dict, der: dict, story: dict | None) -> dict[str, str]:
+    """Figures the period-stamped sentences name, computed from the series.
+
+    The follow-up evidence and the call scorecard describe one quarter and live
+    in the series file, but a number the arrays already carry is not typed into
+    them: the sentence names it (``{dso_now}``) and it is filled here, so the
+    two cannot disagree. Half-year sums are offered only when the quarter is a
+    second quarter -- a Q3 block that asked for ``{buyback_half}`` would be
+    reading the wrong two quarters, and `fill_story` stops on a name it is not
+    given. Names carry no digits: `fill_story` only recognises ``[a-z_]``, and a
+    ``{buyback_h1}`` passed through it untouched and was published as braces.
+    """
+    periods = staging["periods"]
+    fin = staging["financials_krw_bn"]
+    cash = staging["cash_flow_krw_tn"]
+    dx = staging["segment_operating_profit_krw_tn"]["dx"]
+    buyback, capex = cash["treasury_stock_acquired"], cash["capex_ppe"]
+    days = der["receivable_days"]
+    values = {
+        "buyback_now": f"{buyback[-1]:.2f}",
+        "buyback_prev": f"{buyback[-2]:.2f}",
+        "dso_now": f"{days[-1]:.1f}",
+        "dso_prev": f"{days[-2]:.1f}",
+        "dso_before": f"{days[-3]:.1f}",
+        "cash_capex": f"{capex[-1]:.2f}",
+        "capex_qoq": minus_sign(f"{capex[-1] - capex[-2]:+.1f}"),
+        "dx_now": minus_sign(f"{dx[-1]:.1f}"),
+        "dx_prev": minus_sign(f"{dx[-2]:.1f}"),
+    }
+    if story and story.get("accrual_capex_krw_tn") is not None:
+        values["accrual_capex"] = f"{story['accrual_capex_krw_tn']:.1f}"
+    if periods[-1].startswith("Q2"):
+        half, half_ya = capex[-1] + capex[-2], capex[-5] + capex[-6]
+        values.update({
+            "buyback_half": f"{buyback[-1] + buyback[-2]:.2f}",
+            "half_op": f"{(fin['operating_profit'][-1] + fin['operating_profit'][-2]) / 1000:.1f}",
+            "capex_half": f"{half:.2f}",
+            "capex_half_ya": f"{half_ya:.2f}",
+            "capex_half_yoy": signed(pct_change(half, half_ya)),
+        })
+        bonus = (story or {}).get("special_bonus")
+        if bonus:
+            values["bonus_pct"] = f"{bonus['pct']:.1f}"
+            values["accrual"] = f"{labor_accrual(staging, story):.1f}"
+    return values
+
+
+def labor_accrual(staging: dict, story: dict | None) -> float:
+    """The special incentive this quarter booked, in KRW trillions, D.
+
+    The company gave a ratio, not an amount: "around 10.5% of cumulative first
+    half operating profit". The page multiplies that ratio by its own first-half
+    operating profit, which is the arithmetic the ratio describes; any other
+    basis in the story block is a different sentence and stops the build rather
+    than being multiplied by the wrong profit.
+    """
+    bonus = (story or {}).get("special_bonus")
+    if not bonus:
+        raise ValueError("series block `prior_kpi_settlement` settles the labour accrual from "
+                         "`quarter_story.special_bonus`, which this quarter does not have")
+    periods = staging["periods"]
+    if bonus["basis"] != "上半年累计营业利润" or not periods[-1].startswith("Q2"):
+        raise ValueError(f"`quarter_story.special_bonus` is a share of {bonus['basis']!r} in "
+                         f"{periods[-1]!r}; the page only knows how to size a first-half accrual")
+    operating = staging["financials_krw_bn"]["operating_profit"]
+    return bonus["pct"] / 100 * (operating[-1] + operating[-2]) / 1000
+
+
+def prior_entries(staging: dict, der: dict, story: dict | None, prior: dict) -> list[dict]:
+    """Last report's thresholds with this quarter's actual, computed by id.
+
+    A typed actual in the block is refused: the numbers come from the series,
+    and a second copy in the threshold block would be free to disagree with it.
+    """
+    bits = staging["memory_bit_and_price"]
+    known = {
+        "dram_asp": lambda: bits["dram_asp_qoq_pct"][-1],
+        "dram_bit_floor": lambda: bits["dram_bit_actual"][-1],
+        "dram_bit_cap": lambda: bits["dram_bit_actual"][-1],
+        "ds_margin": lambda: der["ds_margin"][-1],
+        "fcf_margin": lambda: der["fcf_margin"][-1],
+        "labor_accrual": lambda: labor_accrual(staging, story),
+    }
+    entries = []
+    for entry in prior["quantified"]:
+        if "actual" in entry or "current" in entry:
+            raise ValueError(f"threshold `{entry['id']}` is computed from the series; remove its typed value")
+        if entry["id"] not in known:
+            raise ValueError(f"threshold `{entry['id']}` has no way to be computed from the series")
+        actual = known[entry["id"]]()
+        if actual is None:
+            raise ValueError(f"threshold `{entry['id']}` has no reading for {staging['periods'][-1]!r}")
+        entries.append({**entry, "actual": actual})
+    return entries
+
+
+def threshold_words(entry: dict, value: float | None = None) -> str:
+    """A threshold or a reading in the entry's unit, the way the prose writes it.
+
+    Thresholds print as the report wrote them (``15.0`` → 「+15%」, ``60.0`` →
+    「60%」, ``3.0`` krw_tn → 「3 兆韩元」); a computed reading keeps one decimal
+    (「70.0%」), except the memory readings, which are the page's numbers for a
+    company phrase and print as the rule gives them (「+45%」「+11.5%」).
+    """
+    number = entry["threshold"] if value is None else value
+    reading = entry["id"].startswith("dram_")
+    text = (f"{number:.1f}".rstrip("0").rstrip(".") if value is None or reading
+            else f"{number:.1f}")
+    if entry["unit"] == "krw_tn":
+        return minus_sign(text) + " 兆韩元"
+    text += "%"
+    # A quarter-on-quarter change is written with its sign, the way the report
+    # and the company both write it ("< +15%"); a level is not.
+    return "+" + text if reading and number > 0 else minus_sign(text)
+
+
+def item_name(entry: dict) -> str:
+    return re.sub(r"（[上下]沿）$", "", entry["metric"])
+
+
+def closure_chart(closure: dict, values: dict[str, str]) -> dict:
+    items = closure["items"]
+    if tuple(closure["labels"]) != CLOSURE_LABELS:
+        raise ValueError(f"`followup_closure.labels` is {closure['labels']!r}; the page reads {CLOSURE_LABELS!r}")
+    for item in items:
+        if item["verdict"] not in CLOSURE_LABELS:
+            raise ValueError(f"follow-up #{item['n']} has verdict {item['verdict']!r}; "
+                             f"the page reads only {CLOSURE_LABELS!r}")
+    counts = {label: sum(1 for item in items if item["verdict"] == label) for label in CLOSURE_LABELS}
+    # A bar whose value is exactly zero draws nothing under a label that stays,
+    # so an empty verdict is said in words instead of drawn as an empty column.
+    shown = [label for label in CLOSURE_LABELS if counts[label]]
+    missing = [label for label in CLOSURE_LABELS if not counts[label]]
+    by_label = {label: [f"#{item['n']} {item['short']}" for item in items if item["verdict"] == label]
+                for label in shown}
+    return {
+        "ref": "EX_CLOSURE",
+        "kind": "bars_labeled",
+        "title": (f"上季 {len(items)} 条待验证问题："
+                  + "、".join(f"{counts[label]} 条{label}" for label in shown)),
+        "xlabels": shown,
+        "values": [counts[label] for label in shown],
+        "legend": "问题条数",
+        "fmt": "f0",
+        "yfmt": "f0",
+        "label_fmt": "f0",
+        "ylab": "条",
+        "note": (
+            "；".join(f"{label}：{'、'.join(by_label[label])}" for label in shown)
+            + ("；没有一条" + "、".join(missing) + "。" if missing else "。")
+            + fill_story(closure["finding"], values)
+        ),
+        "src_extra": (
+            "问题清单来自上季报告（1Q26 分析，回溯补档）文末的 Follow-up Questions。本季报告写于那份补档之前，"
+            "§0 自称首次覆盖，没有逐条核验这几条，所以判定是本页依据本季业绩简报、电话会英文逐字稿与 DART 公告作出的，"
+            "逐条依据与出处见数据核对抽屉。"
+        ),
+    }
+
+
+def scorecard_chart(scorecard: dict) -> dict:
+    items = scorecard["items"]
+    for item in items:
+        for key in ("direction", "magnitude"):
+            if item[key] not in GRADES:
+                raise ValueError(f"scorecard #{item['n']} {key} is {item[key]!r}; the page reads {GRADES!r}")
+    direction = [sum(1 for item in items if item["direction"] == grade) for grade in GRADES]
+    magnitude = [sum(1 for item in items if item["magnitude"] == grade) for grade in GRADES]
+    understated = [item["topic"] for item in items if item["magnitude"] == "错" and item["miss"] == "说轻了"]
+    undelivered = [item["topic"] for item in items if item["magnitude"] == "错" and item["miss"] == "没兑现"]
+    colours = {"对": "NAVY", "部分": "MBLUE", "错": "GOLD"}
+    return {
+        "ref": "EX_SCORE",
+        "kind": "grouped_bars",
+        "title": (f"上季电话会 {len(items)} 条管理层说法：方向对 {direction[0]} 条，"
+                  f"幅度对 {magnitude[0]} 条"),
+        "xlabels": ["方向", "幅度"],
+        "groups": [{"name": grade, "color": colours[grade], "values": [d, m]}
+                   for grade, d, m in zip(GRADES, direction, magnitude)],
+        "bar_labels": True,
+        "fmt": "f0",
+        "label_fmt": "f0",
+        "ylab": "条",
+        "note": (
+            "这是本季报告 §0 的记分卡：报告找不到自己的上季报告，就拿 1Q26 电话会上管理层的说法逐条对本季实际打分。"
+            + (f"幅度判错的{cn_count(magnitude[2])}条里，{cn_count(len(understated))}条是<b>说轻了</b>"
+               f"（{'、'.join(understated)}）" if understated else "")
+            + (f"，{cn_count(len(undelivered))}条是没兑现或打了折（{'、'.join(undelivered)}）" if undelivered else "")
+            + ("。报告据此认为，读三星的定性指引应默认幅度比措辞更极端。" if understated else "。")
+        ),
+        "src_extra": ("判定来自本季报告 §0；两边的原话已逐条对 1Q26、2Q26 电话会英文逐字稿与本季业绩简报核过，"
+                      "逐条见数据核对抽屉。"),
+    }
+
+
+def prior_charts(staging: dict, der: dict, labels: list[str], prior: dict,
+                 entries: list[dict]) -> list[dict]:
+    """The overview of last report's thresholds, then one line per long series."""
+    items: dict[int, list[dict]] = {}
+    for entry in entries:
+        items.setdefault(entry["item"], []).append(entry)
+    broken = [number for number, group in items.items()
+              if any(headroom(e["direction"], e["threshold"], e["actual"]) < 0 for e in group)]
+    band = [group for group in items.values() if len(group) == 2]
+    labour = next((e for e in entries if e["id"] == "labor_accrual"), None)
+    notes = ["正值 = 仍在安全侧。"]
+    for group in band:
+        low, high = sorted(group, key=lambda e: e["threshold"])
+        notes.append(
+            f"{item_name(low)}一项是区间：低于 {threshold_words(low)} 算供给见顶，高于 {threshold_words(high)} "
+            f"算价格依赖被证伪，两条线各画一根柱；本季读数 {threshold_words(low, low['actual'])} D 落在"
+            + ("两条线之间。" if low["actual"] >= low["threshold"] and high["actual"] <= high["threshold"] else
+               "区间之外。"))
+    if labour is not None:
+        breached = headroom(labour["direction"], labour["threshold"], labour["actual"]) < 0
+        notes.append(
+            f"劳资一次性计提公司只给了比例（上半年累计营业利润的约 "
+            f"{staging['quarter_story']['special_bonus']['pct']:.1f}%），"
+            f"按本页上半年营业利润算约 {labour['actual']:.1f} 兆韩元 D"
+            + (f"，是 {threshold_words(labour)}阈值的{multiple_words(labour['actual'] / labour['threshold'])}。"
+               if breached else "。"))
+    if prior.get("unverified"):
+        notes.append(prior["unverified"] + "。")
+    overview = headroom_exhibit(
+        (f"上季 {len(items)} 项量化阈值：{len(items) - len(broken)} 项守住、{len(broken)} 项被击穿"
+         + (f"，被击穿的是{'、'.join(item_name(items[number][0]) for number in broken)}" if broken else "")),
+        entries, "actual",
+        note="".join(notes),
+        src_extra=("阈值与方向逐字取自上季报告 §8（关键观察指标）；实际值为本季披露值或据其自算 D："
+                   "ASP 与位元是公司措辞的数值化读数（规则见 Exhibit {EX_ASP}），"
+                   "DS 利润率与 FCF margin 由业绩简报附录算出。原始单位见核对表。"),
+    )
+    overview["ref"] = "EX_PRIOR"
+
+    bits = staging["memory_bit_and_price"]
+    drawn = {
+        "dram_asp": ([compact_period(q) for q in bits["quarters"]], bits["dram_asp_qoq_pct"],
+                     "pct0", "环比 %", "DRAM 混合 ASP 环比 D",
+                     "三星对价格从不给指引，线上是公司事后自述措辞的数值化读数，规则见 Exhibit {EX_ASP}。"),
+        "ds_margin": (labels, der["ds_margin"], "pct1", "DS 营业利润率", "DS 分部营业利润率 D",
+                      "DS 含 System LSI 与 Foundry，Memory 自己的利润率公司不披露，所以这是上季报告说的"
+                      "「Memory 利润率代理」；分母是含分部间销售的 DS 收入。"),
+        "fcf_margin": (labels, der["fcf_margin"], "pct1", "占收入 %", "季度 FCF margin D",
+                       "口径是现金流量表的经营现金流减购置 PP&E，再除以合并收入。"),
+    }
+    charts = [overview]
+    for entry in entries:
+        if not entry.get("chart"):
+            continue
+        xlabels, series, fmt, ylab, name, context = drawn[entry["id"]]
+        ok = headroom(entry["direction"], entry["threshold"], entry["actual"]) >= 0
+        side = "上方" if entry["direction"] == "up" else "下方"
+        charts.append(threshold_exhibit(
+            f"{entry['metric']} {threshold_words(entry, entry['actual'])}："
+            f"{'守住' if ok else '击穿'}上季阈值 {threshold_words(entry)}",
+            xlabels, rounded(series, 2), entry["threshold"],
+            fmt=fmt, ylab=ylab, actual_name=name,
+            threshold_name=f"上季阈值 {threshold_words(entry)}（安全侧在{side}）",
+            note=(f"上季报告的原话是「{entry['rule']}」。本季 {threshold_words(entry, entry['actual'])}，"
+                  f"余量 {headroom(entry['direction'], entry['threshold'], entry['actual']):+.1f}%。" + context),
+            src_extra=SRC_DECK + "阈值与方向逐字取自上季报告 §8；实际值为本页自算 D。",
+        ))
+    return charts
+
+
+def settled_description(periods: list[str], closure: dict | None, scorecard: dict | None,
+                        entries: list[dict]) -> str:
+    """What section one settles, in the order it settles it."""
+    last = deck_short(shift_period(periods[-1], -1))
+    parts = []
+    if closure is not None:
+        parts.append(
+            f"先结算上季报告（{last} 分析）文末留下的 {len(closure['items'])} 条待验证问题。那份报告是回溯补档，"
+            "写在本季报告之后；本季报告因此自称首次覆盖、没有逐条核验这几条，闭环判定是本页依据本季业绩简报、"
+            "电话会逐字稿与 DART 公告作出的。")
+    if scorecard is not None:
+        parts.append(f"本季报告第 0 节自己做的，是拿上季电话会上管理层的 {len(scorecard['items'])} 条说法"
+                     "逐条对本季实际打分，见本节的记分卡图。")
+    if entries:
+        parts.append(f"上季报告第 8 节的 {len({e['item'] for e in entries})} 项量化阈值，逐项用本季实际结算。")
+    if closure is None and not entries:
+        parts.append("本季没有上季报告留下的问题或阈值可结算，本节只结算公司上季给出、本季到期的指引。")
+    parts.append("最后是公司自己的指引：三星不提供收入、毛利率或营业利润的数字指引，唯一给的前瞻数字是下一季 "
+                 "DRAM 与 NAND 的出货 bit 增速，而且是定性措辞；价格只在事后回顾时说。")
+    return "".join(parts)
 
 
 def provisional_chart(staging: dict) -> dict:
@@ -1099,9 +1408,27 @@ def build_payload(staging: dict) -> dict:
                          "add this quarter's release with the roll")
     ir_page = next(item for item in staging["sources"]
                    if item["label"].startswith("Samsung IR — Earnings Release"))
+    # What last quarter's report left to be settled this quarter. Each block
+    # names the quarter it settles (`set_in`); one that settles anything but
+    # the quarter just before is another roll's and stops the build.
+    closure = stamped_block(staging, "followup_closure", periods[-1])
+    scorecard = stamped_block(staging, "guidance_scorecard", periods[-1])
+    prior = stamped_block(staging, "prior_kpi_settlement", periods[-1])
+    for name, block in (("followup_closure", closure), ("guidance_scorecard", scorecard),
+                        ("prior_kpi_settlement", prior)):
+        if block is not None and block["set_in"] != shift_period(periods[-1], -1):
+            raise ValueError(f"series block `{name}` settles what was set in {block['set_in']!r}, "
+                             f"but last quarter was {shift_period(periods[-1], -1)!r}: update it or remove it")
 
     facts = quarter_facts(staging, der)
-    settled_ex = bit_delivery_charts(staging, facts, guidance)
+    story_values = one_quarter_values(staging, der, story)
+    settled_entries = prior_entries(staging, der, story, prior) if prior else []
+    settled_ex = (
+        ([closure_chart(closure, story_values)] if closure else [])
+        + ([scorecard_chart(scorecard)] if scorecard else [])
+        + (prior_charts(staging, der, labels, prior, settled_entries) if prior else [])
+        + bit_delivery_charts(staging, facts, guidance)
+    )
     highlight_ex = quarter_charts(staging, der, labels, facts, story)
     next_ex = tracking_charts(staging, der, labels, facts, kpi, story, guidance)
     routine_ex = routine_charts(staging, der, labels, story) + [provisional_chart(staging)]
@@ -1186,6 +1513,32 @@ def build_payload(staging: dict) -> dict:
         ]
         for i in range(len(bits["quarters"]))
     ]
+    settled_tables = []
+    if closure is not None:
+        settled_tables.append({
+            "title": "上季报告留下的待验证问题：逐条判定与依据",
+            "headers": ["#", "上季的问题", "判定", "本季依据", "出处"],
+            "rows": [[str(item["n"]), fill_story(item["topic"], story_values), item["verdict"],
+                      fill_story(item["evidence"], story_values), item["source"]]
+                     for item in closure["items"]],
+        })
+    if scorecard is not None:
+        settled_tables.append({
+            "title": "本季报告第 0 节：上季电话会管理层说法记分卡",
+            "headers": ["#", "事项", "上季电话会原话", "本季实际", "方向", "幅度", "报告判定"],
+            "rows": [[str(item["n"]), item["topic"], item["claim"],
+                      fill_story(item["actual"], story_values), item["direction"], item["magnitude"],
+                      item["verdict"]]
+                     for item in scorecard["items"]],
+        })
+    if prior is not None:
+        prior_table = threshold_table(
+            0, "上季报告第 8 节的量化阈值与本季实际（原始单位）", settled_entries, "actual", "本季实际")
+        prior_table["headers"] = ["项"] + prior_table["headers"] + ["上季报告的原话"]
+        prior_table["rows"] = [[str(entry["item"])] + row + [entry["rule"]]
+                               for row, entry in zip(prior_table["rows"], settled_entries)]
+        settled_tables.append(prior_table)
+
     threshold_entries = kpi["entries"]
     threshold = threshold_table(
         0, "下季跟踪阈值与当前值（原始单位）", threshold_entries, "current", "本季值",
@@ -1219,6 +1572,7 @@ def build_payload(staging: dict) -> dict:
          "headers": ["期间", "上季给出的 DRAM bit 指引", "该季 DRAM bit 实际",
                      "该季 DRAM ASP", "该季 NAND bit 实际", "该季 NAND ASP"],
          "rows": bit_rows},
+    ] + settled_tables + [
         threshold,
     ]
     if guidance is not None:
@@ -1368,12 +1722,7 @@ def build_payload(staging: dict) -> dict:
             {
                 "id": "settled",
                 "title": "一、上季跟踪指标兑现了吗",
-                "description": (
-                    "三星不提供收入、毛利率或营业利润的数字指引，所以这一节没有常规的指引兑现。"
-                    "公司唯一给的前瞻数字是下一季 DRAM 与 NAND 的出货 bit 增速，而且是定性措辞；"
-                    f"价格只在事后回顾时说。{cn_count(len(settled_ex))}张图分别是：这条唯一的指引兑现得怎么样、"
-                    "以及同期没有被指引的价格走了多少。"
-                ),
+                "description": settled_description(periods, closure, scorecard, settled_entries),
                 "exhibits": settled_ex,
             },
             {

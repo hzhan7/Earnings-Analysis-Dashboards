@@ -368,6 +368,16 @@
       2.45,
       0.01,
       6.21
+    ],
+    "treasury_stock_acquired": [
+      0.0,
+      1.81,
+      2.96,
+      1.32,
+      3.87,
+      0.04,
+      7.61,
+      5.63
     ]
   },
   "balance_sheet_krw_bn": {
@@ -707,6 +717,216 @@
     "rnd_quarterly_record_claimed": true,
     "supply_shortage_claimed": true
   },
+  "followup_closure": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "_note": "上季报告（`2026-04-30 005930 Q1 2026 vs Q4 2025 Analysis.md`，2026-08-29 回溯补档）文末 Follow-up Questions 5 条在本季的闭环。本季报告（2026-08-03）写于那份补档之前，§0 自称首次覆盖，没有逐条核验这 5 条，所以 verdict 是本页依据 2Q26 业绩简报、2Q26 电话会英文逐字稿与 DART 公告作出的判定，每条的依据写在 evidence、出处写在 source。verdict 只取 labels 里的四个词；页面上的条数由 builder 现算。evidence 里花括号是 builder 从 series 现算后填入的数，不在这里手敲。",
+    "labels": [
+      "已验证",
+      "部分验证",
+      "被证伪",
+      "仍未披露"
+    ],
+    "finding": "已验证的那一条改变了一个数的读法：1Q26 的 {buyback_prev} 兆韩元与本季的 {buyback_now} 兆韩元库藏股买入，DART 决议写明是员工股票报酬，不是股东回报。",
+    "items": [
+      {
+        "n": 1,
+        "short": "1Q26 回购的来历",
+        "topic": "1Q26 那笔库藏股买入的授权来源，是否在 2024 年 11 月那轮 10 兆韩元计划之外",
+        "verdict": "已验证",
+        "evidence": "DART 上三份自己株式取得决定：2026-01-07 决议 2.50 兆、2026-01-28 决议 3.57 兆、2026-03-18 决议 7.17 兆韩元，取得目的都写「임직원 주식보상」（员工股票报酬，2025 年 10 月导入的 PSU 与 OPI、LTI），不在 2024 年 11 月那轮 10 兆计划里；现金流量表上半年买入 {buyback_half} 兆韩元（{buyback_prev} + {buyback_now}），与三份决议对得上。两场电话会都没说，2Q26 电话会 CFO 只提到员工报酬用的回购「may affect FCF」。",
+        "source": "DART 주요사항보고서(자기주식취득결정) rcpNo 20260107000715、20260129000003、20260318001062；1Q26 与 2Q26 Earnings Release Appendix 4；2Q26 电话会逐字稿"
+      },
+      {
+        "n": 2,
+        "short": "HBM 毛利倒挂",
+        "topic": "HBM 与常规 DRAM 的毛利倒挂有多大，下一次 HBM 年度议价在哪个月",
+        "verdict": "仍未披露",
+        "evidence": "2Q26 电话会只说供货组合「independent of the profitability difference between HBM and conventional DRAM」，倒挂幅度与议价月份都没有给；只提到 2027 年的 HBM 供货协议已经签了。本季报告 §5 把这一题列为管理层回避。",
+        "source": "2Q26 电话会逐字稿（HSBC 提问）"
+      },
+      {
+        "n": 3,
+        "short": "应收与 DSO",
+        "topic": "应收比收入涨得快、DSO 从 {dso_before} 天升到 {dso_prev} 天的原因",
+        "verdict": "部分验证",
+        "evidence": "按本页口径（应收 ÷ 当季收入 × 当季天数）DSO 从 {dso_prev} 天回落到 {dso_now} 天：往回走了，但没有回到上季设的 50 天以内，也没有继续上升；公司没有解释应收为什么先涨后缓。",
+        "source": "2Q26 Earnings Release Appendix 1、Appendix 3"
+      },
+      {
+        "n": 4,
+        "short": "全年 CapEx",
+        "topic": "2026 年全年账面 CapEx 是多少，现金资本开支还要超过账面多久",
+        "verdict": "部分验证",
+        "evidence": "全年数字仍没有给；2Q26 电话会给的应计口径资本开支 {accrual_capex} 兆韩元，高于上季设的 14 兆触发线；现金流量表购置 PP&E {cash_capex} 兆，本季已经低于应计口径，不再是现金超账面。",
+        "source": "2Q26 电话会逐字稿（IR 资本开支段）；2Q26 Earnings Release Appendix 4"
+      },
+      {
+        "n": 5,
+        "short": "劳资计提与罢工",
+        "topic": "劳资一次性计提最终多少，5/21–6/7 罢工是否执行、对平泽出货影响多大",
+        "verdict": "部分验证",
+        "evidence": "CFO 说二季度一次补提了相当于上半年累计营业利润约 {bonus_pct}% 的特别绩效奖金，按本页上半年营业利润 {half_op} 兆韩元算约 {accrual} 兆 D，其中一部分资本化进在产品存货、从 3Q 起随销售结转；金额与拆分都没给。罢工全场没有提，公司自述 DRAM 与 NAND 出货双双创新高。",
+        "source": "2Q26 电话会逐字稿（Citi 提问）；2Q26 Earnings Release"
+      }
+    ]
+  },
+  "guidance_scorecard": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "_note": "本季报告 §0 的记分卡：报告写于上季报告补档之前，没有自己的上季报告可对，就拿 1Q26 电话会上管理层的 8 条说法逐条对 2Q26 实际打分（方向 / 幅度 / 判定）。direction / magnitude 取 对 / 部分 / 错，逐字对应报告表里的 ✅ / ⚠️ / ❌；miss 记幅度判错的那一条是「说轻了」还是「没兑现」。claim 是 1Q26 逐字稿原话，actual 是 2Q26 一侧，两边都已对逐字稿与 2Q26 业绩简报核过。报告正文自述「8 条里有 5 条是方向对、幅度错」：严格按表内 ✅/❌ 只有 3 条（#1 #3 #4），把 ⚠️ 也算进去（#5 方向⚠️、#7 幅度⚠️）才是 5 条；页面按逐条判定现算，不抄那句总述。",
+    "items": [
+      {
+        "n": 1,
+        "topic": "2Q DRAM 出货 bit",
+        "claim": "DRAM bit growth to increase by single-digit percentage Q-on-Q",
+        "actual": "low teens，公司自称「exceeding our guidance」",
+        "direction": "对",
+        "magnitude": "错",
+        "miss": "说轻了",
+        "verdict": "超预期，公司连续低估自己的出货能力"
+      },
+      {
+        "n": 2,
+        "topic": "2Q NAND 出货 bit",
+        "claim": "bit growth is expected to be constrained at the low single-digit level Q-on-Q",
+        "actual": "low single-digit，「in line with our guidance」",
+        "direction": "对",
+        "magnitude": "对",
+        "miss": null,
+        "verdict": "准确"
+      },
+      {
+        "n": 3,
+        "topic": "2Q 存储价格",
+        "claim": "we expect memory price to stay on the current upward trend",
+        "actual": "DRAM ASP +mid-40%、NAND +high-60%",
+        "direction": "对",
+        "magnitude": "错",
+        "miss": "说轻了",
+        "verdict": "「维持上行」完全没有传达出这一季的量级"
+      },
+      {
+        "n": 4,
+        "topic": "DX 利润",
+        "claim": "In the DX division, we expect profit to decline due to rising cost pressures",
+        "actual": "DX 营业利润由 {dx_prev} 转为 {dx_now} 兆韩元",
+        "direction": "对",
+        "magnitude": "错",
+        "miss": "说轻了",
+        "verdict": "说的是下降，实际是转亏"
+      },
+      {
+        "n": 5,
+        "topic": "Foundry 盈利",
+        "claim": "Foundry will drive earnings improvement through increased sales in advanced processes",
+        "actual": "「significant improvement before incentive-related charges」，仍未盈利",
+        "direction": "部分",
+        "magnitude": "错",
+        "miss": "没兑现",
+        "verdict": "打折兑现：新增了限定语，且仍未盈利"
+      },
+      {
+        "n": 6,
+        "topic": "HBM4 占 HBM 销售",
+        "claim": "HBM4 sales are expected to exceed 50% of total HBM sales from the third quarter onwards",
+        "actual": "下半年「well over 60% of our total HBM revenue mix」",
+        "direction": "对",
+        "magnitude": "对",
+        "miss": null,
+        "verdict": "上修，超预期兑现"
+      },
+      {
+        "n": 7,
+        "topic": "2026 年资本开支",
+        "claim": "In 2026, we anticipate a substantial year-on-year increase in CapEx",
+        "actual": "上半年现金 capex {capex_half} 兆韩元，较去年上半年 {capex_half_ya} 兆 {capex_half_yoy} D；但 2Q 环比 {capex_qoq}",
+        "direction": "对",
+        "magnitude": "部分",
+        "miss": null,
+        "verdict": "兑现中，但本季现金 capex 环比下降"
+      },
+      {
+        "n": 8,
+        "topic": "股东回报政策",
+        "claim": "the company will faithfully execute its current shareholder return policy ... we'll share details once the direction is decided",
+        "actual": "「in-depth discussions」「further updates very soon」，新政策仍未公布",
+        "direction": "错",
+        "magnitude": "错",
+        "miss": "没兑现",
+        "verdict": "未兑现，连续两季拖延"
+      }
+    ]
+  },
+  "prior_kpi_settlement": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "_note": "上季报告 §8「关键观察指标」5 项在本季的结算。threshold 与 direction 逐字取自那一节（DRAM 位元一项是区间，上下沿各记一条，item 相同）；actual 不在这里手敲，由 builder 按 id 从 series 现算：ASP 与位元用公司措辞的数值化读数（memory_bit_and_price），DS 利润率与 FCF margin 用业绩简报附录，劳资计提用 quarter_story 里 CFO 给的比例乘本页上半年营业利润（公司没有给金额）。chart 标记有长序列、单独画阈值线的条目。",
+    "source": "`2026-04-30 005930 Q1 2026 vs Q4 2025 Analysis.md` §8 关键观察指标",
+    "quantified": [
+      {
+        "id": "dram_asp",
+        "item": 1,
+        "metric": "DRAM 混合 ASP 环比",
+        "direction": "up",
+        "threshold": 15.0,
+        "unit": "pct",
+        "chart": true,
+        "rule": "Q2 < +15% = 涨价周期斜率断裂，收入唯一驱动失速（减仓）"
+      },
+      {
+        "id": "dram_bit_floor",
+        "item": 2,
+        "metric": "DRAM 位元出货环比（下沿）",
+        "direction": "up",
+        "threshold": 3.0,
+        "unit": "pct",
+        "chart": false,
+        "rule": "实际 < +3% = 供给彻底见顶、增长 100% 押注价格（警示）"
+      },
+      {
+        "id": "dram_bit_cap",
+        "item": 2,
+        "metric": "DRAM 位元出货环比（上沿）",
+        "direction": "down",
+        "threshold": 15.0,
+        "unit": "pct",
+        "chart": false,
+        "rule": "> +15% = 产能有弹性，价格依赖度被证伪（upside）"
+      },
+      {
+        "id": "ds_margin",
+        "item": 3,
+        "metric": "DS 分部营业利润率",
+        "direction": "up",
+        "threshold": 60.0,
+        "unit": "pct",
+        "chart": true,
+        "rule": "在 HBM 占比明确上升的季度 < 60% = 组合稀释被证实（重新评估）"
+      },
+      {
+        "id": "fcf_margin",
+        "item": 4,
+        "metric": "季度 FCF margin",
+        "direction": "up",
+        "threshold": 15.0,
+        "unit": "pct",
+        "chart": true,
+        "rule": "现金流量表口径（经营现金流 − 购置 PP&E）÷ 收入 < 15% = 利润质量问题从时点转为结构（警示）"
+      },
+      {
+        "id": "labor_accrual",
+        "item": 5,
+        "metric": "劳资一次性计提",
+        "direction": "down",
+        "threshold": 3.0,
+        "unit": "krw_tn",
+        "chart": false,
+        "rule": "计提 > KRW 3T，或平泽出货受实质影响（减仓）"
+      }
+    ],
+    "unverified": "第 5 项的另一半「5/21–6/7 罢工是否实质影响平泽出货」公司全场没有提，本页没有可核的一手数字"
+  },
   "next_kpi": {
     "period": "Q2 2026",
     "entries": [
@@ -808,7 +1028,9 @@
     "operating_profit_krw_tn": 43.6,
     "cfo_krw_tn": 85.32,
     "depreciation_krw_tn": 43.61,
-    "capex_ppe_krw_tn": 47.52
+    "capex_ppe_krw_tn": 47.52,
+    "treasury_stock_acquired_krw_tn": 8.19,
+    "dividends_paid_krw_tn": 9.9
   },
   "window_floor_note": "**这一页停在八季，理由不是懒，是三星不向 SEC 申报任何文件。**一手来源是它自己的季度英文 Earnings Presentation 与电话会记录，只存在于本机；因此这一页必须分清两件事：三星披露过什么，与本机有什么。逐项查过：\n· 合并损益、分部收入与营业利润、资产负债表与现金流：本机的 deck 最早到 2023Q1（其中 2023Q1–Q3 单一来源，2023Q4 起可双源交叉核对）。再往前不是三星没发过，是本机没有。\n· 内存位元增长与均价的**量化措辞**：只存在于电话会问答，deck 的 Memory 页是纯定性的。本机只有三份 transcript（Q4 2025 起）—— 那三季正好是目前有值的三季，不是巧合，是约束本身。\n· 速报值与确定值的对比：本机没有任何一份三星速报（잠정실적）原件。\n另有两条与取数无关的硬下限：Harman 不可能早于 2017Q1（并购 2017 年 3 月交割）；DX 这个大分部来自 2021 年 12 月的组织重整，deck 自己的脚注写明。\n**本轮实测过一次扩窗**：用本机已有的十份 deck 可以把窗口推到 14 季（2023Q1 起），数据本身通过了本页的三条恒等式（deck 精度为 0.01 兆韩元，误差落在一个进位单位内）。没有采用，因为那 6 季**一张图也到不了 2016**，而整页的图注、表格与阈值都是围绕八季写的 —— 为零收益重写一页，不如把这段理由写下来。要真正拉长这一页，先要的是更早的 deck 与 transcript，不是改 builder。",
   "period_ends": [
