@@ -787,8 +787,8 @@ def build_payload(staging: dict) -> dict:
             charts.append(chart)
         return charts
 
-    # ── section one: the guided record, then last quarter's two threshold sets ──
-    settled_charts = list(guidance_charts)
+    # ── section one: last quarter's two threshold sets, then the guided record ──
+    settled_charts = []
     settled_entries = prior_kpi["quantified"] if prior_kpi else []
     if prior_kpi is not None:
         risk_margins = [headroom(e["direction"], e["threshold"], e["actual"]) for e in settled_entries]
@@ -883,6 +883,8 @@ def build_payload(staging: dict) -> dict:
                 f"上季风险线 {unit_text(entry['unit'], entry['threshold'])}"
             ),
         )
+    # (c) after (a)(b): the company's own guided record closes the section.
+    settled_charts += guidance_charts
 
     # ── section two: this quarter ────────────────────────────────────────────
     early = [value for quarter, value in zip(long_quarters, long_aws_sequential)
@@ -1815,11 +1817,10 @@ def build_payload(staging: dict) -> dict:
             "id": "settled",
             "title": "一、上季跟踪指标兑现了吗",
             "description": (
-                ("先结算上季设下的阈值，再看本季数据。" if prior_kpi is not None else "")
+                ("先结算上季本地分析设下的阈值，再看公司自己的指引兑现记录：" if prior_kpi is not None else "")
                 + "亚马逊每季在申报文件里同时给出净销售额与经营利润两个区间，"
-                f"所以这一节先用 {guided[0]}–{guided[-1]} 共 {len(guided)} 季的完整记录"
-                "回答「这家公司对自己的指引兑现到什么程度」"
-                + ("，再看本地设定的阈值 —— 顺序反过来就看不出后者为什么会错。" if prior_kpi is not None else "。")
+                f"本节用 {guided[0]}–{guided[-1]} 共 {len(guided)} 季的完整记录"
+                "回答「这家公司对自己的指引兑现到什么程度」。"
             ),
             "exhibits": exhibits[:settled_count],
         },

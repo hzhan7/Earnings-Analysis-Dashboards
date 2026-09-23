@@ -273,10 +273,11 @@ class AmznDashboardTest(unittest.TestCase):
         """The page's headline claim about the guided record: each band's title
         says the bottom was never broken exactly when no finished quarter came
         in below its range, and the audit table agrees row by row."""
-        settled = self.by_section["settled"]
+        bands = [ex for ex in self.by_section["settled"] if ex["kind"] == "range_band"]
+        self.assertEqual(len(bands), 2)
         for chart, low_key, actual_key in (
-                (settled[0], "net_sales_low_bn", "actual_net_sales_bn"),
-                (settled[2], "operating_income_low_bn", "actual_operating_income_bn")):
+                (bands[0], "net_sales_low_bn", "actual_net_sales_bn"),
+                (bands[1], "operating_income_low_bn", "actual_operating_income_bn")):
             missed = sum(1 for low, actual in zip(self.guide[low_key], self.guide[actual_key])
                          if actual is not None and actual < low)
             with self.subTest(chart=chart["title"]):
