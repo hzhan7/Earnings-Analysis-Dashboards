@@ -570,7 +570,7 @@ class McDashboardTest(unittest.TestCase):
                 self.assertEqual(row[3], mc.kpi_unit_text(entry["unit"], expected))
 
     def test_the_headroom_chart_agrees_with_the_audit_table(self) -> None:
-        exhibit = next(ex for ex in self.exhibits if ex["kind"] == "diverging_bars")
+        exhibit = next(ex for ex in self.exhibits if ex.get("ref") == "EX_NEXT_HEADROOM")
         entries = mc.kpi_entries(self.staging, self.der, self.staging["next_kpi"])
         self.assertEqual(exhibit["xlabels"], [e["metric"] for e in entries])
         self.assertEqual(
@@ -578,7 +578,7 @@ class McDashboardTest(unittest.TestCase):
             [round(headroom(e["direction"], e["threshold"], e["current"]), 1) for e in entries])
 
     def test_the_headroom_title_counts_the_safe_lines(self) -> None:
-        exhibit = next(ex for ex in self.exhibits if ex["kind"] == "diverging_bars")
+        exhibit = next(ex for ex in self.exhibits if ex.get("ref") == "EX_NEXT_HEADROOM")
         safe = sum(1 for value in exhibit["values"] if value >= 0)
         self.assertEqual(exhibit["title"],
                          f"下季跟踪阈值：{mc.cn_count(len(exhibit['values']))}条线里{mc.cn_count(safe)}条仍在安全侧")
@@ -622,6 +622,39 @@ class McDashboardTest(unittest.TestCase):
              ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
         for section in self.payload["sections"]:
             self.assertTrue(section["exhibits"], f"{section['id']} is empty")
+
+    def test_section_one_settles_questions_then_thresholds_then_the_company(self) -> None:
+        """(a) last quarter's open questions, (b) its thresholds with one line per
+        tracked series, (c) what the company itself said. The page used to open
+        on (c) alone, as though the company's sentences were the whole record."""
+        refs = [ex["ref"] for ex in self.payload["sections"][0]["exhibits"]]
+        self.assertEqual(refs[:2], ["EX_CLOSURE", "EX_PRIOR_HEADROOM"])
+        lines = [ref for ref in refs[2:] if ref.startswith("EX_PRIOR_")]
+        self.assertTrue(lines, "no prior threshold has its own line")
+        self.assertEqual(refs[2:], lines + ["EX_SAID", "EX_SCORE"])
+
+    def test_the_half_year_rates_are_a_second_reading_of_their_quarters(self) -> None:
+        """The company prints a half's organic rate in its own column beside the
+        two quarters, and the half is a weighted mean of the quarters. Each figure
+        is rounded to a whole percent, so the printed half can sit at most one
+        point outside the printed quarters -- a column read from the wrong row or
+        the wrong year lands further out than that."""
+        half = self.staging["halves"][-1]
+        number, year = mc.half_parts(half)
+        pair = [f"{year}Q{2 * number - 1}", f"{year}Q{2 * number}"]
+        checked = 0
+        for block, quarters, rates in (
+                ("half_organic_growth_pct", self.staging["organic_quarters"], self.staging["organic_growth_pct"]),
+                ("region_half_organic_pct", self.staging["region_quarters"], self.staging["region_organic_pct"])):
+            for key, value in self.staging[block][half].items():
+                both = [rates[key][quarters.index(q)] for q in pair]
+                with self.subTest(block=block, key=key):
+                    self.assertLessEqual(min(both) - 1, value)
+                    self.assertLessEqual(value, max(both) + 1)
+                checked += 1
+        self.assertGreaterEqual(checked, 10)
+        self.assertEqual(self.staging["half_organic_growth_pct"][half]["total"],
+                         self.staging["half_growth_components_pct"][half]["organic"])
 
     def test_sections_are_numbered_in_order_and_the_notes_say_how_many(self) -> None:
         """The long record was inserted as a second 「四、」 and the notes kept
@@ -810,6 +843,95 @@ class McChecksTest(unittest.TestCase):
         self.assertIn(f"半年经营利润率 {checks['operating_margin_pct']:.1f}%", card)
         self.assertIn(f"本季有机 {checks['quarter_organic_pct']:+d}%", card)
 
+    # ── the two local reports, as `_checks.note` records them ────────────────
+    def test_the_closure_counts_are_the_reports_section_zero(self) -> None:
+        note = self.checks["note"]["followup_closure"]
+        exhibit = self.exhibits["EX_CLOSURE"]
+        self.assertEqual(dict(zip(exhibit["xlabels"], exhibit["values"])), note["counts"])
+        self.assertEqual(sum(exhibit["values"]), note["total"])
+        self.assertTrue(exhibit["title"].startswith(f"上季 {note['total']} 条待验证问题："), exhibit["title"])
+        for label, count in note["counts"].items():
+            if count:
+                self.assertIn(f"{count} 条{label}", exhibit["title"])
+            else:
+                self.assertIn(f"没有一条{label}", exhibit["title"])
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("上季本地分析稿的"))
+        self.assertEqual(len(table["rows"]), note["total"])
+        tally = {label: sum(1 for row in table["rows"] if row[2] == label) for label in note["counts"]}
+        self.assertEqual(tally, note["counts"])
+
+    def test_the_prior_thresholds_are_the_reports_section_eight(self) -> None:
+        """Every threshold, comparison and number as the prior note wrote it, and
+        each one's words found in the row of that note it was read from."""
+        note = self.checks["note"]["prior_thresholds"]
+        block = self.staging["prior_kpi_settlement"]
+        said = {row["row"]: row["said"] for row in block["rows"]}
+        self.assertEqual([(q["metric"], q["op"], q["threshold"]) for q in block["quantified"]],
+                         [(e["metric"], e["op"], e["threshold"]) for e in note["settled"]])
+        for entry, expected in zip(block["quantified"], note["settled"]):
+            with self.subTest(metric=entry["metric"]):
+                self.assertIn(expected["said"], said[entry["row"]])
+                self.assertEqual(expected["direction"], "up" if entry["op"] in ("≥", ">") else "down")
+        self.assertEqual([(r["metric"], r["op"], r["threshold"]) for r in block["reverse"]],
+                         [(e["metric"], e["op"], e["threshold"]) for e in note["reverse"]])
+        self.assertEqual([u["metric"] for u in block["unsettled"]], [e["metric"] for e in note["unsettled"]])
+        for item, expected in zip(block["reverse"] + block["unsettled"], note["reverse"] + note["unsettled"]):
+            self.assertIn(expected["said"], said[item["row"]], item["metric"])
+        self.assertEqual(self.exhibits["EX_PRIOR_HEADROOM"]["xlabels"], [e["metric"] for e in note["settled"]])
+
+    def test_the_prior_thresholds_are_settled_on_the_staged_figures(self) -> None:
+        """Readings recomputed here from the staged figures, not through the builder,
+        and measured in points: three of these thresholds are zero."""
+        block = self.staging["prior_kpi_settlement"]
+        exhibit = self.exhibits["EX_PRIOR_HEADROOM"]
+        self.assertEqual(exhibit["fmt"], "pp1")
+        held = 0
+        for entry, value in zip(block["quantified"], exhibit["values"]):
+            got = staged_reading(self.staging, entry["reads"])
+            up = entry["op"] in ("≥", ">")
+            with self.subTest(metric=entry["metric"]):
+                self.assertAlmostEqual(value, round((got - entry["threshold"]) * (1 if up else -1), 1))
+            held += {"≥": got >= entry["threshold"], ">": got > entry["threshold"],
+                     "≤": got <= entry["threshold"], "<": got < entry["threshold"]}[entry["op"]]
+        n = len(block["quantified"])
+        self.assertEqual(exhibit["title"], f"上季 {n} 条量化阈值："
+                         + (f"{n} 条全部守住" if held == n else f"{held} 条守住、{n - held} 条被击穿"))
+        # the tracked series behind the quarterly one is drawn whole, against its line
+        for entry in block["quantified"]:
+            kind, _, key = entry["reads"].partition(".")
+            if kind != "organic":
+                continue
+            line = self.exhibits[f"EX_PRIOR_{entry['id'].upper()}"]
+            self.assertEqual(line["series"][0]["values"], self.staging["organic_growth_pct"][key])
+            self.assertEqual(set(line["series"][1]["values"]), {entry["threshold"]})
+            self.assertEqual(len(line["xlabels"]), len(self.staging["organic_quarters"]))
+
+
+def staged_reading(staging: dict, reads: str) -> float:
+    """The latest staged figure a threshold names, read straight off the series."""
+    kind, _, key = reads.partition(".")
+    halves = staging["halves"]
+    half = halves[-1]
+    number, year = mc.half_parts(half)
+    ago = f"H{number} {year - 1}"
+    if kind == "organic":
+        return staging["organic_growth_pct"][key][-1]
+    if kind == "half_organic":
+        return staging["half_organic_growth_pct"][half][key]
+    if kind == "half_region":
+        return staging["region_half_organic_pct"][half][key]
+    if kind == "margin_change":
+        printed = staging["half_margin_company_printed_pct"]
+        return round(printed[half][key] - printed[ago][key], 1)
+    if kind == "organic_negative_run":
+        run = 0
+        for value in reversed(staging["organic_growth_pct"][key]):
+            if value >= 0:
+                break
+            run += 1
+        return run
+    raise KeyError(reads)
+
 
 def roll_forward(staging: dict) -> dict:
     """The series as a Q3 roll would leave it: one revenue-only quarter appended.
@@ -843,7 +965,8 @@ def roll_forward(staging: dict) -> dict:
                              "audit_status": "unaudited"})
     rolled["sources"].append({"label": f"Q{number} {year} 收入公告（{year}-10-14）",
                               "url": "https://www.lvmh.com/en/investors/investors-and-analysts"})
-    for key in ("call_record", "forward_statements", "next_kpi", "quarter_story", "_checks"):
+    for key in ("followup_closure", "prior_kpi_settlement", "call_record", "forward_statements",
+                "next_kpi", "quarter_story", "_checks"):
         del rolled[key]
     return rolled
 
@@ -851,10 +974,11 @@ def roll_forward(staging: dict) -> dict:
 class McRollTest(unittest.TestCase):
     """What a roll can change without touching the builder."""
 
-    STAMPED = ("call_record", "forward_statements", "next_kpi", "quarter_story", "half_story")
-    STORY_ONLY = ("predominantly volume growth", "Bvlgari", "entirely driven by currencies",
+    STAMPED = ("followup_closure", "prior_kpi_settlement", "call_record", "forward_statements",
+               "next_kpi", "quarter_story", "half_story")
+    STORY_ONLY = ("predominantly driven by volume growth", "Bvlgari", "entirely driven by currencies",
                   "10% or more per year", "VSOP", "欧元对美元、日元与韩元", "DFS 大中华",
-                  "剔除中东本季")
+                  "剔除中东本季", "Saks", "50.21%", "上季 12 条待验证问题")
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -868,6 +992,16 @@ class McRollTest(unittest.TestCase):
             stale[key]["period"] = "H1 1999" if key == "half_story" else "Q1 1999"
             with self.subTest(block=key):
                 with self.assertRaisesRegex(ValueError, "stamped"):
+                    mc.build_payload(stale)
+
+    def test_a_settlement_of_some_other_quarters_notes_stops_the_build(self) -> None:
+        """Stamped for this quarter is not enough: what section one settles has to
+        be what last quarter's note set, not a copy carried over from further back."""
+        for key in ("followup_closure", "prior_kpi_settlement"):
+            stale = copy.deepcopy(self.staging)
+            stale[key]["set_in"] = "Q4 2025"
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "last quarter"):
                     mc.build_payload(stale)
 
     def test_the_quarters_own_release_must_be_in_the_sources(self) -> None:
