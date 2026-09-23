@@ -148,6 +148,18 @@ def _intc_threshold_reach() -> int:
                if "警戒线" in ex["title"])
 
 
+def _ma_threshold_reach() -> int:
+    """MA's threshold-line charts -- section one draws last report's tiers on
+    their series, section three this report's -- run the full axis, but how many
+    there are is the reports' doing: the page is rolled by editing
+    `series/ma.json` alone, and a report with more tracked series draws more of
+    them. The pin counts the permanent charts and adds these while published."""
+    page = js_payload(ROOT / "data" / "ma.js", "window.DASH")
+    return sum(1 for section in page["sections"] for ex in section["exhibits"]
+               if any(series["name"].startswith(("上季", "下季")) and "线" in series["name"]
+                      for series in ex.get("series", [])))
+
+
 def _tsm_advanced_count() -> dict:
     """The process-mix note counts the quarters since 2021Q1 in which the page's
     summed 7nm-and-below line equals TSMC's own aggregate. The count grows by
@@ -173,7 +185,7 @@ def _tsm_advanced_count() -> dict:
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
     "amd": 16, "amzn": 13, "arm": 0, "asml": 16, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
-    "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 18, "mc": 5, "mco": 7, "meta": 10,
+    "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 13 + _ma_threshold_reach(), "mc": 5, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
     "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
@@ -535,9 +547,9 @@ CONVERTED = {
         "净收入的同比增量拆成三条腿": "the rebate leg needs gross billings, which is the sum "
                           "of the four assessment lines.",
         "毛计费的同比增量": "same disaggregation floor.",
-        "返点占毛计费从": "same disaggregation floor.",
-        "返点占比的同比变化": "same disaggregation floor, one more year in for the "
-                      "year-on-year run-up.",
+        "返点占毛计费 #%：同比": "same disaggregation floor.",
+        "返点占比同比": "same disaggregation floor, one more year in for the "
+                  "year-on-year run-up.",
         "四条计费线": "the four assessment lines themselves.",
     },
     "msci": {
@@ -1103,8 +1115,8 @@ FLOOR_KIND = {
     'ma': {
         '净收入的同比增量拆成三条腿': 'disclosure',
         '毛计费的同比增量': 'disclosure',
-        '返点占毛计费从': 'disclosure',
-        '返点占比的同比变化': 'disclosure',
+        '返点占毛计费 #%：同比': 'disclosure',
+        '返点占比同比': 'disclosure',
         '四条计费线': 'disclosure',
     },
     # All five were 'coverage' -- "the filings have it, we have not fetched it".
