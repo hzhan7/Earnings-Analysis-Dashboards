@@ -285,8 +285,13 @@ def settled_exhibits(staging: dict, ops: dict, blocks: dict, when: dict) -> list
 
 
 def highlight_exhibits(staging: dict, fin: dict, periods: list, ops: dict,
-                       blocks: dict) -> list:
-    """Section two: what actually moved this quarter."""
+                       blocks: dict) -> dict:
+    """The income-statement charts, by name.
+
+    Section two takes the ones that state this quarter's reading; the two
+    long-run structure charts (`mix`, `share`) go to section four, where a
+    ten-year range is the point rather than a quarter's conclusion.
+    """
     labels = [compact(p) for p in periods]
     revenue = fin["revenue_usd_m"]
     nii = fin["net_interest_revenue_usd_m"]
@@ -529,7 +534,8 @@ def highlight_exhibits(staging: dict, fin: dict, periods: list, ops: dict,
         "src_extra": "两条都取自各季业绩新闻稿的 Financial and Operating Highlights 表。",
     }
 
-    return [mix, growth, share, leverage, margin_chart, volume_price]
+    return {"mix": mix, "growth": growth, "share": share, "leverage": leverage,
+            "margin": margin_chart, "volume_price": volume_price}
 
 
 def next_exhibits(staging: dict, ops: dict, kpi: dict, when: dict) -> list:
@@ -587,8 +593,14 @@ def next_exhibits(staging: dict, ops: dict, kpi: dict, when: dict) -> list:
 
 
 def routine_exhibits(staging: dict, fin: dict, periods: list, ops: dict,
-                     blocks: dict) -> list:
-    """Section four: the routine multi-quarter series, chosen for a broker."""
+                     blocks: dict) -> dict:
+    """The balance-sheet and client series, by name.
+
+    The lending and net-new-asset charts each state this quarter's reading of a
+    conclusion the quarter's analysis leads with (lending carries the margin
+    expansion; Advisor Services carries the flows), so section two takes them;
+    client assets and the share count stay in section four as long-run series.
+    """
     op_periods = ops["periods"]
     labels = [compact(p) for p in periods]
     disclosures = blocks["disclosures"]
@@ -626,7 +638,7 @@ def routine_exhibits(staging: dict, fin: dict, periods: list, ops: dict,
         "ylab": "US$B",
         "note": (
             earned
-            + "把资产规模当经营成绩读是这条线最容易犯的错，下一张图才是公司自己带进来的量。"
+            + "把资产规模当经营成绩读是这条线最容易犯的错，第二节的净新增资产图才是公司自己带进来的量。"
             "<b>两条业务线在 2023Q3/2023Q4 之间换过一次口径</b>：公司 2024 年第四季把 "
             "Retirement Business Services 从 Advisor Services 划到 Investor Services，"
             "只把重述发布到 2023-12-31 为止，更早的季度没有重述值。"
@@ -772,7 +784,7 @@ def routine_exhibits(staging: dict, fin: dict, periods: list, ops: dict,
         "src_extra": "各季业绩新闻稿；保证金贷款为客户资产表中的抵减项，此处取绝对值。",
     }
 
-    return [assets, flows, share_chart, lending]
+    return {"assets": assets, "flows": flows, "shares": share_chart, "lending": lending}
 
 
 def headline_metrics(staging: dict) -> list[str]:
@@ -1024,7 +1036,7 @@ def build_payload(staging: dict) -> dict:
         "银行存款账户费这条线自 2020Q4 起才存在，它随 TD Ameritrade 收购（2020-10-06 完成）进入利润表，因此收入结构图的窗口从 2020Q4 开始而不是补零向前延伸。"
         f"本页的季度序列从 {periods[0]} 起；{provision[0]}–{provision[-1]} 的净收入里还含「贷款损失准备」一项"
         f"（2017 年起移到净收入之外），那{cn_count(len(provision))}季要把它加回五条线才等于净收入。",
-        f"第四节的净新增资产图从 {op_periods_after(ops)} 起：{TDA_CLOSE} 那一季的净新增资产含 TD Ameritrade 客户群一次性并入的 "
+        f"第二节的净新增资产图从 {op_periods_after(ops)} 起：{TDA_CLOSE} 那一季的净新增资产含 TD Ameritrade 客户群一次性并入的 "
         f"US${ops['net_new_assets_usd_bn'][ops['periods'].index(TDA_CLOSE)]:,.1f}B，那是收购而不是获客。",
         sweep_note,
         "调整后 Tier 1 杠杆率是公司自己定义的非 GAAP 指标（在 GAAP 口径上计入累计其他综合收益），公司同时披露 GAAP 口径与调节表；"
@@ -1044,12 +1056,21 @@ def build_payload(staging: dict) -> dict:
     when["monthly_note"] = cn_ordinal(
         1 + next(i for i, note in enumerate(notes) if note.startswith("本页只发布季度口径")))
 
+    income = highlight_exhibits(staging, fin, periods, ops, blocks)
+    balance = routine_exhibits(staging, fin, periods, ops, blocks)
+    # Section two runs in the order the quarter's analysis ranks its findings:
+    # revenue growth, then the volume/price split the growth chart's note hands
+    # on to (so it has to be the very next chart), margin, the lending that
+    # carries the margin expansion, the flows, and the cost side last.
+    highlights = [income["growth"], income["volume_price"], income["margin"],
+                  balance["lending"], balance["flows"], income["leverage"]]
+    routine = [balance["assets"], income["mix"], income["share"], balance["shares"]]
+
     settled_ex = number_exhibits(settled_exhibits(staging, ops, blocks, when), 2)
-    highlight_ex = number_exhibits(highlight_exhibits(staging, fin, periods, ops, blocks),
-                                   (settled_ex[-1]["n"] + 1) if settled_ex else 2)
+    highlight_ex = number_exhibits(highlights, (settled_ex[-1]["n"] + 1) if settled_ex else 2)
     next_ex = number_exhibits(next_exhibits(staging, ops, blocks["next"], when)
                               if blocks["next"] else [], highlight_ex[-1]["n"] + 1)
-    routine_ex = number_exhibits(routine_exhibits(staging, fin, periods, ops, blocks),
+    routine_ex = number_exhibits(routine,
                                  (next_ex[-1]["n"] if next_ex else highlight_ex[-1]["n"]) + 1)
 
 
@@ -1091,8 +1112,8 @@ def build_payload(staging: dict) -> dict:
                 "id": "quarter_highlights",
                 "title": "二、本季重点",
                 "description": (
-                    "五条收入线各自的水平与增速、利率腿与费类腿此消彼长的比重、"
-                    "收入与费用之间的经营杠杆，以及交易业务里量与价反向的那道矛盾。"
+                    "本季分析报告的核心结论，一图一条：五条收入线的同比增速、交易业务里量与价反向、"
+                    "税前利润率、撑起 NIM 扩张的放贷、净新增资产由哪条渠道带进来，以及收入与费用之间的经营杠杆。"
                 ),
                 "exhibits": highlight_ex,
             },
@@ -1106,9 +1127,8 @@ def build_payload(staging: dict) -> dict:
                 "id": "routine",
                 "title": "四、长期常规跟踪",
                 "description": (
-                    "SCHW 专属的常规序列：客户资产与它有多少是市场给的、"
-                    "两条获客渠道的净新增、收购一次发出去又慢慢买回来的股数，"
-                    "以及撑起这轮 NIM 扩张的两条放贷线。"
+                    "SCHW 专属的常规序列：客户资产与它有多少是市场给的、五条收入线的长期结构、"
+                    "利率腿占净收入的比重随周期开合，以及收购一次发出去又慢慢买回来的股数。"
                 ),
                 "exhibits": routine_ex,
             },

@@ -78,6 +78,25 @@ class SchwDashboardTest(unittest.TestCase):
         cls.periods = cls.source["periods"]
 
     # ── shape ────────────────────────────────────────────────────────────────
+    def test_the_four_sections_carry_the_site_titles(self) -> None:
+        """Every company page has the same four sections, in this order, word for word."""
+        self.assertEqual(
+            [(section["id"], section["title"]) for section in self.payload["sections"]],
+            [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+             ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+        for section in self.payload["sections"]:
+            with self.subTest(section=section["id"]):
+                self.assertTrue(section["exhibits"], "an empty section fails the site's format check")
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列", self.payload["notes"][0])
+
+    def test_range_charts_sit_in_the_routine_section(self) -> None:
+        """A chart whose title states a ten-year range is not a finding of this quarter."""
+        highlights = [ex["title"] for ex in self.by_section["quarter_highlights"]]
+        routine = [ex["title"] for ex in self.by_section["routine"]]
+        self.assertFalse([title for title in highlights if "之间来回摆" in title])
+        self.assertTrue([title for title in routine if title.startswith("净利息收入占净收入的比重")])
+        self.assertTrue([title for title in routine if title.startswith("五条收入线（")])
+
     def test_the_channel_split_carries_the_published_recast_and_declares_its_break(self) -> None:
         """The reclassification moves balances between the two channels only.
 
