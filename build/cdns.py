@@ -52,6 +52,7 @@ from build.board import (  # noqa: E402
     headroom_exhibit,
     latest_block,
     midpoint_deviation,
+    minus_sign,
     number_exhibits,
     stamped_block,
     unit_text,
@@ -462,6 +463,26 @@ def threshold_reading(staging: dict, guidance: dict | None, reads: str) -> dict:
     raise KeyError(f"threshold reads {reads!r} has no reading defined in build/cdns.py")
 
 
+def first_half_backlog(long: dict) -> dict[str, list[tuple[int, float]]]:
+    """Each year's first-half change in the backlog itself (prior year-end → Q2), by sign.
+
+    Management says backlog is "normally" drawn down in the first half; the
+    record, read here, is what the page prints instead.
+    """
+    quarters, backlog = long["quarters"], long["backlog_usd_bn"]
+    halves: dict[str, list[tuple[int, float]]] = {"grew": [], "flat": [], "fell": []}
+    for year in sorted({int(quarter[:4]) for quarter in quarters}):
+        start, end = f"{year - 1}Q4", f"{year}Q2"
+        if start not in quarters or end not in quarters:
+            continue
+        i, j = quarters.index(start), quarters.index(end)
+        if backlog[i] is None or backlog[j] is None:
+            continue
+        change = round(backlog[j] - backlog[i], 1)
+        halves["grew" if change > 0 else "fell" if change < 0 else "flat"].append((year, change))
+    return halves
+
+
 def coverage_pattern(long: dict, ratio: list[float | None]) -> str:
     """What the coverage multiple does over a first half, counted from the record.
 
@@ -471,19 +492,18 @@ def coverage_pattern(long: dict, ratio: list[float | None]) -> str:
     others. What the record does support is the multiple's own pattern, so
     that is what is counted and printed.
     """
-    quarters, backlog = long["quarters"], long["backlog_usd_bn"]
-    years = sorted({int(quarter[:4]) for quarter in quarters})
-    fell, rose, level = [], [], {"grew": [], "flat": [], "fell": []}
-    for year in years:
+    quarters = long["quarters"]
+    fell, rose = [], []
+    for year in sorted({int(quarter[:4]) for quarter in quarters}):
         start, end = f"{year - 1}Q4", f"{year}Q2"
         if start not in quarters or end not in quarters:
             continue
         i, j = quarters.index(start), quarters.index(end)
-        if None in (ratio[i], ratio[j], backlog[i], backlog[j]):
+        if ratio[i] is None or ratio[j] is None:
             continue
         (fell if ratio[j] < ratio[i] else rose).append(year)
-        change = round(backlog[j] - backlog[i], 1)
-        level["grew" if change > 0 else "fell" if change < 0 else "flat"].append(year)
+    halves = first_half_backlog(long)
+    level = {sign: [year for year, _ in pairs] for sign, pairs in halves.items()}
     span = sorted(fell + rose)
     if not span:
         return ""
@@ -1272,15 +1292,25 @@ def build_payload(staging: dict) -> dict:
         low, high = hexagon["operating_margin_range_pct"]
         values["hexagon_margin"] = f"{low:.0f}–{high:.0f}%"
     if balance is not None:
-        interim = balance.get("other_long_term_liabilities_interim")
-        start, end = balance["other_long_term_liabilities"]
-        if interim:
-            jump_date = interim["date"]
-            month = int(jump_date[5:7])
-            values["oltl_jump_quarter"] = f"{jump_date[:4]}Q{(month - 1) // 3 + 1}"
-            values["oltl_jump"] = f"${interim['value'] - start:,.1f}M"
-        values["oltl_change"] = f"${end - start:,.1f}M"
+        taxes = balance.get("other_long_term_liabilities_components", {}).get("deferred_income_taxes")
+        if taxes:
+            values["dtl_start"], values["dtl_end"] = (f"${value:,.1f}M" for value in taxes)
+    acquisition = staging.get("acquisition_dne")
+    if acquisition:
+        values["dne_shares"] = f"{acquisition['shares_issued_m']:.1f}M"
+        values["dne_stock_value"] = f"${acquisition['stock_fair_value_usd_m']:,.1f}M"
+        values["dne_ltl"] = f"${acquisition['long_term_liabilities_assumed_usd_m']:,.1f}M"
+    # The years before this one in which the backlog itself grew over the first
+    # half: the claim that it is "normally drawn down" is management's.
+    earlier = [f"{when} 年 +US${change:.1f}B"
+               for when, change in first_half_backlog(staging["long_history"])["grew"] if when != year]
+    # Placeholder names are letters and underscores only: `fill_story` passes
+    # a name with a digit in it through as literal braces.
+    values["half_growth_years"] = "、".join(earlier) or "申报记录里没有别的年份"
     if plan:
+        values["fy_prior_label"] = fy["labels"][-1]
+        values["share_guide_increase"] = (
+            f"{mid(plan['current']['diluted_shares_m']) - fy['diluted_shares_m'][-1]:.1f}M 股")
         values["next_buyback"] = f"${plan['next']['buyback_usd_m']:,.0f}M"
         values["buyback_policy"] = plan["current"].get("buyback_policy", "")
         values["fy_label"] = f"{plan['fiscal_year']}E"
@@ -1479,6 +1509,20 @@ def build_payload(staging: dict) -> dict:
             + (f"隐含同比 {signed(plan['nq_yoy'])}、" if "nq_yoy" in plan else "")
             + f"环比{'仅' if 'nq_yoy' in plan and abs(qoq) < abs(plan['nq_yoy']) / 4 else ''} {signed(qoq)}。"
         )
+    # The acquisition is inside the reported growth; the 10-Q's pro forma
+    # revenue (as if D&E had been owned in both periods) is the one filed
+    # figure that takes it out of the comparison. No organic rate is filed.
+    pro_forma = stamped_block(staging, "pro_forma_revenue_usd_m", period)
+    pro_forma_words = ""
+    if pro_forma is not None:
+        if abs(pro_forma["three_months"][0] - revenue[-1]) > 0.001:
+            raise ValueError("`pro_forma_revenue_usd_m` must open with this quarter's reported revenue")
+        quarter_word, year_word = display_period(period).split()
+        if pro_forma["labels"] != [f"{quarter_word} {year_word}", f"{quarter_word} {int(year_word) - 1}"]:
+            raise ValueError("`pro_forma_revenue_usd_m.labels` must be this quarter and the same quarter a year earlier")
+        pro_forma_words = (
+            f"同比 {revenue_yoy[-1]:.1f}% 里含 Hexagon D&E 的并表：10-Q 附注 2 的备考收入（假设 D&E 两期都已并入）"
+            f"同比是 {signed(pct_change(*pro_forma['three_months']))}，公司没有单独披露剔除并购的有机增速。")
     highlights = [
         {
             "kind": "gs_bar",
@@ -1506,8 +1550,9 @@ def build_payload(staging: dict) -> dict:
                 "披露过，所以坎有多高是量得出来的：收入 525.5（605）对 517.3（606）。"
                 "同比线在 2018 那四季因此跨基数，读它要连着这句话一起读。"
                 f"本季指引区间 ${quarter_guide_low:,.0f}–{quarter_guide_high:,.0f}M，"
-                f"实际 ${revenue_shown[-1]:,.0f}M，{versus_words}；"
+                f"实际 ${revenue_shown[-1]:,.0f}M，{versus_words}（区间与实际见 Exhibit {{EX_REV_RANGE}}）；"
                 + next_words
+                + pro_forma_words
                 + f"服务收入同比 {signed(services_yoy)}"
                 + (f"，{story_or['services']}。" if story_or.get("services") else "。")
             ),
@@ -1557,6 +1602,53 @@ def build_payload(staging: dict) -> dict:
         ),
         "src_extra": MIX_PROVENANCE,
     })
+
+    # The analysis' headline evidence is a gap between two companies' IP growth.
+    # Synopsys's side is its filed segment revenue; the quarter the analysis
+    # used and the quarter the site's calendar pairs with Cadence's are both
+    # drawn, because the second was filed after the analysis was written and
+    # narrows the gap.
+    peers = stamped_block(staging, "peer_ip_growth", period)
+    if peers is not None:
+        months = {1: "1–3 月", 2: "4–6 月", 3: "7–9 月", 4: "10–12 月"}[quarter_number]
+        rows = [(f"Cadence IP（{months}，占比法 D）", ip_yoy)] + [
+            (f"{peers['peer']} Design IP（{row['months']}）", pct_change(*row["design_ip_usd_m"]))
+            for row in peers["quarters"]]
+        compared = [row for row in peers["quarters"] if row.get("analysis_compared")]
+        later = [row for row in peers["quarters"] if not row.get("analysis_compared")]
+        floor = company_growth["semiconductor_ip_yoy_floor"] if company_growth is not None else None
+        peer_words = "、".join(minus_sign(f"{pct_change(*row['design_ip_usd_m']):+.1f}%") + f"（{row['months']}）"
+                               for row in peers["quarters"])
+        highlights.append({
+            "kind": "diverging_bars",
+            "title": ((f"IP 同比：Cadence「超过 {floor:.0f}%」" if floor is not None else f"IP 同比：Cadence {ip_yoy:+.0f}%")
+                      + f"，{peers['peer']} Design IP 同期 {peer_words}"),
+            "xlabels": [label for label, _ in rows],
+            "values": [round(value, 1) for _, value in rows],
+            "legend": "同比增速",
+            "positive_label": "同比增长",
+            "negative_label": "同比下降",
+            "fmt": "pct1",
+            "yfmt": "pct1",
+            "label_fmt": "pct1",
+            "ylab": "同比 %",
+            "zero_line": True,
+            "note": (
+                "本站季报分析拿来说「份额转移」的是 Cadence 与 "
+                + "、".join(f"{peers['peer']} {row['months']}（{row['period_end']} 止）" for row in compared)
+                + "的对照，差约 " + "、".join(f"{ip_yoy - pct_change(*row['design_ip_usd_m']):.0f}pp" for row in compared)
+                + "——那是分析写成时对方最新的一季。两家财季错开："
+                + "；".join(f"{row['months']}那一季 {row['filed_on']} 才申报，与 Cadence {months}重叠更多，"
+                           f"Design IP 同比 {pct_change(*row['design_ip_usd_m']):+.1f}%，差距收窄到约 "
+                           f"{ip_yoy - pct_change(*row['design_ip_usd_m']):.0f}pp" for row in later)
+                + "。Cadence 这一根是整数占比反推，精度约 ±"
+                f"{(ip_high - ip_low) / 2:.0f}pp" + (f"，公司自己的说法是「超过 {floor:.0f}%」" if floor is not None else "")
+                + f"；{peers['peer']} 的 Design Automation 自 2025 年 7 月起含 Ansys，与 Core EDA 不可比，这里不画。"
+            ),
+            "src_extra": ("Cadence：CFO Commentary 的产品线整数占比 × 10-Q 总收入，自算（D）；"
+                          + "；".join(f"{peers['peer']} {row['months']}：{row['source']}" for row in peers["quarters"])
+                          + "；同比为自算。"),
+        })
 
     china_values = {
         "china_yoy_by_share": f"{china_share_yoy_by_share:+.0f}%",
@@ -1742,13 +1834,19 @@ def build_payload(staging: dict) -> dict:
         return "连续两季走低" if a > b > c else "连续两季走高" if a < b < c else ""
 
     cov_now, cov_year_ago = round(coverage[-1], 2), round(coverage_all[-5], 2)
+    trend = moved_twice(coverage)
+    versus_year = ("高于" if cov_now > cov_year_ago else "低于" if cov_now < cov_year_ago else "持平于")
+    # The analysis reads the multiple sequentially (two quarters down); the
+    # record says the multiple falls in most first halves, so the same-quarter
+    # comparison is printed beside it rather than instead of it.
+    against = (trend == "连续两季走低" and versus_year == "高于") or (trend == "连续两季走高" and versus_year == "低于")
+    seasonal_words = threshold_reading(staging, guidance, "coverage")["note"]
     highlights.append({
         "kind": "gs_bar",
         "title": (
             f"backlog {'创纪录的 ' if backlog_record else ''}US${backlog[-1]:.1f}B，"
-            f"覆盖倍数 {coverage[-1]:.2f}x "
-            f"{'高于' if cov_now > cov_year_ago else '低于' if cov_now < cov_year_ago else '持平于'}"
-            f"去年同期的 {coverage_all[-5]:.2f}x"
+            f"覆盖倍数{trend + '到 ' if trend else ' '}{coverage[-1]:.2f}x，"
+            f"{'但' if against else ''}{versus_year}去年同期的 {coverage_all[-5]:.2f}x"
         ),
         "xlabels": labels,
         "values": backlog,
@@ -1766,11 +1864,9 @@ def build_payload(staging: dict) -> dict:
         },
         "note": (
             f"绝对额{'是历史最高' if backlog_record else '不是历史最高'}，覆盖倍数 {coverage[-3]:.2f}x → {coverage[-2]:.2f}x → "
-            f"{coverage[-1]:.2f}x {moved_twice(coverage)}".rstrip() + "。"
-            "<b>但这条线有季节性，不能按环比读</b>："
-            + (f"{story_or['backlog_quote']}，所以" if story_or.get("backlog_quote") else "")
-            + f"有意义的比较是同一季度——本季 {coverage[-1]:.2f}x，"
-            f"去年同期 {coverage_all[-5]:.2f}x"
+            f"{coverage[-1]:.2f}x {trend}".rstrip() + "。"
+            + (f"<b>环比走低本身说明不了什么</b>——{seasonal_words}" if seasonal_words else "")
+            + f"同一季度的对照：本季 {coverage[-1]:.2f}x，去年同期 {coverage_all[-5]:.2f}x"
             + (f"，前年同期 {coverage_all[-9]:.2f}x。" if len(coverage_all) >= 9 and coverage_all[-9] is not None
                else "。")
             + told("backlog_news")
@@ -1840,7 +1936,7 @@ def build_payload(staging: dict) -> dict:
     # ── section three: the same discipline pointed forward ──────────────────
     next_charts = []
     next_table = followup_table = None
-    next_words = ""
+    next_section_words = ""
     if next_kpi is not None:
         if period_order(next_kpi["for_period"]) <= period_order(period):
             raise ValueError(f"series block `next_kpi` is written for {next_kpi['for_period']}, "
@@ -1877,7 +1973,7 @@ def build_payload(staging: dict) -> dict:
         overview["positive_label"] = "安全 / 已达到"
         overview["negative_label"] = "越线 / 未达到"
         next_charts = [overview] + charts
-        next_words = (
+        next_section_words = (
             f"本季报告第 8 节的阈值逐条拆成 {len(next_lines)} 条线：{len(bars)} 条有本季读数，总览量它们离线多远，"
             f"每个读数再画一张历史图"
             + (f"；{'、'.join(line_label(line) for line in waiting if line['verdict'] == UNDECIDED)} "
@@ -1906,11 +2002,17 @@ def build_payload(staging: dict) -> dict:
                for item in not_drawn],
         }
         if next_kpi.get("followups"):
+            # A question the filings have already answered says so, with the
+            # figures read from the series; the rest wait for next quarter.
+            answered = next_kpi.get("answered", {})
+            if set(answered) - {str(i) for i in range(1, len(next_kpi["followups"]) + 1)}:
+                raise ValueError("`next_kpi.answered` names a follow-up that does not exist")
             followup_table = {
                 "n": 0,
                 "title": f"本季分析文末 {len(next_kpi['followups'])} 条追问（下季第 0 节逐条结算）",
-                "headers": ["#", "追问"],
-                "rows": [[str(i), text] for i, text in enumerate(next_kpi["followups"], 1)],
+                "headers": ["#", "追问", "申报里已有的答案"],
+                "rows": [[str(i), text, fill_story(answered[str(i)], values) if str(i) in answered else "—"]
+                         for i, text in enumerate(next_kpi["followups"], 1)],
             }
 
     # ── section four: the routine series chosen for this company ────────────
@@ -2513,6 +2615,21 @@ def build_payload(staging: dict) -> dict:
                 chinese, f"${start:,.1f}M", f"${end:,.1f}M",
                 f"${end - start:+,.1f}M", f"{pct_change(end, start):+.1f}% D",
             ])
+            # The 10-Q's balance-sheet note breaks this line down; the parts
+            # must add back to the line or the breakdown is from another date.
+            parts = balance.get(f"{name}_components") if name == "other_long_term_liabilities" else None
+            if parts:
+                for side in (0, 1):
+                    if abs(sum(values[side] for values in parts.values()) - balance[name][side]) > 0.002:
+                        raise ValueError(f"`balance_sheet_usd_m.{name}_components` does not add up to the line")
+                for part, words in (("deferred_income_taxes", "其中：递延所得税负债"),
+                                    ("operating_lease_liabilities", "其中：经营租赁负债"),
+                                    ("other_accrued_liabilities", "其中：其他应计负债")):
+                    part_start, part_end = parts[part]
+                    balance_rows.append([
+                        words, f"${part_start:,.1f}M", f"${part_end:,.1f}M",
+                        f"${part_end - part_start:+,.1f}M", f"{pct_change(part_end, part_start):+.1f}% D",
+                    ])
         tables.append({
             "n": 0,
             "title": f"资产负债表变动（{start_label} → {end_label}）",
@@ -2643,9 +2760,36 @@ def build_payload(staging: dict) -> dict:
             f"上季{line_name(line)} 落在区间里，判为无法判定，而不是没到" if line["verdict"] == UNDECIDED
             else f"上季{line_name(line)} 在整个区间之外，判为{line['verdict']}" for line in btb_lines) + "。"
            if btb_lines else "，只能当方向看。")
-        + "覆盖倍数另有季节性：backlog 每年上半年被消耗，该倍数在第二、三季走低、第四季回补，"
-        "只能同比不能环比读。"
+        + seasonal_words
     )
+    if balance is not None and balance.get("other_long_term_liabilities_components"):
+        parts = balance["other_long_term_liabilities_components"]
+        start, end = balance["other_long_term_liabilities"]
+        # The quarter-end in between (the earlier 10-Q's same note) says when
+        # the change happened; its parts must add back to its own total.
+        interim = balance.get("other_long_term_liabilities_interim")
+        timing = ""
+        if interim:
+            if not balance["labels"][0] < interim["date"] < balance["labels"][1]:
+                raise ValueError("`balance_sheet_usd_m.other_long_term_liabilities_interim` is not between the two columns")
+            month = int(interim["date"][5:7])
+            timing = (f"，其中 {'+' if interim['value'] >= start else '−'}${abs(interim['value'] - start):,.1f}M "
+                      f"发生在 {interim['date'][:4]}Q{(month - 1) // 3 + 1}")
+            if all(part in interim for part in parts):
+                if abs(sum(interim[part] for part in parts) - interim["value"]) > 0.002:
+                    raise ValueError("`balance_sheet_usd_m.other_long_term_liabilities_interim` does not add up")
+                timing += f"（{interim['date']} 的递延所得税负债已是 ${interim['deferred_income_taxes']:,.1f}M）"
+        notes.append(
+            f"其他长期负债在 {balance['labels'][0]} 到 {balance['labels'][1]} 之间"
+            f"{'增加' if end >= start else '减少'} ${abs(end - start):,.1f}M{timing}；"
+            "10-Q 附注 13 把它拆开了："
+            + "、".join(f"{words} {'+' if pair[1] >= pair[0] else '−'}${abs(pair[1] - pair[0]):,.1f}M"
+                       for part, words in (("deferred_income_taxes", "递延所得税负债"),
+                                           ("operating_lease_liabilities", "经营租赁负债"),
+                                           ("other_accrued_liabilities", "其他应计负债"))
+                       for pair in [parts[part]])
+            + (f"；附注 2 的 Hexagon D&E 购买价分摊里承接的长期负债是 {values['dne_ltl']}" if "dne_ltl" in values else "")
+            + "。明细列在核对抽屉的资产负债表里。")
     market_note = "市场预期一律标注为「市场预期」并给出取数时点，不写卖方机构名，也不发布评级、目标价或估值。"
     if consensus is not None and consensus.get("source_conflict_note"):
         market_values = {
@@ -2698,22 +2842,21 @@ def build_payload(staging: dict) -> dict:
                 "id": "quarter_highlights",
                 "title": "二、本季重点",
                 "description": (
-                    "收入与产品线结构、中国这条没人问的线、GAAP 与非 GAAP 毛利率的背离、"
+                    "收入与产品线结构、"
+                    + (f"与 {peers['peer']} 的 IP 增速对照、" if peers is not None else "")
+                    + ("中国这条没人问的线、" if story is not None else "中国收入、")
+                    + "GAAP 与非 GAAP 毛利率的背离、"
                     + ("全年指引倒推出来的 " + plan["remainder_word"] + " 利润率，"
                        if plan and "remainder_margin" in plan else "")
                     + "以及订单存量与资本分配。"
-                ) if story is not None else (
-                    "收入与产品线结构、中国收入、GAAP 与非 GAAP 毛利率的背离、"
-                    + ("全年指引倒推出来的 " + plan["remainder_word"] + " 利润率，"
-                       if plan and "remainder_margin" in plan else "")
-                    + "以及订单存量与资本分配。"
+                    + told("undrawn")
                 ),
                 "exhibits": highlight_ex,
             },
             {
                 "id": "next_quarter",
                 "title": "三、下季要跟踪什么",
-                "description": (next_words if next_kpi is not None else "本季没有设定下季阈值。"),
+                "description": (next_section_words if next_kpi is not None else "本季没有设定下季阈值。"),
                 "exhibits": next_ex,
             },
             {

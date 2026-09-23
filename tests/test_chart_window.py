@@ -707,7 +707,9 @@ CONVERTED = {
                     "performance obligations, which do not exist before 2018Q1; "
                     "the 2017 year-end figure is annual and has no quarterly "
                     "series behind it.",
-        "backlog 创纪录": "same RPO floor.",
+        # Keyed on the words that stay when the quarter's reading changes: the
+        # title says 「创纪录」 only in a record quarter.
+        "US$#B，覆盖倍数": "same RPO floor.",
         "backlog / 过去四季收入": "same RPO floor.",
         "单季 book-to-bill": "a book-to-bill needs two consecutive quarter-end backlog figures, "
                             "and Cadence prints backlog each quarter only from the 2020 releases "
@@ -723,8 +725,8 @@ CONVERTED = {
         "经营现金流 $#M、同比": "same.",
         "单季回购金额": "same.",
         "单季回购 $#M，摊薄股数": "same.",
-        "三条产品线的分化": 'not a floor: Cadence\'s "Revenue Mix by Product Group" table is unchanged in structure back to 2016Q1 -- the same categories this chart plots. The claim that the 2016-2017 releases grouped products differently does not survive reading them. Fetch gap; backfill in flight.',
-        "GAAP 毛利率降到": "gross margin is carried for the reviewed window.",
+        "三条产品线": 'not a floor: Cadence\'s "Revenue Mix by Product Group" table is unchanged in structure back to 2016Q1 -- the same categories this chart plots. The claim that the 2016-2017 releases grouped products differently does not survive reading them. Fetch gap; backfill in flight.',
+        "GAAP 毛利率": "gross margin is carried for the reviewed window.",
         "本季非 GAAP 营业利润率": "this chart pairs the quarterly series with two guided "
                           "points, so it runs on the reviewed window plus two.",
     },
@@ -1075,7 +1077,7 @@ FLOOR_KIND = {
         '非 GAAP 营业利润率（本图仅近 20 季）': 'design',
         '非 GAAP EPS（本图仅近 20 季）': 'design',
         '季末 backlog': 'disclosure',
-        'backlog 创纪录': 'disclosure',
+        'US$#B，覆盖倍数': 'disclosure',
         'backlog / 过去四季收入': 'disclosure',
         '单季 book-to-bill': 'disclosure',
         '中国收入 $': 'disclosure',
@@ -1084,8 +1086,8 @@ FLOOR_KIND = {
         '经营现金流 $#M、同比': 'coverage',
         '单季回购金额': 'coverage',
         '单季回购 $#M，摊薄股数': 'coverage',
-        '三条产品线的分化': 'coverage',
-        'GAAP 毛利率降到': 'coverage',
+        '三条产品线': 'coverage',
+        'GAAP 毛利率': 'coverage',
         '本季非 GAAP 营业利润率': 'coverage',
     },
     'cme': {

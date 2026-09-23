@@ -271,7 +271,56 @@
         }
       ],
       "followups_total": 12
-    }
+    },
+    "pro_forma_revenue_usd_k": [
+      1584451,
+      1348687
+    ],
+    "dne_consideration": {
+      "shares_m": 3.2,
+      "stock_fair_value_usd_m": 902.2,
+      "long_term_liabilities_assumed_usd_k": 329850
+    },
+    "other_long_term_liabilities_usd_k": {
+      "dates": [
+        "2025-12-31",
+        "2026-06-30"
+      ],
+      "deferred_income_taxes": [
+        47997,
+        349873
+      ],
+      "operating_lease_liabilities": [
+        136289,
+        169159
+      ],
+      "other_accrued_liabilities": [
+        223243,
+        227835
+      ],
+      "total": [
+        407529,
+        746867
+      ],
+      "interim": {
+        "date": "2026-03-31",
+        "deferred_income_taxes": 351475,
+        "operating_lease_liabilities": 177184,
+        "other_accrued_liabilities": 217980,
+        "total": 746639
+      }
+    },
+    "snps_design_ip_usd_k": {
+      "FY2026Q2": [
+        454209,
+        482031
+      ],
+      "FY2026Q3": [
+        473851,
+        427571
+      ]
+    },
+    "source_10q_notes": "Q2 2026 10-Q（acc 0000813672-26-000092）附注 2：Pro forma total revenue 1,584,451 / 1,348,687（三个月），3.2 million shares、$902.2 million、Long-term liabilities 329,850；附注 13：Deferred income taxes 349,873 / 47,997、Operating lease liabilities 169,159 / 136,289、Other accrued liabilities 227,835 / 223,243、合计 746,867 / 407,529；Q1 2026 10-Q（acc 0000813672-26-000047）附注 13 的 2026-03-31 栏：Deferred income taxes 351,475、Operating lease liabilities 177,184、Other accrued liabilities 217,980、合计 746,639。Synopsys 10-Q Note 17：Design IP Revenue 454,209 / 482,031（三个月至 2026-04-30）、473,851 / 427,571（三个月至 2026-07-31）。"
   },
   "period_labelling": {
     "convention": "自然年季度",
@@ -1892,7 +1941,7 @@
     "asc_606_break": {
       "new_quarters": "ASC 605",
       "existing": "ASC 606（2018Q1 起）",
-      "measured": "Cadence 于 2018 财年首日以 modified retrospective 采用 ASC 606，2017 及以前**不重述**。2018Q1 在两套准则下都被披露过，所以这道坎可以直接量：收入 525.457（605）对 517.313（606），差 8.144；GAAP 营业利润率 18.5% 对 16.6%；非 GAAP 营业利润率 29.5% 对 27.8%，差 1.7pp；非 GAAP EPS /bin/zsh.44 对 /bin/zsh.40。来源：2018-04-23 与 2018-07-23 两份 CFO Commentary 同时印了 606 表与 605 五季对照表。",
+      "measured": "Cadence 于 2018 财年首日以 modified retrospective 采用 ASC 606，2017 及以前**不重述**。2018Q1 在两套准则下都被披露过，所以这道坎可以直接量：收入 525.457（605）对 517.313（606），差 8.144；GAAP 营业利润率 18.5% 对 16.6%；非 GAAP 营业利润率 29.5% 对 27.8%，差 1.7pp；非 GAAP EPS $0.44 对 $0.40。来源：2018-04-23 与 2018-07-23 两份 CFO Commentary 同时印了 606 表与 605 五季对照表。",
       "why_one_axis": "本站把两段画在同一根横轴上，但**在图注里标出 2018Q1 那道坎**，不做接缝平滑，也不把 605 的数换算成 606。1.7pp 的利润率差是准则变更，不是经营变化；读者需要知道 2016–2017 那一段与 2018 之后不是同一把尺。",
       "trap": "2018Q1–2018Q3 三份 CFO Commentary 的五季趋势表是 **ASC 605** 口径，而同一份 8-K 的 EX-99.1 损益表是 606。只读趋势表会给 2018 三个季度写进 605 的数，而仓库里已有的是 606 的数。"
     },
@@ -2151,9 +2200,26 @@
       407.529,
       746.867
     ],
+    "other_long_term_liabilities_components": {
+      "deferred_income_taxes": [
+        47.997,
+        349.873
+      ],
+      "operating_lease_liabilities": [
+        136.289,
+        169.159
+      ],
+      "other_accrued_liabilities": [
+        223.243,
+        227.835
+      ]
+    },
     "other_long_term_liabilities_interim": {
       "date": "2026-03-31",
-      "value": 746.639
+      "value": 746.639,
+      "deferred_income_taxes": 351.475,
+      "operating_lease_liabilities": 177.184,
+      "other_accrued_liabilities": 217.98
     },
     "stockholders_equity": [
       5474.181,
@@ -2167,7 +2233,55 @@
       2500.0,
       2500.0
     ],
-    "note": "两栏相隔半年。其他长期负债在这半年里增加 $339.3M（+83.3%），而其中 $339.1M 落在 2026Q1（季末余额 $746.6M）、2026Q2 只增加 $0.2M——即这笔跳升与 Hexagon D&E 并表同季发生。公司未作解释、分析师亦未提问；本页只列示该变动与其发生时点，不对其构成作任何归因"
+    "note": "两栏相隔半年。其他长期负债增加 $339.3M，其中 $339.1M 落在 2026Q1（D&E 并表的那一季）。构成取自 10-Q 附注 13（Balance Sheet Components）：递延所得税负债 $48.0M → $349.9M，经营租赁负债 $136.3M → $169.2M，其他应计负债 $223.2M → $227.8M；10-Q 附注 2 的 D&E 购买价分摊里承接的长期负债是 $329.9M。"
+  },
+  "acquisition_dne": {
+    "shares_issued_m": 3.2,
+    "stock_fair_value_usd_m": 902.2,
+    "long_term_liabilities_assumed_usd_m": 329.85,
+    "source": "Q1 与 Q2 2026 10-Q 附注 2 Acquisitions（acc 0000813672-26-000047、0000813672-26-000092）：aggregate purchase consideration, net of cash acquired of $154.6 million, was $2.9 billion ... $2.2 billion of cash and non-cash consideration of 3.2 million shares ... aggregate acquisition date fair value of $902.2 million；购买价分摊表 Long-term liabilities 329,850（千美元）。"
+  },
+  "pro_forma_revenue_usd_m": {
+    "period": "Q2 2026",
+    "labels": [
+      "Q2 2026",
+      "Q2 2025"
+    ],
+    "three_months": [
+      1584.451,
+      1348.687
+    ],
+    "source": "Q2 2026 10-Q 附注 2 Pro Forma Financial Information（Unaudited）：Pro forma total revenue，假设 D&E 自比较期期初已并入。"
+  },
+  "peer_ip_growth": {
+    "period": "Q2 2026",
+    "peer": "Synopsys",
+    "quarters": [
+      {
+        "label": "Synopsys FY26 Q2",
+        "months": "2–4 月",
+        "period_end": "2026-04-30",
+        "filed_on": "2026-05-27",
+        "design_ip_usd_m": [
+          454.209,
+          482.031
+        ],
+        "analysis_compared": true,
+        "source": "Synopsys FY2026 Q2 10-Q（acc 0000883241-26-000018）Note 17 Segment Disclosure，Design IP Revenue"
+      },
+      {
+        "label": "Synopsys FY26 Q3",
+        "months": "5–7 月",
+        "period_end": "2026-07-31",
+        "filed_on": "2026-08-26",
+        "design_ip_usd_m": [
+          473.851,
+          427.571
+        ],
+        "analysis_compared": false,
+        "source": "Synopsys FY2026 Q3 10-Q（acc 0000883241-26-000025，2026-08-26）Note 17 Segment Disclosure，Design IP Revenue"
+      }
+    ]
   },
   "ytd_cash_bridge_usd_m": {
     "period": "Q2 2026",
@@ -2326,10 +2440,10 @@
       "implied_below_ytd"
     ],
     "headline_lead": "真正变强的不是收入而是订单",
-    "headline_backlog": "但在管理层自己称的「低续约年」里，{ytd_word} backlog 逆季节性净增 {ytd_backlog_add} 到 {backlog}",
+    "headline_backlog": "但在管理层自己称的「低续约年」里，{ytd_word} backlog 仍净增 {ytd_backlog_add} 到 {backlog}",
     "headline_cost": "代价写在下半年",
     "services": "主要来自并表而非主业结构变化",
-    "mix": "IP 是本季最快的一条，也是最该打折的一条：CFO 在电话会上主动设限「IP revenue can be timing dependent from quarter-to-quarter... I wouldn't annualize any one quarter」，而 Intel 协议正是在本季签署。SD&A 的表观增速里超过三分之二来自 Hexagon D&E 并表，不是经营。",
+    "mix": "IP 是本季最快的一条，也是最该打折的一条：CFO 在电话会上主动设限「IP revenue can be timing dependent from quarter-to-quarter... I wouldn't annualize any one quarter」，而 Intel 协议正是在本季签署。SD&A 的 +37% 里有多少是 Hexagon D&E 并表，公司没有披露；电话会上 CFO 说 Hexagon 让经常性收入增速多了约 4 个百分点，本站的季报分析据此估算其中超过三分之二是并表，不是经营。",
     "china": "<b>翻倍几乎全部是基数</b>：去年同期正处在出口管制与调查期的低谷（{china_year_ago}），而本季的绝对额仍低于 {china_peak_quarter}。中国不是在突破，是在高位震荡。麻烦在下一季——{china_peak_quarter} 是全序列最硬的基数，而管理层本季<b>没有重申</b>上季给出的「全年约 13%」口径，15 个分析师问题里中国出现 0 次。全年指引本身则明确建立在「出口管制维持现状」的假设上。",
     "gross_margin_cause": "全部来自 Hexagon D&E 带来的无形资产摊销。",
     "gross_margin_tail": "——在硬件（低毛利）创纪录、并购资产（低毛利）刚并表的一季里仍在扩张。",
@@ -2341,18 +2455,17 @@
     "giveback": "管理层把这笔让步称作「targeted investments」，但没有给出任何金额。",
     "cash_verdict": "上季的现金流质疑被彻底证伪",
     "capex": "自研硬件与数据中心，对一家资产轻的软件公司来说是新出现的一条腿。",
-    "backlog_quote": "管理层自己的说法是「normally, first half, we draw down on our backlog」",
-    "backlog_news": "真正的新信息是：在一个管理层承认的「低续约年」里，{ytd_word} backlog 逆季节性净增 {ytd_backlog_add}。",
+    "backlog_news": "管理层把这当作本季的新变化：在一个他们自称的「低续约年」里，{ytd_word} backlog 净增 {ytd_backlog_add}（原话「normally, first half, we draw down on our backlog, but this year has been good growth」）；申报记录里，上半年 backlog 净增此前也出现过：{half_growth_years}。",
     "buyback": "<b>按公司承诺的「{buyback_policy}」，这笔钱的全部作用是抵消股权激励稀释</b>，并非缩股：",
     "eps_reading": "这与本季收入端「基本符合、EPS 小超」的读数是同一件事的两个切面。",
-    "share_note": "全年股数上升还包含 Hexagon D&E 交易中以股票支付的对价，公司未单独披露其股数。",
+    "share_note": "Hexagon D&E 的对价里有 {dne_shares} 股 Cadence 股票（收购日公允价值 {dne_stock_value}，10-Q 附注 2），全年摊薄股数指引中值比 {fy_prior_label} 年多 {share_guide_increase}。",
     "rnd": "管理层口径的全年研发同比约 +19%（2025 年为 +10%），是下半年利润率让步的主要去向；",
     "margin_promise": "管理层对 2027 年的明示承诺是「better operating margins next year」，即必须高于 {fy_label} 的 {fy_margin_mid}；这是一句可证伪的话。",
     "cards": [
       {
         "tag": "亮点",
-        "title": "低续约年里订单逆季节性净增",
-        "body": "backlog {backlog}{backlog_record}，{ytd_word}逆季节性净增 {ytd_backlog_add}；经营现金流 {ocf}、同比 {ocf_yoy}。"
+        "title": "低续约年里订单仍净增",
+        "body": "backlog {backlog}{backlog_record}，{ytd_word}净增 {ytd_backlog_add}，此前上半年净增的还有 {half_growth_years}；经营现金流 {ocf}、同比 {ocf_yoy}。"
       },
       {
         "tag": "张力",
@@ -2365,7 +2478,8 @@
         "body": "占比 {china_share_exact}、金额 {china_revenue}，{china_vs_peak}；管理层未重申全年口径，问答中零提及。"
       }
     ],
-    "not_tracked": "本页已知未接入：Hexagon D&E 的单季收入贡献与利润率（公司只在 Q1 2026 给过一次全年口径，本季被直接问到未重申）、Intel 协议的金额与年限、下半年「targeted investments」的具体金额、agentic AI 相关的任何收入或 ARR（管理层已说明其在结构上会被吸收进 Core EDA 与经常性收入）、以及其他长期负债 {oltl_jump_quarter} 单季增加 {oltl_jump} 的构成。"
+    "not_tracked": "本页已知未接入：Hexagon D&E 的单季收入贡献与利润率（公司只在 Q1 2026 给过一次全年口径，本季被直接问到未重申，10-Q 也不单列）、Intel 协议的金额与年限、下半年「targeted investments」的具体金额、agentic AI 相关的任何收入或 ARR（管理层已说明其在结构上会被吸收进 Core EDA 与经常性收入）。",
+    "undrawn": "报告另有两条本季结论本页不画：现价隐含的 EPS 复合增速高于管理层自己的三年口径（本站不发布估值），以及问答里「愿意说、不给数」的披露质量评分（只在电话会里，没有申报可核）。"
   },
   "followup_closure": {
     "period": "Q2 2026",
@@ -2707,7 +2821,10 @@
       "其他长期负债半年里多出来的那一笔是什么，有没有未披露的或有对价？",
       "Q4 回购能不能补足全年「约 50% 自由现金流」的承诺？若 Q4 仍只是 Q3 的水平，现金的优先级已经转向整合与投资。",
       "2027 年的摊薄股数指引会不会超过 280M？超过则回购已经抵不住股权激励的稀释。"
-    ]
+    ],
+    "answered": {
+      "10": "10-Q 已经拆开：附注 13 里递延所得税负债由 {dtl_start} 升到 {dtl_end}，附注 2 的 D&E 购买价分摊承接长期负债 {dne_ltl}；没有单列或有对价。"
+    }
   },
   "annual_reconciliation_usd_m": {
     "years": [
