@@ -167,13 +167,29 @@ def _tsm_advanced_count() -> dict:
     return {}
 
 
+def cost_threshold_reach(page: dict) -> int:
+    """Costco's threshold charts that reach 2016: one per metric group of the
+    local report's section 8 in section three (「下季阈值」) and of the previous
+    report's section 8 in section one (「上季阈值」). Which metrics those are is
+    data -- the page is rolled by editing `series/cost.json` alone, and the next
+    quarter's section one settles this quarter's section-three lines -- so the
+    pin counts the permanent charts and adds these while they are published."""
+    return sum(1 for section in page["sections"] for ex in section["exhibits"]
+               if ("上季阈值" in ex["title"] or "下季阈值" in ex["title"])
+               and (first_year(ex) or TARGET_YEAR + 1) <= TARGET_YEAR)
+
+
+def _cost_threshold_reach() -> int:
+    return cost_threshold_reach(js_payload(ROOT / "data" / "cost.js", "window.DASH"))
+
+
 # ── the ratchet ──────────────────────────────────────────────────────────────
 # Time-axis exhibits per page whose earliest label is 2016 or earlier. Raise a
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
     "amd": 16, "amzn": 13, "arm": 0, "asml": 16, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
-    "cost": 14, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
+    "cost": 11 + _cost_threshold_reach(), "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
     "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,

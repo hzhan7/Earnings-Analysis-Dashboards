@@ -430,10 +430,10 @@ def kpi_series_note(staging: dict, reads: str, local_note: dict | None) -> str:
                 "剔除汽油的口径，但 FY2019 那四个季度的「Adjusted」还额外剔除了 ASC 606 收入准则变更，"
                 f"是同一个标签下的另一个口径；本图因此把那{cn_count(asc606)}季留空，"
                 "其余每一季都是同一个「剔除汽油价格与汇率」的定义。"
-                f"窗口内区间 {min(adjusted_filed):.1f}% 到 {max(adjusted_filed):.1f}%，"
-                + (f"所以「结构性 {claim:.1f}%」这句话描述的是最近四个季度，不是这家公司的常态。"
+                f"窗口内区间 {min(adjusted_filed):.1f}% 到 {max(adjusted_filed):.1f}%"
+                + (f"，所以「结构性 {claim:.1f}%」这句话描述的是最近四个季度，不是这家公司的常态。"
                    if claim is not None and abs(recent_mean - claim) <= 0.3 and claim < max(adjusted_filed)
-                   else "")
+                   else "。")
                 + resolution_note(staging))
     if reads in ("renewal_us", "renewal_ww", "renewal_us_change_bp", "renewal_ww_change_bp"):
         return ("<b>这条线为什么不从更早画起：</b>"
@@ -550,7 +550,7 @@ def kpi_line_words(staging: dict, entry: dict, value: float, *, word: str) -> st
         text += "；" + entry["remark"]
     extra = entry.get("upside")
     if extra:
-        text += (f"；另一侧的 {kpi_text(entry, extra['value'])} 是报告写的{extra['name']}线，本季"
+        text += (f"；另一侧的 {kpi_text(entry, extra['value'])} 是报告写的{extra['name']}，本季"
                  + ("已经回到它上面" if (value >= extra["value"] if up else value <= extra["value"])
                     else "还没有回到它上面"))
     return text + "。"
@@ -712,8 +712,12 @@ def group_title(staging: dict, group: list[dict], value_key: str, *, settle: boo
     if len(set(marks)) == 1:
         head = f"{marks[0]}上季阈值 {lines}"
     else:
-        head = "；".join(f"{entry['metric']}{mark}上季阈值 {kpi_text(entry, entry['threshold'])}"
-                        for entry, mark in zip(group, marks))
+        def named(entry: dict) -> str:
+            short = specs[entry["reads"]]["short"] if len(reads) > 1 else ""
+            return (short + " " if short else "") + kpi_text(entry, entry["threshold"])
+        broke = "、".join(named(entry) for entry, mark in zip(group, marks) if mark == "击穿")
+        held = "、".join(named(entry) for entry, mark in zip(group, marks) if mark == "守住")
+        head = f"击穿上季阈值 {broke}，守住 {held}"
     return f"{family}：本季 {now}，{head}"
 
 
@@ -874,6 +878,17 @@ OWN_GUIDANCE = ("Costco 自己在申报文件里给的数字只有三份，都�
                 "下一财年的资本开支区间与开店计划，自 2024 年 5 月起每季的 EX-99.2 还给一次财年末仓库数的估计；"
                 "它从不指引收入、利润或每股收益 —— 翻遍近十二份业绩 8-K，outlook 与 guidance 这两个词"
                 "只出现在前瞻性陈述的免责声明里。这三份记录放在本节最后。")
+
+
+def threshold_notes(templates: list[str], facts: dict, numbers: dict[str, int]) -> list[str]:
+    """The series notes, plus -- while both overviews are on the page -- the one
+    that says whose thresholds they are."""
+    notes = [note.format_map(facts) for note in templates]
+    if "EX_PRIOR_HEADROOM" in numbers and "EX_NEXT_HEADROOM" in numbers:
+        notes.insert(1, f"Exhibit {numbers['EX_PRIOR_HEADROOM']} 与 Exhibit {numbers['EX_NEXT_HEADROOM']} "
+                        "的阈值取自本地报告（上一份与本季那份的第 8 节「关键观察指标」），逐字抄录，不是公司指引，"
+                        "也不构成评级或投资建议；「距阈值余量」统一为正值代表安全侧。")
+    return notes
 
 
 def settled_description(staging: dict, first: bool, closure: dict | None, prior: dict | None,
@@ -1385,6 +1400,7 @@ def build_payload(staging: dict) -> dict:
         raise ValueError("series block `next_kpi` is required every quarter: section three is "
                          "this quarter's local analysis's section 8")
     local_note = stamped_block(staging, "local_note", periods[-1])
+    quarter_story = stamped_block(staging, "quarter_story", periods[-1])
     values = story_values(staging)
     capex_full = staging["capex_record_full"]
     fin = staging["financials"]
@@ -1513,10 +1529,13 @@ def build_payload(staging: dict) -> dict:
     # changes, and where it rounds differently from the dollars the page uses
     # what the company printed.
     mdna = staging["mdna_margins_pct"]
+    gm_bps = sga_bps = None
     if staging["periods"][-1] in mdna["periods"]:
         m = mdna["periods"].index(staging["periods"][-1])
         gm_bps, sga_bps = mdna["gross_margin_change_bps"][m], mdna["sga_change_bps"][m]
-    else:
+    # A fiscal fourth quarter has no 10-Q, so the MD&A block carries the quarter
+    # with no figure (the 10-K speaks for the year): fall back to the dollars.
+    if gm_bps is None or sga_bps is None:
         gm_bps = round((fin["gross_margin_pct"][-1] - fin["gross_margin_pct"][-5]) * 100)
         sga_bps = round((fin["sga_pct_of_net_sales"][-1] - fin["sga_pct_of_net_sales"][-5]) * 100)
     offsetting = gm_bps * sga_bps > 0 and abs(gm_bps - sga_bps) <= 5
@@ -1531,13 +1550,48 @@ def build_payload(staging: dict) -> dict:
     negative_gaps = sum(1 for v in gap_filed if v < 0)
     positive_gaps = sum(1 for v in gap_filed if v > 0)
     zero_gaps = sum(1 for v in gap_filed if v == 0)
+    # The comp chart leads with the last three quarters both ways -- the local
+    # report's first conclusion is about exactly that run -- and the gap chart
+    # with where this quarter's gap ranks in the whole record.
+    reported3 = hist["reported_total_pct"][-3:]
+    adjusted3 = hist["adjusted_total_pct"][-3:]
+    three_filed = all(value is not None for value in adjusted3)
+    if three_filed:
+        comp_title = ("报告 comp 与剔除汽油、汇率后的 comp：近三季 "
+                      + "→".join(f"{value:+.1f}%" for value in reported3) + " 对 "
+                      + "→".join(f"{value:+.1f}%" for value in adjusted3))
+        rising = all(b > a for a, b in zip(reported3, reported3[1:]))
+        flat = max(adjusted3) - min(adjusted3) <= 0.5
+        comp_lead = ("<b>近三季报告口径" + ("逐季抬高" if rising else "是 " + "、".join(f"{v:+.1f}%" for v in reported3))
+                     + "，剔除汽油与汇率后" + ("几乎是一条平线" if flat else
+                                          f"从 {adjusted3[0]:+.1f}% 走到 {adjusted3[-1]:+.1f}%")
+                     + f"</b>；本季两者差 {gap[-1]:.1f} 个百分点，这个缺口在记录里排第几见下一张。")
+    else:
+        comp_title = (f"报告 comp 与剔除汽油、汇率后的 comp：本季 "
+                      f"{hist['reported_total_pct'][-1]:+.1f}% 对 {hist['adjusted_total_pct'][-1]:+.1f}%")
+        comp_lead = ""
+    this_gap = gap[-1]
+    if this_gap is None:
+        gap_title = (f"汽油与汇率把 headline 抬高（或压低）了多少："
+                     f"{len(gap_filed)} 季里 {negative_gaps} 季是压低")
+    elif this_gap > 0:
+        gap_title = (f"汽油与汇率本季把 headline 抬高 {this_gap:.1f} 个百分点，是 {len(gap_filed)} 季里第 "
+                     f"{sorted(gap_filed, reverse=True).index(this_gap) + 1} 大；整段记录 {negative_gaps} 季是压低")
+    elif this_gap < 0:
+        gap_title = (f"汽油与汇率本季把 headline 压低 {abs(this_gap):.1f} 个百分点，是 {len(gap_filed)} 季里第 "
+                     f"{sorted(gap_filed).index(this_gap) + 1} 深；整段记录 {negative_gaps} 季是压低")
+    else:
+        gap_title = (f"汽油与汇率本季没有改变 headline；整段记录 {len(gap_filed)} 季里 "
+                     f"{negative_gaps} 季是压低")
+    # Earnings per share growth as the company prints it: the two printed EPS
+    # figures to the cent, which is also the rate the supplemental deck prints.
+    # The four legs multiply to the unrounded rate, a few hundredths away.
+    eps_printed = pct_change(fin["diluted_eps_usd"][-1], fin["diluted_eps_usd"][-5])
     highlight_ex = [
         {
             "ref": "EX_COMPBOTH",
             "kind": "lines",
-            "title": (f"报告 comp 与剔除汽油、汇率后的 comp：本季 "
-                      f"{hist['reported_total_pct'][-1]:+.1f}% 对 "
-                      f"{hist['adjusted_total_pct'][-1]:+.1f}%"),
+            "title": comp_title,
             "xlabels": hist_labels,
             "series": [
                 {"name": "报告合并 comp", "color": "GOLD",
@@ -1548,9 +1602,7 @@ def build_payload(staging: dict) -> dict:
             "fmt": "pct1", "yfmt": "pct1", "label_fmt": "pct1", "end_label": True,
             "ylab": "%", "xstep": LONG_STEP,
             "note": ("两条线都是公司披露值，差别只在剔不剔汽油价格与汇率。"
-                     "<b>本季金色那条比深蓝那条高 "
-                     f"{gap[-1]:.1f} 个百分点，是有该口径的 {len(gap_filed)} 季里第 "
-                     f"{sorted(gap_filed, reverse=True).index(gap[-1]) + 1} 大的一次。</b>"
+                     + comp_lead +
                      "读 headline 的人看到的是金色，读这家公司的人要看深蓝。"
                      "两条线在 2021–2022 年那段一起冲到两位数，是疫情后的低基数加油价，"
                      "不是需求。"
@@ -1560,8 +1612,7 @@ def build_payload(staging: dict) -> dict:
         {
             "ref": "EX_GAP",
             "kind": "diverging_bars",
-            "title": (f"汽油与汇率把 headline 抬高（或压低）了多少："
-                      f"{len(gap_filed)} 季里 {negative_gaps} 季是压低"),
+            "title": gap_title,
             "xlabels": hist_labels,
             "values": rounded(gap),
             "legend": "报告 comp − 调整后 comp",
@@ -1570,7 +1621,7 @@ def build_payload(staging: dict) -> dict:
             "fmt": "pp1", "yfmt": "pp1", "label_fmt": "pp1",
             "ylab": "百分点", "zero_line": True, "xstep": LONG_STEP,
             "note": ("<b>这张图是本页最想让人看见的一张。</b>"
-                     + (f"本地笔记把本季 {gap[-1]:.1f} 个百分点的汽油顺风当成一次性的加成来提示风险，"
+                     + (f"本地报告把本季 {gap[-1]:.1f} 个百分点的汽油与汇率顺风当成下季就会反转的加成来提示风险，"
                         "而完整记录说的是更强的一句话："
                         if local_note and local_note.get("gas_tailwind_flagged") and gap[-1] > 0 else
                         f"本季这个缺口是 {gap[-1]:+.1f} 个百分点，而完整记录说的是一句更一般的话：")
@@ -1635,7 +1686,7 @@ def build_payload(staging: dict) -> dict:
             "ref": "EX_EPSBRIDGE",
             "kind": "grouped_bars",
             "title": (f"每股收益增速拆成四条腿：本季 "
-                      f"{bridge['reported_eps_yoy_pct'][-1]:+.1f}% 里营业利润只占 "
+                      f"{eps_printed:+.1f}% 里营业利润只占 "
                       f"{bridge['operating_leg_pct'][-1]:+.1f}%"),
             "xlabels": [compact_period(period) for period in bridge["periods"]],
             "groups": [
@@ -1656,9 +1707,10 @@ def build_payload(staging: dict) -> dict:
                      "与用申报的净利润和摊薄股数算出的每股收益同比完全相同；"
                      f"而新闻稿印到分的 ${fin['diluted_eps_usd'][-1]:.2f} 对 "
                      f"${fin['diluted_eps_usd'][-5]:.2f} 得到 "
-                     f"{pct_change(fin['diluted_eps_usd'][-1], fin['diluted_eps_usd'][-5]):+.2f}% —— "
-                     "两者相差的那一点就是那两个分位的四舍五入。"
-                     f"<b>本季的读法：{bridge['reported_eps_yoy_pct'][-1]:+.1f}% 里有 "
+                     f"{eps_printed:+.2f}% —— "
+                     "两者相差的那一点就是那两个分位的四舍五入。标题取后者，那是公司自己印的每股收益相除，"
+                     "也是补充材料印出的增速。"
+                     f"<b>本季的读法：{eps_printed:+.1f}% 里有 "
                      f"{bridge['below_the_line_leg_pct'][-1] + bridge['tax_leg_pct'][-1]:+.1f}% "
                      "来自经营之外</b> —— 利息收入（现金及短期投资 US$"
                      f"{bal['cash_and_short_term_investments_usd_m'][-1] / 1000:.1f}B）与更低的税率。"
@@ -2067,6 +2119,14 @@ def build_payload(staging: dict) -> dict:
     # Read the numbers before the references are resolved (that drops `ref`).
     ref_numbers = {exhibit["ref"]: exhibit["n"]
                    for exhibit in settled_ex + highlight_ex + next_ex + routine_ex if exhibit.get("ref")}
+    # Exhibit numbers a one-quarter sentence may name: {ex:next_core_on_core} and
+    # the like, plus the run of the previous analysis's threshold charts.
+    exhibit_words = {f"ex:{ref[3:].lower()}": f"Exhibit {number}" for ref, number in ref_numbers.items()}
+    prior_numbers = sorted(number for ref, number in ref_numbers.items()
+                           if ref.startswith("EX_PRIOR_") and ref != "EX_PRIOR_HEADROOM")
+    if prior_numbers:
+        exhibit_words["prior_charts"] = (f"Exhibit {prior_numbers[0]}" if len(prior_numbers) == 1 else
+                                         f"Exhibit {prior_numbers[0]}–{prior_numbers[-1]}")
     resolve_exhibit_refs(settled_ex + highlight_ex + next_ex + routine_ex)
 
     first_table = routine_ex[-1]["n"] + 1
@@ -2232,7 +2292,7 @@ def build_payload(staging: dict) -> dict:
     higher = [i for i, value in enumerate(reported[:-1]) if value > reported[-1]]
     quarters_since_higher = len(reported) - 1 - max(higher) if higher else len(reported)
     eps_wedge = bridge["below_the_line_leg_pct"][-1] + bridge["tax_leg_pct"][-1]
-    both_ends = latest_gap > 0 and bridge["reported_eps_yoy_pct"][-1] > fin["operating_income_yoy_pct"][-1]
+    both_ends = latest_gap > 0 and eps_printed > fin["operating_income_yoy_pct"][-1]
     capex_rec = staging["capex_guidance"]
     capex_settled = [i for i, a in enumerate(capex_rec["actual_capex_usd_m"])
                      if a is not None and capex_rec["guided_low_usd_m"][i] is not None]
@@ -2279,7 +2339,7 @@ def build_payload(staging: dict) -> dict:
             f"个季度以来最高；但公司自己披露的剔除汽油与汇率后的 comp 是 "
             f"{signed(hist['adjusted_total_pct'][-1])}，两者 {latest_gap:.1f} 个百分点的缺口"
             f"在这 {len(gap)} 季里有 {negative_gaps} 季是负的，{cn_count(4)}个季度前还是 {gap[-4]:+.1f}；"
-            f"同一季每股收益 {signed(bridge['reported_eps_yoy_pct'][-1])} 对营业利润 "
+            f"同一季每股收益 {signed(eps_printed)} 对营业利润 "
             f"{signed(fin['operating_income_yoy_pct'][-1])}。"
             + ("两端的加成都能用申报值原样剥掉。" if both_ends else "")
         ),
@@ -2330,6 +2390,10 @@ def build_payload(staging: dict) -> dict:
                     + "comp 那端是汽油与汇率，每股收益那端是利息收入与税率。"
                     f"剥完之后剩下的是{traffic_words}、{ticket_words}，以及四条商品线里"
                     f"加油站所在的那一条贡献了{share_words}的销售增量。"
+                    + (fill_story(quarter_story["elsewhere"], exhibit_words)
+                       if quarter_story and quarter_story.get("elsewhere") else "")
+                    + ("本页不画的：" + "；".join(quarter_story["undrawn"]) + "。"
+                       if quarter_story and quarter_story.get("undrawn") else "")
                 ),
                 "exhibits": highlight_ex,
             },
@@ -2352,7 +2416,7 @@ def build_payload(staging: dict) -> dict:
             },
         ],
         "tables": tables,
-        "notes": [note.format_map(facts) for note in staging["notes"]],
+        "notes": threshold_notes(staging["notes"], facts, ref_numbers),
         "footer": "Costco quarterly results · 数据来自 Costco 公开披露与透明自算 · 仅供研究，不构成投资建议",
     }
 

@@ -31,6 +31,7 @@
     "operating_income_usd_m": 2815,
     "net_income_usd_m": 2192,
     "diluted_eps_usd": 4.93,
+    "diluted_eps_growth_printed_pct": 15.2,
     "comparable_sales_total_pct": 9.8,
     "comparable_sales_adjusted_total_pct": 6.6,
     "digitally_enabled_comparable_sales_pct": 21.5,
@@ -47,7 +48,7 @@
     "sga_rate_change_bps": -20,
     "core_on_core_bps": -9,
     "fy_end_warehouse_estimate": 940,
-    "source": "Costco FY2026 Q3 业绩 8-K（2026-05-28，acc 0000909832-26-000046）逐项读取：EX-99.1 首段「third quarter (twelve weeks) … of fiscal 2026, ended May 10, 2026」、「Net sales for the quarter increased 11.6 percent, to $69.15 billion」、同店销售表 12 周栏 Total Company 9.8% / Adjusted 6.6%、Digitally-Enabled 21.5%；损益表 12 周栏（Net sales 69,154；Membership fees 1,373；Total revenue 70,527；Operating income 2,815；Net income 2,192；Diluted 4.93）；资产负债表（Cash and cash equivalents 18,946；Short-term investments 1,050）。EX-99.2 补充材料：Comparable Traffic +2.4%、Ticket +7.3%、Adjusted Ticket +4.2%；41.2MM Executive、82.9MM Paid；US/CN 92.2%、Worldwide 89.7%；Gross Margin -21 bps；SG&A +20 bps（该页注明「+ = Favorable/lower」，即SG&A 率下降 20 个基点，本块按页面的符号记为 -20）；Core on Core Sales -9 bps；仓库扩张表 FY'26 End (Estimated) 940。EX-99.2 Segment Reporting 页美国列 Traffic +1.8%。",
+    "source": "Costco FY2026 Q3 业绩 8-K（2026-05-28，acc 0000909832-26-000046）逐项读取：EX-99.1 首段「third quarter (twelve weeks) … of fiscal 2026, ended May 10, 2026」、「Net sales for the quarter increased 11.6 percent, to $69.15 billion」、同店销售表 12 周栏 Total Company 9.8% / Adjusted 6.6%、Digitally-Enabled 21.5%；损益表 12 周栏（Net sales 69,154；Membership fees 1,373；Total revenue 70,527；Operating income 2,815；Net income 2,192；Diluted 4.93）；资产负债表（Cash and cash equivalents 18,946；Short-term investments 1,050）。EX-99.2 补充材料：Diluted EPS $4.93 +15.2% Growth；Comparable Traffic +2.4%、Ticket +7.3%、Adjusted Ticket +4.2%；41.2MM Executive、82.9MM Paid；US/CN 92.2%、Worldwide 89.7%；Gross Margin -21 bps；SG&A +20 bps（该页注明「+ = Favorable/lower」，即SG&A 率下降 20 个基点，本块按页面的符号记为 -20）；Core on Core Sales -9 bps；仓库扩张表 FY'26 End (Estimated) 940。EX-99.2 Segment Reporting 页美国列 Traffic +1.8%。",
     "checked_on": "2026-09-19",
     "comparable_traffic_us_pct": 1.8,
     "note": {
@@ -3103,7 +3104,7 @@
         "threshold": 92.2,
         "unit": "pct",
         "quote": "续费率（US/CN + WW）：92.2% / 89.7%；连续企稳/回升 → 加仓确认；任一季 -15bps+ = 年轻会员结构性流失 → 减仓",
-        "remark": "报告另写了「任一季 -15bps+ = 减仓」，那是季度变化的线，见第一节的续费率季度变化图"
+        "remark": "报告另写了「任一季 -15bps+ = 减仓」，那条线量的是单季变化，不是水平"
       },
       {
         "id": "renewal_ww",
@@ -3177,7 +3178,7 @@
     "period": "Q2 2026",
     "set_in": "Q4 2025",
     "set_in_file": "2026-03-05 COST Q1 2026 vs Q4 2025 Analysis.md",
-    "closed_in": "2026-05-28 COST Q2 2026 vs Q1 2026 Analysis.md 第 0 节",
+    "closed_in": "2026-05-28 COST Q2 2026 vs Q1 2026 Analysis.md",
     "_note": "上一份报告（文件名标 2026-03-05，正文是 FY2026 Q1）文末的 7 条 Follow-up，由本季报告第 0 节一次性闭环（FY2026 Q2 没有单独的报告）。verdict 照录第 0 节判定列原文；evidence 是本页核对的申报读数，花括号是 builder 现算的数。",
     "labels": [
       "看多确认",
@@ -3230,6 +3231,15 @@
         "verdict": "部分确认",
         "evidence": "EX-99.2 仓库扩张表：财年末估计由上一季的 {fy_end_estimate_prev} 家改为 {fy_end_estimate} 家，对上一财年末 {fy_start_warehouses} 家即净新开 {net_new_prev} → {net_new} 家；本季末 {warehouses} 家。新店爬坡的销售额不在任何申报文件里。"
       }
+    ]
+  },
+  "quarter_story": {
+    "period": "Q2 2026",
+    "_note": "本季报告（2026-05-28 那一份）第 1、7 节的结论里，页面在第二节之外处理的与不画的：elsewhere 的花括号是 builder 现算的图号；undrawn 是画不了或不发布的结论与理由。只属于这一季：换季时换成新一季报告的内容，或整块删掉。",
+    "elsewhere": "本季报告的另一条主结论 —— 续费率拐点（美加回升、全球持平）与 Executive 会员质增 —— 正是上一份报告第 8 节第 1、2 条阈值，结清在第一节（{prior_charts}）；core-on-core 转负是本季报告第 8 节的第 4 条线，在第三节（{ex:next_core_on_core}）。",
+    "undrawn": [
+      "同业的 comp 对比（BJ's、Walmart、Target 等）：报告标注取自网络检索，不是 Costco 的申报",
+      "财报后的股价反应与估值倍数：本站不发布估值"
     ]
   },
   "disclosure_boundary": [
@@ -4462,7 +4472,7 @@
     "毛利率的「剔除汽油」与 comp 的「剔除汽油与汇率」不是同一个调整。翻遍 2001 年以来全部 10-Q 与 10-K，公司从未把毛利率或 SG&A 率按汇率重述过；汇率只以美元金额的形式进入毛利讨论（如「positively impacted gross margin by approximately $69」）。本页据此分别标注两条轴，不把它们叫成同一个口径。",
     "数字化 comp 是断点不是改名：公司自 FY2026 Q1 起把 e-commerce comp 改为 digitally-enabled comp，10-Q 写明新口径更宽，新闻稿没有任何脚注、也没有重述历史。本页的数字化 comp 记录在那一季断开，两段不接成一条线。",
     "会计 Q4 没有 10-Q，因此分部数据与核心商品毛利率在会计 Q4 都没有申报的季度值。分部数用「全年减去 36 周累计」自算并标 D —— 同一个减法在合并层面得到的净销售额与营业利润，与 Q4 业绩稿印出的 16 周数逐项相同，这是本页愿意在分部上用它的理由。核心商品毛利率不做这个减法，图上每年留一个空格。",
-    "EX-99.2 补充材料：公司自 2024-05-30（FY2024 Q3 业绩）起随每份业绩 8-K 一并 furnish 一份 Supplemental Information，Executive 会员数、同店客流与客单、毛利率与 SG&A 的基点分解、以及「Core on Core」这个说法都在里面。此前这些数字只在电话会上口头给出，所以本页相关序列只有 {deck_quarters} 个季度，不向前回补。",
+    "EX-99.2 补充材料：公司自 2024-05-30（FY2024 Q3 业绩）起随每份业绩 8-K 一并 furnish 一份 Supplemental Information，Executive 会员数、同店客流与客单（含美国、加拿大、其他国际三个分部）、毛利率与 SG&A 的基点分解、以及「Core on Core」这个说法都在里面。此前这些按季的数字没有进过申报文件（Executive 会员数只在 10-K 里按年给，见下面那条），所以本页相关序列只有 {deck_quarters} 个季度，不向前回补。",
     "资本开支计划的时点与修订：10-K 在每年 10 月初申报，而 Costco 的财年在 9 月初就开始了，所以这份计划是在它所指引的财年已经开始之后公布的，本记录里最早第 {lag_min} 天、最晚第 {lag_max} 天。而且它不是只发一次 —— 每一季的 10-Q 都会把同一段重写一遍，每个财年因此有一版年初计划和最多三次修订。本页把「年初那一版」与「当年最后一版」分开结清，两者的答案不一样：对年初版的平均绝对偏离约 {open_mean:.0f}%，对最后一版约 {final_mean:.0f}%。命中率必须连同这两句一起读。",
     "资本开支计划的窗口是取数窗口而不是披露窗口：同一段话可以一直回到 EDGAR 上最早的那份 10-K（FY1994 那份为 FY1995 给出「approximately $600 million to $700 million」），本页目前画 FY{band_first} 起的 {band_years} 个年度。两段之间有一处真实的口径差别 —— 为 FY2007 之前的年度给计划时，公司把它拆成美加与国际两笔分别给出，要相加才与现在这一个数可比。",
     "FY{qualitative_prior} 的 10-K 对 FY{qualitative_year} 只说要花「a similar amount」，没有给数字。本页把那一年记为没有区间，不把一个词换算成一个范围；那一年实际花掉的钱比上一年多 {qualitative_growth:.1f}%。",
