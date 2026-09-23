@@ -195,6 +195,45 @@ def kpi_unit_text(unit: str, value: float) -> str:
     return stores_text(value) if unit == "stores" else unit_text(unit, value)
 
 
+# The page's four sections, in the site's fixed order, and the charts each one
+# carries. A chart is placed by what it says, not by which function drew it: the
+# half-year charts that state this half's result (the divisional margins) belong
+# to the quarter, the half-year charts that describe the business across ten
+# years (the seasonal shape, cash and net debt, capital intensity, stores) to
+# the routine record.
+SECTIONS = (
+    ("settled", "一、上季跟踪指标兑现了吗"),
+    ("quarter_highlights", "二、本季重点"),
+    ("next_quarter", "三、下季要跟踪什么"),
+    ("routine", "四、长期常规跟踪"),
+)
+SECTION_REFS = (
+    ("EX_SAID", "EX_SCORE"),
+    ("EX_REV", "EX_BRIDGE_REV", "EX_GAPS", "EX_MIX", "EX_DIVORG", "EX_WS_SPLIT", "EX_REGION",
+     "EX_BRIDGE_PRO", "EX_DIVMARGIN"),
+    ("EX_NEXT_HEADROOM", "EX_HALF_MARGIN"),
+    ("EX_L_REV", "EX_L_ORG", "EX_L_MIX", "EX_SEASON", "EX_CASH", "EX_CAPEX", "EX_STORES"),
+)
+
+
+def section_groups(charts: list[dict]) -> list[list[dict]]:
+    """Sort the drawn charts into the four sections by their refs.
+
+    A chart whose ref is in no section would be drawn and then silently left
+    off the page, so that stops the build; so does a ref drawn twice.
+    """
+    by_ref = {}
+    for chart in charts:
+        if chart["ref"] in by_ref:
+            raise ValueError(f"chart {chart['ref']} is drawn twice")
+        by_ref[chart["ref"]] = chart
+    placed = {ref for refs in SECTION_REFS for ref in refs}
+    orphans = sorted(set(by_ref) - placed)
+    if orphans:
+        raise ValueError(f"charts drawn but placed in no section: {orphans}")
+    return [[by_ref[ref] for ref in refs if ref in by_ref] for refs in SECTION_REFS]
+
+
 def resolve_exhibit_refs(exhibits: list[dict]) -> list[dict]:
     """Replace ``{EX_NAME}`` placeholders with the numbers assigned at render."""
     numbers = {ex["ref"]: ex["n"] for ex in exhibits if "ref" in ex}
@@ -1152,7 +1191,7 @@ def routine_charts(staging: dict, der: dict, labels: list[str], kpi: dict | None
     if kpi is not None:
         values_now = [headroom(e["direction"], e["threshold"], e["current"]) for e in entries]
         safe = sum(1 for v in values_now if round(v, 1) >= 0)
-        charts.append(headroom_exhibit(
+        charts.append({"ref": "EX_NEXT_HEADROOM", **headroom_exhibit(
             f"下季跟踪阈值：{cn_count(len(entries))}条线里{cn_count(safe)}条仍在安全侧",
             entries, "current",
             ("阈值是本地研究设定，不是公司指引 —— <b>LVMH 不提供任何数字指引</b>，"
@@ -1160,7 +1199,7 @@ def routine_charts(staging: dict, der: dict, labels: list[str], kpi: dict | None
              + fill_story(kpi.get("headroom_note", ""), values)
              + "原始单位的阈值与当前值见核对表。"),
             "阈值与理由见核对表；当前值取自本页已列示的公司披露值与透明自算。",
-        ))
+        )})
 
     # The group margin against the last complete year's level. Two readings of
     # this half are made against it: above the previous year's second half, and
@@ -1224,14 +1263,14 @@ def routine_charts(staging: dict, der: dict, labels: list[str], kpi: dict | None
                            if same else "")
                         + "所以跌破这条线是信息，站在线上只说明这一年还在这段里。")
     if fy is not None:
-        charts.append(threshold_exhibit(
+        charts.append({"ref": "EX_HALF_MARGIN", **threshold_exhibit(
             f"半年集团经营利润率对 FY{fy_year} 全年水平（{fy:.1f}%）",
             halves, rounded(margin), round(fy, 1),
             fmt="pct1", ylab="半年经营利润率",
             actual_name="半年经营利润率 D", threshold_name=f"FY{fy_year} 全年 {fy:.1f}%",
             note=margin_note,
             src_extra=SOURCE_HALF,
-        ))
+        )})
 
     intensity = der["capex_intensity"]
     falling = all(intensity[i + 1] < intensity[i] for i in range(len(intensity) - 1))
@@ -1441,7 +1480,8 @@ def build_payload(staging: dict) -> dict:
     half_ex = half_charts(staging, der, hstory)
     long_ex = long_charts(staging)
     routine_ex = routine_charts(staging, der, labels, kpi, entries, values, call, hstory)
-    exhibits = number_exhibits(said_ex + quarter_ex + half_ex + long_ex + routine_ex)
+    groups = section_groups(said_ex + quarter_ex + half_ex + long_ex + routine_ex)
+    exhibits = number_exhibits([exhibit for group in groups for exhibit in group])
 
     # ── audit tables ─────────────────────────────────────────────────────────
     rev_rows = [
@@ -1594,64 +1634,44 @@ def build_payload(staging: dict) -> dict:
         cards.append(f'<article><span>兑现</span><b>{call["lead"]["brief_head"]}</b>'
                      f'<p>{fill_story(call["lead"]["brief"], values)}</p></article>')
 
-    sections = []
-    if said_ex:
-        sections.append({
-            "id": "settled",
-            "short": "上季兑现",
-            "title": "公司给的是句子，不是数字 —— 上季那些话结算了没有",
-            "description": (
-                "LVMH 不发布收入、利润或利润率的任何数字指引，所以这一节不是常规的指引兑现，"
-                f"而是对电话会陈述的逐条结算：{cn_count(len(call['items']))}条前瞻陈述，"
-                f"{call['made_on']} 说出，{call['settled_by']} 结清。"
-            ),
-            "exhibits": said_ex,
-        })
-    sections.append({
-        "id": "quarter_highlights",
-        "short": "本季重点",
-        "title": "本季重点" + (f"：{story['section_theme']}" if story else ""),
-        "description": (
-            "季度口径能看的只有收入。这一节拆报告增速与有机增速之间那条差，"
-            "看分部结构与分化，最后用半年图给出唯一存在的利润拆解。"
+    settled_ex, highlight_ex, next_ex, routine_ex = (
+        [exhibit for exhibit in exhibits if exhibit["ref"] in refs] for refs in SECTION_REFS)
+    # The quarter's half-year charts sit at the end of its section; the sentence
+    # counts that trailing run off the axis labels rather than trusting the order.
+    half_tail = trailing_run(["半年" in exhibit.get("ylab", "") for exhibit in highlight_ex])
+    if any("半年" in exhibit.get("ylab", "") for exhibit in highlight_ex[:len(highlight_ex) - half_tail]):
+        raise ValueError("a half-year chart sits among the quarter's quarterly charts")
+    descriptions = {
+        "settled": (
+            "LVMH 不发布收入、利润或利润率的任何数字指引，所以这一节结算的是公司上季电话会上的前瞻陈述："
+            f"{cn_count(len(call['items']))}条，{call['made_on']} 说出，{call['settled_by']} 结清。"
+            if call is not None else
+            "本季没有可结算的上季陈述：对应的数据块缺席，这一节留空，而不是沿用上一季的。"
         ),
-        "exhibits": quarter_ex,
-    })
-    sections.append({
-        "id": "half_year",
-        "short": "半年度独有",
-        "title": "只有半年度披露才看得见的",
-        "description": (
-            "利润率、现金流、净负债与门店数一年只有两个读数。"
-            "本节所有图的 x 轴都是半年，不是季度。"
+        "quarter_highlights": (
+            (f"本季主题：{story['section_theme']}。" if story else "")
+            + f"{period} 的收入与 {half} 的利润。季度口径能看的只有收入：先拆报告增速与有机增速之间那条差，"
+            "再看分部、葡萄酒与烈酒的两条腿与地区；利润、利润率只在半年度披露，"
+            + (f"本节最后{cn_count(half_tail)}张是 {half} 的半年图。" if half_tail else
+               f"本节没有 {half} 的半年图。")
         ),
-        "exhibits": half_ex,
-    })
-    sections.append({
-        "id": "long_record",
-        "short": "长期记录",
-        "title": f"{cn_count(len(long_q))}季的长期记录",
-        "description": (
+        "next_quarter": (
+            "阈值为本地研究设定，不是公司指引；LVMH 不提供任何数字指引。"
+            if kpi is not None else "本季没有设定下季阈值：对应的数据块缺席。"
+        ),
+        "routine": (
             f"季度收入与有机增速回到 {long_q[0]}。LVMH 不向 SEC 申报，但它每年的全年"
             "新闻稿附表里同时重印当年与上年全部四个季度 —— 九份发布就拼出完整序列，"
-            f"且相邻两份互相重叠、可逐格核对。这一节只画能连续读的{cn_count(len(long_ex))}张。"
+            "且相邻两份互相重叠、可逐格核对。再加只有半年度披露才看得见的几条长期序列："
+            "上下半年的季节性、现金流与净负债、资本强度与门店网络。"
         ),
-        "exhibits": long_ex,
-    })
-    sections.append({
-        "id": "routine",
-        "short": "下季跟踪与常规" if kpi is not None else "长期常规",
-        "title": "下季跟踪与长期常规" if kpi is not None else "长期常规",
-        "description": (
-            ("阈值为本地研究设定，不是公司指引；再加资本强度与葡萄酒与烈酒的两条腿。"
-             if kpi is not None else "半年利润率对上一整年的水平、资本强度与葡萄酒与烈酒的两条腿。")
-        ),
-        "exhibits": routine_ex,
-    })
-    for index, section in enumerate(sections, start=1):
-        section["title"] = f"{cn_ordinal(index)}、{section['title']}"
-    order = " → ".join(section.pop("short") for section in sections)
-    threshold_section = next(i for i, s in enumerate(sections, start=1) if s["id"] == "routine")
+    }
+    sections = [
+        {"id": key, "title": title, "description": descriptions[key], "exhibits": group}
+        for (key, title), group in zip(SECTIONS, (settled_ex, highlight_ex, next_ex, routine_ex))
+    ]
+    order = "上季兑现 → 本季重点 → 下季跟踪 → 长期常规"
+    threshold_section = next(i for i, s in enumerate(sections, start=1) if s["id"] == "next_quarter")
 
     # ── notes ──
     residual_gaps = [abs(der["other"][start + i] - staging["quarterly_revenue_other_published_eur_m"][start + i])

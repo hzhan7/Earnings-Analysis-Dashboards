@@ -611,6 +611,18 @@ class McDashboardTest(unittest.TestCase):
         self.assertEqual(self.payload["latest"]["full_financial_period_label"], checks["half"])
         self.assertEqual(self.staging["halves"][-1], checks["half"])
 
+    def test_the_page_has_the_four_sections_of_the_site_format(self) -> None:
+        """Every company page runs 上季兑现 → 本季重点 → 下季跟踪 → 长期常规, with
+        these ids and these titles verbatim. This page used to carry five: a
+        half-year section between the quarter and the long record, and a last
+        section that mixed the next thresholds with the routine charts."""
+        self.assertEqual(
+            [(s["id"], s["title"]) for s in self.payload["sections"]],
+            [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+             ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+        for section in self.payload["sections"]:
+            self.assertTrue(section["exhibits"], f"{section['id']} is empty")
+
     def test_sections_are_numbered_in_order_and_the_notes_say_how_many(self) -> None:
         """The long record was inserted as a second 「四、」 and the notes kept
         saying 「四段」; numbering and the count are now read off the sections."""
@@ -618,8 +630,9 @@ class McDashboardTest(unittest.TestCase):
         for index, section in enumerate(sections, start=1):
             self.assertTrue(section["title"].startswith(f"{mc.cn_ordinal(index)}、"), section["title"])
         self.assertIn(f"」{mc.cn_count(len(sections))}段排列", self.payload["notes"][0])
-        routine = next(i for i, s in enumerate(sections, start=1) if s["id"] == "routine")
-        self.assertTrue(any(n.startswith(f"第{mc.cn_ordinal(routine)}节的阈值") for n in self.payload["notes"]))
+        self.assertIn("「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」", self.payload["notes"][0])
+        following = next(i for i, s in enumerate(sections, start=1) if s["id"] == "next_quarter")
+        self.assertTrue(any(n.startswith(f"第{mc.cn_ordinal(following)}节的阈值") for n in self.payload["notes"]))
 
     def test_the_text_quotes_the_margin_the_company_printed(self) -> None:
         """The charts draw recomputed margins; a sentence quoting one uses the
@@ -875,7 +888,13 @@ class McRollTest(unittest.TestCase):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, self.text)
                 self.assertNotIn(phrase, text)
-        self.assertNotIn("settled", [s["id"] for s in payload["sections"]])
+        # The four sections keep their places and titles; the one with nothing to
+        # settle says so instead of disappearing and renumbering the rest.
+        self.assertEqual([s["id"] for s in payload["sections"]],
+                         ["settled", "quarter_highlights", "next_quarter", "routine"])
+        settled = payload["sections"][0]
+        self.assertEqual(settled["exhibits"], [])
+        self.assertIn("这一节留空", settled["description"])
         for index, section in enumerate(payload["sections"], start=1):
             self.assertTrue(section["title"].startswith(f"{mc.cn_ordinal(index)}、"))
         self.assertNotRegex(text, r"\{(TBL|EX)_[A-Z_]+\}")
