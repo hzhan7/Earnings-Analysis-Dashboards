@@ -485,6 +485,9 @@ class AxpDashboardTest(unittest.TestCase):
         self.assertEqual(signs, {True, False})
 
     def test_the_credit_charts_carry_the_older_basis_as_its_own_line(self) -> None:
+        """Every chart of the tracked credit series draws the loans-only basis as its own
+        grey line -- next quarter's two threshold charts and the write-off chart that
+        settles last quarter's two lines."""
         titles = ("30+ 天逾期率", "净核销率（本金口径）")
         loans = self.staging["credit_metrics"]["loans_basis"]
         periods = self.staging["periods"]
@@ -493,14 +496,19 @@ class AxpDashboardTest(unittest.TestCase):
             if not ex.get("title", "").startswith(titles):
                 continue
             found += 1
-            self.assertEqual(len(ex["series"]), 3, ex["title"])
-            self.assertEqual([s["color"] for s in ex["series"]], ["NAVY", "RED", "GRAY"])
-            grey = ex["series"][2]
+            colors = [s["color"] for s in ex["series"]]
+            self.assertEqual(colors[0], "NAVY", ex["title"])
+            self.assertEqual(colors.count("GRAY"), 1, ex["title"])
+            grey = ex["series"][colors.index("GRAY")]
             self.assertIn(loans["label"], grey["name"])
             self.assertEqual(len(grey["values"]), len(ex["xlabels"]))
             # The grey line stops where the company stopped printing it.
             self.assertTrue(all(v is None for p, v in zip(periods, grey["values"]) if p >= "2026Q1"))
-        self.assertEqual(found, 2)
+            # every other line is a flat threshold
+            for line in ex["series"][1:]:
+                if line is not grey:
+                    self.assertEqual(len(set(line["values"])), 1, line["name"])
+        self.assertEqual(found, 3)
 
     def test_the_loans_note_counts_the_quarters_it_covers(self) -> None:
         """The note said 36 quarters from 2017Q1 after the line reached 2016Q1."""
@@ -641,11 +649,13 @@ class AxpDashboardTest(unittest.TestCase):
 
     # ── thresholds ──────────────────────────────────────────────────────────
     def test_every_quantified_threshold_has_a_headroom_bar(self) -> None:
+        """A zero threshold has no percentage headroom, so it is settled in the table, not the bar."""
         for block, key, ref in (("next_kpi", "current", "下季"),
-                                ("settled_kpi", "actual", "上季")):
-            entries = axp.kpi_entries(self.staging[block], key, self.staging)
+                                ("prior_kpi_settlement", "actual", "上季")):
+            entries = [e for e in axp.kpi_entries(self.staging[block], key, self.staging)
+                       if e["threshold"] != 0]
             bar = next(ex for ex in self.exhibits
-                       if ex["kind"] == "diverging_bars" and ref in ex["title"])
+                       if ex["kind"] == "diverging_bars" and ex["title"].startswith(ref))
             self.assertEqual(bar["xlabels"], [e["metric"] for e in entries])
             for entry, value in zip(entries, bar["values"]):
                 self.assertAlmostEqual(
@@ -654,7 +664,7 @@ class AxpDashboardTest(unittest.TestCase):
 
     def test_no_threshold_block_types_the_value_it_can_read(self) -> None:
         """A current value typed into the block went stale against its own series."""
-        for block in ("next_kpi", "settled_kpi"):
+        for block in ("next_kpi", "prior_kpi_settlement"):
             for entry in self.staging[block]["quantified"]:
                 if "reads" in entry:
                     self.assertNotIn("current", entry, entry["metric"])
@@ -792,7 +802,8 @@ class AxpDashboardTest(unittest.TestCase):
 QUARTER_END = {1: "03-31", 2: "06-30", 3: "09-30", 4: "12-31"}
 RELEASE_DAY = {1: "04-22", 2: "07-23", 3: "10-22", 4: "01-29"}
 CN_QUARTER = {1: "一", 2: "二", 3: "三", 4: "四"}
-QUARTER_BLOCKS = ("settled_kpi", "next_kpi", "quarter_story")
+QUARTER_BLOCKS = ("followup_closure", "prior_kpi_settlement", "next_kpi", "quarter_story")
+SETTLEMENT_BLOCKS = ("followup_closure", "prior_kpi_settlement")
 PLACEHOLDER = r"\{[a-z_:]+\}"
 
 
@@ -811,6 +822,9 @@ def quarterly_lists(s: dict) -> list[tuple[dict, str]]:
         for key, values in seg.items():
             if isinstance(values, list) and len(values) == m:
                 out.append((seg, key))
+    growth = s["network_growth_printed_pct"]
+    out += [(growth, key) for key, values in growth.items()
+            if isinstance(values, list) and len(values) == len(growth["periods"])]
     return out
 
 
@@ -821,14 +835,16 @@ def vintage_keys(g: dict) -> list[str]:
 
 def rolled_back(staging: dict) -> dict:
     """The series one quarter earlier, on the Q1 2026 figures the file already
-    holds. The Q1 page's own thresholds are the three the 2026-04-24 note set,
-    with the ICS figure as the Q1 release printed it."""
+    holds. Q1 2026 is the first quarter this site analysed, so it has nothing to
+    settle; its own thresholds are the ones the 2026-04-24 analysis set -- the
+    very lines this quarter's page settles -- read against the Q1 figures."""
     s = copy.deepcopy(staging)
     for container, key in quarterly_lists(s):
         container[key] = container[key][:-1]
     g = s["annual_guidance_history"]
     for key in vintage_keys(g):
         g[key] = g[key][:-1]
+    prior = staging["prior_kpi_settlement"]
     for key in ("_checks",) + QUARTER_BLOCKS:
         s.pop(key, None)
     label = s["period_labels"][-1]
@@ -836,14 +852,7 @@ def rolled_back(staging: dict) -> dict:
                    "analysis_date": "2026-04-25", "audit_status": "unaudited"}
     s["next_kpi"] = {
         "period": label,
-        "quantified": [
-            {"metric": "ICS 消费同比（报告口径）", "direction": "up", "threshold": 15.0, "unit": "pct",
-             "current": 20.0, "source": "Q1 2026 EX-99.2 Network Volumes Related Growth"},
-            {"metric": "拨备同比", "direction": "down", "threshold": 5.0, "unit": "pct",
-             "reads": "yoy:financials.provisions_usd_m"},
-            {"metric": "净核销率（本金口径）", "direction": "down", "threshold": 2.1, "unit": "pct",
-             "reads": "credit_metrics.net_write_off_rate_principal_pct"},
-        ],
+        "quantified": [dict(entry) for entry in prior["quantified"] if entry["threshold"] != 0],
     }
     folder = "https://www.sec.gov/Archives/edgar/data/4962/000000496226000188/"
     s["sources"] = ([{"label": "American Express 2026 年第一季度业绩新闻稿（8-K EX-99.1）",
@@ -856,8 +865,45 @@ def rolled_back(staging: dict) -> dict:
     return s
 
 
+def settle_forward(previous: dict, label: str) -> dict:
+    """The blocks a roll writes for last quarter's analysis, as a roller would:
+    section 8's lines are last quarter's `next_kpi` lines, now read against the new
+    quarter (a line on a value no series holds gets this quarter's printed figure),
+    plus section 0's follow-ups. Nothing here is code -- only series edits."""
+    lines = previous["next_kpi"]["quantified"]
+    quantified = []
+    for i, line in enumerate(lines):
+        entry = {k: v for k, v in line.items() if k != "current"}
+        entry.setdefault("note_item", i + 1)
+        entry.setdefault("side", "警示")
+        if "reads" not in entry:
+            entry["actual"] = line["current"]
+            entry["source"] = "演练：新一季申报里的同一行"
+        quantified.append(entry)
+    rows = max(e["note_item"] for e in quantified)
+    return {
+        "prior_kpi_settlement": {
+            "period": label, "set_in": previous["period_labels"][-1],
+            "quantified": quantified, "unsettled": [],
+            "conditions": [f"演练第 {i} 行原文" for i in range(1, rows + 1)],
+            "dispositions": [f"演练第 {i} 行处置" for i in range(1, rows + 1)],
+            "source": "演练：上季分析第 8 节",
+        },
+        "followup_closure": {
+            "period": label, "set_in": previous["period_labels"][-1],
+            "items": [{"question": "演练问题一", "verdict_text": "已验证", "verdict": "已验证", "follow": "演练"},
+                      {"question": "演练问题二", "verdict_text": "被证伪（反向）", "verdict": "被证伪",
+                       "follow": "演练"}],
+            "rule": "演练：按主判定词归类。",
+            "source": "演练：本季分析第 0 节",
+        },
+    }
+
+
 def rolled_forward(staging: dict, revenue_growth: int | None = None) -> dict:
-    """One quarter later with made-up figures. A fourth quarter's release
+    """One quarter later with made-up figures, rolled the way a quarter's roll is:
+    the arrays grow a cell, last quarter's thresholds become this quarter's
+    settlement, and the new analysis leaves its own. A fourth quarter's release
     settles the open year and opens the next."""
     s = copy.deepcopy(staging)
     last = s["periods"][-1]
@@ -908,8 +954,13 @@ def rolled_forward(staging: dict, revenue_growth: int | None = None) -> dict:
         g["guide_eps_basis"][-1] = None
     else:
         add_vintage(open_year, f"Q{quarter}")
+    previous = staging
+    next_lines = copy.deepcopy(staging["next_kpi"])
     for key in ("_checks",) + QUARTER_BLOCKS:
         s.pop(key, None)
+    s.update(settle_forward(previous, label))
+    next_lines["period"] = label
+    s["next_kpi"] = next_lines
     s["latest"] = {"period": label, "release_date": release,
                    "analysis_date": release, "audit_status": "unaudited"}
     folder = f"https://www.sec.gov/Archives/edgar/data/4962/next{period}/"
@@ -1016,9 +1067,16 @@ class AxpChecksTest(unittest.TestCase):
         self.assertEqual({row[0]: row[3] for row in table["rows"]}, expected)
         settled = next(t for t in self.payload["tables"] if t["title"].startswith("上季阈值与本季实际值"))
         rows = {row[0]: row[3] for row in settled["rows"]}
-        self.assertEqual(rows["拨备同比"],
-                         f"{growth(c['total_provisions_usd_m'], prior['total_provisions_usd_m']):.1f}%")
-        self.assertEqual(rows["净核销率（本金口径）"], f"{c['net_write_off_rate_principal_pct']:.1f}%")
+        provisions = f"{growth(c['total_provisions_usd_m'], prior['total_provisions_usd_m']):.1f}%".replace("-", "−")
+        for line in ("稳定线", "警示线"):
+            self.assertEqual(rows[f"拨备同比（{line}）"], provisions)
+            self.assertEqual(rows[f"净核销率（本金口径，{line}）"], f"{c['net_write_off_rate_principal_pct']:.1f}%")
+        ics, te = c["ics_billed_business_growth_printed_pct"], c["te_billed_business_growth_printed_pct"]
+        self.assertEqual(rows["ICS 消费同比（消退线）"], f"{ics['reported'][1]}%")
+        self.assertEqual(rows["T&E 消费同比（加仓线）"], f"{te['reported'][1]}%")
+        before, now = c["guidance_prior_eps_usd"], c["guidance"]["eps_usd"]
+        self.assertEqual(rows["FY2026 EPS 指引上修幅度（加仓线）"],
+                         f"{(sum(now) / sum(before) - 1) * 100:.1f}%".replace("-", "−"))
 
     def test_the_prior_year_quarter_is_the_series_one(self) -> None:
         fin, prior = self.staging["financials"], self.checks["prior_year"]
@@ -1031,22 +1089,140 @@ class AxpChecksTest(unittest.TestCase):
         self.assertEqual(self.staging["operating_metrics"]["billed_business_usd_bn"][-5],
                          prior["billed_business_usd_bn"])
 
-    def test_the_settled_ics_reading_is_the_printed_one(self) -> None:
-        block = self.staging["settled_kpi"]
-        ics = next(e for e in block["quantified"] if e["metric"].startswith("ICS"))
-        printed = self.checks["ics_billed_business_growth_printed_pct"]
-        self.assertEqual(ics["actual"], printed["reported"][1])
-        figures = block["figures"]
-        self.assertEqual([figures["ics_reported_prior"], figures["ics_reported"]], printed["reported"])
-        self.assertEqual([figures["ics_fx_prior"], figures["ics_fx"]], printed["fx_adjusted"])
+    def test_the_growth_table_ends_on_the_checked_readings(self) -> None:
+        """The printed ICS and T&E growth rates the settlement reads, against the release."""
+        block = self.staging["network_growth_printed_pct"]
+        self.assertEqual(block["periods"][-1], self.staging["periods"][-1])
+        for row, check in (("ics", "ics_billed_business_growth_printed_pct"),
+                           ("te", "te_billed_business_growth_printed_pct")):
+            printed = self.checks[check]
+            self.assertEqual(block[f"{row}_reported_pct"][-2:], printed["reported"], row)
+            self.assertEqual(block[f"{row}_fx_adjusted_pct"][-2:], printed["fx_adjusted"], row)
+        for entry in self.staging["prior_kpi_settlement"]["quantified"]:
+            self.assertNotIn("actual", entry, entry["metric"])
         self.assertEqual(self.staging["next_kpi"]["figures"]["fx_adjusted_billed_growth_pct"],
                          self.checks["billed_business_growth_printed_pct"]["fx_adjusted"])
+
+    def test_the_write_off_basis_the_note_names_is_the_printed_one(self) -> None:
+        figures = self.staging["prior_kpi_settlement"]["figures"]
+        self.assertEqual(figures["nwo_total_pct"], self.checks["net_write_off_rate_total_pct"])
+        chart = next(ex for ex in self.exhibits if ex.get("ref") ==
+                     "EX_PRIOR_CREDIT_METRICS_NET_WRITE_OFF_RATE_PRINCIPAL_PCT")
+        self.assertIn(f"含利息与费用的口径本季是 {self.checks['net_write_off_rate_total_pct']}%", chart["note"])
+
+
+class AxpFourPartTest(unittest.TestCase):
+    """Section one says what the owner's two analyses say.
+
+    What the analyses concluded -- the closure tally, last quarter's thresholds --
+    is keyed once per roll into `_checks["note"]`, re-read from the report files
+    rather than copied from the series blocks, and the builder never sees it. So
+    a roll edits the series file alone; nothing the reports said is typed here.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.s = json.loads(axp.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.note = cls.s["_checks"]["note"]
+        cls.payload = axp.build_payload(cls.s)
+        cls.sections = {section["id"]: section for section in cls.payload["sections"]}
+
+    def test_the_closure_is_the_analysis_section_zero(self) -> None:
+        closure = self.s["followup_closure"]
+        self.assertEqual(closure["set_in"], self.s["period_labels"][-2])
+        self.assertEqual([item["verdict_text"] for item in closure["items"]],
+                         self.note["closure"]["verdicts_verbatim"])
+        chart = self.sections["settled"]["exhibits"][0]
+        self.assertEqual(chart["kind"], "bars_labeled")
+        expected = [(label, count) for label, count in self.note["closure"]["counts"].items()]
+        order = axp.CLOSURE_ORDER
+        self.assertEqual(list(zip(chart["xlabels"], chart["values"])),
+                         sorted(expected, key=lambda pair: order.index(pair[0])))
+        total = self.note["closure"]["total"]
+        self.assertEqual(sum(chart["values"]), total)
+        self.assertTrue(chart["title"].startswith(f"上季 {total} 条待验证问题："), chart["title"])
+        # the classification rule is printed, because the report prints no tally of its own
+        self.assertIn("归类规则", chart["note"])
+
+    def test_a_verdict_the_chart_does_not_know_stops_the_build(self) -> None:
+        odd = copy.deepcopy(self.s)
+        odd["followup_closure"]["items"][0]["verdict"] = "大致验证"
+        with self.assertRaisesRegex(ValueError, "verdicts"):
+            axp.build_payload(odd)
+
+    def test_the_closure_table_prints_the_checked_readings(self) -> None:
+        c = self.s["_checks"]
+        table = next(t for t in self.payload["tables"] if t["title"].endswith("待验证问题与本季判定"))
+        self.assertEqual(len(table["rows"]), self.note["closure"]["total"])
+        rows = {row[0]: row[4] for row in table["rows"]}
+        before, now = c["other_net_expense_usd_m"]
+        self.assertIn(f"本季 US${now:,.0f}M（上季 US${before:,.0f}M）", rows["5"])
+        self.assertIn(f"30+ 天逾期 {c['past_due_30_pct']:.1f}%（上季 {c['past_due_30_pct_prior']:.1f}%）", rows["6"])
+        te = c["te_billed_business_growth_printed_pct"]["fx_adjusted"]
+        self.assertIn(f"T&E 汇率调整口径 +{te[1]}%（上季 +{te[0]}%）", rows["7"])
+
+    def test_the_prior_thresholds_are_the_last_analysis_section_eight(self) -> None:
+        prior = self.s["prior_kpi_settlement"]
+        self.assertEqual(prior["set_in"], self.s["period_labels"][-2])
+        self.assertEqual(len(prior["conditions"]), self.note["prior_rows"])
+        self.assertEqual(len(prior["dispositions"]), self.note["prior_rows"])
+        typed = [(e["note_item"], e["metric"], e["threshold"], e["direction"]) for e in prior["quantified"]]
+        self.assertEqual(typed, [(row["row"], row["metric"], row["threshold"], row["direction"])
+                                 for row in self.note["prior_thresholds"]])
+        self.assertEqual(sorted(u["note_item"] for u in prior["unsettled"]),
+                         self.note["prior_unquantified_rows"])
+        self.assertFalse(any("actual" in entry for entry in prior["quantified"]))
+
+    def test_the_prior_settlement_is_read_from_the_series(self) -> None:
+        """Recomputed along a second route: from the arrays, not the builder's readers."""
+        fin, credit, growth = self.s["financials"], self.s["credit_metrics"], self.s["network_growth_printed_pct"]
+        g = self.s["annual_guidance_history"]
+        provisions = fin["provisions_usd_m"]
+        now = {
+            "guide_change:eps": ((g["guide_eps_lo_usd"][-1] + g["guide_eps_hi_usd"][-1])
+                                 / (g["guide_eps_lo_usd"][-2] + g["guide_eps_hi_usd"][-2]) - 1) * 100,
+            "printed_growth:ics_reported_pct": growth["ics_reported_pct"][-1],
+            "printed_growth:te_reported_pct": growth["te_reported_pct"][-1],
+            "yoy:financials.provisions_usd_m": (provisions[-1] / provisions[-5] - 1) * 100,
+            "credit_metrics.net_write_off_rate_principal_pct": credit["net_write_off_rate_principal_pct"][-1],
+        }
+        expected, labels = [], []
+        for row, entry in zip(self.note["prior_thresholds"], self.s["prior_kpi_settlement"]["quantified"]):
+            if row["threshold"] == 0:
+                continue
+            sign = 1 if row["direction"] == "up" else -1
+            expected.append(round(sign * (now[entry["reads"]] - row["threshold"]) / abs(row["threshold"]) * 100, 1))
+            labels.append(row["metric"])
+        overview = next(ex for ex in self.sections["settled"]["exhibits"]
+                        if ex["kind"] == "diverging_bars")
+        self.assertEqual(overview["xlabels"], labels)
+        self.assertEqual(overview["values"], expected)
+        self.assertTrue(overview["title"].startswith(f"上季 {len(expected)} 条量化阈值："), overview["title"])
+
+    def test_every_prior_line_on_a_drawn_reading_is_on_its_chart(self) -> None:
+        """Each settled threshold is a flat line on the chart of the reading it watches,
+        or the overview says why that reading has no chart."""
+        charts = [ex for ex in self.sections["settled"]["exhibits"] if ex.get("ref", "").startswith("EX_PRIOR_")
+                  and ex["kind"] == "lines"]
+        drawn = sorted(line["values"][0] for ex in charts for line in ex["series"]
+                       if len(set(line["values"])) == 1)
+        overview = next(ex for ex in self.sections["settled"]["exhibits"] if ex["kind"] == "diverging_bars")
+        charted = {ex["ref"] for ex in charts}
+        expected = []
+        for entry in self.s["prior_kpi_settlement"]["quantified"]:
+            if axp.reading_ref("上季", entry["reads"]) in charted:
+                expected.append(entry["threshold"])
+            else:
+                self.assertIn("没有", overview["note"])
+        self.assertEqual(drawn, sorted(expected))
+        for phrase in ("EPS 指引那条没有时间序列可画", "T&E 消费同比没有单独画线", "拨备同比没有单独画线"):
+            self.assertIn(phrase, overview["note"])
 
 
 class AxpRollTest(unittest.TestCase):
     """What a roll can change without touching the builder."""
 
-    STORY_ONLY = ("预计将面临执法行动", "因为口径错了才触发", "上季那份分析一共立了")
+    STORY_ONLY = ("预计将面临执法行动",)
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -1069,9 +1245,9 @@ class AxpRollTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "sources"):
             axp.build_payload(bare)
 
-    def test_a_quarter_without_its_blocks_leaves_them_out(self) -> None:
+    def test_a_quarter_without_its_story_blocks_leaves_them_out(self) -> None:
         bare = copy.deepcopy(self.s)
-        for key in QUARTER_BLOCKS:
+        for key in ("next_kpi", "quarter_story"):
             del bare[key]
         payload = axp.build_payload(bare)
         text = own_text(payload)
@@ -1082,13 +1258,34 @@ class AxpRollTest(unittest.TestCase):
         sections = {section["id"]: section for section in payload["sections"]}
         self.assertEqual(sections["next_quarter"]["exhibits"], [])
         self.assertIn("本节没有图", sections["next_quarter"]["description"])
-        self.assertFalse(any(ex["kind"] == "diverging_bars"
-                             for ex in sections["settled"]["exhibits"]))
-        self.assertNotIn("两样东西", sections["settled"]["description"])
         numbers = [ex["n"] for ex in exhibits_of(payload)]
         self.assertEqual(numbers, list(range(2, 2 + len(numbers))))
         self.assertNotRegex(text, PLACEHOLDER)
         self.assertNotRegex(text, r"\{EX_[A-Z_]+\}")
+
+    def test_a_later_quarter_without_its_settlement_stops_the_build(self) -> None:
+        """Past the first analysed quarter, section one's thresholds are owed every quarter."""
+        bare = copy.deepcopy(self.s)
+        del bare["prior_kpi_settlement"]
+        with self.assertRaisesRegex(ValueError, "prior_kpi_settlement"):
+            axp.build_payload(bare)
+        # the follow-up block alone may be absent: the chart and its table go, the rest stays
+        no_closure = copy.deepcopy(self.s)
+        del no_closure["followup_closure"]
+        payload = axp.build_payload(no_closure)
+        settled = payload["sections"][0]
+        self.assertFalse(any(ex["title"].startswith("上季 ") and "待验证问题" in ex["title"]
+                             for ex in settled["exhibits"]))
+        self.assertTrue(settled["exhibits"][0]["title"].startswith("上季 "))
+        self.assertFalse(any("待验证问题" in t["title"] for t in payload["tables"]))
+
+    def test_an_unaccounted_section_eight_row_stops_the_build(self) -> None:
+        """A row of last quarter's section 8 that is neither settled nor explained is a
+        threshold dropped silently."""
+        bare = copy.deepcopy(self.s)
+        bare["prior_kpi_settlement"]["unsettled"] = bare["prior_kpi_settlement"]["unsettled"][:1]
+        with self.assertRaisesRegex(ValueError, "neither settled nor explained"):
+            axp.build_payload(bare)
 
     def test_a_point_vintage_without_the_companys_words_stops_the_build(self) -> None:
         bare = copy.deepcopy(self.s)
@@ -1108,11 +1305,47 @@ class AxpRollTest(unittest.TestCase):
             self.assertNotIn(token, text)
         self.assertNotRegex(text, PLACEHOLDER)
         self.assertNotRegex(text, r"\{EX_[A-Z_]+\}")
+        # Q1 2026 is the first quarter this site analysed: nothing to settle, and the
+        # section says so rather than leaving a titled section with nothing under it.
+        settled = payload["sections"][0]
+        self.assertIn(f"本站对美国运通的第一份季报分析是 {label}，没有上季留下的跟踪指标可结算",
+                      settled["description"])
+        self.assertFalse(any("待验证问题" in ex["title"] or ex["title"].startswith("上季 ")
+                             for ex in settled["exhibits"]))
         # Q1 2026: the provision leg was negative, so the headline has no "但"
         self.assertNotIn("；但税前利润", payload["headline"])
         self.assertIn("税前增量全部来自经营", payload["brief"])
         self.assertIn("拨备腿 −US$101M", payload["brief"])
         self.assertIn("本季 jaws 为正", own_text(payload))
+
+    def test_the_first_analysed_quarter_refuses_a_settlement(self) -> None:
+        """No analysis precedes the first one, so a settlement stamped for it is invented."""
+        rolled = rolled_back(self.s)
+        invented = copy.deepcopy(self.s["prior_kpi_settlement"])
+        invented["period"] = rolled["period_labels"][-1]
+        rolled["prior_kpi_settlement"] = invented
+        with self.assertRaisesRegex(ValueError, "nothing for"):
+            axp.build_payload(rolled)
+
+    def test_next_quarter_settles_this_quarters_thresholds_from_the_series_alone(self) -> None:
+        """The roll drill: next quarter, this quarter's section-3 lines are section one's
+        section-8 settlement, and the page builds from series edits alone."""
+        rolled = rolled_forward(self.s)
+        payload = axp.build_payload(rolled)
+        settled = payload["sections"][0]
+        closure = settled["exhibits"][0]
+        self.assertEqual(closure["title"], "上季 2 条待验证问题：1 条已验证、1 条被证伪")
+        overview = settled["exhibits"][1]
+        lines = [e for e in self.s["next_kpi"]["quantified"] if e["threshold"] != 0]
+        self.assertEqual(overview["xlabels"], [e["metric"] for e in lines])
+        entries = axp.kpi_entries(rolled["prior_kpi_settlement"], "actual", rolled)
+        expected = [round(headroom(e["direction"], e["threshold"], e["actual"]), 1)
+                    for e in entries if e["threshold"] != 0]
+        self.assertEqual(overview["values"], expected)
+        self.assertTrue(overview["title"].startswith(f"上季 {len(lines)} 条量化阈值："))
+        text = own_text(payload)
+        self.assertNotRegex(text, PLACEHOLDER)
+        self.assertNotRegex(text, r"\{EX_[A-Z_]+\}")
 
     def test_the_quarters_after_build_from_the_series_alone(self) -> None:
         s = self.s
@@ -1332,21 +1565,36 @@ class AxpFindingsTest(unittest.TestCase):
 
     def test_the_quarterly_guidance_exceptions_are_named(self) -> None:
         notes = axp.build_payload(copy.deepcopy(self.s))["notes"]
-        note = next(n for n in notes if n.startswith("第一节结清的是年度指引"))
+        note = next(n for n in notes if n.startswith("第一节第三步结清的公司指引是年度指引"))
         self.assertIn("2019-10-18", note)
         self.assertIn("2020-03-17", note)
         self.assertIn("至少", note)
 
-    def test_the_settled_block_counts_its_own_items(self) -> None:
-        """「只结清得了其中三条，另外两条……第三条」 added up to six of five."""
+    def test_the_settlement_counts_its_own_rows(self) -> None:
+        """「上季那份分析一共立了五条阈值，本页结清了其中两条」 counted rows, not lines,
+        and left three rows out without a word. The words now come from the block."""
         clean = self.page()
-        self.assertIn("上季那份分析一共立了五条阈值，本页结清了其中两条（拆成三根阈值线）", clean)
+        self.assertIn("上季第 8 节一共五行，第一、三、五行拆成 9 根阈值线在这里结清", clean)
+        self.assertIn("第二行<b>无法判定</b>", clean)
+        self.assertIn("第四行<b>无法判定</b>", clean)
 
-        def one_line_each(s):
-            q = s["settled_kpi"]["quantified"]
-            q[2]["note_item"] = 6
+        def drop_row_one(s):
+            block = s["prior_kpi_settlement"]
+            block["quantified"] = [e for e in block["quantified"] if e["note_item"] != 1]
+            block["unsettled"].append({"note_item": 1, "kind": "unjudgeable", "text": "演练"})
 
-        self.assertIn("一共立了六条阈值，本页结清了其中三条", self.page(one_line_each))
+        dropped = self.page(drop_row_one)
+        self.assertIn("第三、五行拆成 8 根阈值线在这里结清", dropped)
+        self.assertIn("第一行<b>无法判定</b>", dropped)
+
+    def test_the_overview_title_counts_each_kind_of_line(self) -> None:
+        clean = self.page()
+        self.assertIn("上季 8 条量化阈值：加仓线三条达到一条、稳定线两条都守住、警示线两条都守住、消退线被跌破", clean)
+
+        def ics_recovers(s):
+            s["network_growth_printed_pct"]["ics_reported_pct"][-1] = 19
+
+        self.assertIn("加仓线三条达到两条、稳定线两条都守住、警示线两条都守住、消退线守住", self.page(ics_recovers))
 
     def test_the_timing_warning_is_read_from_the_filing_dates(self) -> None:
         clean = self.page()
