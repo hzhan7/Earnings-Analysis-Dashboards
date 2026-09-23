@@ -71,6 +71,36 @@ class KerDashboardTest(unittest.TestCase):
         cls.exhibits = [ex for section in cls.payload["sections"] for ex in section["exhibits"]]
         cls.by_ref = {ex["ref"]: ex for ex in cls.exhibits if "ref" in ex}
 
+    # ── the four sections of the reference page ──────────────────────────────
+    def test_the_page_runs_in_the_four_sections_of_the_reference_page(self) -> None:
+        """TSM's four sections, in order, with the ids and titles the format check
+        reads -- and the page's own sentence about its layout says four, not the
+        five it used to."""
+        self.assertEqual([(s["id"], s["title"]) for s in self.payload["sections"]], [
+            ("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+            ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+        for section in self.payload["sections"]:
+            self.assertTrue(section["exhibits"], section["id"])
+        notes = " ".join(self.payload["notes"])
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列", notes)
+        self.assertNotRegex(composed(self.payload), r"[五六]段排列|第五节")
+
+    def test_each_chart_sits_where_its_content_belongs(self) -> None:
+        """A half-year profit line is part of the record; the bridge of the half that
+        ends with this quarter is a finding of this quarter. The company's own
+        targets are settled in section one; the long brand record is routine."""
+        where = {ex["ref"]: section["id"] for section in self.payload["sections"]
+                 for ex in section["exhibits"] if "ref" in ex}
+        for ref in ("EX_G2024", "EX_GUCCI_TARGET", "EX_YSL_TARGET", "EX_TARGETS_2022"):
+            self.assertEqual(where[ref], "settled", ref)
+        for ref in ("EX_GROUP_COMP", "EX_Q2_BRIDGE", "EX_GRID", "EX_GUCCI_Q"):
+            self.assertEqual(where[ref], "quarter_highlights", ref)
+        if "EX_H1_BRIDGE" in where:
+            self.assertEqual(where["EX_H1_BRIDGE"], "quarter_highlights")
+        for ref in ("EX_HOUSES", "EX_HOUSE_COMP", "EX_HOUSE_MARGIN", "EX_GROUP_MARGIN", "EX_GROSS",
+                    "EX_NET_DEBT", "EX_CMD_LINE"):
+            self.assertEqual(where[ref], "routine", ref)
+
     # ── the disclosure shape this page exists to respect ─────────────────────
     def test_no_profit_series_is_carried_on_the_quarterly_axis(self) -> None:
         profit_words = ("利润", "利润率", "毛利", "净负债")

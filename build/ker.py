@@ -36,7 +36,10 @@ statements about the documents read up to the page's quarter, so they are printe
 only while `corpus_audit` is stamped for that quarter.
 
 Published numbers are company-reported or transparent arithmetic (marked D).
-Thresholds in the last section are local research settings, not company guidance.
+The page runs in TSM's four sections: what last quarter set and this quarter
+settles, this quarter's findings, what the next quarter is tracked against, and
+the long record. Thresholds in the third section are local research settings, not
+company guidance.
 
 Rolling the page is a data edit (CLAUDE.md §9). A first- or third-quarter roll
 appends a quarter and leaves the half-year arrays alone; a second- or fourth-quarter
@@ -412,7 +415,7 @@ def targets_2022(st: dict, der: dict) -> dict:
             "g22": g_rev[ig22], "g_now": g_rev[ig], "s_m22": s_m[is22], "s_m_now": s_m[is_]}
 
 
-# ── section one: the numbers Kering did give ─────────────────────────────────
+# ── section one (c): the numbers Kering itself gave, settled ─────────────────
 def gucci_target_facts(st: dict, der: dict) -> dict:
     ann = st["annual_house"]["gucci"]
     years, g_rev, g_m = ann["years"], ann["revenue_eur_m"], der["ann_margin"]["gucci"]
@@ -826,7 +829,7 @@ def quarter_charts(st: dict, der: dict) -> list[dict]:
     return exhibits
 
 
-# ── section three: what only the half-year shows ─────────────────────────────
+# ── half-year profit: this half's bridge (section two), the record (four) ────
 def half_charts(st: dict, der: dict) -> list[dict]:
     halves = st["halves"]
     hg = st["half_group"]
@@ -1104,7 +1107,7 @@ def long_charts(st: dict, der: dict) -> list[dict]:
     ]
 
 
-# ── section five: next-quarter tracking ──────────────────────────────────────
+# ── section three: next-quarter tracking ─────────────────────────────────────
 def measured(st: dict, der: dict) -> dict:
     """What the page can measure a threshold against, keyed by the block's `measure`.
 
@@ -1150,7 +1153,9 @@ def outlook_sentence(st: dict) -> str:
     return f"<b>{release_cn(outlook['doc'])}的展望段落里没有数字</b>，只写「{outlook['quote']}」；"
 
 
-def routine_charts(st: dict, der: dict) -> list[dict]:
+def routine_charts(st: dict, der: dict) -> tuple[list[dict], list[dict]]:
+    """The next quarter's thresholds (section three) and the Capital Markets Day
+    target drawn on the long half-year margin line (section four)."""
     entries = threshold_entries(st, der)
     breached = [e["metric"] for e in entries if headroom(e["direction"], e["threshold"], e["current"]) < 0]
     gm_now = der["group_margin"][-1]
@@ -1163,10 +1168,11 @@ def routine_charts(st: dict, der: dict) -> list[dict]:
             ("阈值是本地研究设定，不是公司指引。正值代表仍在安全侧。"
              + outlook_sentence(st) +
              "资本市场日给的是中期目标（利润率为 FY2025 的两倍以上），"
-             "见下一张。原始单位的阈值与当前值见核对表。"),
+             "画在第四节。原始单位的阈值与当前值见核对表。"),
             "阈值与理由见核对表；当前值取自本页已列示的公司披露值与透明自算。",
         ),
-        threshold_exhibit(
+    ], [
+        {"ref": "EX_CMD_LINE"} | threshold_exhibit(
             f"半年利润率对资本市场日的中期目标：FY2025 的两倍是 {line:.1f}%",
             st["halves"], rounded(der["group_margin"]), round(line, 2),
             fmt="pct1", ylab="半年经常性营业利润率 D",
@@ -1208,12 +1214,28 @@ def build_payload(st: dict) -> dict:
     check_half_matches_quarter(st)
     check_release_in_sources(st)
     der = derived(st)
+    # Four sections, TSM's order: what last quarter set and this quarter settles,
+    # this quarter's findings, what the next quarter is tracked against, and the
+    # long record. The half-year profit charts are split by what they say: the
+    # half that ends with this quarter has a finding of its own (the margin
+    # bridge, stamped with the half), the twenty-one-half lines are the record.
     said_ex = settled_charts(st, der)
     quarter_ex = quarter_charts(st, der)
-    half_ex = half_charts(st, der)
+    half = {ex["ref"]: ex for ex in half_charts(st, der)}
+    half_now = [half.pop("EX_H1_BRIDGE")] if "EX_H1_BRIDGE" in half else []
     long_ex = long_charts(st, der)
-    routine_ex = routine_charts(st, der)
-    exhibits = number_exhibits(said_ex + quarter_ex + half_ex + long_ex + routine_ex)
+    next_ex, target_ex = routine_charts(st, der)
+    settled_group = said_ex
+    highlight_group = quarter_ex + half_now
+    next_group = next_ex
+    # the long record: the brand lines by quarter, then profitability by half
+    # (brands, group, the mid-term target on the group line, gross margin), then
+    # the balance sheet
+    routine_group = (long_ex + [half.pop("EX_HOUSE_MARGIN"), half.pop("EX_GROUP_MARGIN")]
+                     + target_ex + [half.pop("EX_GROSS"), half.pop("EX_NET_DEBT")])
+    if half:
+        raise ValueError(f"half-year charts {sorted(half)} have no section")
+    exhibits = number_exhibits(settled_group + highlight_group + next_group + routine_group)
     resolve_exhibit_refs(exhibits)
 
     q = st["long_quarters"]
@@ -1391,11 +1413,11 @@ def build_payload(st: dict) -> dict:
     # ── sections, notes
     end = max(i for i, v in enumerate(rev["saint_laurent"]) if v is not None) + 1
     if turn["first_again"]:
-        s2_title = "二、本季重点：集团回到增长，增长来自哪里"
+        s2_lead = "集团回到增长，增长来自哪里。"
     elif turn["cur"] > 0:
-        s2_title = "二、本季重点：集团在增长，增长来自哪里"
+        s2_lead = "集团在增长，增长来自哪里。"
     else:
-        s2_title = "二、本季重点：集团与 Gucci 都在哪里"
+        s2_lead = "集团与 Gucci 都在哪里。"
     audit = stamped_block(st, "corpus_audit", period)
     exceptions = st["reprint_exceptions"]
     reprint_notes = []
@@ -1412,7 +1434,7 @@ def build_payload(st: dict) -> dict:
                               f"在本页读过的全部文件里，三条品牌线与首次公布不同的重印共{cn_count(len(exceptions))}处。")
 
     notes = [
-        "本页按「给过的数字 → 本季 → 半年度独有 → 长期记录 → 下季跟踪」五段排列，支撑表格收在核对抽屉里。",
+        "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，支撑表格收在核对抽屉里。",
         "Kering 一年发四次收入、只发两次利润。第一与第三季度只发收入公告；损益表、品牌经常性营业利润、现金流与资产负债表只在半年度与全年披露。所以收入用季度轴、利润用半年轴，两条轴各自独立，本页不做任何按季摊平。",
         "Kering 不是 SEC 报告发行人：EDGAR 上 CIK 1445465 名下只有 ADR 存托登记文件（F-6EF、F-6 POS、424B3），没有任何财务报表。本页全部数据取自 kering.com 发布的文件。",
     ]
@@ -1428,7 +1450,7 @@ def build_payload(st: dict) -> dict:
         "H2 各行由「全年减上半年」得出并标 D；半年品牌收入取当季首次公布的两个季度相加，与公司印出的半年表逐一核对过。",
         "2024 年下半年与全年利润指引都附脚注「Based on the scope of consolidation and exchange rates」（当时的合并范围与汇率）；公司从未按该口径公布实际值，本页用报告口径结算，并在图注里写明。",
         "净负债按公司定义不含租赁负债，整条序列口径一致；公告正文只印到 0.1 十亿欧元，本页取半年度财务报告与全年新闻稿净负债表里的精确值。",
-        "第五节的阈值是本地研究设定，不是公司指引，也不构成评级或投资建议；「距阈值余量」统一为正值代表安全侧。",
+        "第三节的阈值是本地研究设定，不是公司指引，也不构成评级或投资建议；「距阈值余量」统一为正值代表安全侧。",
         "本页只发布公司披露值与可复算的简单派生值；D 标记代表 Derived / 自算。电话会记录仅作背景，不作为本页任何数字的来源。",
         "本页已知未接入：品牌的分地区收入（公司只给零散的文字增速）、按季的零售与批发拆分、门店数（两份文件对同一时点的门店数不一致，见各年财务文件）、2026 年起 Saint Laurent 与 Bottega Veneta 的任何数字（公司不再披露）。",
     ]
@@ -1454,28 +1476,29 @@ def build_payload(st: dict) -> dict:
         "guidance": None,
         "sections": [
             {"id": "settled",
-             "title": "一、公司给过的数字，结算了没有",
-             "description": ("Kering 给过的数字目标散在新闻稿、演示材料与年度文件里。这一节只结算能在原口径上核的："
+             "title": "一、上季跟踪指标兑现了吗",
+             "description": ("Kering 自己给过的数字目标散在新闻稿、演示材料与年度文件里。这一节结算能在原口径上核的："
                              "2024 年三次利润指引、2019 年与 2022 年的品牌中期目标；其余目标逐条列在核对表里，"
-                             "2026 年资本市场日的中期目标尚未到期，放在最后一节跟踪。"),
-             "exhibits": said_ex},
+                             "2026 年资本市场日的中期目标尚未到期，画在第四节。"),
+             "exhibits": settled_group},
             {"id": "quarter_highlights",
-             "title": s2_title,
-             "description": "季度口径只有收入。这一节看集团可比增速、分部贡献与 Gucci 本身。",
-             "exhibits": quarter_ex},
-            {"id": "half_year",
-             "title": "三、只有半年度披露才看得见的：利润、毛利与负债",
-             "description": "本节所有利润图的 x 轴都是半年，不是季度；净负债是期末时点。",
-             "exhibits": half_ex},
-            {"id": "long_record",
-             "title": f"四、{cn_count(len(q))}季的品牌记录",
-             "description": (f"季度收入与可比增速回到 {quarter_cn(q[0])}；品牌线停在 {quarter_cn(q[end - 1])}，"
-                             "因为之后不再披露。"),
-             "exhibits": long_ex},
+             "title": "二、本季重点",
+             "description": (s2_lead + "季度口径只有收入：集团可比增速、分部贡献与 Gucci 本身。"
+                             f"{half_word(halves[-1])}在本季结束，所以本期半年利润率的结论也放在这一节。"
+                             if half_now else
+                             s2_lead + "季度口径只有收入：集团可比增速、分部贡献与 Gucci 本身。"),
+             "exhibits": highlight_group},
+            {"id": "next_quarter",
+             "title": "三、下季要跟踪什么",
+             "description": "阈值为本地研究设定，不是公司指引；当前值离下季阈值还有多远，统一用「距阈值余量」口径。",
+             "exhibits": next_group},
             {"id": "routine",
-             "title": "五、下季跟踪",
-             "description": "阈值为本地研究设定，不是公司指引；再加资本市场日中期利润率目标的距离。",
-             "exhibits": routine_ex},
+             "title": "四、长期常规跟踪",
+             "description": (f"Kering 特有的长期序列：品牌季度收入与可比增速回到 {quarter_cn(q[0])}，"
+                             f"品牌线停在 {quarter_cn(q[end - 1])}（之后不再披露）；半年利润率与毛利率回到 "
+                             f"{halves[0]}，x 轴是半年、不是季度；资本市场日的中期利润率目标画在集团半年利润率上；"
+                             "净负债是期末时点。"),
+             "exhibits": routine_group},
         ],
         "tables": tables,
         "notes": notes,
