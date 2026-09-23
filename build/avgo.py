@@ -854,9 +854,8 @@ def build_payload(staging: dict) -> dict:
     }
 
     delivery_charts, delivery_tables = guidance_delivery_charts(staging)
-    settled_ex = number_exhibits(
-        [chart for chart in (closure_chart, verdict_chart) if chart is not None]
-        + [delivery_chart] + delivery_charts, start=2)
+    settled_charts = ([chart for chart in (closure_chart, verdict_chart) if chart is not None]
+                      + [delivery_chart] + delivery_charts)
 
     # ── section two ──────────────────────────────────────────────────────────
     semi_yoy = pct_change(semi_rev[-1], semi_rev[-5])
@@ -1129,11 +1128,6 @@ def build_payload(staging: dict) -> dict:
         "src_extra": "取自各季 10-Q / 10-K 资产负债表。",
     }
 
-    highlight_ex = number_exhibits(
-        [revenue_chart, mix_chart, ai_chart, seg_profit_chart, wedge_chart,
-         commit_chart, working_chart],
-        start=settled_ex[-1]["n"] + 1)
-
     # ── section three ────────────────────────────────────────────────────────
     kpi = stamped_block(staging, "next_kpi", periods[-1])
     next_kpi = kpi["quantified"] if kpi else []
@@ -1203,7 +1197,7 @@ def build_payload(staging: dict) -> dict:
             ))
         return charts
 
-    next_ex = []
+    next_charts = []
     if next_kpi:
         headroom_chart = headroom_exhibit(
             f"下季{cn_count(len(next_kpi))}条跟踪线：当前值离阈值还有多远",
@@ -1215,9 +1209,7 @@ def build_payload(staging: dict) -> dict:
             ),
             src_extra="阈值为本地研究设定，不是公司指引；当前值为本季申报值或自算值。",
         )
-        next_ex = number_exhibits(
-            [headroom_chart] + tracking_charts(next_kpi),
-            start=highlight_ex[-1]["n"] + 1)
+        next_charts = [headroom_chart] + tracking_charts(next_kpi)
 
     # ── section four ─────────────────────────────────────────────────────────
     both = [i for i in range(len(periods)) if semi_margin[i] is not None and isg_margin[i] is not None]
@@ -1422,9 +1414,21 @@ def build_payload(staging: dict) -> dict:
         "src_extra": "回购与分红取自现金流量表融资活动；自由现金流为经营现金流减资本开支。",
     }
 
-    routine_ex = number_exhibits(
-        [seg_margin_chart, intensity_chart, conversion_chart, debt_chart, payout_chart],
-        start=(next_ex or highlight_ex)[-1]["n"] + 1)
+    # Numbered once every chart exists, in render order. The four sections are
+    # the site's fixed layout: what last quarter left, settled; this quarter's
+    # conclusions; what to track next; the long-run series. A chart belongs to
+    # the section its content answers, not to where it happens to be computed:
+    # the GAAP / non-GAAP wedge is a 42-quarter structural line with no
+    # this-quarter conclusion, so it sits with the routine series, and the
+    # payout chart reads this quarter's capital allocation, so it sits with the
+    # quarter's highlights.
+    highlight_charts = [revenue_chart, mix_chart, ai_chart, seg_profit_chart,
+                        commit_chart, working_chart, payout_chart]
+    routine_charts = [seg_margin_chart, wedge_chart, intensity_chart, conversion_chart, debt_chart]
+    settled_ex = number_exhibits(settled_charts, start=2)
+    highlight_ex = number_exhibits(highlight_charts, start=settled_ex[-1]["n"] + 1)
+    next_ex = number_exhibits(next_charts, start=highlight_ex[-1]["n"] + 1)
+    routine_ex = number_exhibits(routine_charts, start=(next_ex or highlight_ex)[-1]["n"] + 1)
 
     all_ex = settled_ex + highlight_ex + next_ex + routine_ex
     resolve_exhibit_refs(all_ex)
@@ -1690,7 +1694,7 @@ def build_payload(staging: dict) -> dict:
         "sections": [
             {
                 "id": "settled",
-                "title": "一、上季兑现了吗",
+                "title": "一、上季跟踪指标兑现了吗",
                 "description": (
                     "先结清上季设下的阈值，再看新数字。Broadcom 每季在业绩新闻稿的 "
                     f"Business Outlook 区块给出下一季的{joined(formal_names)}，"
@@ -1700,10 +1704,10 @@ def build_payload(staging: dict) -> dict:
                 "exhibits": settled_ex,
             },
             {
-                "id": "highlights",
+                "id": "quarter_highlights",
                 "title": "二、本季重点",
                 "description": (
-                    "收入结构、两个分部各自的利润、GAAP 与自定义口径之间的缺口，"
+                    "收入结构、两个分部各自的利润、本季的资本配置，"
                     + commitment_words
                 ),
                 "exhibits": highlight_ex,
@@ -1718,8 +1722,8 @@ def build_payload(staging: dict) -> dict:
                 "id": "routine",
                 "title": "四、长期常规跟踪",
                 "description": (
-                    "AVGO 专属的常规序列：两个引擎的分部利润率、fab-lite 的资本强度、"
-                    "现金转化，以及 VMware 之后的去杠杆路径。"
+                    "AVGO 专属的常规序列：两个引擎的分部利润率、GAAP 与自定义口径之间的缺口、"
+                    "fab-lite 的资本强度、现金转化，以及 VMware 之后的去杠杆路径。"
                 ),
                 "exhibits": routine_ex,
             },

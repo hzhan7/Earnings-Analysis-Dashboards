@@ -570,7 +570,7 @@ class AvgoDashboardTest(unittest.TestCase):
                 self.assertIn(row["form"], ("10-Q", "10-K"))
         by_end = {row["period_end"]: row for row in reports}
         year_ago = self.ends[-5]
-        commit = next(ex for ex in self.by_section["highlights"] if "采购承诺" in ex["title"])
+        commit = next(ex for ex in self.by_section["quarter_highlights"] if "采购承诺" in ex["title"])
         if self.source["purchase_commitments_usd_m"]["total"][-1] is None and year_ago in by_end:
             lag = (datetime.date.fromisoformat(by_end[year_ago]["filed"])
                    - datetime.date.fromisoformat(release_of[year_ago])).days
@@ -584,7 +584,7 @@ class AvgoDashboardTest(unittest.TestCase):
         ai = self.source["ai_semiconductor_disclosures"]
         self.assertIn(None, ai["actual_usd_bn"], "the quarter with no level must stay empty")
         self.assertTrue(any(ai["actual_is_floor"]), "the 'over $4.4 billion' floor must be flagged")
-        chart = next(ex for ex in self.by_section["highlights"] if "AI 半导体收入" in ex["title"])
+        chart = next(ex for ex in self.by_section["quarter_highlights"] if "AI 半导体收入" in ex["title"])
         self.assertIn("不是", chart["note"])
         self.assertIn("引语", chart["note"] + chart["src_extra"])
         self.assertNotIn("AI", " ".join(
@@ -606,7 +606,7 @@ class AvgoDashboardTest(unittest.TestCase):
         ai = self.source["ai_semiconductor_disclosures"]
         pairs = [(g, a) for g, a in zip(ai["guided_usd_bn"], ai["actual_usd_bn"])
                  if g is not None and a is not None]
-        chart = next(ex for ex in self.by_section["highlights"]
+        chart = next(ex for ex in self.by_section["quarter_highlights"]
                      if ex["title"].startswith("AI 半导体收入："))
         self.assertIn(f"已有的 {len(pairs)} 对", chart["note"])
         # never claim a clean beat while a pair merely met its floor
@@ -644,9 +644,32 @@ class AvgoDashboardTest(unittest.TestCase):
                     self.assertNotIn("{EX_", exhibit.get(field) or "")
                     self.assertNotIn("ref", exhibit)
 
-    def test_section_order_matches_how_the_note_is_used(self) -> None:
-        self.assertEqual([s["id"] for s in self.payload["sections"]],
-                         ["settled", "highlights", "next_quarter", "routine"])
+    def test_the_page_has_the_sites_four_sections_in_order(self) -> None:
+        """The site's fixed layout, ids and titles verbatim, none of them empty.
+
+        This page's second section used to carry the id `highlights` and its
+        first the title 「一、上季兑现了吗」: both close to the site's layout and
+        neither the layout itself, so a site-wide check keyed on the ids or the
+        titles could not see this page.
+        """
+        self.assertEqual([(s["id"], s["title"]) for s in self.payload["sections"]],
+                         [("settled", "一、上季跟踪指标兑现了吗"),
+                          ("quarter_highlights", "二、本季重点"),
+                          ("next_quarter", "三、下季要跟踪什么"),
+                          ("routine", "四、长期常规跟踪")])
+        for section in self.payload["sections"]:
+            with self.subTest(section=section["id"]):
+                self.assertTrue(section["exhibits"])
+                self.assertTrue(section["description"].strip())
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列",
+                      " ".join(self.payload["notes"]))
+
+    def test_charts_sit_in_the_section_their_content_answers(self) -> None:
+        """A 42-quarter structural line is routine; this quarter's capital allocation is a highlight."""
+        where = {ex["title"].split("：")[0]: section["id"]
+                 for section in self.payload["sections"] for ex in section["exhibits"]}
+        self.assertEqual(where["GAAP 与 non-GAAP 营业利润率的缺口"], "routine")
+        self.assertEqual(where["股东回报与其资金来源"], "quarter_highlights")
 
     def test_headroom_bars_reproduce_the_next_quarter_thresholds(self) -> None:
         entries = self.source["next_kpi"]["quantified"]
