@@ -709,6 +709,11 @@ CONVERTED = {
                     "series behind it.",
         "backlog 创纪录": "same RPO floor.",
         "backlog / 过去四季收入": "same RPO floor.",
+        "单季 book-to-bill": "a book-to-bill needs two consecutive quarter-end backlog figures, "
+                            "and Cadence prints backlog each quarter only from the 2020 releases "
+                            "(checked: the 2019-07-22 CFO Commentary and release carry no backlog "
+                            "figure, only the share of revenue from beginning RPO), so the first "
+                            "ratio is 2020Q1.",
         "中国收入 $": "the 2016-2017 geographic disclosure is Americas / Asia / EMEA / "
                  "Japan with the United States singled out; China is not broken "
                  "out at all, so this file carries Asia-ex-Japan instead.",
@@ -1074,6 +1079,7 @@ FLOOR_KIND = {
         '季末 backlog': 'disclosure',
         'backlog 创纪录': 'disclosure',
         'backlog / 过去四季收入': 'disclosure',
+        '单季 book-to-bill': 'disclosure',
         '中国收入 $': 'disclosure',
         '中国收入占比': 'disclosure',
         '单季经营现金流': 'coverage',
@@ -1391,7 +1397,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 160)
+        self.assertEqual(settled.count("disclosure"), 161)
         self.assertEqual(settled.count("design"), 40)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
@@ -1647,7 +1653,7 @@ UNDERIVABLE_QUARTER_COUNTS = {
                        "自己没有任何地方声明窗口有多长。那 13 个季度本身在本页 8 张 42 季图"
                        "上都画着（画的是它们的合计数，减出来的是收入分项），只是没有任何一张"
                        "图把它们单独成组，所以也不是「补集没被画」。"),
-    "cdns Ex11": ([43], "指向完整指引记录的交叉引用；本图只画近 20 季"),
+    "cdns Ex13": ([43], "指向完整指引记录的交叉引用；本图只画近 20 季"),
     "cme Ex14":  ([37], "锚是同句里用中文写的「五十四个季度里」，数字形式的锚不存在"),
     "cme Ex21":  ([34], "税改前 7 季 / 之后 34 季的分段均值，两段都短于窗口"),
     "meta Ex9":  ([13], "价格腿同比为负的季度数，是条件计数"),

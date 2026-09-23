@@ -76,7 +76,118 @@
       "previous_non_gaap_operating_income_midpoint_usd_m": 2717
     },
     "source": "Cadence Q2 2026 业绩 8-K（2026-07-27，acc 0000813672-26-000089）：EX-99.01 新闻稿的 Condensed Consolidated Income Statements（三个月 Total revenue 1,584,451 / 1,275,441，六个月 3,058,671）、Operating Margin Reconciliation（28.4% → 45.5%）、Diluted Net Income Per Share Reconciliation（1.33 → 2.11）与 Net Income Reconciliation 的经营科目（SBC 146,890、无形资产摊销 79,922、并购整合 32,823、重组 (352)、递延薪酬 11,430）；EX-99.02 CFO Commentary 的 Backlog 表（Q2 2026 $8.1）、Free Cash Flow 表（经营现金流 $635）、Share Repurchase 表（$200）、Revenue Mix by Geography（China 15%）、Q3 2026 Outlook（$1.595–1.625 billion，Non-GAAP OM 43.5%–44.5%，Non-GAAP EPS $2.01–2.07，Y/Y 19%–21%，Q/Q 1%–3%）、FY 2026 Outlook 与 Profitability Trends（$6.260–6.340 billion，43.75%–44.75%，$8.05–8.15，Non-GAAP operating income $2,788 at midpoint）；上一版全年指引（$6.125–6.225 billion，$2,717）读自 Q1 2026 CFO Commentary（acc 0000813672-26-000044）。中国收入读自 Q2 2026 10-Q（acc 0000813672-26-000092）收入按地域附注（China 236,207 / 120,717）。",
-    "checked_on": "2026-09-19"
+    "checked_on": "2026-09-19",
+    "note": {
+      "source": {
+        "this_quarter": "2026-07-27 CDNS Q2 2026 vs Q1 2026 Analysis.md：第 0 节「上季 Follow-up 回答」11 行逐条判定（没有统计行）与上季判断记分卡；第 8 节「上季 KPI 校准」5 行、「本季 KPI（5 条）」与「立场撤销条件」3 条",
+        "last_quarter": "2026-04-28 CDNS Q1 2026 vs Q4 2025 Analysis.md：第 8 节「关键观察指标」5 行；第 1 节 A 表（Bull / Base / Bear）的「验证指标」列；文末「Follow-up Questions for Next Quarter (Q2 2026)」11 条"
+      },
+      "checked_on": "2026-09-24",
+      "closure": {
+        "total": 11,
+        "verdicts_verbatim": [
+          "部分验证，量化倒退",
+          "已验证，强反弹",
+          "已验证（定性）",
+          "未披露",
+          "部分验证",
+          "已验证，幅度超预期",
+          "已验证（超出）+ 新增风险",
+          "仍未披露",
+          "判断错误",
+          "已验证",
+          "未验证"
+        ],
+        "counts": {
+          "已验证": 5,
+          "部分验证": 2,
+          "未披露": 2,
+          "未验证": 1,
+          "判断错误": 1
+        }
+      },
+      "prior_rows": 5,
+      "prior_thresholds": [
+        {
+          "row": 1,
+          "metric": "季末 backlog",
+          "kind": "hurdle",
+          "trigger": "≥",
+          "threshold": 8.2,
+          "report": "#1：Q2/Q3 backlog ≥ $8.2B + 单季 book-to-bill ≥ 1.10x = 2027 营收增速底线 13-15% 锚定 → 加仓"
+        },
+        {
+          "row": 1,
+          "metric": "单季 book-to-bill",
+          "kind": "hurdle",
+          "trigger": "≥",
+          "threshold": 1.1,
+          "report": "#1 同一句的后半"
+        },
+        {
+          "row": 1,
+          "metric": "季末 backlog 环比变化",
+          "kind": "guard",
+          "trigger": "≤",
+          "threshold": 0.0,
+          "report": "#1：Q2 backlog 持平/下降或 b2b < 1.0x = 增长动能 inflection → 警示"
+        },
+        {
+          "row": 1,
+          "metric": "单季 book-to-bill",
+          "kind": "guard",
+          "trigger": "<",
+          "threshold": 1.0,
+          "report": "#1 同一句的后半"
+        },
+        {
+          "row": 5,
+          "metric": "单季回购金额",
+          "kind": "hurdle",
+          "trigger": "≥",
+          "threshold": 250.0,
+          "report": "#5：Q2 ≥ $250M = 资本配置回归常态、Hexagon 整合期可控 → 跟踪"
+        },
+        {
+          "row": 5,
+          "metric": "单季回购金额",
+          "kind": "guard",
+          "trigger": "<",
+          "threshold": 200.0,
+          "consecutive": 2,
+          "report": "#5：连续 2 季 < $200M = 整合期长于预期 + 50% FCF 承诺 at risk → 警示"
+        },
+        {
+          "row": null,
+          "metric": "单季经营现金流",
+          "kind": "guard",
+          "trigger": "<",
+          "threshold": 400.0,
+          "report": "第 1 节 A 表 Bear 的验证指标「Q2 OpCF<$400M（YoY 仍负）」；本季第 8 节校准表：Q2 OpCF < $400M = 恶化非一次性"
+        },
+        {
+          "row": null,
+          "metric": "FY2026 非 GAAP EPS 指引中值",
+          "kind": "hurdle",
+          "trigger": "≥",
+          "threshold": 8.0,
+          "report": "第 1 节 A 表 Bull 的验证指标「FY2026 EPS指引上修至$8.00+」；本季第 8 节校准表：= Bull 确认"
+        },
+        {
+          "row": null,
+          "metric": "中国收入占比",
+          "kind": "guard",
+          "trigger": "<",
+          "threshold": 10.0,
+          "report": "第 1 节 A 表 Bear 的验证指标「中国营收占比破 10%」；本季第 8 节校准表：= Bear 信号"
+        }
+      ],
+      "prior_unquantified_rows": {
+        "2": "Hexagon Q2 收入贡献 ≥ $47M（跟踪）/ < $40M（警示）：公司不披露",
+        "3": "Intel 14A IP multi-year 合同 $400–700M：协议已公布、金额未披露",
+        "4": "ChipStack/AgentStack multi-year 大订单 + ARR：没有量化披露，本季第 8 节退役"
+      }
+    }
   },
   "period_labelling": {
     "convention": "自然年季度",
@@ -2179,84 +2290,197 @@
       "已验证",
       "部分验证",
       "未披露",
+      "未验证",
       "判断错误"
     ],
-    "counts": [
-      5,
-      2,
-      3,
-      1
+    "items": [
+      {
+        "question": "Hexagon Q2 收入贡献在哪条轨道？整合费用是否减弱？",
+        "verdict_text": "部分验证，量化倒退",
+        "verdict": "部分验证",
+        "evidence": "管理层只说 Hexagon「按原计划交付」，没有给 Q2 金额，也没有重申 Q1 给过的全年 {hexagon_revenue} 收入 / {hexagon_eps} EPS（电话会）；10-Q 不单列 D&E 的并表收入"
+      },
+      {
+        "question": "Q1 经营现金流同比 −27% 是否反弹？",
+        "verdict_text": "已验证，强反弹",
+        "verdict": "已验证",
+        "evidence": "Q2 经营现金流 {ocf}、同比 {ocf_yoy}；全年经营现金流指引由 {prev_fy_ocf} 上修到{fy_ocf}"
+      },
+      {
+        "question": "Intel 14A 合同是否公布？",
+        "verdict_text": "已验证（定性）",
+        "verdict": "已验证",
+        "evidence": "多年期协议已在本季新闻稿公布，管理层称是「100% incremental」；金额、年限与确认节奏都没有披露"
+      },
+      {
+        "question": "Z4 / X4 硬件路线图是否更新？",
+        "verdict_text": "未披露",
+        "verdict": "未披露",
+        "evidence": "电话会完全没有提；新闻稿只写硬件「another record quarter」、新增 12 个客户"
+      },
+      {
+        "question": "ChipStack / AgentStack 大客户多年签约是否披露？",
+        "verdict_text": "部分验证",
+        "verdict": "部分验证",
+        "evidence": "ChipStack 超过 20 个客户 engagement、ViraStack 超过 25 个（电话会）；没有 ARR、合同金额或客户名"
+      },
+      {
+        "question": "下半年收入指引是否上修？",
+        "verdict_text": "已验证，幅度超预期",
+        "verdict": "已验证",
+        "evidence": "全年收入指引中值上修 {raise_revenue}，公司称全部有机；上季报告预期上修 $50–100M"
+      },
+      {
+        "question": "中国是否触及 13% 上限？",
+        "verdict_text": "已验证（超出）+ 新增风险",
+        "verdict": "已验证",
+        "evidence": "中国占比 {china_share_int}（CFO Commentary 的整数占比；按 10-Q 申报金额是 {china_share_exact}），金额 {china_revenue}、同比 {china_yoy_filed}——报告写的 $237.7M、+107% 是整数占比乘收入的自算值；管理层没有更新全年中国口径，问答里无人问"
+      },
+      {
+        "question": "Hexagon 利润率是否触及 5–10% 区间上沿？",
+        "verdict_text": "仍未披露",
+        "verdict": "未披露",
+        "evidence": "管理层只说并购业务的利润率 2027 年会继续改善，没有数"
+      },
+      {
+        "question": "回购节奏是否回升？",
+        "verdict_text": "判断错误",
+        "verdict": "判断错误",
+        "evidence": "Q2 回购 {buyback}，Q3 指引仍约 {next_buyback}；上季预期 Q2–Q4 平均回升到 {prior_threshold:buyback_hurdle}/季"
+      },
+      {
+        "question": "研发强度是否继续上升？",
+        "verdict_text": "已验证",
+        "verdict": "已验证",
+        "evidence": "研发 {rnd}、同比 {rnd_yoy}；占收入 {rnd_ratio}（上季 {rnd_ratio_prior}）——绝对额加速，占比因收入涨得更快而略降"
+      },
+      {
+        "question": "Physical AI 是否单独分部披露？",
+        "verdict_text": "未验证",
+        "verdict": "未验证",
+        "evidence": "没有：CFO Commentary 的产品线仍是 Core EDA、Semiconductor IP、System Design & Analysis 三类，Physical AI 在 SD&A 里"
+      }
     ],
-    "falsified_item": "判断错误的一条是回购节奏：上季预期 Q2–Q4 平均回升到 {prior_threshold:buyback}/季，实际 Q2 仍是 {buyback}，Q3 指引也仍是 {next_buyback}"
+    "rule": "本季分析第 0 节只有逐条判定、没有统计行。本页按「验证结果」栏的判定词归类：逗号后与括号里的限定语（量化倒退、强反弹、定性、幅度超预期、超出、新增风险）不改变归类；「仍未披露」与「未披露」同为一类（「仍」只是副词）；「未验证」单列——那一条（Physical AI 是否单独披露）有了答案，答案是否定的，不是还没披露。",
+    "calibration": "第 0 节另按方向、幅度、归因、时点给上季判断打分：方向强、归因对，幅度系统性偏保守（全年上修、经营现金流反弹与 IP 增速都低估了），时点两处错（ChipStack ARR 首次披露的窗口、Q2 回购回升）；报告据此把「agentic AI 何时以 ARR 披露」这条跟踪项退役。",
+    "checked": "能用申报核的五条（#2 经营现金流、#6 全年收入指引、#7 中国、#9 回购、#10 研发）已回本季 8-K 与 10-Q 核对，判定与申报一致；#7 的金额与增速按 10-Q 的申报值写，不用报告的整数占比自算值。",
+    "falsified_item": "判断错误的一条是回购节奏：上季预期 Q2–Q4 平均回升到 {prior_threshold:buyback_hurdle}/季，实际 Q2 仍是 {buyback}，Q3 指引也仍是约 {next_buyback}"
   },
   "prior_kpi_settlement": {
     "period": "Q2 2026",
     "set_in": "Q1 2026",
+    "rows": 5,
     "quantified": [
       {
-        "id": "backlog",
+        "id": "backlog_hurdle",
+        "row": 1,
+        "reads": "backlog",
         "metric": "季末 backlog",
-        "direction": "up",
+        "kind": "hurdle",
+        "trigger": "≥",
         "threshold": 8.2,
         "unit": "usd_bn",
-        "chart": true
+        "disposition": "重设：改看 backlog ÷ 过去四季收入的覆盖倍数，而不是绝对值"
       },
       {
-        "id": "ocf",
+        "id": "btb_hurdle",
+        "row": 1,
+        "reads": "book_to_bill",
+        "metric": "单季 book-to-bill",
+        "kind": "hurdle",
+        "trigger": "≥",
+        "threshold": 1.1,
+        "unit": "times"
+      },
+      {
+        "id": "backlog_flat",
+        "row": 1,
+        "reads": "backlog_qoq",
+        "metric": "季末 backlog 环比变化",
+        "kind": "guard",
+        "trigger": "≤",
+        "threshold": 0.0,
+        "unit": "usd_bn_change"
+      },
+      {
+        "id": "btb_floor",
+        "row": 1,
+        "reads": "book_to_bill",
+        "metric": "单季 book-to-bill",
+        "kind": "guard",
+        "trigger": "<",
+        "threshold": 1.0,
+        "unit": "times"
+      },
+      {
+        "id": "buyback_hurdle",
+        "row": 5,
+        "reads": "buyback",
+        "metric": "单季回购金额",
+        "kind": "hurdle",
+        "trigger": "≥",
+        "threshold": 250.0,
+        "unit": "usd_m"
+      },
+      {
+        "id": "buyback_floor",
+        "row": 5,
+        "reads": "buyback",
+        "metric": "单季回购金额",
+        "kind": "guard",
+        "trigger": "<",
+        "threshold": 200.0,
+        "unit": "usd_m",
+        "consecutive": 2
+      },
+      {
+        "id": "ocf_floor",
+        "reads": "ocf",
         "metric": "单季经营现金流",
-        "direction": "up",
+        "kind": "guard",
+        "trigger": "<",
         "threshold": 400.0,
         "unit": "usd_m",
-        "chart": true
+        "disposition": "退役：现金流质疑已被证伪"
       },
       {
-        "id": "buyback",
-        "metric": "单季回购金额",
-        "direction": "up",
-        "threshold": 250.0,
-        "unit": "usd_m",
-        "chart": true
-      },
-      {
-        "id": "eps_guide",
+        "id": "eps_guide_hurdle",
+        "reads": "eps_guide",
         "metric": "FY2026 非 GAAP EPS 指引中值",
-        "direction": "up",
+        "kind": "hurdle",
+        "trigger": "≥",
         "threshold": 8.0,
         "unit": "usd_eps",
-        "chart": false
+        "disposition": "退役：已兑现"
       },
       {
-        "id": "china_share",
+        "id": "china_floor",
+        "reads": "china_share",
         "metric": "中国收入占比",
-        "direction": "up",
+        "kind": "guard",
+        "trigger": "<",
         "threshold": 10.0,
         "unit": "pct",
-        "chart": false
+        "digits": 0,
+        "disposition": "反向重设：风险方向从「跌破」改为「依赖度过高」"
       }
     ],
-    "held": [
-      "ocf",
-      "eps_guide",
-      "china_share"
-    ],
-    "breached": [
-      "backlog",
-      "buyback"
-    ],
-    "breached_summary": "被击穿的全在订单与资本分配上",
-    "note": "经营与现金面超额兑现——经营现金流 {prior_actual:ocf} 是 {prior_threshold:ocf} 阈值的 {prior_multiple:ocf} 倍，中国占比与全年 EPS 指引也都在安全侧。越线的两条是 backlog 没有摸到 {prior_threshold:backlog}、回购没有回到 {prior_threshold:buyback}/季——都不是经营质量问题，但都是上季据以看多的直接依据。",
-    "precision_retired": {
-      "id": "book_to_bill",
-      "metric": "单季 book-to-bill",
-      "direction": "up",
-      "threshold": 1.1,
-      "unit": "times"
-    },
-    "retired": [
-      "「ChipStack / AgentStack 的 ARR 首次披露」已退役：管理层本季说明 agent license 是叠加在既有 EDA 订阅之上的加购，在结构上会被吸收进 Core EDA 与经常性收入，公司没有单独披露的会计必要",
-      "「Hexagon 单季收入贡献 ≥$47M」已退役为披露受限项：Q1 给过全年 {hexagon_revenue} 的口径，本季被直接问到仍不给单季数",
-      "「Intel 14A 合同是否公布」已兑现并转为定性跟踪：协议已签、公司称 100% 增量，但金额、年限与确认节奏全部未披露",
-      "「单季 book-to-bill ≥ 1.10x」已退役为精度受限项：该比率的分子是两个季度 backlog 之差，而 backlog 只披露到 US$0.1B，本季 {backlog_net_add} 的净增因此带 ±$100M 的四舍五入区间，算出来的比率落在 {book_to_bill_range} 之间——恰好横跨 {precision_threshold} 这个阈值，无法判定守住还是击穿"
+    "unsettled": [
+      {
+        "row": 2,
+        "text": "Hexagon Q2 收入贡献：≥ $47M 为跟踪线，< $40M 为警示线",
+        "why": "公司没有披露 D&E 的单季收入——电话会被直接问到不给，10-Q 只给合并后的备考收入，不单列 D&E"
+      },
+      {
+        "row": 3,
+        "text": "Intel 14A 合同公告，上季预估金额 $400–700M",
+        "why": "协议已经公布（本季分析第 0 节判为已验证），但金额、年限与确认节奏都没有披露，金额这一半无从结算"
+      },
+      {
+        "row": 4,
+        "text": "ChipStack / AgentStack 首批多年大订单与 ARR 量化",
+        "why": "没有任何 ARR 或合同金额披露；本季分析说明 agent license 叠加在 EDA 订阅之上、在结构上会被吸收进 Core EDA 与经常性收入，把这条退役"
+      }
     ]
   },
   "next_kpi": {
