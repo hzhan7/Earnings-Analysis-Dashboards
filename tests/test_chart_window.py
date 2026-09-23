@@ -173,7 +173,7 @@ def _tsm_advanced_count() -> dict:
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
     "amd": 16, "amzn": 13, "arm": 0, "asml": 16, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
-    "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
+    "cost": 13, "googl": 11, "hkex": 15, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
     "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
@@ -878,11 +878,25 @@ CONVERTED = {
                           "The 2022 Q1 announcement, read, prints Commodities Q1 2022 at HK$376M on the "
                           "old basis (clearing a segment of its own); the 2023 Q1 announcement "
                           "reprints the same quarter at HK$589M. Every earlier quarter is old-basis only.",
-        "未上市股权估值收益：": "the Corporate Funds line footnoted 'investments in minority stakes of "
-                       "unlisted companies' first appears in the FY2021 announcement, with FY2020 "
-                       "printed as nil; the 2021 Q1, interim and Q3 announcements, read, carry no "
-                       "such line, and the 2016-2017 'Equity securities' row has no such footnote "
-                       "and is not spliced on.",
+        "未上市股权估值收益": "the Corporate Funds line footnoted 'investments in minority stakes of "
+                      "unlisted companies' first appears in the FY2021 announcement, with FY2020 "
+                      "printed as nil; the 2021 Q1, interim and Q3 announcements, read, carry no "
+                      "such line, and the 2016-2017 'Equity securities' row has no such footnote "
+                      "and is not spliced on. Section one's settlement and section three's "
+                      "threshold draw the same series.",
+        # Section three's thresholds, from the owner's current analysis.
+        "现货日均成交额（季均）：下季阈值": "same disclosure limit as the other quarterly market "
+                              "statistics: the first three-month table (2022) reaches back one "
+                              "comparative column, to 2021Q1.",
+        "LME 计费日均手数：下季阈值": "same disclosure limit, the chargeable-ADV line; earlier "
+                            "quarters exist only as Q1 / H1 / 9M / FY averages, which cannot "
+                            "be subtracted.",
+        "有效 IPO 申请数：": "the count of active IPO applications is printed at a quarter end "
+                      "from the Q1 2022 announcement (157 at 31 March 2022). The FY2021 "
+                      "announcement, read, says only 'over 150' at the end of 2021 and the "
+                      "2021 quarterly announcements give no figure; the annual IPO-work table's "
+                      "'application in process at year-end' is a different count (65 against 93 "
+                      "active applications at 31 December 2022).",
     },
     "ker": {
         # Read against every 2016-2024 revenue table on this page's corpus (both
@@ -1028,7 +1042,10 @@ FLOOR_KIND = {
         '互联互通：北向日均': 'disclosure',
         '现货日均成交额为上季的': 'disclosure',
         '商品分部 EBITDA 利润率：': 'disclosure',
-        '未上市股权估值收益：': 'disclosure',
+        '未上市股权估值收益': 'disclosure',
+        '现货日均成交额（季均）：下季阈值': 'disclosure',
+        'LME 计费日均手数：下季阈值': 'disclosure',
+        '有效 IPO 申请数：': 'disclosure',
     },
     'avgo': {
         '把「超出自身指引」拆成两条腿': 'coverage',
@@ -1409,7 +1426,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 163)
+        self.assertEqual(settled.count("disclosure"), 166)
         self.assertEqual(settled.count("design"), 40)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
@@ -1445,7 +1462,7 @@ class ChartWindowTest(unittest.TestCase):
         combined = {slug: SHORT_BY_DESIGN.get(slug, 0) + UNEXPLAINED_LONG.get(slug, 0)
                     for slug in set(SHORT_BY_DESIGN) | set(UNEXPLAINED_LONG)}
         self.assertEqual(by_page, combined)
-        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 51)
+        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 52)
         # Zero, as of the SK hynix backfill. This number is not load-bearing on
         # its own -- an empty dict sums to zero for free -- but `by_length ==
         # UNEXPLAINED_LONG` two lines down is, and that one is what turns red if
@@ -1621,6 +1638,8 @@ class ChartWindowTest(unittest.TestCase):
 # they sit in the 550 denominator and have to be accounted for somewhere.
 SHORT_BY_DESIGN = {
     'bc': 7,
+    # the headquarters-purchase capex chart: eight quarters, instalment by instalment
+    'hkex': 1,
     'mc': 8,
     'nvda': 11,
     'pm': 5,
@@ -1660,7 +1679,7 @@ UNEXPLAINED_LONG = {
 # ("42 季里 39 季为正" licenses the 39) is not listed; the anchor is checked
 # exhibit-wide, not field by field, because a title routinely anchors its note.
 UNDERIVABLE_QUARTER_COUNTS = {
-    "hkex Ex12": ([13], "这张图（第四板块的「收入怎么拆开的」）的 x 轴"
+    "hkex Ex22": ([13], "这张图（第四板块的「收入怎么拆开的」）的 x 轴"
                        "是 29 个「收入分项被公司印过」的季度；13 是它在 42 季"
                        "窗口里的补集，而 42 是别的图的轴长、不是这张图的任何属性 —— 这张图"
                        "自己没有任何地方声明窗口有多长。那 13 个季度本身在本页每一张 42 季图"
