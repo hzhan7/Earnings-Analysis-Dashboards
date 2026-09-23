@@ -785,7 +785,52 @@
       297.0,
       307.0,
       308.0
-    ]
+    ],
+    "unearned_revenue": [
+      39.0,
+      -1.0,
+      -44.0,
+      113.0,
+      -6.0,
+      -11.0,
+      -90.0,
+      192.0,
+      27.0,
+      14.0,
+      -113.0,
+      142.0,
+      -3.0,
+      3.0,
+      -27.0,
+      283.0,
+      -12.0,
+      -44.0,
+      -102.0,
+      378.0,
+      -61.0,
+      -15.0,
+      -83.0,
+      357.0,
+      -100.0,
+      -50.0,
+      -38.0,
+      225.0,
+      61.0,
+      -22.0,
+      -110.0,
+      423.0,
+      84.0,
+      -158.0,
+      -135.0,
+      431.0,
+      181.0,
+      -44.0,
+      -205.0,
+      395.0,
+      -76.0,
+      -43.0
+    ],
+    "unearned_revenue_note": "现金流量表「Unearned revenue」一行（经营资产负债变动，已剔除并购与处置影响），逐季为相邻两次年初至今申报值之差、第四季度为全年减九个月，四季相加等于申报全年。2016–2017 取 XBRL 概念 IncreaseDecreaseInDeferredRevenue，2017 年起为 IncreaseDecreaseInContractWithCustomerLiability（FY2018 10-K 以新概念重印 2016、2017 全年，数值不变）。2023 年上半年：2023 年二季度 10-Q（acc 0000064040-23-000159）印 (142)，2024 年二季度 10-Q（acc 0000064040-24-000150）比较栏改列为 39（「Certain prior-year amounts have been reclassified to conform with current presentation」，差额 181 挪入「Net change in other assets and liabilities」），2023 年前三季度 (71) 在两年的三季度 10-Q 里相同，本序列取改列后的 39。2026 年上半年 (119) 与 2025 年上半年 137 取自 2026 年二季度 10-Q（acc 0000064040-26-000045）现金流量表。"
   },
   "annual_guidance_history": {
     "vintages": [
@@ -3522,7 +3567,12 @@
           ]
         }
       ]
-    }
+    },
+    "unearned_revenue_ytd_usd_m": [
+      -119.0,
+      137.0
+    ],
+    "unearned_revenue_source": "截至 2026-06-30 的 10-Q（acc 0000064040-26-000045）Consolidated Statements of Cash Flows，Six Months Ended June 30：Unearned revenue ( 119 ) | 137。"
   },
   "prior_kpi_settlement": {
     "period": "Q2 2026",
@@ -3708,7 +3758,7 @@
     "pro_forma_revenue_usd_m": 3678.0,
     "pro_forma_operating_profit_usd_m": 1757.0,
     "adjusted_operating_profit_usd_m": 1998.0,
-    "source": "2026-07-28 业绩新闻稿 Exhibit 5（Unaudited Pro Forma Condensed Consolidated Statements of Income：Revenue 3,678、Operating profit 1,757）与首段「adjusted operating profit increased 15% to $1.998 billion」。Exhibit 8「Energy Adjusted (As Recast) Organic, Constant Currency Revenue」constant currency basis 621 / 607、「Market Intelligence …」1,206 / 1,136；Exhibit 7 Revenue by Type（报告口径）Market Intelligence Subscription 1,076 / 1,017。",
+    "source": "2026-07-28 业绩新闻稿 Exhibit 5（Unaudited Pro Forma Condensed Consolidated Statements of Income：Revenue 3,678、Operating profit 1,757）与首段「adjusted operating profit increased 15% to $1.998 billion」。Exhibit 8「Energy Adjusted (As Recast) Organic, Constant Currency Revenue」constant currency basis 621 / 607、「Market Intelligence …」1,206 / 1,136；Exhibit 7 Revenue by Type（报告口径）Market Intelligence Subscription 1,076 / 1,017。Exhibit 6「Operating Results - Recast/Pro Forma」Adjusted (as recast) 收入：Energy 623 / 607、Market Intelligence 1,235 / 1,165。",
     "src_extra": "pro forma 与 adjusted 口径取自同日业绩 8-K EX-99.1 的 Exhibit 5 与 Exhibit 6。",
     "energy_organic_cc_revenue_usd_m": [
       621.0,
@@ -3722,7 +3772,15 @@
       1076.0,
       1017.0
     ],
-    "_pairs_note": "成对的数都是 [本季, 去年同季]，取自同一份新闻稿的同一张表。"
+    "_pairs_note": "成对的数都是 [本季, 去年同季]，取自同一份新闻稿的同一张表。",
+    "energy_recast_revenue_usd_m": [
+      623.0,
+      607.0
+    ],
+    "mi_recast_revenue_usd_m": [
+      1235.0,
+      1165.0
+    ]
   },
   "ytd_vs_guidance": {
     "period": "Q2 2026",
@@ -3755,7 +3813,9 @@
       "fiscal_year": 2025,
       "adjusted_operating_profit_usd_m": 6974.0,
       "adjusted_equity_income_usd_m": 69.0,
-      "source": "2026-07-06 8-K/A（acc 0001104659-26-080571）EX-99.1 Pro Forma 损益表 Full-Year 2025：Pro forma non-GAAP adjusted operating profit 6,974；分部重述表 Equity in Income on Unconsolidated Subsidiaries 调整后 (69)。FY2025 pro forma 收入 13,589 = 本页 FY2025 申报收入 15,336 − Mobility 1,747，由 builder 现算、不另存。"
+      "source": "2026-07-06 8-K/A（acc 0001104659-26-080571）EX-99.1 Pro Forma 损益表 Full-Year 2025：Revenue 13,589、Pro forma non-GAAP adjusted operating profit 6,974、Pro forma non-GAAP adjusted diluted EPS 15.85；分部重述表 Equity in Income on Unconsolidated Subsidiaries 调整后 (69)。",
+      "revenue_usd_m": 13589.0,
+      "adjusted_diluted_eps_usd": 15.85
     },
     "guidance": {
       "adjusted_margin_expansion_bp": [
@@ -3768,20 +3828,34 @@
       ]
     },
     "_pairs_note": "成对的数都是 [本年年初至今, 上年同期]。",
-    "source": "2026-07-28 业绩新闻稿（acc 0000064040-26-000040）：Exhibit 5 六个月 pro forma 收入 7,397 / 6,674；Exhibit 6 六个月 Pro forma non-GAAP adjusted operating profit 3,964 / 3,478、Adjusted equity in income — / 48、Pro forma non-GAAP adjusted diluted EPS 9.27 / 7.82、Pro forma non-GAAP adjusted effective tax rate 21.5% / 23.0%；Exhibit 8 六个月 Adjusted free cash flow excluding certain items 2,362 / 2,258；Full-Year 2026 Outlook 表 Operating Profit Margin expansion（Adjusted）35 to 60 bps、excluding OSTTRA 75 to 100 bps。"
+    "source": "2026-07-28 业绩新闻稿（acc 0000064040-26-000040）：Exhibit 5 六个月 pro forma 收入 7,397 / 6,674；Exhibit 6 六个月 Pro forma non-GAAP adjusted operating profit 3,964 / 3,478、Adjusted equity in income — / 48、Pro forma non-GAAP adjusted net income 2,750 / 2,399、Pro forma non-GAAP adjusted diluted EPS 9.27 / 7.82、Pro forma non-GAAP adjusted effective tax rate 21.5% / 23.0%；Exhibit 8 六个月 Adjusted free cash flow excluding certain items 2,362 / 2,258；Full-Year 2026 Outlook 表 Operating Profit Margin expansion（Adjusted）35 to 60 bps、excluding OSTTRA 75 to 100 bps。",
+    "adjusted_net_income_usd_m": [
+      2750.0,
+      2399.0
+    ]
   },
   "quarter_story": {
     "period": "Q2 2026",
     "headline_rebase": "本季那根看起来像 −US${drop} 的指引下调也不是下调 —— Mobility 于 2026-07-01 分拆，指引换了口径，按同口径看是上调。",
     "brief_rebase": "<article><span>本季</span><b>指引掉了 ${drop}，公司也小了一块</b><p>Mobility 于 2026-07-01 分拆，FY2026 调整后 EPS 指引从 ${prior_mid} 中值挪到 ${new_mid}。公司同时给了重述后的 FY2025 基数，按同口径算这次是上调。</p></article>",
-    "section2_tail": "以及一次被普遍读成下调、其实是换口径的指引修订",
-    "segment_note": "<b>Mobility 这一根是最后一次出现在这张图上</b>：公司于 2026-07-01 完成分拆，自 2026 年第三季度起它将按终止经营列报，并重述<b>所有</b>期间；截至本页取数时点，没有任何一份已申报报表是重述后的。",
+    "section2_tail": "一次被普遍读成下调、其实是换口径的指引修订",
+    "segment_note": "<b>Mobility 这一根是最后一次出现在这张图上</b>：公司于 2026-07-01 完成分拆，自 2026 年第三季度起它将按终止经营列报，并重述<b>所有</b>期间；截至本页取数时点，10-Q / 10-K 的历史报表还没有按终止经营重述（2026-07-06 的 8-K/A 只给了 pro forma 数）。",
     "margin_note": "<b>公司新闻稿的头条margin是第{nth}根，不是第一根。</b>新闻稿里那句「operating profit margin increased 410 basis points to 47.8%」说的是 pro forma 口径 —— 分母是剔除 Mobility 后的 US${pro_forma_revenue}M，而不是申报的 US${revenue}M。按申报口径算是 {gaap_margin}%。",
-    "consolidated_note": "<b>Mobility 在本页的所有报表数字里仍然是继续经营的一个分部。</b>分拆于 2026-07-01 生效，比本页报告的季末晚一天，因此截至 2026-06-30 的 10-Q 里没有终止经营行、没有持有待售的 Mobility 资产，分部附注里它是完整的五个分部之一（本季收入 US${mobility}M）。公司在同一份 10-Q 里说明，自 2026 年第三季度起将把 Mobility 按终止经营重述<b>所有</b>期间。本页实测核对过：2025Q2 的合并收入在 2025 年的 10-Q 与 2026 年的 10-Q 里都是 US$3,755M，分毫未动 —— 也就是说重述尚未发生在任何一份已申报的报表里。等第三季度 10-Q 落地，本页的长序列需要整体重建。",
-    "revenue_restatement": "另一件将要发生的事已经确定但还没进任何一张申报报表：Mobility 于 2026-07-01 分拆，公司称自 2026 年第三季度起按终止经营重述<b>所有</b>期间，届时这条线的整段都会向下移约一成。",
+    "consolidated_note": "<b>Mobility 在本页的所有报表数字里仍然是继续经营的一个分部。</b>分拆于 2026-07-01 生效，比本页报告的季末晚一天，因此截至 2026-06-30 的 10-Q 里没有终止经营行、没有持有待售的 Mobility 资产，分部附注里它是完整的五个分部之一（本季收入 US${mobility}M）。公司在同一份 10-Q 里说明，自 2026 年第三季度起将把 Mobility 按终止经营重述<b>所有</b>期间。本页实测核对过：2025Q2 的合并收入在 2025 年的 10-Q 与 2026 年的 10-Q 里都是 US$3,755M，分毫未动 —— 也就是说重述尚未发生在任何一份 10-Q / 10-K 报表里（2026-07-06 的 8-K/A 给的是 2025 年各季与 2026 年一季度的 pro forma 数）。等第三季度 10-Q 落地，本页的长序列需要整体重建。",
+    "revenue_restatement": "另一件将要发生的事已经确定但还没进任何一张 10-Q / 10-K 报表：Mobility 于 2026-07-01 分拆，公司称自 2026 年第三季度起按终止经营重述<b>所有</b>期间，届时这条线的整段都会向下移约一成。",
     "fcf_open_year": "另外这条线在 FY2026 直接消失了 —— 2026 年的三档展望里，初次与 Q1 只写「grow mid-single digits」这类文字，Q2 连这句也没有，所以本图右端不是空白待填，而是公司停止给这个数字。",
     "payout_target": "公司自己给的是年度目标：{prior_release} 那份业绩新闻稿写的是 2026 年「return 100% or more of adjusted Free Cash Flow」，{release} 这份改为全年回购「more than $7 billion」，",
-    "source": "S&P Global 2026-07-28 业绩新闻稿（acc 0000064040-26-000040）：首段 pro forma 收入 $3.678 billion、营业利润 $1.757 billion，「reported operating profit margin increased by 410 basis points to 47.8%」；Full-Year 2026 Outlook 表只有收入增速、利润率、EPS 等行，没有自由现金流；「Prior to this release, the Company had not previously provided GAAP guidance for 2026」。截至 2026-06-30 的 10-Q（acc 0000064040-26-000045）分部附注：Mobility 仍为五个报告分部之一。回报目标：2026-04-28 业绩新闻稿（acc 0000064040-26-000019）要点段「now expects to return 100% or more of adjusted Free Cash Flow through dividends and share repurchases in 2026」；2026-07-28 业绩新闻稿要点段「The Company now expects to repurchase more than $7 billion in shares in total in 2026」。"
+    "source": "S&P Global 2026-07-28 业绩新闻稿（acc 0000064040-26-000040）：首段 pro forma 收入 $3.678 billion、营业利润 $1.757 billion，「reported operating profit margin increased by 410 basis points to 47.8%」；Full-Year 2026 Outlook 表只有收入增速、利润率、EPS 等行，没有自由现金流；「Prior to this release, the Company had not previously provided GAAP guidance for 2026」。截至 2026-06-30 的 10-Q（acc 0000064040-26-000045）分部附注：Mobility 仍为五个报告分部之一。回报目标：2026-04-28 业绩新闻稿（acc 0000064040-26-000019）要点段「now expects to return 100% or more of adjusted Free Cash Flow through dividends and share repurchases in 2026」；2026-07-28 业绩新闻稿要点段「The Company now expects to repurchase more than $7 billion in shares in total in 2026」。「三重保守」与指引偏保守的判断：本季本地季报分析稿第 3.1 节与第 8 节洞察 1；回购目标「more than $7 billion」：2026-07-28 业绩新闻稿要点段。",
+    "section2_unchartable": "画不了的几条也写在这里：分析稿按管理层口头结构反推的 MI 内部 Platforms 约 2% 增速、Ratings 私人市场收入 +60%、AI 客户与非 AI 客户的 ACV 增速差、hyperscaler 上半年约 1,690 亿美元的发行额，都只在电话会上出现，申报文件里没有，本页不画。分析稿洞察 4（这家公司的驱动变量是信用利差与资产价格，不是波动率）是一个分析框架，不是一个能画的读数，本页不单独画。",
+    "rest_of_year_reading": "本季分析稿把这组落差读成指引的「三重保守」—— hyperscaler 发行假设砍半、下半年再投资、税率回归 —— 并拿公司同一份新闻稿把全年回购目标提到「more than $7 billion」作对照；那是分析稿的判断，本页只画算术。",
+    "rest_of_year_brief": "本季分析稿把这道落差读成指引偏保守，本页只做这道减法。"
+  },
+  "cash_story": {
+    "period": "Q2 2026",
+    "topic": "递延收入现金流的同比反转（分析稿所说叙事与现金流的第一处实质裂缝）",
+    "call": "公司在电话会上说，大客户续约周期在拉长 —— 围绕 AI 用途与 IP 保护的条款谈判更复杂 —— 并把它说成「客户想和我们做更多」的正面信号",
+    "reading": "本季分析稿把这一行的同比反转读成续约拉长的现金代价（第 3.3 节、洞察 3），并把「全年调整后自由现金流增速 ≥ +10% / ≤ +5%」设为下季阈值（第三板块）",
+    "source": "2026-07-28 业绩电话会问答（CEO 回答续约周期）；本季本地季报分析稿第 3.3 节与第 8 节洞察 3。"
   },
   "followup_closure": {
     "period": "Q2 2026",
@@ -3881,12 +3955,6 @@
       }
     ],
     "source": "问题原文：2026-04-29《SPGI Q1 2026 vs Q4 2025 Analysis》末节「Follow-up Questions for Next Quarter (Q2 2026)」10 条；逐条判定：2026-07-28《SPGI Q2 2026 vs Q1 2026 Analysis》第 0 节「逐题回答」每条开头的判定语；导语取自同节「框架性偏差诊断」。"
-  },
-  "market_expectation": {
-    "as_of": "2026-07-28",
-    "adjusted_eps_usd": 4.62,
-    "revenue_usd_m": 4062.0,
-    "basis": "市场预期，取数时点 2026-07-28，不注明来源机构；仅作对照，不构成评级或目标价。"
   },
   "sources": [
     {

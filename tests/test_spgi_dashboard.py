@@ -806,10 +806,12 @@ class SpgiDashboardTest(unittest.TestCase):
         self.assertTrue(any("跨页对照" in note and "不是对" in note
                             for note in self.payload["notes"]))
 
-    def test_market_expectation_is_labelled_and_unattributed(self) -> None:
-        consensus = self.source["market_expectation"]
-        self.assertTrue(consensus["as_of"])
-        self.assertIn("市场预期", consensus["basis"])
+    def test_no_broker_expectation_or_stance_reaches_the_page(self) -> None:
+        """The series used to carry an unread `market_expectation` block (a
+        consensus EPS with no source named); a block no builder reads is not
+        published, so it went. The report's thresholds come with trade actions
+        (加仓 / 减仓 / 警示); the page carries the thresholds and not the actions."""
+        self.assertNotIn("market_expectation", self.source)
         blob = json.dumps(self.payload, ensure_ascii=False).lower()
         for broker in ("zacks", "marketbeat", "seeking alpha", "investing.com",
                        "benzinga", "stifel", "benchmark", "bloomberg",
@@ -1076,7 +1078,7 @@ def own_text(payload: dict) -> str:
 
 
 QUARTER_BLOCKS = ("followup_closure", "prior_kpi_settlement", "next_kpi", "quarter_figures",
-                  "ytd_vs_guidance", "quarter_story")
+                  "ytd_vs_guidance", "quarter_story", "cash_story")
 # The blocks the two reports supply every quarter; the page will not build without them.
 REPORT_BLOCKS = ("followup_closure", "prior_kpi_settlement", "next_kpi")
 
@@ -1456,6 +1458,90 @@ class SpgiReportTest(unittest.TestCase):
                     self.assertIn(f"{row['metric']}：{row['why']}", description)
 
 
+class SpgiHighlightsTest(unittest.TestCase):
+    """Section two against the report's conclusions, recomputed here from the
+    printed inputs rather than read back from the builder."""
+
+    YTD = {1: "第一季度", 2: "上半年", 3: "前三季度"}
+    REST = {1: "后三个季度", 2: "下半年", 3: "第四季度"}
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.s = json.loads(STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = build_payload(cls.s)
+        cls.section = next(sec for sec in cls.payload["sections"] if sec["id"] == "quarter_highlights")
+        cls.quarter = int(cls.s["periods"][-1][1])
+
+    def test_the_rest_of_year_is_the_guidance_less_the_year_to_date(self) -> None:
+        if not self.s.get("ytd_vs_guidance") or self.quarter == 4:
+            return
+        ytd = self.s["ytd_vs_guidance"]
+        record = self.s["annual_guidance_history"]
+        base = ytd["base_year"]
+        # the base year the 8-K/A printed agrees with the page's own filed record
+        actuals = self.s["annual_actuals"]
+        at = actuals["fiscal_years"].index(base["fiscal_year"])
+        self.assertAlmostEqual(base["revenue_usd_m"],
+                               actuals["revenue_usd_m"][at] - record["mobility_addback_revenue_usd_m"], delta=0.5)
+        self.assertEqual(base["adjusted_diluted_eps_usd"], record["proforma_base_adjusted_eps_usd"])
+        lo, hi = record["guide_revenue_growth_lo_pct"][-1], record["guide_revenue_growth_hi_pct"][-1]
+        full = base["revenue_usd_m"] * (1 + (lo + hi) / 200)
+        rest_revenue = ((full - ytd["revenue_usd_m"][0])
+                        / (base["revenue_usd_m"] - ytd["revenue_usd_m"][1]) - 1) * 100
+        eps_mid = (record["guide_adjusted_eps_lo"][-1] + record["guide_adjusted_eps_hi"][-1]) / 2
+        rest_eps = ((eps_mid - ytd["adjusted_diluted_eps_usd"][0])
+                    / (base["adjusted_diluted_eps_usd"] - ytd["adjusted_diluted_eps_usd"][1]) - 1) * 100
+        ytd_revenue = (ytd["revenue_usd_m"][0] / ytd["revenue_usd_m"][1] - 1) * 100
+        ytd_eps = (ytd["adjusted_diluted_eps_usd"][0] / ytd["adjusted_diluted_eps_usd"][1] - 1) * 100
+        chart = self.section["exhibits"][0]
+        words, rest = self.YTD[self.quarter], self.REST[self.quarter]
+        self.assertTrue(chart["title"].startswith(f"全年指引减去{words}："))
+        drawn = chart["groups"][0]["values"] + chart["groups"][1]["values"]
+        for got, want in zip(drawn, (ytd_revenue, ytd_eps, rest_revenue, rest_eps)):
+            self.assertAlmostEqual(got, want, places=4)
+        for text in (chart["title"], self.payload["brief"]):
+            self.assertIn(f"{rest}收入只需 {spgi.minus(rest_revenue)}", text)
+            self.assertIn(f"调整后 EPS 只需 {spgi.minus(rest_eps)}", text)
+        # the margin leg, at both guidance midpoints, excluding the equity income
+        expansion = ytd["guidance"]["adjusted_margin_expansion_ex_osttra_bp"]
+        base_profit = base["adjusted_operating_profit_usd_m"] - base["adjusted_equity_income_usd_m"]
+        full_margin = base_profit / base["revenue_usd_m"] * 100 + sum(expansion) / 200
+        now_profit = ytd["adjusted_operating_profit_usd_m"][0] - ytd["adjusted_equity_income_usd_m"][0]
+        then_profit = ytd["adjusted_operating_profit_usd_m"][1] - ytd["adjusted_equity_income_usd_m"][1]
+        rest_margin = ((full_margin / 100 * full - now_profit) / (full - ytd["revenue_usd_m"][0])
+                       - (base_profit - then_profit) / (base["revenue_usd_m"] - ytd["revenue_usd_m"][1])) * 100
+        self.assertIn(f"同比 {rest_margin:+.1f}pp".replace("-", "−"), chart["note"])
+
+    def test_the_unearned_line_is_the_filed_year_to_date(self) -> None:
+        if not self.s.get("cash_story"):
+            return
+        capital = self.s["capital_allocation_usd_m"]
+        year = int(self.s["periods"][-1][-4:])
+
+        def ytd(y: int) -> float:
+            return sum(capital["unearned_revenue"][capital["quarters"].index(f"Q{n} {y}")]
+                       for n in range(1, self.quarter + 1))
+
+        self.assertEqual([ytd(year), ytd(year - 1)], self.s["_checks"]["unearned_revenue_ytd_usd_m"])
+        chart = next(ex for ex in self.section["exhibits"] if "递延收入现金流" in ex["title"])
+        self.assertEqual(chart["groups"][0]["values"][-2:], [ytd(year - 1), ytd(year)])
+        self.assertTrue(chart["title"].startswith(f"{self.YTD[self.quarter]}递延收入现金流 "))
+        years = sorted({label.split()[1] for label in capital["quarters"]})
+        self.assertEqual(chart["xlabels"], years)
+
+    def test_section_two_follows_the_reports_order(self) -> None:
+        titles = [ex["title"] for ex in self.section["exhibits"]]
+        description = self.section["description"]
+        if self.s.get("ytd_vs_guidance") and self.quarter < 4:
+            self.assertTrue(titles[0].startswith("全年指引减去"))
+        if self.s.get("cash_story"):
+            self.assertTrue(any("递延收入现金流" in title for title in titles))
+            self.assertIn(self.s["cash_story"]["topic"], description)
+        story = self.s.get("quarter_story") or {}
+        if story.get("section2_unchartable"):
+            self.assertIn(story["section2_unchartable"], description)
+
+
 class SpgiRollTest(unittest.TestCase):
     """What a roll can change without touching the builder."""
 
@@ -1730,6 +1816,36 @@ class SpgiFindingsTest(unittest.TestCase):
         self.assertNotIn("恰好踩在", more)
         self.assertIn("当前 3 道在安全侧、4 道已在线外", current)
         self.assertIn("当前 5 道在安全侧、2 道已在线外", self.page(energy_recovers))
+
+    def test_the_unearned_claims(self) -> None:
+        """The cash line's title and note say where this year sits in its own
+        record; each clause goes when the state it describes goes."""
+        def milder(s):
+            s["capital_allocation_usd_m"]["unearned_revenue"][-1] += 200
+
+        def weaker_last_year(s):
+            capital = s["capital_allocation_usd_m"]
+            capital["unearned_revenue"][capital["quarters"].index("Q2 2025")] -= 100
+
+        def record_low(s):
+            s["capital_allocation_usd_m"]["unearned_revenue"][-1] -= 100
+
+        current = self.page()
+        self.assertIn("是 2016 年以来最大的同比回落", current)
+        self.assertIn("但去年同期那一格是记录最高", current)
+        self.assertIn("本季仍在它之上", current)
+        self.assertNotIn("最大的同比回落", self.page(milder))
+        weaker = self.page(weaker_last_year)
+        self.assertNotIn("去年同期那一格是记录最高", weaker)
+        self.assertIn("是 2016 年以来最大的同比回落", weaker)
+        self.assertIn("本季就是最低", self.page(record_low))
+
+    def test_the_recast_ranking_claims(self) -> None:
+        def energy_recast_strong(s):
+            s["quarter_figures"]["energy_recast_revenue_usd_m"] = [700.0, 607.0]
+
+        self.assertIn("标题里领先与落后的分部不变", self.page())
+        self.assertIn("标题里领先与落后的分部会变", self.page(energy_recast_strong))
 
     def test_the_issuance_cycle_claims(self) -> None:
         def downturn(s):

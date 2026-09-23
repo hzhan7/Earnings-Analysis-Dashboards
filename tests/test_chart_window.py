@@ -176,7 +176,7 @@ REACH_2016 = {
     "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
-    "spgi": 13, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
+    "spgi": 14, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
     "intc": 10 + _intc_threshold_reach(),
     # Not a company page. It is here because the ratchet now walks every
     # published payload rather than `ENTRIES`: a page that was invisible to the
