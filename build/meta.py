@@ -947,50 +947,6 @@ def regional_chart(geography: dict, quarter_revenue: float, period: str) -> dict
     }
 
 
-def expectation_chart(consensus: dict, actual: dict, one_offs: list[dict], period: str) -> dict:
-    """The quarter against the market's expectation going in: where it beat and where it missed.
-
-    `actual` carries this quarter's revenue, diluted EPS and DAP and the midpoint of
-    the next quarter's revenue guide, all from the release.
-    """
-    rows = [("收入", pct_change(actual["revenue_usd_m"], consensus["revenue_usd_m"])),
-            ("摊薄 EPS", pct_change(actual["diluted_eps_usd"], consensus["diluted_eps_usd"])),
-            ("Family DAP", pct_change(actual["dap_bn"], consensus["family_daily_active_people_bn"]))]
-    if actual.get("next_guide_mid_usd_m") and consensus.get("q3_revenue_usd_m"):
-        rows.append(("下季收入指引中点", pct_change(actual["next_guide_mid_usd_m"], consensus["q3_revenue_usd_m"])))
-    revenue_gap, eps_gap = rows[0][1], rows[1][1]
-    low, high = consensus.get("diluted_eps_usd_range", (None, None))
-    note = (f"市场预期是财报前的一致预期（{consensus['as_of']}），不具名。"
-            f"收入 ${actual['revenue_usd_m']:,}M 对预期 ${consensus['revenue_usd_m']:,.0f}M；"
-            f"摊薄 EPS ${actual['diluted_eps_usd']:.2f} 对预期 ${consensus['diluted_eps_usd']:.2f}"
-            + (f"（各来源的 EPS 预期在 ${low:.2f}–${high:.2f} 之间，按两端算是 "
-               f"{pct_change(actual['diluted_eps_usd'], low):+.1f}% 到 {pct_change(actual['diluted_eps_usd'], high):+.1f}%）"
-               if low and high else "")
-            + "。"
-            + (f"本季经营利润里有{cn_count(len(one_offs))}笔一次性项（"
-               + "、".join(f"{item['name']} ${item['usd_m']:,}M" for item in one_offs)
-               + "，税前），公司没有给剔除后的每股收益。" if one_offs else "")
-            + (f"下季收入指引中点 ${actual['next_guide_mid_usd_m']:,.0f}M 对财报前的下季预期 "
-               f"${consensus['q3_revenue_usd_m']:,.0f}M。" if len(rows) > 3 else ""))
-    return {
-        "kind": "diverging_bars",
-        "title": (f"对市场预期：收入{'高' if revenue_gap >= 0 else '低'} {abs(revenue_gap):.1f}%，"
-                  f"摊薄 EPS {'高' if eps_gap >= 0 else '低'} {abs(eps_gap):.1f}%"),
-        "xlabels": [label for label, _ in rows],
-        "values": [round(value, 2) for _, value in rows],
-        "legend": "较市场预期",
-        "positive_label": "高于市场预期",
-        "negative_label": "低于市场预期",
-        "fmt": "pct1",
-        "yfmt": "pct1",
-        "label_fmt": "pct1",
-        "ylab": "% 较市场预期",
-        "zero_line": True,
-        "note": note,
-        "src_extra": f"实际值来自 {period} 业绩新闻稿（EX-99.1）；{consensus['label']}。",
-    }
-
-
 def off_balance_chart(leases: dict, off_balance: dict | None, period: str) -> dict:
     """What does not go through the capex line: lease obligations signed but not yet commenced,
     quarter by quarter since the disclosure began, with the ventures' guarantees in the note."""
@@ -1414,13 +1370,6 @@ def build_payload(staging: dict) -> dict:
             "src_extra": source_note("收入来自各期 10-Q / 10-K 与当季 release，同比为自算"),
         },
     ]
-    if consensus is not None and snapshot is not None:
-        highlights.append(expectation_chart(consensus, {
-            "revenue_usd_m": revenue[-1],
-            "diluted_eps_usd": snapshot["diluted_eps_usd"][0],
-            "dap_bn": ads["family_daily_active_people_bn"][-1],
-            "next_guide_mid_usd_m": q3_midpoint,
-        }, one_offs, period))
     highlights += [
         {
             "kind": "lines",
@@ -2067,16 +2016,18 @@ def build_payload(staging: dict) -> dict:
     }, {
         "id": "quarter_highlights",
         "title": "二、本季重点",
-        "description": ("本季分析的核心结论里能用申报数画的，一图一个结论：收入"
-                        + ("与对市场预期" if consensus is not None and snapshot is not None else "")
-                        + "、广告的量价拆分"
+        "description": ("本季分析的核心结论里能用申报数画的，一图一个结论：收入与指引、广告的量价拆分"
                         + ("与各区域的收入增速" if geography is not None else "")
                         + ("、一次性项之后的经营利润" if one_offs else "")
                         + "、现金流与资本开支"
                         + (f"、资本开支指引的{cn_count(capex_raises)}次上调" if capex_raises else "")
                         + ("与不进资本开支线的租赁和合资承诺" if leases_chart is not None else "")
                         + "。报告核心矛盾里全年增量经营利润率的区间依赖报告自设的第四季收入假设（公司不给第四季指引），"
-                          "本页不画；第三板块按上半年实际与全年承诺的差距跟踪同一件事。"),
+                          "本页不画；第三板块按上半年实际与全年承诺的差距跟踪同一件事。"
+                        # the site's boundary statement leaves out sell-side consensus: the
+                        # report's comparison is named by direction only, with the reason
+                        + (f"报告里对一致预期的比较（{consensus['report_comparison']}）本页不发布：站点不放卖方共识。"
+                           if consensus is not None and consensus.get("report_comparison") else "")),
         "exhibits": exhibits[len(settled_charts): len(settled_charts) + len(highlights)],
     }, {
         "id": "next_quarter",
