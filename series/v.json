@@ -41,6 +41,7 @@
     "operating_income_usd_m": 6877,
     "net_income_usd_m": 5628,
     "diluted_eps_usd": 2.97,
+    "nongaap_effective_tax_rate_pct": 18.4,
     "prior_year": {
       "period": "Q2 2025",
       "net_revenue_usd_m": 10172,
@@ -66,8 +67,105 @@
       "value": 3728
     },
     "value_added_services_revenue_usd_bn": 3.8,
-    "source": "Visa FY2026 Q3 业绩新闻稿（8-K EX-99.1，2026-07-28，acc 0001403161-26-000103）：电头「San Francisco, CA, July 28, 2026」、Financial Summary 表（Service revenue 4,922 / 14%、Data processing 6,042 / 17%、International transaction 3,853 / 6%、Other 1,496 / 45%、Client incentives (4,680) / 18%、Net revenue 11,633 / 14%、Total operating expenses 4,756 / 19%、Net income 5,628、EPS 2.97）、Financial Highlights 段（遣散费 $563 million、MDL 诉讼计提 $237 million）、季度损益表（Litigation provision 253 / 去年同季 615，Total operating expenses 去年同季 3,995）、资产负债表（U.S. litigation escrow 888、Accrued litigation 1,274）、九个月现金流量表（经营 16,342、资本开支 (1,178)、回购 (16,430)、分红 (3,852)）；截至 2026-06-30 的 10-Q（acc 0001403161-26-000104）：收入分解附注（U.S. 4,410、International 7,223；去年同季 International transaction 3,633、Client incentives (3,972)、净收入 10,172；value-added services 本季 $3.8 billion）、法律事项附注（Accrual Summary—U.S. Covered Litigation 期末 822）、MD&A 名义支付额表（Three Months Ended March 31, 2026 Total nominal payments volume $3,728 billion）。",
-    "checked_on": "2026-09-19"
+    "source": "Visa FY2026 Q3 业绩新闻稿（8-K EX-99.1，2026-07-28，acc 0001403161-26-000103）：电头「San Francisco, CA, July 28, 2026」、Financial Summary 表（Service revenue 4,922 / 14%、Data processing 6,042 / 17%、International transaction 3,853 / 6%、Other 1,496 / 45%、Client incentives (4,680) / 18%、Net revenue 11,633 / 14%、Total operating expenses 4,756 / 19%、Net income 5,628、EPS 2.97）、Financial Highlights 段（遣散费 $563 million、MDL 诉讼计提 $237 million）、季度损益表（Litigation provision 253 / 去年同季 615，Total operating expenses 去年同季 3,995）、资产负债表（U.S. litigation escrow 888、Accrued litigation 1,274）、九个月现金流量表（经营 16,342、资本开支 (1,178)、回购 (16,430)、分红 (3,852)）；截至 2026-06-30 的 10-Q（acc 0001403161-26-000104）：收入分解附注（U.S. 4,410、International 7,223；去年同季 International transaction 3,633、Client incentives (3,972)、净收入 10,172；value-added services 本季 $3.8 billion）、法律事项附注（Accrual Summary—U.S. Covered Litigation 期末 822）、MD&A 名义支付额表（Three Months Ended March 31, 2026 Total nominal payments volume $3,728 billion）。2026-09-24 另读：同一份新闻稿 Key Business Drivers 表（Cross-border volume excluding intra-Europe 恒定汇率 12% / 名义 14%）、non-GAAP 对账表（non-GAAP 有效税率 18.4%）；上一季 FY2026 Q2 新闻稿（acc 0001403161-26-000077）Key Business Drivers（11% / 17%）、收入表（International transaction revenue 10%、Client incentives 14%）；截至 2026-03-31 的 10-Q（acc 0001403161-26-000079）MD&A「Value-added services revenue increased 29%」；本季 10-Q MD&A「increased 33%」、US$3.8B / US$2.8B。",
+    "checked_on": "2026-09-19",
+    "value_added_services": {
+      "usd_bn": 3.8,
+      "prior_year_usd_bn": 2.8,
+      "growth_printed_pct": 33,
+      "prior_quarter_growth_printed_pct": 29
+    },
+    "cross_border_ex_intra_europe_pct": {
+      "constant": 12,
+      "nominal": 14,
+      "prior_quarter_constant": 11,
+      "prior_quarter_nominal": 17,
+      "international_transaction_printed": 6,
+      "prior_quarter_international_transaction_printed": 10
+    },
+    "client_incentives_growth_printed_pct": {
+      "this_quarter": 18,
+      "prior_quarter": 14
+    },
+    "note": {
+      "source": {
+        "this_quarter": "5.Earnings Analysis/VISA/2026-07-28 VISA Q2 2026 vs Q1 2026 Analysis.md（第 0 节、第 8 节）",
+        "prior_quarter": "5.Earnings Analysis/VISA/2026-04-29 VISA Q1 2026 vs Q4 2025 Analysis.md（第 8 节、文末 Follow-up 1–10）",
+        "relation": "04-29 那份 frontmatter 标 Q1 FY2026，正文截止 2025-12-31，即 FY26 Q1 / 本页 Q4 2025；本季报告第 0 节开头指出命名错误，并说明 FY26 Q2（本页 Q1 2026）库里从未分析，10 条问题跨两季闭环；2026-03-05 那份是同一季的早期稿，无第 0、8 节与 Follow-up"
+      },
+      "checked_on": "2026-09-24",
+      "followup_closure": {
+        "total": 10,
+        "counts": {
+          "已验证": 3,
+          "部分验证": 2,
+          "未达标（公司停披）": 1,
+          "仍未披露": 3,
+          "被证伪": 1
+        },
+        "verdicts": [
+          "已验证（大幅超预期）；margin 部分仍未披露",
+          "被证伪（已回归）",
+          "已验证（超额）；两个子问题仍未披露",
+          "已验证（且显著恶化）；量化仍未披露",
+          "未达标，且公司已停止披露",
+          "部分验证 + 部分证伪",
+          "仍未披露",
+          "仍未披露（议题降温）",
+          "部分验证（未破 18%）",
+          "仍未披露"
+        ]
+      },
+      "prior_thresholds": [
+        {
+          "metric": "VAS 恒定汇率 YoY",
+          "role": "加仓",
+          "threshold": 25.0,
+          "direction": "up",
+          "text": "Q2/Q3 FY26 ≥ +25% YoY = 持续高位 → 加仓"
+        },
+        {
+          "metric": "VAS 恒定汇率 YoY",
+          "role": "跟踪",
+          "threshold": 18.0,
+          "direction": "up",
+          "text": "< +18% YoY = 增速 normalize 过快 → 跟踪"
+        },
+        {
+          "metric": "International transaction revenue YoY vs cross-border volume YoY 差",
+          "role": "可控",
+          "threshold": 3.0,
+          "direction": "down",
+          "text": "Q2/Q3 yield gap ≤ 3pp = 可控 → 跟踪"
+        },
+        {
+          "metric": "International transaction revenue YoY vs cross-border volume YoY 差",
+          "role": "警示",
+          "threshold": 6.0,
+          "direction": "down",
+          "quarters": 2,
+          "text": "连续 2 季 yield gap ≥ 6pp = 警示"
+        },
+        {
+          "metric": "Client incentives YoY",
+          "role": "加仓",
+          "threshold": 15.0,
+          "direction": "down",
+          "text": "Q2/Q3 client incentives YoY 维持 ≤ 15% 同时 VAS mix 继续上升 = 加仓"
+        },
+        {
+          "metric": "Client incentives YoY",
+          "role": "重置",
+          "threshold": 20.0,
+          "direction": "down",
+          "text": "client incentives 反弹到 +20%+ = pricing power 假设需 reset → 跟踪"
+        }
+      ],
+      "prior_unquantified": [
+        "Stablecoin settlement annualized run rate（≥ $7B / < $5.5B，电话会口径）",
+        "Pismo top 50 银行 migration（H2 FY26 ≥ 1 家 / 连续 4 季无）"
+      ]
+    }
   },
   "periods": [
     "Q3 2024",
@@ -1896,57 +1994,176 @@
     "excluded": [
       "（1）<b>公司口径 non-GAAP 营业费用增速</b> —— 公司对下季只给「low double digits」这类定性区间，没有可对照的数字，把定性词翻译成百分数再画成兑现图正是本页拒绝做的事",
       "（2）<b>国际交易收入的单位变现率（收入 ÷ 跨境交易额）</b> —— 公司只披露跨境交易额的同比百分比，不披露金额，这个比率在申报文件里无法复算（支付额这一边 10-Q 印着金额，见口径说明）",
-      "（3）<b>商业支付的分部收入</b> —— 公司在电话会上给增速，但申报文件不做这个拆分，无法逐季复算，也就无法设阈值；增值服务收入 10-Q 按季印着金额（四舍五入到 0.1B），本页尚未接入",
+      "（3）<b>商业支付的分部收入</b> —— 公司在电话会上给增速，但申报文件不做这个拆分，无法逐季复算，也就无法设阈值",
       "（4）<b>裁员规模与年化节约</b> —— 本季电话会未量化，申报文件未披露员工人数变动"
     ]
   },
   "followup_closure": {
     "period": "Q2 2026",
-    "set_in": "2026-04-29 VISA Q1 2026 vs Q4 2025 Analysis（公司 FY26 Q1）第 0 节之后留下的 10 条 follow-up；本季笔记 2026-07-28 第 0 节逐条闭环",
+    "set_in": "2026-04-29 VISA Q1 2026 vs Q4 2025 Analysis 文末 Follow-up Questions 1–10",
+    "closed_in": "2026-07-28 VISA Q2 2026 vs Q1 2026 Analysis 第 0 节「上季遗留问题回答」",
     "labels": [
       "已验证",
       "部分验证",
+      "未达标（公司停披）",
       "仍未披露",
       "被证伪"
     ],
-    "counts": [
-      3,
-      2,
-      4,
-      1
+    "items": [
+      {
+        "n": 1,
+        "question": "增值服务收入在冬奥会、世界杯期间能否维持 +25% 以上，营销服务的收入与费用配比对利润率的影响",
+        "verdict": "已验证（大幅超预期）；margin 部分仍未披露",
+        "label": "已验证",
+        "evidence": "10-Q 印的增值服务收入名义同比，上季 {vas_prev}、本季 {vas_now}（电话会给的恒定汇率口径是 +27%、+34%）；营销服务的增量利润率公司没有量化"
+      },
+      {
+        "n": 2,
+        "question": "商业与资金流动解决方案（CMS）的恒定汇率收入增速能否守在 18%–20%，还是回到 mid-teens",
+        "verdict": "被证伪（已回归）",
+        "label": "被证伪",
+        "evidence": "电话会口径上季 +24%、本季 +17%，公司归因于上季的一次性绩效调整与去年同期起步的定价；申报文件不单列 CMS 收入，同期商业支付量反而加速"
+      },
+      {
+        "n": 3,
+        "question": "美国借记卡支付额增速能否回到 +7% 以上，Capital One Interlink 流失与 Visa Direct 大客户迁移能否量化",
+        "verdict": "已验证（超额）；两个子问题仍未披露",
+        "label": "已验证",
+        "evidence": "本季 10-Q 印的美国消费借记支付额 1–3 月名义同比 +7%（4–6 月那一季没有申报单独印，要等 FY2026 10-K 的十二个月栏减九个月栏；电话会口径 +9%）；两个子问题连续两季没有再提"
+      },
+      {
+        "n": 4,
+        "question": "国际交易收入与跨境交易额增速的差距会不会继续扩大，汇率波动对季度收入的影响能否量化",
+        "verdict": "已验证（且显著恶化）；量化仍未披露",
+        "label": "已验证",
+        "evidence": "新闻稿印的跨境交易额（不含欧洲区内）名义增速减国际交易收入增速，上季 {gap_nominal_prev}、本季 {gap_nominal_now}；每个百分点波动率的收入弹性公司仍未给"
+      },
+      {
+        "n": 5,
+        "question": "稳定币结算年化 run rate 能否突破 US$100 亿，Visa Direct 稳定币出款试点的客户与笔数",
+        "verdict": "未达标，且公司已停止披露",
+        "label": "未达标（公司停披）",
+        "evidence": "上季电话会给的是 US$70 亿年化，本季不再给这个数；申报文件从未印过"
+      },
+      {
+        "n": 6,
+        "question": "Pismo 是否新增全球前 50 大行的核心银行系统签约，销售周期多长",
+        "verdict": "部分验证 + 部分证伪",
+        "label": "部分验证",
+        "evidence": "上季公布 Wells Fargo 迁移核心账户系统、本季电话会上分析师提到 Citi；但 CEO 明说大型发卡行不是 Pismo 发卡处理整合方案的目标，大行只做核心账户迁移"
+      },
+      {
+        "n": 7,
+        "question": "代理式商务（agentic commerce）的线上交易何时进入可量化的收入",
+        "verdict": "仍未披露",
+        "label": "仍未披露",
+        "evidence": "电话会只说还在很早期、时点难以预测，没有交易量也没有收入"
+      },
+      {
+        "n": 8,
+        "question": "信用卡竞争法案（CCCA）在国会的进展",
+        "verdict": "仍未披露（议题降温）",
+        "label": "仍未披露",
+        "evidence": "两季电话会都没有提；损益表上的诉讼计提本季仍有 {litigation}"
+      },
+      {
+        "n": 9,
+        "question": "全年税率会不会下修到 18% 以下，claim-of-right 税收利益的全年金额",
+        "verdict": "部分验证（未破 18%）",
+        "label": "部分验证",
+        "evidence": "全年税率指引收窄到 18%–18.25%（电话会口径），没有破 18%；本季新闻稿印的 non-GAAP 有效税率 18.4%；claim-of-right 的金额仍未量化"
+      },
+      {
+        "n": 10,
+        "question": "Visa Flex Credential 能否突破 3,000 万张，先买后付用例的消费数据",
+        "verdict": "仍未披露",
+        "label": "仍未披露",
+        "evidence": "连续两季没有给数字"
+      }
     ],
-    "keys": {
-      "已验证": "verified",
-      "部分验证": "partial",
-      "仍未披露": "undisclosed",
-      "被证伪": "refuted"
-    },
-    "figures": {
-      "never_filed": 3
-    },
-    "note": "上一份笔记留下 {total} 条待验问题，本季连同上一季的申报文件一起结清：{verified} 条已验证、{partial} 条部分验证、{undisclosed} 条公司仍未披露、{refuted} 条被证伪。被证伪的那条是把商业支付收入的加速当成结构性变化 —— 本季收入增速回落而交易量反而加快，量价再次反向。仍未披露的{undisclosed_cn}条里有{never_filed_cn}条是公司从未在申报文件里给过的拆分。"
+    "note": "问题清单是上一份报告文末的 10 条 Follow-up，判定逐字取自本季报告第 0 节的「验证结果」列。第 0 节没有统计行，柱是本页按每条判定的<b>第一个判定词</b>归类计数：「已验证（大幅超预期）」「已验证（超额）」「已验证（且显著恶化）」计已验证，后面跟着的「某子问题仍未披露」不另计；「部分验证 + 部分证伪」计部分验证；第 5 条原文是「未达标，且公司已停止披露」，既不是「仍未披露」也不是「被证伪」，单列一类。证据只引新闻稿与 10-Q 印出的数，电话会上的数注明是电话会口径。"
   },
-  "tracked_metric_verdicts": {
+  "prior_kpi_settlement": {
     "period": "Q2 2026",
-    "labels": [
-      "继续跟踪",
-      "升级为阈值",
-      "退役：公司停披",
-      "退役：议题失效"
+    "set_in": "2026-04-29 VISA Q1 2026 vs Q4 2025 Analysis 第 8 节「关键观察指标」",
+    "lead": "先结算上一份报告留下、本季到期的东西。本站上一份 Visa 季报分析是 2026-04-29 那份：文件名写的是「Q1 2026 vs Q4 2025」，内容分析的却是公司 FY26 Q1，即截至 2025-12-31、本页记作 Q4 2025 的那一季（本季报告第 0 节开头指出了这个命名错误）；截至 2026-03-31 的那一季（公司 FY26 Q2，本页 Q1 2026）库里没有分析。所以本节的「上季」跨了两季：那份报告留下的 10 条待验证问题，本季报告第 0 节用 FY26 Q2、Q3 两季的证据一起闭环；它第 8 节的阈值原文写明针对「Q2/Q3 FY26」，也就是本页的 Q1、Q2 2026，这里用申报值结算，两季都要看的那一条两季一起看。",
+    "quantified": [
+      {
+        "metric": "增值服务收入同比（加仓线）",
+        "direction": "up",
+        "threshold": 25.0,
+        "unit": "pct",
+        "reads": "vas_yoy",
+        "chart": "vas_yoy",
+        "role": "加仓",
+        "words": "Q2/Q3 FY26 ≥ +25% YoY = 持续高位、Olympics/FIFA tailwind 兑现 → 加仓",
+        "rationale": "上一份报告的阈值写的是恒定汇率增速，申报文件只印名义增速；电话会给的恒定汇率口径是上季 +27%、本季 +34%（电话会口径，不当申报数用）。"
+      },
+      {
+        "metric": "增值服务收入同比（跟踪线）",
+        "direction": "up",
+        "threshold": 18.0,
+        "unit": "pct",
+        "reads": "vas_yoy",
+        "chart": "vas_yoy",
+        "role": "跟踪",
+        "words": "< +18% YoY = 增速 normalize 过快 → 跟踪"
+      },
+      {
+        "metric": "跨境交易额增速 − 国际交易收入增速（可控线）",
+        "direction": "down",
+        "threshold": 3.0,
+        "unit": "pp",
+        "reads": "cross_border_gap",
+        "chart": "cross_border_gap",
+        "role": "可控",
+        "words": "Q2/Q3 yield gap ≤ 3pp = Visa Direct mix 影响可控 → 跟踪"
+      },
+      {
+        "metric": "跨境交易额增速 − 国际交易收入增速（连续两季的警示线）",
+        "direction": "down",
+        "threshold": 6.0,
+        "unit": "pp",
+        "reads": "cross_border_gap_min2",
+        "chart": "cross_border_gap",
+        "role": "警示",
+        "words": "连续 2 季 yield gap ≥ 6pp = Visa Direct 持续 yield drag → 警示",
+        "quarters": 2
+      },
+      {
+        "metric": "客户激励同比（加仓线）",
+        "direction": "down",
+        "threshold": 15.0,
+        "unit": "pct",
+        "reads": "yoy:revenue_lines_usd_m.client_incentives",
+        "chart": "incentives_yoy",
+        "role": "加仓",
+        "words": "Q2/Q3 client incentives YoY 维持 ≤ 15% 同时 VAS mix 继续上升 = 定价权 structural 改善 → 加仓"
+      },
+      {
+        "metric": "客户激励同比（重置线）",
+        "direction": "down",
+        "threshold": 20.0,
+        "unit": "pct",
+        "reads": "yoy:revenue_lines_usd_m.client_incentives",
+        "chart": "incentives_yoy",
+        "role": "重置",
+        "words": "client incentives 反弹到 +20%+ = Q1 仅 timing noise、pricing power 假设需 reset → 跟踪"
+      }
     ],
-    "counts": [
-      3,
-      1,
-      2,
-      2
+    "unsettleable": [
+      {
+        "metric": "稳定币结算年化 run rate",
+        "words": "Q2/Q3 FY26 ≥ $7B + Visa Direct stablecoin payouts GA = 加仓；< $5.5B 或停滞 = 跟踪",
+        "why": "这个数只在电话会上给过（上季 US$70 亿，恰好在加仓线上），本季公司不再给；申报文件从未印过，无从结算"
+      },
+      {
+        "metric": "Pismo 全球前 50 大行签约",
+        "words": "H2 FY26 ≥ 1 家 top 50 全球银行公开宣布 Pismo migration = 加仓；连续 4 季无 top 50 银行 win = 跟踪",
+        "why": "客户签约不进申报文件；本季报告第 0 节记下的是上季公布的 Wells Fargo 与本季电话会上被提到的 Citi"
+      }
     ],
-    "keys": {
-      "继续跟踪": "kept",
-      "升级为阈值": "promoted",
-      "退役：公司停披": "stopped",
-      "退役：议题失效": "moot"
-    },
-    "note": "上一份笔记的 {total} 条跟踪点按结清方式分类。{stopped_cn}条因公司<b>停止披露</b>而退役 —— 稳定币结算 run rate 至少连续三季给过数字之后本季不再给，Visa Flex Credential 的张数连续两季不披露。本站的处理是<b>退役</b>而不是继续用估计值顶着：一个指标一旦只能靠推算，它就不再能证伪任何判断。"
+    "note": "阈值与方向逐字取自上一份报告第 8 节；同一个指标设了加仓线和跟踪 / 警示线的，分开结算。正值 = 仍在该线的安全侧：加仓线「守住」就是加仓条件成立，跟踪、警示线「守住」就是没有触发。增值服务那条上一份报告写的是恒定汇率增速，申报文件只印名义增速，这里用 10-Q 印的名义数结算，电话会给的恒定汇率数写在图注里。跨境那一条按上一份报告自己的口径（恒定汇率、不含欧洲区内）结算，它当时的读数「跨境 +11%、收入 +6%、差 5pp」就是这个口径；本季报告改用名义口径，两种都画在图上。"
   },
   "market_expectation": {
     "as_of": "2026-07-29",
@@ -2475,6 +2692,311 @@
       "Q1 2026": "10-Q（期末 2026-06-30，acc 0001403161-26-000104）MD&A 名义支付额表「Three Months Ended March 31, 2026」栏：Total nominal payments volume US$3,728B"
     },
     "provenance": "名义支付额（Total nominal payments volume，及 U.S. / International 两行）逐季读自 10-Q 的 MD&A 名义支付额表，取每一季首次印出的那份申报：10-Q 印的是上一季的三个月栏（公司按上一季支付额确认 Service revenue），所以 7–9 月、10–12 月、1–3 月三季各有一份 10-Q 直接印着；4–6 月那一季没有任何一份申报单独印，取 10-K 的「Twelve Months Ended June 30」栏减同年 6 月 10-Q 的「Nine Months Ended March 31」栏，两端都是申报值（D）。逐格出处见 nominal_payments_volume_source，2026-09-19 按原文逐格核对，43 格全部相符。公司说以前期的量偶有更新（「Prior period updates are not material」），下一年 10-Q 重印的去年同季与首印大多相差 US$1–6B，2017 年 7 月至 2018 年 3 月那三季上修了 US$16–20B；唯一的大改是 2016 年 7–9 月：按 10-Q 脚注，自 2016 年 10–12 月那一季起欧洲 co-badged 支付额不再计入，下一年 10-Q 把 7–9 月那一季的可比数从 US$1,858B 改印成 US$1,752B。本序列一律用首次印出的数，也就是与它所对应那一季 Service revenue 同一份 10-Q（或 10-K）印出的数。处理笔数是当季口径（10-Q MD&A 的 processed transactions 表，10-Q 覆盖的季度逐格核对相符）。两条序列的季度对齐不同：支付金额滞后一个季度（本季 10-Q 报的是上一季的量），处理笔数是当季 —— 所以两个 quarters 数组各自独立，不要合并成一根轴。"
+  },
+  "vas_revenue": {
+    "quarters": [
+      "Q4 2023",
+      "Q1 2024",
+      "Q2 2024",
+      "Q3 2024",
+      "Q4 2024",
+      "Q1 2025",
+      "Q2 2025",
+      "Q3 2025",
+      "Q4 2025",
+      "Q1 2026",
+      "Q2 2026"
+    ],
+    "period_ends": [
+      "2023-12-31",
+      "2024-03-31",
+      "2024-06-30",
+      "2024-09-30",
+      "2024-12-31",
+      "2025-03-31",
+      "2025-06-30",
+      "2025-09-30",
+      "2025-12-31",
+      "2026-03-31",
+      "2026-06-30"
+    ],
+    "fiscal_labels": [
+      "FY2024Q1",
+      "FY2024Q2",
+      "FY2024Q3",
+      "FY2024Q4",
+      "FY2025Q1",
+      "FY2025Q2",
+      "FY2025Q3",
+      "FY2025Q4",
+      "FY2026Q1",
+      "FY2026Q2",
+      "FY2026Q3"
+    ],
+    "usd_bn": [
+      2.1,
+      2.1,
+      2.2,
+      2.4,
+      2.4,
+      2.6,
+      2.8,
+      3.1,
+      3.2,
+      3.3,
+      3.8
+    ],
+    "growth_printed_pct": [
+      null,
+      null,
+      null,
+      null,
+      17,
+      23,
+      28,
+      null,
+      32,
+      29,
+      33
+    ],
+    "derived": {
+      "Q3 2024": "FY2025 10-K 的 FY2024 全年 US$8.8B 减 FY2025 Q3 10-Q 的上年九个月 US$6.4B（D）",
+      "Q3 2025": "FY2025 10-K 的 FY2025 全年 US$10.9B 减 FY2025 Q3 10-Q 的九个月 US$7.8B（D）"
+    },
+    "source": {
+      "Q4 2023": "10-Q（期末 2024-12-31，acc 0001403161-25-000017）收入附注上年同期栏：US$2.1B",
+      "Q1 2024": "10-Q（期末 2025-03-31，acc 0001403161-25-000037）上年同期栏：US$2.1B",
+      "Q2 2024": "10-Q（期末 2025-06-30，acc 0001403161-25-000052）上年同期栏：US$2.2B",
+      "Q3 2024": "10-K FY2025（acc 0001403161-25-000089）FY2024 全年 US$8.8B − 上年九个月 US$6.4B（D）",
+      "Q4 2024": "10-Q（期末 2024-12-31，acc 0001403161-25-000017）：US$2.4B，MD&A「increased 17%」",
+      "Q1 2025": "10-Q（期末 2025-03-31，acc 0001403161-25-000037）：US$2.6B，「increased 23%」",
+      "Q2 2025": "10-Q（期末 2025-06-30，acc 0001403161-25-000052）：US$2.8B，「increased 28%」",
+      "Q3 2025": "10-K FY2025（acc 0001403161-25-000089）全年 US$10.9B − 九个月 US$7.8B（D）；季度增速未印",
+      "Q4 2025": "10-Q（期末 2025-12-31，acc 0001403161-26-000045）：US$3.2B，「increased 32%」",
+      "Q1 2026": "10-Q（期末 2026-03-31，acc 0001403161-26-000079）：US$3.3B，「increased 29%」",
+      "Q2 2026": "10-Q（期末 2026-06-30，acc 0001403161-26-000104）：US$3.8B，「increased 33%」"
+    },
+    "provenance": "增值服务（value-added services）收入由 10-Q / 10-K 的收入附注与 MD&A 印出，四舍五入到 US$0.1B。公司从 FY2025 Q1 的 10-Q（截至 2024-12-31）起才按季印这个数，附上年同期栏，所以季度序列最早到 Q4 2023；此前 43 份 10-Q / 10-K 逐份检索过「value-added services」的收入金额，没有。增速是 MD&A 自己印的名义同比，会计第四季只有 10-K 的全年数，季度额是全年减九个月（D），季度增速没有印。电话会另给恒定汇率增速，本页不当申报数用。"
+  },
+  "cross_border_growth_pct": {
+    "quarters": [
+      "Q2 2019",
+      "Q3 2019",
+      "Q4 2019",
+      "Q1 2020",
+      "Q2 2020",
+      "Q3 2020",
+      "Q4 2020",
+      "Q1 2021",
+      "Q2 2021",
+      "Q3 2021",
+      "Q4 2021",
+      "Q1 2022",
+      "Q2 2022",
+      "Q3 2022",
+      "Q4 2022",
+      "Q1 2023",
+      "Q2 2023",
+      "Q3 2023",
+      "Q4 2023",
+      "Q1 2024",
+      "Q2 2024",
+      "Q3 2024",
+      "Q4 2024",
+      "Q1 2025",
+      "Q2 2025",
+      "Q3 2025",
+      "Q4 2025",
+      "Q1 2026",
+      "Q2 2026"
+    ],
+    "period_ends": [
+      "2019-06-30",
+      "2019-09-30",
+      "2019-12-31",
+      "2020-03-31",
+      "2020-06-30",
+      "2020-09-30",
+      "2020-12-31",
+      "2021-03-31",
+      "2021-06-30",
+      "2021-09-30",
+      "2021-12-31",
+      "2022-03-31",
+      "2022-06-30",
+      "2022-09-30",
+      "2022-12-31",
+      "2023-03-31",
+      "2023-06-30",
+      "2023-09-30",
+      "2023-12-31",
+      "2024-03-31",
+      "2024-06-30",
+      "2024-09-30",
+      "2024-12-31",
+      "2025-03-31",
+      "2025-06-30",
+      "2025-09-30",
+      "2025-12-31",
+      "2026-03-31",
+      "2026-06-30"
+    ],
+    "fiscal_labels": [
+      "FY2019Q3",
+      "FY2019Q4",
+      "FY2020Q1",
+      "FY2020Q2",
+      "FY2020Q3",
+      "FY2020Q4",
+      "FY2021Q1",
+      "FY2021Q2",
+      "FY2021Q3",
+      "FY2021Q4",
+      "FY2022Q1",
+      "FY2022Q2",
+      "FY2022Q3",
+      "FY2022Q4",
+      "FY2023Q1",
+      "FY2023Q2",
+      "FY2023Q3",
+      "FY2023Q4",
+      "FY2024Q1",
+      "FY2024Q2",
+      "FY2024Q3",
+      "FY2024Q4",
+      "FY2025Q1",
+      "FY2025Q2",
+      "FY2025Q3",
+      "FY2025Q4",
+      "FY2026Q1",
+      "FY2026Q2",
+      "FY2026Q3"
+    ],
+    "ex_intra_europe_constant": [
+      9,
+      9,
+      9,
+      -4,
+      -47,
+      -41,
+      -33,
+      -21,
+      53,
+      46,
+      51,
+      47,
+      48,
+      49,
+      31,
+      32,
+      22,
+      18,
+      16,
+      16,
+      14,
+      13,
+      16,
+      13,
+      11,
+      11,
+      11,
+      11,
+      12
+    ],
+    "ex_intra_europe_nominal": [
+      null,
+      null,
+      null,
+      null,
+      -48,
+      -41,
+      -32,
+      -19,
+      62,
+      48,
+      49,
+      42,
+      38,
+      36,
+      22,
+      27,
+      22,
+      21,
+      18,
+      16,
+      12,
+      12,
+      15,
+      10,
+      13,
+      14,
+      15,
+      17,
+      14
+    ],
+    "international_transaction_printed": [
+      8,
+      11,
+      9,
+      2,
+      -44,
+      -38,
+      -28,
+      -19,
+      54,
+      41,
+      50,
+      48,
+      51,
+      52,
+      29,
+      24,
+      14,
+      10,
+      8,
+      9,
+      9,
+      9,
+      14,
+      10,
+      14,
+      10,
+      6,
+      10,
+      6
+    ],
+    "source": {
+      "Q2 2019": "新闻稿 Operational Performance Data 跨境表的滚动五季栏「Ex. Intra-Europe Growth (Constant USD)」+9%（首见于 FY2020 Q3 新闻稿 acc 0001403161-20-000043）；名义口径未印",
+      "Q3 2019": "新闻稿 Operational Performance Data 跨境表的滚动五季栏「Ex. Intra-Europe Growth (Constant USD)」+9%（首见于 FY2020 Q3 新闻稿 acc 0001403161-20-000043）；名义口径未印",
+      "Q4 2019": "新闻稿 Operational Performance Data 跨境表的滚动五季栏「Ex. Intra-Europe Growth (Constant USD)」+9%（首见于 FY2020 Q3 新闻稿 acc 0001403161-20-000043）；名义口径未印",
+      "Q1 2020": "新闻稿 Operational Performance Data 跨境表的滚动五季栏「Ex. Intra-Europe Growth (Constant USD)」-4%（首见于 FY2020 Q3 新闻稿 acc 0001403161-20-000043）；名义口径未印",
+      "Q2 2020": "新闻稿（acc 0001403161-20-000043）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 -47% / 名义 -48%",
+      "Q3 2020": "新闻稿（acc 0001403161-20-000061）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 -41% / 名义 -41%",
+      "Q4 2020": "新闻稿（acc 0001403161-21-000009）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 -33% / 名义 -32%",
+      "Q1 2021": "新闻稿（acc 0001403161-21-000023）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 -21% / 名义 -19%",
+      "Q2 2021": "新闻稿（acc 0001403161-21-000038）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 +53% / 名义 +62%",
+      "Q3 2021": "新闻稿（acc 0001403161-21-000056）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 +46% / 名义 +48%",
+      "Q4 2021": "新闻稿（acc 0001403161-22-000009）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 +51% / 名义 +49%",
+      "Q1 2022": "新闻稿（acc 0001403161-22-000023）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 +47% / 名义 +42%",
+      "Q2 2022": "新闻稿（acc 0001403161-22-000055）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 +48% / 名义 +38%",
+      "Q3 2022": "新闻稿（acc 0001403161-22-000076）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 +49% / 名义 +36%",
+      "Q4 2022": "新闻稿（acc 0001403161-23-000010）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 +31% / 名义 +22%",
+      "Q1 2023": "新闻稿（acc 0001403161-23-000027）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 +32% / 名义 +27%",
+      "Q2 2023": "新闻稿（acc 0001403161-23-000069）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 +22% / 名义 +22%",
+      "Q3 2023": "新闻稿（acc 0001403161-23-000092）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 +18% / 名义 +21%",
+      "Q4 2023": "新闻稿（acc 0001403161-24-000013）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 +16% / 名义 +18%",
+      "Q1 2024": "新闻稿（acc 0001403161-24-000027）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 +16% / 名义 +16%",
+      "Q2 2024": "新闻稿（acc 0001403161-24-000040）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 +14% / 名义 +12%",
+      "Q3 2024": "新闻稿（acc 0001403161-24-000053）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 +13% / 名义 +12%",
+      "Q4 2024": "新闻稿（acc 0001403161-25-000016）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 +16% / 名义 +15%",
+      "Q1 2025": "新闻稿（acc 0001403161-25-000035）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 +13% / 名义 +10%",
+      "Q2 2025": "新闻稿（acc 0001403161-25-000051）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 +11% / 名义 +13%",
+      "Q3 2025": "新闻稿（acc 0001403161-25-000077）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 +11% / 名义 +14%",
+      "Q4 2025": "新闻稿（acc 0001403161-26-000044）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 +11% / 名义 +15%",
+      "Q1 2026": "新闻稿（acc 0001403161-26-000077）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 +11% / 名义 +17%",
+      "Q2 2026": "新闻稿（acc 0001403161-26-000103）Key Business Drivers「Cross-border volume excluding intra-Europe」恒定汇率 +12% / 名义 +14%"
+    },
+    "provenance": "跨境交易额（不含欧洲区内）的同比增速逐季读自当季业绩 8-K 的 EX-99.1：FY2020 Q3 起 Key Business Drivers 表同时印恒定汇率与名义两栏；更早三季的恒定汇率数取自 FY2020 Q3 新闻稿 Operational Performance Data 表的滚动五季栏（该栏首次出现就是那一份，往前各季新闻稿只印含欧洲区内的总跨境量，2016 年 6 月并入 Visa Europe 之后那个总量含不产生国际交易收入的欧洲区内交易，不是同一个口径，本页不接）。名义栏 FY2021 Q1–Q2 两季另有 10-Q MD&A 的「nominal cross-border volumes, excluding transactions within Europe」读数，与新闻稿一致；FY2022 起各季 10-Q 的同一句逐季核对，全部一致。international_transaction_printed 是同一份新闻稿印的国际交易收入同比整数，与收入附注金额相除的结果逐季一致（Q1 2023 公司印 24%、金额相除 24.5%，公司按未取整的数取整）。"
   },
   "quarter_story": {
     "period": "Q2 2026",
