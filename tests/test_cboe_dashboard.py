@@ -70,6 +70,26 @@ class CboeDashboardTest(unittest.TestCase):
         cls.staging = json.loads(cboe.STAGING_PATH.read_text(encoding="utf-8"))
         cls.payload = cboe.build_payload(cls.staging)
 
+    # ── the four sections ───────────────────────────────────────────────────
+    def test_the_page_has_the_site_s_four_sections_in_order(self) -> None:
+        """The owner's four-part format (TSM is the reference): ids and titles verbatim."""
+        self.assertEqual(
+            [(section["id"], section["title"]) for section in self.payload["sections"]],
+            [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+             ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+        for section in self.payload["sections"]:
+            self.assertTrue(section["exhibits"], section["id"])
+        self.assertTrue(self.payload["notes"][0].startswith(
+            "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列"))
+
+    def test_the_segment_structure_chart_is_routine_not_a_highlight(self) -> None:
+        """Five segments plus the sixth row is a long structural record with no
+        one-quarter conclusion, so it belongs to the routine section."""
+        where = {ex.get("ref"): section["id"] for section in self.payload["sections"]
+                 for ex in section["exhibits"]}
+        self.assertEqual(where["EX_SEG"], "routine")
+        self.assertEqual(where["EX_CATS"], "routine")
+
     # ── the short window ────────────────────────────────────────────────────
     def test_the_short_window_starts_in_2024q3_and_is_complete(self) -> None:
         """It grows by one quarter a roll; what stays true is where it starts."""

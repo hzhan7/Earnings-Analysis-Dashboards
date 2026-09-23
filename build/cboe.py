@@ -716,64 +716,6 @@ def highlight_exhibits(staging: dict, has_share: bool, context: dict | None,
         "src_extra": "各期业绩 8-K EX-99.1 经营指标表；两条都是公司披露值。",
     })
 
-    seg = staging["segments"]
-    # This used to draw the last 20 of the 37 reconciled quarters this file
-    # already holds. The excuse on record said the five-segment structure "begins
-    # 2021Q3; the earlier structure had different segments" -- but the series
-    # itself runs to 2017Q2 with no break, so the axis was short by a hardcoded
-    # number, not by anything about the filings.
-    tail = len(seg["quarters"])
-    seg_labels = [compact(q) for q in seg["quarters"][-tail:]]
-    five = [sum(seg[key][i] for key in ("options", "north_american_equities",
-                                        "europe_and_apac", "futures", "global_fx"))
-            for i in range(tail)]
-    five_off = sum(1 for f, t in zip(five, seg["total"]) if abs(f - t) > 0.05)
-    six_ok = sum(1 for i, (f, t) in enumerate(zip(five, seg["total"]))
-                 if abs(f + seg["corporate_digital"][i] - t) <= 0.05)
-    charts.append({
-        "ref": "EX_SEG",
-        "kind": "grouped_bars",
-        "title": (f"五个分部的净收入，加上一条读者容易漏掉的第六行："
-                  f"Options US${seg['options'][-1]:,.1f}M 占 "
-                  f"{seg['options'][-1] / seg['total'][-1] * 100:.1f}%"),
-        "xlabels": axis(seg_labels, 2),
-        "groups": [
-            {"name": "Options", "color": "NAVY", "values": rounded(seg["options"][-tail:])},
-            {"name": "North American Equities", "color": "BLUE",
-             "values": rounded(seg["north_american_equities"][-tail:])},
-            {"name": "Europe and Asia Pacific", "color": "GOLD",
-             "values": rounded(seg["europe_and_apac"][-tail:])},
-            {"name": "Futures", "color": "GREEN", "values": rounded(seg["futures"][-tail:])},
-            {"name": "Global FX", "color": "ORANGE", "values": rounded(seg["global_fx"][-tail:])},
-            {"name": "Corporate / Digital", "color": "RED",
-             "values": rounded(seg["corporate_digital"][-tail:])},
-        ],
-        "fmt": "f0c", "label_fmt": "f0c", "ylab": "US$M",
-        "note": (
-            "<b>第六根柱子是负的，而且大多数读者不会去找它。</b>"
-            "分部表里那一行在两个时代是两样东西：2017–2022 年叫 Corporate，"
-            "小额为正或为零；2022Q4–2024Q4 叫 Digital，"
-            "是 2022 年 5 月收购、随后关掉的 Cboe Digital，"
-            "净收入<b>为负</b>（表本身是扣掉收入成本之后的口径），"
-            f"最深一季 −US${abs(min(seg['corporate_digital'])):.1f}M；"
-            "2025Q1 起这一行消失。"
-            # "25 of 37" was the count on record; the five named rows miss the
-            # printed total exactly where the sixth row is not zero, 16 quarters.
-            f"只取前五行会在 {tail} 个季度里的 {five_off} 个对不上公司自己印的合计，"
-            "而差额还会中途换号 —— "
-            + (f"六行相加则 {tail} 季全部对平，" if six_ok == tail else
-               f"六行相加则 {tail} 季里 {six_ok} 季对平，")
-            + "这也是本页把它画出来而不是抹掉的原因。"
-            # "窗口只画最近 20 季" stayed behind when the axis was widened to all 37.
-            f"窗口从 {seg['quarters'][0]} 起画满 {tail} 季；"
-            "2017Q1 不画，因为 Bats 自 2017-02-28 才并表，"
-            "那一季的三个分部是一个月对着别人的三个月。"),
-        "src_extra": ("各期业绩 8-K EX-99.1 的分部表，逐季取自同一份新闻稿；"
-                      f"六行相加与公司印出的合计在 {tail} 个季度里"
-                      + ("全部一致（容差 0.05）。" if six_ok == tail else
-                         f"有 {six_ok} 季一致（容差 0.05）。")),
-    })
-
     nr = staging["net_revenue_window"]
     pass_through = [round(r / t * 100, 6) if t else None
                     for r, t in zip(nr["regulatory_fees_cost"], nr["total_revenues"])]
@@ -937,6 +879,71 @@ def next_exhibits(staging: dict, kpi: dict, settled: dict | None, context: dict 
 
 
 # ── section four: the routine long series ───────────────────────────────────
+def segment_exhibit(staging: dict) -> dict:
+    """The five named segments and the sixth row that makes them add up.
+
+    A long structural series with no one-quarter conclusion of its own, so it
+    sits in 「长期常规跟踪」; this quarter's segment moves are read in section two.
+    """
+    seg = staging["segments"]
+    # This used to draw the last 20 of the 37 reconciled quarters this file
+    # already holds. The excuse on record said the five-segment structure "begins
+    # 2021Q3; the earlier structure had different segments" -- but the series
+    # itself runs to 2017Q2 with no break, so the axis was short by a hardcoded
+    # number, not by anything about the filings.
+    tail = len(seg["quarters"])
+    seg_labels = [compact(q) for q in seg["quarters"][-tail:]]
+    five = [sum(seg[key][i] for key in ("options", "north_american_equities",
+                                        "europe_and_apac", "futures", "global_fx"))
+            for i in range(tail)]
+    five_off = sum(1 for f, t in zip(five, seg["total"]) if abs(f - t) > 0.05)
+    six_ok = sum(1 for i, (f, t) in enumerate(zip(five, seg["total"]))
+                 if abs(f + seg["corporate_digital"][i] - t) <= 0.05)
+    return {
+        "ref": "EX_SEG",
+        "kind": "grouped_bars",
+        "title": (f"五个分部的净收入，加上一条读者容易漏掉的第六行："
+                  f"Options US${seg['options'][-1]:,.1f}M 占 "
+                  f"{seg['options'][-1] / seg['total'][-1] * 100:.1f}%"),
+        "xlabels": axis(seg_labels, 2),
+        "groups": [
+            {"name": "Options", "color": "NAVY", "values": rounded(seg["options"][-tail:])},
+            {"name": "North American Equities", "color": "BLUE",
+             "values": rounded(seg["north_american_equities"][-tail:])},
+            {"name": "Europe and Asia Pacific", "color": "GOLD",
+             "values": rounded(seg["europe_and_apac"][-tail:])},
+            {"name": "Futures", "color": "GREEN", "values": rounded(seg["futures"][-tail:])},
+            {"name": "Global FX", "color": "ORANGE", "values": rounded(seg["global_fx"][-tail:])},
+            {"name": "Corporate / Digital", "color": "RED",
+             "values": rounded(seg["corporate_digital"][-tail:])},
+        ],
+        "fmt": "f0c", "label_fmt": "f0c", "ylab": "US$M",
+        "note": (
+            "<b>第六根柱子是负的，而且大多数读者不会去找它。</b>"
+            "分部表里那一行在两个时代是两样东西：2017–2022 年叫 Corporate，"
+            "小额为正或为零；2022Q4–2024Q4 叫 Digital，"
+            "是 2022 年 5 月收购、随后关掉的 Cboe Digital，"
+            "净收入<b>为负</b>（表本身是扣掉收入成本之后的口径），"
+            f"最深一季 −US${abs(min(seg['corporate_digital'])):.1f}M；"
+            "2025Q1 起这一行消失。"
+            # "25 of 37" was the count on record; the five named rows miss the
+            # printed total exactly where the sixth row is not zero, 16 quarters.
+            f"只取前五行会在 {tail} 个季度里的 {five_off} 个对不上公司自己印的合计，"
+            "而差额还会中途换号 —— "
+            + (f"六行相加则 {tail} 季全部对平，" if six_ok == tail else
+               f"六行相加则 {tail} 季里 {six_ok} 季对平，")
+            + "这也是本页把它画出来而不是抹掉的原因。"
+            # "窗口只画最近 20 季" stayed behind when the axis was widened to all 37.
+            f"窗口从 {seg['quarters'][0]} 起画满 {tail} 季；"
+            "2017Q1 不画，因为 Bats 自 2017-02-28 才并表，"
+            "那一季的三个分部是一个月对着别人的三个月。"),
+        "src_extra": ("各期业绩 8-K EX-99.1 的分部表，逐季取自同一份新闻稿；"
+                      f"六行相加与公司印出的合计在 {tail} 个季度里"
+                      + ("全部一致（容差 0.05）。" if six_ok == tail else
+                         f"有 {six_ok} 季一致（容差 0.05）。")),
+    }
+
+
 def routine_exhibits(staging: dict) -> list[dict]:
     long = staging["long"]
     kpil = staging["kpi_long"]
@@ -1026,7 +1033,7 @@ def routine_exhibits(staging: dict) -> list[dict]:
         "bar_labels": False,
         "fmt": "f0c", "label_fmt": "f0c", "ylab": "US$M",
         "note": (
-            "公司并行发布两套口径：上一节那张按<b>分部</b>（Options / 北美股票 / 欧洲亚太 / "
+            "公司并行发布两套口径：上一张（Exhibit {EX_SEG}）按<b>分部</b>（Options / 北美股票 / 欧洲亚太 / "
             "期货 / 外汇），这张按<b>业务类别</b>。两套不可混用，但都加总到同一个净收入 —— "
             f"本季三类相加 US${cats['derivatives'][-1] + cats['cash_and_spot'][-1] + cats['data_vantage'][-1]:,.1f}M。"
             f"Data Vantage 这条从 US${cats['data_vantage'][0]:,.1f}M 走到 "
@@ -1067,6 +1074,8 @@ def routine_exhibits(staging: dict) -> list[dict]:
             f"总债务 US${cap['total_debt_usd_m'][-1]:,.1f}M。"),
         "src_extra": "各期业绩 8-K EX-99.1 的资本管理段；均价为公司披露值，缺则留空。",
     })
+    # The segment split sits beside the category split it is read against.
+    charts.insert(2, segment_exhibit(staging))
     return charts
 
 
@@ -1307,7 +1316,7 @@ def build_payload(staging: dict) -> dict:
         "summary": {"blocks": []},
         "guidance": None,
         "sections": [
-            {"id": "settled", "title": "一、上季兑现了吗",
+            {"id": "settled", "title": "一、上季跟踪指标兑现了吗",
              "description": plain_text(
                  "这一节先说清楚哪些东西能结清、哪些不能，再结清能结的。"
                  "Cboe 每期业绩新闻稿都给一份全年指引并在当年逐季修订，"
@@ -1323,19 +1332,20 @@ def build_payload(staging: dict) -> dict:
                  "本页的核心在这一节：市占率和每合约收入印在同一张表里，"
                  "而它们相乘才是这门生意每天挣到的钱。"
                  "三门生意、三条不同的窗口，形状是同一个。"
-                 "最后两张是读这张表之前必须先看懂的两件事："
-                 "分部表里那条负的第六行，以及毛收入与净收入之间那道过路项的楔子。"),
+                 "最后一张是读这张表之前必须先看懂的一件事："
+                 "毛收入与净收入之间那道过路项的楔子。"),
              "exhibits": highlight_ex},
             {"id": "next_quarter", "title": "三、下季要跟踪什么",
              "description": plain_text(
                  (kpi or {}).get("description",
                                  "当前值离下季阈值还有多远，统一用「距阈值余量」口径。")),
              "exhibits": next_ex},
-            {"id": "routine", "title": "四、长期常规",
+            {"id": "routine", "title": "四、长期常规跟踪",
              "description": plain_text(
                  f"CBOE 专属的常规序列：{cn_count(round(len(staging['long']['quarters']) / 4))}年的调整后营业利润率、"
                  f"本页最长的一条线（指数期权的量与价，{cn_count(len(staging['kpi_long']['quarters']))}个季度）、"
-                 "公司自己的第二套收入口径，以及回购与它实际付出的价格。"),
+                 "公司的两套收入口径（分部表连同那条负的第六行，以及业务类别），"
+                 "以及回购与它实际付出的价格。"),
              "exhibits": routine_ex},
         ],
         "tables": tables,
