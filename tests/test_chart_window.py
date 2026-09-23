@@ -309,8 +309,11 @@ CONVERTED = {
                     "contract assets, so the unbroken quarterly run starts 2023-12-31.",
         "两者相差": "non-GAAP operating income is first printed for the quarter ended 2022-06-30 "
                 "(prospectus); nothing prints it for January-March 2022.",
-        "购置物业设备本季": "the three-month cash-flow reconciliation is first printed for the "
-                     "quarter ended 2022-06-30 (prospectus).",
+        "资本性支出三项本季": "the three-month cash-flow reconciliation is first printed for the "
+                      "quarter ended 2022-06-30 (prospectus).",
+        "软银咨询协议本季": "revenue from related parties is first split by counterparty for the quarter "
+                     "ended 2022-06-30 (prospectus related-party note); the SoftBank Consulting Agreement "
+                     "itself earns nothing before 2024Q3, and those zeros are drawn.",
         "本季自由现金流": "same cash-flow floor.",
     },
     "v": {
@@ -991,7 +994,8 @@ FLOOR_KIND = {
         '关联方里的两家': 'disclosure',
         '流动合同资产': 'disclosure',
         '两者相差': 'disclosure',
-        '购置物业设备本季': 'disclosure',
+        '资本性支出三项本季': 'disclosure',
+        '软银咨询协议本季': 'disclosure',
         '本季自由现金流': 'disclosure',
     },
     'ker': {
@@ -1401,7 +1405,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 162)
+        self.assertEqual(settled.count("disclosure"), 163)
         self.assertEqual(settled.count("design"), 40)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:

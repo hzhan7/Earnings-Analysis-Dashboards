@@ -2511,7 +2511,17 @@
     "demand_floor_prior_letter_usd_bn": 2,
     "opportunity_usd_bn": 1,
     "demand_window": "FY27 与 FY28 合计",
-    "source": "Q1 FYE27 股东信：「now exceeds $2 billion across fiscal 2027 and fiscal 2028」、「the $1 billion opportunity we outlined last quarter」；Q4 FYE26 股东信：「more than $2 billion of customer demand across fiscal 2027 and fiscal 2028」"
+    "source": "Q1 FYE27 股东信：「now exceeds $2 billion across fiscal 2027 and fiscal 2028」、「the $1 billion opportunity we outlined last quarter」；Q4 FYE26 股东信：「more than $2 billion of customer demand across fiscal 2027 and fiscal 2028」",
+    "call": {
+      "date": "2026-07-29",
+      "next_quarter_license_yoy": "约 30%",
+      "next_quarter_royalty_yoy": "low teens",
+      "fy_royalty_before": "约 20%",
+      "fy_royalty_now": "更接近 high teens",
+      "softbank_run_rate": "今年余下几季每季约 $200M",
+      "agi_gross_margin": "首代高 30% 到低 40%，几年内做到 50%",
+      "source": "2026-07-29 业绩电话会：CFO 准备稿（下季 license 约 +30%、royalty low teens；软银协议本季 $193M、今年余下每季约 $200M；AGI CPU 在 Q3 业绩时更新）与问答（全年 royalty 增速此前约 20%、现在更接近 high teens；AGI CPU 首代毛利率 high 30% range, maybe low 40s，几年内到 50%）。股东信的指引表只有收入、non-GAAP 运营费用与 EPS 三行。"
+    }
   },
   "followup_closure": {
     "period": "Q2 2026",
@@ -2673,6 +2683,102 @@
       }
     ],
     "_note": "本季（Q2 2026）本地分析稿第 8 节「关键观察指标」的 5 条：3 条可量化，阈值与方向逐字取自该节，当前值由 builder 从 series 现算（quarterly.royalty、kpi.acv、quarterly.cash.free_cash_flow）；upside 是该节写的上行一侧触发条件；disclosure_gated 是不能作图的 2 条及其原因。"
+  },
+  "current_snapshot": {
+    "period": "Q2 2026",
+    "columns": [
+      "2026Q2",
+      "2025Q2"
+    ],
+    "reconciliation_operating_income": {
+      "share_based_compensation": [
+        343,
+        241
+      ],
+      "employer_taxes_on_sbc_net_of_rd_incentives": [
+        90,
+        54
+      ],
+      "other_operating_and_disposal": [
+        7,
+        3
+      ],
+      "row": "GAAP to Non-GAAP Reconciliation，Operating income (loss) 行的调整列：Share-based compensation cost (equity settled)、Employer taxes related to SBC, net of R&D tax incentives、Other operating income (expenses), net 与 Costs associated with disposal activities（2025 年那一栏是 2 与 1）"
+    },
+    "below_operating_income": {
+      "income_from_equity_investments": [
+        128,
+        4
+      ],
+      "income_tax_benefit_expense": [
+        17,
+        -16
+      ],
+      "row": "Condensed Consolidated Income Statements：Income (loss) from equity investments, net；Income tax benefit (expense)"
+    },
+    "non_cash_adjustments": {
+      "depreciation_and_amortization": [
+        75,
+        60
+      ],
+      "deferred_income_taxes": [
+        -66,
+        -14
+      ],
+      "income_loss_from_equity_investments": [
+        -128,
+        -4
+      ],
+      "share_based_compensation_cost": [
+        343,
+        241
+      ],
+      "operating_lease_expense": [
+        16,
+        13
+      ],
+      "other_non_cash": [
+        3,
+        -5
+      ]
+    },
+    "working_capital_changes": {
+      "accounts_receivable": [
+        181,
+        -208
+      ],
+      "contract_assets": [
+        50,
+        123
+      ],
+      "prepaid_expenses_and_other_assets": [
+        -9,
+        38
+      ],
+      "accrued_compensation_and_benefits": [
+        3,
+        -4
+      ],
+      "contract_liabilities": [
+        -107,
+        90
+      ],
+      "tax_liabilities": [
+        -3,
+        -34
+      ],
+      "operating_lease_liabilities": [
+        -11,
+        -9
+      ],
+      "other_liabilities": [
+        285,
+        -85
+      ]
+    },
+    "letter_words_on_fcf": "benefiting from favorable timing of receivables collections and tax payments",
+    "source": "Q1 FYE27 股东信（6-K EX-99.2，2026-07-29）：GAAP to Non-GAAP Reconciliation（三个月，截至 2026-06-30 与 2025-06-30）、Condensed Consolidated Income Statements、Condensed Consolidated Statements of Cash Flows（Changes in assets and liabilities 八行）与 Q1 FYE27 Financial Overview 的 FCF 一句",
+    "_note": "这一季的对账表、利润表营业利润以下两行与现金流量表营运资本八行，本页只印本季与上年同期，所以按季戳存放、换季整块替换。净利润 + 非现金调整 + 营运资本变动 = 经营现金流，两栏都由测试对 quarterly.cash.operating_cash_flow 核对。"
   },
   "sources": [
     {
@@ -2867,6 +2973,13 @@
     "rpo_within_12_months_pct": 24,
     "contract_assets_current_usd_m": 881,
     "contract_assets_current_related_usd_m": 577,
+    "share_based_compensation_prior_year_usd_m": 241,
+    "income_from_equity_investments_usd_m": 128,
+    "income_from_equity_investments_prior_year_usd_m": 4,
+    "income_tax_benefit_usd_m": 17,
+    "income_tax_benefit_prior_year_usd_m": -16,
+    "working_capital_change_usd_m": 389,
+    "working_capital_change_prior_year_usd_m": -89,
     "where": {
       "period_end": "Cover/TOC: 'Quarterly report for the three months ended June 30, 2026'",
       "release_date": "EDGAR filing index of the earnings 6-K acc 0001973239-26-000113: Filing Date 2026-07-29, accepted 2026-07-29 16:02:28 (the statements 6-K 0001973239-26-000114 was accepted the same day at 16:05:46; its signature block is dated July 29, 2026). EX-99.2 not read.",
@@ -2897,7 +3010,14 @@
       "rpo_usd_m": "Note 3 - Revenue, 'Remaining Performance Obligations' (p.17): 'aggregate transaction price allocated to remaining performance obligations was $2,122.6 million' as of June 30, 2026",
       "rpo_within_12_months_pct": "Note 3 - Revenue, 'Remaining Performance Obligations': 'approximately 24% ... over the next 12 months, 23% over the subsequent 13- to 24-month period, and the remainder thereafter'",
       "contract_assets_current_usd_m": "Condensed Consolidated Balance Sheets (p.6), row 'Contract assets (including contract assets from related parties of $577 and $646 ...)', June 30, 2026 column (March 31, 2026: 977). Non-current portion printed separately: 366.",
-      "contract_assets_current_related_usd_m": "Same balance-sheet row, parenthetical 'contract assets from related parties of $577' (March 31, 2026: $646). Note 14 attributes $576.1 million current (plus $1.1 million non-current) to an affiliate of SoftBank Group (Consulting Agreement) and $0.5 million current to Ampere."
+      "contract_assets_current_related_usd_m": "Same balance-sheet row, parenthetical 'contract assets from related parties of $577' (March 31, 2026: $646). Note 14 attributes $576.1 million current (plus $1.1 million non-current) to an affiliate of SoftBank Group (Consulting Agreement) and $0.5 million current to Ampere.",
+      "share_based_compensation_prior_year_usd_m": "Condensed Consolidated Statements of Cash Flows (p.9), row 'Share-based compensation cost', 2025 column. Added 2026-09-23 by the four-part format pass, read from arm-20260630.htm, not from the shareholder letter that current_snapshot was keyed from.",
+      "income_from_equity_investments_usd_m": "Condensed Consolidated Income Statements (p.4), row 'Income (loss) from equity investments, net', 2026 column (Note 5: $125.6 million of it is fair-value gains on publicly listed equity investments). Added 2026-09-23, read from arm-20260630.htm.",
+      "income_from_equity_investments_prior_year_usd_m": "Same row, 2025 column. Added 2026-09-23, read from arm-20260630.htm.",
+      "income_tax_benefit_usd_m": "Condensed Consolidated Income Statements (p.4), row 'Income tax benefit (expense)', 2026 column: 17 (a benefit). Added 2026-09-23, read from arm-20260630.htm.",
+      "income_tax_benefit_prior_year_usd_m": "Same row, 2025 column printed (16), an expense. Added 2026-09-23, read from arm-20260630.htm.",
+      "working_capital_change_usd_m": "Condensed Consolidated Statements of Cash Flows (p.9), 'Changes in assets and liabilities', sum of the eight rows for the 2026 column: 181 + 50 + (9) + 3 + (107) + (3) + (11) + 285 = 389. Added 2026-09-23, read from arm-20260630.htm.",
+      "working_capital_change_prior_year_usd_m": "Same eight rows, 2025 column: (208) + 123 + 38 + (4) + 90 + (34) + (9) + (85) = (89). Added 2026-09-23, read from arm-20260630.htm."
     }
   }
 }
