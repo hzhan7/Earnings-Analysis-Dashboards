@@ -487,6 +487,9 @@ CONVERTED = {
         "季度净流入：下季阈值": "checked against the four 2023 releases: they print only trailing-twelve-month "
                        "net inflows (plus one stray quarterly $5B in Q3 and a full-year $31B in Q4); "
                        "the quarterly figure is printed every quarter from the 2024-04-25 release.",
+        "剔除 Index 的净收入同比": "a reported year-on-year rate before 2025Q1 divides by a year-ago quarter "
+                         "with no Adenza in it (two months in 2023Q4), so most of it is the "
+                         "acquisition; the segment window itself only starts in 2022Q4.",
     },
     # All five checked against the filing immediately before each start; every
     # one is a real disclosure floor, and four of the five share a single cause:
@@ -1209,6 +1212,7 @@ FLOOR_KIND = {
         'Financial Technology 有机收入同比：下季阈值': 'design',
         'Capital Markets Technology 有机收入同比：下季阈值': 'design',
         '季度净流入：下季阈值': 'disclosure',
+        '剔除 Index 的净收入同比': 'design',
     },
     'nke': {
         '大中华区收入同比（固定汇率）': 'coverage',
@@ -1410,7 +1414,7 @@ class ChartWindowTest(unittest.TestCase):
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
         self.assertEqual(settled.count("disclosure"), 162)
-        self.assertEqual(settled.count("design"), 42)
+        self.assertEqual(settled.count("design"), 43)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
         """Every short chart either names its reason or is counted here.

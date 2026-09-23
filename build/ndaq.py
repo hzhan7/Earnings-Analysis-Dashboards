@@ -15,6 +15,13 @@ when it is published. Three of the "above" verdicts (FY2020, FY2022, FY2023)
 and two of the "below vs January" ones (FY2018, FY2019) have an explanation the
 page carries rather than smooths.
 
+The four sections follow the owner's quarterly analysis. Section one settles what
+the previous analysis left (its follow-ups and its section-8 thresholds); the
+site's first NDAQ analysis covers `FIRST_REPORT_PERIOD`, so that quarter settles
+only the company's own guidance record and says why. Section three is that
+quarter's analysis's section 8, threshold for threshold, scored against readings
+taken from the filings.
+
 **Rolling a quarter edits `series/ndaq.json` and nothing else** (CLAUDE.md §9).
 Every figure, period and count in the prose is computed from the series, and a
 sentence that states a record, a "first", an "only", an "always" or a direction
@@ -655,6 +662,92 @@ def s31_story(staging: dict) -> dict:
             "run_to": s31["quarters"][-2] if run else None}
 
 
+def ex_index_growth(staging: dict) -> tuple[list[float], list[float], list[float]] | None:
+    """Net revenue, net revenue without Index, and Solutions without Index: year-on-year, %.
+
+    Each quarter divides the two columns one release printed side by side
+    (`yoy_printed`), so a restated or re-based year-ago figure cannot splice in.
+    None when the block does not reach the page's quarter.
+    """
+    printed = staging.get("yoy_printed")
+    if not printed or printed["quarters"][-1] != staging["periods"][-1]:
+        return None
+    total = [pct_change(now, ago) for now, ago in printed["net_revenue_usd_m"]]
+    without = [pct_change(now - i_now, ago - i_ago) for (now, ago), (i_now, i_ago)
+               in zip(printed["net_revenue_usd_m"], printed["index_usd_m"])]
+    solutions = [pct_change(now - i_now, ago - i_ago) for (now, ago), (i_now, i_ago)
+                 in zip(printed["solutions_usd_m"], printed["index_usd_m"])]
+    return total, without, solutions
+
+
+def ex_index_chart(staging: dict) -> dict | None:
+    """The report's core finding (its insight 1): Index carries more than all of the
+    headline acceleration, while the rest of the company slows.
+
+    Drawn from 2025Q1: before it, the year-ago quarter held no Adenza (or two
+    months of it), so a reported rate was mostly the acquisition. The window's own
+    range is printed beside the latest reading, because the one quarter before it
+    is the window's high -- "slowing" and "back to its 2025 pace" are both true,
+    and the page says both.
+    """
+    grown = ex_index_growth(staging)
+    if grown is None:
+        return None
+    total, without, solutions = grown
+    labels = staging["yoy_printed"]["period_labels"]
+    headline_up, rest_down = total[-1] > total[-2], without[-1] < without[-2]
+    title = (f"剔除 Index 的净收入同比：本季 {signed(without[-1])}、上季 {signed(without[-2])}"
+             + (f"，合并口径却从 {signed(total[-2])} 升到 {signed(total[-1])}" if headline_up and rest_down else
+                f"；合并口径 {signed(total[-2])} → {signed(total[-1])}"))
+    earlier = without[:-1]
+    seg = staging["segments"]
+    rebased = []
+    for quarter, (_, ago) in zip(staging["yoy_printed"]["quarters"],
+                                 staging["yoy_printed"]["net_revenue_usd_m"]):
+        k = seg["quarters"].index(quarter) - 4
+        if k >= 0 and ago != seg["net_revenue"][k]:
+            rebased.append(f"{quarter} 那一格的去年同季是公司表里的非 GAAP 口径"
+                           f"（{seg['quarters'][k]} 净收入首印 {seg['net_revenue'][k]:,.0f}，表里是 {ago:,.0f}）")
+    rebased_words = ("；" + "；".join(rebased)) if rebased else ""
+    if headline_up and rest_down:
+        lead = "<b>本季合并净收入的加速全部来自 Index</b>：剔除 Index 之后，其余业务的增速是在放缓的。"
+    elif not headline_up and not rest_down:
+        lead = "<b>合并口径放缓，剔除 Index 之后反而在加速。</b>"
+    else:
+        lead = "<b>合并口径与剔除 Index 之后的增速同向。</b>"
+    before = labels[:len(earlier) - 1]
+    years = {label.split()[-1] for label in before}
+    pace_words = f"{years.pop()} 年的步子" if len(years) == 1 else "此前几个季度的步子"
+    context_words = (f"但放在 {len(without)} 个季度里看，上季的 {signed(without[-2])} 是窗口最高的一格"
+                     + (f"，本季的 {signed(without[-1])} 落回此前 "
+                        f"{signed(min(earlier[:-1]))}–{signed(max(earlier[:-1]))} 的区间里，"
+                        f"是回到 {pace_words}而不是跌出新低。"
+                        if min(earlier[:-1]) <= without[-1] <= max(earlier[:-1]) else "。")
+                     if without[-2] == max(without) and len(earlier) > 1 else "")
+    return {
+        "ref": "EX_EXINDEX",
+        "kind": "lines",
+        "title": title,
+        "xlabels": labels,
+        "series": [
+            {"name": "合并净收入同比", "values": rounded(total), "color": "NAVY"},
+            {"name": "剔除 Index 的净收入同比 D", "values": rounded(without), "color": "GOLD"},
+        ],
+        "fmt": "pct1", "yfmt": "pct1", "label_fmt": "pct1", "end_label": True, "ylab": "%",
+        "note": (
+            lead
+            + "两条线之间的缝就是 Index 的贡献，Index 自己的增速见 Exhibit {EX_INDEX}。"
+            + context_words
+            + f"只看 Capital Access 与 Financial Technology 两块（Solutions 收入）剔除 Index，"
+            f"同比也从上季 {signed(solutions[-2])} 到本季 {signed(solutions[-1])}。"
+            "每一格都是同一份新闻稿里并排印出的两列相除" + rebased_words + "。"),
+        "src_extra": ("各季业绩 8-K EX-99.1「Reconciliation of (Adjusted and) Organic Impacts」表三个月块里"
+                      "净收入、Index、Solutions 的 [本季, 去年同季] 两列，增速为本页自算（D）。"
+                      "从 2025Q1 起画：此前的去年同季不含 Adenza（2023Q4 只含两个月），"
+                      "报告口径的增速里大半是收购。"),
+    }
+
+
 def quarter_section(staging: dict, year_ago: YearAgo, context: dict | None) -> list[dict]:
     """What moved this quarter, and the pass-through the gross line hides."""
     s31 = staging["section_31"]
@@ -685,12 +778,31 @@ def quarter_section(staging: dict, year_ago: YearAgo, context: dict | None) -> l
         back = f"，本季 US${story['now']:,.0f}M。"
 
     n_seg = len(seg["quarters"])
+    cash = (context or {}).get("cash_flow") or {}
+    payable_words = ""
+    if cash and fees[-1] > 0:
+        payable_words = (
+            "规费收上来之后要过一段时间才缴给 SEC，所以在现金流上它先是一笔流入："
+            f"10-Q 现金流量表里年初至今「Section 31 fees payable to SEC」增加 "
+            f"US${cash['s31_payable_ytd_change_usd_m']:,.0f}M，{staging['period_ends'][-1]} 的余额是 "
+            f"US${cash['s31_payable_end_usd_m']:,.0f}M（上年末 US${cash['s31_payable_start_usd_m']:,.0f}M），"
+            "10-Q 把它归因于费率上调与缴付时点。本季报告说公司口径的自由现金流剔除了一笔 Section 31 "
+            "时点收益，来源就在这里；但应收那一腿并在应收账款里、申报没有单列，那个剔除额本页核不了（见第三节）。")
 
     legs = [year_ago.growth(key, seg[key]) for key in ("cap", "fin", "ms_net")]
     adenza = seg["quarters"].index(ADENZA_QUARTER)
     reg_jump = (seg["fin_reg"][adenza - 1], seg["fin_reg"][adenza])
     cmt_jump = (seg["fin_cmt"][adenza - 1], seg["fin_cmt"][adenza])
     index_growth = year_ago.growth("cap_index", seg["cap_index"])
+
+    printed = staging.get("yoy_printed")
+    organic_words = ""
+    if printed and printed["quarters"][-1] == staging["periods"][-1]:
+        cmt, fin_o = printed["cmt_organic_pct"], printed["fin_organic_pct"]
+        verb = "降到" if cmt[-1] < cmt[-2] else ("升到" if cmt[-1] > cmt[-2] else "持平于")
+        organic_words = (f"公司印的有机增速里，Capital Markets Technology 从上季 {cmt[-2]:g}% {verb}本季 "
+                         f"{cmt[-1]:g}%，整个 Financial Technology 从 {fin_o[-2]:g}% 到 {fin_o[-1]:g}%；"
+                         "两条对应的下季阈值见第三节。")
 
     first_trillion = aum_first_trillion(staging)
     adjusted = (context or {}).get("index_adjusted")
@@ -752,7 +864,8 @@ def quarter_section(staging: dict, year_ago: YearAgo, context: dict | None) -> l
             f"把它剥掉之后剩下的真实经纪与清算费用，{len(residual)} 个季度里始终在 US$"
             f"{min(residual):.0f}M–US${max(residual):.0f}M 之间，"
             "几乎是一条直线。"
-            f"而规费本身在同一窗口里{span}" + back + "费率由 SEC 定，不由公司定。"),
+            f"而规费本身在同一窗口里{span}" + back + "费率由 SEC 定，不由公司定。"
+            + payable_words),
         "src_extra": ("Section 31 规费逐季数值取自各期 10-Q / 10-K 的 MD&A 表格"
                       "（U.S. Equity Derivative Trading 与 Cash Equity Trading 两块相加）；"
                       "该行总额取自各季业绩 8-K EX-99.1 的合并损益表；"
@@ -760,9 +873,9 @@ def quarter_section(staging: dict, year_ago: YearAgo, context: dict | None) -> l
     }, {
         "ref": "EX_SEG",
         "kind": "grouped_bars",
-        "title": (f"三个分部的净收入：Capital Access US${seg['cap'][-1]:,.0f}M、"
-                  f"Financial Technology US${seg['fin'][-1]:,.0f}M、"
-                  f"Market Services 净 US${seg['ms_net'][-1]:,.0f}M"),
+        "title": (("三个分部的净收入同比都在两位数：" if min(legs) >= 10 else "三个分部的净收入同比：")
+                  + f"Capital Access {signed(legs[0])}、Financial Technology {signed(legs[1])}、"
+                  f"Market Services 净 {signed(legs[2])}"),
         "xlabels": seg["period_labels"],
         "groups": [
             {"name": "Capital Access Platforms", "color": "NAVY", "values": rounded(seg["cap"])},
@@ -808,7 +921,8 @@ def quarter_section(staging: dict, year_ago: YearAgo, context: dict | None) -> l
             f"2024Q1 之后三条线都是内生的：本季分别同比 "
             f"{signed(year_ago.growth('fin_cmt', seg['fin_cmt']))}、"
             f"{signed(year_ago.growth('fin_reg', seg['fin_reg']))}、"
-            f"{signed(year_ago.growth('fin_fcmt', seg['fin_fcmt']))}。"),
+            f"{signed(year_ago.growth('fin_fcmt', seg['fin_fcmt']))}。"
+            + organic_words),
         "src_extra": ("各季 EX-99.1 的 Revenue Detail 表。"
                       "Financial Crime Management Technology 是 2024 年 4 月那期新闻稿才从 "
                       "Regulatory Technology 里单列出来的，并回溯重述了 2023 各季；"
@@ -1025,7 +1139,7 @@ def next_section(staging: dict, kpi: dict, context: dict | None) -> tuple[list[d
         k = entry.get("consecutive", 1)
         runs = runs_below(labels, values, thr, k)
         note = (f"阈值来自本季报告第 8 节：Financial Technology 有机收入增速连续{cn_count(k)}季低于 {thr:g}% "
-                "算执行转弱（警示，达到硬阈值则减仓）；它与下一张的 CMT 条件是「或」的关系。"
+                "算执行转弱（警示，达到硬阈值则减仓）；它与 Exhibit {EX_T_CMT} 的 CMT 条件是「或」的关系。"
                 + ("按这条规则，本图里 " + "；".join(f"{run[0]}–{run[-1]} 连续{cn_count(len(run))}季低于 {thr:g}%"
                                               for run in runs) + "，当时已经触发"
                    if runs else f"本图 {n} 个季度里没有连续{cn_count(k)}季低于 {thr:g}% 的时候")
@@ -1087,7 +1201,7 @@ def next_section(staging: dict, kpi: dict, context: dict | None) -> tuple[list[d
         low = min(range(len(flow_values)), key=lambda i: flow_values[i])
         ttm = (context or {}).get("aum_ttm_usd_b")
         last_four = sum(flow_values[-4:])
-        note = ("阈值来自本季报告第 8 节：出现季度净流出算 beta 反转，与上一张的 AUM 条件是「或」的关系。"
+        note = ("阈值来自本季报告第 8 节：出现季度净流出算 beta 反转，与 Exhibit {EX_T_AUM} 的 AUM 条件是「或」的关系。"
                 "阈值是零，没有百分比余量，所以不进 Exhibit {EX_T_OVERVIEW} 的余量图。"
                 + (f"本图 {len(flow_values)} 个季度全是净流入，最少的是 {flow_labels[low]} 的 US${flow_values[low]:,.0f}B"
                    if not outflows else
@@ -1234,6 +1348,23 @@ def routine_section(staging: dict) -> list[dict]:
     # report never asked for.)
     margin_shape = (f"几乎单调{direction}" if falls <= (len(margins) - 1) // 10
                     else f"总体{direction}（{len(margins) - 1} 次环比里 {falls} 次回落）")
+    # The company divides non-GAAP operating income by NON-GAAP net revenue. The
+    # two denominators differ in one quarter of the window, and the series used to
+    # carry that quarter on the GAAP one (637 / 1,146 = 55.6% against a printed 54%).
+    adjustments = {q: v for q, v in (staging.get("nongaap_revenue_adjustments_usd_m") or {}).items()
+                   if q in lng["quarters"]}
+    if adjustments:
+        spelled = []
+        for quarter, add in adjustments.items():
+            k = lng["quarters"].index(quarter)
+            income = margins[k] / 100 * (lng["net_revenue"][k] + add)
+            spelled.append(f"{quarter} 多出 US${add:,.0f}M，所以那一季是 {margins[k]:.1f}%，"
+                           f"除以 GAAP 净收入会得出 {100 * income / lng['net_revenue'][k]:.1f}%")
+        denominator_words = ("GAAP 那条的分母是净收入；非 GAAP 那条按公司定义除以非 GAAP 净收入，"
+                             f"窗口里只有{cn_count(len(adjustments))}个季度两者不同（"
+                             + "；".join(spelled) + "）。")
+    else:
+        denominator_words = "两条线的分母都是净收入。"
     share_first = 100 * lng["ms_net"][0] / lng["net_revenue"][0]
     share_now = 100 * lng["ms_net"][-1] / lng["net_revenue"][-1]
     basis = staging["ms_reclassification"]
@@ -1271,8 +1402,8 @@ def routine_section(staging: dict) -> list[dict]:
             "两条线的<b>缺口</b>就是被调整掉的成本 —— 主要是收购无形资产摊销，"
             f"其次是重组与并购费用。缺口在 {n} 个季度里从 {gap[0]:.1f}pp 走到 {gap[-1]:.1f}pp，"
             "2023Q4 Adenza 交割后明显走阔，因为摊销基数一次性变大。"
-            "两条线的分母都是净收入。第一节结清的费用指引只针对非 GAAP 口径，"
-            "公司在每份新闻稿里都写明不提供 GAAP 费用指引。"),
+            + denominator_words
+            + "第一节结清的费用指引只针对非 GAAP 口径，公司在每份新闻稿里都写明不提供 GAAP 费用指引。"),
         "src_extra": "各季业绩 8-K EX-99.1；GAAP 利润率为经营利润 ÷ 净收入（D），与公司披露值一致。",
     }, {
         "ref": "EX_MIX",
@@ -1412,7 +1543,8 @@ def build_payload(staging: dict) -> dict:
     opex_record = hist["operating_expense"]
     opex_threshold = (next((e for e in kpi["quantified"] if e.get("reads") == "nongaap_opex"), None)
                       if kpi else None)
-    highlights = quarter_section(staging, year_ago, context) + [
+    core = ex_index_chart(staging)
+    highlights = ([core] if core else []) + quarter_section(staging, year_ago, context) + [
         open_year_chart(staging, opex_record, finished_years(opex_record), context, opex_threshold)]
     next_block, kpi_table = next_section(staging, kpi, context) if kpi else ([], None)
     routine = routine_section(staging)
@@ -1496,8 +1628,12 @@ def build_payload(staging: dict) -> dict:
               + ("没有一年低于指引下限" if opex_never_below else f"有 {t_last['below']} 年低于指引下限")
               + f"，{n_tax} 个年度里非 GAAP 有效税率"
               + ("没有一年高于指引上限。" if tax_never_above else f"有 {tax_last['above']} 年高于指引上限。"))
+    grown = ex_index_growth(staging)
+    ex_words = ""
+    if grown:
+        ex_words = f"（剔除 Index 后 {signed(grown[1][-1])}，上季 {signed(grown[1][-2])}）"
     headline = (
-        f"净收入 US${fin['net_revenue'][-1]:,.0f}M、同比 {signed(net_growth)}，"
+        f"净收入 US${fin['net_revenue'][-1]:,.0f}M、同比 {signed(net_growth)}{ex_words}，"
         f"Index 收入同比 {signed(index_growth)}、"
         + (f"挂钩指数的 ETP AUM 首次突破一万亿美元（期末 US${aum['period_end_usd_b'][-1]:,.0f}B）；"
            if first_trillion else
@@ -1534,7 +1670,9 @@ def build_payload(staging: dict) -> dict:
         f'{t_first["inside"]}/{t_first["above"]}/{t_first["below"]}。'
         f'税率 {n_tax} 年里 {tax_last["above"]} 次高于上限。</p></article>',
         f'<article><span>亮点</span><b>{legs_title}</b>'
-        f'<p>{index_words}；{fin_arr_words}，{cap_arr_words}。</p></article>',
+        f'<p>{index_words}；{fin_arr_words}，{cap_arr_words}。'
+        + (f'剔除 Index 的净收入同比 {signed(grown[1][-1])}（上季 {signed(grown[1][-2])}）。' if grown else '')
+        + '</p></article>',
     ]
     gross_growth = year_ago.growth("ms_gross", seg["ms_gross"])
     net_ms_growth = year_ago.growth("ms_net", seg["ms_net"])
@@ -1573,6 +1711,23 @@ def build_payload(staging: dict) -> dict:
     aum_times = round(aum["period_end_usd_b"][-1] / aum["period_end_usd_b"][0])
     ms_share = 100 * staging["long"]["ms_net"][-1] / staging["long"]["net_revenue"][-1]
     notes = notes_for(staging, latest, context)
+    if next_ex:
+        notes.insert(1, f"Exhibit {next_ex[0]['n']} 起的下季阈值逐字取自本站对 {period} 的季报分析第 8 节"
+                        "（关键观察指标），不是公司指引，也不构成评级或投资建议；「距阈值余量」统一为正值代表安全侧。")
+
+    # Section two opens with the report's core finding, stated only while the data says it.
+    core_n = next((ex["n"] for ex in highlight_ex if ex.get("ref") == "EX_EXINDEX"), None)
+    core_words = ""
+    if grown and core_n:
+        if grown[0][-1] > grown[0][-2] and grown[1][-1] < grown[1][-2]:
+            core_words = (f"先画本季报告的核心结论：合并净收入在加速，剔除 Index 之后却在放缓"
+                          f"（Exhibit {core_n}）；")
+        else:
+            core_words = f"先画合并口径与剔除 Index 之后的两条增速（Exhibit {core_n}）；"
+    m_now, m_prev = fin["nongaap_margin_pct"][-1], fin["nongaap_margin_pct"][-2]
+    margin_words = (f"非 GAAP 经营利润率本季 {m_now:.1f}%、上季 {m_prev:.1f}%"
+                    + (f"，按整数取整两季都是 {round(m_now)}%" if round(m_now) == round(m_prev) else "")
+                    + "，长期走势见第四节。")
 
     return {
         "schema_version": "quarterly-dashboard/ndaq-v1",
@@ -1613,9 +1768,12 @@ def build_payload(staging: dict) -> dict:
                              "「年初那次」与「当年最后一次」分开算，因为两者的答案不一样。"),
              "exhibits": settled_ex},
             {"id": "quarter_highlights", "title": "二、本季重点",
-             "description": ("先把毛收入里那笔代收代付的 SEC 规费剥掉，再看三个分部与两条 ARR，"
+             "description": (core_words
+                             + "再把毛收入里那笔代收代付的 SEC 规费剥掉，看三个分部、FinTech 子线、Index 与 ARR，"
                              "最后是本季对全年费用指引的更新；"
-                             + highlight_words),
+                             + highlight_words
+                             + (context or {}).get("not_charted", "")
+                             + margin_words),
              "exhibits": highlight_ex},
             {"id": "next_quarter", "title": "三、下季要跟踪什么",
              "description": (
@@ -1685,7 +1843,8 @@ def notes_for(staging: dict, latest: dict, context: dict | None) -> list[str]:
     unconnected = ("本页已知未接入：公司在投资者日发布的中期分部有机增长目标（不在任何申报文件里）、"
                    + ((context or {}).get("cross_sell_note", "") + "、" if (context or {}).get("cross_sell_note") else "")
                    + "各交易所的市占率与行业成交量序列（同一标签在一份新闻稿里出现两次、分别属于期权与现货两块，"
-                   "按出现次序取值会静默取错，故不接入）、现金流与资本回报的逐季序列（业绩新闻稿不含现金流量表），"
+                   "按出现次序取值会静默取错，故不接入）、现金流与资本回报的逐季序列（业绩新闻稿只印经营现金流一个数、"
+                   "不含现金流量表；季报分析第 8 节跟踪的公司口径自由现金流转化率只在电话会与投资者材料里，见第三节），"
                    # This said 「2026 年第三季度之后」 while the page's data ends at the
                    # second quarter: the unconnected data starts after this quarter.
                    f"以及 {quarter_words(period)}之后的任何数据（本页数据截至 {latest['release_date']} 的申报）。")

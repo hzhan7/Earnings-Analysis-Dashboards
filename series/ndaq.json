@@ -158,7 +158,7 @@
       859.0
     ],
     "nongaap_margin_pct": [
-      55.5846422338569,
+      53.983050847457626,
       54.686226568867156,
       55.13338722716249,
       55.206738131699844,
@@ -680,7 +680,7 @@
       54.87914055505819,
       53.08863025962399,
       53.49439171699741,
-      55.5846422338569,
+      53.983050847457626,
       54.686226568867156,
       55.13338722716249,
       55.206738131699844,
@@ -737,6 +737,10 @@
       608.0,
       641.0
     ]
+  },
+  "nongaap_revenue_adjustments_usd_m": {
+    "2024Q3": 34,
+    "source": "Nasdaq 3Q24 业绩新闻稿（8-K EX-99.1，2024-10-24）「Reconciliation of U.S. GAAP to Non-GAAP Revenues Less Transaction-Based Expenses」表：GAAP 1,146 + Adenza purchase accounting adjustment（AxiomSL 本地部署合同改按期确认，补记当年上半年）34 = 非 GAAP 1,180；同一份新闻稿脚注 9：非 GAAP 经营利润率 = 非 GAAP 经营利润 ÷ 非 GAAP 净收入，印 54%。其余季度两者相同。"
   },
   "segments": {
     "quarters": [
@@ -2576,7 +2580,9 @@
       "s31_payable_end_usd_m": 313,
       "s31_payable_start_usd_m": 0,
       "source": "经营现金流：Nasdaq 2Q26 业绩新闻稿 FINANCIAL REVIEW「Cash flow from operations was $711 million in the second quarter」；Section 31 应付：截至 2026-06-30 的 10-Q（acc 0001120193-26-000013）Condensed Consolidated Statements of Cash Flows 六个月列「Section 31 fees payable to SEC 313」，同一份新闻稿资产负债表「Section 31 fees payable to SEC」2026-06-30 为 313、2025-12-31 为 —"
-    }
+    },
+    "not_charted": "本季报告里另有三件事本节画不了：公司口径的自由现金流与它的转化率只在电话会与投资者材料里，申报只印经营现金流一个数（Section 31 那张图写了 10-Q 能核到的应付那一腿）；AI 功能的采用，新闻稿只印了零散的客户数（Verafin 有 750 家客户用上 agentic 平台），付费转化、合同金额与收入都没有披露，没有可画的序列；增长里 alpha 与 beta 各占几个百分点的拆分只在电话会里。",
+    "not_charted_source": "750：2Q26 新闻稿 STRATEGIC AND BUSINESS UPDATES「Nasdaq Verafin's Agentic Workforce continued to gain traction, with 750 clients now leveraging the platform」"
   },
   "year_ago_reprinted": {
     "period": "Q2 2026",
@@ -2929,7 +2935,30 @@
           "role": "上行撤销",
           "words": "H2 Section 31-adjusted FCF conversion ≥90%"
         }
-      ]
+      ],
+      "core_findings": {
+        "source": "本季报告第 1 节「核心结论」第一条与第 7 节洞察 1",
+        "ex_index_net_revenue_yoy_pct": {
+          "prior": 13.7,
+          "now": 10.7,
+          "words": "ex-Index reported net revenue 增速从 Q1 的 13.7% 降至 Q2 的 10.7%"
+        },
+        "ex_index_solutions_yoy_pct": {
+          "prior": 14.3,
+          "now": 11.8,
+          "words": "ex-Index Solutions 也从 14.3% 降至 11.8%"
+        },
+        "net_revenue_yoy_pct": {
+          "prior": 14,
+          "now": 15,
+          "words": "reported 为 14%→15%"
+        }
+      }
+    },
+    "section_31_payable_usd_m": {
+      "end": 313,
+      "start": 0,
+      "source": "2Q26 新闻稿 Condensed Consolidated Balance Sheets「Section 31 fees payable to SEC」：June 30, 2026 列 313，December 31, 2025 列 —"
     }
   }
 }

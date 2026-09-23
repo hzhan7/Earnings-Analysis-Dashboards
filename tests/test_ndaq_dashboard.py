@@ -119,6 +119,33 @@ class NdaqDashboardTest(unittest.TestCase):
         self.assertEqual(by_section["EX_FY26"], "quarter_highlights")
         self.assertEqual(by_section["EX_GROSSNET"], "routine")
 
+    def test_section_two_opens_with_the_reports_core_finding(self) -> None:
+        """The report's core contradiction (section 1, insight 1): the headline rate
+        rose while net revenue without Index fell. The page draws it from each
+        release's own two columns, and at the report's precision its numbers must be
+        the report's -- which are keyed in `_checks["note"]`, not typed here."""
+        findings = self.staging["_checks"]["note"]["core_findings"]
+        core = self.payload["sections"][1]["exhibits"][0]
+        self.assertEqual(core.get("ref"), "EX_EXINDEX")
+        printed = self.staging["yoy_printed"]
+        pairs = list(zip(printed["net_revenue_usd_m"], printed["index_usd_m"], printed["solutions_usd_m"]))
+        total = [(n / a - 1) * 100 for (n, a), _, _ in pairs]
+        without = [((n - i) / (a - j) - 1) * 100 for (n, a), (i, j), _ in pairs]
+        solutions = [((s - i) / (t - j) - 1) * 100 for _, (i, j), (s, t) in pairs]
+        self.assertEqual(core["xlabels"], printed["period_labels"])
+        self.assertEqual(core["series"][0]["values"], [round(v, 6) for v in total])
+        self.assertEqual(core["series"][1]["values"], [round(v, 6) for v in without])
+        self.assertEqual(round(without[-2], 1), findings["ex_index_net_revenue_yoy_pct"]["prior"])
+        self.assertEqual(round(without[-1], 1), findings["ex_index_net_revenue_yoy_pct"]["now"])
+        self.assertEqual(round(solutions[-2], 1), findings["ex_index_solutions_yoy_pct"]["prior"])
+        self.assertEqual(round(solutions[-1], 1), findings["ex_index_solutions_yoy_pct"]["now"])
+        self.assertEqual(round(total[-2]), findings["net_revenue_yoy_pct"]["prior"])
+        self.assertEqual(round(total[-1]), findings["net_revenue_yoy_pct"]["now"])
+        self.assertIn(f"本季 {without[-1]:+.1f}%、上季 {without[-2]:+.1f}%", core["title"])
+        self.assertIn(f"{solutions[-2]:+.1f} 到本季 {solutions[-1]:+.1f}", core["note"].replace("%", ""))
+        self.assertIn(f"（剔除 Index 后 {without[-1]:+.1f}%，上季 {without[-2]:+.1f}%）", self.payload["headline"])
+        self.assertIn("核心结论", self.payload["sections"][1]["description"])
+
     # ── the short window ────────────────────────────────────────────────────
     def test_the_short_window_starts_in_2024q3_and_is_complete(self) -> None:
         """It grows by one quarter a roll; what stays true is where it starts."""
@@ -171,14 +198,28 @@ class NdaqDashboardTest(unittest.TestCase):
                                    fin["op_income"][index], delta=0.6, msg=period)
 
     def test_operating_margins_are_the_ratios_they_claim_to_be(self) -> None:
+        """Non-GAAP margin divides by NON-GAAP net revenue, the company's own definition.
+
+        The two denominators differ in 2024Q3 only (the 34 AxiomSL ratable
+        adjustment), and this test used to pin the wrong one: it divided by GAAP net
+        revenue and so held the series at 55.6% for a quarter the release prints as 54%.
+        """
         fin = self.staging["financials"]
+        adjustments = self.staging["nongaap_revenue_adjustments_usd_m"]
         for index, period in enumerate(self.staging["periods"]):
             gaap = fin["op_income"][index] / fin["net_revenue"][index] * 100
             self.assertAlmostEqual(gaap, fin["gaap_margin_pct"][index],
                                    delta=0.12, msg=period)
-            non_gaap = fin["nongaap_opinc"][index] / fin["net_revenue"][index] * 100
+            denominator = fin["net_revenue"][index] + adjustments.get(period, 0)
+            non_gaap = fin["nongaap_opinc"][index] / denominator * 100
             self.assertAlmostEqual(non_gaap, fin["nongaap_margin_pct"][index],
                                    delta=0.12, msg=period)
+        # the long record carries the same corrected figure, and it is the printed one
+        long = dict(zip(self.staging["long"]["quarters"], self.staging["long"]["nongaap_margin_pct"]))
+        short = dict(zip(self.staging["periods"], fin["nongaap_margin_pct"]))
+        for quarter in (q for q in adjustments if q in short):
+            self.assertEqual(long[quarter], short[quarter], quarter)
+        self.assertEqual(round(long["2024Q3"]), 54)
 
     def test_non_gaap_margin_exceeds_gaap_margin_every_quarter(self) -> None:
         """Non-GAAP removes costs, so its margin cannot be the lower one."""
@@ -843,6 +884,25 @@ class NdaqChecksTest(unittest.TestCase):
         self.assertEqual(s31[self.staging["periods"][-1]], sum(now for now, _ in parts))
         self.assertEqual(s31[self.staging["periods"][-5]], sum(ago for _, ago in parts))
 
+    def test_the_section_31_payable_sentence_is_the_filed_balance(self) -> None:
+        """The cash-flow leg of the fee: `quarter_context` took the year-to-date change
+        from the 10-Q cash-flow statement; `_checks` took the two balances from the
+        release's balance sheet. The page's sentence must be both at once."""
+        payable = self.checks["section_31_payable_usd_m"]
+        cash = self.staging["quarter_context"]["cash_flow"]
+        self.assertEqual(cash["s31_payable_ytd_change_usd_m"], payable["end"] - payable["start"])
+        note = self.by_ref["EX_S31"]["note"]
+        self.assertIn(f"增加 US${payable['end'] - payable['start']:,.0f}M，{self.checks['period_end']} 的余额是 "
+                      f"US${payable['end']:,.0f}M（上年末 US${payable['start']:,.0f}M）", note)
+
+    def test_the_fintech_sub_lines_carry_the_printed_organic_rates(self) -> None:
+        printed = self.staging["yoy_printed"]
+        cmt = printed["cmt_organic_pct"]
+        self.assertEqual(cmt[-1], self.checks["organic_printed_pct"]["cmt_revenue"])
+        verb = "降到" if cmt[-1] < cmt[-2] else ("升到" if cmt[-1] > cmt[-2] else "持平于")
+        self.assertIn(f"Capital Markets Technology 从上季 {cmt[-2]:g}% {verb}本季 {cmt[-1]:g}%",
+                      self.by_ref["EX_FINSUB"]["note"])
+
     def test_the_section_8_readings_are_the_checked_figures(self) -> None:
         """Every reading section three scores is the figure keyed separately into
         `_checks` -- the organic rates from the release's text, where `yoy_printed`
@@ -1019,6 +1079,14 @@ class NdaqRollTest(unittest.TestCase):
             s["long"]["nongaap_margin_pct"] = [values[0] + 0.25 * i for i in range(len(values))]
         self.moves(("次回落",), monotone)
         self.moves(("几乎单调向上",), monotone, present_before=False)
+
+        # Index carried the whole acceleration in Q2 2026; lift the rest of the company
+        # past its prior-quarter rate and the core-finding sentences must go.
+        def index_not_the_story(s):
+            now, ago = s["yoy_printed"]["net_revenue_usd_m"][-1]
+            s["yoy_printed"]["net_revenue_usd_m"][-1] = [now + 60, ago]
+        self.moves(("合并净收入的加速全部来自 Index", "剔除 Index 之后却在放缓", "合并口径却从"),
+                   index_not_the_story)
 
         # The fee was zero for the three quarters before this one.
         def fee_never_stopped(s):
