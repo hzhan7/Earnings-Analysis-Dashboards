@@ -202,7 +202,7 @@ def _tsm_advanced_count() -> dict:
 REACH_2016 = {
     "amd": 16, "amzn": 13, "arm": 0, "asml": 24, "avgo": 6, "axp": 11, "bc": 3, "cboe": 10, "cdns": 10, "cfr": 20, "cme": 17,
     "cost": 13, "googl": 11, "hkex": 15, "ibkr": 26, "ker": 11 + _ker_threshold_reach(), "ma": 17, "mc": 9, "mco": 13, "meta": 10,
-    "msci": 15, "msft": 8, "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 8, "nvda": 10, "pm": 8,
+    "msci": 23, "msft": 8, "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 8, "nvda": 10, "pm": 8,
     "race": 12, "rms": 15, "samsung": 0, "schw": 10, "skhynix": 4, "snps": 8,
     "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
     "intc": 10 + _intc_threshold_reach(),
@@ -1663,10 +1663,10 @@ class ChartWindowTest(unittest.TestCase):
         # tracked exhibit by exhibit (621 at the luxury page's rebuild; 674 when
         # INTC landed on top of AMD and ARM, which is what pushed past 660; 750
         # on 2026-09-23 after the four-part pass had merged its first ten pages,
-        # each of which gained closure and threshold lines -- re-measured with
-        # headroom for the rest of that pass).
+        # each of which gained closure and threshold lines; 804 at its twentieth --
+        # re-measured with headroom for the rest of that pass).
         self.assertGreaterEqual(total, 540)
-        self.assertLessEqual(total, 800)
+        self.assertLessEqual(total, 900)
 
     def test_flipping_the_alternation_changes_nothing(self) -> None:
         """The property that makes the parser safe, stated as a property.
