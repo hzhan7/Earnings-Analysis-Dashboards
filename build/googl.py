@@ -75,6 +75,20 @@ BUILD_OUT_FROM = "2023Q1"
 # the revenue chart once it is this long; one- and two-quarter wiggles do not.
 ACCELERATION_EPISODE = 3
 
+# The first quarter the owner's local analysis covered (the vault's
+# `2026-03-05 GOOGL Q4 2025 vs Q3 2025 Analysis.md`). Every later quarter has a
+# previous analysis whose follow-up list and section 8 section one settles.
+FIRST_REPORT_PERIOD = "Q4 2025"
+
+# The four sections every company page carries, in order (owner, 2026-09-23;
+# TSM is the reference page).
+SECTIONS = (
+    ("settled", "一、上季跟踪指标兑现了吗"),
+    ("quarter_highlights", "二、本季重点"),
+    ("next_quarter", "三、下季要跟踪什么"),
+    ("routine", "四、长期常规跟踪"),
+)
+
 
 def parse_number(value: str) -> float | None:
     """Parse the compact financial-number strings used by the GOOGL source table."""
@@ -317,6 +331,16 @@ def build_payload(staging: dict) -> dict:
 
     prior_kpi = stamped_block(staging, "prior_kpi_settlement", period)
     next_kpi = stamped_block(staging, "next_kpi", period)
+    # The page has four sections every quarter. Section one settles what the
+    # previous local analysis left and section three carries this analysis's
+    # section 8; the site has analysed Alphabet since FIRST_REPORT_PERIOD, so
+    # every quarter the page can be rolled to has both, and a roll that forgot
+    # one would otherwise publish a page with a section quietly missing.
+    for key, block in (("prior_kpi_settlement", prior_kpi), ("next_kpi", next_kpi)):
+        if block is None:
+            raise ValueError(f"series block `{key}` is required every quarter: the local analysis "
+                             f"has covered Alphabet since {FIRST_REPORT_PERIOD}, so {period} has "
+                             "a previous analysis to settle and a section 8 to track")
     consensus = stamped_block(staging, "market_expectation", period)
     snapshot = stamped_block(staging, "snapshot", period)
     story = stamped_block(staging, "quarter_story", period) or {}
@@ -1323,7 +1347,7 @@ def build_payload(staging: dict) -> dict:
                      f"{change(ttm_fcf_cur, recorded)}；按 10-Q 逐季倒推，${recorded:,.0f}M 实为 {actual} 的 TTM，"
                      f"{claimed} 应为 ${true_value:,.0f}M，同比 {change(ttm_fcf_cur, true_value)}。本页采用后者。")
 
-    parts = (["上季兑现"] if settled_charts else []) + ["本季重点"] + (["下季跟踪"] if next_charts else []) + ["长期常规"]
+    parts = ["上季兑现", "本季重点", "下季跟踪", "长期常规"]
     notes = [
         f"本页按「{' → '.join(parts)}」{cn_count(len(parts))}段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
     ]
@@ -1349,37 +1373,19 @@ def build_payload(staging: dict) -> dict:
         "本页已知未接入：收入成本 / R&D / S&M / G&A 四条费用线、有效税率、稀释股数、paid clicks 与 CPC，以及电话会口径的 Gemini、订阅、Waymo 等运营 KPI。",
     ]
 
-    sections = []
-    if settled_charts:
-        sections.append({
-            "id": "settled",
-            "title": "一、上季跟踪指标兑现了吗",
-            "description": "先结算上季设下的阈值，再看本季数据——否则每季只会新增判断、从不闭环。",
-            "exhibits": exhibits[: len(settled_charts)],
-        })
-    sections.append({
-        "id": "quarter_highlights",
-        "title": "二、本季重点",
-        "description": ("四个亮点与存疑项：Cloud、Search、backlog、资本开支与现金流"
-                        + ("，外加一张盈利质量拆解。" if len(highlights) > 5 else "。")),
-        "exhibits": exhibits[len(settled_charts): len(settled_charts) + len(highlights)],
-    })
-    if next_charts:
-        sections.append({
-            "id": "next_quarter",
-            "title": "三、下季要跟踪什么",
-            "description": "同一套口径向前看：当前值离下季阈值还有多远。",
-            "exhibits": exhibits[
-                len(settled_charts) + len(highlights):
-                len(settled_charts) + len(highlights) + len(next_charts)
-            ],
-        })
-    sections.append({
-        "id": "routine",
-        "title": "四、长期常规跟踪",
-        "description": "GOOGL 专属的常规序列：总量增长、资本强度、折旧与现金转换、地域结构。",
-        "exhibits": exhibits[-len(routine):],
-    })
+    descriptions = {
+        "settled": "先结算上季设下的阈值，再看本季数据——否则每季只会新增判断、从不闭环。",
+        "quarter_highlights": ("四个亮点与存疑项：Cloud、Search、backlog、资本开支与现金流"
+                               + ("，外加一张盈利质量拆解。" if len(highlights) > 5 else "。")),
+        "next_quarter": "同一套口径向前看：当前值离下季阈值还有多远。",
+        "routine": "GOOGL 专属的常规序列：总量增长、资本强度、折旧与现金转换、地域结构。",
+    }
+    counts = [len(settled_charts), len(highlights), len(next_charts), len(routine)]
+    sections, start = [], 0
+    for (section_id, title), count in zip(SECTIONS, counts):
+        sections.append({"id": section_id, "title": title, "description": descriptions[section_id],
+                         "exhibits": exhibits[start:start + count]})
+        start += count
 
     return {
         "schema_version": "quarterly-dashboard/googl-v3",

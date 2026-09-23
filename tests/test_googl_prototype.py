@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build.board import headroom  # noqa: E402
-from build.googl import build_payload, parse_number, quarter_key  # noqa: E402
+from build.googl import SECTIONS, build_payload, parse_number, quarter_key  # noqa: E402
 
 
 class GooglePageTest(unittest.TestCase):
@@ -145,6 +145,16 @@ class GooglePageTest(unittest.TestCase):
         for exhibit in self.exhibits:
             self.assertTrue(exhibit.get("kind"), exhibit["n"])
             self.assertTrue(exhibit.get("note"), f"exhibit {exhibit['n']} has no explanation")
+
+    def test_the_page_has_the_four_sections_every_company_page_has(self) -> None:
+        """Owner's rule (2026-09-23, TSM is the reference): exactly four sections,
+        in this order, with these ids and these titles verbatim, none empty."""
+        self.assertEqual([(s["id"], s["title"]) for s in self.payload["sections"]],
+                         [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+                          ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+        self.assertEqual(list(SECTIONS), [(s["id"], s["title"]) for s in self.payload["sections"]])
+        self.assertTrue(all(section["exhibits"] for section in self.payload["sections"]))
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列", self.payload["notes"][0])
 
     def test_section_order_matches_how_the_note_is_used(self) -> None:
         """Each tracking section is one overview bar plus one chart per threshold,
@@ -354,8 +364,9 @@ class GooglePageTest(unittest.TestCase):
             self.assertTrue(any("66,728" in note and "73,552" in note for note in self.payload["notes"]))
 
 
-STAMPED = ("prior_kpi_settlement", "next_kpi", "market_expectation", "snapshot",
-           "quarter_story", "local_note_errata")
+REQUIRED_STAMPED = ("prior_kpi_settlement", "next_kpi")
+OPTIONAL_STAMPED = ("market_expectation", "snapshot", "quarter_story", "local_note_errata")
+STAMPED = REQUIRED_STAMPED + OPTIONAL_STAMPED
 
 
 def published_text(payload: dict) -> str:
@@ -486,15 +497,27 @@ class GooglRollTest(unittest.TestCase):
 
     def test_a_missing_quarter_block_leaves_its_part_out(self) -> None:
         bare = copy.deepcopy(self.source)
-        for key in STAMPED:
+        for key in OPTIONAL_STAMPED:
             del bare[key]
         payload = build_payload(bare)
-        ids = [section["id"] for section in payload["sections"]]
-        self.assertEqual(ids, ["quarter_highlights", "routine"])
+        # The four sections stay: an optional block takes only its own part with it.
+        self.assertEqual([(s["id"], s["title"]) for s in payload["sections"]], list(SECTIONS))
+        self.assertTrue(all(section["exhibits"] for section in payload["sections"]))
         text = published_text(payload)
         for gone in ("财报当日股价", "GAAP EPS", "关键指标一览", "市场预期约", "本地分析稿"):
             with self.subTest(gone=gone):
                 self.assertNotIn(gone, text)
+
+    def test_a_quarter_without_its_settlement_or_its_section_8_does_not_build(self) -> None:
+        """Sections one and three are not optional: the site has analysed Alphabet
+        since its first report, so every quarter the page can be rolled to has a
+        previous analysis to settle and a section 8 to track."""
+        for key in REQUIRED_STAMPED:
+            bare = copy.deepcopy(self.source)
+            del bare[key]
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "required every quarter"):
+                    build_payload(bare)
 
     def test_the_quarter_release_must_be_in_the_sources(self) -> None:
         missing = copy.deepcopy(self.source)
