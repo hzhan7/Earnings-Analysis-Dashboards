@@ -417,9 +417,14 @@ CONVERTED = {
         "最想结清的那条指引": "organic net revenue growth was guided as a number only for "
                        "2022-2024; from 2025 the guidance is a phrase, and the page "
                        "does not convert phrases into endpoints.",
-        "其中最关键的一条": "Cboe first printed a separate multi-listed options market "
-                     "share in the 2019Q2 release; ADV and RPC -- and so the money "
-                     "line beside it -- do run the whole window.",
+        "上季阈值": "each settled threshold is drawn on its metric's own series from its first "
+                "comparable point: the multi-listed options market share was first printed "
+                "separately in the 2019Q2 release (ADV and RPC, and so the money line, run the "
+                "whole window); net revenue (revenues less cost of revenues) exists only for the "
+                "combined company -- the Q4 2016 CBOE Holdings release (8-K of 2017-02-06) prints "
+                "Total Operating Revenues and no cost-of-revenues line anywhere, 2017Q2 is the first "
+                "full combined quarter (Bats consolidated from 2017-02-28), so a year-on-year line "
+                "starts 2018Q2.",
         "同一形状在股票撮合里重演": 'verified: Cboe acquired BIDS Trading on 2020-12-31, so the off-exchange block (share, ADV, net capture) genuinely begins 2021Q1.',
         "五个分部的净收入": 'was wrong and is now fixed in the builder: the five-segment series runs unbroken to 2017Q2 and is already in this repo -- the chart was drawing the last 20 of 37 because of a hardcoded tail, not because of anything in the filings. It now draws all 37. 2017Q2 is the real floor (Bats consolidated 2017-02-28, so 2017Q1 carries one month of the combined company).',
         "毛收入与净收入之间那道楔子": 'verified: a genuine Bats-driven structural break -- the pre-2017 income statement had no net-revenue/liquidity-payment structure to build the wedge from.',
@@ -1061,7 +1066,7 @@ FLOOR_KIND = {
     },
     'cboe': {
         '最想结清的那条指引': 'disclosure',
-        '其中最关键的一条': 'disclosure',
+        '上季阈值': 'disclosure',
         '同一形状在股票撮合里重演': 'disclosure',
         '五个分部的净收入': 'disclosure',
         '毛收入与净收入之间那道楔子': 'disclosure',
