@@ -201,7 +201,7 @@ def _tsm_advanced_count() -> dict:
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
     "amd": 16, "amzn": 13, "arm": 0, "asml": 24, "avgo": 6, "axp": 11, "bc": 3, "cboe": 10, "cdns": 10, "cfr": 20, "cme": 17,
-    "cost": 13, "googl": 11, "hkex": 13, "ibkr": 26, "ker": 11 + _ker_threshold_reach(), "ma": 17, "mc": 5, "mco": 13, "meta": 10,
+    "cost": 13, "googl": 11, "hkex": 13, "ibkr": 26, "ker": 11 + _ker_threshold_reach(), "ma": 17, "mc": 9, "mco": 13, "meta": 10,
     "msci": 15, "msft": 8, "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 8, "nvda": 10, "pm": 8,
     "race": 12, "rms": 15, "samsung": 0, "schw": 10, "skhynix": 4, "snps": 8,
     "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
