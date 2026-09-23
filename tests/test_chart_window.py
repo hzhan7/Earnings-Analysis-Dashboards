@@ -148,6 +148,54 @@ def _intc_threshold_reach() -> int:
                if "警戒线" in ex["title"])
 
 
+def _cme_page() -> dict:
+    return js_payload(ROOT / "data" / "cme.js", "window.DASH")
+
+
+def cme_threshold_reach(page: dict) -> int:
+    """CME's threshold lines that reach 2016: one per metric of the local
+    analysis's section 8 in section three (「下季阈值」), and from the second
+    analysis on one per settled metric in section one (「上季阈值」; none in
+    Q2 2026, the first). Which metrics there are, and when a dated line comes
+    due, is data -- the page is rolled by editing `series/cme.json` alone -- so
+    the pin counts the permanent charts and adds these while they are published."""
+    return sum(1 for section in page["sections"] for ex in section["exhibits"]
+               if ("上季阈值" in ex["title"] or "下季阈值" in ex["title"])
+               and (first_year(ex) or TARGET_YEAR + 1) <= TARGET_YEAR)
+
+
+def _cme_threshold_reach() -> int:
+    return cme_threshold_reach(_cme_page())
+
+
+def cme_quarter_pins(page: dict, series: dict) -> dict:
+    """CME's two underivable quarter counts, keyed by where their charts are now.
+
+    Both used to be pinned by exhibit number with a typed value. From the second
+    local analysis on, section one gains a chart per settled threshold, which
+    moves every later exhibit number; and both counts move with the series -- the
+    quarters in which volume and rate moved against each other, and the quarters
+    since the 2018 tax cut. So the key is found by ref on the page and the value
+    is counted here from `series/cme.json`, not read from the note it checks."""
+    long = series["long"]
+    adv, rpc = long["adv_k"], long["rpc"]
+    opposite = sum(1 for i in range(1, len(adv))
+                   if (adv[i] / adv[i - 1] - 1) * (rpc[i] / rpc[i - 1] - 1) < 0)
+    after_reform = len(long["quarters"]) - long["quarters"].index("2018Q1")
+    where = {ex.get("ref"): ex["n"] for section in page["sections"] for ex in section["exhibits"]}
+    return {
+        f"cme Ex{where['EX_ADV_LONG']}": ([opposite], "量价反向的季度数；锚是同句里用中文写的「N 个季度里」，"
+                                                     "数字形式的锚不存在"),
+        f"cme Ex{where['EX_TAX']}": ([after_reform], "税改前 / 税改后两段的分段均值，两段都短于窗口；"
+                                                    "税改后那段自 2018Q1 起，每换一季加一"),
+    }
+
+
+def _cme_quarter_pins() -> dict:
+    return cme_quarter_pins(_cme_page(),
+                            json.loads((ROOT / "series" / "cme.json").read_text(encoding="utf-8")))
+
+
 def _tsm_advanced_count() -> dict:
     """The process-mix note counts the quarters since 2021Q1 in which the page's
     summed 7nm-and-below line equals TSMC's own aggregate. The count grows by
@@ -172,7 +220,8 @@ def _tsm_advanced_count() -> dict:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amd": 16, "amzn": 13, "arm": 0, "asml": 16, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 17,
+    "amd": 16, "amzn": 13, "arm": 0, "asml": 16, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13,
+    "cme": 13 + _cme_threshold_reach(),
     "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
@@ -848,7 +897,9 @@ CONVERTED = {
     "cme": {
         "调整后营业费用（除许可费）": "same numerator, same 2024Q3 floor; the licensing leg alone "
                             "has 54 quarters.",
-        "调整后营业利润率：下季阈值": "same numerator again -- this is the threshold view of it.",
+        # Both threshold views of the margin: next quarter's line in section
+        # three and, from the second local analysis on, last quarter's in section one.
+        "调整后营业利润率：": "same numerator again -- this is the threshold view of it.",
         "抵押品净利差": "the two figures are first quantified in the 10-Q filed 2022-11-02, "
                   "which carries 2022Q3 and the prior-year 2021Q3. Every earlier "
                   "filing discusses the same items only qualitatively.",
@@ -1087,7 +1138,7 @@ FLOOR_KIND = {
     },
     'cme': {
         '调整后营业费用（除许可费）': 'disclosure',
-        '调整后营业利润率：下季阈值': 'disclosure',
+        '调整后营业利润率：': 'disclosure',
         '抵押品净利差': 'disclosure',
     },
     'googl': {
@@ -1648,8 +1699,7 @@ UNDERIVABLE_QUARTER_COUNTS = {
                        "上都画着（画的是它们的合计数，减出来的是收入分项），只是没有任何一张"
                        "图把它们单独成组，所以也不是「补集没被画」。"),
     "cdns Ex11": ([43], "指向完整指引记录的交叉引用；本图只画近 20 季"),
-    "cme Ex19":  ([37], "锚是同句里用中文写的「五十四个季度里」，数字形式的锚不存在"),
-    "cme Ex25":  ([34], "税改前 7 季 / 之后 34 季的分段均值，两段都短于窗口"),
+    **_cme_quarter_pins(),
     "meta Ex9":  ([13], "价格腿同比为负的季度数，是条件计数"),
     "axp Ex16":  ([16], "两条口径同时被印出来的季度数（16 季），是重叠区间的长度，"
                         "不是该图 42 季的窗口 —— 图注拿它论证两条线不能接成一条"),
