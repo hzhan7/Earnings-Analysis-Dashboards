@@ -2297,6 +2297,127 @@
     ],
     "source": "各季新闻稿的合并利润表三个月列（另一位读者从 8-K EX-99.1 读出，未看 series）。"
    }
+  },
+  "note": {
+   "what": "两份本地研究报告里页面要用到的事实：本季报告第 0 节的上季遗留问题与判定，上季报告第 8 节与本季报告第 8 节的量化阈值。从报告原文重读录入，没有从 series 的 followup_closure / prior_kpi_settlement / next_kpi 抄；builder 不读它，测试拿它对 payload。只放本季这一份，换季整块重写",
+   "source": {
+    "this_quarter": "2026-07-23 INTC Q2 2026 vs Q1 2026 Analysis.md：第 0 节「上季遗留问题回答」、第 8 节「关键观察指标」",
+    "last_quarter": "2026-04-30 INTC Q1 2026 vs Q4 2025 Analysis.md：第 8 节「关键观察指标」、Follow-up Questions for Next Quarter"
+   },
+   "checked_on": "2026-09-23",
+   "closure": {
+    "total": 5,
+    "verdicts": [
+     "通过",
+     "未通过，继续追踪",
+     "表面通过、质量未通过",
+     "部分通过",
+     "动能通过、经济性未验证"
+    ],
+    "tally_in_report": null,
+    "page_buckets": {
+     "通过": 1,
+     "部分通过": 3,
+     "未通过": 1
+    },
+    "page_buckets_rule": "报告第 0 节没有统计行；页面按判定原文归三档：只写「通过」为通过，以「未通过」开头为未通过，其余为部分通过"
+   },
+   "prior_thresholds": [
+    {
+     "row": 1,
+     "id": "dcai_yoy",
+     "metric": "DCAI YoY 增速",
+     "direction": "up",
+     "warning": 15.0,
+     "positive": 25.0,
+     "report_text": "Q2 actual ≥ +25% YoY = AI 重定价兑现 → 加仓；Q2 < +15% YoY = 加速是 Q1 单季脉冲 → 警示"
+    },
+    {
+     "row": 2,
+     "id": "non_gaap_gm",
+     "metric": "Non-GAAP Gross Margin",
+     "direction": "up",
+     "warning": 38.5,
+     "positive": 40.0,
+     "report_text": "Q2 actual ≥ 40.0% + Q3 ≥ 39.5% → 加仓；Q2 < 38.5% + Q3 < 38% → 减仓"
+    },
+    {
+     "row": 3,
+     "id": "foundry_external",
+     "metric": "External Foundry revenue",
+     "direction": "up",
+     "warning": 200,
+     "positive": 222,
+     "report_text": "Q2/Q3 ≥ $222M 且形成上升趋势 → 跟踪；连续 2 季 < $200M + 无新外部客户公告 → 警示"
+    },
+    {
+     "row": 4,
+     "id": null,
+     "metric": "14A 外部客户 design commitment 公告",
+     "direction": null,
+     "warning": null,
+     "positive": null,
+     "report_text": "2H 2026 ≥ 1 家外部客户 commit 14A wafer volume + pricing → 加仓；2027 H1 仍无 commitment → 重新评估"
+    },
+    {
+     "row": 5,
+     "id": "adjusted_fcf",
+     "metric": "Adjusted FCF 季度路径",
+     "direction": "up",
+     "warning": -1.0,
+     "positive": 1.0,
+     "unit": "usd_bn",
+     "report_text": "Q2/Q3 单季 ≥ +$1B + FY26 全年含 Fab 34 仍 positive → 加仓；连续 2 季 ≤ -$1B 或 FY26 全年 ex Fab 34 仍 negative → 警示"
+    }
+   ],
+   "next_thresholds": [
+    {
+     "row": 1,
+     "id": "dcai_margin",
+     "metric": "DCAI growth quality（margin）",
+     "direction": "up",
+     "warning": 35.0,
+     "positive": 40.0,
+     "report_text": "加仓 Units ≥15% 且 ASP ≥20%；margin ≥40% ／ 警示 Units <5% 且 ASP 增速 <15%；margin <35%"
+    },
+    {
+     "row": 2,
+     "id": "non_gaap_gm",
+     "metric": "Non-GAAP GM 与 operating leverage",
+     "direction": "up",
+     "warning": 40.0,
+     "positive": 42.0,
+     "report_text": "加仓 Q3/Q4 均 ≥42%，incremental OM ≥40% ／ 减仓 Q3 <40% 或连续两季 <40%"
+    },
+    {
+     "row": 3,
+     "id": "foundry_external_ex_altera",
+     "metric": "External Foundry ex-Altera",
+     "direction": "up",
+     "warning": 150,
+     "positive": 300,
+     "report_text": "加仓 连续两季 >$300M，且 2H26 出现 named volume/pricing commitment ／ 警示 连续两季 < $150M，或 H1 2027 仍无 commitment"
+    },
+    {
+     "row": 4,
+     "id": "net_debt",
+     "metric": "FCF / net debt",
+     "direction": "down",
+     "warning": 30.0,
+     "positive": null,
+     "unit": "usd_bn",
+     "report_text": "加仓 FY26 ex-Fab34 FCF >0，剔除预收后覆盖 CapEx；net debt 见顶 ／ 减仓 两季 underlying FCF <0 或 net debt >$30B"
+    },
+    {
+     "row": 5,
+     "id": null,
+     "metric": "CapEx 回报与融资",
+     "direction": null,
+     "warning": null,
+     "positive": null,
+     "report_text": "跟踪 CapEx 上调伴随订单、utilization 和无股权融资 ／ 警示 CapEx 上调、客户不披露且发行股权/可转债"
+    }
+   ]
   }
  },
  "verification": {
@@ -3251,7 +3372,12 @@
   },
   "what_it_is": "公司口径的外部收入是 Intel Foundry 向外部客户的代工与封装测试收入合计，10-Q 分部附注原文是「third-party foundry and assembly and test revenues from external customers」。",
   "source": "外部收入取自各季 10-Q 与 10-K 分部附注（第四季度为全年减前三季）；Altera 的份额取自 10-Q 投资附注里 Altera 一段的关联方收入。",
-  "_note": "Current basis (Q1 2025 recast) from 2024Q1. The 2024 filings printed 27/77/67/214 for the same four quarters before the recast; the filings do not say what moved (the reader's inference is IMS leaving the segment)."
+  "_note": "Current basis (Q1 2025 recast) from 2024Q1. The 2024 filings printed 27/77/67/214 for the same four quarters before the recast; the filings do not say what moved (the reader's inference is IMS leaving the segment).",
+  "altera_classification": {
+   "filing": "Q2 2026 10-Q",
+   "what": "Intel Foundry 段说外部收入同比增加「主要因为 Altera 出表后转为外部客户」，MD&A 另写「来自 Altera 这个客户的收入」",
+   "quote": "External revenue was $293 million in Q2 2026, up $271 million from Q2 2025, … primarily due to Altera's transition to an external customer following the deconsolidation of Altera in Q3 2025. / Revenue from Altera as a customer was $181 million in Q2 2026"
+  }
  },
  "equity": {
   "issuances": [
@@ -3663,7 +3789,41 @@
    "price_usd": 95.0,
    "what": "季后 2026-08-12 公开增发 2.42 亿股（含承销商超额配售 0.32 亿股），每股 US$95",
    "source": "8-K 2026-08-12（0001193125-26-346806）与 424B5（0001193125-26-345221）"
-  }
+  },
+  "afcf_other_legs": [
+   {
+    "name": "融资租赁付款",
+    "value_usd_m": -617
+   }
+  ],
+  "afcf_source": "2026-07-23 新闻稿 Supplemental Reconciliations of GAAP Actuals to Non-GAAP Actuals 里的调整后自由现金流调节表（Jun 27, 2026 一栏）：经营现金流 7,006、总资本开支 (2,652)、资本相关政府补贴 60、合伙人出资净额 (12,216)、融资租赁付款 (617)、调整后自由现金流 (8,419)",
+  "customer_deposits_received_usd_m": 1700,
+  "customer_deposits_source": "Q2 2026 10-Q MD&A「Liquidity and Capital Resources」：「In Q1 2026, we entered into long-term arrangements with customers that included deposits totaling $1.7 billion, … for which the related cash was received in Q2 2026」",
+  "working_capital_change_usd_m": {
+   "2026Q1": -3498,
+   "2026Q2": 1227
+  },
+  "working_capital_source": "新闻稿现金流量表「Changes in assets and liabilities」六行之和：2026Q1 取 2026-04-23 新闻稿三个月列（(217)、(808)、(142)、(1,175)、169、(1,325)）；2026Q2 为 2026-07-23 新闻稿六个月列之和（(221)、(874)、310、(372)、(477)、(637)，合计 −2,271）减 2026Q1（D）",
+  "foundry_yoy": {
+   "lower_period_charges_usd_m": 1400,
+   "absent_charge_usd_m": 797,
+   "absent_charge_quarter": "2025Q2",
+   "lower_product_profit_usd_m": 340,
+   "source": "Q2 2026 10-Q MD&A「Intel Foundry」段：「Operating loss was $2.1 billion in Q2 2026, compared to an operating loss of $3.2 billion in Q2 2025, primarily driven by $1.4 billion of lower period charges, including the absence of $797 million of non-cash asset impairment and accelerated depreciation charges recognized in Q2 2025 … partially offset by $340 million of lower product profit in Q2 2026, driven by an increased mix of higher-cost wafers manufactured on our Intel 18A process node」",
+   "what": "10-Q 说主要来自 {lower_period_charges} 较低的期间费用，其中 {absent_charge} 是 {absent_quarter} 那笔减值与加速折旧没有再发生；产品利润反而少了 {lower_product_profit}（Intel 18A 的晶圆成本更高）。本季报告据此认为同比的改善不宜外推，环比的改善更干净"
+  },
+  "ccpg_yoy": {
+   "higher_period_charges_usd_m": 669,
+   "source": "Q2 2026 10-Q MD&A「Intel Products」段 CCPG：「These benefits were partially offset by $669 million of higher period charges, primarily due to an inventory-related charge recognized in Q2 2026 to align product mix with customer demand」",
+   "what": "10-Q 说同比多出 {higher_period_charges} 的期间费用，主要是本季为让产品组合对上客户需求而确认的一笔库存相关费用，10-Q 没有单独给出这笔费用的金额"
+  },
+  "undrawn_conclusions": [
+   "全年资本开支的上调与下半年需要的加速，只在电话会与业绩演示里给出，新闻稿与 10-Q 都没有这个数",
+   "定制芯片（ASIC）的年化收入只在电话会里说过（10-Q 能读到的相关数见第一节闭环图）",
+   "财报后的股价反应与估值是市场数据，本页不发布"
+  ],
+  "customer_deposits_what": "一季度签约、本季收到现金",
+  "working_capital_reading": "本季报告因此认为这一季的经营现金流不能年化"
  },
  "followup_closure": {
   "period": "Q2 2026",
@@ -3781,7 +3941,8 @@
     "positive_word": "跟踪",
     "unit": "usd_m",
     "consecutive": 2,
-    "rule": "Q2/Q3 ≥ US$222M 且形成上升趋势为跟踪；连续 2 季 < US$200M 且没有新外部客户公告为警示"
+    "rule": "Q2/Q3 ≥ US$222M 且形成上升趋势为跟踪；连续 2 季 < US$200M 且没有新外部客户公告为警示",
+    "report_view": "本季报告因此把同名的待验证问题判为「表面通过、质量未通过」，并把下季阈值改成剔除 Altera 的口径（见第三节）"
    },
    {
     "id": "adjusted_fcf",
@@ -3793,7 +3954,8 @@
     "positive_word": "加仓",
     "unit": "usd_bn",
     "consecutive": 2,
-    "rule": "Q2/Q3 单季 ≥ +US$1B 且 FY26 全年含 Fab 34 仍为正为加仓；连续 2 季 ≤ −US$1B 或 FY26 全年不含 Fab 34 仍为负为警示"
+    "rule": "Q2/Q3 单季 ≥ +US$1B 且 FY26 全年含 Fab 34 仍为正为加仓；连续 2 季 ≤ −US$1B 或 FY26 全年不含 Fab 34 仍为负为警示",
+    "report_view": "本季报告第 0 节把同一问题判为「部分通过」，是把 Fab 34 合伙人分配与客户押金分开加减后的研究口径；本页按公司口径结算"
    }
   ],
   "unquantified": [
@@ -3805,41 +3967,136 @@
    }
   ]
  },
- "thresholds": {
+ "volume_price": {
   "period": "Q2 2026",
-  "set_in": "本地研究（2026-07-26 季报分析的关键观察指标）",
-  "items": [
+  "rows": [
    {
-    "metric": "non-GAAP 毛利率",
-    "key": "non_gaap_gm",
-    "direction": "up",
-    "threshold": 40.0,
-    "add_threshold": 42.0,
-    "unit": "pct"
+    "name": "服务器（DCAI）",
+    "volume_yoy_pct": 9,
+    "asp_yoy_pct": 48
    },
    {
+    "name": "客户端：笔记本与台式机（CCPG）",
+    "volume_yoy_pct": -8,
+    "asp_yoy_pct": 27
+   }
+  ],
+  "why": "10-Q 说售价上升大部分来自高端产品占比提高，按需求调价是次要部分，部分用来抵消投入成本的上涨",
+  "source": "Q2 2026 10-Q MD&A「Intel Products」段：DCAI「server revenue, which increased $2.0 billion in Q2 2026 … due to ASP increases of 48% … Server volume increased 9% compared to Q2 2025」；CCPG「Client revenue … primarily driven by ASP increases of 27% … partially offset by volume decreases of 8% compared to Q2 2025」"
+ },
+ "next_kpi": {
+  "period": "Q2 2026",
+  "for_period": "Q3 2026",
+  "set_in_report": "2026-07-23 的 Q2 2026 季报分析第 8 节「关键观察指标」",
+  "quantified": [
+   {
+    "id": "dcai_margin",
+    "row": 1,
     "metric": "DCAI 营业利润率",
-    "key": "dcai_margin",
     "direction": "up",
     "threshold": 35.0,
-    "add_threshold": 40.0,
+    "positive": 40.0,
+    "positive_word": "加仓",
     "unit": "pct"
    },
    {
-    "metric": "剔除 Altera 的外部 Foundry 收入",
-    "key": "foundry_external_ex_altera",
+    "id": "non_gaap_gm",
+    "row": 2,
+    "metric": "non-GAAP 毛利率",
     "direction": "up",
-    "threshold": 150,
-    "add_threshold": 300,
-    "unit": "usd_m"
+    "threshold": 40.0,
+    "positive": 42.0,
+    "positive_word": "加仓",
+    "unit": "pct"
    },
    {
+    "id": "foundry_external_ex_altera",
+    "row": 3,
+    "metric": "剔除 Altera 的外部 Foundry 收入",
+    "direction": "up",
+    "threshold": 150,
+    "positive": 300,
+    "positive_word": "加仓",
+    "unit": "usd_m",
+    "consecutive": 2
+   },
+   {
+    "id": "net_debt",
+    "row": 4,
     "metric": "净债务",
-    "key": "net_debt",
     "direction": "down",
     "threshold": 30.0,
     "unit": "usd_bn"
    }
-  ]
+  ],
+  "rows": [
+   {
+    "row": 1,
+    "indicator": "DCAI growth quality",
+    "positive": "Units ≥15% 且 ASP ≥20%；margin ≥40%",
+    "warning": "Units <5% 且 ASP 增速 <15%；margin <35%",
+    "action": "加仓 / 警示"
+   },
+   {
+    "row": 2,
+    "indicator": "Non-GAAP GM 与 operating leverage",
+    "positive": "Q3/Q4 均 ≥42%，incremental OM ≥40%",
+    "warning": "Q3 <40% 或连续两季 <40%",
+    "action": "加仓 / 减仓"
+   },
+   {
+    "row": 3,
+    "indicator": "External Foundry ex-Altera + 14A 客户",
+    "positive": "连续两季 >$300M，且 2H26 出现 named volume/pricing commitment",
+    "warning": "连续两季 < $150M，或 H1 2027 仍无 commitment",
+    "action": "加仓 / 重估"
+   },
+   {
+    "row": 4,
+    "indicator": "FCF / net debt",
+    "positive": "FY26 ex-Fab34 FCF >0，剔除预收后覆盖 CapEx；net debt 见顶",
+    "warning": "两季 underlying FCF <0 或 net debt >$30B",
+    "action": "加仓 / 减仓"
+   },
+   {
+    "row": 5,
+    "indicator": "CapEx 回报与融资",
+    "positive": "CapEx 上调伴随订单、utilization 和无股权融资",
+    "warning": "CapEx 上调、客户不披露且发行股权/可转债",
+    "action": "跟踪 / 警示"
+   }
+  ],
+  "unquantified": [
+   {
+    "row": 1,
+    "what": "服务器出货量与平均售价的同比",
+    "why": "公司只在 10-Q 里给本季对上年同期的百分比，本页没有它的历史序列；警示条件又是量、价两个条件同时成立，拆不成一条线"
+   },
+   {
+    "row": 2,
+    "what": "增量营业利润率",
+    "why": "由两季新闻稿印出的 non-GAAP 营业利润与收入相除得到，本页没有 non-GAAP 营业利润的历史序列"
+   },
+   {
+    "row": 3,
+    "what": "14A 的具名客户承诺",
+    "why": "没有数值；本季新闻稿与 10-Q 都没有披露任何外部客户对 14A 的量价承诺"
+   },
+   {
+    "row": 4,
+    "what": "剔除 Fab 34 与客户预收的基础自由现金流",
+    "why": "是研究口径，公司不印这个数；公司口径的调整后自由现金流在第一节结算"
+   },
+   {
+    "row": 5,
+    "what": "资本开支上调与股权融资",
+    "why": "全年资本开支指引只在电话会与业绩演示里给出，新闻稿与 10-Q 都没有这个数"
+   }
+  ],
+  "non_gaap_operating_income_usd_m": {
+   "2026Q1": 1668,
+   "2026Q2": 2770
+  },
+  "non_gaap_operating_income_source": "各季新闻稿 Supplemental Reconciliations 表「Non-GAAP operating income (loss)」：2026-04-23 新闻稿 $1,668、2026-07-23 新闻稿 $2,770"
  }
 }

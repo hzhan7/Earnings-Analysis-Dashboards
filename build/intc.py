@@ -27,11 +27,21 @@ segments only on the current basis (2024Q1 on, NEX folded in) and Intel Foundry
 from 2023Q1, the earliest quarter the segment has ever been reported for, with
 the 2024 restatement marked as a break rather than drawn through.
 
+**The page reads in four parts** (the TSM reference format): what last
+quarter left is settled first -- the open questions last quarter's research
+report asked, closed with the verdicts this quarter's report wrote
+(`followup_closure`), last quarter's numeric thresholds settled on the filed
+figures (`prior_kpi_settlement`), then the company's own guidance record; then
+this quarter's highlights, one chart per conclusion of this quarter's report;
+then next quarter's thresholds as that report set them (`next_kpi`, required
+every quarter); then the long series.
+
 **A roll edits `series/intc.json` and nothing else** (CLAUDE.md §9). Every
 period, count and figure on the page is computed from the series; what belongs
-to one quarter only -- the EPS reconciliation legs, the prior quarter's open
-questions, the next quarter's thresholds -- sits in period-stamped blocks and is
-left out when absent.
+to one quarter only -- the EPS and adjusted-FCF reconciliation legs, the 10-Q's
+volume and price changes, the research reports' questions, verdicts and
+thresholds, every sentence that explains this quarter -- sits in period-stamped
+blocks and is left out when absent.
 """
 
 from __future__ import annotations
@@ -58,7 +68,6 @@ from build.board import (  # noqa: E402
     number_exhibits,
     stamped_block,
     threshold_exhibit,
-    threshold_table,
 )
 from build.page_shell import render_shell  # noqa: E402
 from build.payload_guard import write_dash  # noqa: E402
@@ -321,7 +330,7 @@ def kpi_table(n: int, title: str, entries: list[dict], value_key: str, value_hea
     return {"n": n, "title": title, "headers": ["指标", "方向", "阈值", value_head, "余量 D"], "rows": rows}
 
 
-# ── section one: the guidance record ─────────────────────────────────────────
+# ── part one (c): the company's own guidance record ─────────────────────────
 def revenue_record(s: dict) -> dict:
     """Score every revenue outlook against the revenue that was then reported.
 
@@ -516,8 +525,8 @@ def guidance_charts(s: dict) -> list[dict]:
     return [band, dev, gm, eps]
 
 
-# ── section two: the quarter ─────────────────────────────────────────────────
-def quarter_charts(s: dict, story: dict | None) -> list[dict]:
+# ── part two: this quarter's highlights ────────────────────────────────────
+def quarter_charts(s: dict, story: dict | None, volume_price: dict | None = None) -> list[dict]:
     P = s["periods"]
     rev = s["income_usd_m"]["revenue"]
     yoy = [None if i < 4 else round(pct(rev[i], rev[i - 4]), 1) for i in range(len(P))]
@@ -557,21 +566,25 @@ def quarter_charts(s: dict, story: dict | None) -> list[dict]:
     client = client_label(s)
     names = [(client, "ccpg", "NAVY"), ("DCAI", "dcai", "MBLUE"),
              ("Intel Foundry", "foundry", "GOLD"), ("All Other", "all_other", "GRAY")]
-    growth = {key: pct(seg[f"{key}_revenue"][-1], seg[f"{key}_revenue"][0]) for _, key, _ in names}
-    lead = max(names[:3], key=lambda n: growth[n[1]])
+    ya = SP.index(year_ago(SP[-1]))
+    seg_yoy = {key: pct(seg[f"{key}_revenue"][-1], seg[f"{key}_revenue"][ya]) for _, key, _ in names}
+    seg_qoq = {key: pct(seg[f"{key}_revenue"][-1], seg[f"{key}_revenue"][-2]) for _, key, _ in names}
+    lead = max(names[:3], key=lambda n: seg_yoy[n[1]])
     seg_rev = {
         "ref": "EX_SEGREV",
         "kind": "lines",
-        "title": (f"四个分部的收入（现行口径 {len(SP)} 季）：{lead[0]} 从 "
-                  f"{usd_bn(seg[lead[1] + '_revenue'][0])} 到 {usd_bn(seg[lead[1] + '_revenue'][-1])}，"
-                  f"{signed(growth[lead[1]])}"),
+        "title": (f"本季 {lead[0]} 收入 {usd_bn(seg[lead[1] + '_revenue'][-1])}，同比 {signed(seg_yoy[lead[1]])}、"
+                  f"环比 {signed(seg_qoq[lead[1]])}，是三个主要分部里同比最快的"
+                  f"（四个分部的收入，现行口径 {len(SP)} 季）"),
         "xlabels": [qlab(q) for q in SP],
         "series": [{"name": zh, "color": color, "values": rounded(seg[f"{key}_revenue"])}
                    for zh, key, color in names],
         "end_label": True,
         "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
         "ylab": "US$M（含分部间收入）",
-        "note": ("分部收入含分部间交易 —— Intel Foundry 的收入绝大部分来自给 Intel Products 代工，"
+        "note": ("三个主要分部本季的同比与环比："
+                 + "；".join(f"{zh} {signed(seg_yoy[key])}、{signed(seg_qoq[key])}" for zh, key, _ in names[:3])
+                 + "。分部收入含分部间交易 —— Intel Foundry 的收入绝大部分来自给 Intel Products 代工，"
                  "所以四条线相加大于合并收入，差额是分部间抵销。"
                  "现行口径从 2025 年第一季度的新闻稿开始：NEX 并入 CCG 与 DCAI，2024 年各季被重述到这个口径。"
                  + client_rename_sentence(s)),
@@ -579,23 +592,37 @@ def quarter_charts(s: dict, story: dict | None) -> list[dict]:
     }
     margin = {key: [o / r * 100 for o, r in zip(seg[f"{key}_oi"], seg[f"{key}_revenue"])]
               for _, key, _ in names[:3]}
+    move = {key: margin[key][-1] - margin[key][-2] for key in margin}
+    oi_qoq = pct(seg["ccpg_oi"][-1], seg["ccpg_oi"][-2])
+    ccpg_words = ""
+    if seg_qoq["ccpg"] > 0 > oi_qoq:
+        ccpg_words = (f"{client_short(s)} 收入环比 {signed(seg_qoq['ccpg'])}，营业利润却 {signed(oi_qoq)}"
+                      + ((lambda c: "：" + fill_story(c["what"], {
+                              "higher_period_charges": usd_m(c["higher_period_charges_usd_m"])}) + "。")(story["ccpg_yoy"])
+                         if story and story.get("ccpg_yoy") else "。"))
     seg_margin = {
         "ref": "EX_SEGMARGIN",
         "kind": "lines",
-        "title": (f"分部营业利润率：DCAI 从 {num(margin['dcai'][0])}% 到 {num(margin['dcai'][-1])}%，"
-                  f"{client_short(s)} {num(margin['ccpg'][-1])}%，Intel Foundry {num(margin['foundry'][-1])}%"),
+        "title": (f"本季分部营业利润率：DCAI {num(margin['dcai'][-1])}%（环比 {signed(move['dcai'], 1, 'pp')}），"
+                  f"{client_short(s)} {num(margin['ccpg'][-1])}%（{signed(move['ccpg'], 1, 'pp')}），"
+                  f"Intel Foundry {num(margin['foundry'][-1])}%（{signed(move['foundry'], 1, 'pp')}）"),
         "xlabels": [qlab(q) for q in SP],
         "series": [{"name": zh, "color": color, "values": rounded(margin[key], 1)}
                    for zh, key, color in names[:3]],
         "end_label": True,
         "fmt": "pct1", "yfmt": "pct1", "label_fmt": "pct1",
         "ylab": "分部营业利润 / 分部收入 %",
-        "note": ("分母是含分部间交易的分部收入。Intel Foundry 的收入大部分是向 Intel Products 的内部转移价"
+        "note": (ccpg_words
+                 + "分母是含分部间交易的分部收入。Intel Foundry 的收入大部分是向 Intel Products 的内部转移价"
                  "（公司说内部价格意在接近市场价），所以它的利润率取决于这个内部定价，不是纯粹对外经营的利润率。"
                  "股权激励、重组与收购摊销记在公司未分配费用里，不在任何一个分部。"),
-        "src_extra": "由上一张图的同一组分部数相除得到（D）。",
+        "src_extra": ("由上一张图的同一组分部数相除得到（D）。"
+                      + (story["ccpg_yoy"]["source"] + "。" if ccpg_words and story and story.get("ccpg_yoy") else "")),
     }
-    out += [seg_rev, seg_margin]
+    out.append(seg_rev)
+    if volume_price:
+        out.append(volume_price_chart(volume_price, seg_yoy))
+    out.append(seg_margin)
 
     if story:
         rc = story["eps_reconciliation"]
@@ -605,11 +632,14 @@ def quarter_charts(s: dict, story: dict | None) -> list[dict]:
         rest = sum(leg["value"] for leg in others)
         if abs(rc["gaap"] + sum(leg["value"] for leg in legs) - rc["non_gaap"]) >= 0.015:
             raise ValueError("quarter_story EPS reconciliation legs do not close to non-GAAP EPS")
+        gap = rc["non_gaap"] - rc["gaap"]
+        share = big["value"] / gap * 100 if gap else None
         bridge = {
             "ref": "EX_EPSBRIDGE",
             "kind": "grouped_bars",
             "title": (f"GAAP EPS {usd_eps(rc['gaap'])} 到 non-GAAP {usd_eps(rc['non_gaap'])}："
-                      f"{big['name']}一项就是 {usd_eps(big['value'])}"),
+                      f"{big['name']}一项就是 {usd_eps(big['value'])}"
+                      + (f"，占两者之差的 {share:.0f}%" if share is not None and 0 < share <= 100 else "")),
             "xlabels": ["GAAP EPS", big["name"], f"其余{cn_count(len(others))}项合计", "non-GAAP EPS"],
             "groups": [{"name": "每股（US$）", "color": "NAVY",
                         "values": rounded([rc["gaap"], big["value"], rest, rc["non_gaap"]], 2)}],
@@ -622,10 +652,103 @@ def quarter_charts(s: dict, story: dict | None) -> list[dict]:
             "src_extra": rc["source"] + "。",
         }
         out.append(bridge)
+        afcf = afcf_chart(s, story)
+        if afcf:
+            out.append(afcf)
     return out
 
 
-# ── section three: margins over ten years, and a definition that moved ──────
+def volume_price_chart(vp: dict, seg_yoy: dict) -> dict:
+    """What the 10-Q says moved revenue: units against average selling price.
+
+    The company prints these only as this quarter's change on the year-ago
+    quarter, in the 10-Q's segment discussion, so they live in a period-stamped
+    block and the chart is left out of a quarter without one.
+    """
+    rows = vp["rows"]
+    short = lambda name: name.split("（")[0].split("：")[0]
+    price_led = all(r["asp_yoy_pct"] > r["volume_yoy_pct"] for r in rows)
+    parts = "；".join(f"{short(r['name'])}出货量同比 {signed(r['volume_yoy_pct'], 0)}、平均售价 "
+                     f"{signed(r['asp_yoy_pct'], 0)}" for r in rows)
+    return {
+        "ref": "EX_VOLPRICE",
+        "kind": "grouped_bars",
+        "title": ("本季收入增长主要来自售价：" if price_led else "本季出货量与平均售价的同比：") + parts,
+        "xlabels": [r["name"] for r in rows],
+        "groups": [
+            {"name": "出货量同比", "color": "GRAY", "values": [r["volume_yoy_pct"] for r in rows]},
+            {"name": "平均售价同比", "color": "NAVY", "values": [r["asp_yoy_pct"] for r in rows]},
+        ],
+        "bar_labels": True,
+        "fmt": "pct0", "label_fmt": "pct0",
+        "ylab": "同比 %",
+        "note": (f"{vp['why']}。同季 DCAI 收入同比 {signed(seg_yoy['dcai'])}、客户端所在的 CCPG 收入同比 "
+                 f"{signed(seg_yoy['ccpg'])}（上一张图）。10-Q 只给本季对上年同期的百分比，不给环比，也不给量与价的绝对数，"
+                 "所以本页没有它的历史序列。"),
+        "src_extra": vp["source"] + "。",
+    }
+
+
+def afcf_chart(s: dict, story: dict) -> dict | None:
+    """The quarter's adjusted free cash flow, leg by leg, closed to the printed figure.
+
+    Four legs are series the page already carries (operating cash flow, gross
+    capex, capital-related incentives, partner contributions net); the rest of
+    the company's reconciliation sits in the period-stamped story. The legs must
+    add up to the figure the release printed, or the build stops.
+    """
+    others = story.get("afcf_other_legs")
+    if not others:
+        return None
+    P = s["periods"]
+    cf = s["cash_flow_usd_m"]
+    ocf, capex = cf["ocf"], capex_gross(s)
+    printed = cf["adjusted_fcf_printed"][-1]
+    legs = [("经营现金流", ocf[-1]), ("总资本开支", -capex[-1]), ("资本相关政府补贴", cf["gov_incentives"][-1]),
+            ("合伙人出资净额", cf["partner_contributions_net"][-1])] + [(o["name"], o["value_usd_m"]) for o in others]
+    if abs(sum(v for _, v in legs) - printed) > 1:
+        raise ValueError(f"adjusted-FCF legs add to {sum(v for _, v in legs)}, the release printed {printed}")
+    name, low = min(legs[1:], key=lambda t: t[1])
+    if printed < 0 < printed - low:
+        title = (f"调整后自由现金流 {usd_bn(printed)}：{name} {usd_bn(low)} 一项就把它拉负，"
+                 f"不含这一项是 {usd_bn(printed - low)}")
+    else:
+        title = f"调整后自由现金流 {usd_bn(printed)}：经营现金流 {usd_bn(ocf[-1])}，总资本开支 {usd_bn(capex[-1])}"
+    scip = s["equity"]["scip"]["fab34_repurchase"]
+    why_partner = (f"本季合伙人出资净额是负数，因为{scip['what']}"
+                   if quarter_of(scip["closed"]) == P[-1] and cf["partner_contributions_net"][-1] < 0 else "")
+    wc = story.get("working_capital_change_usd_m")
+    if wc is not None and sorted(wc) != [P[-2], P[-1]]:
+        raise ValueError(f"quarter_story working capital is for {sorted(wc)}, not {P[-2]} and {P[-1]}")
+    deposits = story.get("customer_deposits_received_usd_m")
+    cash_words = ""
+    if deposits:
+        cash_words += (f"经营现金流 {usd_bn(ocf[-1])} 里有 {usd_bn(deposits)} 是客户为锁定未来供货付的押金"
+                       + (f"（{story['customer_deposits_what']}）" if story.get("customer_deposits_what") else ""))
+    if wc is not None:
+        cash_words += ((f"；" if cash_words else "")
+                       + f"比上季多出的 {usd_bn(ocf[-1] - ocf[-2])} 里，{usd_bn(wc[P[-1]] - wc[P[-2]])} 是营运资本项目的变动（D）"
+                       + (f"，{story['working_capital_reading']}" if story.get("working_capital_reading") else ""))
+    return {
+        "ref": "EX_AFCF",
+        "kind": "grouped_bars",
+        "title": title,
+        "xlabels": [n for n, _ in legs] + ["调整后自由现金流"],
+        "groups": [{"name": "本季（US$B）", "color": "NAVY",
+                    "values": rounded([v / 1000 for _, v in legs] + [printed / 1000], 3)}],
+        "bar_labels": True,
+        "fmt": "usd1", "label_fmt": "usd1",
+        "ylab": "US$B",
+        "note": ("公司定义：调整后自由现金流 = 经营现金流 − 总资本开支 + 资本相关政府补贴 + 合伙人出资净额（出资减分配）"
+                 "− 融资租赁付款；这个定义这些年改过，历次改动写在第一节该指标的走势图注里。"
+                 + (why_partner if why_partner else "")
+                 + (cash_words + "。" if cash_words else "")),
+        "src_extra": "；".join(text for text in (story.get("afcf_source"), story.get("customer_deposits_source"),
+                                               story.get("working_capital_source")) if text) + "。",
+    }
+
+
+# ── part four: margins over ten years ──────────────────────────────────────
 def margin_charts(s: dict) -> list[dict]:
     P = s["periods"]
     gm = gross_margin(s)
@@ -710,8 +833,8 @@ def recast_table(s: dict, n: int) -> dict:
     }
 
 
-# ── section four: Intel Foundry ──────────────────────────────────────────────
-def foundry_charts(s: dict) -> list[dict]:
+# ── part two: Intel Foundry ───────────────────────────────────────────────
+def foundry_charts(s: dict, story: dict | None = None) -> list[dict]:
     seg = s["segments"]
     old = s["foundry_2024_basis"]
     early = [q for q in old["periods"] if q not in seg["periods"]]
@@ -724,13 +847,28 @@ def foundry_charts(s: dict) -> list[dict]:
     d_oi = [seg["foundry_oi"][seg["periods"].index(q)] - old["foundry_oi"][old["periods"].index(q)]
             for q in overlap]
     cur = seg["foundry_oi"]
+    SP = seg["periods"]
     smallest = max(range(len(cur)), key=lambda i: cur[i])
     total_loss = -sum(cur)
-    head = (f"Intel Foundry 现行口径 {len(cur)} 季累计经营{'亏损' if total_loss > 0 else '盈利'} "
-            f"{usd_bn(abs(total_loss))}；本季{'亏损' if oi[-1] < 0 else '盈利'} {usd_bn(abs(oi[-1]))}、"
+    qoq = cur[-1] - cur[-2]
+    head = (f"Intel Foundry 分部损益：本季{'亏损' if oi[-1] < 0 else '盈利'} {usd_bn(abs(oi[-1]))}、"
             f"收入 {usd_bn(rev[-1])}")
+    if oi[-1] < 0 and cur[-2] < 0:
+        head += f"，亏损比上季{'收窄' if qoq > 0 else '扩大'} {usd_m(abs(qoq))}"
     if oi[-1] < 0 and smallest == len(cur) - 1:
-        head += f"，亏损是现行口径 {len(cur)} 季里最小的一季"
+        head += f"，是现行口径 {len(cur)} 季里亏得最少的一季"
+    head += f"；现行口径 {len(cur)} 季累计经营{'亏损' if total_loss > 0 else '盈利'} {usd_bn(abs(total_loss))}"
+    yoy_words = ""
+    fy = (story or {}).get("foundry_yoy")
+    if fy and year_ago(SP[-1]) in SP:
+        change = cur[-1] - cur[SP.index(year_ago(SP[-1]))]
+        yoy_words = (f"亏损比去年同期{'收窄' if change > 0 else '扩大'} {usd_m(abs(change))}："
+                     + fill_story(fy["what"], {
+                         "lower_period_charges": usd_bn(fy["lower_period_charges_usd_m"]),
+                         "absent_charge": usd_m(fy["absent_charge_usd_m"]),
+                         "absent_quarter": qlab(fy["absent_charge_quarter"]),
+                         "lower_product_profit": usd_m(fy["lower_product_profit_usd_m"]),
+                     }) + "。")
     chart = {
         "ref": "EX_FOUNDRY",
         "kind": "grouped_bars",
@@ -746,7 +884,8 @@ def foundry_charts(s: dict) -> list[dict]:
         "ylab": "US$M",
         "break_at": len(early),
         "break_label": "2025 年重述口径",
-        "note": (f"Intel Foundry 是 2024 年才设立的报告分部，公司只把它的季度数重述回 {qlab(P[0])}；"
+        "note": (yoy_words
+                 + f"Intel Foundry 是 2024 年才设立的报告分部，公司只把它的季度数重述回 {qlab(P[0])}；"
                  "更早只有年度数。竖线两侧口径不同：左边是 2024 年的口径，右边是 2025 年起重述后的口径。"
                  f"两套口径都印过的{cn_count(len(overlap))}个季度（{'、'.join(qlab(q) for q in overlap)}）上，"
                  f"收入差 {'、'.join(signed(v, 0, '') for v in d_rev)}（US$M），"
@@ -755,7 +894,8 @@ def foundry_charts(s: dict) -> list[dict]:
                  f"另有经营{'亏损' if sum(oi[:len(early)]) < 0 else '盈利'} {usd_bn(abs(sum(oi[:len(early)])))}。"
                  + charge_note(s, P[min(range(len(oi)), key=lambda i: oi[i])])),
         "src_extra": ("竖线左侧取自 2024-04-25 8-K EX-99.2 的重述表与 2024 年各季新闻稿；右侧取自现行口径的"
-                      "各季新闻稿，其中 2024 年四季用一年后新闻稿的上年同期列。"),
+                      "各季新闻稿，其中 2024 年四季用一年后新闻稿的上年同期列。"
+                      + (fy["source"] + "。" if yoy_words else "")),
     }
     out = [chart]
 
@@ -772,28 +912,31 @@ def foundry_charts(s: dict) -> list[dict]:
            if al[-1] is not None else f"本季 {usd_m(ev[-1])}，Altera 的份额未披露")
     jump = next((k for k in range(decon, len(EP)) if ev[k] > max(before)), None)
     disclosed = [(EP[k], a) for k, a in enumerate(al) if a is not None]
+    cls = ext.get("altera_classification")
     ext_chart = {
         "ref": "EX_FOUNDRYEXT",
         "kind": "grouped_bars",
-        "title": (f"Intel Foundry 的外部收入：Altera 出表前每季 {usd_m(min(before))}–{usd_m(max(before))}，"
-                  + now),
+        "title": (f"Intel Foundry 的外部收入：{now}；Altera 出表前每季 {usd_m(min(before))}–{usd_m(max(before))}"),
         "xlabels": [qlab(q) for q in EP],
         "groups": [
             {"name": "外部客户收入（公司口径）", "color": "GOLD", "values": ev},
-            {"name": "Altera 关联方收入（本页视为外部收入的一部分）", "color": "GRAY", "values": al},
+            {"name": "其中来自 Altera（关联方收入）", "color": "GRAY", "values": al},
         ],
         "bar_labels": True,
         "fmt": "f0c", "label_fmt": "f0c",
         "ylab": "US$M",
         "note": (ext["what_it_is"] + f" Altera 在 {ext['altera_deconsolidated_on']} 出售 51% 后出表，从此成为 Intel Foundry 的外部客户，"
                  + (f"所以 {qlab(EP[jump])} 起的跳升有一部分只是同一笔生意换了记账位置。" if jump is not None else "")
-                 + "公司没有明说 Altera 的关联方收入就在外部收入之内，本页按其性质（向 Altera 提供的晶圆代工服务）"
-                   "视为其中一部分，所以「扣掉 Altera 后」的数是本页的推断。"
+                 + (f"{cls['filing']} 的 {cls['what']}；" if cls else "")
+                 + "但公司没有印出剔除 Altera 后的外部收入，本页把 Altera 的关联方收入整笔从外部收入里减掉，"
+                   "所以「扣掉 Altera 后」的数是两数相减的推断（D）。"
                  + (f"{'、'.join(qlab(q) for q in hidden)} 的 Altera 份额公司没有披露，图上那几格只有合计。" if hidden else "")
                  + "现行口径从 2025 年第一季度的重述开始，2024 年四季在重述前印的是 "
                  + "、".join(f"{v}" for v in ext["prior_basis_2024"]["external_revenue_usd_m"])
                  + "（US$M），公司没有说明是哪块业务被移走。"
-                 f"与分部收入相比，外部收入本季只占 {num(ev[-1] / seg['foundry_revenue'][-1] * 100)}%。"),
+                 f"与分部收入相比，外部收入本季只占 {num(ev[-1] / seg['foundry_revenue'][-1] * 100)}%"
+                 + (f"，扣掉 Altera 后只占 {num(ex_alt[-1] / seg['foundry_revenue'][-1] * 100)}%"
+                    if ex_alt[-1] is not None else "") + "。"),
         "src_extra": (ext["source"]
                       + ("公司披露过的 Altera 份额：" + "、".join(f"{qlab(q)} {usd_m(a)}" for q, a in disclosed) + "。"
                          if disclosed else "")),
@@ -802,7 +945,7 @@ def foundry_charts(s: dict) -> list[dict]:
     return out
 
 
-# ── section five: capital, cash and debt ─────────────────────────────────────
+# ── part four: capital, cash and debt ─────────────────────────────────────
 def capital_charts(s: dict) -> list[dict]:
     P = s["periods"]
     cf = s["cash_flow_usd_m"]
@@ -921,7 +1064,7 @@ def capital_charts(s: dict) -> list[dict]:
     return [cash, capint, funding, debt]
 
 
-# ── section six: shares ──────────────────────────────────────────────────────
+# ── part four: shares ──────────────────────────────────────────────────────
 def share_charts(s: dict, story: dict | None) -> list[dict]:
     P = s["periods"]
     eq = s["equity"]
@@ -990,7 +1133,7 @@ def issuance_sentence(s: dict) -> str:
             + "），其余来自员工股权计划与托管股份的陆续释放等。")
 
 
-# ── section one (a): what last quarter asked, closed by this quarter's report ─
+# ── part one (a): what last quarter asked, closed by this quarter's report ──
 def closure_chart(s: dict, closure: dict) -> dict:
     """Last quarter's open questions, with the verdicts this quarter's report wrote.
 
@@ -1054,7 +1197,7 @@ def closure_chart(s: dict, closure: dict) -> dict:
     }
 
 
-# ── section one (b): last quarter's thresholds, settled ──────────────────────
+# ── part one (b): last quarter's thresholds, settled ───────────────────────
 PRIOR_CHART_STEP = 16      # a threshold line longer than this gets yearly labels
 
 
@@ -1141,9 +1284,8 @@ def prior_settlement_charts(s: dict, prior: dict) -> list[dict]:
         elif e["id"] == "foundry_external":
             if ext["altera_usd_m"][-1] is not None:
                 extra = (f"本季 {usd_m(values[-1])} 里有 {usd_m(ext['altera_usd_m'][-1])} 来自 Altera"
-                         f"（出表后转为外部客户），扣掉后是 {usd_m(values[-1] - ext['altera_usd_m'][-1])} —— "
-                         "本季报告因此把同名的待验证问题判为「表面通过、质量未通过」，"
-                         "并把下季阈值改成剔除 Altera 的口径（见第三节）。")
+                         f"（出表后转为外部客户），扣掉后是 {usd_m(values[-1] - ext['altera_usd_m'][-1])}"
+                         + (f" —— {e['report_view']}" if e.get("report_view") else "") + "。")
         elif e["id"] == "adjusted_fcf":
             n = e.get("consecutive", 1)
             run = [f"{qlab(q)} {usd_bn(v * 1000)}" for q, v in zip(quarters[-n:], values[-n:])]
@@ -1151,8 +1293,8 @@ def prior_settlement_charts(s: dict, prior: dict) -> list[dict]:
             last_change = max(c["quarter"] for c in defs["changes"])
             extra = (f"公司口径最近{cn_count(n)}季是 {'、'.join(run)}"
                      + ("，都在线下，警示条件成立" if e["status"] == "击穿" else "")
-                     + "；本季报告第 0 节把同一问题判为「部分通过」，是把 Fab 34 合伙人分配与客户押金分开加减后的研究口径，"
-                     "本页按公司口径结算。这条线是公司每季印出的数，定义改过（各季新闻稿的定义原文）："
+                     + (f"；{e['report_view']}" if e.get("report_view") else "")
+                     + "。这条线是公司每季印出的数，定义改过（各季新闻稿的定义原文）："
                      + "；".join(f"{qlab(c['quarter'])}（{c['release']} 新闻稿）{c['what']}" for c in defs["changes"])
                      + ("。结算用到的最近两季定义相同。" if last_change <= quarters[-n] else "。"))
         ex = threshold_exhibit(
@@ -1171,63 +1313,143 @@ def prior_settlement_charts(s: dict, prior: dict) -> list[dict]:
     return out
 
 
-# ── section three: next quarter's lines ─────────────────────────────────────
-def tracking_charts(s: dict, followup: dict | None, thresholds: dict | None) -> list[dict]:
-    out = []
-    cur = current_values(s)
-    if thresholds:
-        entries = []
-        for item in thresholds["items"]:
-            value = cur[item["key"]]
-            if value is None:
-                continue
-            entries.append({**item, "current": value})
-        breached = [e for e in entries if (e["current"] < e["threshold"]) == (e["direction"] == "up")]
-        head = headroom_exhibit(
-            (f"下季 {len(entries)} 条量化阈值：" + (f"{cn_count(len(breached))}条已经越线" if breached
-                                                 else "全部仍在安全侧")),
-            entries, "current",
-            note=("每根柱是当前值离警戒线还有多远，按阈值的百分比计，正值 = 仍在安全侧。阈值出自"
-                  + thresholds["set_in"] + "，是研究设定，不是公司指引。"
-                  + ("已越线的是：" + "、".join(e["metric"] for e in breached) + "。" if breached else "")
-                  + ("「剔除 Altera 的外部 Foundry 收入」一条用的是本页的推断（见第二节外部收入图的注）。"
-                     if any(e["key"] == "foundry_external_ex_altera" for e in entries) else "")),
-            src_extra="当前值由本页 series 现算。",
-        )
-        head["ref"] = "EX_HEADROOM"
-        out.append(head)
-        P = s["periods"]
-        gm_item = next((e for e in entries if e["key"] == "non_gaap_gm"), None)
-        if gm_item:
-            ng = s["non_gaap_printed"]["gross_margin_pct_first_print"]
-            below = [q for q, v in zip(P, ng) if v < gm_item["threshold"]]
-            ex = threshold_exhibit(
-                (f"non-GAAP 毛利率对 {num(gm_item['threshold'], 0)}% 警戒线：本季 {num(ng[-1])}%，"
-                 f"{len(P)} 季里 {len(below)} 季在线下"),
-                [qlab(q) for q in P], ng, gm_item["threshold"],
-                fmt="pct1", ylab="non-GAAP 毛利率 %", actual_name="non-GAAP 毛利率（首次印出）",
-                threshold_name=f"警戒线 {num(gm_item['threshold'], 0)}%",
-                note=(f"加仓线是 {num(gm_item['add_threshold'], 0)}%。"
-                      + (f"线下的季度最早一次是 {qlab(below[0])}。" if below else "")),
-                src_extra=SRC_RELEASES, xstep=4)
-            ex["ref"] = "EX_GMLINE"
-            out.append(ex)
-        nd_item = next((e for e in entries if e["key"] == "net_debt"), None)
-        if nd_item:
-            nd = [v / 1000 for v in net_debt(s)]
-            over = [q for q, v in zip(P, nd) if v > nd_item["threshold"]]
-            ex = threshold_exhibit(
-                (f"净债务对 US${num(nd_item['threshold'], 0)}B 警戒线：本季末 US${num(nd[-1])}B，"
-                 + (f"离线还有 US${num(nd_item['threshold'] - nd[-1])}B" if nd[-1] <= nd_item["threshold"]
-                    else f"已越线 US${num(nd[-1] - nd_item['threshold'])}B")
-                 + (f"；{len(P)} 季里越线的只有 {'、'.join(qlab(q) for q in over)}" if over else "")),
-                [qlab(q) for q in P], rounded(nd, 3), nd_item["threshold"],
-                fmt="usd1", ylab="US$B（季末）", actual_name="净债务（D）",
-                threshold_name=f"警戒线 US${num(nd_item['threshold'], 0)}B",
-                note="净债务口径同第四节的净债务图。", src_extra="同第四节净债务图。", xstep=4)
-            ex["ref"] = "EX_NDLINE"
-            out.append(ex)
+# ── part three: next quarter's lines, from this quarter's report ──────────
+NEXT_TABLE_TITLE = "本季报告第 8 节观察指标：原文与本页读数"
+
+
+def next_entries(s: dict, next_kpi: dict) -> list[dict]:
+    """This quarter's report's numeric thresholds with their current reading.
+
+    A threshold whose current reading does not exist (an undisclosed Altera
+    share, say) is left out of the headroom chart rather than given a number.
+    """
+    history = tracked_history(s)
+    return [{**e, "current": history[e["id"]][1][-1]} for e in next_kpi["quantified"]
+            if history[e["id"]][1][-1] is not None]
+
+
+def incremental_margin(s: dict, next_kpi: dict) -> float | None:
+    """Non-GAAP operating income added per dollar of revenue added, this quarter on last (D)."""
+    P, rev = s["periods"], s["income_usd_m"]["revenue"]
+    oi = next_kpi.get("non_gaap_operating_income_usd_m")
+    if not oi or sorted(oi) != [P[-2], P[-1]] or rev[-1] == rev[-2]:
+        return None
+    return (oi[P[-1]] - oi[P[-2]]) / (rev[-1] - rev[-2]) * 100
+
+
+def next_threshold_charts(s: dict, next_kpi: dict) -> list[dict]:
+    P = s["periods"]
+    history = tracked_history(s)
+    entries = next_entries(s, next_kpi)
+    rows = {r["row"]: r for r in next_kpi["rows"]}
+    outside = [e for e in entries if headroom(e["direction"], e["threshold"], e["current"]) < 0]
+    running = [e for e in outside if e.get("consecutive", 1) > 1]
+    head = headroom_exhibit(
+        (f"下季 {len(entries)} 条阈值：" + ("、".join(e["metric"] for e in outside) + "本季已在线外"
+                                        if outside else "本季读数全部在安全侧")),
+        entries, "current",
+        note=("每根柱是当前值离下季阈值还有多远，按阈值的百分比计，正值 = 仍在安全侧。阈值逐字取自"
+              f"{next_kpi['set_in_report']}，是研究设定，不是公司指引。"
+              + ("本季已在线外的是：" + "、".join(e["metric"] for e in outside) + "。" if outside else "")
+              + "".join(f"「{e['metric']}」的警示条件是连续{cn_count(e['consecutive'])}季，下季再在线外才成立。"
+                        for e in running)
+              + ("「剔除 Altera 的外部 Foundry 收入」一条用的是本页的推断（见第二节外部收入图的注）。"
+                 if any(e["id"] == "foundry_external_ex_altera" for e in entries) else "")
+              + f"第 8 节里没有画成图的条件，原文与本页读数见核对抽屉「{NEXT_TABLE_TITLE}」表。"),
+        src_extra="当前值由本页 series 现算。",
+    )
+    head["ref"] = "EX_HEADROOM"
+    out = [head]
+    g = s["guidance"]
+    ext = s["foundry_external"]
+    for e in entries:
+        quarters, values = history[e["id"]]
+        row = rows[e["row"]]
+        title = (f"{e['metric']}：下季阈值 {kpi_text(e['unit'], e['threshold'])}，"
+                 f"当前 {kpi_text(e['unit'], e['current'])}")
+        extra = ""
+        if e["id"] == "non_gaap_gm":
+            below = [q for q, v in zip(quarters, values) if v < e["threshold"]]
+            title += f"；{len(quarters)} 季里 {len(below)} 季在线下"
+            extra = (f"公司给的下季指引是 {num(g['non_gaap_gross_margin_pct'][-1])}%。"
+                     + (f"线下的季度最近一次是 {qlab(below[-1])}。" if below else ""))
+        elif e["id"] == "net_debt":
+            over = [q for q, v in zip(quarters, values) if v > e["threshold"]]
+            gap = e["threshold"] - e["current"]
+            title += ((f"（离线还有 {usd_bn(gap * 1000)}）" if gap >= 0 else f"（已越线 {usd_bn(-gap * 1000)}）")
+                      + (f"；{len(quarters)} 季里越线的只有 {'、'.join(qlab(q) for q in over)}" if over else ""))
+            extra = "净债务口径同第四节的净债务图。"
+        elif e["id"] == "dcai_margin":
+            above = [q for q, v in zip(quarters, values) if v >= e["threshold"]]
+            title += (f"；{len(quarters)} 季里只有本季在线上" if above == [quarters[-1]]
+                      else f"；{len(quarters)} 季里 {len(above)} 季在线上")
+            extra = "分母是含分部间交易的 DCAI 分部收入（见第二节分部利润率图）。"
+        elif e["id"] == "foundry_external_ex_altera":
+            hidden = [q for q, v in zip(quarters, values) if v is None]
+            extra = (f"{qlab(altera_exit_quarter(ext))} 以前 Altera 是 Intel 的子公司，Intel Foundry 卖给它的晶圆记作分部间收入、"
+                     "不在外部收入里，所以那几季这条线就是公司口径的外部收入；出表之后减去 Altera 的关联方收入（D）。"
+                     + (f"{'、'.join(qlab(q) for q in hidden)} 的 Altera 份额未披露，图上留空。" if hidden else "")
+                     + (f"本季读数已在线下，警示条件是连续{cn_count(e['consecutive'])}季，下季再低于即成立。"
+                        if e.get("consecutive", 1) > 1 and e["current"] < e["threshold"] else ""))
+        ex = threshold_exhibit(
+            title, [qlab(q) for q in quarters], rounded(values, 3), e["threshold"],
+            fmt={"pct": "pct1", "usd_m": "f0c", "usd_bn": "usd1"}[e["unit"]],
+            ylab={"pct": "%", "usd_m": "US$M", "usd_bn": "US$B（季末）"}[e["unit"]],
+            actual_name=e["metric"] + ("（D）" if e["id"] in ("net_debt", "foundry_external_ex_altera") else ""),
+            threshold_name=(f"下季阈值 {kpi_text(e['unit'], e['threshold'])}"
+                            f"（安全侧在{'上方' if e['direction'] == 'up' else '下方'}）"),
+            note=(f"本季报告第 8 节第{cn_ordinal(e['row'])}条「{row['indicator']}」：警示 {row['warning']}；"
+                  f"加仓 {row['positive']}。" + extra),
+            src_extra=(SRC_RELEASES if e["id"] == "non_gaap_gm" else
+                       "各季末取自该季 10-Q 或 10-K 的资产负债表。" if e["id"] == "net_debt" else
+                       ext["source"] if e["id"] == "foundry_external_ex_altera" else
+                       SRC_RELEASES + "分部数逐季与合并数核过。"),
+            xstep=4 if len(quarters) > PRIOR_CHART_STEP else None)
+        ex["ref"] = f"EX_NEXT_{e['id'].upper()}"
+        out.append(ex)
     return out
+
+
+def altera_exit_quarter(ext: dict) -> str:
+    """The quarter Altera left the consolidation."""
+    return quarter_of(ext["altera_deconsolidated_on"])
+
+
+def next_table(s: dict, next_kpi: dict, story: dict | None, vp: dict | None, n: int) -> dict:
+    """Every row of this quarter's report's section 8, as written, with what the page can read now."""
+    cur = {e["id"]: e for e in next_entries(s, next_kpi)}
+    g = s["guidance"]
+    cf = s["cash_flow_usd_m"]
+    inc = incremental_margin(s, next_kpi)
+    after = (story or {}).get("after_quarter")
+    server = next((r for r in (vp or {}).get("rows", []) if r["name"].startswith("服务器")), None)
+    reading = {
+        1: [f"DCAI 营业利润率 {num(cur['dcai_margin']['current'])}%" if "dcai_margin" in cur else "",
+            (f"服务器出货量同比 {signed(server['volume_yoy_pct'], 0)}、平均售价 {signed(server['asp_yoy_pct'], 0)}（10-Q）"
+             if server else "")],
+        2: [f"non-GAAP 毛利率 {num(cur['non_gaap_gm']['current'])}%，下季指引 "
+            f"{num(g['non_gaap_gross_margin_pct'][-1])}%" if "non_gaap_gm" in cur else "",
+            f"增量营业利润率 {num(inc)}%（本季对上季，D）" if inc is not None else ""],
+        3: [(f"剔除 Altera 后 {usd_m(cur['foundry_external_ex_altera']['current'])}（D）"
+             if "foundry_external_ex_altera" in cur else "Altera 份额未披露")],
+        4: [f"净债务 {usd_bn(cur['net_debt']['current'] * 1000)}（本页口径）" if "net_debt" in cur else "",
+            f"公司口径调整后自由现金流 {usd_bn(cf['adjusted_fcf_printed'][-1])}"],
+        5: [f"{after['what']}（8-K）" if after else ""],
+    }
+    charted = {}
+    for e in next_kpi["quantified"]:
+        charted.setdefault(e["row"], []).append(e["metric"])
+    unq = {}
+    for u in next_kpi.get("unquantified", []):
+        unq.setdefault(u["row"], []).append(f"{u['what']}：{u['why']}")
+    rows = []
+    for r in next_kpi["rows"]:
+        handled = ([f"画成余量图与走势图：{'、'.join(charted[r['row']])}"] if r["row"] in charted else []) + unq.get(r["row"], [])
+        rows.append([cn_ordinal(r["row"]), r["indicator"], r["positive"], r["warning"], r["action"],
+                     "；".join(x for x in reading.get(r["row"], []) if x) or "—", "；".join(handled) or "—"])
+    return {"n": n, "title": f"{NEXT_TABLE_TITLE}（{next_kpi['set_in_report']}，研究设定）",
+            "headers": ["#", "指标", "加仓 / 正面阈值", "警示 / 减仓阈值", "动作", "本页读数", "本页怎么处理"],
+            "rows": rows}
 
 
 # ── the page ─────────────────────────────────────────────────────────────────
@@ -1255,15 +1477,19 @@ def build_payload(staging: dict) -> dict:
     story = stamped_block(s, "quarter_story", period)
     closure = stamped_block(s, "followup_closure", period)
     prior = stamped_block(s, "prior_kpi_settlement", period)
-    thresholds = stamped_block(s, "thresholds", period)
+    volume_price = stamped_block(s, "volume_price", period)
+    next_kpi = stamped_block(s, "next_kpi", period)
     for block, name in ((closure, "followup_closure"), (prior, "prior_kpi_settlement")):
         if block and block["set_in"] != display_period(P[-2]):
             raise ValueError(f"series block `{name}` settles what was set in {block['set_in']!r}, "
                              f"but last quarter was {display_period(P[-2])!r}")
-    if thresholds is None:
-        raise ValueError("series block `thresholds` is required every quarter: section three is "
+    if next_kpi is None:
+        raise ValueError("series block `next_kpi` is required every quarter: section three is "
                          "the next quarter's thresholds, and a roll without them would publish an "
                          "empty section")
+    if next_kpi["for_period"] != display_period(next_quarter(P[-1])):
+        raise ValueError(f"series block `next_kpi` is for {next_kpi['for_period']!r}, but the next "
+                         f"quarter is {display_period(next_quarter(P[-1]))!r}: update it with the roll")
 
     # The four parts, in the order the page reads (CLAUDE.md, TSM reference):
     # what last quarter left to settle, then this quarter, then next quarter's
@@ -1273,8 +1499,8 @@ def build_payload(staging: dict) -> dict:
         ([closure_chart(s, closure)] if closure else [])
         + (prior_settlement_charts(s, prior) if prior else [])
         + guidance_charts(s),
-        quarter_charts(s, story) + foundry_charts(s),
-        tracking_charts(s, None, thresholds),
+        quarter_charts(s, story, volume_price) + foundry_charts(s, story),
+        next_threshold_charts(s, next_kpi),
         margin_charts(s) + capital_charts(s) + share_charts(s, story),
     ]
     exhibits = number_exhibits([ex for group in groups for ex in group])
@@ -1287,7 +1513,6 @@ def build_payload(staging: dict) -> dict:
 
     inc = s["income_usd_m"]
     g = s["guidance"]
-    rec = revenue_record(s)
     gm = gross_margin(s)
     ng = s["non_gaap_printed"]
     nd = net_debt(s)
@@ -1309,17 +1534,20 @@ def build_payload(staging: dict) -> dict:
                 + f"。同季调整后自由现金流 {usd_bn(cf['adjusted_fcf_printed'][-1])}，"
                 f"季末净债务（本页口径）{usd_bn(nd[-1])}。")
 
-    below = sorted(rec["ranged_below"] + rec["points_below"], key=lambda r: r["quarter"])
-    gm_q = [q for q, v in zip(g["quarters"], g["non_gaap_gross_margin_pct"]) if v is not None and q in P]
-    gm_devs = {q: ng["gross_margin_pct_first_print"][P.index(q)]
-               - g["non_gaap_gross_margin_pct"][g["quarters"].index(q)] for q in gm_q}
-    worst_q = min(gm_devs, key=gm_devs.get)
     lo_now, hi_now = g["revenue_lo_usd_bn"][gi], g["revenue_hi_usd_bn"][gi]
     rev_now = inc["revenue"][-1] / 1000
     gm_gap = ng["gross_margin_pct_first_print"][-1] - g["non_gaap_gross_margin_pct"][gi]
     rev_word = ("高于指引上限" if rev_now > hi_now else "低于指引下限" if rev_now < lo_now else "落在指引区间内")
     gm_word = "高于" if gm_gap > 0.05 else "低于" if gm_gap < -0.05 else "等于"
     afcf = cf["adjusted_fcf_printed"][-1]
+    partner = cf["partner_contributions_net"][-1]
+    SP = seg["periods"]
+    dcai_yoy = pct(seg["dcai_revenue"][-1], seg["dcai_revenue"][SP.index(year_ago(SP[-1]))])
+    ext = s["foundry_external"]
+    ext_now, altera_now = ext["external_revenue_usd_m"][-1], ext["altera_usd_m"][-1]
+    f_oi = seg["foundry_oi"]
+    # One card per line of this quarter's report (sections 1 and 7): the beat,
+    # where the growth came from, why the cash did not follow, and Foundry.
     cards = [
         f'<article><span>本季</span><b>收入{rev_word}，non-GAAP 毛利率{gm_word}指引</b>'
         f'<p>收入比指引中值 {signed(beat)}，non-GAAP 毛利率 {num(ng["gross_margin_pct_first_print"][-1])}% 对指引 '
@@ -1327,17 +1555,32 @@ def build_payload(staging: dict) -> dict:
         f'{num(seg["dcai_oi"][-1] / seg["dcai_revenue"][-1] * 100)}%。下季指引收入 '
         f'US${num(g["revenue_lo_usd_bn"][-1])}–{num(g["revenue_hi_usd_bn"][-1])}B、'
         f'non-GAAP 毛利率 {num(g["non_gaap_gross_margin_pct"][-1])}%。</p></article>',
-        f'<article><span>指引记录</span><b>收入跌破指引 {len(below)} 次，毛利率最深一次差 '
-        f'{signed(gm_devs[worst_q], 1, "pp")}</b>'
-        f'<p>{len(rec["ranged"]) + len(rec["points"])} 个已完结季度里收入低于指引的是 '
-        + "、".join(qlab(r["quarter"]) for r in below)
-        + f'；给过毛利率指引的 {len(gm_q)} 季里 {sum(1 for v in gm_devs.values() if v < -0.05)} 季低于，'
-        f'最深一次在 {qlab(worst_q)}。</p></article>',
-        f'<article><span>资本</span><b>调整后自由现金流 {usd_bn(afcf)}，净债务 {usd_bn(nd[-1])}（本页口径）</b>'
-        f'<p>本季合伙人出资净额 {usd_bn(cf["partner_contributions_net"][-1])}，总资本开支 '
-        f'{usd_bn(capex_gross(s)[-1])}；季末流通股 '
-        f'{s["balance_sheet_usd_m"]["shares_outstanding_m"][-1]:,.0f}M。</p></article>',
     ]
+    if volume_price:
+        rows = {r["name"].split("（")[0].split("：")[0]: r for r in volume_price["rows"]}
+        server, client = rows.get("服务器"), rows.get("客户端")
+        if server and client:
+            cards.append(
+                f'<article><span>增长来源</span><b>服务器平均售价同比 {signed(server["asp_yoy_pct"], 0)}、'
+                f'出货量 {signed(server["volume_yoy_pct"], 0)}</b>'
+                f'<p>客户端平均售价 {signed(client["asp_yoy_pct"], 0)}、出货量 {signed(client["volume_yoy_pct"], 0)}（10-Q）；'
+                f'DCAI 收入同比 {signed(dcai_yoy)}。</p></article>')
+    cards.append(
+        f'<article><span>现金</span><b>调整后自由现金流 {usd_bn(afcf)}'
+        + (f'，不含合伙人出资净额是 {usd_bn(afcf - partner)}' if partner < 0 < afcf - partner else '')
+        + f'</b><p>本季合伙人出资净额 {usd_bn(partner)}，总资本开支 {usd_bn(capex_gross(s)[-1])}'
+        + (f'；经营现金流 {usd_bn(cf["ocf"][-1])} 里有 {usd_bn(story["customer_deposits_received_usd_m"])} 客户押金'
+           if story and story.get("customer_deposits_received_usd_m") else '')
+        + f'；季末净债务 {usd_bn(nd[-1])}（本页口径）。</p></article>')
+    cards.append(
+        f'<article><span>Intel Foundry</span><b>外部收入 {usd_m(ext_now)}'
+        + (f'，扣掉 Altera 后 {usd_m(ext_now - altera_now)}' if altera_now is not None else '')
+        + f'</b><p>分部{"亏损" if f_oi[-1] < 0 else "盈利"} {usd_bn(abs(f_oi[-1]))}'
+        + (f'，比上季收窄 {usd_m(f_oi[-1] - f_oi[-2])}' if f_oi[-2] < f_oi[-1] < 0 else '')
+        + f'；外部收入只占分部收入的 {num(ext_now / seg["foundry_revenue"][-1] * 100)}%'
+        + (f'，扣掉 Altera 后 {num((ext_now - altera_now) / seg["foundry_revenue"][-1] * 100)}%'
+           if altera_now is not None else '')
+        + '。</p></article>')
 
     def rows_of(values, fmt):
         return [fmt(v) if v is not None else "—" for v in values]
@@ -1382,11 +1625,9 @@ def build_payload(staging: dict) -> dict:
     tables.append(recast_table(s, first_table + len(tables)))
     if prior:
         tables.append(prior_table(s, prior, first_table + len(tables)))
-    cur = current_values(s)
-    entries = [{**item, "current": cur[item["key"]]} for item in thresholds["items"]
-               if cur[item["key"]] is not None]
-    tables.append(threshold_table(first_table + len(tables), "下季阈值的原始单位（研究设定）",
-                                  entries, "current", "当前值"))
+    tables.append(kpi_table(first_table + len(tables), "下季阈值的原始单位（研究设定）",
+                            next_entries(s, next_kpi), "current", "当前值"))
+    tables.append(next_table(s, next_kpi, story, volume_price, first_table + len(tables)))
     tables.append(ai_capex_cycle_table(first_table + len(tables)))
 
     record_words = (f"公司自己的季度指引兑现记录：{cn_count(len(g['quarters']))}次展望，"
@@ -1410,16 +1651,31 @@ def build_payload(staging: dict) -> dict:
          "description": settled_words,
          "exhibits": settled_ex},
         {"id": "quarter_highlights", "title": "二、本季重点",
-         "description": (f"{period} 的收入与它在 {len(P)} 季里的位置、现行口径下的四个分部"
-                         + ("、GAAP 与 non-GAAP 每股收益之间差得最多的那一项" if story else "")
-                         + "，以及 Intel Foundry 的分部损益与外部收入。"),
+         "description": (f"本季报告第 1、2、3、7 节的核心结论，能用申报数据画的各一张图：{period} 的收入与它在 {len(P)} 季里的位置；"
+                         "增长主要来自哪个分部"
+                         + ("、来自出货量还是售价（10-Q）" if volume_price else "")
+                         + "；分部利润率的环比变化"
+                         + ("；GAAP 与 non-GAAP 每股收益之间最大的那一项；调整后自由现金流为什么是负的" if story else "")
+                         + "；Intel Foundry 的亏损与外部收入。"
+                         + ((lambda undrawn: f"报告里另有{cn_count(len(undrawn))}条结论本页不画："
+                                             + "；".join(undrawn) + "。")(story["undrawn_conclusions"])
+                            if story and story.get("undrawn_conclusions") else "")),
          "exhibits": highlight_ex},
         {"id": "next_quarter", "title": "三、下季要跟踪什么",
-         "description": "下季的量化阈值：当前值离警戒线还有多远，再逐条看它的历史走势。阈值是研究设定，不是公司口径。",
+         "description": (f"{next_kpi['set_in_report']}列了 {len(next_kpi['rows'])} 条观察指标。"
+                         f"有数值阈值、又有历史序列的 {len(next_kpi['quantified'])} 个画成下面的余量图与逐条走势"
+                         f"（{'、'.join(e['metric'] for e in next_kpi['quantified'])}）；其余条件——"
+                         + "、".join(u["what"] for u in next_kpi.get("unquantified", []))
+                         + "——没有数值、只有本季一个读数、是研究口径，或者只在电话会里出现，"
+                         f"原文与本页能读到的当前值列在核对抽屉「{NEXT_TABLE_TITLE}」表里。"
+                         "阈值是研究设定，不是公司口径。"),
          "exhibits": next_ex},
         {"id": "routine", "title": "四、长期常规跟踪",
-         "description": ("Intel 自己的长期序列：毛利率与营业利润率、经营现金流对总资本开支、资本强度、"
-                         "晶圆厂合伙人的出资与分配、净债务、流通股与股东回报。"),
+         "description": (f"Intel 自己的长期序列，都从 {qlab(P[0])} 起"
+                         + (lambda first: f"（晶圆厂合伙人的出资从 {qlab(P[first])} 才有这一行）" if first else "")(
+                             next((i for i, v in enumerate(cf["partner_contributions_net"]) if v), None))
+                         + "：毛利率与营业利润率、经营现金流对总资本开支、资本强度、合伙人出资与政府补贴、"
+                         "净债务、流通股与股东回报。"),
          "exhibits": routine_ex},
     ]
 
@@ -1452,9 +1708,14 @@ def build_payload(staging: dict) -> dict:
          + "Intel Foundry 的季度数最早只重述到 2023 年第一季度，更早只有年度数；2024 年的口径与 2025 年重述后的口径"
          "在四个季度上都印过，差额写在该图的注里。"),
         ("外部 Foundry 收入取自 10-Q 与 10-K 的分部附注；Altera 的关联方收入取自 10-Q 投资附注里 Altera 一段。"
-         f"Altera 在 {s['foundry_external']['altera_deconsolidated_on']} 出售 51% 后出表，此后按外部客户计；"
-         "公司没有明说这笔关联方收入就在外部收入之内，页面上「扣掉 Altera 后」的数是本页的推断。"),
+         f"Altera 在 {ext['altera_deconsolidated_on']} 出售 51% 后出表，此后按外部客户计"
+         + ((lambda c: f"（{c['filing']} 的 {c['what']}）")(ext["altera_classification"])
+            if ext.get("altera_classification") else "")
+         + "；公司没有印出剔除 Altera 后的外部收入，页面上「扣掉 Altera 后」的数是两数相减的推断。"),
         "净债务是本页的口径（总债务减现金、短期投资与交易性资产），公司新闻稿不印这个数。",
+        ("调整后自由现金流用公司每季印出的数；这个指标 "
+         + qlab(cf["adjusted_fcf_definition"]["first_quarter"])
+         + " 才开始印，定义之后改过几次，逐次写在第一节该指标的走势图注里。"),
         "第一节的待验证问题与判定、第三节的阈值出自本地研究的季报分析，是研究设定而不是公司口径；页面上凡能用数据判定的，都由本页从 series 现算并复核。",
         "本页不发布市场一致预期、评级、目标价与估值。",
         "本页发布公司披露值与可复算的简单派生值（D 标记代表 Derived / 自算）；另有第一、三节的研究判定与阈值，以及引用的电话会口径，都已在原处标明。",

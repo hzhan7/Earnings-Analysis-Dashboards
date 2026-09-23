@@ -910,11 +910,11 @@ CONVERTED = {
         "non-GAAP EPS 对指引": "Intel's quarterly outlook first guided EPS for 2017Q1 (the "
                               "2017-01-26 release); the four 2016 outlooks guide revenue, gross "
                               "margin, spending, depreciation and tax, and no EPS.",
-        "分部的收入（现行口径": "the current four-segment basis (NEX folded into CCG and DCAI) is "
-                        "printed back to 2024Q1 only, in the Q1 2025 recast; earlier quarters "
-                        "exist only on the 2022 and 2024 structures, which are different segments.",
+        "四个分部的收入，现行口径": "the current four-segment basis (NEX folded into CCG and DCAI) is "
+                          "printed back to 2024Q1 only, in the Q1 2025 recast; earlier quarters "
+                          "exist only on the 2022 and 2024 structures, which are different segments.",
         "分部营业利润率：DCAI": "same segment basis as the revenue chart above it.",
-        "Intel Foundry 现行口径":"Intel Foundry became a reporting segment in 2024; the 2024-04-25 8-K "
+        "Intel Foundry 分部损益": "Intel Foundry became a reporting segment in 2024; the 2024-04-25 8-K "
                     "EX-99.2 recast it back to 2023Q1 by quarter, and the 2024-04-02 8-K revised "
                     "only annual figures (FY2021-FY2023).",
         "Intel Foundry 的外部收入": "external revenue on the current basis starts with the Q1 2025 "
@@ -934,6 +934,14 @@ CONVERTED = {
                      "(2022-04-28). Every earlier EX-99.1 was read: 2018-01-25 to 2022-01-26 "
                      "print 'free cash flow' (operating cash flow less additions to PP&E), a "
                      "different measure, and the 2016-2017 releases print neither.",
+        # Next quarter's thresholds in section three (drawn while the series
+        # carries a `next_kpi` block, which it must every quarter).
+        "DCAI 营业利润率：": "same current segment basis as the segment charts: printed back to "
+                       "2024Q1 only, in the Q1 2025 recast.",
+        "剔除 Altera 的外部 Foundry 收入：": "same current-basis floor as the external-revenue chart "
+                                   "(2024Q1, the Q1 2025 recast); Altera's share is disclosed only "
+                                   "from 2026Q1, and before the 2025-09-12 deconsolidation Altera's "
+                                   "wafers were intersegment revenue, outside external revenue.",
     },
     "zgn": {
         "DTC 占品牌收入从": "revenue by distribution channel is quarterly only from the "
@@ -1004,14 +1012,16 @@ FLOOR_KIND = {
     },
     'intc': {
         'non-GAAP EPS 对指引': 'disclosure',
-        '分部的收入（现行口径': 'disclosure',
+        '四个分部的收入，现行口径': 'disclosure',
         '分部营业利润率：DCAI': 'disclosure',
-        'Intel Foundry 现行口径': 'disclosure',
+        'Intel Foundry 分部损益': 'disclosure',
         'Intel Foundry 的外部收入': 'disclosure',
         '合伙人出资净额：': 'disclosure',
         'DCAI 收入同比：': 'disclosure',
         'Intel Foundry 外部收入（公司口径）：': 'disclosure',
         '调整后自由现金流：': 'disclosure',
+        'DCAI 营业利润率：': 'disclosure',
+        '剔除 Altera 的外部 Foundry 收入：': 'disclosure',
     },
     'zgn': {
         'DTC 占品牌收入从': 'disclosure',
@@ -1408,7 +1418,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 163)
+        self.assertEqual(settled.count("disclosure"), 165)
         self.assertEqual(settled.count("design"), 39)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
