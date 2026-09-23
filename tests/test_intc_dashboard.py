@@ -258,16 +258,42 @@ class IntcDashboardTest(unittest.TestCase):
             self.assertEqual(ng["reprinted_in_release"][k], self.st["release_dates"][k + 4])
         self.assertTrue(all(v is None for v in ng["reprinted_in_release"][-4:]))
 
-    def test_the_recast_chart_is_the_quarters_whose_eps_moved(self) -> None:
+    def test_the_recast_table_is_the_quarters_whose_figures_moved(self) -> None:
+        """The reprint record is audit material -- why guidance is scored on the
+        first print -- so it sits in the drawer, one row per quarter that moved."""
         ng, P = self.ng, self.P
-        moved = [q for k, q in enumerate(P) if ng["eps_usd_year_ago_reprint"][k] is not None
-                 and abs(ng["eps_usd_first_print"][k] - ng["eps_usd_year_ago_reprint"][k]) > 0.004]
-        ex = self.ex["EX_RECAST"]
-        self.assertEqual(ex["xlabels"], [qlab(q) for q in moved])
+        eps_moved = [q for k, q in enumerate(P) if ng["eps_usd_year_ago_reprint"][k] is not None
+                     and abs(ng["eps_usd_first_print"][k] - ng["eps_usd_year_ago_reprint"][k]) > 0.004]
+        gm_moved = [q for k, q in enumerate(P) if ng["gross_margin_pct_year_ago_reprint"][k] is not None
+                    and abs(ng["gross_margin_pct_first_print"][k] - ng["gross_margin_pct_year_ago_reprint"][k]) > 0.04]
+        table = next(t for t in self.payload["tables"] if t["title"].startswith(intc.RECAST_TABLE_TITLE))
+        self.assertEqual([row[0] for row in table["rows"]], sorted(set(eps_moved) | set(gm_moved)))
         pairs = sum(1 for v in ng["eps_usd_year_ago_reprint"] if v is not None)
-        self.assertIn(f"{pairs} 个有重印的季度里 {len(moved)} 个变了", ex["title"])
-        for e in self.st["restatement_events"]:
-            self.assertIn(e["what"], ex["note"])
+        self.assertIn(f"{pairs} 个有重印的季度里，EPS 变了 {len(eps_moved)} 个、毛利率变了 {len(gm_moved)} 个",
+                      table["title"])
+        restated = {e["restated_year"]: e for e in self.st["restatement_events"]}
+        for row in table["rows"]:
+            self.assertIn(restated[row[0][:4]]["what"], row[-1])
+        # the chart that used to carry this record is gone from every section
+        self.assertNotIn("EX_RECAST", self.ex)
+
+    # ── the four parts ───────────────────────────────────────────────────────
+    def test_the_page_is_in_the_four_part_format(self) -> None:
+        self.assertEqual([(sec["id"], sec["title"]) for sec in self.payload["sections"]],
+                         [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+                          ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+        for sec in self.payload["sections"]:
+            with self.subTest(section=sec["id"]):
+                self.assertTrue(sec["exhibits"])
+                self.assertTrue(sec["description"])
+
+    def test_the_page_describes_itself_as_four_parts(self) -> None:
+        text = text_of({k: self.payload[k] for k in ("notes", "brief", "footer")})
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列", text)
+        self.assertEqual(len(re.findall(r"段排列", text)), 1)
+        # no sentence still points a reader at a section of the old seven-part page
+        for stale in ("第五节", "第六节", "第七节", "跟踪一节"):
+            self.assertNotIn(stale, text_of(self.payload))
 
     # ── the quarter ──────────────────────────────────────────────────────────
     def test_the_segments_close_to_the_consolidated_statement(self) -> None:
@@ -565,10 +591,14 @@ class IntcRollTest(unittest.TestCase):
 
     def test_a_quarter_without_its_stories_leaves_them_out(self) -> None:
         bare_src = {k: v for k, v in self.source.items()
-                    if k not in ("quarter_story", "followup", "thresholds")}
+                    if k not in ("quarter_story", "followup")}
         bare = intc.build_payload(bare_src)
         full_ex, bare_ex = exhibits_of(self.payload), exhibits_of(bare)
-        story_refs = {"EX_EPSBRIDGE", "EX_FOLLOWUP", "EX_HEADROOM", "EX_GMLINE", "EX_NDLINE"}
+        story_refs = {"EX_EPSBRIDGE", "EX_FOLLOWUP"}
+        # still four parts, none of them empty
+        self.assertEqual([sec["id"] for sec in bare["sections"]],
+                         ["settled", "quarter_highlights", "next_quarter", "routine"])
+        self.assertTrue(all(sec["exhibits"] for sec in bare["sections"]))
         refs = {ex["ref"] for ex in bare_ex}
         self.assertFalse(refs & story_refs)
         present = {ex["ref"] for ex in full_ex} & story_refs
@@ -604,6 +634,13 @@ class IntcRollTest(unittest.TestCase):
             self.assertNotEqual(moved["charge_events"], src["charge_events"], "the move did not happen")
             if P[0] not in extremes:
                 self.assertNotIn(event["what"], text_of(intc.build_payload(moved)))
+
+    def test_a_quarter_without_next_quarters_thresholds_stops_the_build(self) -> None:
+        """Section three is the thresholds; without them the page would publish
+        an empty part, so the roll has to write them."""
+        missing = {k: v for k, v in self.source.items() if k != "thresholds"}
+        with self.assertRaisesRegex(ValueError, "required every quarter"):
+            intc.build_payload(missing)
 
     def test_a_follow_up_verdict_the_data_contradicts_stops_the_build(self) -> None:
         if "followup" not in self.source:
@@ -647,6 +684,9 @@ class IntcRollTest(unittest.TestCase):
             ext[name].append(ext[name][-1])
         for key in ("quarter_story", "followup", "thresholds", "_checks"):
             rolled.pop(key, None)
+        # section three is required every quarter: a roll writes the new
+        # quarter's thresholds, here the old ones restamped
+        rolled["thresholds"] = dict(copy.deepcopy(self.source["thresholds"]), period=display_period(new))
         rolled["latest"] = dict(rolled["latest"], period=display_period(new))
         rolled["sources"] = rolled["sources"] + [{
             "label": f"Intel {new[:4]} 年第 {new[5]} 季度业绩新闻稿（8-K EX-99.1，2099-02-01）",

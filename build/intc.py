@@ -417,7 +417,7 @@ def guidance_charts(s: dict) -> list[dict]:
                      g["gross_margin_band"][k] is None for k, q in enumerate(g["quarters"])
                      if q > om_q[-1] and g["non_gaap_gross_margin_pct"][k] is not None) else "")
                  + "实际值用该季自己那份新闻稿首次印出的 non-GAAP 毛利率 —— "
-                 "与指引同一口径；一年后重印时公司可能已经改了口径（见本页第三节）。"
+                 f"与指引同一口径；一年后重印时公司可能已经改了口径（见核对抽屉「{RECAST_TABLE_TITLE}」表）。"
                  + charge_note(s, gm_q[worst])),
         "src_extra": SRC_RELEASES,
     }
@@ -588,45 +588,61 @@ def margin_charts(s: dict) -> list[dict]:
         "src_extra": SRC_FILINGS + "non-GAAP 一条" + SRC_RELEASES,
     }
 
+    return [margins]
+
+
+# ── the audit drawer: the quarters whose non-GAAP figures were reprinted ────
+RECAST_TABLE_TITLE = "non-GAAP 首印与一年后重印不同的季度"
+
+
+def recast_record(s: dict) -> dict:
+    """Every quarter whose non-GAAP EPS or gross margin reads differently in the
+    release a year later, and the redefinitions that explain them.
+
+    Each release reprints the year-ago quarter, so every non-GAAP figure can be
+    read twice. The page scores guidance against the first print only, and that
+    is sound only while every disagreement falls in a year a recorded
+    redefinition restated -- so a disagreement no `restatement_events` entry
+    explains stops the build instead of printing.
+    """
+    P = s["periods"]
     npr = s["non_gaap_printed"]
-    pairs = [(i, a, b) for i, (a, b) in enumerate(zip(npr["eps_usd_first_print"],
-                                                     npr["eps_usd_year_ago_reprint"]))
-             if b is not None]
-    moved = [(i, a, b) for i, a, b in pairs if abs(a - b) > 0.004]
-    gm_moved = [i for i, (a, b) in enumerate(zip(npr["gross_margin_pct_first_print"],
-                                                npr["gross_margin_pct_year_ago_reprint"]))
-                if b is not None and abs(a - b) > 0.04]
-    years = sorted({P[i][:4] for i, _, _ in moved})
+    eps_pairs = [i for i, b in enumerate(npr["eps_usd_year_ago_reprint"]) if b is not None]
+    eps_moved = [i for i in eps_pairs
+                 if abs(npr["eps_usd_first_print"][i] - npr["eps_usd_year_ago_reprint"][i]) > 0.004]
+    gm_moved = [i for i, b in enumerate(npr["gross_margin_pct_year_ago_reprint"])
+                if b is not None and abs(npr["gross_margin_pct_first_print"][i] - b) > 0.04]
     events = recast_events(s)
     explained = {e["restated_year"] for e in events}
-    unexplained = sorted({P[i][:4] for i, _, _ in moved} | {P[i][:4] for i in gm_moved}) 
+    unexplained = sorted({P[i][:4] for i in eps_moved} | {P[i][:4] for i in gm_moved})
     unexplained = [y for y in unexplained if y not in explained]
     if unexplained:
         raise ValueError(f"first print and reprint differ in {unexplained}, which no "
                          "`restatement_events` entry restates: read those releases and record why")
-    recast = {
-        "ref": "EX_RECAST",
-        "kind": "grouped_bars",
-        "title": (f"同一季度的 non-GAAP EPS，一年后被公司重印成另一个数：{len(pairs)} 个有重印的季度里 "
-                  f"{len(moved)} 个变了，全部落在 {'、'.join(years)} 年"),
-        "xlabels": [qlab(P[i]) for i, _, _ in moved],
-        "xrot": 90,
-        "groups": [
-            {"name": "该季自己的新闻稿首次印出", "color": "NAVY", "values": [a for _, a, _ in moved]},
-            {"name": "一年后新闻稿的上年同期列", "color": "GOLD", "values": [b for _, _, b in moved]},
-        ],
-        "bar_labels": False,
-        "fmt": "usd2", "label_fmt": "usd2",
-        "ylab": "non-GAAP EPS（US$）",
-        "note": ("每份新闻稿都把一年前那一季并排再印一次，所以每个季度的 non-GAAP 数都能读两遍。"
-                 f"读下来 {len(pairs)} 对里有 {len(moved)} 对 EPS 不同、{len(gm_moved)} 对毛利率不同，"
-                 "而它们全部落在公司改口径、并重印上一年的年份里："
-                 + "；".join(f"{e['release'][:4]} 年{e['what']}（重印 {e['restated_year']} 年）" for e in events)
-                 + "。其余季度两遍逐分相同。<b>所以本页给指引打分只用首次印出的数</b> —— 它和指引是同一个定义；"
-                 "重印的数与指引不可比。"),
-        "src_extra": SRC_RELEASES,
+    return {"eps_pairs": eps_pairs, "eps_moved": eps_moved, "gm_moved": gm_moved, "events": events}
+
+
+def recast_table(s: dict, n: int) -> dict:
+    P = s["periods"]
+    npr = s["non_gaap_printed"]
+    rec = recast_record(s)
+    by_year = {e["restated_year"]: e for e in rec["events"]}
+    rows = []
+    for i in sorted(set(rec["eps_moved"]) | set(rec["gm_moved"])):
+        eps_a, eps_b = npr["eps_usd_first_print"][i], npr["eps_usd_year_ago_reprint"][i]
+        gm_a, gm_b = npr["gross_margin_pct_first_print"][i], npr["gross_margin_pct_year_ago_reprint"][i]
+        event = by_year[P[i][:4]]
+        rows.append([P[i], usd_eps(eps_a), usd_eps(eps_b), f"{num(gm_a)}%", f"{num(gm_b)}%",
+                     npr["reprinted_in_release"][i], f"{event['release']}：{event['what']}"])
+    return {
+        "n": n,
+        "title": (f"{RECAST_TABLE_TITLE}（{len(rec['eps_pairs'])} 个有重印的季度里，EPS 变了 "
+                  f"{len(rec['eps_moved'])} 个、毛利率变了 {len(rec['gm_moved'])} 个，全部落在公司改口径并重印上一年的年份；"
+                  "本页给指引打分只用首印）"),
+        "headers": ["季度", "non-GAAP EPS 首印", "一年后重印", "non-GAAP 毛利率首印", "一年后重印",
+                    "重印所在新闻稿", "口径变化"],
+        "rows": rows,
     }
-    return [margins, recast]
 
 
 # ── section four: Intel Foundry ──────────────────────────────────────────────
@@ -970,7 +986,7 @@ def tracking_charts(s: dict, followup: dict | None, thresholds: dict | None) -> 
             note=("每根柱是当前值离警戒线还有多远，按阈值的百分比计，正值 = 仍在安全侧。阈值出自"
                   + thresholds["set_in"] + "，是研究设定，不是公司指引。"
                   + ("已越线的是：" + "、".join(e["metric"] for e in breached) + "。" if breached else "")
-                  + ("「剔除 Altera 的外部 Foundry 收入」一条用的是本页的推断（见第四节外部收入图的注）。"
+                  + ("「剔除 Altera 的外部 Foundry 收入」一条用的是本页的推断（见第二节外部收入图的注）。"
                      if any(e["key"] == "foundry_external_ex_altera" for e in entries) else "")),
             src_extra="当前值由本页 series 现算。",
         )
@@ -1004,7 +1020,7 @@ def tracking_charts(s: dict, followup: dict | None, thresholds: dict | None) -> 
                 [qlab(q) for q in P], rounded(nd, 3), nd_item["threshold"],
                 fmt="usd1", ylab="US$B（季末）", actual_name="净债务（D）",
                 threshold_name=f"警戒线 US${num(nd_item['threshold'], 0)}B",
-                note="净债务口径同第五节。", src_extra="同第五节净债务图。", xstep=4)
+                note="净债务口径同第四节的净债务图。", src_extra="同第四节净债务图。", xstep=4)
             ex["ref"] = "EX_NDLINE"
             out.append(ex)
     return out
@@ -1035,17 +1051,28 @@ def build_payload(staging: dict) -> dict:
     story = stamped_block(s, "quarter_story", period)
     followup = stamped_block(s, "followup", period)
     thresholds = stamped_block(s, "thresholds", period)
+    if thresholds is None:
+        raise ValueError("series block `thresholds` is required every quarter: section three is "
+                         "the next quarter's thresholds, and a roll without them would publish an "
+                         "empty section")
 
-    groups = [guidance_charts(s), quarter_charts(s, story), margin_charts(s),
-              foundry_charts(s), capital_charts(s), share_charts(s, story),
-              tracking_charts(s, followup, thresholds)]
+    # The four parts, in the order the page reads (CLAUDE.md, TSM reference):
+    # what last quarter left to settle, then this quarter, then next quarter's
+    # lines, then the long series. Sliced by cumulative length after numbering,
+    # so a chart added to one part cannot silently land in its neighbour.
+    groups = [
+        tracking_charts(s, followup, None) + guidance_charts(s),
+        quarter_charts(s, story) + foundry_charts(s),
+        tracking_charts(s, None, thresholds),
+        margin_charts(s) + capital_charts(s) + share_charts(s, story),
+    ]
     exhibits = number_exhibits([ex for group in groups for ex in group])
     resolve_exhibit_refs(exhibits)
     cuts, at = [], 0
     for group in groups:
         cuts.append(exhibits[at:at + len(group)])
         at += len(group)
-    guide_ex, quarter_ex, margin_ex, foundry_ex, capital_ex, share_ex, track_ex = cuts
+    settled_ex, highlight_ex, next_ex, routine_ex = cuts
 
     inc = s["income_usd_m"]
     g = s["guidance"]
@@ -1141,57 +1168,39 @@ def build_payload(staging: dict) -> dict:
                                  lambda v: minus_sign(f"{v:,.0f}"))
                  for i, q in enumerate(seg["periods"])],
     }]
-    if thresholds:
-        cur = current_values(s)
-        entries = [{**item, "current": cur[item["key"]]} for item in thresholds["items"]
-                   if cur[item["key"]] is not None]
-        tables.append(threshold_table(first_table + len(tables), "下季阈值的原始单位（研究设定）",
-                                      entries, "current", "当前值"))
+    tables.append(recast_table(s, first_table + len(tables)))
+    cur = current_values(s)
+    entries = [{**item, "current": cur[item["key"]]} for item in thresholds["items"]
+               if cur[item["key"]] is not None]
+    tables.append(threshold_table(first_table + len(tables), "下季阈值的原始单位（研究设定）",
+                                  entries, "current", "当前值"))
     tables.append(ai_capex_cycle_table(first_table + len(tables)))
 
     sections = [
-        {"id": "guidance", "short": "指引记录",
-         "title": f"{cn_count(len(g['quarters']))}次季度展望，兑现得怎样",
-         "description": ("收入、毛利率与 EPS 三条指引，各自只在公司真正给过的季度上打分；"
-                         "第一张图横跨全部展望，最后一格是下季。"),
-         "exhibits": guide_ex},
-        {"id": "quarter", "short": "本季",
-         "title": (f"{period}：收入、分部" + ("，与 GAAP 和 non-GAAP 之间的那一项" if story else "")),
-         "description": (f"季度收入在全部 {len(P)} 季里的位置、现行口径下的四个分部"
-                         + ("，以及 GAAP 与 non-GAAP 每股收益之间差得最多的那一项" if story else "") + "。"),
-         "exhibits": quarter_ex},
-        {"id": "margins", "short": "利润率与口径",
-         "title": f"毛利率 {len(P)} 季，与被重印过的旧季度",
-         "description": "GAAP 与 non-GAAP 的毛利率、营业利润率，以及公司重印旧季度时改掉的数。",
-         "exhibits": margin_ex},
-        {"id": "foundry", "short": "Intel Foundry",
-         "title": "代工分部：分部损益与外部收入",
-         "description": "分部收入与营业利润（两段口径），以及外部客户收入里有多少来自 Altera。",
-         "exhibits": foundry_ex},
-        {"id": "capital", "short": "资本与负债",
-         "title": "资本开支、合伙人资金与净债务",
-         "description": "经营现金流对总资本开支、资本强度、晶圆厂合伙人的出资与分配，以及净债务的走向。",
-         "exhibits": capital_ex},
-        {"id": "shares", "short": "股本",
-         "title": "股本与股东回报",
-         "description": "季末流通股与股东回报的现金。",
-         "exhibits": share_ex},
-        {"id": "tracking", "short": "跟踪",
-         "title": "与".join(part for part, on in (("上季的问题", followup), ("下季的警戒线", thresholds)) if on),
-         "description": ("、".join(part for part, on in (("上季留下的待验证问题的判定", followup),
-                                                        ("下季的量化阈值", thresholds)) if on)
-                         + " —— 都是研究设定，不是公司口径。"),
-         "exhibits": track_ex},
+        {"id": "settled", "title": "一、上季跟踪指标兑现了吗",
+         "description": (("先看上季留下的待验证问题在本季的判定，" if followup else "")
+                         + f"再看公司自己的季度指引兑现得怎样：{cn_count(len(g['quarters']))}次展望，"
+                         "收入、毛利率与 EPS 三条指引各自只在公司真正给过的季度上打分；"
+                         "指引记录的第一张图横跨全部展望，最后一格是下季。"),
+         "exhibits": settled_ex},
+        {"id": "quarter_highlights", "title": "二、本季重点",
+         "description": (f"{period} 的收入与它在 {len(P)} 季里的位置、现行口径下的四个分部"
+                         + ("、GAAP 与 non-GAAP 每股收益之间差得最多的那一项" if story else "")
+                         + "，以及 Intel Foundry 的分部损益与外部收入。"),
+         "exhibits": highlight_ex},
+        {"id": "next_quarter", "title": "三、下季要跟踪什么",
+         "description": "下季的量化阈值：当前值离警戒线还有多远，再逐条看它的历史走势。阈值是研究设定，不是公司口径。",
+         "exhibits": next_ex},
+        {"id": "routine", "title": "四、长期常规跟踪",
+         "description": ("Intel 自己的长期序列：毛利率与营业利润率、经营现金流对总资本开支、资本强度、"
+                         "晶圆厂合伙人的出资与分配、净债务、流通股与股东回报。"),
+         "exhibits": routine_ex},
     ]
-    sections = [sec for sec in sections if sec["exhibits"]]
-    for index, section in enumerate(sections, start=1):
-        section["title"] = f"{cn_ordinal(index)}、{section['title']}"
-    order = " → ".join(section.pop("short") for section in sections)
 
     om_q = [q for q, v in zip(g["quarters"], g["non_gaap_operating_margin_pct"]) if v is not None]
     first_eps = next(q for q, v in zip(g["quarters"], g["non_gaap_eps_usd"]) if v is not None)
     notes = [
-        f"本页按「{order}」{cn_count(len(sections))}段排列，以图为主；支撑表格收在核对抽屉里。",
+        "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主；支撑表格收在核对抽屉里。",
         ("Intel 是美国本土申报人，每个季度都有 10-Q 或 10-K，每份业绩新闻稿都作为 8-K 的 EX-99.1 报送，全部原件在 EDGAR 上；"
          "本页 sources 直链每一份业绩新闻稿、本季 10-Q 与页面引用到的其他申报。"
          f"财年是 {s['company']['fiscal_year']}，本页按自然季度标注；"
@@ -1207,7 +1216,7 @@ def build_payload(staging: dict) -> dict:
                    "本页只在给过的季度上打分。")(s["verification"]["guidance_checked_against_reconciliation"]),
         ("non-GAAP 的实际值一律用该季自己那份新闻稿首次印出的数，因为那是与指引同一个定义的数；"
          + "公司在 " + "、".join(e["release"][:4] for e in recast_events(s) if e["kind"] == "non_gaap_definition")
-         + " 年各改过一次 non-GAAP 定义并重印了上一年，第三节把这些重印的差别单独画出来。"),
+         + f" 年各改过一次 non-GAAP 定义并重印了上一年，核对抽屉里的「{RECAST_TABLE_TITLE}」表把这些重印的差别逐季列出。"),
         "2021 年四个季度的指引里，GAAP 与 non-GAAP 的收入指引不同：non-GAAP 剔除了待售的 NAND 业务。本页的收入一律用 GAAP，打分也用 GAAP 收入指引。2016 年第一季度的 non-GAAP 收入指引多出 Altera 递延收入减记的加回，同样不用。",
         ("分部数只画现行口径：2025 年起 NEX 并入 CCG 与 DCAI，2024 年各季被重述到这个口径。" + client_rename_sentence(s)
          + "Intel Foundry 的季度数最早只重述到 2023 年第一季度，更早只有年度数；2024 年的口径与 2025 年重述后的口径"
@@ -1215,12 +1224,10 @@ def build_payload(staging: dict) -> dict:
         ("外部 Foundry 收入取自 10-Q 与 10-K 的分部附注；Altera 的关联方收入取自 10-Q 投资附注里 Altera 一段。"
          f"Altera 在 {s['foundry_external']['altera_deconsolidated_on']} 出售 51% 后出表，此后按外部客户计；"
          "公司没有明说这笔关联方收入就在外部收入之内，页面上「扣掉 Altera 后」的数是本页的推断。"),
-        "净债务是本页的口径（总债务减现金、短期投资与交易性资产），公司新闻稿不印这个数；自由现金流用公司印出的调整后自由现金流，其定义在这些年里改过，见该图的注。",
-        "跟踪一节的问题、判定与阈值出自本地研究的季报分析，是研究设定而不是公司口径；页面上凡能用数据判定的，都由本页从 series 现算并复核。",
+        "净债务是本页的口径（总债务减现金、短期投资与交易性资产），公司新闻稿不印这个数。",
+        "第一节的待验证问题与判定、第三节的阈值出自本地研究的季报分析，是研究设定而不是公司口径；页面上凡能用数据判定的，都由本页从 series 现算并复核。",
         "本页不发布市场一致预期、评级、目标价与估值。",
-        ("本页发布公司披露值与可复算的简单派生值（D 标记代表 Derived / 自算）"
-         + ("；另有跟踪一节的研究判定与阈值，以及引用的电话会口径，都已在原处标明" if (followup or thresholds) else "")
-         + "。"),
+        "本页发布公司披露值与可复算的简单派生值（D 标记代表 Derived / 自算）；另有第一、三节的研究判定与阈值，以及引用的电话会口径，都已在原处标明。",
         (f"本页已知未接入：{period} 之后的数据"
          + (f"（{story['after_quarter']['date']} 的季后增发只在股本图注里提及）"
             if story and story.get("after_quarter") else "")

@@ -909,9 +909,7 @@ CONVERTED = {
                         "printed back to 2024Q1 only, in the Q1 2025 recast; earlier quarters "
                         "exist only on the 2022 and 2024 structures, which are different segments.",
         "分部营业利润率：DCAI": "same segment basis as the revenue chart above it.",
-        "一年后被公司重印成另一个数": "the axis lists only the quarters whose non-GAAP EPS was "
-                             "reprinted differently; the full 42-quarter comparison is in the note.",
-        "Intel Foundry 现行口径": "Intel Foundry became a reporting segment in 2024; the 2024-04-25 8-K "
+        "Intel Foundry 现行口径":"Intel Foundry became a reporting segment in 2024; the 2024-04-25 8-K "
                     "EX-99.2 recast it back to 2023Q1 by quarter, and the 2024-04-02 8-K revised "
                     "only annual figures (FY2021-FY2023).",
         "Intel Foundry 的外部收入": "external revenue on the current basis starts with the Q1 2025 "
@@ -991,7 +989,6 @@ FLOOR_KIND = {
         'non-GAAP EPS 对指引': 'disclosure',
         '分部的收入（现行口径': 'disclosure',
         '分部营业利润率：DCAI': 'disclosure',
-        '一年后被公司重印成另一个数': 'design',
         'Intel Foundry 现行口径': 'disclosure',
         'Intel Foundry 的外部收入': 'disclosure',
         '合伙人出资净额：': 'disclosure',
@@ -1392,7 +1389,7 @@ class ChartWindowTest(unittest.TestCase):
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
         self.assertEqual(settled.count("disclosure"), 160)
-        self.assertEqual(settled.count("design"), 40)
+        self.assertEqual(settled.count("design"), 39)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
         """Every short chart either names its reason or is counted here.
