@@ -7920,6 +7920,97 @@
   "verbatim": "we are planning to add 30% to our 2026 low NA EUV capacity of around 65 for 2027, and we are investigating to increase capacity with another 30% for 2028. Similarly, we plan to add 30% to our 2026 DUV immersion capacity of around 130 for 2027, and we are investigating to increase capacity with another 30% in 2028.",
   "source": "2026-07-15 6-K EX-99.1 pressreleasefinancialresul.htm, CEO statement and outlook"
  },
+ "next_kpi": {
+  "period": "Q2 2026",
+  "for_period": "Q3 2026",
+  "_note": "本季（Q2 2026）本地分析稿「关键观察指标」6 条的阈值，逐字抄自报告：兑现线是报告的 🟢/⚪ 一档，警戒线是 🔴/🟠 一档；kpi 是报告里的序号。当前值由 build/asml.py 从 series 现算，这里不写。",
+  "quantified": [
+   {
+    "kpi": 1,
+    "measure": "total_net_sales",
+    "line": "兑现线",
+    "direction": "up",
+    "threshold": 11500.0
+   },
+   {
+    "kpi": 1,
+    "measure": "total_net_sales",
+    "line": "警戒线",
+    "direction": "up",
+    "threshold": 11000.0
+   },
+   {
+    "kpi": 1,
+    "measure": "q4_sales_guide",
+    "line": "兑现线",
+    "direction": "up",
+    "threshold": 14000.0
+   },
+   {
+    "kpi": 1,
+    "measure": "q4_sales_guide",
+    "line": "警戒线",
+    "direction": "up",
+    "threshold": 13000.0
+   },
+   {
+    "kpi": 4,
+    "measure": "china_share_h1",
+    "line": "兑现线",
+    "direction": "up",
+    "threshold": 20.0,
+    "why": "兑现线取的是公司在电话会上给的全年中国占比口径（总净销售；报告记录，电话会不在 EDGAR 上）。报告写的是「Q3 占比」，而单季只会有演示页那个口径——下季按哪个口径结算，本页不替报告决定。"
+   },
+   {
+    "kpi": 4,
+    "measure": "china_share_h1",
+    "line": "警戒线",
+    "direction": "up",
+    "threshold": 18.0
+   },
+   {
+    "kpi": 5,
+    "measure": "fcf_conversion",
+    "line": "警戒线",
+    "direction": "up",
+    "threshold": 60.0
+   },
+   {
+    "kpi": 6,
+    "measure": "gross_margin",
+    "line": "兑现线",
+    "direction": "up",
+    "threshold": 55.0
+   },
+   {
+    "kpi": 6,
+    "measure": "gross_margin",
+    "line": "警戒线",
+    "direction": "up",
+    "threshold": 54.0
+   }
+  ],
+  "not_quantified": [
+   {
+    "kpi": 2,
+    "metric": "Memory 占比与 DRAM 价格拐点",
+    "condition": "DRAM 合约价环比转跌，或任一大型晶圆厂后续阶段推迟、订单改期",
+    "why": "触发条件是 DRAM 价格和客户的扩产节奏，公司申报里两样都没有；Memory 占净系统销售的读数见第二节"
+   },
+   {
+    "kpi": 3,
+    "metric": "High NA 第二家量产客户",
+    "condition": "TSMC、Samsung、SK hynix 任一宣布插入或验收（2027-06-10 资本市场日之前）",
+    "why": "是事件，不是数值"
+   },
+   {
+    "kpi": 5,
+    "metric": "应收账款回落、自由现金流转正",
+    "condition": "Q3 / Q4 应收账款回落，且自由现金流大幅转正",
+    "why": "报告只给了方向，没有数值阈值；同一条的另一半（全年自由现金流 / 净利润）已作图"
+   }
+  ]
+ },
  "sources": [
   {
    "label": "2016 年第一季度业绩新闻稿（6-K EX-99.1，2016-04-20）",
