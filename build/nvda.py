@@ -1661,15 +1661,18 @@ def build_payload(staging: dict) -> dict:
     }
 
     # ── assemble ─────────────────────────────────────────────────────────────
-    settled_charts = (
-        ([closure_chart] if closure_chart else []) + [delivery_chart]
-        + ([expectation_chart(staging, period, prior, fiscal, consensus, restated, guidance["tax_rate"])]
-           if consensus is not None and restated is not None and guidance is not None else [])
-        + delivery_charts
-    )
+    # Section one settles what last quarter left and what the company guided;
+    # the market's consensus is neither, so the chart that reads the quarter
+    # against it sits in section two beside the GAAP / non-GAAP split it
+    # explains (the report's 「盈利质量」 conclusion), the way TSM's page does.
+    settled_charts = ([closure_chart] if closure_chart else []) + [delivery_chart] + delivery_charts
+    market_chart = (
+        [expectation_chart(staging, period, prior, fiscal, consensus, restated, guidance["tax_rate"])]
+        if consensus is not None and restated is not None and guidance is not None else [])
     highlights = ([revenue_chart, platform_chart]
                   + ([recast_chart] if recast_chart else [])
                   + ([accounting_chart] if accounting_chart else [])
+                  + market_chart
                   + [margin_level_chart, cash_quality_chart]
                   + ([exposure_chart] if exposure_chart else []))
     routine = [long_margin_chart, opex_intensity_chart, cash_chart, supply_chart]
@@ -1990,9 +1993,9 @@ def build_payload(staging: dict) -> dict:
                 "id": "settled",
                 "title": "一、上季跟踪指标兑现了吗",
                 "description": (
-                    "先看上季留的问题闭环了几条、这一季对公司自己的指引和对市场预期各兑现到什么程度，"
-                    "再谈本季。公司每季给三个数——收入、两条毛利率、两条营业费用——"
-                    "本节按指标逐个给出完整记录，最后把「超出自身指引」拆成收入、毛利率与费用三条腿。"
+                    "先看上季留的问题闭环了几条、这一季对公司自己的指引兑现到什么程度，再谈本季。"
+                    "公司每季给三个数——收入、两条毛利率、两条营业费用——"
+                    "本节按指标逐个给出完整记录，收入那一组把「超出自身指引」拆成收入、毛利率与费用三条腿。"
                 ),
                 "exhibits": settled_ex,
             },
@@ -2002,7 +2005,8 @@ def build_payload(staging: dict) -> dict:
                 "description": (
                     "、".join(["收入的二阶导", "市场平台构成"]
                              + (["被重述掉的那条客户结构序列"] if recast_chart else [])
-                             + (["GAAP 与 non-GAAP 在净利处的分叉"] if accounting_chart else []))
+                             + (["GAAP 与 non-GAAP 在净利处的分叉"] if accounting_chart else [])
+                             + (["对市场预期"] if market_chart else []))
                     + "，以及"
                     + ("本季真正变坏的" if fcf_step < 0 else "")
                     + ("现金转化与表外敞口。" if exposure_chart else "现金转化。")

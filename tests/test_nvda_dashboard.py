@@ -542,6 +542,35 @@ class NvdaDashboardTest(unittest.TestCase):
             / restated["gaap_total_other_income_usd_m"][current], 0.99)
 
     # ── page assembly ────────────────────────────────────────────────────────
+    def test_the_four_sections_and_what_section_one_holds(self) -> None:
+        """The site's four sections, verbatim, and nothing in section one that
+        last quarter did not leave.
+
+        The market's consensus is not a line last quarter's analysis set and it
+        is not something the company guided, so the chart that reads the quarter
+        against it belongs to this quarter's highlights -- beside the GAAP /
+        non-GAAP split it explains, which is the report's 「盈利质量」 conclusion.
+        It used to sit in section one between the guidance charts.
+        """
+        self.assertEqual(
+            [(section["id"], section["title"]) for section in self.payload["sections"]],
+            [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+             ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+
+        def reads_the_market(exhibit: dict) -> bool:
+            return any("市场预期" in str(label) for label in exhibit.get("xlabels") or [])
+
+        self.assertFalse([ex["title"] for ex in self.by_section["settled"] if reads_the_market(ex)])
+        self.assertNotIn("市场预期", self.payload["sections"][0]["description"])
+        highlights = self.by_section["quarter_highlights"]
+        market = [i for i, ex in enumerate(highlights) if reads_the_market(ex)]
+        self.assertEqual(len(market), 1, "the consensus chart went missing or doubled")
+        split = next(i for i, ex in enumerate(highlights)
+                     if any(group["name"] == "GAAP 净利" for group in ex.get("groups", [])))
+        self.assertEqual(market[0], split + 1, "the consensus chart no longer sits beside the split")
+        if self.source.get("followup_closure"):
+            self.assertIn("条待验证问题", self.by_section["settled"][0]["title"])
+
     def test_exhibits_are_numbered_in_render_order(self) -> None:
         numbers = [exhibit["n"] for exhibit in self.exhibits]
         self.assertEqual(numbers, list(range(2, 2 + len(numbers))))
