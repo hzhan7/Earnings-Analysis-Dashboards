@@ -30,9 +30,12 @@ webcast that cannot be checked against a second source is the failure this repo
 exists to avoid, so section one carries what the company *does* publish about
 its own prior quarter instead.
 
-**Coverage began with `meta.coverage_start`**, so on that quarter there are no
-thresholds set by a previous note to settle and section one says so; the loop
-closes from the next quarter, through `prior_kpi`.
+**Coverage began with `meta.coverage_start`** -- the quarter of the first
+analysis note on this company in the owner's vault (Q4 2025, 2026-03-05). On
+that quarter there are no thresholds set by a previous note to settle and
+section one says so; from then on the loop closes through `prior_kpi`. The page
+once stamped its own first quarter here and printed "first coverage" on a
+quarter that already had two notes behind it.
 
 **The operating metrics are not XBRL facts.**  Accounts, customer equity, DARTs,
 margin loans, credits and the net-interest-margin table are read out of the
@@ -1378,15 +1381,17 @@ def build_payload(staging: dict) -> dict:
         nim_and_yields(staging),
         customer_scale(staging),
         upc_wedge(staging),
-        other_income_swing(staging),
         pretax_margin_quarter(staging),
     ]
 
     quantified = kpi["quantified"] if kpi else []
     next_ex = threshold_section(staging, kpi, registry) if kpi else []
 
+    # The other-income chart states a range over the whole record and no
+    # reading of this quarter, so it is routine tracking, not a highlight.
     routine_ex = [
         revenue_mix_long(staging),
+        other_income_swing(staging),
         nim_long(staging),
         scale_long(staging),
         upc_long(staging),
@@ -1598,7 +1603,7 @@ def build_payload(staging: dict) -> dict:
     sections = [
         {
             "id": "settled",
-            "title": "一、上季兑现了吗",
+            "title": "一、上季跟踪指标兑现了吗",
             "description": plain_text(
                 settled_lead
                 + NO_GUIDANCE_NOTE
@@ -1615,8 +1620,7 @@ def build_payload(staging: dict) -> dict:
                 ("创纪录的总净收入" if record else "本季的总净收入")
                 + "、它的三条腿、"
                 "决定其中最大一条腿价格的四条利率线、"
-                "客户端的规模、Up-C 结构切走的那一块，"
-                "以及总收入里那块与经营无关的货币头寸波动。"
+                "客户端的规模、Up-C 结构切走的那一块，以及税前利润率。"
             ),
             "exhibits": highlight_ex,
         },
@@ -1640,7 +1644,7 @@ def build_payload(staging: dict) -> dict:
         "description": plain_text(
             f"IBKR 专属的常规序列，窗口{cn_count(len(periods))}季而不是八季，"
             "因为其中几条要走完一整轮利率周期才显形："
-            "收入结构的迁移、净息差与生息资产、账户与户均权益、"
+            "收入结构的迁移、「其他收入」里的货币头寸摆动、净息差与生息资产、账户与户均权益、"
             "Up-C 楔子、经营杠杆，以及每笔订单的佣金单价。"
         ),
         "exhibits": routine_ex,

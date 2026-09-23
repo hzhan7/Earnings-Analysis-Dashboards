@@ -586,9 +586,18 @@ class IbkrDashboardTest(unittest.TestCase):
             s["operating"]["darts_thousands"][-1] = s["operating"]["darts_thousands"][-5] * 1.05
         without(("客户端每一项都在爆发", "三项同比都在三成以上"), slower_darts)
 
-        def earlier_coverage(s):
-            s["meta"]["coverage_start"] = "Q1 1999"
-        without(("首次覆盖", "第一组阈值"), earlier_coverage)
+        # "First coverage" is true of one quarter only -- the quarter of the
+        # first note in the owner's vault. The page once printed it on a
+        # quarter that already had two notes behind it, so the direction that
+        # matters is the reverse one: absent on this page, present only when
+        # the series says this quarter is the first.
+        first = copy.deepcopy(self.source)
+        first["meta"]["coverage_start"] = self.periods[-1]
+        first_text = published_text(build_payload(first))
+        for claim in ("首次覆盖", "第一组阈值"):
+            with self.subTest(claim=claim):
+                self.assertNotIn(claim, published_text(self.payload))
+                self.assertIn(claim, first_text)
 
     def test_the_crossings_are_counted_from_the_series(self) -> None:
         """The revenue-mix note once said the lines crossed twice; it is recounted here."""

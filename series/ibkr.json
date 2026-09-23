@@ -7,7 +7,7 @@
     "quarter_convention": "自然年季度；公司财年即自然年，无需映射",
     "units": "financials_usd_m 为百万美元；operating 各列单位见键名",
     "built_from": "SEC XBRL companyfacts + 各季业绩 8-K EX-99.1",
-    "coverage_start": "Q2 2026"
+    "coverage_start": "Q4 2025"
   },
   "latest": {
     "period": "Q2 2026",
