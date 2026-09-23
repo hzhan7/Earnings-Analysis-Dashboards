@@ -509,10 +509,14 @@ def one_quarter_values(staging: dict, der: dict, story: dict | None) -> dict[str
     cash = staging["cash_flow_krw_tn"]
     dx = staging["segment_operating_profit_krw_tn"]["dx"]
     buyback, capex = cash["treasury_stock_acquired"], cash["capex_ppe"]
+    dividends, fcf = cash["dividends_paid"], der["fcf"]
     days = der["receivable_days"]
     values = {
         "buyback_now": f"{buyback[-1]:.2f}",
         "buyback_prev": f"{buyback[-2]:.2f}",
+        "dividends_now": f"{dividends[-1]:.2f}",
+        "return_share": f"{(dividends[-1] + buyback[-1]) / fcf[-1] * 100:.1f}",
+        "dividend_share": f"{dividends[-1] / fcf[-1] * 100:.1f}",
         "dso_now": f"{days[-1]:.1f}",
         "dso_prev": f"{days[-2]:.1f}",
         "dso_before": f"{days[-3]:.1f}",
@@ -779,6 +783,23 @@ def settled_description(periods: list[str], closure: dict | None, scorecard: dic
     return "".join(parts)
 
 
+def threshold_note(settled_ex: list[dict], next_ex: list[dict], tracked: list[dict]) -> str:
+    """Where the page's thresholds come from, naming the two overview charts.
+
+    The numbers are read from the charts after numbering, never typed: two
+    pages once named the wrong exhibit here (see `ExhibitReferenceTest`).
+    """
+    prior = next((ex["n"] for ex in settled_ex if ex["kind"] == "diverging_bars"), None)
+    following = next((ex["n"] for ex in next_ex if ex["kind"] == "diverging_bars"), None)
+    source = (" 的阈值分别逐字取自上季与本季报告的第 8 节（关键观察指标）" if prior is not None else
+              " 的阈值逐字取自本季报告的第 8 节（关键观察指标）")
+    named = (f"Exhibit {prior} 与 Exhibit {following}" if prior is not None else f"Exhibit {following}")
+    doubled = [entry["metric"] for entry in tracked if entry.get("second_line") is not None]
+    return (f"{named}{source}，不是公司指引，也不构成评级或投资建议；「距阈值余量」统一为正值代表安全侧。"
+            + (f"本季报告里有{cn_count(len(doubled))}条阈值带两条线（{'、'.join(doubled)}），"
+               "主阈值取触发动作挂的那条，另一条在各自的图上画成灰线。" if doubled else ""))
+
+
 def provisional_chart(staging: dict) -> dict:
     """How far the month-end release moved the quarter-end flash.
 
@@ -841,6 +862,31 @@ def provisional_chart(staging: dict) -> dict:
     return provisional
 
 
+def bonus_timing(staging: dict, story: dict | None, into_costs: float) -> str:
+    """The report's §7 insight 1 in numbers: how much of the accrual stayed in
+    inventory, as a floor.
+
+    The company gave the accrual as a ratio and did not split it between this
+    quarter's costs and work-in-progress inventory. The most the income
+    statement can have absorbed is the whole quarter-on-quarter rise in cost of
+    sales and SG&A, so the rest is a lower bound on what is carried into the
+    next quarters' cost of sales. Printed only when the arithmetic has that
+    shape; a quarter where the costs rose by more than the accrual says nothing.
+    """
+    bonus = (story or {}).get("special_bonus")
+    if not bonus or bonus["capitalized_split_disclosed"]:
+        return ""
+    if not (staging["periods"][-1].startswith("Q2") and bonus["basis"] == "上半年累计营业利润"):
+        return ""
+    booked = labor_accrual(staging, story)
+    if not booked > into_costs > 0:
+        return ""
+    return (f"。按本页上半年营业利润算，这笔奖金约 {booked:.1f} 兆韩元 D，而销货成本与销管费用合计只多了 "
+            f"{into_costs:.1f}：即便把两项增量全算作奖金，也至少约 {booked - into_costs:.1f} 兆留在在产品存货里、"
+            f"从 {quarter_only(bonus['released_from'])} 起随销售结转进销货成本 —— 本季报告据此认为，"
+            "这一季的利润率有一部分是奖金的记账时点给的")
+
+
 # ── Section 2: the quarter ────────────────────────────────────────────────────
 def quarter_charts(staging: dict, der: dict, labels: list[str], facts: dict,
                    story: dict | None) -> list[dict]:
@@ -875,6 +921,9 @@ def quarter_charts(staging: dict, der: dict, labels: list[str], facts: dict,
             f"（{rev[0]:.1f} → {rev[-1]:.1f} 兆韩元），"
             f"{'但' if margin_outran else ''}营业利润率从 {opm[0]:.1f}% 走到 {opm[-1]:.1f}%"
             + (f"，是收入倍数的{multiple_words(margin_ratio / revenue_ratio)}" if margin_outran else "")
+            # The margin threshold chart that used to say this was a local
+            # threshold and is gone; the reading itself belongs with the margin.
+            + ("，本季是窗口内最高" if opm[-1] == max(opm) else "")
             + (" —— 这一轮的增量几乎不带成本" if (facts["incremental_gm"] or 0) >= 90 else "")
             + "，拆解见 Exhibit {EX_BRIDGE}。"
             "本页全部以韩元列示，不折美元。"
@@ -993,8 +1042,7 @@ def quarter_charts(staging: dict, der: dict, labels: list[str], facts: dict,
                f"{tax[0]:.1f}% 升到 {tax[-1]:.1f}%"
                if tax_gap[-1] > tax_gap[0] and tax[-1] > tax[0] else
                f"有效税率本季 {tax[-1]:.1f}%")
-            + "（见 Exhibit {EX_HEADROOM} 的阈值列表）。"
-            "纵轴自 0 起，没有截轴。"
+            + "。纵轴自 0 起，没有截轴。"
         ),
         "src_extra": SRC_DECK + src_dart(n) + "三条比率均为各利润行除以合并收入 D。",
     }
@@ -1036,6 +1084,7 @@ def quarter_charts(staging: dict, der: dict, labels: list[str], facts: dict,
                + ("" if bonus["capitalized_split_disclosed"] else
                   "；公司未拆分其中多少被资本化进在产品存货，所以这根柱不是纯费用增长")
                if bonus else "")
+            + bonus_timing(staging, story, delta_sga + delta_cogs)
             + "。四根柱不是瀑布图，不相互加总。"
         ),
         "src_extra": (SRC_DECK + "四项均为公司披露值的相邻两季算术差 D"
@@ -1086,87 +1135,145 @@ def quarter_charts(staging: dict, der: dict, labels: list[str], facts: dict,
     return [headline_chart, mix_chart, op_chart, margin_chart, bridge_chart, memory_chart]
 
 
-# ── Section 3: thresholds ─────────────────────────────────────────────────────
-def tracking_charts(staging: dict, der: dict, labels: list[str], facts: dict,
-                    kpi: dict, story: dict | None, guidance: dict | None) -> list[dict]:
-    n = len(staging["periods"])
-    entries = kpi["entries"]
-    by_metric = {entry["metric"]: entry for entry in entries}
-    headroom = headroom_exhibit(
-        f"距阈值余量：{cn_count(len(entries))}条跟踪线里 "
-        f"{sum(1 for e in entries if (e['current'] - e['threshold']) * (1 if e['direction'] == 'up' else -1) < 0)}"
-        " 条已经越过",
+# ── Section 3: this report's §8 ───────────────────────────────────────────────
+def next_entries(staging: dict, der: dict, kpi: dict) -> list[dict]:
+    """This report's §8 thresholds with the current reading, computed by id.
+
+    The eight lines this section used to draw were local thresholds with no
+    counterpart in the report. These are the report's own; the current value
+    of each is read from the series, and a typed one is refused.
+    """
+    bits = staging["memory_bit_and_price"]
+    known = {
+        "dram_asp": lambda: bits["dram_asp_qoq_pct"][-1],
+        "gross_margin": lambda: der["gross_margin"][-1],
+        "cash_capex": lambda: staging["cash_flow_krw_tn"]["capex_ppe"][-1],
+        "dx_profit": lambda: staging["segment_operating_profit_krw_tn"]["dx"][-1],
+    }
+    entries = []
+    for entry in kpi["quantified"]:
+        if "current" in entry or "actual" in entry:
+            raise ValueError(f"threshold `{entry['id']}` is computed from the series; remove its typed value")
+        if entry["id"] not in known:
+            raise ValueError(f"threshold `{entry['id']}` has no way to be computed from the series")
+        entries.append({**entry, "current": known[entry["id"]]()})
+    return entries
+
+
+def tracking_charts(staging: dict, der: dict, labels: list[str], facts: dict, kpi: dict,
+                    entries: list[dict], story: dict | None, guidance: dict | None) -> list[dict]:
+    periods = staging["periods"]
+    n = len(periods)
+    following = shift_period(periods[-1], 1)
+    pending = kpi.get("pending", [])
+    crossed = [e for e in entries if headroom(e["direction"], e["threshold"], e["current"]) < 0]
+    overview = headroom_exhibit(
+        (f"下季 {len(entries) + len(pending)} 条阈值：{len(entries)} 条有当期读数，"
+         f"{len(entries) - len(crossed)} 条在安全侧、{len(crossed)} 条已越线"
+         + (f"（{'、'.join(e['metric'] for e in crossed)}）" if crossed else "")),
         entries, "current",
         note=(
-            "阈值是<b>本地研究设定</b>，不是公司指引 —— 三星不提供收入、毛利率或营业利润的数字指引，"
-            "所以这一节没有可兑现的公司承诺可用。正值代表仍在安全侧；口径统一为「距阈值百分之多少」，"
-            "好让百分比、天数这些不同单位的线并排可读。原始单位的阈值与当前值见核对表。"
-            "每条线为什么选这个阈值，写在同一张表的最后一列。"
+            "阈值与触发动作逐字取自本季报告第 8 节（关键观察指标），不是公司指引。正值代表仍在安全侧；"
+            "口径统一为「距阈值百分之多少」，好让百分比与兆韩元的线并排可读，原始单位与另一条线见核对表。"
+            + (f"另有{cn_count(len(pending))}条没有当期读数、不进这张图："
+               + "；".join(f"{p['metric']}（{p['why']}）" for p in pending) + "。" if pending else "")
         ),
-        src_extra=SRC_DECK + f"当前值全部由公司披露值算出 D，算式见{cn_count(n)}季核对表。",
+        src_extra=SRC_DECK + "当前值由公司披露值算出 D；ASP 是公司措辞的数值化读数，规则见 Exhibit {EX_ASP}。",
     )
-    headroom["ref"] = "EX_HEADROOM"
+    overview["ref"] = "EX_HEADROOM"
 
-    opm = der["operating_margin"]
-    opm_line = by_metric["合并营业利润率"]["threshold"]
-    next_quarter = shift_period(staging["periods"][-1], 1)
+    bits = staging["memory_bit_and_price"]
+    asp = bits["dram_asp_qoq_pct"]
     asp_unguided = guidance is not None and not guidance["asp_guided"]
-    trough = min(range(n), key=lambda i: opm[i])
-    opm_chart = threshold_exhibit(
-        f"合并营业利润率对 {opm_line:.0f}% 的阈值：本季 {opm[-1]:.1f}%",
-        labels, rounded(opm, 2), opm_line,
-        fmt="pct1", ylab="营业利润率",
-        actual_name="合并营业利润率", threshold_name=f"阈值 {opm_line:.0f}%",
-        note=(
-            f"选 {opm_line:.0f}% 不是因为它是某个共识，而是因为它把「涨价减速」和「周期翻转」分开"
-            + (f"；公司对 {quarter_only(next_quarter)} ASP 一个字都没给" if asp_unguided else "")
-            + f"。若真跌破 {opm_line:.0f}%，说明减速的假设本身错了。"
-            + (f"{cn_count(n)}季里这条线从 {opm[trough]:.1f}% 的谷底走到 {opm[-1]:.1f}%"
-               + ("，本季是窗口内最高。" if opm[-1] == max(opm) else "。")
-               if trough < n - 1 else
-               f"本季 {opm[-1]:.1f}% 是{cn_count(n)}季里最低的一季。")
-        ),
-        src_extra=SRC_DECK + "阈值为本地设定；实际值 = 合并营业利润 ÷ 合并收入 D。",
-    )
-    opm_chart["ref"] = "EX_OPM"
+    gm = der["gross_margin"]
+    capex = staging["cash_flow_krw_tn"]["capex_ppe"]
+    investments = staging["balance_sheet_krw_bn"]["investments"]
+    dx = staging["segment_operating_profit_krw_tn"]["dx"]
+    by_id = {entry["id"]: entry for entry in entries}
 
-    dx_margin = der["dx_margin"]
-    dx_line = by_metric["DX 分部营业利润率"]["threshold"]
-    dx_profit = staging["segment_operating_profit_krw_tn"]["dx"][-1]
-    dx_chart = threshold_exhibit(
-        f"DX 分部营业利润率对 {dx_line:.0f}% 的阈值：本季 {dx_margin[-1]:.2f}%"
-        + (f"，{dx_loss_words(facts, n)}为负" if facts["dx_negative"] else ""),
-        labels, rounded(dx_margin, 2), dx_line,
-        fmt="pct1", ylab="DX 营业利润率",
-        actual_name="DX 分部营业利润率", threshold_name=f"阈值 {dx_line:.0f}%",
-        note=(
-            "这条线是集团内部矛盾的温度计：DX 买存储，DS 卖存储，两者在同一张合并报表里。"
-            f"本季 DX 营业利润 {dx_profit:.1f} 兆韩元"
-            + ((f"，是{cn_count(n)}季唯一的负值。" if facts["dx_loss_ordinal"] == 1 else
-                f"，是{cn_count(n)}季里第{cn_ordinal(facts['dx_loss_ordinal'])}个负值。")
-               if facts["dx_negative"] else "。")
-            + f"阈值取 {dx_line:.0f}% 而不是 0，是因为「距零阈值的百分比余量」在算术上没有定义。"
-            + (f"管理层对下半年的说法是 <b>{story['dx_outlook_quote']}</b>"
-               + ("，" + story["handset_outlook_words"] if story.get("handset_outlook_words") else "")
-               + " —— 也就是说这条线在公司自己的预期里还会往下。"
-               if story and story.get("dx_outlook_quote") else "")
-        ),
-        src_extra=SRC_DECK + "实际值 = DX 分部营业利润 ÷ DX 分部收入（含分部间销售）D。",
-    )
-    dx_chart["ref"] = "EX_DX"
-    return [headroom, opm_chart, dx_chart]
+    def capex_context() -> str:
+        entry = by_id["cash_capex"]
+        below = capex[-1] < entry["threshold"]
+        grew = investments[-1] > investments[-2]
+        text = (f"同一季资产负债表上的金融资产（Investments）从 {investments[-2] / 1000:.1f} "
+                f"{'增到' if grew else '降到'} {investments[-1] / 1000:.1f} 兆韩元"
+                f"（{minus_sign(f'{(investments[-1] - investments[-2]) / 1000:+.1f}')}）")
+        if below and grew:
+            text = (f"本季 {capex[-1]:.2f} 已经在 {threshold_words(entry)}之下，而" + text
+                    + "：报告说的「叙事与行为背离」本季已经出现一次，它要持续两季才触发动作。")
+        else:
+            text = f"本季 {capex[-1]:.2f}；" + text + "。"
+        if story and story.get("accrual_capex_krw_tn") is not None:
+            accrual_qoq = minus_sign(f"{story['accrual_capex_qoq_krw_tn']:+.1f}")
+            text += (f"电话会给的应计口径资本开支是另一个数：本季 {story['accrual_capex_krw_tn']:.1f} 兆韩元、"
+                     f"环比 {accrual_qoq}（见 Exhibit {{EX_CASH}}）。")
+        return text
+
+    def dx_context() -> str:
+        text = "DX 买存储、DS 卖存储，这条线是集团内部矛盾的温度计。"
+        if facts["dx_negative"]:
+            text += (f"本季 {minus_sign(f'{dx[-1]:.1f}')} 兆韩元，"
+                     + (f"是{cn_count(n)}季唯一的负值。" if facts["dx_loss_ordinal"] == 1 else
+                        f"是{cn_count(n)}季里第{cn_ordinal(facts['dx_loss_ordinal'])}个负值。"))
+        if story and story.get("dx_outlook_quote"):
+            text += (f"管理层对下半年的说法是 <b>{story['dx_outlook_quote']}</b>"
+                     + ("，" + story["handset_outlook_words"] if story.get("handset_outlook_words") else "")
+                     + " —— 也就是说这条线在公司自己的预期里还会往下。")
+        return text
+
+    drawn = {
+        "dram_asp": ([compact_period(q) for q in bits["quarters"]], asp, "pct0", "环比 %", "DRAM 混合 ASP 环比 D",
+                     lambda: ((f"公司对 {quarter_only(following)} 的 ASP 一个字都没给；" if asp_unguided else "")
+                              + f"环比涨幅从上季 {asp[-2]:+.0f}% {'收敛到' if asp[-1] < asp[-2] else '扩大到'} "
+                              f"{asp[-1]:+.0f}%。线上是公司事后自述措辞的数值化读数，规则见 Exhibit {{EX_ASP}}。")),
+        "gross_margin": (labels, gm, "pct1", "毛利率", "毛利率",
+                         # What the CFO said about the accrual is this quarter's
+                         # story; without the story block the sentence goes.
+                         lambda: (("递延的来历：CFO 说本季补提的奖金有一部分资本化进在产品存货、"
+                                   f"从 {quarter_only(story['special_bonus']['released_from'])} 起随销售结转，"
+                                   "见 Exhibit {EX_BRIDGE}。"
+                                   if story and story.get("special_bonus") else "")
+                                  + (f"本季 {gm[-1]:.1f}% 是{cn_count(n)}季里最高的一季。" if gm[-1] == max(gm) else ""))),
+        "cash_capex": (labels, capex, "f1", "兆韩元", "现金资本开支（购置 PP&E）", capex_context),
+        "dx_profit": (labels, dx, "f1", "兆韩元", "DX 分部营业利润", dx_context),
+    }
+    charts = [overview]
+    for entry in entries:
+        xlabels, series, fmt, ylab, name, context = drawn[entry["id"]]
+        side = "上方" if entry["direction"] == "up" else "下方"
+        chart = threshold_exhibit(
+            (f"{entry['metric']}：下季阈值 {threshold_words(entry)}，当前 {threshold_words(entry, entry['current'])}"
+             + (f"，{dx_loss_words(facts, n)}为负" if entry["id"] == "dx_profit" and facts["dx_negative"] else "")),
+            xlabels, rounded(series, 2), entry["threshold"],
+            fmt=fmt, ylab=ylab, actual_name=name,
+            threshold_name=f"下季阈值 {threshold_words(entry)}（安全侧在{side}）",
+            note=(f"本季报告第 8 节：{entry['rule']}；触发动作：{entry['action']}。"
+                  f"余量 {headroom(entry['direction'], entry['threshold'], entry['current']):+.1f}%。" + context()),
+            src_extra=SRC_DECK + "阈值与方向逐字取自本季报告第 8 节；当前值为本页自算 D。",
+        )
+        if entry.get("second_line") is not None:
+            second = {**entry, "threshold": entry["second_line"]}
+            chart["series"].append({"name": f"{entry['second_label']} {threshold_words(second)}",
+                                    "values": [entry["second_line"]] * len(xlabels), "color": "GRAY"})
+        charts.append(chart)
+    return charts
 
 
-# ── Section 4: the routine series ─────────────────────────────────────────────
-def routine_charts(staging: dict, der: dict, labels: list[str], story: dict | None) -> list[dict]:
+# ── Section 2, last chart: where the quarter's cash went ─────────────────────
+def cash_chart(staging: dict, der: dict, labels: list[str], story: dict | None) -> dict:
+    """Capital intensity, the report's §1 reading of the quarter.
+
+    This chart used to sit with the routine series under a long-run title. The
+    report makes the quarter's reading its own conclusion -- cash capex fell to
+    a sliver of a record operating cash flow in the quarter management called
+    capacity the only constraint -- so it now leads with that reading, and says
+    where the cash went and how much of it is accrued rather than received.
+    """
     n = len(staging["periods"])
     cash = staging["cash_flow_krw_tn"]
-    fin = staging["financials_krw_bn"]
-    first = labels[0]
-
+    bs = staging["balance_sheet_krw_bn"]
     cfo, capex = cash["operating"], cash["capex_ppe"]
-    capex_ratio = capex[-1] / capex[0]
-    cfo_ratio = cfo[-1] / cfo[0]
+    ratio = der["capex_to_cfo"]
     capex_flat = max(capex) / min(capex) < 2
     capex_qoq = capex[-1] - capex[-2]
     capex_qoq_text = minus_sign(f"{capex_qoq:+.1f}")
@@ -1174,14 +1281,18 @@ def routine_charts(staging: dict, der: dict, labels: list[str], story: dict | No
     accrual_qoq = story["accrual_capex_qoq_krw_tn"] if accrual is not None else 0.0
     accrual_qoq_text = minus_sign(f"{accrual_qoq:+.1f}")
     opposite = accrual is not None and (accrual_qoq > 0) != (capex_qoq > 0)
-    cash_chart = {
+    investments = bs["investments"]
+    invested = (investments[-1] - investments[-2]) / 1000
+    net_cash = staging["net_cash_krw_tn"]
+    tax_up = (bs["current_income_tax_liabilities"][-1] - bs["current_income_tax_liabilities"][-2]) / 1000
+    other_up = (bs["other_liabilities"][-1] - bs["other_liabilities"][-2]) / 1000
+    accrued_share = (tax_up + other_up) / cfo[-1] * 100
+    chart = {
         "ref": "EX_CASH",
         "kind": "lines",
         "title": (
-            f"经营现金流 {cfo[-1]:.1f} 兆韩元，自由现金流 {der['fcf'][-1]:.1f}，"
-            + (f"而现金资本开支 {capex[-1]:.1f} 只是 {first} 的 {capex_ratio:.1f} 倍"
-               if capex_ratio < cfo_ratio / 2 else
-               f"现金资本开支 {capex[-1]:.1f}")
+            f"现金资本开支 {capex[-1]:.1f} 兆韩元，{'只' if ratio[-1] < ratio[-2] else ''}占经营现金流 "
+            f"{ratio[-1]:.1f}%（上季 {ratio[-2]:.1f}%），自由现金流 {der['fcf'][-1]:.1f}"
         ),
         "xlabels": labels,
         "series": [
@@ -1213,10 +1324,28 @@ def routine_charts(staging: dict, der: dict, labels: list[str], story: dict | No
                if accrual is not None else "")
             + f"本页画的是现金流量表那一条，因为它是{cn_count(n)}季都有、口径一致的那条"
             + ("；但读者不该由此得出「资本开支在降」的结论。" if opposite and capex_qoq < 0 else "。")
+            + (f"钱去了哪里：同一季资产负债表上的金融资产（Investments）"
+               f"{'增加' if invested >= 0 else '减少'} {abs(invested):.1f} 兆韩元，"
+               f"净现金{'增加' if net_cash[-1] >= net_cash[-2] else '减少'} {abs(net_cash[-1] - net_cash[-2]):.1f}"
+               "（见 Exhibit {EX_NETCASH}）。")
+            + (f"经营现金流本身也要打折：应交所得税增加 {tax_up:.1f}、其他负债增加 {other_up:.1f}，"
+               f"合计 {tax_up + other_up:.1f} 兆韩元，相当于经营现金流的 {accrued_share:.0f}%，"
+               "是记了账、还没付出去的钱（其他负债公司未细分）。"
+               if tax_up > 0 and other_up > 0 else "")
         ),
-        "src_extra": (SRC_DECK + "自由现金流 = 经营现金流 − 购置 PP&E D，不是公司定义的指标"
+        "src_extra": (SRC_DECK + "自由现金流 = 经营现金流 − 购置 PP&E D，不是公司定义的指标；"
+                      "资本开支占经营现金流、两项负债的增加额均为本页自算 D"
                       + ("；应计口径来自电话会。" if accrual is not None else "。")),
     }
+    return chart
+
+
+# ── Section 4: the routine series ─────────────────────────────────────────────
+def routine_charts(staging: dict, der: dict, labels: list[str], story: dict | None) -> list[dict]:
+    n = len(staging["periods"])
+    cash = staging["cash_flow_krw_tn"]
+    fin = staging["financials_krw_bn"]
+    first = labels[0]
 
     net_cash = staging["net_cash_krw_tn"]
     assets = staging["balance_sheet_krw_bn"]["total_assets"]
@@ -1354,7 +1483,51 @@ def routine_charts(staging: dict, der: dict, labels: list[str], story: dict | No
         ),
         "src_extra": SRC_DECK + src_dart(n) + "研发强度为研发支出除以合并收入 D。",
     }
-    return [cash_chart, net_cash_chart, days_chart, elim_chart, rnd_chart]
+    return [net_cash_chart, returns_chart(staging, der, labels, story), days_chart, elim_chart, rnd_chart]
+
+
+def returns_chart(staging: dict, der: dict, labels: list[str], story: dict | None) -> dict:
+    """Dividends and treasury-stock purchases against free cash flow.
+
+    The notes used to say the buyback row was carried only in some quarters'
+    decks, which is why this series was never connected. Every deck in the
+    window carries "Acquisition of treasury stock", and the 2025 annual column
+    adds up to its four quarters, so the series is drawn now. What a bought-back
+    share is *for* is not in the cash-flow row; DART's board resolutions say,
+    and that one-quarter reading lives in the story block.
+    """
+    n = len(staging["periods"])
+    cash = staging["cash_flow_krw_tn"]
+    dividends, bought = cash["dividends_paid"], cash["treasury_stock_acquired"]
+    fcf = der["fcf"]
+    share = (dividends[-1] + bought[-1]) / fcf[-1] * 100
+    return {
+        "ref": "EX_RETURNS",
+        "kind": "lines",
+        "title": (f"分红 {dividends[-1]:.2f} 兆韩元、库藏股买入 {bought[-1]:.2f}，"
+                  f"合计是本季自由现金流 {fcf[-1]:.1f} 的 {share:.1f}%"),
+        "xlabels": labels,
+        "series": [
+            {"name": "自由现金流 D", "values": rounded(fcf, 2), "color": "GOLD"},
+            {"name": "分红（现金流量表）", "values": rounded(dividends, 2), "color": "NAVY"},
+            {"name": "库藏股买入（现金流量表）", "values": rounded(bought, 2), "color": "MBLUE"},
+        ],
+        "fmt": "f1",
+        "yfmt": "f0",
+        "label_fmt": "f1",
+        "end_label": True,
+        "zero_base": True,
+        "ylab": "兆韩元",
+        "note": (
+            f"{cn_count(n)}季合计：分红 {sum(dividends):.1f}、库藏股买入 {sum(bought):.1f}、"
+            f"自由现金流 {sum(fcf):.1f} 兆韩元。"
+            "三星的季度股息晚一个季度付、年末股息在次年二季度付，所以现金流量表上一季度几乎没有分红、"
+            "二季度有两笔，单季占比会跳，不宜逐季比。"
+            + ((story or {}).get("buyback_purpose") or "")
+        ),
+        "src_extra": (SRC_DECK + "分红与库藏股买入为 Appendix 4 现金流量表的两行（2025 年四季之和与 4Q25 简报的"
+                      "年度列一致）；自由现金流与占比为本页自算 D。"),
+    }
 
 
 def headline_metrics(staging: dict) -> list[str]:
@@ -1429,8 +1602,9 @@ def build_payload(staging: dict) -> dict:
         + (prior_charts(staging, der, labels, prior, settled_entries) if prior else [])
         + bit_delivery_charts(staging, facts, guidance)
     )
-    highlight_ex = quarter_charts(staging, der, labels, facts, story)
-    next_ex = tracking_charts(staging, der, labels, facts, kpi, story, guidance)
+    highlight_ex = quarter_charts(staging, der, labels, facts, story) + [cash_chart(staging, der, labels, story)]
+    tracked = next_entries(staging, der, kpi)
+    next_ex = tracking_charts(staging, der, labels, facts, kpi, tracked, story, guidance)
     routine_ex = routine_charts(staging, der, labels, story) + [provisional_chart(staging)]
     resolve_exhibit_refs(
         number_exhibits(settled_ex + highlight_ex + next_ex + routine_ex)
@@ -1539,14 +1713,25 @@ def build_payload(staging: dict) -> dict:
                                for row, entry in zip(prior_table["rows"], settled_entries)]
         settled_tables.append(prior_table)
 
-    threshold_entries = kpi["entries"]
     threshold = threshold_table(
-        0, "下季跟踪阈值与当前值（原始单位）", threshold_entries, "current", "本季值",
+        0, "本季报告第 8 节的下季阈值与当前值（原始单位）", tracked, "current", "本季值",
     )
-    threshold["headers"] = threshold["headers"] + ["为什么是这条线"]
+    threshold["headers"] = (["项"] + threshold["headers"]
+                            + ["另一条线", "本季报告的判据", "触发动作"])
     threshold["rows"] = [
-        row + [entry["why"]] for row, entry in zip(threshold["rows"], threshold_entries)
+        [str(entry["item"])] + row
+        + ([f"{entry['second_label']} {threshold_words({**entry, 'threshold': entry['second_line']})}"]
+           if entry.get("second_line") is not None else ["—"])
+        + [entry["rule"], entry["action"]]
+        for row, entry in zip(threshold["rows"], tracked)
+    ] + [
+        # No current reading: the thing measured does not exist yet this
+        # quarter. The row says what can be read now and when it settles.
+        [str(item["item"]), item["metric"], f"到 {iso_period(item['settles'])} 结算",
+         "—", fill_story(item["reading"], story_values), "—", "—", item["rule"], item["action"]]
+        for item in kpi.get("pending", [])
     ]
+    threshold["rows"].sort(key=lambda row: int(row[0]))
 
     count = cn_count(n)
     tables = [
@@ -1655,15 +1840,21 @@ def build_payload(staging: dict) -> dict:
            if all(value > 0 for value in gap) else
            f"{prov_count}季里 {sum(1 for value in gap if value > 0)} 季上修、{sum(1 for value in gap if value < 0)} 季下修。")
         + "速报的营业收入按兆韩元取整发布，所以收入两次之间的差主要是取整而非修正，本页因此只对营业利润作图。",
-        f"第三节的阈值是本地研究设定，不是公司指引，也不构成评级或投资建议；「距阈值余量」统一为正值代表安全侧。DX 分部那条阈值取 {next(e['threshold'] for e in kpi['entries'] if e['metric'] == 'DX 分部营业利润率'):.0f}% 而不是 0，是因为距零阈值的百分比余量在算术上没有定义。",
+        threshold_note(settled_ex, next_ex, tracked),
     ]
     bonus = (story or {}).get("special_bonus")
     if bonus:
+        bridge = next(ex for ex in highlight_ex if ex["title"].startswith("本季环比增量拆解"))
+        into_costs = ((fin["sga_expenses"][-1] - fin["sga_expenses"][-2])
+                      + (fin["cost_of_sales"][-1] - fin["cost_of_sales"][-2])) / 1000
+        floor_given = bonus_timing(staging, story, into_costs) != ""
         notes.append(
             f"本季销管费用含公司口径为「{bonus['basis']}的 {bonus['pct']:.1f}%」的特别绩效奖金一次性补提，"
             f"{deck_short(bonus['prior_quarter'])} 为{bonus['prior_quarter_accrual']}，两季费用基数因此不可比。"
             + ("" if bonus["capitalized_split_disclosed"] else
-               "公司未拆分其中被资本化进在产品存货、递延至下半年的金额，本页也不估算。"))
+               "公司未拆分其中被资本化进在产品存货、递延至下半年的金额；"
+               + (f"本页只在 Exhibit {bridge['n']} 用上限法给一个下限（把销货成本与销管费用的环比增量全算作奖金），"
+                  "不给点估计。" if floor_given else "本页也不估算。")))
     if story and story.get("accrual_capex_krw_tn") is not None:
         accrual_qoq = story["accrual_capex_qoq_krw_tn"]
         opposite = (accrual_qoq > 0) != (capex_qoq > 0)
@@ -1680,7 +1871,7 @@ def build_payload(staging: dict) -> dict:
         "本页只发布公司披露值与可复算的简单派生值"
         + ("，以及注明出处的韩国银行汇率" if won else "")
         + "；D 标记代表 Derived / 自算。市面上流传的 Foundry 亏损额、HBM 收入、DRAM 与 NAND 分别收入均为卖方估计，本页不予采用。",
-        f"本页已知未接入：HBM 的任何量化序列（公司不披露）、DRAM 与 NAND 的分别收入、智能手机出货量的完整{count}季序列（仅个别季度在电话会上给过绝对数）、地区与客户结构、股份回购的完整{count}季序列（现金流量表该行只在部分季度的简报中单列）、以及 {iso_period(periods[0])} 之前的历史。",
+        f"本页已知未接入：HBM 的任何量化序列（公司不披露）、DRAM 与 NAND 的分别收入、智能手机出货量的完整{count}季序列（仅个别季度在电话会上给过绝对数）、地区与客户结构、以及 {iso_period(periods[0])} 之前的历史。库藏股买入此前也列在这里，理由是现金流量表那一行只在部分季度的简报里单列；窗口内每一份简报其实都有这一行，本页已接入。",
         "电话会文字稿仅链接公司官方 IR 托管版本，公开仓不复制原件或逐字全文；页面内引用的英文原话为逐字短句引用。",
     ]
 
@@ -1729,20 +1920,30 @@ def build_payload(staging: dict) -> dict:
                 "id": "quarter_highlights",
                 "title": "二、本季重点",
                 "description": (
-                    "收入与利润率、分部结构、增量的成本构成，以及 DS 之下那条唯一披露的 Memory 收入线。"
+                    "本季报告第 1、2–3、7 节的结论，一图一个：收入与营业利润率、分部收入结构、分部利润里的 DX、"
+                    "三条利润率、增量几乎不带成本（以及奖金的记账时点）、DS 之下的非存储残值、现金资本开支占经营现金流。"
+                    + (f"报告里另有{cn_count(len(story['undrawn']))}条结论画不了："
+                       + "；".join(story["undrawn"]) + "。" if story and story.get("undrawn") else "")
                 ),
                 "exhibits": highlight_ex,
             },
             {
                 "id": "next_quarter",
                 "title": "三、下季要跟踪什么",
-                "description": "当前值离阈值还有多远，统一用「距阈值余量」口径；阈值为本地设定，不是公司指引。",
+                "description": (
+                    f"本季报告第 8 节的 {len(tracked) + len(kpi.get('pending', []))} 条阈值逐字照录，"
+                    "统一用「距阈值余量」口径：先看总览，再逐条看线。"
+                    + (f"其中{cn_count(len(kpi['pending']))}条没有当期读数、不画线："
+                       + "；".join(f"{item['metric']}到 {iso_period(item['settles'])} 才结算（{item['why']}）"
+                                  for item in kpi["pending"])
+                       + "，本季能读到的数写在核对表。" if kpi.get("pending") else "")
+                ),
                 "exhibits": next_ex,
             },
             {
                 "id": "routine",
                 "title": "四、长期常规跟踪",
-                "description": ("现金流与资本强度、净现金、营运资金、分部间抵销与研发强度，"
+                "description": ("净现金、分红与库藏股买入、营运资金、分部间抵销与研发强度，"
                                 "以及季末速报数到月末确定数之间被改动了多少。"),
                 "exhibits": routine_ex,
             },

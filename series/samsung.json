@@ -50,7 +50,144 @@
     },
     "krw_depreciation_yoy_pct": 6.5,
     "source": "Samsung 2Q 2026 Earnings Release（2026_2Q_conference_eng.pdf，IR 网站；电话会 2026-07-29 21:00 EDT 即 2026-07-30 韩国时间）：第 5 页 2Q 2026 Results（Revenue KRW 171.5T、Operating Profit KRW 89.5T、R&D KRW 16.0T QoQ +41%、EPS KRW10,849）；第 6 页分部表（DS 127.5T / 89.2T，DX 48.0T / −0.8T、−2%，SDC 7.5T / 0.7T，Harman 4.6T / 0.4T；OP Margin 52.2%）；Appendix 1 损益表（Gross profit 69.6%、Operating profit 52.2%、Profit attributable to owners 41.6%）；Appendix 2（Memory 120.8）；Appendix 3 资产负债表 30.Jun.26 栏（Total assets 759,480.5、Inventories 71,389.1、A/R 96,409.0）；Appendix 4 现金流量表 2Q 26 栏（Cash flows from operating activities 105.08、Depreciation 12.11、Purchase of PP&E (14.11)）与 Net Cash 30.Jun.26 栏 167.59。汇率：韩国银行 ECOS 表 731Y004「원/미국달러(매매기준율)」「평균자료」分季，2025Q2 1404.04、2026Q2 1501.93（逐季单独查询）；韩元对美元同比贬值 = 1 − 1404.04 ÷ 1501.93 = 6.52%，页面印 6.5%。",
-    "checked_on": "2026-09-19"
+    "checked_on": "2026-09-19",
+    "note": {
+      "source": {
+        "this_report": "本季季报分析 `2026-07-30 005930 Q2 2026 vs Q1 2026 Analysis.md`：§0 上季遗留问题回答（管理层说法记分卡）、§8 关键观察指标",
+        "last_report": "上季季报分析 `2026-04-30 005930 Q1 2026 vs Q4 2025 Analysis.md`（2026-08-29 回溯补档）：文末 Follow-up Questions for Next Quarter、§8 关键观察指标"
+      },
+      "checked_on": "2026-09-23",
+      "followup_closure": {
+        "total": 5,
+        "counts": {
+          "已验证": 1,
+          "部分验证": 3,
+          "被证伪": 0,
+          "仍未披露": 1
+        },
+        "remark": "本季报告 §0 自称首次覆盖、没有核验上季这 5 条；计数是本页逐条对 2Q26 简报、电话会逐字稿与 DART 判定后另记的一份：#1 已验证（DART 三份决议）、#2 仍未披露、#3 #4 #5 部分验证"
+      },
+      "section0_scorecard": {
+        "total": 8,
+        "grades": {
+          "1": [
+            "对",
+            "错"
+          ],
+          "2": [
+            "对",
+            "对"
+          ],
+          "3": [
+            "对",
+            "错"
+          ],
+          "4": [
+            "对",
+            "错"
+          ],
+          "5": [
+            "部分",
+            "错"
+          ],
+          "6": [
+            "对",
+            "对"
+          ],
+          "7": [
+            "对",
+            "部分"
+          ],
+          "8": [
+            "错",
+            "错"
+          ]
+        },
+        "remark": "方向、幅度两列，✅ = 对、⚠️ = 部分、❌ = 错，逐条照报告 §0 的表"
+      },
+      "prior_thresholds": [
+        {
+          "item": 1,
+          "metric": "Q2 DRAM blended ASP 环比",
+          "threshold": 15.0,
+          "direction": "up"
+        },
+        {
+          "item": 2,
+          "metric": "Q2 DRAM 位元出货环比（< +3% 一侧）",
+          "threshold": 3.0,
+          "direction": "up"
+        },
+        {
+          "item": 2,
+          "metric": "Q2 DRAM 位元出货环比（> +15% 一侧）",
+          "threshold": 15.0,
+          "direction": "down"
+        },
+        {
+          "item": 3,
+          "metric": "Q2–Q3 DS 经营利润率",
+          "threshold": 60.0,
+          "direction": "up"
+        },
+        {
+          "item": 4,
+          "metric": "季度 FCF margin（现金流量表口径）",
+          "threshold": 15.0,
+          "direction": "up"
+        },
+        {
+          "item": 5,
+          "metric": "劳资一次性计提",
+          "threshold": 3.0,
+          "direction": "down"
+        }
+      ],
+      "next_thresholds": [
+        {
+          "item": 1,
+          "metric": "DRAM 混合 ASP 环比",
+          "threshold": 20.0,
+          "direction": "up",
+          "second_line": 0.0
+        },
+        {
+          "item": 2,
+          "metric": "Q3 毛利率（奖金结转验证）",
+          "threshold": 62.0,
+          "direction": "up",
+          "second_line": 66.0
+        },
+        {
+          "item": 3,
+          "metric": "LTA 覆盖率与价格地板",
+          "threshold": 60.0,
+          "direction": "up",
+          "pending": true
+        },
+        {
+          "item": 4,
+          "metric": "股东回报新政策（实际返还占 FCF）",
+          "threshold": 20.0,
+          "direction": "up",
+          "second_line": 30.0,
+          "pending": true
+        },
+        {
+          "item": 5,
+          "metric": "现金资本开支 vs 金融资产",
+          "threshold": 15.0,
+          "direction": "up",
+          "second_line": 18.0
+        },
+        {
+          "item": 6,
+          "metric": "DX 分部营业利润",
+          "threshold": -2.0,
+          "direction": "up"
+        }
+      ]
+    }
   },
   "periods": [
     "Q3 2024",
@@ -410,6 +547,36 @@
       566942.1,
       633339.6,
       759480.5
+    ],
+    "investments": [
+      31914.6,
+      33981.1,
+      33489.1,
+      33240.3,
+      38345.3,
+      48030.2,
+      54619.6,
+      104824.5
+    ],
+    "current_income_tax_liabilities": [
+      4882.4,
+      4340.2,
+      6281.5,
+      7643.1,
+      6189.6,
+      7037.2,
+      15229.1,
+      30303.1
+    ],
+    "other_liabilities": [
+      23268.7,
+      25305.4,
+      25971.4,
+      25422.4,
+      26611.5,
+      28297.5,
+      31657.5,
+      52145.6
     ]
   },
   "net_cash_krw_tn": [
@@ -715,7 +882,13 @@
     },
     "_fx_note": "3.1 出自电话会 CFO 原话（stronger U.S. dollar … positive quarter-on-quarter impact of around KRW 3.1 trillion on operating profit）。季度均价同比贬值原先印的是 6.7%，三星 2Q26 简报与电话会里都没有，出处不明；2026-09-19 改为由 krw_per_usd_average 的韩国银行季度平均汇率现算：1 − 1,404.04 ÷ 1,501.93 = 6.52%（若按每美元韩元数的涨幅算则是 6.97%），两种口径都不是 6.7。",
     "rnd_quarterly_record_claimed": true,
-    "supply_shortage_claimed": true
+    "supply_shortage_claimed": true,
+    "buyback_purpose": "库藏股买入要分两段读：2024 年 11 月到 2025 年 9 月那一轮 10 兆韩元计划买回的股份，除保留 1.6 兆给员工报酬外，已在 2025 年 2 月与 2026 年 4 月分两次注销（1Q26 电话会）；2026 年起 DART 上三份新决议（1 月 7 日、1 月 28 日、3 月 18 日）写明取得目的是员工股票报酬，不是股东回报。现行 2024–2026 三年政策是返还 50% 自由现金流，CFO 说员工报酬用的回购与多年期合同预付款「may affect FCF」。",
+    "undrawn": [
+      "量价拆分（报告按 DRAM 占存储收入 70–80% 的假设算出价格贡献约 47%、量约 10 个百分点；公司不披露 DRAM 与 NAND 的收入权重，本页不画）",
+      "多年期供货合同（5 年期、按年滚动，签约量将占规划产能 60–70%，前 5 大数据中心客户已签、另 5 家在最后阶段，主流产品设最低价格地板，预付款已收约 1/4 —— 全是电话会上的定性披露，金额受保密协议限制）",
+      "报告洞察 2（管理层「2028 年前供给放不出来」的论据，与它自己「先建洁净室、再按需求装设备」的策略相矛盾 —— 这是对措辞的读法，没有可画的序列）"
+    ]
   },
   "followup_closure": {
     "period": "Q2 2026",
@@ -929,70 +1102,74 @@
   },
   "next_kpi": {
     "period": "Q2 2026",
-    "entries": [
+    "_note": "本季报告 §8「关键观察指标」6 条。threshold、direction、rule（判据）与 action（触发动作）逐字取自那一节；current 不在这里手敲，由 builder 按 id 从 series 现算。报告里是三段式的两条（ASP、毛利率）和带兑现线的一条（现金资本开支），主阈值取「触发动作」挂的那条线，另一条线记在 second_line，图上画成灰线；ASP 的拐点线是 0%，「距阈值 %」在 0 上没有定义，所以主阈值取 +20% 那条、0% 作灰线。pending 是没有当期读数的条目：它们在报告里有数值阈值，但被度量的东西本季还不存在（公司没给 LTA 覆盖率；新股东回报政策还没公布），不画线、不进余量图，理由与当期能读到的数写进 description 与核对表。此前这里的 8 条是本地研究设定，与报告 §8 一条都不对应，已全部换掉。",
+    "source": "`2026-07-30 005930 Q2 2026 vs Q1 2026 Analysis.md` §8 关键观察指标",
+    "quantified": [
       {
-        "metric": "合并营业利润率",
+        "id": "dram_asp",
+        "item": 1,
+        "metric": "DRAM 混合 ASP 环比",
         "direction": "up",
-        "threshold": 35.0,
+        "threshold": 20.0,
         "unit": "pct",
-        "current": 52.18,
-        "why": "存储价格环比涨幅正在收敛，而公司对下季 ASP 不给指引；跌破 35% 意味着周期已经翻转而不只是减速"
+        "second_line": 0.0,
+        "second_label": "拐点线",
+        "rule": "> +20% = 周期未破，维持；0~+20% = 进入平台期，警戒；< 0 = 拐点确认",
+        "action": "环比转负立即减仓"
       },
       {
-        "metric": "Memory 占合并收入",
-        "direction": "down",
-        "threshold": 75.0,
-        "unit": "pct",
-        "current": 70.44,
-        "why": "八季从 28.2% 升到 70.4%，集团已经变成一家存储公司；越过 75% 意味着其余业务对集团业绩不再有对冲作用"
-      },
-      {
-        "metric": "DX 分部营业利润率",
+        "id": "gross_margin",
+        "item": 2,
+        "metric": "毛利率（奖金结转验证）",
         "direction": "up",
-        "threshold": 1.0,
+        "threshold": 62.0,
         "unit": "pct",
-        "current": -1.67,
-        "why": "本季首次转负，原因是自家 DS 涨价推高自家 DX 的物料成本；管理层预期这一压力延续至下半年"
+        "second_line": 66.0,
+        "second_label": "上沿",
+        "rule": "≥ 66% = 递延奖金影响小于预期，上修 H2；62–66% = 符合本报告约 10.1T 的测算；< 62% = 递延规模被低估",
+        "action": "< 62% ⇒ 下修 FY26 EPS 并复核本报告 §7 洞察 1 的测算"
       },
       {
-        "metric": "库存天数",
-        "direction": "down",
-        "threshold": 130.0,
-        "unit": "days",
-        "current": 124.5,
-        "why": "本季从 100.9 天跳到 124.5 天，其中含奖金计提资本化进在产品的部分；继续上行会稀释「行业缺货」这一叙事"
-      },
-      {
-        "metric": "现金 CapEx / 经营现金流",
-        "direction": "down",
-        "threshold": 40.0,
-        "unit": "pct",
-        "current": 13.43,
-        "why": "经营现金流暴涨把这一比率压到八季最低；公司同时说全年 capex 会 substantial 增长，两者迟早要收敛"
-      },
-      {
-        "metric": "SDC 分部营业利润率",
+        "id": "cash_capex",
+        "item": 5,
+        "metric": "现金资本开支",
         "direction": "up",
-        "threshold": 8.0,
-        "unit": "pct",
-        "current": 9.33,
-        "why": "8.6 代 IT OLED 线 7 月起量产，管理层主动说初期固定成本会有 short-term impacts"
+        "threshold": 15.0,
+        "unit": "krw_tn",
+        "second_line": 18.0,
+        "second_label": "兑现线",
+        "rule": "Q3 现金 capex > 18T = 扩产承诺兑现；< 15T 且金融资产继续增加 = 叙事与行为背离",
+        "action": "背离持续两季 ⇒ 视为管理层选择维持短缺而非扩产，上调 2027 价格假设、同时上调治理折价"
       },
       {
-        "metric": "股东回报 / 自由现金流",
+        "id": "dx_profit",
+        "item": 6,
+        "metric": "DX 分部营业利润",
         "direction": "up",
-        "threshold": 25.0,
-        "unit": "pct",
-        "current": 13.02,
-        "why": "现行政策承诺 returning 50% of free cash flow；自由现金流一个季度涨到 91 兆韩元后，这个比例掉到 13%"
+        "threshold": -2.0,
+        "unit": "krw_tn",
+        "rule": "亏损收窄 = 涨价被终端消化；扩大至 −2T 以下 = 涨价开始杀需求",
+        "action": "< −2T ⇒ 下调 2027 存储 bit 需求假设"
+      }
+    ],
+    "pending": [
+      {
+        "item": 3,
+        "metric": "LTA 覆盖率与价格地板",
+        "rule": "目标 60–70% 产能；前 5 大客户已签、5 家在谈；预付款已收 1/4。Q4 电话会若覆盖率未达 60% 或口径下调 = 改造失败",
+        "action": "撤回「周期股→合同股」的重估假设，估值乘数回到 5x 周期股框架",
+        "settles": "Q4 2026",
+        "why": "公司没有给覆盖率，只说待签合同落定后多年期合同「will easily account for 60% to 70%」规划产能；价格地板与预付款金额受保密协议限制",
+        "reading": "本季电话会：前 5 大数据中心客户已签、另 5 家在最后阶段；预付款已收约 1/4"
       },
       {
-        "metric": "有效税率",
-        "direction": "down",
-        "threshold": 27.0,
-        "unit": "pct",
-        "current": 24.16,
-        "why": "八季从 2.1% 升到 24.2%，递延所得税资产的缓冲已经用完，再上行会直接吃掉净利增速"
+        "item": 4,
+        "metric": "股东回报新政策",
+        "rule": "现行 3 年政策 2026 年到期；2026Q4 前公布且调整后实际返还 ≥ 30% FCF = 达标",
+        "action": "若 Q4 仍未公布，或实际返还 < 20% FCF ⇒ 判定资本配置优先级不在股东，下调估值",
+        "settles": "Q4 2026",
+        "why": "被度量的是新政策公布后的返还率，本季新政策还没有公布",
+        "reading": "本季分红 {dividends_now} 兆韩元、库藏股买入 {buyback_now} 兆，合计占自由现金流 {return_share}%；DART 决议写明库藏股是员工股票报酬，只算分红是 {dividend_share}%"
       }
     ]
   },

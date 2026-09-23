@@ -1427,7 +1427,7 @@ class ChartWindowTest(unittest.TestCase):
         combined = {slug: SHORT_BY_DESIGN.get(slug, 0) + UNEXPLAINED_LONG.get(slug, 0)
                     for slug in set(SHORT_BY_DESIGN) | set(UNEXPLAINED_LONG)}
         self.assertEqual(by_page, combined)
-        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 54)
+        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 57)
         # Zero, as of the SK hynix backfill. This number is not load-bearing on
         # its own -- an empty dict sums to zero for free -- but `by_length ==
         # UNEXPLAINED_LONG` two lines down is, and that one is what turns red if
@@ -1606,7 +1606,7 @@ SHORT_BY_DESIGN = {
     'mc': 8,
     'nvda': 11,
     'pm': 5,
-    'samsung': 18,
+    'samsung': 21,
     'skhynix': 5,
 
 }
