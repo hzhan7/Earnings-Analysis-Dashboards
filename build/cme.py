@@ -58,6 +58,7 @@ from build.board import (  # noqa: E402
     cn_count,
     cn_ordinal,
     delivery_band,
+    display_period,
     headroom,
     headroom_exhibit,
     latest_block,
@@ -1195,6 +1196,33 @@ def release_source(staging: dict) -> dict:
     return found
 
 
+def settles_nothing_yet(staging: dict, period: str) -> bool:
+    """True in the quarter of the first local analysis, which left nothing to settle.
+
+    Section one is 「上季跟踪指标兑现了吗」: it settles the previous analysis's
+    follow-up questions and thresholds, then the company's own guidance. The
+    first CME analysis covers Q2 2026 and says it has no previous one, so that
+    quarter settles only the guidance -- and says why. Any later quarter has a
+    previous analysis by construction, so a roll that leaves both settlement
+    blocks out would publish a section one that silently skipped it; that
+    stops the build instead.
+    """
+    record = staging.get("analysis_record")
+    first = record is not None and display_period(record["first_period"]) == display_period(period)
+    blocks = [key for key in ("followup_closure", "prior_kpi_settlement")
+              if stamped_block(staging, key, period) is not None]
+    if first and blocks:
+        raise ValueError(f"{period} is the first CME analysis, so there is nothing for "
+                         f"{', '.join(blocks)} to settle")
+    if not first and not blocks:
+        raise ValueError(f"{period} is not the first CME analysis: section one must settle the "
+                         "previous one -- add `followup_closure` (its section 0) and "
+                         "`prior_kpi_settlement` (its section 8 thresholds) to the series")
+    if blocks:
+        raise ValueError("this builder does not draw `followup_closure` / `prior_kpi_settlement` yet")
+    return first
+
+
 def build_payload(staging: dict) -> dict:
     fin = staging["financials"]
     lng = staging["long"]
@@ -1206,6 +1234,7 @@ def build_payload(staging: dict) -> dict:
     kpi = stamped_block(staging, "next_kpi", period)
     context = stamped_block(staging, "quarter_context", period)
     release = release_source(staging)
+    first_analysis = settles_nothing_yet(staging, period)
 
     settled, settled_tables = capex_section(staging)
     highlights = quarter_section(staging, context)
@@ -1375,6 +1404,22 @@ def build_payload(staging: dict) -> dict:
     collateral_count = len(coll["quarters"])
     long_from = lng["quarters"].index("2016Q1")
 
+    # The company's guidance is annual, so "given last quarter, due this
+    # quarter" does not describe it; what section one settles for CME is every
+    # guided year that has ended.
+    pending_years = [y for y in capex["years"] if capex["by_year"][y]["actual"] is None]
+    settled_description = (
+        (f"本站对该公司的第一份季报分析是 {period}，没有上季留下的跟踪指标可结算；"
+         "本节结算的是公司自己给出、已经到期的指引。" if first_analysis else "")
+        + "CME 在申报文件里只指引一个数：每年 10-K 流动性一节里用一句话给出的全年资本开支，"
+        f"{cn_count(len(capex['years']))}年没有断过。它按年到期，所以这里结算的是"
+        f"{cn_count(len(finished))}个已完结年度"
+        + (f"，FY{pending_years[-1]} 那一格要等该年的 10-K" if pending_years else "")
+        + "。除此之外，它在申报文件里不指引收入、每股收益、利润率，也不指引费用。"
+        "市场用来给它建成本模型的那个全年调整后营业费用指引只出现在业绩电话会上"
+        + (f"，本页逐份检索过 {searched}，一次都没有找到，因此不接入。" if searched else "，因此不接入。")
+    )
+
     notes = [
         "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
         "CME 财年即自然年，本页季度标注与公司自己的口径一致，无需换算。",
@@ -1447,14 +1492,8 @@ def build_payload(staging: dict) -> dict:
         "summary": {"blocks": []},
         "guidance": None,
         "sections": [
-            {"id": "settled", "title": "一、申报文件里唯一的那条指引兑现了吗",
-             "description": (f"CME 每年在 10-K 的流动性一节里用一句话给出全年资本开支的预期，"
-                             f"{cn_count(len(capex['years']))}年没有断过；除此之外，它在申报文件里不指引收入、每股收益、"
-                             "利润率，也不指引费用。市场用来给它建成本模型的那个全年调整后"
-                             "营业费用指引只出现在业绩电话会上"
-                             + (f"，本页逐份检索过 {searched}，一次都没有找到，因此不接入。"
-                                if searched else "，因此不接入。")
-                             + "这一节结清的是那条唯一有申报出处的指引。"),
+            {"id": "settled", "title": "一、上季跟踪指标兑现了吗",
+             "description": settled_description,
              "exhibits": settled_ex},
             {"id": "quarter_highlights", "title": "二、本季重点",
              "description": ("先把三条收入线分开，再把清算费的环比变动拆成量与价两块，"

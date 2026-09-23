@@ -3229,6 +3229,10 @@
     165035.3,
     158110.7
   ],
+  "analysis_record": {
+    "first_period": "Q2 2026",
+    "_note": "本地分析稿里 CME 的第一份季报分析覆盖的季度（2026-07-22 发布的 Q2 2026）。那份分析第 0 节写明「未找到上季遗留问题」、第 8 节写明「首次覆盖，无上季 KPI 可校准」，所以这一季第一板块只结算公司自己的指引。此后每一季的第一板块要结算上一份分析：第 0 节的待验证问题进 followup_closure，第 8 节的量化阈值进 prior_kpi_settlement，两块都带 period 戳；两块都缺席时 build/cme.py 拒绝构建。"
+  },
   "next_kpi": {
     "period": "Q2 2026",
     "quantified": [

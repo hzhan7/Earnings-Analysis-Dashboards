@@ -96,6 +96,36 @@ class CmeDashboardTest(unittest.TestCase):
         cls.staging = json.loads(cme.STAGING_PATH.read_text(encoding="utf-8"))
         cls.payload = cme.build_payload(cls.staging)
 
+    # ── the four sections ───────────────────────────────────────────────────
+    def test_the_page_has_the_site_s_four_sections_in_order(self) -> None:
+        self.assertEqual(
+            [(section["id"], section["title"]) for section in self.payload["sections"]],
+            [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+             ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+        self.assertTrue(all(section["exhibits"] for section in self.payload["sections"]))
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列",
+                      self.payload["notes"][0])
+
+    def test_the_first_analysis_settles_only_the_company_s_guidance_and_says_so(self) -> None:
+        """The local analysis of Q2 2026 is the first one on CME.
+
+        Its section 0 reads "未找到上季遗留问题" and its section 8 "首次覆盖，无上季
+        KPI 可校准", so there is no follow-up list and no threshold to settle:
+        section one carries the capital-expenditure record alone and has to say
+        why, rather than look like a section that forgot its first half.
+        """
+        record = self.staging["analysis_record"]
+        # The quarter the owner's first CME analysis covers -- a fact about the
+        # library, copied from that report, not a number from a filing.
+        self.assertEqual(record["first_period"], "Q2 2026")
+        period = self.staging["period_labels"][-1]
+        settled = next(s for s in self.payload["sections"] if s["id"] == "settled")
+        self.assertTrue(settled["description"].startswith(
+            f"本站对该公司的第一份季报分析是 {period}，没有上季留下的跟踪指标可结算；"))
+        self.assertEqual([ex["ref"] for ex in settled["exhibits"]], ["EX_CAPEX", "EX_CAPEX_DEV"])
+        for key in ("followup_closure", "prior_kpi_settlement"):
+            self.assertNotIn(key, self.staging)
+
     # ── the two windows ─────────────────────────────────────────────────────
     def test_the_short_window_starts_where_the_adjusted_table_does(self) -> None:
         """2024Q3 is the year-ago column of the first release that printed it."""
@@ -667,6 +697,13 @@ class CmeRollTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "sources"):
             self.rebuilt(lambda s: s.__setitem__(
                 "sources", [x for x in s["sources"] if not x["label"].startswith(label)]))
+
+    def test_a_later_quarter_must_settle_the_previous_analysis(self) -> None:
+        """「第一份分析」is true of one quarter only; after it, section one owes a settlement."""
+        with self.assertRaisesRegex(ValueError, "prior_kpi_settlement"):
+            self.rebuilt(lambda s: s["analysis_record"].__setitem__("first_period", "Q1 2026"))
+        with self.assertRaisesRegex(ValueError, "not the first CME analysis"):
+            self.rebuilt(lambda s: s.pop("analysis_record"))
 
     def test_a_quarter_without_its_blocks_leaves_them_out(self) -> None:
         def strip(s):
