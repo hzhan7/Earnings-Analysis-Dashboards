@@ -641,27 +641,38 @@ class PmDashboardTest(unittest.TestCase):
 
     # ── thresholds, exhibits, publication ───────────────────────────────────
     def test_every_quantified_threshold_has_a_headroom_bar(self) -> None:
-        _, entries = pm.kpi_entries(self.staging)
+        _, entries, worded = pm.kpi_entries(self.staging)
         bar = self.payload["sections"][2]["exhibits"][0]
         self.assertEqual(bar["xlabels"], [entry["metric"] for entry in entries])
         for entry, value in zip(entries, bar["values"]):
             self.assertAlmostEqual(headroom(entry["direction"], entry["threshold"], entry["current"]),
                                    value, places=1, msg=entry["metric"])
+        for entry in worded:
+            self.assertNotIn(entry["metric"], bar["xlabels"])
         for entry in self.staging["next_kpi"]["quantified"]:
             self.assertNotIn("current", entry, "a typed current value goes stale with the roll")
 
     def test_threshold_current_values_are_measured_from_the_series(self) -> None:
-        _, entries = pm.kpi_entries(self.staging)
-        seg = self.staging["segments"]
-        current = {e["measure"]: e["current"] for e in entries}
-        self.assertEqual(current["segment_gm_us"], seg["adjusted_gross_margin_pct"]["us"][-1])
-        self.assertEqual(current["segment_gm_isf"], seg["adjusted_gross_margin_pct"]["international_smoke_free"][-1])
-        self.assertEqual(current["adjusted_oi_margin"], seg["adjusted_oi_margin_pct"][-1])
-        known = [v for v in self.staging["zyn"]["offtake_yoy_pct"] if v is not None]
-        self.assertEqual(current["zyn_offtake"], known[-1])
-        printed = self.staging["quarter_printed"]
-        self.assertEqual(current["organic_growth"], printed["organic_revenue_growth_pct"])
-        self.assertEqual(current["isf_organic_growth"], printed["isf_organic_revenue_growth_pct"])
+        """Each bar reads the quarter's own figure. The ZYN offtake line used to be
+        measured at the last quarter that printed a figure (Q1's 10%) and drawn as
+        25% on the safe side, while the quarter's own reading was a sentence."""
+        _, entries, worded = pm.kpi_entries(self.staging)
+        seg, printed = self.staging["segments"], self.staging["quarter_printed"]
+        expected = {
+            "segment_gm_us": seg["adjusted_gross_margin_pct"]["us"][-1],
+            "segment_gm_isf": seg["adjusted_gross_margin_pct"]["international_smoke_free"][-1],
+            "zyn_share": printed["zyn_retail_value_share_pct"],
+            "isf_organic_growth": printed["isf_organic_revenue_growth_pct"],
+            "isf_gp_lead": round(printed["isf_organic_gross_profit_growth_pct"]
+                                 - printed["isf_organic_revenue_growth_pct"], 1),
+            "organic_oi_growth": printed["organic_operating_income_growth_pct"],
+            "leverage": self.staging["leverage"]["net_debt_to_adjusted_ebitda"][-1],
+        }
+        for entry in entries:
+            self.assertEqual(entry["current"], expected[entry["measure"]], entry["metric"])
+        words_only = self.staging["zyn"]["offtake_yoy_pct"][-1] is None
+        self.assertEqual([e["measure"] for e in worded], ["zyn_offtake"] if words_only else [])
+        self.assertEqual("zyn_offtake" in [e["measure"] for e in entries], not words_only)
 
     def test_the_capex_contrast_reads_the_shared_table(self) -> None:
         """The cross-page table's four-cloud total is a ratio, so it "grew to"
@@ -672,39 +683,47 @@ class PmDashboardTest(unittest.TestCase):
         self.assertNotIn("增长了", note)
 
     def test_threshold_source_lines_name_the_releases_the_lines_came_from(self) -> None:
-        """The ZYN line runs from Q2 2025, whose figures are in 2025 releases;
-        its source line said "2026 releases". A segment margin line now starts in
-        the recast 8-K, and says so before it names the releases."""
-        _, entries = pm.kpi_entries(self.staging)
-        charts = self.payload["sections"][2]["exhibits"][1:]
-        charted = [e for e in entries if e["measure"] in pm.SERIES_FOR]
-        self.assertEqual(len(charts), len(charted))
+        """A segment margin line starts in the recast 8-K and says so before it
+        names the releases; the ZYN line is each quarter's own release; the
+        leverage line names both exhibits its schedule lived in; the second half
+        of the year is a 10-K less a 10-Q."""
+        charts = {ex["title"].split("：")[0]: ex for ex in self.payload["sections"][2]["exhibits"][1:]}
         own = [p for p in self.staging["segments"]["periods"] if pm.yq(p) >= pm.yq(pm.NEW_SEGMENTS_FROM)]
+        years = sorted({pm.yq(p)[0] for p in own})
+        span = str(years[0]) if len(years) == 1 else f"{years[0]}–{years[-1]}"
         recast = self.staging["segments"]["recast_filing"]
-        for entry, chart in zip(charted, charts):
-            labels = self.staging["zyn"]["periods"] if entry["measure"] == "zyn_offtake" else own
-            years = sorted({pm.yq(p)[0] for p in labels})
-            span = str(years[0]) if len(years) == 1 else f"{years[0]}–{years[-1]}"
-            recast_years = f"{pm.yq(recast['first'])[0]}–{pm.yq(recast['last'])[0]}"
-            if entry["measure"] in ("segment_gm_us", "segment_gm_isf"):
-                self.assertTrue(chart["src_extra"].startswith(f"{recast_years} 年各季取自 {recast['date']}"),
-                                chart["title"])
-                self.assertIn(recast["accession"], chart["src_extra"])
-                self.assertIn(f"；{span} 年各季业绩 8-K", chart["src_extra"])
-            else:
-                self.assertTrue(chart["src_extra"].startswith(f"{span} 年各季业绩 8-K"), chart["title"])
-                self.assertNotIn(recast["accession"], chart["src_extra"])
+        recast_years = f"{pm.yq(recast['first'])[0]}–{pm.yq(recast['last'])[0]}"
+        for name in ("美国分部调整后毛利率", "国际无烟分部调整后毛利率"):
+            src = charts[name]["src_extra"]
+            self.assertTrue(src.startswith(f"{recast_years} 年各季取自 {recast['date']}"), name)
+            self.assertIn(recast["accession"], src)
+            self.assertIn(f"；{span} 年各季业绩 8-K", src)
+        zyn = charts["美国 ZYN 零售出货同比"]["src_extra"]
+        self.assertTrue(zyn.startswith("各季业绩 8-K EX-99.1"))
+        self.assertNotIn(recast["accession"], zyn)
+        leverage = charts["净债务 / 调整后 EBITDA"]["src_extra"]
+        self.assertIn("EX-99.1", leverage)
+        self.assertIn("EX-99.2", leverage)
+        second_half = charts["下半年经营现金流"]["src_extra"]
+        self.assertIn("10-K", second_half)
+        self.assertIn("10-Q", second_half)
 
     def test_what_the_page_refuses_to_plot_is_named(self) -> None:
         kpi = self.staging["next_kpi"]
+        overview = self.payload["sections"][2]["exhibits"][0]
         excluded = pm.not_tracked_text(kpi)
-        for term in ["零售价值份额", "调整后 EBITDA", "自由现金流"]:
-            self.assertIn(term, excluded)
-        self.assertIn(excluded, self.payload["sections"][2]["exhibits"][0]["note"])
+        self.assertIn(excluded, overview["note"])
+        for item in kpi["not_tracked"]:
+            self.assertIn(item["name"], excluded)
+        for item in kpi["awaiting"] + kpi["unmeasurable"]:
+            self.assertIn(item["metric"], overview["note"])
         self.assertIn(f"不接入的{cn_count(len(kpi['not_tracked']))}条", self.payload["sections"][2]["description"])
-        # PMI prints the net debt to adjusted EBITDA ratio every quarter (EX-99.2
-        # Schedule 16); the page used to say it was annual only.
-        self.assertNotIn("只按年披露", excluded + " ".join(self.payload["notes"]))
+        # PMI prints the net debt to adjusted EBITDA ratio every quarter, and the
+        # ZYN retail value share is printed in the earnings presentation: the page
+        # used to call the first annual-only and the second call-only.
+        text = text_of(self.payload)
+        self.assertNotIn("只按年披露", text)
+        self.assertNotIn("只出现在业绩电话会上", text)
         # the notes list the same items, from the same stamped block
         listed = next(n for n in self.payload["notes"] if n.startswith("本页已知未接入："))
         for item in kpi["not_tracked"]:
@@ -899,16 +918,17 @@ class PmSectionOneTest(unittest.TestCase):
         self.assertIn("第一节先结算上季本地分析稿留下的待验证问题与量化阈值", " ".join(self.payload["notes"]))
 
     def test_the_closure_is_the_notes_own_verdicts_counted(self) -> None:
-        block, checks = self.s["followup_closure"], self.s["_checks"]
-        self.assertEqual([item["verdict"] for item in block["items"]], checks["note_followup_verdicts"])
+        block, note = self.s["followup_closure"], self.s["_checks"]["note"]["followup_closure"]
+        self.assertEqual([item["verdict"] for item in block["items"]], note["verdicts"])
         for item in block["items"]:
             # a label is the verdict's own words, never a regrouping of them
             self.assertIn(item["label"], item["verdict"], item["question"])
         chart = self.exhibits["EX_CLOSURE"]
         counted = collections.Counter(item["label"] for item in block["items"])
-        self.assertEqual(dict(zip(chart["xlabels"], chart["values"])), dict(counted))
+        self.assertEqual(dict(zip(chart["xlabels"], chart["values"])), note["verdict_counts"])
+        self.assertEqual(dict(counted), note["verdict_counts"])
         self.assertEqual(chart["xlabels"], [label for label in block["labels"] if counted[label]])
-        self.assertEqual(sum(chart["values"]), len(checks["note_followup_verdicts"]))
+        self.assertEqual(sum(chart["values"]), note["total"])
         self.assertTrue(chart["title"].startswith(f"上季 {len(block['items'])} 条待验证问题："), chart["title"])
         for label, count in counted.items():
             self.assertIn(f"{count} 条{label}", chart["title"])
@@ -918,9 +938,11 @@ class PmSectionOneTest(unittest.TestCase):
         self.assertIn(block["set_in"], chart["src_extra"])
 
     def test_the_prior_thresholds_are_the_prior_notes_settled_on_filed_figures(self) -> None:
-        block, checks = self.s["prior_kpi_settlement"], self.s["_checks"]
-        self.assertEqual(sorted((e["direction"], e["threshold"]) for e in block["quantified"]),
-                         sorted((t["direction"], t["threshold"]) for t in checks["note_prior_thresholds"]))
+        block, note = self.s["prior_kpi_settlement"], self.s["_checks"]["note"]["prior_thresholds"]
+        lines = block["quantified"] + block["unsettleable"]
+        self.assertEqual({e["metric"]: (e["threshold"], e["direction"]) for e in lines},
+                         {t["metric"]: (t["threshold"], t["direction"]) for t in note})
+        self.assertEqual(len(lines), len(note))
         self.assertEqual(pm.yq(block["set_in"]), pm.yq(pm.previous_quarter(self.s["period_labels"][-1])))
         chart = self.exhibits["EX_PRIOR"]
         printed = self.s["quarter_printed"]
@@ -943,7 +965,9 @@ class PmSectionOneTest(unittest.TestCase):
             self.assertIn(f"{pm.base_name(entry['metric'])} {pm.threshold_words(entry)} {entry['words_verdict']}",
                           chart["title"])
             self.assertIn(f"「{self.s['zyn']['offtake_words'][-1]}」", chart["note"])
-        for item in block["unsettleable"] + block["qualitative"]:
+        for item in block["unsettleable"]:
+            self.assertIn(item["metric"], chart["note"])
+        for item in block["qualitative"]:
             self.assertIn(item["name"], chart["note"])
         table = next(t for t in self.payload["tables"] if t["title"].startswith("上季阈值与本季实际"))
         self.assertEqual([row[0] for row in table["rows"]], chart["xlabels"])
@@ -964,6 +988,127 @@ class PmSectionOneTest(unittest.TestCase):
         self.assertIn(f"{entry['words_verdict']}上季阈值 {pm.unit_text(entry['unit'], entry['threshold'])}",
                       line["title"])
         self.assertIn(zyn["offtake_words"][-1], line["annot"])
+
+
+class PmNextQuarterTest(unittest.TestCase):
+    """Section three is this quarter's note's section 8, line by line, and the
+    sections either side read the filed figures the note's conclusions rest on.
+    The thresholds are the note's facts: `_checks["note"]` carries them typed a
+    second time from the note, so a roll re-keys them there."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.s = load()
+        cls.payload = pm.build_payload(cls.s)
+        cls.exhibits = exhibits_of(cls.payload)
+        cls.section = cls.payload["sections"][2]
+        cls.charts = {ex["title"].split("：")[0]: ex for ex in cls.section["exhibits"][1:]}
+
+    def test_the_thresholds_are_the_notes_section_eight(self) -> None:
+        kpi = self.s["next_kpi"]
+        note = self.s["_checks"]["note"]["next_thresholds"]
+        lines = kpi["quantified"] + kpi["awaiting"] + kpi["unmeasurable"]
+        self.assertEqual({e["metric"]: (e["threshold"], e["direction"]) for e in lines},
+                         {t["metric"]: (t["threshold"], t["direction"]) for t in note})
+        self.assertEqual(len(lines), len(note))
+        overview = self.section["exhibits"][0]
+        self.assertEqual(overview.get("ref"), "EX_NEXT")
+        self.assertTrue(overview["title"].startswith(f"下季 {len(note)} 条阈值："), overview["title"])
+        self.assertIn(f"共 {len(note)} 条", self.section["description"])
+
+    def test_no_threshold_is_a_local_setting_any_more(self) -> None:
+        """The page carried 集团调整后经营利润率 ≥41% -- in neither note -- and
+        called every threshold 本地研究设定."""
+        text = text_of(self.section)
+        for gone in ("本地研究设定", "本地阈值", "集团调整后经营利润率"):
+            self.assertNotIn(gone, text)
+        self.assertIn("本季本地分析稿第 8 节", self.section["exhibits"][0]["note"])
+
+    def test_a_metric_with_two_lines_is_one_chart_with_both(self) -> None:
+        chart = self.charts["美国分部调整后毛利率"]
+        thresholds = sorted(e["threshold"] for e in self.s["next_kpi"]["quantified"]
+                            if e["measure"] == "segment_gm_us")
+        self.assertEqual(sorted(series["values"][0] for series in chart["series"][1:]), thresholds)
+        for series in chart["series"][1:]:
+            self.assertEqual(len(set(series["values"])), 1)
+            self.assertEqual(len(series["values"]), len(chart["xlabels"]))
+        self.assertEqual({series["color"] for series in chart["series"][1:]}, {"RED", "GOLD"})
+
+    def test_the_leverage_line_is_what_each_release_printed(self) -> None:
+        lev = self.s["leverage"]
+        self.assertEqual(lev["periods"][0], "2016Q1")
+        self.assertEqual(pm.yq(lev["periods"][-1]), pm.yq(self.s["periods"][-1]))
+        for quarter, ratio, debt, ebitda in zip(lev["periods"], lev["net_debt_to_adjusted_ebitda"],
+                                                 lev["net_debt_usd_m"], lev["adjusted_ebitda_ttm_usd_m"]):
+            self.assertLessEqual(abs(debt / ebitda - ratio), 0.005 + 1e-9, quarter)
+        c = self.s["_checks"]
+        self.assertEqual(lev["net_debt_to_adjusted_ebitda"][-1], c["net_debt_to_adjusted_ebitda"])
+        year_end = lev["periods"].index(f"{pm.yq(self.s['periods'][-1])[0] - 1}Q4")
+        self.assertEqual(lev["net_debt_to_adjusted_ebitda"][year_end], c["prior_year_end_net_debt_to_adjusted_ebitda"])
+        chart = self.charts["净债务 / 调整后 EBITDA"]
+        self.assertEqual(chart["xlabels"], lev["period_labels"])
+        self.assertIn(f"当前 {lev['net_debt_to_adjusted_ebitda'][-1]:.2f}×", chart["title"])
+
+    def test_the_second_half_is_the_year_less_the_first_half(self) -> None:
+        half, annual, c = self.s["half_year_cash"], self.s["annual"], self.s["_checks"]
+        self.assertEqual(half["h1_operating_cash_flow_usd_m"][-1], c["h1_operating_cash_flow_usd_m"])
+        self.assertEqual(half["h1_capex_usd_m"][-1], c["h1_capex_usd_m"])
+        full = dict(zip(annual["years"], annual["operating_cash_flow_usd_m"]))
+        first = dict(zip(half["years"], half["h1_operating_cash_flow_usd_m"]))
+        years = [y for y in half["years"] if y in full]
+        chart = self.charts["下半年经营现金流"]
+        self.assertEqual(chart["xlabels"], [f"H2 {y}" for y in years])
+        self.assertEqual(chart["series"][0]["values"], [full[y] - first[y] for y in years])
+        threshold = next(e["threshold"] for e in self.s["next_kpi"]["awaiting"] if e["measure"] == "h2_ocf")
+        reached = [y for y in years if full[y] - first[y] >= threshold]
+        self.assertEqual(f"年里只有 {reached[0]} 年达到" in chart["title"], len(reached) == 1)
+        guide = self.s["guidance_other"]["operating_cash_flow_usd_m"]
+        self.assertIn(f"隐含 US${guide - first[half['years'][-1]]:,.0f}M", chart["title"])
+
+    def test_the_bridge_names_both_lines_last_quarter_printed(self) -> None:
+        """Last quarter's note read volume/mix as −346 and this page read −206.
+        Both are filed: the first 2026 release printed Volume/Mix (−346) and
+        Other (+140) on two lines, the second release one line. The page now says so."""
+        bridge = self.s["revenue_bridge"]
+        previous = bridge[bridge["periods"][-2]]
+        split = previous["printed_split"]
+        for i, total in enumerate(previous["volume_mix_other"]):
+            self.assertEqual(split["volume_mix"][i] + split["other"][i], total)
+        note = self.exhibits["EX_BRIDGE"]["note"]
+        self.assertIn(f"量与结构（{pm.money_m(split['volume_mix'][0])}）和其他（{pm.money_m(split['other'][0])}）",
+                      note)
+        self.assertIn(pm.money_m(split["volume_mix"][0]), self.payload["brief"])
+        latest = bridge[bridge["periods"][-1]]
+        printed = self.s["quarter_printed"]["organic_revenue_growth_pct"]
+        self.assertEqual(f"{pm.organic_rate(latest):.1f}", f"{printed:.1f}")
+        self.assertIn(f"本季的 {pm.organic_rate(latest):.1f}%", note)
+
+    def test_a_quarterly_bar_names_the_year_to_date_beside_it(self) -> None:
+        """The organic operating-income lines are read on the quarter (10.7% at Q2
+        2026); the release's year to date sits on the other side of both of them."""
+        printed = self.s["quarter_printed"]
+        ytd = printed["ytd_organic_operating_income_growth_pct"]
+        lines = [e for e in self.s["next_kpi"]["quantified"] if e["measure"] == "organic_oi_growth"]
+        note = self.section["exhibits"][0]["note"]
+        self.assertIn(f"本季单季的 {printed['organic_operating_income_growth_pct']:.1f}%", note)
+        self.assertIn(f"年初至今累计是 {ytd:.1f}%", note)
+        under = [e for e in lines if ytd < e["threshold"]]
+        self.assertEqual("在两条线之上" in note, not under)
+        for entry in under:
+            self.assertIn(f"{pm.role_of(entry['metric'])} {pm.unit_words(entry['unit'], entry['threshold'])}", note)
+
+    def test_the_headline_names_the_one_off_behind_the_gaap_decline(self) -> None:
+        one_off = self.s["quarter_story"]["gaap_one_off"]
+        eps = self.s["financials"]["reported_diluted_eps_usd"]
+        self.assertLess(eps[-1], eps[-5])
+        self.assertIn(f"同比下降（其中 {one_off['name']}拿走 US${one_off['eps_usd']:.2f}）", self.payload["headline"])
+
+    def test_the_first_half_capex_is_read_now_that_the_10q_is_filed(self) -> None:
+        """The note could not check capital expenditure: the 10-Q came two days
+        after the release. The page now reads the filed first half."""
+        capex = self.s["half_year_cash"]["h1_capex_usd_m"]
+        self.assertIn(f"上半年资本开支是 US${capex[-1]:,.0f}M，上年同期 US${capex[-2]:,.0f}M",
+                      self.exhibits["EX_CASH"]["note"])
 
 
 def with_every_block(source: dict) -> dict:
@@ -1085,7 +1230,14 @@ def roll_forward(source: dict) -> dict:
     for key in ("quarter_story", "guidance_other", "followup_closure", "prior_kpi_settlement"):
         st.pop(key, None)
     st["quarter_printed"] = {"period": label, "organic_revenue_growth_pct": 5.5,
-                             "isf_organic_revenue_growth_pct": 10.5}
+                             "isf_organic_revenue_growth_pct": 10.5, "isf_organic_gross_profit_growth_pct": 13.0,
+                             "organic_operating_income_growth_pct": 8.0, "zyn_retail_value_share_pct": 56.0}
+    # the leverage schedule of the new release
+    leverage = st["leverage"]
+    leverage["periods"].append(new)
+    leverage["period_labels"].append(label)
+    for key in ("net_debt_to_adjusted_ebitda", "net_debt_usd_m", "adjusted_ebitda_ttm_usd_m"):
+        leverage[key].append(leverage[key][-1])
     return st
 
 
@@ -1116,7 +1268,7 @@ class PmRollTest(unittest.TestCase):
             with self.subTest(block=key):
                 with self.assertRaisesRegex(ValueError, "stamped"):
                     pm.build_payload(stale)
-        for key in ("revenue_bridge", "segments", "zyn"):
+        for key in ("revenue_bridge", "segments", "zyn", "leverage"):
             behind = copy.deepcopy(self.full)
             behind[key]["periods"][-1] = "1999Q1"
             with self.subTest(block=key):
@@ -1131,6 +1283,12 @@ class PmRollTest(unittest.TestCase):
         unknown = copy.deepcopy(self.full)
         unknown["next_kpi"]["quantified"][0]["measure"] = "not_a_measure"
         cases["does not know how to measure"] = unknown
+        waiting = copy.deepcopy(self.full)
+        waiting["next_kpi"]["awaiting"][0]["measure"] = "not_a_measure"
+        cases["next_kpi awaiting entry"] = waiting
+        unshared = copy.deepcopy(self.full)
+        del unshared["quarter_printed"]["zyn_retail_value_share_pct"]
+        cases["has no 'zyn_retail_value_share_pct'"] = unshared
         unprinted = copy.deepcopy(self.full)
         del unprinted["quarter_printed"]
         cases["`quarter_printed` has no"] = unprinted
@@ -1169,8 +1327,9 @@ class PmRollTest(unittest.TestCase):
     def test_a_quarter_without_a_story_leaves_it_out(self) -> None:
         story, other = self.full["quarter_story"], self.full["guidance_other"]
         cases = {
-            "quarter_story": [story["us_gross_margin_reason"][:10], story["us_investment"][:10], "这条判断下一季"],
-            "guidance_other": [other["rows"][0][0], other["headline_quote"], "这条判断下一季"],
+            # the capex judgement and the first half that tests it go with the story
+            "quarter_story": [story["us_gross_margin_reason"][:10], story["us_investment"][:10], "上半年资本开支是"],
+            "guidance_other": [other["rows"][0][0], other["headline_quote"], "上半年资本开支是"],
         }
         for key, texts in cases.items():
             bare = copy.deepcopy(self.full)
@@ -1313,6 +1472,9 @@ class PmRollTest(unittest.TestCase):
                 bridge["period_labels"].insert(0, pm.display(before))
             bridge[bridge["periods"][-2]]["volume_mix_other"][0] = -100
             bridge[bridge["periods"][-1]]["volume_mix_other"][0] = 100
+            # the rewritten quarter no longer adds up to the two lines it printed
+            for quarter in bridge["periods"][-2:]:
+                bridge[quarter].pop("printed_split", None)
 
         def vmo_stays(d):
             vmo_turns(d)
@@ -1461,7 +1623,9 @@ class PmRollTest(unittest.TestCase):
             "only the U.S. margin falls": (us_gm_alone_falls, us_gm_recovers,
                                            ("只有美国一条在塌", "单位经济性还在恶化")),
             "ZYN slides to words": (zyn_slides, zyn_bounces, ("一路降到公司只肯用措辞描述",)),
-            "the last figure is last quarter's": (zyn_slides, zyn_words_twice, ("当前值取的是上一季的",)),
+            # the section-three line no longer borrows last quarter's figure as the
+            # current one; the section-one line says when that figure was read
+            "the last figure is last quarter's": (zyn_slides, zyn_words_twice, ("上季设这条线时，最近一格读数是",)),
             "the only withdrawal": (noop, withdrawn_twice, ("这是记录里唯一一次撤回",)),
             "the withdrawal that kept the clause": (noop, no_withdrawal, ("撤回了全年预测，这句话跟着", "撤回除外")),
             "a reported quarter after the switch": (noop, q1_2023_adjusted, ("又回到报告口径",)),
@@ -1513,15 +1677,10 @@ class PmRollTest(unittest.TestCase):
         the quarters that have it rather than as a line of holes."""
         charts = {ex["title"].split("：")[0]: ex for ex in self.payload["sections"][2]["exhibits"][1:]}
         seg = self.full["segments"]
-        us = charts["美国分部调整后毛利率"]
-        self.assertEqual(len(us["xlabels"]), len(seg["periods"]))
-        self.assertIn(f"最早一季（{seg['period_labels'][0]}）起画", us["note"])
-        oi = charts["集团调整后经营利润率"]
-        held = [v for v in seg["adjusted_oi_margin_pct"] if v is not None]
-        self.assertEqual(len(oi["xlabels"]), len(held))
-        self.assertNotIn(None, oi["series"][0]["values"])
-        self.assertIn(f"这条线只有{cn_count(len(held))}个季度", oi["note"])
-        self.assertIn(seg["recast_filing"]["not_printed"]["adjusted_oi_margin"], oi["note"])
+        for name in ("美国分部调整后毛利率", "国际无烟分部调整后毛利率"):
+            chart = charts[name]
+            self.assertEqual(len(chart["xlabels"]), len(seg["periods"]))
+            self.assertIn(f"最早一季（{seg['period_labels'][0]}）起画", chart["note"])
         for chart in charts.values():
             self.assertNotIn("本节前", chart["note"])
         # once the recast is gone the segment lines fall back to the releases' window
@@ -1693,7 +1852,9 @@ class PmChecksTest(unittest.TestCase):
             self.assertEqual(bridge[key][0], value, key)
         printed = s["quarter_printed"]
         for key in ("organic_revenue_growth_pct", "isf_organic_revenue_growth_pct",
-                    "organic_operating_income_growth_pct", "combustible_pricing_pct"):
+                    "organic_operating_income_growth_pct", "combustible_pricing_pct",
+                    "isf_organic_gross_profit_growth_pct", "zyn_retail_value_share_pct",
+                    "ytd_organic_operating_income_growth_pct"):
             with self.subTest(printed=key):
                 self.assertEqual(printed[key], c[key])
 
@@ -1746,7 +1907,12 @@ class PmChecksTest(unittest.TestCase):
         self.assertEqual(rows[f"{year} 全年报告口径摊薄 EPS"][1], f"${fy['reported'][0]:.2f} – ${fy['reported'][1]:.2f}")
         self.assertEqual(rows[f"{year} 全年调整后摊薄 EPS"][1], f"${fy['adjusted'][0]:.2f} – ${fy['adjusted'][1]:.2f}")
         thresholds = next(t for t in self.payload["tables"] if "下季阈值" in t["title"])
-        organic = next(r for r in thresholds["rows"] if r[0] == "集团有机收入增速")
+        isf = next(r for r in thresholds["rows"] if r[0].startswith("国际无烟有机收入增速"))
+        self.assertEqual(isf[3], f"{c['isf_organic_revenue_growth_pct']:.1f}%")
+        leverage = next(r for r in thresholds["rows"] if r[0].startswith("净债务 / 调整后 EBITDA"))
+        self.assertEqual(leverage[3], f"{c['net_debt_to_adjusted_ebitda']:.2f}x")
+        settled = next(t for t in self.payload["tables"] if t["title"].startswith("上季阈值与本季实际"))
+        organic = next(r for r in settled["rows"] if r[0].startswith("集团有机收入增速"))
         self.assertEqual(organic[3], f"{c['organic_revenue_growth_pct']:.1f}%")
         for number in re.findall(r"\d+(?:\.\d+)?%", c["zyn_shipments_words"]):
             self.assertIn(number, self.s["zyn"]["shipment_words"][-1])

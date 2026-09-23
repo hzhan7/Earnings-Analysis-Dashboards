@@ -1,5 +1,5 @@
 {
-  "_provenance": "公司披露值逐项读自 SEC EDGAR 上 Philip Morris International Inc.（CIK 1413329）的申报文件：74 份季度业绩 8-K 的 EX-99.1 新闻稿（2008 年第一季度至 2026 年第二季度，全年与下季 EPS 指引、分部收入桥、经营指标）、10-K 与 10-Q 的 Segment Reporting 附注（按产品类别的净收入，2016–2025 年度值与 2025–2026 季度值），2026-03-13 按新分部重印 2023–2025 各季的 8-K（0001628280-26-017497，EX-99.1 与 EX-99.2，未经审计补充信息；分部净收入、毛利、调整后毛利率与 2023–2025 的合并毛利），以及 XBRL companyfacts （合并损益、经营现金流、资本开支、每股股息）。财季第四季无 10-Q，故其收入、毛利与经营利润为全年减去前九个月；每股收益不可加总，第四季读自当期新闻稿的 EPS 调节表。",
+  "_provenance": "公司披露值逐项读自 SEC EDGAR 上 Philip Morris International Inc.（CIK 1413329）的申报文件：74 份季度业绩 8-K 的 EX-99.1 新闻稿（2008 年第一季度至 2026 年第二季度，全年与下季 EPS 指引、分部收入桥、经营指标）、10-K 与 10-Q 的 Segment Reporting 附注（按产品类别的净收入，2016–2025 年度值与 2025–2026 季度值），2026-03-13 按新分部重印 2023–2025 各季的 8-K（0001628280-26-017497，EX-99.1 与 EX-99.2，未经审计补充信息；分部净收入、毛利、调整后毛利率与 2023–2025 的合并毛利），以及 XBRL companyfacts （合并损益、经营现金流、资本开支、每股股息）。财季第四季无 10-Q，故其收入、毛利与经营利润为全年减去前九个月；每股收益不可加总，第四季读自当期新闻稿的 EPS 调节表。杠杆率序列（leverage）读自 2016 年第一季至 2026 年第二季各季业绩 8-K 的杠杆率明细表，上半年经营现金流与资本开支（half_year_cash）读自各年第二季 10-Q，两块各自的 _provenance 写明读法与核对；美国 ZYN 零售价值份额读自 2026 年第二季度业绩演示文稿第 17 页。",
   "latest": {
     "period": "Q2 2026",
     "release_date": "2026-07-22",
@@ -2336,7 +2336,21 @@
         3836,
         5688,
         622
-      ]
+      ],
+      "printed_split": {
+        "volume_mix": [
+          -346,
+          399,
+          -542,
+          -203
+        ],
+        "other": [
+          140,
+          0,
+          140,
+          0
+        ]
+      }
     },
     "2026Q2": {
       "base": [
@@ -2413,6 +2427,271 @@
       "同比下降 23.5%，至 23 亿袋（1.55 亿罐）",
       "同比增长 1.8%，至 29 亿袋"
     ]
+  },
+  "leverage": {
+    "periods": [
+      "2016Q1",
+      "2016Q2",
+      "2016Q3",
+      "2016Q4",
+      "2017Q1",
+      "2017Q2",
+      "2017Q3",
+      "2017Q4",
+      "2018Q1",
+      "2018Q2",
+      "2018Q3",
+      "2018Q4",
+      "2019Q1",
+      "2019Q2",
+      "2019Q3",
+      "2019Q4",
+      "2020Q1",
+      "2020Q2",
+      "2020Q3",
+      "2020Q4",
+      "2021Q1",
+      "2021Q2",
+      "2021Q3",
+      "2021Q4",
+      "2022Q1",
+      "2022Q2",
+      "2022Q3",
+      "2022Q4",
+      "2023Q1",
+      "2023Q2",
+      "2023Q3",
+      "2023Q4",
+      "2024Q1",
+      "2024Q2",
+      "2024Q3",
+      "2024Q4",
+      "2025Q1",
+      "2025Q2",
+      "2025Q3",
+      "2025Q4",
+      "2026Q1",
+      "2026Q2"
+    ],
+    "period_labels": [
+      "Q1 2016",
+      "Q2 2016",
+      "Q3 2016",
+      "Q4 2016",
+      "Q1 2017",
+      "Q2 2017",
+      "Q3 2017",
+      "Q4 2017",
+      "Q1 2018",
+      "Q2 2018",
+      "Q3 2018",
+      "Q4 2018",
+      "Q1 2019",
+      "Q2 2019",
+      "Q3 2019",
+      "Q4 2019",
+      "Q1 2020",
+      "Q2 2020",
+      "Q3 2020",
+      "Q4 2020",
+      "Q1 2021",
+      "Q2 2021",
+      "Q3 2021",
+      "Q4 2021",
+      "Q1 2022",
+      "Q2 2022",
+      "Q3 2022",
+      "Q4 2022",
+      "Q1 2023",
+      "Q2 2023",
+      "Q3 2023",
+      "Q4 2023",
+      "Q1 2024",
+      "Q2 2024",
+      "Q3 2024",
+      "Q4 2024",
+      "Q1 2025",
+      "Q2 2025",
+      "Q3 2025",
+      "Q4 2025",
+      "Q1 2026",
+      "Q2 2026"
+    ],
+    "net_debt_to_adjusted_ebitda": [
+      2.43,
+      2.4,
+      2.31,
+      2.15,
+      2.28,
+      2.22,
+      2.26,
+      2.09,
+      2.22,
+      1.95,
+      2.0,
+      2.04,
+      2.2,
+      2.08,
+      2.03,
+      1.91,
+      1.91,
+      2.03,
+      1.96,
+      1.93,
+      1.92,
+      1.74,
+      1.73,
+      1.62,
+      1.74,
+      1.64,
+      1.58,
+      2.89,
+      3.33,
+      3.24,
+      3.17,
+      3.16,
+      3.19,
+      3.02,
+      2.97,
+      2.66,
+      2.82,
+      2.85,
+      2.69,
+      2.53,
+      2.61,
+      2.35
+    ],
+    "net_debt_usd_m": [
+      26849.0,
+      26155.0,
+      25203.0,
+      24828.0,
+      26270.0,
+      25550.0,
+      26308.0,
+      25892.0,
+      27648.0,
+      25078.0,
+      25886.0,
+      25166.0,
+      27183.0,
+      25881.0,
+      25309.0,
+      24184.0,
+      24624.0,
+      25428.0,
+      24669.0,
+      24256.0,
+      25496.0,
+      24243.0,
+      24614.0,
+      23310.0,
+      24735.0,
+      23016.0,
+      21853.0,
+      39916.0,
+      44693.0,
+      44401.0,
+      44698.0,
+      44849.0,
+      46419.0,
+      44332.0,
+      44964.0,
+      41479.0,
+      45136.0,
+      47324.0,
+      46045.0,
+      43963.0,
+      46498.0,
+      43114.0
+    ],
+    "adjusted_ebitda_ttm_usd_m": [
+      11030.0,
+      10891.0,
+      10913.0,
+      11558.0,
+      11503.0,
+      11496.0,
+      11624.0,
+      12378.0,
+      12449.0,
+      12854.0,
+      12957.0,
+      12320.0,
+      12378.0,
+      12464.0,
+      12471.0,
+      12635.0,
+      12920.0,
+      12507.0,
+      12565.0,
+      12582.0,
+      13284.0,
+      13941.0,
+      14239.0,
+      14371.0,
+      14251.0,
+      14055.0,
+      13840.0,
+      13802.0,
+      13428.0,
+      13703.0,
+      14111.0,
+      14193.0,
+      14570.0,
+      14700.0,
+      15130.0,
+      15580.0,
+      16000.0,
+      16600.0,
+      17131.0,
+      17375.0,
+      17795.0,
+      18359.0
+    ],
+    "_provenance": "每一格读自该季业绩 8-K 的杠杆率明细表「Calculation of Total Debt to Adjusted EBITDA and Net Debt to Adjusted EBITDA Ratios」（2016 年第一季至 2022 年第四季在 EX-99.1，2023 年第一季起在 EX-99.2），取当季那一列：Net Debt、12 个月滚动 Adjusted EBITDA（第四季为全年列）与印出的 Net Debt to Adjusted EBITDA。42 格全部满足 净债务 ÷ 调整后 EBITDA 四舍五入到两位 = 印出的比率；每个年末比率又作为比较列印在其后四份新闻稿里，逐一相同。未经事后重述：每格是当时定义下的当期印出值。"
+  },
+  "half_year_cash": {
+    "years": [
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ],
+    "h1_operating_cash_flow_usd_m": [
+      2836.0,
+      4071.0,
+      5373.0,
+      4683.0,
+      3036.0,
+      4065.0,
+      4642.0,
+      2487.0,
+      4873.0,
+      3062.0,
+      5093.0
+    ],
+    "h1_capex_usd_m": [
+      480.0,
+      560.0,
+      774.0,
+      502.0,
+      310.0,
+      307.0,
+      478.0,
+      639.0,
+      787.0,
+      760.0,
+      733.0
+    ],
+    "_provenance": "上半年（1–6 月）经营活动现金净流入与购置不动产、厂房及设备支出，读自各年第二季 10-Q 的现金流量表（XBRL companyfacts：NetCashProvidedByUsedInOperatingActivities、PaymentsToAcquirePropertyPlantAndEquipment）。2016–2025 每个值都在当年与次年两份第二季 10-Q 里各印一次，逐一相同；2026 年的读数另与 10-Q 正文现金流量表（5,093 / (733)）及 EX-99.2 Schedule 17（上半年经营现金流 5,093）核对相同。下半年 = annual 块的全年值 − 上半年，两条腿都是申报值。"
   },
   "followup_closure": {
     "period": "Q2 2026",
@@ -2564,11 +2843,17 @@
     ],
     "unsettleable": [
       {
-        "name": "美国 ZYN 零售出货连续 4 周低于 +5%（减仓线）",
+        "metric": "美国 ZYN 零售出货连续 4 周低于 +5%（减仓线）",
+        "direction": "up",
+        "threshold": 5.0,
+        "unit": "pct",
         "why": "Nielsen 的周度读数公司不披露，本季只有一句措辞，无法判断是否连续 4 周低于 5%"
       },
       {
-        "name": "全年有机增速 ≥ +9%（加仓线）",
+        "metric": "全年有机增速 ≥ +9%（加仓线）",
+        "direction": "up",
+        "threshold": 9.0,
+        "unit": "pct",
         "why": "按全年结算，要等第四季新闻稿"
       }
     ],
@@ -2588,69 +2873,130 @@
     "period": "Q2 2026",
     "quantified": [
       {
-        "metric": "美国分部调整后毛利率",
-        "direction": "up",
-        "threshold": 63.0,
-        "measure": "segment_gm_us",
-        "unit": "pct"
-      },
-      {
-        "metric": "国际无烟分部调整后毛利率",
-        "direction": "up",
-        "threshold": 69.0,
-        "measure": "segment_gm_isf",
-        "unit": "pct"
-      },
-      {
-        "metric": "集团调整后经营利润率",
-        "direction": "up",
-        "threshold": 41.0,
-        "measure": "adjusted_oi_margin",
-        "unit": "pct"
-      },
-      {
-        "metric": "美国 ZYN 零售出货同比（Nielsen）",
+        "metric": "美国 ZYN 零售出货同比（修复线）",
         "direction": "up",
         "threshold": 8.0,
-        "measure": "zyn_offtake",
-        "unit": "pct"
-      },
-      {
-        "metric": "集团有机收入增速",
-        "direction": "up",
-        "threshold": 5.0,
-        "measure": "organic_growth",
         "unit": "pct",
-        "company_basis": "公司全年有机收入指引区间的下限"
+        "measure": "zyn_offtake"
       },
       {
-        "metric": "国际无烟分部有机收入增速",
+        "metric": "美国 ZYN 零售价值份额（修复线）",
+        "direction": "up",
+        "threshold": 57.0,
+        "unit": "pct",
+        "measure": "zyn_share"
+      },
+      {
+        "metric": "美国 ZYN 零售价值份额（受损线）",
+        "direction": "up",
+        "threshold": 54.0,
+        "unit": "pct",
+        "measure": "zyn_share"
+      },
+      {
+        "metric": "美国分部调整后毛利率（改善线）",
+        "direction": "up",
+        "threshold": 67.0,
+        "unit": "pct",
+        "measure": "segment_gm_us"
+      },
+      {
+        "metric": "美国分部调整后毛利率（警示线）",
+        "direction": "up",
+        "threshold": 63.0,
+        "unit": "pct",
+        "measure": "segment_gm_us"
+      },
+      {
+        "metric": "国际无烟有机收入增速（护城河线）",
         "direction": "up",
         "threshold": 10.0,
-        "measure": "isf_organic_growth",
-        "unit": "pct"
+        "unit": "pct",
+        "measure": "isf_organic_growth"
+      },
+      {
+        "metric": "国际无烟毛利有机增速领先收入（护城河线）",
+        "direction": "up",
+        "threshold": 2.0,
+        "unit": "pp",
+        "measure": "isf_gp_lead"
+      },
+      {
+        "metric": "国际无烟分部调整后毛利率（转弱线）",
+        "direction": "up",
+        "threshold": 69.0,
+        "unit": "pct",
+        "measure": "segment_gm_isf"
+      },
+      {
+        "metric": "集团有机经营利润增速（上行线）",
+        "direction": "up",
+        "threshold": 9.0,
+        "unit": "pct",
+        "measure": "organic_oi_growth"
+      },
+      {
+        "metric": "集团有机经营利润增速（重新评估线）",
+        "direction": "up",
+        "threshold": 7.0,
+        "unit": "pct",
+        "measure": "organic_oi_growth"
+      },
+      {
+        "metric": "净债务 / 调整后 EBITDA（年末线）",
+        "direction": "down",
+        "threshold": 2.15,
+        "unit": "times",
+        "measure": "leverage"
       }
     ],
+    "awaiting": [
+      {
+        "metric": "第三季调整后摊薄 EPS（上行线）",
+        "direction": "up",
+        "threshold": 2.25,
+        "unit": "usd_eps",
+        "measure": "next_quarter_eps"
+      },
+      {
+        "metric": "第三季调整后摊薄 EPS（重新评估线）",
+        "direction": "up",
+        "threshold": 2.2,
+        "unit": "usd_eps",
+        "measure": "next_quarter_eps"
+      },
+      {
+        "metric": "下半年经营现金流（兑现线）",
+        "direction": "up",
+        "threshold": 8000.0,
+        "unit": "usd_m",
+        "measure": "h2_ocf"
+      }
+    ],
+    "unmeasurable": [
+      {
+        "metric": "美国 ZYN 零售出货连续两季同比 ≤0%（受损线）",
+        "direction": "up",
+        "threshold": 0.0,
+        "unit": "pct",
+        "why": "要两个连续季度的数字才能判断，本季公司只给措辞"
+      }
+    ],
+    "joint": [
+      "第 1 行的修复条件是零售出货与份额两条同时满足，受损条件是任一条成立",
+      "第 3 行的护城河条件是有机收入增速与毛利领先两条同时满足",
+      "第 4 行的上行条件是第三季 EPS 与有机经营利润两条同时满足，重新评估是任一条成立"
+    ],
     "not_tracked": [
-      {
-        "name": "ZYN 美国零售价值份额",
-        "why": "本季约 57% 这个数只出现在业绩电话会上，业绩新闻稿里没有，本站不发布只在网络直播里出现、无法与第二个来源核对的数字。",
-        "note": "ZYN 美国零售价值份额（只在电话会上给出）"
-      },
-      {
-        "name": "净债务 / 调整后 EBITDA",
-        "why": "公司每季在业绩 8-K 的 EX-99.2（Schedule 16）按滚动十二个月印出这个比率，本季 2.35×（2025 年末 2.53×）；公司自己给的目标（2026 年底接近 2.0×）写在指引假设里。本页暂不把它画成线，只记在这里。",
-        "note": "净债务 / 调整后 EBITDA（公司在业绩 8-K 的 EX-99.2 里按滚动十二个月印出，本页暂未画成线）"
-      },
       {
         "name": "ZYN Ultra 的净增量与自我蚕食",
         "why": "公司明确以「只有两周数据、竞争敏感」为由不量化。",
         "note": "ZYN Ultra 的净增量与自我蚕食（公司明确拒绝量化）"
       },
       {
-        "name": "本季自由现金流",
-        "why": "第二季 10-Q 于新闻稿发布两天后才提交，本页现金流序列因此只到年度层面。",
-        "note": "季度自由现金流（第二季 10-Q 在新闻稿两天后才提交，本页现金流序列只到年度层面）"
+        "name": "下半年美国投入的金额",
+        "why": "公司只说下半年加大美国投入，没有给金额、渠道构成或毛利率底线。",
+        "note": "下半年美国投入的金额（公司没有给数字）"
       }
     ]
   },
@@ -2659,7 +3005,19 @@
     "organic_revenue_growth_pct": 7.6,
     "isf_organic_revenue_growth_pct": 11.8,
     "organic_operating_income_growth_pct": 10.7,
-    "combustible_pricing_pct": 10.0
+    "combustible_pricing_pct": 10.0,
+    "isf_organic_gross_profit_growth_pct": 14.6,
+    "ytd_organic_operating_income_growth_pct": 6.1,
+    "zyn_retail_value_share_pct": 57.1,
+    "sources": {
+      "organic_revenue_growth_pct": "业绩 8-K EX-99.1 Results Highlights",
+      "isf_organic_revenue_growth_pct": "业绩 8-K EX-99.1 International Smoke-Free 段",
+      "isf_organic_gross_profit_growth_pct": "业绩 8-K EX-99.1 Gross Profit 表 Organic growth 行",
+      "organic_operating_income_growth_pct": "业绩 8-K EX-99.1 Results Highlights",
+      "ytd_organic_operating_income_growth_pct": "业绩 8-K EX-99.1 First Six Months 表",
+      "combustible_pricing_pct": "业绩 8-K EX-99.1 International Combustibles 段",
+      "zyn_retail_value_share_pct": "同日业绩演示文稿第 17 页（U.S. ZYN Retail Value Share，Nielsen）"
+    }
   },
   "guidance_other": {
     "period": "Q2 2026",
@@ -2697,12 +3055,18 @@
       ]
     ],
     "capex_low_usd_m": 1400.0,
-    "capex_high_usd_m": 1600.0
+    "capex_high_usd_m": 1600.0,
+    "operating_cash_flow_usd_m": 13500.0,
+    "net_debt_to_ebitda_target": 2.0
   },
   "quarter_story": {
     "period": "Q2 2026",
     "us_gross_margin_reason": "公司给的原因是产能扩张带来的更高制造成本、雪茄业务下滑，以及 Wellness 的确认节奏。",
-    "us_investment": "本季管理层说要在美国「加大投入」"
+    "us_investment": "本季管理层说要在美国「加大投入」",
+    "gaap_one_off": {
+      "name": "RBH 权益投资的非现金减值",
+      "eps_usd": 0.33
+    }
   },
   "sources": [
     {
@@ -2714,8 +3078,16 @@
       "url": "https://www.sec.gov/Archives/edgar/data/1413329/000162828026049107/glossaryselectfininfoandno.htm"
     },
     {
-      "label": "PMI 截至 2026-06-30 的 Form 10-Q（分部与按产品类别的净收入附注）",
+      "label": "PMI 截至 2026-06-30 的 Form 10-Q（分部与按产品类别的净收入附注、上半年现金流量表）",
       "url": "https://www.sec.gov/Archives/edgar/data/1413329/000162828026049493/pm-20260630.htm"
+    },
+    {
+      "label": "PMI 2026 年第二季度业绩页（含业绩演示文稿：第 17 页 U.S. ZYN Retail Value Share）",
+      "url": "https://www.pmi.com/investor-relations/press-releases-and-events/2026-q2-results"
+    },
+    {
+      "label": "PMI 2026-05-20 8-K（Item 5.02：Massimo Andolina 于 2026-08-01 接任集团 CFO）",
+      "url": "https://www.sec.gov/Archives/edgar/data/1413329/000162828026036721/pm-20260518.htm"
     },
     {
       "label": "PMI 2026-03-13 8-K EX-99.1：按新分部重印的 2025 与 2024 各季（Recast Shipment Volume and Unaudited Financial Information 2025 vs. 2024）",
@@ -2812,61 +3184,193 @@
     },
     "zyn_shipments_words": "increased by 1.8% to 2.9 billion pouches",
     "zyn_offtake_words": "flat to slightly growing versus the prior year",
-    "source": "PMI 8-K（0001628280-26-049107）EX-99.1，标题「Philip Morris International Reports 2026 Second-Quarter & First Six-Months Results and Updates 2026 Full-Year Adjusted Diluted EPS Forecast for Currency Only」、日期行「STAMFORD, CT, July 22, 2026」：Results Highlights（Net revenues increased by 10.4% (7.6% organically)；international smoke-free net revenue growth of 14.2% (11.8% organically)）；U.S. Segment 段（ZYN offtake volumes were flat to slightly growing versus the prior year；ZYN shipments increased by 1.8% to 2.9 billion pouches）；EPS 调节表（Reported 1.80 / 1.95，Adjusted 2.20 / 1.91）；2026 Full-Year Forecast 表（7.19–7.34、8.26–8.41、Less: Currency 0.15、8.11–8.26）与假设段（Third quarter adjusted diluted EPS of $2.20 to $2.25, including an estimated unfavorable currency impact of 8 cents）；Second-Quarter 2026 Operating Review 的 Net Revenues 表（10,140 → 11,192：Price 689、Volume/Mix/Other 81、Acquisitions & Divestitures (17)、Currency 299；分部 3,877 / 6,459 / 856）、Gross Profit 表（2,716 / 4,388 / 555；Adj. Gross Profit Margin 68.5% / 70.1% / 67.9% / 65.4%，vs. Q2 2025 0.7 / 1.8 / 1.0 / (6.0)pp）与 PMI 表（Gross Profit 7,659 / 6,866；Operating Income 4,530 / 3,712；Adj. Operating Income 4,773；Adj. OI Margin 42.6% / 41.9%）；Results Highlights「Operating income increased by 22.0% (10.7% organically)」与 Second-Quarter 2026 Performance Highlights 表 Operating Income 的「organic vs. Q2 2025 10.7%」；International Combustibles 段「driven by an exceptional quarter of 10.0% pricing」。",
+    "source": "PMI 8-K（0001628280-26-049107）EX-99.1，标题「Philip Morris International Reports 2026 Second-Quarter & First Six-Months Results and Updates 2026 Full-Year Adjusted Diluted EPS Forecast for Currency Only」、日期行「STAMFORD, CT, July 22, 2026」：Results Highlights（Net revenues increased by 10.4% (7.6% organically)；international smoke-free net revenue growth of 14.2% (11.8% organically)）；U.S. Segment 段（ZYN offtake volumes were flat to slightly growing versus the prior year；ZYN shipments increased by 1.8% to 2.9 billion pouches）；EPS 调节表（Reported 1.80 / 1.95，Adjusted 2.20 / 1.91）；2026 Full-Year Forecast 表（7.19–7.34、8.26–8.41、Less: Currency 0.15、8.11–8.26）与假设段（Third quarter adjusted diluted EPS of $2.20 to $2.25, including an estimated unfavorable currency impact of 8 cents）；Second-Quarter 2026 Operating Review 的 Net Revenues 表（10,140 → 11,192：Price 689、Volume/Mix/Other 81、Acquisitions & Divestitures (17)、Currency 299；分部 3,877 / 6,459 / 856）、Gross Profit 表（2,716 / 4,388 / 555；Adj. Gross Profit Margin 68.5% / 70.1% / 67.9% / 65.4%，vs. Q2 2025 0.7 / 1.8 / 1.0 / (6.0)pp）与 PMI 表（Gross Profit 7,659 / 6,866；Operating Income 4,530 / 3,712；Adj. Operating Income 4,773；Adj. OI Margin 42.6% / 41.9%）；Results Highlights「Operating income increased by 22.0% (10.7% organically)」与 Second-Quarter 2026 Performance Highlights 表 Operating Income 的「organic vs. Q2 2025 10.7%」；International Combustibles 段「driven by an exceptional quarter of 10.0% pricing」；Gross Profit 表 International Smoke-Free 列「Organic growth 14.6%」；EX-99.2 Schedule 16（Net Debt to Adjusted EBITDA 2.35 / 2.53）；Form 10-Q（0001628280-26-049493）简明合并现金流量表「Net cash provided by (used in) operating activities 5,093」「Capital expenditures (733)」；同日业绩演示文稿第 17 页「Retail Value Share: 57.1%」；First Six Months 2026 Performance Highlights 表 Operating Income「organic vs. YTD 2025 6.1%」。",
     "checked_on": "2026-09-19",
     "organic_operating_income_growth_pct": 10.7,
     "combustible_pricing_pct": 10.0,
-    "note_followup_verdicts": [
-      "已验证，但量化未完成",
-      "部分验证",
-      "偏空验证",
-      "已验证",
-      "未上修底层框架",
-      "原推断被证伪",
-      "仍未披露",
-      "已验证",
-      "已验证",
-      "部分验证",
-      "部分验证",
-      "已验证"
-    ],
-    "note_prior_thresholds": [
-      {
-        "row": 2,
-        "direction": "up",
-        "threshold": 15.0
+    "isf_organic_gross_profit_growth_pct": 14.6,
+    "zyn_retail_value_share_pct": 57.1,
+    "net_debt_to_adjusted_ebitda": 2.35,
+    "prior_year_end_net_debt_to_adjusted_ebitda": 2.53,
+    "h1_operating_cash_flow_usd_m": 5093,
+    "h1_capex_usd_m": 733,
+    "note": {
+      "source": "本季：2026-07-22 PM Q2 2026 vs Q1 2026 Analysis 第 0 节「上季遗留问题回答」（验证结果列）与第 8 节「关键观察指标」「未来1年量化跟踪表」5 行；上季：2026-04-23 PM Q1 2026 vs Q4 2025 Analysis 「7.2 下季度（Q2 2026）关键跟踪问题」12 条与「七.6 关键观察指标（补充板块 8）」5 行。",
+      "checked_on": "2026-09-23",
+      "followup_closure": {
+        "total": 12,
+        "verdict_counts": {
+          "已验证": 5,
+          "部分验证": 3,
+          "偏空验证": 1,
+          "未上修": 1,
+          "被证伪": 1,
+          "仍未披露": 1
+        },
+        "verdicts": [
+          "已验证，但量化未完成",
+          "部分验证",
+          "偏空验证",
+          "已验证",
+          "未上修底层框架",
+          "原推断被证伪",
+          "仍未披露",
+          "已验证",
+          "已验证",
+          "部分验证",
+          "部分验证",
+          "已验证"
+        ]
       },
-      {
-        "row": 3,
-        "direction": "up",
-        "threshold": 5.0
-      },
-      {
-        "row": 3,
-        "direction": "up",
-        "threshold": 3.0
-      },
-      {
-        "row": 3,
-        "direction": "up",
-        "threshold": 5.0
-      },
-      {
-        "row": 3,
-        "direction": "up",
-        "threshold": 3.0
-      },
-      {
-        "row": 5,
-        "direction": "up",
-        "threshold": 6.0
-      },
-      {
-        "row": 5,
-        "direction": "up",
-        "threshold": 4.0
-      }
-    ],
-    "note_source": "本季本地分析稿（2026-07-22，Q2 2026 vs Q1 2026）第 0 节「上季遗留问题回答」的「验证结果」列；上季本地分析稿（2026-04-23，Q1 2026 vs Q4 2025）「七.6 关键观察指标」第 2 行（ZYN 零售增速 Q2 ≥ +15%）、第 3 行（有机营收与 OI：≥ +5% 加仓、< +3% 警示，营收与 OI 各一条）、第 5 行（组合烟草定价 ≥ +6% 加仓、< +4% 警示）。"
+      "prior_thresholds": [
+        {
+          "metric": "美国 ZYN 零售出货同比（加仓线）",
+          "threshold": 15.0,
+          "direction": "up",
+          "row": 2
+        },
+        {
+          "metric": "美国 ZYN 零售出货连续 4 周低于 +5%（减仓线）",
+          "threshold": 5.0,
+          "direction": "up",
+          "row": 2
+        },
+        {
+          "metric": "集团有机收入增速（加仓线）",
+          "threshold": 5.0,
+          "direction": "up",
+          "row": 3
+        },
+        {
+          "metric": "集团有机经营利润增速（加仓线）",
+          "threshold": 5.0,
+          "direction": "up",
+          "row": 3
+        },
+        {
+          "metric": "全年有机增速 ≥ +9%（加仓线）",
+          "threshold": 9.0,
+          "direction": "up",
+          "row": 3
+        },
+        {
+          "metric": "集团有机收入增速（警示线）",
+          "threshold": 3.0,
+          "direction": "up",
+          "row": 3
+        },
+        {
+          "metric": "集团有机经营利润增速（警示线）",
+          "threshold": 3.0,
+          "direction": "up",
+          "row": 3
+        },
+        {
+          "metric": "国际组合烟草定价（加仓线）",
+          "threshold": 6.0,
+          "direction": "up",
+          "row": 5
+        },
+        {
+          "metric": "国际组合烟草定价（警示线）",
+          "threshold": 4.0,
+          "direction": "up",
+          "row": 5
+        }
+      ],
+      "next_thresholds": [
+        {
+          "metric": "美国 ZYN 零售出货同比（修复线）",
+          "threshold": 8.0,
+          "direction": "up",
+          "row": 1
+        },
+        {
+          "metric": "美国 ZYN 零售价值份额（修复线）",
+          "threshold": 57.0,
+          "direction": "up",
+          "row": 1
+        },
+        {
+          "metric": "美国 ZYN 零售出货连续两季同比 ≤0%（受损线）",
+          "threshold": 0.0,
+          "direction": "up",
+          "row": 1
+        },
+        {
+          "metric": "美国 ZYN 零售价值份额（受损线）",
+          "threshold": 54.0,
+          "direction": "up",
+          "row": 1
+        },
+        {
+          "metric": "美国分部调整后毛利率（改善线）",
+          "threshold": 67.0,
+          "direction": "up",
+          "row": 2
+        },
+        {
+          "metric": "美国分部调整后毛利率（警示线）",
+          "threshold": 63.0,
+          "direction": "up",
+          "row": 2
+        },
+        {
+          "metric": "国际无烟有机收入增速（护城河线）",
+          "threshold": 10.0,
+          "direction": "up",
+          "row": 3
+        },
+        {
+          "metric": "国际无烟毛利有机增速领先收入（护城河线）",
+          "threshold": 2.0,
+          "direction": "up",
+          "row": 3
+        },
+        {
+          "metric": "国际无烟分部调整后毛利率（转弱线）",
+          "threshold": 69.0,
+          "direction": "up",
+          "row": 3
+        },
+        {
+          "metric": "第三季调整后摊薄 EPS（上行线）",
+          "threshold": 2.25,
+          "direction": "up",
+          "row": 4
+        },
+        {
+          "metric": "集团有机经营利润增速（上行线）",
+          "threshold": 9.0,
+          "direction": "up",
+          "row": 4
+        },
+        {
+          "metric": "第三季调整后摊薄 EPS（重新评估线）",
+          "threshold": 2.2,
+          "direction": "up",
+          "row": 4
+        },
+        {
+          "metric": "集团有机经营利润增速（重新评估线）",
+          "threshold": 7.0,
+          "direction": "up",
+          "row": 4
+        },
+        {
+          "metric": "下半年经营现金流（兑现线）",
+          "threshold": 8000.0,
+          "direction": "up",
+          "row": 5
+        },
+        {
+          "metric": "净债务 / 调整后 EBITDA（年末线）",
+          "threshold": 2.15,
+          "direction": "down",
+          "row": 5
+        }
+      ]
+    },
+    "ytd_organic_operating_income_growth_pct": 6.1
   }
 }
