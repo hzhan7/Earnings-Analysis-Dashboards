@@ -5894,50 +5894,55 @@
   "prior_kpi_settlement": {
     "period": "Q2 2026",
     "set_in": "Q1 2026",
-    "_note": "上季（Q1 2026）本地分析第 8 节「关键观察指标」共 5 条。quantified 是本页读得到数字的 3 条：阈值与方向逐字取自那一节，reads 指明 build/cboe.py 从本 series 哪条序列现算本季读数（这里不存读数）；settles 写着以后才结算的，只进阈值表、不进余量图。not_carried 是另外 2 条（电话会口径、不是数字）及原因。下一季换季时，这一块由本季的 next_kpi.quantified 原样搬来。",
+    "_note": "上季（Q1 2026）本地分析第 8 节「关键观察指标」共 5 条。quantified 是本页读得到数字的 3 条：阈值与方向逐字取自那一节，row 是它在第 8 节表里的行号，reads 指明 build/cboe.py 从本 series 哪条序列现算本季读数（这里不存读数），basis 不写「上季 / 本季」—— 由 builder 按所在板块加上；settles 写着以后才结算的，只进阈值表、不进余量图。not_carried 是另外 2 条（电话会口径、期限）及原因。下一季换季时，这一块由本季的 next_kpi.quantified 与 not_carried 原样搬来。",
     "quantified": [
       {
         "id": "organic_growth",
         "reads": "net_revenue_yoy",
+        "row": 1,
         "metric": "净收入同比增速",
         "direction": "up",
         "threshold": 10.0,
         "unit": "pct",
-        "basis": "上季第 8 节 #1：FY26 有机净收入增速（underlying，剔除 Section 31）低于 +10% → 减仓",
+        "basis": "第 8 节 #1：FY26 有机净收入增速（underlying，剔除 Section 31）低于 +10% → 减仓",
         "caveat": "上季这一条写在全年「有机」增速上：全年实际要到 FY2026 结束才有，公司也从不印有机增速的实际值；本季那一份本地分析在第 0 节用本季同比读它、判「未触发」，并指出「剔除 Section 31」的前提本身是错的 —— 规费两边同进同出（见 Exhibit {EX_WEDGE}）。"
       },
       {
         "id": "ml_share",
         "reads": "ml_share",
+        "row": 2,
         "metric": "Multi-listed 期权市占",
         "direction": "up",
         "threshold": 22.0,
         "unit": "pct",
-        "basis": "上季第 8 节 #2：Q2 低于 22% = 趋势恶化 → 警示",
+        "basis": "第 8 节 #2：Q2 低于 22% = 趋势恶化 → 警示",
         "caveat": "本季那一份本地分析在第 0 节说这条阈值「设计有缺陷」（份额涨、收入跌），已退役，改成第三节的 multi-listed 日均收入。"
       },
       {
         "id": "fy_adj_opex",
         "reads": "fy_adj_opex",
+        "row": 4,
         "metric": "全年调整后营业费用（FY2026）",
         "direction": "down",
         "threshold": 860.0,
         "unit": "usd_m",
         "settles": "Q4 2026",
-        "basis": "上季第 8 节 #4：FY26 实际高于 $860M = realignment 执行延迟 → 警示"
+        "basis": "第 8 节 #4：FY26 实际高于 $860M = realignment 执行延迟 → 警示"
       }
     ],
     "not_carried": [
       {
         "metric": "SPX 期权日均成交量",
-        "basis": "上季第 8 节 #3",
+        "row": 3,
+        "basis": "第 8 节 #3",
         "rule": "Q2 SPX 低于 4.5M → 警示",
         "short_why": "只在电话会上有",
         "why": "SPX 这一产品级的量不在本季业绩新闻稿里（全文没有「SPX」），10-Q 也只在释义与业务描述里提到 SPX；它只在电话会上说过，本页不发布电话会数字。申报里最近的一行是指数期权 ADV，那是另一个量，本页不拿它顶替"
       },
       {
         "metric": "事件合约的批准与上线",
-        "basis": "上季第 8 节 #5",
+        "row": 5,
+        "basis": "第 8 节 #5",
         "rule": "2026-12-31 前 securities-based 事件合约未获批 → 重新评估",
         "short_why": "是期限，不是数字",
         "why": "这是一个期限，不是数字，没有可画的余量；本季 10-Q 记载 2026-06-23 已上线 Cboe Predicts 首批产品（见 Exhibit {EX_CLOSURE} 第 4 条）"
@@ -5946,47 +5951,75 @@
   },
   "next_kpi": {
     "period": "Q2 2026",
-    "description": "同样的问题指向下一季。上季那份分析的第一条阈值设在市占率上，本页按第二节的记录把它改写在日均收入上 —— 这是本页对那份分析唯一改动过的一条，理由全部在 Exhibit 里。",
-    "lead": "<b>其中第一条是本页这次唯一改动过的一条</b> —— 上季那份分析把它写在市占率上，本页按 Exhibit {EX_DIVERGE} 的记录改写在日均收入上。",
+    "for_period": "Q3 2026",
+    "_note": "阈值与方向逐字取自本季（Q2 2026）本地分析第 8 节「关键观察指标」top 5 与「立场撤销条件」；row 是它在第 8 节表里的行号（#5 一行拆成申报读得到的指数期权 ADV 与只在电话会的 SPX 两项）。当前值不存在这里 —— build/cboe.py 按 reads 从本 series 现算；环比条件写成倍数（本季 ÷ 上季 ≥ 1.00），因为「环比为负」的阈值是零增长，按百分比算的余量没有定义。consecutive：要连续这么多季才算触发；upside：另一头的加仓线。basis 不写「本季 / 上季」，由 builder 按所在板块加上。下一季换季时，quantified 与 not_carried 原样搬进 prior_kpi_settlement。",
     "quantified": [
       {
-        "metric": "Multi-listed 日均收入（US$M/日）",
-        "direction": "up",
-        "threshold": 1.1,
-        "unit": "usd_eps",
-        "current": 1.002,
-        "why": "阈值取上一季的水平 —— 连续两季低于它，才说明这不是一次波动。"
-      },
-      {
-        "metric": "指数期权日均收入（US$M/日）",
-        "direction": "up",
-        "threshold": 5.5,
-        "unit": "usd_eps",
-        "current": 5.916
-      },
-      {
+        "id": "net_revenue",
+        "reads": "net_revenue",
+        "row": 1,
         "metric": "季度净收入",
         "direction": "up",
         "threshold": 690.0,
         "unit": "usd_m",
-        "current": 731.6
+        "basis": "第 8 节 #1（立场撤销条件①）：Q3 净收入低于 $690M = 环比失速确认 → 减仓",
+        "upside": {
+          "above": 740.0,
+          "basis": "第 8 节 #1：高于 $740M = 指引保守、PDT 效应延续 → 加仓"
+        },
+        "caveat": "报告在同一栏还写了指引隐含的下半年单季区间 $678–727M —— 那是先把「mid to high teens」换算成 15%–19% 两个端点再倒推出来的，本站不做这一步，所以只画报告自己设的两条线。"
       },
       {
+        "id": "ml_daily_revenue_qoq",
+        "reads": "ml_daily_revenue_qoq",
+        "row": 2,
+        "metric": "Multi-listed 日均收入环比（本季 ÷ 上季）",
+        "direction": "up",
+        "threshold": 1.0,
+        "unit": "times",
+        "consecutive": 2,
+        "basis": "第 8 节 #2（立场撤销条件②）：multi-listed 日均收入（ADV × RPC）连续两季环比为负 = 价格战确认 → 减仓",
+        "caveat": "这一条接替被退役的市占阈值（第 0 节：份额涨、收入跌）。报告别处还写过两条水平线 —— 第 2 节 A3 #2「Q3 低于 $1.0M/日 → 减仓」、第 7 节洞察 2「回升至 $1.10M/日以上 → 风险解除」；本页按第 8 节的写法画「连续两季环比为负」。"
+      },
+      {
+        "id": "adj_opex",
+        "reads": "adj_opex",
+        "row": 4,
         "metric": "调整后营业费用（季）",
         "direction": "down",
         "threshold": 218.0,
         "unit": "usd_m",
-        "current": 216.7
+        "basis": "第 8 节 #4：Q3 调整后营业费用高于 $218M = 全年指引上限承压 → 警示"
       },
       {
-        "metric": "调整后营业利润率",
+        "id": "index_adv_qoq",
+        "reads": "index_adv_qoq",
+        "row": 5,
+        "metric": "指数期权 ADV 环比（本季 ÷ 上季）",
         "direction": "up",
-        "threshold": 68.0,
-        "unit": "pct",
-        "current": 70.4
+        "threshold": 1.0,
+        "unit": "times",
+        "basis": "第 8 节 #5：Index options ADV 环比转负 = 核心引擎见顶 → 减仓（立场撤销条件③要连续两季）"
       }
     ],
-    "excluded": "四条不接入本页：（1）<b>指引隐含的下半年单季收入区间</b> —— 要得到它必须先把「mid to high teens」这句话换算成 15%–19% 两个端点，而本站不做这一步（见口径说明）。能公布的是它的输入端而不是输出端：FY2025 净收入 US$2,429.1M 是公司在 2026-02-06 那期印出来的，四个季度 565.2 + 587.3 + 605.5 + 671.1 正好等于它，喂给本页的那份本地分析当时把 2025Q3 估成约 US$625M、全年估成约 US$2,449M，比申报值高了 US$19.9M。（2）<b>事件合约的上线时点与首季成交量</b> —— 不是数字，且公司明说 2026 指引未计入。（3）<b>Cboe Canada 与 Australia 的出售对价</b> —— 连续两季未披露，没有可跟踪的数。（4）<b>SPX 与 0DTE 的产品级成交量</b> —— 只在电话会里，不在申报表内。"
+    "not_carried": [
+      {
+        "metric": "事件合约是否按期上线",
+        "row": 3,
+        "basis": "第 8 节 #3",
+        "rule": "2026-12-31 前未上线 → 重新评估",
+        "short_why": "是期限，不是数字",
+        "why": "公司 KPI 事件合约的目标是 9 月末 / 10 月初上线（电话会说法）；这是一个期限，没有可画的余量。已经上线的是 2026-06-23 的 Cboe Predicts 首批产品（10-Q）"
+      },
+      {
+        "metric": "SPX 期权日均成交量",
+        "row": 5,
+        "basis": "第 8 节 #5 后半与第 0 节 KPI ③",
+        "rule": "SPX ADV 低于 5.0M → 警示（第 0 节由 4.5M 上调）",
+        "short_why": "只在电话会上有",
+        "why": "SPX 这一产品级的量不在业绩新闻稿与 10-Q 里，只在电话会上说过；本页画的是同一行里申报读得到的指数期权 ADV"
+      }
+    ]
   },
   "quarter_context": {
     "period": "Q2 2026",
@@ -5996,7 +6029,35 @@
       "source": "Cboe 2Q26 业绩新闻稿第 1 页与第 4 页指引脚注 (2)：「Given an expected third quarter sale completion for Cboe Australia, 2026 adjusted operating expenses guidance is being reduced by $11 million」；同一份的指引段写的是「Reaffirms adjusted operating expenses ... $838 to $853 million」。1Q26 新闻稿（2026-05-01）的同一条脚注里没有这句。"
     },
     "wedge_story": "喂给本页的那份本地分析上季正是这么错的，本季自己更正了过来。",
-    "call_only_note": "上一季那份本地分析里引用的若干口径 —— 例如 SPX 期权的日均成交量 —— 只出现在电话会里、不在业绩新闻稿的经营指标表内，因此不进本页的任何序列。"
+    "call_only_note": "上一季那份本地分析里引用的若干口径 —— 例如 SPX 期权的日均成交量 —— 只出现在电话会里、不在业绩新闻稿的经营指标表内，因此不进本页的任何序列。",
+    "quarter_moves": "报告第 1 节把这一季概括为「同比极强，环比全面失速」。它写「五个分部只有期权环比正增长」，是因为拿不到上季北美股票与期货的单独分部数、只算了两者合计（{nae_futures_qoq}）；上季新闻稿 Table 2 分开印着这两行，北美股票环比其实是 {seg_qoq:north_american_equities}、期货 {seg_qoq:futures}。",
+    "guidance_note": "报告第 1 节称资本开支上调是本季最被低估的变化；电话会上的解释是清算基础设施的增量投入与在通胀压力前提前采购硬件，折旧摊销下调是因为这批采购投产较晚（折旧推到 2027 年）。",
+    "undrawn": "画不了的：报告最重要的一条洞察 —— 上调后的全年指引仍隐含下半年单季低于第二季度 —— 要先把「mid to high teens」换算成 15%–19% 两个端点，本站不把文字换算成区间端点；它的两个申报输入是今年前{ytd_quarters}季的净收入 {ytd_net_revenue} 与 FY2025 净收入 {prior_year_net_revenue}（报告用的基数是把 2025Q3 插值成约 US$625M 的约 US$2,449M，申报的 2025Q3 是 {net_revenue_at:2025q3}）。PDT 规则废除带来的券商成交数据、公司 KPI 事件合约的申报与上线目标只在电话会上有数。"
+  },
+  "data_vantage_captions": {
+    "period": "Q2 2026",
+    "_note": "本季业绩新闻稿 Table 4「Net Revenue by Revenue Caption」Data Vantage 栏，三个月两列 [本季, 去年同季]。净收入不另存 —— categories.data_vantage 已有，build/cboe.py 核对 总收入 − 收入成本 与它一致。",
+    "access_and_capacity": [
+      115.6,
+      101.2
+    ],
+    "market_data": [
+      65.1,
+      56.4
+    ],
+    "other": [
+      0.9,
+      0.7
+    ],
+    "total_revenues": [
+      181.6,
+      158.3
+    ],
+    "cost_of_revenues": [
+      3.8,
+      3.2
+    ],
+    "call_note": "报告第 7 节洞察 3 的依据是电话会上的说法：约三分之二的增长来自接入相关收入，而接入需求主要来自期权交易所的连接性。前一半申报里查得到（就是这张图）；「需求来自期权成交」这一半只在电话会上，申报不做这个归因。"
   },
   "sources": [
     {
@@ -6283,7 +6344,7 @@
       "data_vantage_words": "low teens",
       "opex_reduced_for_australia_usd_m": 11
     },
-    "source": "Cboe 2Q26 业绩新闻稿（8-K EX-99.1，2026-07-31，acc 0001628280-26-051217，cboe-20260731xex991.htm）：电头「CHICAGO, IL – July 31, 2026」、「Record Net Revenue for the Quarter of $731.6 million, Up 25 percent」；Table 1（Operating Margin 65.1% / 57.7%，adjusted 70.4% / 63.7%）；Condensed Consolidated Statements of Income 三个月两栏（Total Revenues 1,442.8 / 1,173.5；Liquidity payments 453.7 / 418.0；Routing and clearing 20.8 / 20.7；Regulatory fees cost of revenues 153.9 / 85.3；Royalty fees and other 82.8 / 62.2；Total Cost of Revenues 711.2 / 586.2；Revenues Less Cost of Revenues 731.6 / 587.3；Total Operating Expenses 255.6 / 248.2；Operating Income 476.0 / 339.1；Net Income Allocated to Common Stockholders 351.8 / 233.9；Diluted 3.35 / 2.23；diluted shares 104.9 / 105.0）；正文 adjusted operating expenses 216.7 / 213.3、effective tax rate 28.6%、on adjusted earnings 28.5%；Table 2 分部两栏；Net Revenue by Revenue Caption（三类总收入减成本：680.9−268.2、580.3−439.2、181.6−3.8；去年 527.6−211.0、487.6−372.0、158.3−3.2；Regulatory fees 收入 164.6 / 96.8）；Key Performance Statistics 五季表的 2Q26 / 1Q26 / 2Q25 三列；Capital Management 段（adjusted cash 2,346.8，total debt 1,443.8，dividends 75.7 / $0.72，回购 32.6、约 127 千股、均价 $256.61）；2026 Fiscal Year Financial Guidance 段与脚注 (2)（$838–853M reaffirmed、reduced by $11 million for Cboe Australia；27.5–29.5%；capex $98–108M；D&A $54–58M；organic total 'mid to high teens'，Data Vantage 'low teens'）。adjusted diluted EPS 3.56 / 2.46 与 adjusted net income 373.6 / 257.8 见 Table 1。",
+    "source": "Cboe 2Q26 业绩新闻稿（8-K EX-99.1，2026-07-31，acc 0001628280-26-051217，cboe-20260731xex991.htm）：电头「CHICAGO, IL – July 31, 2026」、「Record Net Revenue for the Quarter of $731.6 million, Up 25 percent」；Table 1（Operating Margin 65.1% / 57.7%，adjusted 70.4% / 63.7%）；Condensed Consolidated Statements of Income 三个月两栏（Total Revenues 1,442.8 / 1,173.5；Liquidity payments 453.7 / 418.0；Routing and clearing 20.8 / 20.7；Regulatory fees cost of revenues 153.9 / 85.3；Royalty fees and other 82.8 / 62.2；Total Cost of Revenues 711.2 / 586.2；Revenues Less Cost of Revenues 731.6 / 587.3；Total Operating Expenses 255.6 / 248.2；Operating Income 476.0 / 339.1；Net Income Allocated to Common Stockholders 351.8 / 233.9；Diluted 3.35 / 2.23；diluted shares 104.9 / 105.0）；正文 adjusted operating expenses 216.7 / 213.3、effective tax rate 28.6%、on adjusted earnings 28.5%；Table 2 分部两栏；Net Revenue by Revenue Caption（三类总收入减成本：680.9−268.2、580.3−439.2、181.6−3.8；去年 527.6−211.0、487.6−372.0、158.3−3.2；Regulatory fees 收入 164.6 / 96.8）；Key Performance Statistics 五季表的 2Q26 / 1Q26 / 2Q25 三列；Capital Management 段（adjusted cash 2,346.8，total debt 1,443.8，dividends 75.7 / $0.72，回购 32.6、约 127 千股、均价 $256.61）；2026 Fiscal Year Financial Guidance 段与脚注 (2)（$838–853M reaffirmed、reduced by $11 million for Cboe Australia；27.5–29.5%；capex $98–108M；D&A $54–58M；organic total 'mid to high teens'，Data Vantage 'low teens'）。adjusted diluted EPS 3.56 / 2.46 与 adjusted net income 373.6 / 257.8 见 Table 1。Table 4「Net Revenue by Revenue Caption」Data Vantage 栏：Access and capacity fees 115.6 / 101.2；Market data fees 65.1 / 56.4；Other revenue 0.9 / 0.7；Total revenues 181.6 / 158.3；Royalty fees and other cost of revenues 3.8 / 3.2；Net revenue 177.8 / 155.1。",
     "checked_on": "2026-09-19",
     "note": {
       "source": {
@@ -6336,7 +6397,9 @@
           "metric": "季度净收入",
           "threshold": 690.0,
           "direction": "up",
-          "report": "#1（立场撤销条件①）：Q3 净收入 < $690M = 环比失速确认 → 减仓"
+          "upside_above": 740.0,
+          "report": "#1（立场撤销条件①）：Q3 净收入 < $690M = 环比失速确认 → 减仓；另一头 > $740M = 指引保守、PDT 效应延续 → 加仓",
+          "row": 1
         },
         {
           "id": "ml_daily_revenue_qoq",
@@ -6344,31 +6407,54 @@
           "threshold": 1.0,
           "direction": "up",
           "consecutive": 2,
-          "report": "#2（立场撤销条件②）：multi-listed 日均收入连续两季环比为负 = 价格战确认 → 减仓"
+          "report": "#2（立场撤销条件②）：multi-listed 日均收入连续两季环比为负 = 价格战确认 → 减仓",
+          "row": 2
         },
         {
           "id": "adj_opex",
           "metric": "调整后营业费用（季）",
           "threshold": 218.0,
           "direction": "down",
-          "report": "#4：Q3 调整后费用 > $218M = 全年指引上限承压 → 警示"
+          "report": "#4：Q3 调整后费用 > $218M = 全年指引上限承压 → 警示",
+          "row": 4
         },
         {
           "id": "index_adv_qoq",
           "metric": "指数期权 ADV 环比（本季 ÷ 上季）",
           "threshold": 1.0,
           "direction": "up",
-          "report": "#5：Index options ADV 环比转负 = 核心引擎见顶 → 减仓（立场撤销条件③要连续两季）"
+          "report": "#5：Index options ADV 环比转负 = 核心引擎见顶 → 减仓（立场撤销条件③要连续两季）",
+          "row": 5
         }
       ],
-      "next_upside": {
-        "net_revenue_above": 740.0,
-        "_report": "#1：Q3 净收入 > $740M = 指引保守、PDT 效应延续 → 加仓"
-      },
       "next_not_carried": {
         "count": 2,
         "_report": "#3 事件合约是否按期上线 + 首季可披露成交量（期限，不是数字）；#5 后半 SPX ADV（只在电话会；第 0 节 KPI ③ 把它的阈值上调到 5.0M）"
-      }
+      },
+      "next_rows": 5,
+      "_next_rows": "本季报告第 8 节 top 5 共 5 行；#5 一行拆成读得到的指数期权 ADV（画）与只在电话会的 SPX ADV（不画）。"
+    },
+    "data_vantage_usd_m": {
+      "access_and_capacity": [
+        115.6,
+        101.2
+      ],
+      "market_data": [
+        65.1,
+        56.4
+      ],
+      "other": [
+        0.9,
+        0.7
+      ],
+      "total_revenues": [
+        181.6,
+        158.3
+      ],
+      "cost_of_revenues": [
+        3.8,
+        3.2
+      ]
     }
   }
 }
