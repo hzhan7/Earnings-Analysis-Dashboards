@@ -96,6 +96,102 @@ class CmeDashboardTest(unittest.TestCase):
         cls.staging = json.loads(cme.STAGING_PATH.read_text(encoding="utf-8"))
         cls.payload = cme.build_payload(cls.staging)
 
+    # ── the four sections ───────────────────────────────────────────────────
+    def test_the_page_has_the_site_s_four_sections_in_order(self) -> None:
+        self.assertEqual(
+            [(section["id"], section["title"]) for section in self.payload["sections"]],
+            [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+             ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+        self.assertTrue(all(section["exhibits"] for section in self.payload["sections"]))
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列",
+                      self.payload["notes"][0])
+
+    def test_the_first_analysis_settles_only_the_company_s_guidance_and_says_so(self) -> None:
+        """The local analysis of Q2 2026 is the first one on CME.
+
+        Its section 0 reads "未找到上季遗留问题" and its section 8 "首次覆盖，无上季
+        KPI 可校准", so there is no follow-up list and no threshold to settle:
+        section one carries the capital-expenditure record alone and has to say
+        why, rather than look like a section that forgot its first half.
+        """
+        # What the report says about itself lives in `_checks["note"]`, keyed
+        # from the report; the series' own record has to agree with it.
+        note = self.staging["_checks"]["note"]
+        period = self.staging["period_labels"][-1]
+        first = note["source"]["previous_quarter"] is None
+        self.assertEqual(first, self.staging["analysis_record"]["first_period"] == period)
+        self.assertTrue(first, "this quarter's analysis has a previous one: section one must settle it")
+        self.assertEqual(note["followup_closure"]["total"], 0)
+        self.assertEqual(note["prior_thresholds"], [])
+        settled = next(s for s in self.payload["sections"] if s["id"] == "settled")
+        self.assertTrue(settled["description"].startswith(
+            f"本站对该公司的第一份季报分析是 {period}，没有上季留下的跟踪指标可结算；"))
+        self.assertEqual([ex["ref"] for ex in settled["exhibits"]], ["EX_CAPEX", "EX_CAPEX_DEV"])
+        for key in ("followup_closure", "prior_kpi_settlement"):
+            self.assertNotIn(key, self.staging)
+        # The capex sentence is not the filings' only target: the FY2025 10-K's
+        # next sentence states the regular-dividend target. The section names it
+        # and says why it is not settled, instead of calling capex the only one.
+        self.assertIn("派息目标", settled["description"])
+        for claim in ("只指引一个数", "唯一的那条指引", "唯一有申报出处的指引"):
+            self.assertNotIn(claim, published_text(self.payload))
+
+    def test_each_section_carries_the_charts_that_belong_to_it(self) -> None:
+        """Section two is the local analysis's conclusions about this quarter;
+        section four is the long record.
+
+        The collateral chart is that analysis's third insight -- a claim about
+        this quarter (what CME keeps rose while gross investment income fell)
+        -- and it used to sit among the ten-year series.
+        """
+        refs = {section["id"]: [ex["ref"] for ex in section["exhibits"]]
+                for section in self.payload["sections"]}
+        self.assertEqual(refs["quarter_highlights"],
+                         ["EX_MIX", "EX_BRIDGE", "EX_CLASS_RPC", "EX_MARGIN", "EX_OPEX",
+                          "EX_MKTDATA", "EX_EPS", "EX_SPREAD"])
+        self.assertEqual(refs["routine"],
+                         ["EX_ADV_LONG", "EX_BETA", "EX_RESIDUAL", "EX_INVEST",
+                          "EX_MKTDATA_LONG", "EX_CLASS_ADV", "EX_TAX"])
+
+    def test_the_quarter_charts_lead_with_the_quarter(self) -> None:
+        """A section-two title says this quarter's reading first, not a ten-year range."""
+        fin = self.staging["financials"]
+
+        def yoy(key: str) -> float:
+            return (fin[key][-1] / fin[key][-5] - 1) * 100
+
+        mix = self.exhibit_by_ref("EX_MIX")["title"]
+        self.assertTrue(mix.startswith(f"总收入同比 {yoy('total_revenues'):+.1f}%".replace("-", "−")), mix)
+        self.assertIn(f"清算与交易费同比 {yoy('clearing_fees'):+.1f}%".replace("-", "−"), mix)
+        self.assertNotIn("区间", mix)
+        coll = self.staging["collateral"]
+        this = coll["quarters"][-1]
+        prior = coll["quarters"].index(f"{int(this[:4]) - 1}{this[4:]}")
+        spread = self.exhibit_by_ref("EX_SPREAD")["title"]
+        self.assertIn(f"同比 {(coll['net'][-1] / coll['net'][prior] - 1) * 100:+.1f}%".replace("-", "−"),
+                      spread)
+        income = self.staging["long"]["investment_income"]
+        self.assertIn(f"投资收益同比 {(income[-1] / income[-5] - 1) * 100:+.1f}%".replace("-", "−"), spread)
+
+    def test_the_brief_leads_with_the_quarter_not_the_capex_record(self) -> None:
+        """「本季三条主线」: the first used to be the sixteen-year capex record."""
+        fin = self.staging["financials"]
+        brief = self.payload["brief"]
+        self.assertNotIn("<span>记录</span>", brief)
+        first = brief.split("</article>")[0]
+        self.assertIn("<span>增长</span>", first)
+        for key, name in (("clearing_fees", "清算与交易费"), ("market_data", "行情数据"),
+                          ("other_revenue", "其他收入")):
+            change = fin[key][-1] - fin[key][-5]
+            self.assertIn(f"{name} {'−' if change < 0 else '+'}US${abs(change):,.1f}M", first)
+
+    def test_section_two_names_what_it_cannot_draw(self) -> None:
+        undrawn = self.staging["quarter_context"]["undrawn"]
+        highlights = next(s for s in self.payload["sections"] if s["id"] == "quarter_highlights")
+        self.assertIn(f"另有{cn_count(len(undrawn))}条画不了：", highlights["description"])
+        for item in undrawn:
+            self.assertIn(item, highlights["description"])
+
     # ── the two windows ─────────────────────────────────────────────────────
     def test_the_short_window_starts_where_the_adjusted_table_does(self) -> None:
         """2024Q3 is the year-ago column of the first release that printed it."""
@@ -343,13 +439,14 @@ class CmeDashboardTest(unittest.TestCase):
         self.assertIsNone(capex["by_year"][capex["years"][-1]]["actual"])
 
     def test_the_tally_the_page_publishes_is_the_one_in_the_data(self) -> None:
+        """Section one's own chart carries the record; the brief is this quarter's."""
         capex = self.staging["capex_guidance"]
         tally = cme.capex_tally(capex)
         self.assertEqual(sum(tally.values()), len(cme.finished_capex_years(capex)))
-        brief = self.payload["brief"]
-        self.assertIn(f'{tally["below"]} 年低于下限', brief)
-        self.assertIn(f'{tally["above"]} 年高于上限', brief)
-        self.assertIn(f'{tally["inside"]} 年落在区间内', brief)
+        title = self.exhibit_by_ref("EX_CAPEX")["title"]
+        self.assertIn(f'{tally["below"]} 年跌破下限', title)
+        self.assertIn(f'{tally["above"]} 年超出上限', title)
+        self.assertIn(f'{tally["inside"]} 年落在区间内', title)
 
     def test_the_overshoots_are_the_build_years_and_one_more(self) -> None:
         """Three consecutive, then a fourth -- and the fourth is easy to miss.
@@ -428,16 +525,99 @@ class CmeDashboardTest(unittest.TestCase):
         note = self.exhibit_by_ref("EX_INVEST")["note"]
         self.assertIn("本页不把这两条相减当成利差", note)
 
-    # ── what the page will and will not publish ─────────────────────────────
-    def test_every_quantified_threshold_has_a_headroom_bar(self) -> None:
+    # ── section three: the local analysis's thresholds ──────────────────────
+    def test_the_thresholds_are_the_local_analysis_s_own(self) -> None:
+        """Held to a second keying of the same report section, not to the builder.
+
+        `_checks["note"]` is typed separately from the report's section 8 (its
+        observation table and its three stance-reversal conditions), the way
+        `_checks` is typed separately from the release. A roll re-keys both;
+        this test does not change.
+        """
+        kpi = self.staging["next_kpi"]
+        note = self.staging["_checks"]["note"]
+        self.assertEqual(kpi["period"], self.staging["period_labels"][-1])
+        self.assertEqual(
+            [(e["id"], e["metric"], e["direction"], e["threshold"]) for e in kpi["quantified"]],
+            [(t["id"], t["metric"], t["direction"], t["threshold"]) for t in note["next_thresholds"]])
+        upside = {}
+        for entry in kpi["quantified"]:
+            for key, value in entry.get("upside", {}).items():
+                if key != "basis":
+                    upside[f"{entry['id']}_{key}" if key == "below" else key] = value
+        self.assertEqual(upside, {k: v for k, v in note["next_upside"].items() if not k.startswith("_")})
+        self.assertEqual(len(kpi["not_carried"]), note["next_not_carried"]["count"])
+        for entry in kpi["quantified"]:
+            # Nothing the page could go stale on is stored beside a threshold.
+            self.assertNotIn("current", entry, entry["id"])
+            self.assertTrue(entry["basis"], entry["id"])
+
+    @staticmethod
+    def readings(staging: dict) -> dict:
+        """This quarter's value of each tracked metric, computed here from the
+        disclosed lines rather than through the builder's own helpers."""
+        fin, long = staging["financials"], staging["long"]
+        return {
+            "adj_margin": 100 * fin["adj_operating_income"][-1] / fin["total_revenues"][-1],
+            "adj_opex": fin["adj_total_expenses"][-1] - fin["licensing_expense"][-1],
+            "adv": long["adv_k"][-1],
+            "rpc": long["rpc"][-1],
+            "rates_adv_yoy": long["adv_rates"][-1] / long["adv_rates"][-5],
+            "market_data_qoq": long["market_data"][-1] / long["market_data"][-2],
+            "market_data_yoy": 100 * (long["market_data"][-1] / long["market_data"][-5] - 1),
+        }
+
+    def test_every_next_quarter_threshold_has_a_headroom_bar(self) -> None:
         entries = self.staging["next_kpi"]["quantified"]
+        upcoming = [e for e in entries if not e.get("settles")]
+        self.assertLess(len(upcoming), len(entries), "the Q1 2027 line is not a next-quarter bar")
+        now = self.readings(self.staging)
         bar = self.exhibit_by_ref("EX_HEADROOM")
-        self.assertEqual(bar["xlabels"], [e["metric"] for e in entries])
-        for entry, value in zip(entries, bar["values"]):
+        self.assertTrue(bar["title"].startswith(f"下季 {len(upcoming)} 条阈值："))
+        self.assertEqual(bar["xlabels"], [e["metric"] for e in upcoming])
+        for entry, value in zip(upcoming, bar["values"]):
             self.assertNotEqual(entry["threshold"], 0.0, entry["metric"])
-            self.assertAlmostEqual(
-                headroom(entry["direction"], entry["threshold"], entry["current"]),
-                value, places=1, msg=entry["metric"])
+            self.assertAlmostEqual(headroom(entry["direction"], entry["threshold"], now[entry["reads"]]),
+                                   value, places=1, msg=entry["metric"])
+
+    def test_every_next_quarter_threshold_is_drawn_against_its_own_history(self) -> None:
+        """「X：下季阈值 A，当前 B」, one chart per metric, every threshold on it."""
+        section = next(s for s in self.payload["sections"] if s["id"] == "next_quarter")
+        charts = section["exhibits"][1:]
+        upcoming = [e for e in self.staging["next_kpi"]["quantified"] if not e.get("settles")]
+        by_metric = {}
+        for entry in upcoming:
+            by_metric.setdefault(entry["reads"], []).append(entry)
+        self.assertEqual(len(charts), len(by_metric))
+        now = self.readings(self.staging)
+        for chart, (reads, group) in zip(charts, by_metric.items()):
+            with self.subTest(metric=reads):
+                self.assertEqual(chart["kind"], "lines")
+                self.assertIn("：下季阈值 ", chart["title"])
+                self.assertIn("，当前 ", chart["title"])
+                lines = [s["values"] for s in chart["series"][1:]]
+                self.assertEqual([line[0] for line in lines], [e["threshold"] for e in group])
+                self.assertTrue(all(len(set(line)) == 1 for line in lines))
+                self.assertAlmostEqual(chart["series"][0]["values"][-1], now[reads], places=4)
+
+    def test_the_rest_of_section_8_is_named_with_the_reason_it_is_not_drawn(self) -> None:
+        kpi = self.staging["next_kpi"]
+        note = self.exhibit_by_ref("EX_HEADROOM")["note"]
+        for item in kpi["not_carried"]:
+            self.assertIn(item["text"], note)
+        later = [e for e in kpi["quantified"] if e.get("settles")]
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("下季阈值"))
+        self.assertEqual([row[0] for row in table["rows"]],
+                         [e["metric"] + (f"（{e['settles']} 结算）" if e.get("settles") else "")
+                          for e in kpi["quantified"]])
+        self.assertEqual(table["headers"][-1], "出处（本地研究）")
+        for entry in later:
+            self.assertIn(f"另有一条要到 {entry['settles']} 才结算", note)
+        blob = json.dumps(self.payload, ensure_ascii=False)
+        for stale in ("本页设定", "本页自己设的", "阈值为本页"):
+            self.assertNotIn(stale, blob)
+
+    # ── what the page will and will not publish ─────────────────────────────
 
     def test_the_call_only_expense_guidance_is_named_and_not_published(self) -> None:
         notes = " ".join(self.payload["notes"])
@@ -668,6 +848,75 @@ class CmeRollTest(unittest.TestCase):
             self.rebuilt(lambda s: s.__setitem__(
                 "sources", [x for x in s["sources"] if not x["label"].startswith(label)]))
 
+    def test_the_first_cell_is_counted_not_remembered(self) -> None:
+        """「这是第一格」holds only while the quarter before was on the safe side.
+
+        The local analysis wrote "Q2 已 −6.1%，这是第一格" about rates volume
+        falling year on year; the page prints the same kind of sentence from the
+        series. Both states are built here, so the test does not depend on
+        which one the current quarter happens to be in.
+        """
+        def rates_down_for(quarters: int):
+            def edit(s):
+                rates = s["long"]["adv_rates"]
+                for back in range(1, 4):
+                    i = len(rates) - back
+                    rates[i] = rates[i - 4] + (-1 if back <= quarters else 1)
+            return edit
+        once = published_text(self.rebuilt(rates_down_for(1)))
+        twice = published_text(self.rebuilt(rates_down_for(2)))
+        self.assertIn("这是第一格", once)
+        self.assertNotIn("已经触发", once)
+        self.assertNotIn("这是第一格", twice)
+        self.assertIn("已经触发", twice)
+
+    def test_the_quarter_claims_follow_the_data(self) -> None:
+        """Two sentences this commit added are printed only while the series says so."""
+        # 「行情数据一条线扛下全部增量」: market data's own year-on-year change
+        # has to exceed the whole company's while the clearing line shrinks.
+        def legs(clearing: float, market: float, other: float):
+            def edit(s):
+                fin = s["financials"]
+                for key, change in (("clearing_fees", clearing), ("market_data", market),
+                                    ("other_revenue", other)):
+                    fin[key][-1] = fin[key][-5] + change
+                fin["total_revenues"][-1] = sum(fin[key][-1] for key in
+                                                ("clearing_fees", "market_data", "other_revenue"))
+            return edit
+        carried = published_text(self.rebuilt(legs(-30.0, 40.0, 5.0)))
+        shared = published_text(self.rebuilt(legs(-30.0, 40.0, 100.0)))
+        for claim in ("比全公司的", "行情数据一条线扛下全部增量", "行情数据一条线的增量就比全公司多"):
+            with self.subTest(claim=claim):
+                self.assertIn(claim, carried)
+                self.assertNotIn(claim, shared)
+
+        # 「落在这条长期关系上」: put the last quarter on the fitted line of the
+        # other fifty-two changes, then far off it.
+        def revenue_move(fitted: bool):
+            def edit(s):
+                long = s["long"]
+                x = [(b / a - 1) * 100 for a, b in zip(long["contracts_m"], long["contracts_m"][1:])]
+                y = [(b / a - 1) * 100 for a, b in zip(long["total_revenues"], long["total_revenues"][1:])]
+                xs, ys = x[:-1], y[:-1]
+                mx, my = sum(xs) / len(xs), sum(ys) / len(ys)
+                slope = (sum((a - mx) * (b - my) for a, b in zip(xs, ys))
+                         / sum((a - mx) ** 2 for a in xs))
+                move = my + slope * (x[-1] - mx) if fitted else y[-1] + 30
+                long["total_revenues"][-1] = long["total_revenues"][-2] * (1 + move / 100)
+            return edit
+        on_line = published_text(self.rebuilt(revenue_move(True)))
+        off_line = published_text(self.rebuilt(revenue_move(False)))
+        self.assertIn("落在这条长期关系上", on_line)
+        self.assertNotIn("落在这条长期关系上", off_line)
+        self.assertIn("偏离了这条长期关系", off_line)
+
+    def test_a_later_quarter_must_settle_the_previous_analysis(self) -> None:
+        """「第一份分析」is true of one quarter only; after it, section one owes a settlement."""
+        with self.assertRaisesRegex(ValueError, "prior_kpi_settlement"):
+            self.rebuilt(lambda s: s["analysis_record"].__setitem__("first_period", "Q1 2026"))
+        with self.assertRaisesRegex(ValueError, "not the first CME analysis"):
+            self.rebuilt(lambda s: s.pop("analysis_record"))
+
     def test_a_quarter_without_its_blocks_leaves_them_out(self) -> None:
         def strip(s):
             del s["next_kpi"]
@@ -677,7 +926,7 @@ class CmeRollTest(unittest.TestCase):
         self.assertEqual(sections["next_quarter"]["exhibits"], [])
         self.assertEqual(len(payload["tables"]), len(self.payload["tables"]) - 1)
         text = published_text(payload)
-        for gone in ("逐字检索过", "逐份检索过", "逐字搜过", "亿美元；", "本页数据截至"):
+        for gone in ("逐字检索过", "逐份检索过", "逐字搜过", "亿美元；", "本页数据截至", "条画不了"):
             with self.subTest(gone=gone):
                 self.assertIn(gone, self.text)
                 self.assertNotIn(gone, text)
@@ -714,7 +963,8 @@ class CmeRollTest(unittest.TestCase):
         finished = cme.finished_capex_years(capex)
         under = sum(1 for y in finished if capex["by_year"][y]["actual"]
                     < cme.mid(capex["by_year"][y]["low"], capex["by_year"][y]["high"]))
-        self.assertIn(f"{cn_count(len(finished))}年里{cn_count(under)}年偏高", self.payload["brief"])
+        deviation = next(ex for ex in self.exhibits if ex.get("ref") == "EX_CAPEX_DEV")
+        self.assertIn(f"{cn_count(len(finished))}年里有{cn_count(under)}年往同一个方向不准", deviation["note"])
         self.assertNotIn("一直偏高", text)
         self.assertNotIn("一直往同一个方向不准", text)
         # The EPS gap: the tax-reform quarter is the narrowest, not the widest.
