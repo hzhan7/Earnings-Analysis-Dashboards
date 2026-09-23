@@ -248,8 +248,15 @@ class SamsungDashboardTest(unittest.TestCase):
         numbers = [ex["n"] for ex in exhibits(self.payload)]
         self.assertEqual(numbers, list(range(2, 2 + len(numbers))))
         self.assertEqual(len(self.payload["sections"]), 4)
-        self.assertEqual([s["id"] for s in self.payload["sections"]],
-                         ["settled", "quarter_highlights", "next_quarter", "routine"])
+        # The owner's four-part format, titles verbatim (TSM is the reference):
+        # half-year and off-calendar pages use these exact words too.
+        self.assertEqual([(s["id"], s["title"]) for s in self.payload["sections"]],
+                         [("settled", "一、上季跟踪指标兑现了吗"),
+                          ("quarter_highlights", "二、本季重点"),
+                          ("next_quarter", "三、下季要跟踪什么"),
+                          ("routine", "四、长期常规跟踪")])
+        for section in self.payload["sections"]:
+            self.assertTrue(section["exhibits"], section["id"])
 
     def test_every_exhibit_plots_one_point_per_x_label(self) -> None:
         """The structural identity a NaN scan cannot see: a series one short of

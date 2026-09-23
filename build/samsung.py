@@ -467,7 +467,19 @@ def bit_delivery_charts(staging: dict, facts: dict, guidance: dict | None) -> li
         ),
         "src_extra": SRC_CALL + "逐季原话见数据核对抽屉的量价对照表。",
     }
+    return [dram, price]
 
+
+def provisional_chart(staging: dict) -> dict:
+    """How far the month-end release moved the quarter-end flash.
+
+    This used to sit in the first section as though it were a guidance record.
+    It is not: the flash is the company's own first print of a quarter that has
+    already ended, not something last quarter left to be settled this quarter.
+    It is a fact about how Samsung discloses, and it grows by one quarter a
+    roll, so it belongs with the routine series.
+    """
+    periods = staging["periods"]
     prov = staging["provisional_vs_final"]
     if prov["quarters"][-1] != periods[-1]:
         raise ValueError(f"series block `provisional_vs_final` is stamped {prov['quarters'][-1]!r}, "
@@ -517,7 +529,7 @@ def bit_delivery_charts(staging: dict, facts: dict, guidance: dict | None) -> li
         ),
         "src_extra": src_dart(len(periods)) + "速报与确定数的发布日期逐季列在数据核对抽屉里。",
     }
-    return [dram, price, provisional]
+    return provisional
 
 
 # ── Section 2: the quarter ────────────────────────────────────────────────────
@@ -1092,7 +1104,7 @@ def build_payload(staging: dict) -> dict:
     settled_ex = bit_delivery_charts(staging, facts, guidance)
     highlight_ex = quarter_charts(staging, der, labels, facts, story)
     next_ex = tracking_charts(staging, der, labels, facts, kpi, story, guidance)
-    routine_ex = routine_charts(staging, der, labels, story)
+    routine_ex = routine_charts(staging, der, labels, story) + [provisional_chart(staging)]
     resolve_exhibit_refs(
         number_exhibits(settled_ex + highlight_ex + next_ex + routine_ex)
     )
@@ -1355,12 +1367,12 @@ def build_payload(staging: dict) -> dict:
         "sections": [
             {
                 "id": "settled",
-                "title": "一、公司到底指引了什么，兑现了吗",
+                "title": "一、上季跟踪指标兑现了吗",
                 "description": (
-                    "三星不提供收入、毛利率或营业利润的数字指引，所以这一节不是常规的指引兑现。"
+                    "三星不提供收入、毛利率或营业利润的数字指引，所以这一节没有常规的指引兑现。"
                     "公司唯一给的前瞻数字是下一季 DRAM 与 NAND 的出货 bit 增速，而且是定性措辞；"
                     f"价格只在事后回顾时说。{cn_count(len(settled_ex))}张图分别是：这条唯一的指引兑现得怎么样、"
-                    "同期没有被指引的价格走了多少、以及季末速报数到月末确定数之间被改动了多少。"
+                    "以及同期没有被指引的价格走了多少。"
                 ),
                 "exhibits": settled_ex,
             },
@@ -1381,7 +1393,8 @@ def build_payload(staging: dict) -> dict:
             {
                 "id": "routine",
                 "title": "四、长期常规跟踪",
-                "description": "现金流与资本强度、净现金、营运资金、分部间抵销与研发强度。",
+                "description": ("现金流与资本强度、净现金、营运资金、分部间抵销与研发强度，"
+                                "以及季末速报数到月末确定数之间被改动了多少。"),
                 "exhibits": routine_ex,
             },
         ],
