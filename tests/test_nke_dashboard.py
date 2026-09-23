@@ -450,6 +450,17 @@ class NkeDashboardTest(unittest.TestCase):
         self.assertTrue(all(value < 0 for value in exhibit["values"]),
                         "six goals, six shortfalls -- no bar should be positive")
 
+    def test_the_page_has_the_site_s_four_sections_in_order(self) -> None:
+        """The owner's four-part format, TSM's titles verbatim, and the page's
+        own sentence about its structure saying the same thing."""
+        self.assertEqual(
+            [(section["id"], section["title"]) for section in self.payload["sections"]],
+            [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+             ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+        self.assertTrue(all(section["exhibits"] for section in self.payload["sections"]))
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列",
+                      self.payload["notes"][0])
+
     def test_sections_and_exhibit_numbering(self) -> None:
         self.assertEqual([s["id"] for s in self.payload["sections"]],
                          ["settled", "quarter_highlights", "next_quarter", "routine"])

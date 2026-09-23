@@ -1557,7 +1557,7 @@ def build_payload(staging: dict) -> dict:
         "sections": [
             {
                 "id": "settled",
-                "title": "一、上季兑现与公司自己写进申报文件的目标",
+                "title": "一、上季跟踪指标兑现了吗",
                 "description": (
                     "先结清上季设下的门槛，再看新数字。NIKE 不在任何申报文件里给季度指引，"
                     f"本站清点的 {census['releases_examined']} 份业绩新闻稿没有一份带经营指引；"
