@@ -931,7 +931,16 @@ def quarter_charts(staging: dict) -> list[dict]:
                       "每股口径 = 各项美元数除以当季 non-GAAP 摊薄股数 D。"),
     }
 
-    return [revenue_cogs, technology_chart, unit_revenue, unit_margin, margins, bridge]
+    charts = [revenue_cogs, technology_chart, unit_revenue, unit_margin, margins, bridge]
+    # The supply agreements and the balance sheet are this quarter's findings
+    # (the report's synthesis puts both among the quarter's conclusions), not
+    # thresholds anything is tracked against next quarter, so they sit here.
+    filed = stamped_block(staging, "filed_vs_spoken", periods[-1])
+    if filed is not None:
+        charts.append(supply_agreement_chart(
+            staging, filed, staging["next_quarter_guidance"]["published_on"]))
+    charts.append(balance_sheet_chart(staging))
+    return charts
 
 
 # ── section three: what to watch next quarter ───────────────────────────────
@@ -941,7 +950,6 @@ def next_quarter_charts(staging: dict) -> list[dict]:
     fin = staging["financials"]
     bal = staging["balance_sheet"]
     kpi = {entry["metric"]: entry for entry in staging["next_kpi"]["quantified"]}
-    filed = stamped_block(staging, "filed_vs_spoken", periods[-1])
     next_gm = staging["next_quarter_guidance"]["non_gaap_gross_margin_pct"]
 
     # How often the line was crossed, and where the plotted line sat below zero,
@@ -1043,10 +1051,20 @@ def next_quarter_charts(staging: dict) -> list[dict]:
     )
     dso_line["ref"] = "EX_DSO"
 
-    exhibits = [margin_line, dso_line]
-    release = staging["next_quarter_guidance"]["published_on"]
-    if filed is not None:
-        exhibits.append(supply_agreement_chart(staging, filed, release))
+    return [margin_line, dso_line]
+
+
+def balance_sheet_chart(staging: dict) -> dict:
+    """Net cash and total debt over the whole record.
+
+    A section-two chart: its title is this quarter's reading (the debt paid
+    down, the net cash left), which is one of the quarter's findings rather
+    than a threshold anything is tracked against next quarter.
+    """
+    periods = staging["periods"]
+    labels = [compact_period(period) for period in periods]
+    fin = staging["financials"]
+    bal = staging["balance_sheet"]
 
     interest = fin["interest_expense_usd_m"]
     if interest[-1] is None:
@@ -1093,8 +1111,7 @@ def next_quarter_charts(staging: dict) -> list[dict]:
         "src_extra": ("现金及投资 = 现金及等价物 + 短期投资 + 长期有价投资；"
                       "总债务 = 流动负债端债务 + 长期债务；两者相减为自算 D。"),
     }
-    exhibits.append(net_cash)
-    return exhibits
+    return net_cash
 
 
 def supply_agreement_chart(staging: dict, filed: dict, release: str) -> dict:
@@ -1705,14 +1722,18 @@ def build_payload(staging: dict) -> dict:
         "sections": [
             {
                 "id": "settled",
-                "title": "一、上季兑现与指引记录",
+                "title": "一、上季跟踪指标兑现了吗",
                 "description": (
                     "公司每季在业绩新闻稿的 Business Outlook 表里给出下一季的收入、毛利率、"
                     "营业费用与每股收益，GAAP 与 non-GAAP 两栏并列，这份记录能一直回到 "
                     f"{record['quarters'][0].split()[1]} 年。"
-                    "本节先把这份记录读完再看新数字 —— 因为它是本站唯一一份"
-                    "两个方向都被打破过、且打破幅度以十个百分点计的指引记录。"
-                    "另外：这些区间是在被指引的那个季度开始之后才发布的，这一点写在每张图上。"
+                    # Stated from the record's own tallies. It used to call this
+                    # 「本站唯一」 two-sided record, which stopped being true
+                    # when Intel's page landed with a −20pp margin miss.
+                    + (f"它两个方向都被打破过：non-GAAP 毛利率 {gm_n} 个已完结季里 {gm_above} 季穿出上限、"
+                       f"{gm_below} 季跌破下限，最差一次差 {abs(worst_gap):.1f} 个百分点。"
+                       if gm_above and gm_below else "")
+                    + "这些区间是在被指引的那个季度开始之后才发布的，这一点写在每张图上。"
                 ),
                 "exhibits": settled_ex,
             },
@@ -1721,8 +1742,12 @@ def build_payload(staging: dict) -> dict:
                 "title": "二、本季重点",
                 "description": (
                     "收入与销货成本的分岔、按技术与按业务单元的两种拆法、"
-                    f"{cn_count(len(periods))}个季度的利润率轨迹，以及每股收益从上季到本季的完整桥。"
-                    "公司对价格与出货量只给定性措辞，本页把原话放进核对表，不折算成数字。"
+                    f"{cn_count(len(periods))}个季度的利润率轨迹、每股收益从上季到本季的完整桥，"
+                    + ("长期供货协议的两组数，" if filed is not None else "")
+                    + ("以及本季还债之后的净现金。"
+                       if bal["total_debt_usd_m"][-1] < bal["total_debt_usd_m"][-2]
+                       else "以及净现金与总债务。")
+                    + "公司对价格与出货量只给定性措辞，本页把原话放进核对表，不折算成数字。"
                 ),
                 "exhibits": highlight_ex,
             },
@@ -1731,11 +1756,7 @@ def build_payload(staging: dict) -> dict:
                 "title": "三、下季要跟踪什么",
                 "description": (
                     f"{cn_count(len(kpi['quantified']))}条能从 Micron 自己的申报文件算出水平的阈值，"
-                    "各自画在自己的历史上；"
-                    + ("长期供货协议的申报值与管理层口径并列；" if filed is not None else "")
-                    + ("以及这轮周期里唯一已经落到报表上的结构性变化 —— 净现金转正。"
-                       if bal["net_cash_usd_m"][-1] > 0 else "以及净现金的走势。")
-                    + "不能作图的阈值列在核对抽屉里并说明原因。"
+                    "各自画在自己的历史上；不能作图的阈值列在核对抽屉里并说明原因。"
                 ),
                 "exhibits": next_ex,
             },

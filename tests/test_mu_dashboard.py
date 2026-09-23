@@ -728,6 +728,40 @@ class MuExhibitContractTest(unittest.TestCase):
         self.assertTrue(any("range" in cell for row in table["rows"] for cell in row))
 
 
+class MuFourPartFormatTest(unittest.TestCase):
+    """The site-wide four-part layout (TSM is the reference), by id and title."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(mu.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = mu.build_payload(cls.staging)
+        cls.sections = {section["id"]: section for section in cls.payload["sections"]}
+
+    def test_the_sections_are_the_four_parts_in_order(self) -> None:
+        self.assertEqual(
+            [(section["id"], section["title"]) for section in self.payload["sections"]],
+            [("settled", "一、上季跟踪指标兑现了吗"),
+             ("quarter_highlights", "二、本季重点"),
+             ("next_quarter", "三、下季要跟踪什么"),
+             ("routine", "四、长期常规跟踪")])
+        for section in self.payload["sections"]:
+            with self.subTest(section=section["id"]):
+                self.assertTrue(section["exhibits"])
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列",
+                      self.payload["notes"][0])
+
+    def test_the_quarter_findings_are_not_filed_under_next_quarter(self) -> None:
+        """The supply agreements and the net-cash chart are this quarter's
+        findings, not thresholds; they sat in section three until the format
+        pass, which made that section promise more tracking than it has."""
+        highlight = [exhibit["title"] for exhibit in self.sections["quarter_highlights"]["exhibits"]]
+        tracked = [exhibit["title"] for exhibit in self.sections["next_quarter"]["exhibits"]]
+        for prefix in ("长期供货协议", "净现金"):
+            with self.subTest(chart=prefix):
+                self.assertTrue(any(title.startswith(prefix) for title in highlight))
+                self.assertFalse(any(title.startswith(prefix) for title in tracked))
+
+
 class MuPublishedArtefactTest(unittest.TestCase):
     """The files the site actually serves."""
 
