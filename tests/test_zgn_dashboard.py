@@ -150,40 +150,41 @@ class ZgnDashboardTest(unittest.TestCase):
         self.assertEqual(re.findall(r"(.)段排列", prose), ["四"])
 
     def test_the_next_thresholds_are_the_ones_the_current_analysis_set(self) -> None:
-        """Section 8 of `2026-09-03 ZGN Q2 2026 vs Q1 2026 Analysis.md`, copied
-        here as the report's facts: which metric, which side is safe, where the
-        line is. The readings are the company's (Q2 2026 revenue 6-K, H1 2026
-        semi-annual report note 9) and the headroom is recomputed here."""
-        report = {
-            "tb_organic": ("up", -5.0),        # organic < −5% → 减仓
-            "fx_gap": ("down", 3.0),           # 报告 − 有机 > +3pp（且有机 ≤ +6%）→ 警示
-            "gcr_organic": ("up", 5.0),        # organic < +5% → 警示
-            "tb_headroom": ("up", 50.0),       # headroom < €50m → 重新评估
-        }
+        """Section 8 of the current local analysis, as `_checks.note` records it:
+        which metric, which side is safe, where the line is. The readings are the
+        company's, as `_checks.other_filings` re-read them from the Q2 2026
+        revenue 6-K and note 9 of the semi-annual report; the headroom is
+        recomputed here."""
+        report = {t["metric"]: t for t in self.st["_checks"]["note"]["next_thresholds"]}
         nk = self.st["next_kpi"]
-        self.assertEqual({e["id"]: (e["direction"], e["threshold"]) for e in nk["quantified"]}, report)
-        gap = next(e for e in nk["quantified"] if e["id"] == "fx_gap")
-        self.assertEqual((gap["organic_ceiling"], gap["organic"]), (6.0, 11.0))
+        for e in nk["quantified"]:
+            with self.subTest(metric=e["metric"]):
+                self.assertEqual((e["direction"], e["threshold"]),
+                                 (report[e["metric"]]["direction"], report[e["metric"]]["threshold"]))
+                for key in ("organic_ceiling",):
+                    if key in report[e["metric"]]:
+                        self.assertEqual(e[key], report[e["metric"]][key])
         fy = nk["full_year"]
+        line = report[fy["metric"]]
         self.assertEqual((fy["bear_below_eur_m"], fy["base_eur_m"], fy["bull_from_eur_m"]),
-                         (185, [185, 193], 195))
+                         (line["threshold"], line["base"], line["upper"]))
+        self.assertEqual(set(report), {e["metric"] for e in nk["quantified"]} | {fy["metric"]},
+                         "every threshold the analysis set is on the page, and nothing else")
 
-        q = self.q
-        k = q["periods"].index("2026Q2")
-        reported = (q["revenue_eur_k"][k] / q["revenue_eur_k"][k - 4] - 1) * 100
-        self.assertEqual(round(reported, 1), 10.3, "the company prints +10.3% for Q2 2026")
-        readings = {"tb_organic": 2.7, "fx_gap": reported - 11.0, "gcr_organic": 8.6,
-                    "tb_headroom": 104.0}
+        # the bars: one per threshold the filings give a reading for, each the
+        # headroom of that reading -- recomputed here from `_checks`, not taken
+        # from the builder
+        read = {m: t for m, t in report.items() if "filed_reading" in t}
         ex = self.by_ref["EX_NEXT"]
         self.assertEqual(ex["kind"], "diverging_bars")
-        self.assertTrue(ex["title"].startswith(f"下季 {len(report) + 1} 条阈值"))
+        self.assertTrue(ex["title"].startswith(f"下季 {len(report)} 条阈值"))
+        self.assertEqual(sorted(ex["xlabels"]), sorted(read))
         for name, value in zip(ex["xlabels"], ex["values"]):
-            entry = next(e for e in nk["quantified"] if e["metric"] == name)
-            direction, line = report[entry["id"]]
-            sign = 1 if direction == "up" else -1
+            t = read[name]
+            sign = 1 if t["direction"] == "up" else -1
             with self.subTest(metric=name):
-                self.assertEqual(value, round(sign * (readings[entry["id"]] - line) / abs(line) * 100, 1))
-        self.assertEqual(len(ex["xlabels"]), len(report))
+                self.assertEqual(value, round(sign * (t["filed_reading"] - t["threshold"])
+                                              / abs(t["threshold"]) * 100, 1))
         safe = all(v >= 0 for v in ex["values"])
         self.assertEqual("都在安全侧" in ex["title"], safe)
 
@@ -194,12 +195,18 @@ class ZgnDashboardTest(unittest.TestCase):
         H1 comes from the F-1 because no filing prints an earlier half."""
         nk, a, h = self.st["next_kpi"], self.a, self.h
         pre = self.st["pre_listing_half"]
-        self.assertEqual(pre["period"], "2020H1")
+        filed = self.st["_checks"]["other_filings"]["earliest_half_filing"]
+        year0 = pre["period"][:4]
+        self.assertEqual((pre["revenue"], pre["adjusted_ebit"], pre["profit"]),
+                         (filed[f"h1_{year0}_revenue_eur_k"], filed[f"h1_{year0}_adjusted_ebit_eur_k"],
+                          filed[f"h1_{year0}_profit_eur_k"]))
+        # one year before the series' own half axis, and never inside it
+        self.assertEqual(int(year0) + 1, int(h["periods"][0][:4]))
         firsts = {pre["period"]: pre["adjusted_ebit"]}
         firsts.update({p: v for p, v in zip(h["periods"], h["adjusted_ebit"]) if p.endswith("H1")})
         year = nk["full_year"]["year"]
         seconds = {f"{y}H2": a["adjusted_ebit"][a["years"].index(y)] - firsts[f"{y}H1"]
-                   for y in range(2020, year)}
+                   for y in range(int(year0), year)}
         ex = self.by_ref["EX_NEXT_FY"]
         self.assertEqual(ex["xlabels"], list(seconds))
         self.assertEqual(ex["series"][0]["values"], list(seconds.values()))
@@ -517,7 +524,11 @@ class ZgnDashboardTest(unittest.TestCase):
         mt = self.st["medium_term_targets"]
         new = mt["targets_2027"]
         base, lived = mt["base_year"], new["results_year_of_the_release"]
-        self.assertEqual((base, lived, new["set_on"]), (2023, 2024, "2025-03-27"))
+        # the replacing release is a results release the page lists, dated the day
+        # the block says the targets changed, reporting the year the block says
+        release = next(x for x in self.st["sources"] if x["label"].startswith(f"FY{lived} 业绩新闻稿"))
+        self.assertEqual(release["date"], new["set_on"])
+        self.assertGreater(new["set_on"], mt["set_on"])
         span = lived - base
         rev = ((self.year_from_quarters(lived) / self.year_from_quarters(base)) ** (1 / span) - 1) * 100
         ebit = ((self.year_from_halves("adjusted_ebit", lived)
@@ -541,15 +552,17 @@ class ZgnDashboardTest(unittest.TestCase):
         "€2.2bn / €250m lower end", and the pace from the last full year."""
         mt = self.st["medium_term_targets"]
         new = mt["targets_2027"]
-        # the filing's range; its lower end is the figure both local analyses quote
-        self.assertEqual(new["revenue_eur_m"], [2200, 2400])
-        self.assertEqual(new["adjusted_ebit_eur_m"], [250, 300])
-        self.assertIn("€2,200-€2,400 million", new["wording"])
-        self.assertIn("€250-€300 million", new["wording"])
+        # the filing's range, as `_checks` re-read it from the release's own text
+        filed = self.st["_checks"]["other_filings"]["targets_release"]
+        self.assertEqual(new["revenue_eur_m"], filed["revenue_eur_m"])
+        self.assertEqual(new["adjusted_ebit_eur_m"], filed["adjusted_ebit_eur_m"])
+        self.assertIn("€{:,}-€{:,} million".format(*filed["revenue_eur_m"]), new["wording"])
+        self.assertIn("€{:,}-€{:,} million".format(*filed["adjusted_ebit_eur_m"]), new["wording"])
         last = max(y for y in self.a["years"] if self.a["adjusted_ebit"][self.a["years"].index(y)])
         left = new["year"] - last
-        rev_need = ((2200 * 1000 / self.year_from_quarters(last)) ** (1 / left) - 1) * 100
-        ebit_need = ((250 * 1000 / self.year_from_halves("adjusted_ebit", last)) ** (1 / left) - 1) * 100
+        rev_need = ((filed["revenue_eur_m"][0] * 1000 / self.year_from_quarters(last)) ** (1 / left) - 1) * 100
+        ebit_need = ((filed["adjusted_ebit_eur_m"][0] * 1000
+                      / self.year_from_halves("adjusted_ebit", last)) ** (1 / left) - 1) * 100
         ex = self.by_ref["EX_TARGET_2027"]
         self.assertIn(f"收入年增 {rev_need:.1f}%", ex["title"])
         self.assertIn(f"Adjusted EBIT 年增 {ebit_need:.1f}%", ex["title"])
@@ -557,7 +570,7 @@ class ZgnDashboardTest(unittest.TestCase):
         need = next(g for g in ex["groups"] if "下沿所需" in g["name"])
         self.assertEqual(need["values"], [round(rev_need, 1), round(ebit_need, 1)])
         self.assertIn("、".join(mt["reaffirmed_in"]), ex["note"])
-        # both lie in section one, after nothing but each other at this stage
+        # both lie in section one, the superseded set before the current one
         settled = next(s for s in self.payload["sections"] if s["id"] == "settled")
         refs = [e.get("ref") for e in settled["exhibits"]]
         self.assertLess(refs.index("EX_TARGET_OLD"), refs.index("EX_TARGET_2027"))
@@ -693,12 +706,30 @@ class ZgnRollTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "latest reading"):
             zgn.build_payload(old_reading)
 
-        # a reading the series can produce must not also be typed
+        # a reading that is arithmetic on other figures must not also be typed
         typed = copy.deepcopy(self.source)
         gap = next(e for e in typed["next_kpi"]["quantified"] if e["id"] == "fx_gap")
         gap["current"] = -0.7
+        with self.assertRaisesRegex(ValueError, "computed from its printed legs"):
+            zgn.build_payload(typed)
+        typed = copy.deepcopy(self.source)
+        margin = next(e for e in typed["prior_kpi_settlement"]["quantified"] if e["id"] == "h1_margin")
+        margin["actual"] = 7.5
         with self.assertRaisesRegex(ValueError, "computed from the series"):
             zgn.build_payload(typed)
+
+        # a printed rate the series contradicts is a typo, not a reading
+        misprint = copy.deepcopy(self.source)
+        gap = next(e for e in misprint["next_kpi"]["quantified"] if e["id"] == "fx_gap")
+        gap["reported"] = 13.0
+        with self.assertRaisesRegex(ValueError, "the series gives"):
+            zgn.build_payload(misprint)
+
+        # last quarter's settlement belongs to the analysis written inside this half
+        wrong = copy.deepcopy(self.source)
+        wrong["followup_closure"]["set_in"] = "2025Q3"
+        with self.assertRaisesRegex(ValueError, "not this half's earlier quarter"):
+            zgn.build_payload(wrong)
 
         missing = {k: v for k, v in self.source.items() if k != "next_kpi"}
         with self.assertRaisesRegex(ValueError, "next_kpi"):
@@ -809,6 +840,13 @@ class ZgnRollTest(unittest.TestCase):
         nk.pop("full_year")
         for entry in nk["quantified"]:
             entry["reading"] = "2026Q4" if re.match(r"^\d{4}Q[1-4]$", entry["reading"]) else "2026-12-31"
+            if "reported" in entry:
+                # the synthetic quarter repeats its year-ago value, so it prints 0.0%
+                entry["reported"] = 0.0
+        # The settlement of the Q3 analysis is written with the roll; a half
+        # rolled before it is written builds without it and says so.
+        rolled.pop("followup_closure")
+        rolled.pop("prior_kpi_settlement")
         rolled["sources"] = rolled["sources"] + [
             {"label": "2026 年下半年业绩新闻稿（6-K EX-99.1，2027-03-19）",
              "url": "https://www.sec.gov/Archives/edgar/data/1877787/x/y.htm",
@@ -816,6 +854,9 @@ class ZgnRollTest(unittest.TestCase):
         payload = zgn.build_payload(rolled)
         self.assertEqual(payload["latest"]["disclosed_period_label"], "H2 2026")
         self.assertIn("2026 年下半年", payload["title"])
+        settled = payload["sections"][0]
+        self.assertIn("没有可结算的本地分析稿", settled["description"])
+        self.assertNotIn("上季", " ".join(ex["title"] for ex in settled["exhibits"]))
         mix = next(ex for sec in payload["sections"] for ex in sec["exhibits"]
                    if ex.get("ref") == "EX_MIX")
         self.assertEqual(mix["xlabels"][-1], "2026Q4")
@@ -952,6 +993,100 @@ class ZgnChecksTest(unittest.TestCase):
 
         table = next(t for t in payload["tables"] if "单季收入" in t["title"])
         self.assertEqual(table["rows"][-1][0], self.q["periods"][-1])
+
+    # ── the two local analyses, as `_checks.note` records them ───────────────
+    def by_ref(self) -> dict:
+        return {ex["ref"]: ex for sec in self.payload["sections"] for ex in sec["exhibits"] if "ref" in ex}
+
+    def test_the_closure_is_the_one_the_current_analysis_recorded(self) -> None:
+        """Section 0 of the current analysis: how many questions, and the verdict
+        on each. The chart's buckets are counted from the block's items; the
+        expected counts and verdicts come from `_checks.note`."""
+        note = self.c["note"]["closure"]
+        block = self.st["followup_closure"]
+        ex = self.by_ref()["EX_CLOSURE"]
+        self.assertEqual(sum(ex["values"]), note["total"])
+        self.assertEqual({k: v for k, v in zip(ex["xlabels"], ex["values"]) if v},
+                         {k: v for k, v in note["counts"].items() if v})
+        self.assertTrue(ex["title"].startswith(f"上季 {note['total']} 条待验证问题："))
+        for label, count in note["counts"].items():
+            if count:
+                self.assertIn(f"{count} 条{label}", ex["title"])
+        self.assertEqual({str(it["n"]): it["verdict"] for it in block["items"]}, note["verdicts"])
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("上季待验证问题"))
+        self.assertEqual({row[0]: row[2] for row in table["rows"]}, note["verdicts"])
+        for call, ns in note["scorecard"].items():
+            self.assertIn(f"{zgn.cn_count(len(ns))}条{call}（第 {'、'.join(map(str, ns))} 条）", ex["note"])
+
+    def test_the_prior_thresholds_are_the_ones_last_quarter_set(self) -> None:
+        """Section 8 of last quarter's analysis, as `_checks.note` records it,
+        settled on the reading `_checks` re-derived from this quarter's filings.
+        A computed reading reaches the bar through the series, so a bar equal to
+        the headroom of the filed reading is the series agreeing with the
+        filings; a typed reading has to equal the filed one outright."""
+        report = {t["metric"]: t for t in self.c["note"]["prior_thresholds"]}
+        block = self.st["prior_kpi_settlement"]["quantified"]
+        self.assertEqual({e["metric"] for e in block}, set(report))
+        for e in block:
+            t = report[e["metric"]]
+            with self.subTest(metric=e["metric"]):
+                self.assertEqual((e["direction"], e["threshold"], e.get("upper")),
+                                 (t["direction"], t["threshold"], t.get("upper")))
+                if "actual" in e:
+                    self.assertEqual(e["actual"], t["filed_reading"])
+                if "previous" in e:
+                    self.assertEqual(e["previous"], t["filed_previous"])
+        refs = self.by_ref()
+        ex = refs["EX_PRIOR"]
+        self.assertTrue(ex["title"].startswith(f"上季 {len(report)} 条量化阈值："))
+        plotted = {m: t for m, t in report.items() if t["threshold"] != 0}
+        self.assertEqual(sorted(ex["xlabels"]), sorted(plotted))
+        for name, value in zip(ex["xlabels"], ex["values"]):
+            t = plotted[name]
+            sign = 1 if t["direction"] == "up" else -1
+            with self.subTest(metric=name):
+                self.assertEqual(value, round(sign * (t["filed_reading"] - t["threshold"])
+                                              / abs(t["threshold"]) * 100, 1))
+        # every threshold line says, in its title, the verdict the filed reading gives
+        lines = [e for e in refs.values() if e["ref"].startswith("EX_PRIOR_")]
+        self.assertTrue(lines)
+        for line in lines:
+            name = line["title"].split("：", 1)[0]
+            t = report[name]
+            sign = 1 if t["direction"] == "up" else -1
+            held = sign * (t["filed_reading"] - t["threshold"]) >= 0
+            with self.subTest(chart=name):
+                self.assertIn("守住上季阈值" if held else "已击穿上季阈值", line["title"])
+                self.assertEqual(line["series"][-1]["name"] == "上季的加仓线", "upper" in t)
+
+    def test_every_typed_next_reading_is_the_filed_one(self) -> None:
+        report = {t["metric"]: t for t in self.c["note"]["next_thresholds"]}
+        note9 = self.c["other_filings"]["impairment_note"]
+        for e in self.st["next_kpi"]["quantified"]:
+            t = report[e["metric"]]
+            with self.subTest(metric=e["metric"]):
+                if "current" in e:
+                    self.assertEqual(e["current"], t["filed_reading"])
+                if "reported" in e:
+                    self.assertEqual(round(e["reported"] - e["organic"], 6), t["filed_reading"])
+                for key, value in e.items():
+                    if key in note9 and key != "source":
+                        self.assertEqual(value, note9[key], key)
+
+    def test_section_one_settles_in_the_order_the_page_promises(self) -> None:
+        """Questions first, then last quarter's thresholds, then the company's
+        own targets -- the order the section's description gives."""
+        settled = self.payload["sections"][0]
+        refs = [e.get("ref", "") for e in settled["exhibits"]]
+        closure, prior = refs.index("EX_CLOSURE"), refs.index("EX_PRIOR")
+        lines = [k for k, r in enumerate(refs) if r.startswith("EX_PRIOR_")]
+        targets = [k for k, r in enumerate(refs) if r.startswith("EX_TARGET")]
+        self.assertLess(closure, prior)
+        self.assertTrue(all(prior < k for k in lines))
+        self.assertTrue(all(max(lines) < k for k in targets))
+        note = self.c["note"]
+        self.assertIn(f"{note['closure']['total']} 条待验证问题", settled["description"])
+        self.assertIn(f"{len(note['prior_thresholds'])} 条量化阈值", settled["description"])
 
 
 if __name__ == "__main__":

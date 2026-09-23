@@ -631,6 +631,316 @@ def restatement_table(s: dict, n: int) -> dict:
     }
 
 
+# ── section one (a): the questions last quarter's analysis left open ────────
+def check_set_in(block: dict, name: str, view: dict) -> None:
+    """A block settling last quarter's analysis must name a quarter of this half.
+
+    The page is half-yearly and the analyses are quarterly: the one before this
+    half's results is the revenue release of the half's other quarter. A block
+    naming anything else is another half's.
+    """
+    if block["set_in"] not in view["quarters"] or block["set_in"] == view["latest_quarter"]:
+        raise ValueError(f"series block `{name}` settles an analysis set in {block['set_in']!r}, "
+                         f"which is not this half's earlier quarter: update it with the roll")
+
+
+def closure_chart(closure: dict, view: dict) -> dict:
+    check_set_in(closure, "followup_closure", view)
+    items, buckets = closure["items"], closure["buckets"]
+    stray = [it["n"] for it in items if it["bucket"] not in buckets]
+    if stray:
+        raise ValueError(f"follow-up items {stray} sit in no declared bucket")
+    counts = [sum(1 for it in items if it["bucket"] == b) for b in buckets]
+    falsified = [it for it in items if "被证伪" in it["verdict"]]
+    calls: dict[str, list[int]] = {}
+    for it in items:
+        calls.setdefault(it["call"], []).append(it["n"])
+    return {
+        "ref": "EX_CLOSURE",
+        "kind": "bars_labeled",
+        "title": (f"上季 {len(items)} 条待验证问题：" + "、".join(
+            f"{count} 条{label}" for label, count in zip(buckets, counts) if count)),
+        "xlabels": list(buckets),
+        "values": counts,
+        "legend": "问题条数",
+        "fmt": "f0", "yfmt": "f0", "label_fmt": "f0",
+        "ylab": "条",
+        "note": ((f"判定里带「被证伪」的是第 {'、'.join(str(it['n']) for it in falsified)} 条："
+                  + "；".join(f"第 {it['n']} 条，{it['reading']}" for it in falsified) + "。"
+                  if falsified else "")
+                 + "按本季分析稿的框架复盘，"
+                 + "，".join(f"{cn_count(len(ns))}条{call}（第 {'、'.join(str(n) for n in ns)} 条）"
+                            for call, ns in calls.items())
+                 + "。"),
+        "src_extra": (f"问题清单来自 {closure['set_in_report']}；判定依据 {closure['closed_in_report']}，"
+                      "逐条回到营收与业绩新闻稿、半年报和两场电话会核实。"),
+    }
+
+
+def closure_table(closure: dict, n: int) -> dict:
+    return {
+        "n": n,
+        "title": "上季待验证问题与本季判定（问题摘自上季分析稿，判定原文取自本季分析稿第 0 节）",
+        "headers": ["#", "上季问题", "判定", "本季读数"],
+        "rows": [[str(it["n"]), it["question"], it["verdict"], it["reading"]] for it in closure["items"]],
+    }
+
+
+# ── section one (b): the thresholds last quarter's analysis set ─────────────
+def quarterly_yoy(values: list) -> list:
+    return [None if k < 4 or values[k] is None or not values[k - 4] else pct(values[k], values[k - 4])
+            for k in range(len(values))]
+
+
+def prior_series(s: dict) -> dict:
+    """Every threshold the series can measure, on its own axis."""
+    q = s["quarterly"]
+    P, ch, st = q["periods"], q["channel"], s["stores"]
+    z = lambda v: 0.0 if v is None else v
+    branded = [z(ch["dtc"][k]) + z(ch["wholesale_branded"][k]) for k in range(len(P))]
+    like = [z(ch["dtc_zegna"][k]) + z(ch["dtc_thom_browne"][k])
+            + z(ch["ws_zegna"][k]) + z(ch["ws_thom_browne"][k]) for k in range(len(P))]
+
+    def per_store(k: int):
+        end = q["period_ends"][k]
+        if end not in st["dates"]:
+            return None
+        doors = st["dtc"]["ZEGNA"][st["dates"].index(end)]
+        return ch["dtc_zegna"][k] / doors if doors else None
+
+    stores = [per_store(k) for k in range(len(P))]
+    h, pre = s["half"], s["pre_listing_half"]
+    firsts = [(pre["period"], pre["adjusted_ebit"] / pre["revenue"] * 100)] + [
+        (p, e / r * 100) for p, r, e in zip(h["periods"], h["revenue"], h["adjusted_ebit"])
+        if p.endswith("H1") and None not in (r, e)]
+    return {
+        "h1_margin": ([p for p, _ in firsts], [v for _, v in firsts]),
+        "tb_wholesale": (list(P), quarterly_yoy(ch["ws_thom_browne"])),
+        "branded_net": (list(P), [None if k < 4 else (branded[k] - branded[k - 4]) / 1000
+                                  for k in range(len(P))]),
+        "branded_net_like": (list(P), [None if k < 4 else (like[k] - like[k - 4]) / 1000
+                                       for k in range(len(P))]),
+        "zegna_per_store": (list(P), [None if k < 4 or None in (stores[k], stores[k - 4])
+                                      else pct(stores[k], stores[k - 4]) for k in range(len(P))]),
+    }
+
+
+def prior_entries(s: dict, view: dict, block: dict) -> list[dict]:
+    """Each threshold with the reading it is settled on, computed wherever the series can."""
+    check_set_in(block, "prior_kpi_settlement", view)
+    series = prior_series(s)
+    out = []
+    for e in block["quantified"]:
+        wanted = view["latest_quarter"] if QUARTER_LABEL.match(e["reading"]) else view["half"]
+        if e["reading"] != wanted:
+            raise ValueError(f"series block `prior_kpi_settlement` reads `{e['id']}` at {e['reading']!r}, "
+                             f"but this page's latest reading is {wanted!r}: update it with the roll")
+        if e["id"] in series:
+            if "actual" in e or "previous" in e:
+                raise ValueError(f"`prior_kpi_settlement.{e['id']}` is computed from the series; "
+                                 "remove its typed value")
+            labels, values = series[e["id"]]
+            k = labels.index(e["reading"])
+            entry = {**e, "actual": values[k]}
+            if e.get("upper_quarters", 1) == 2:
+                entry["previous"] = values[k - 1]
+            out.append(entry)
+        else:
+            if "actual" not in e:
+                raise ValueError(f"`prior_kpi_settlement.{e['id']}` has no reading and no way to compute one")
+            out.append(dict(e))
+    return out
+
+
+def upper_met(e: dict) -> bool | None:
+    """Whether the add-side condition of a threshold held; None if it has none."""
+    if "upper" not in e:
+        return None
+    readings = [e["actual"]] + ([e["previous"]] if e.get("upper_quarters", 1) == 2 else [])
+    beyond = (lambda v: v > e["upper"]) if e.get("upper_strict") else (lambda v: v >= e["upper"])
+    return all(beyond(v) for v in readings) and e.get("plan_raised", True)
+
+
+def prior_value(e: dict, value: float, *, sign: bool = False) -> str:
+    """A threshold or reading in its own unit; `sign` marks a reading, and only a
+    change or a growth rate carries one -- a margin of 7.5% is not "+7.5%"."""
+    if e["unit"] == "eur_m":
+        return eur_m(value * 1000)
+    if e["unit"] == "pp":
+        return minus_sign(f"{value:+.1f}pp")
+    rate = "同比" in e["metric"] or "增速" in e["metric"]
+    return signed(value) if sign and rate else minus_sign(f"{value:.1f}%")
+
+
+PRIOR_CAP = 200
+
+
+def prior_charts(s: dict, view: dict, block: dict) -> tuple[list[dict], list[dict]]:
+    entries = prior_entries(s, view, block)
+    plotted = [e for e in entries if e["threshold"] != 0]
+    unplotted = [e for e in entries if e["threshold"] == 0]
+    held = [e for e in plotted if headroom(e["direction"], e["threshold"], e["actual"]) >= 0]
+    upper = [e for e in entries if upper_met(e)]
+    nearest = min(plotted, key=lambda e: headroom(e["direction"], e["threshold"], e["actual"]))
+    half_way = [e for e in entries if upper_met(e) is False and "plan_raised" in e
+                and all(v >= e["upper"] for v in (e["actual"], e["previous"]))]
+    fx = next((e for e in entries if e["id"] == "fx_drag"), None)
+    overview = headroom_exhibit(
+        (f"上季 {len(entries)} 条量化阈值："
+         + (f"能算余量的 {len(plotted)} 条" if unplotted else "")
+         + ("都守住" if len(held) == len(plotted) else f"守住 {len(held)} 条、击穿 {len(plotted) - len(held)} 条")
+         + (f"，{len(upper)} 条连加仓线也过了" if upper else "")),
+        plotted, "actual",
+        ("正值 = 仍在安全侧；线是上季分析稿里触发减仓或警示的那一条。"
+         + f"离线最近的是「{nearest['metric']}」：{prior_value(nearest, nearest['actual'], sign=True)} 对 "
+         f"{prior_value(nearest, nearest['threshold'])}。"
+         + (f"连加仓线也过了的是{'、'.join('「' + e['metric'] + '」' for e in upper)}。" if upper else "")
+         + "".join(f"「{e['metric']}」的数字那一半过了线（上一季 {signed(e['previous'])}、本季 {signed(e['actual'])}），"
+                   "管理层没有上调规划，加仓条件只成立一半。" for e in half_way)
+         + "".join(f"「{e['metric']}」的警戒线是「转负」，零阈值算不出百分比余量，不进这张图，结算在核对抽屉的表里。"
+                   for e in unplotted)
+         + (f"「{fx['metric']}」那条原文写在 EUR/USD 季均上（{fx['as_written']}）；季均不是申报数，"
+            "按上季稿写明的等价后果结算。" if fx else "")),
+        src_extra=("阈值原文取自上季本地分析稿第 8 节，不是公司指引；实际值为本季披露值或据其自算，"
+                   "逐条出处见核对抽屉。"),
+    )
+    overview["ref"] = "EX_PRIOR"
+    # One bar a hundred times its threshold flattens every other bar to a
+    # sliver; the renderer caps it and prints the true value on the bar.
+    if max(overview["values"]) > PRIOR_CAP:
+        overview["ycap"] = PRIOR_CAP
+        overview["note"] += f"超过 {PRIOR_CAP}% 的柱截在 {PRIOR_CAP}%，真值标在柱上。"
+    charts = [overview]
+
+    series = prior_series(s)
+    h = s["half"]
+    margin_of = {p: e / r for p, r, e in zip(h["periods"], h["revenue"], h["adjusted_ebit"])
+                 if None not in (r, e)}
+    halves = [(y, margin_of[f"{y}H1"], margin_of[f"{y}H2"])
+              for y in sorted({int(p[:4]) for p in h["periods"]})
+              if f"{y}H1" in margin_of and f"{y}H2" in margin_of]
+    first_higher = [str(y) for y, a, b in halves if a > b]
+    second_higher = [str(y) for y, a, b in halves if b > a]
+    q_prev = view["quarters"][0] if view["quarters"][0] != view["latest_quarter"] else None
+    by_id = {e["id"]: e for e in entries}
+
+    def line(e: dict, *, fmt: str, ylab: str, note: str, src: str, extra=None, rotate: bool = False) -> dict:
+        labels, values = series[e["id"]]
+        start = next(k for k, v in enumerate(values) if v is not None)
+        labels, values = labels[start:], values[start:]
+        ok = headroom(e["direction"], e["threshold"], e["actual"]) >= 0
+        side = "上方" if e["direction"] == "up" else "下方"
+        lines = [{"name": e["metric"], "color": "NAVY", "values": rounded(values, 2)},
+                 {"name": f"上季阈值（安全侧在{side}）", "color": "RED",
+                  "values": [e["threshold"]] * len(labels)}]
+        if "upper" in e:
+            lines.append({"name": "上季的加仓线", "color": "GOLD", "values": [e["upper"]] * len(labels)})
+        if extra:
+            name, color, more = extra
+            lines.insert(1, {"name": name, "color": color, "values": rounded(more[start:], 2)})
+        word = "本期" if e["reading"] == view["half"] else "本季"
+        chart = {
+            "ref": f"EX_PRIOR_{e['id'].upper()}",
+            "kind": "lines",
+            "title": (f"{e['metric']}：{'守住' if ok else '已击穿'}上季阈值 {prior_value(e, e['threshold'])}，"
+                      f"{word} {prior_value(e, e['actual'], sign=True)}"),
+            "xlabels": labels,
+            "series": lines,
+            "fmt": fmt, "yfmt": fmt, "label_fmt": fmt,
+            "end_label": True,
+            "ylab": ylab,
+            "note": f"上季稿的触发条件：{e['trigger']}。" + note,
+            "src_extra": src,
+        }
+        if rotate:
+            chart["xrot"] = 90
+        return chart
+
+    if "h1_margin" in by_id:
+        e = by_id["h1_margin"]
+        pre = s["pre_listing_half"]
+        charts.append(line(
+            e, fmt="pct1", ylab="上半年 Adjusted EBIT ÷ 收入 %",
+            note=(("只画上半年，因为这条阈值是上半年对上半年：半年利润率并不是每年都下半年高 —— "
+                   f"{'、'.join(first_higher)} 年是上半年高，{'、'.join(second_higher)} 年是下半年高。"
+                   if first_higher and second_higher else "只画上半年，因为这条阈值是上半年对上半年。")
+                  + f"{pre['period']} 取自 F-1，那是任何申报里印出的第一个半年。"),
+            src="上半年收入与 Adjusted EBIT 取自各期半年度业绩新闻稿与 F-1（D）。"))
+    if "tb_wholesale" in by_id:
+        e = by_id["tb_wholesale"]
+        labels, values = series["tb_wholesale"]
+        before = (f"上一季 {signed(values[labels.index(q_prev)])}，" if q_prev else "")
+        charts.append(line(
+            e, fmt="pct1", ylab="同比 %",
+            note=(f"{before}本季 {signed(e['actual'])}。这是报告口径（含汇率），由本页单季批发收入现算；"
+                  "上季稿用的也是这个口径的算术。"),
+            src="Thom Browne 品牌批发收入取自各季营收与业绩新闻稿的渠道表（D）。", rotate=True))
+    if "branded_net" in by_id:
+        e = by_id["branded_net"]
+        like_labels, like = series["branded_net_like"]
+        tff_from = s["quarterly"]["brand"]["tff_floor"]
+        charts.append(line(
+            e, fmt="f1", ylab="€M（同比变动）",
+            extra=("不含 TOM FORD FASHION（同口径对照）", "GRAY", like),
+            note=(f"DTC 的同比增量减去批发的同比减量，等于三个品牌合计收入的同比变动（报告口径）。"
+                  + (f"上一季 {eur_m(e['previous'] * 1000)}、本季 {eur_m(e['actual'] * 1000)}。" if "previous" in e else "")
+                  + f"TOM FORD FASHION 从 {tff_from} 起并表，并表后一年里的同比变动含并购带来的增量，"
+                  "灰线剔除它，只看 ZEGNA 与 Thom Browne。"),
+            src="DTC 与批发品牌收入取自各季营收与业绩新闻稿的渠道表；同比变动为本页自算（D）。", rotate=True))
+    if "zegna_per_store" in by_id:
+        e = by_id["zegna_per_store"]
+        labels, values = series["zegna_per_store"]
+        first = next(labels[k] for k, v in enumerate(values) if v is not None)
+        st = s["stores"]
+        ends = s["quarterly"]["period_ends"]
+        k = s["quarterly"]["periods"].index(e["reading"])
+        doors_now = st["dtc"]["ZEGNA"][st["dates"].index(ends[k])]
+        doors_then = st["dtc"]["ZEGNA"][st["dates"].index(ends[k - 4])]
+        before = (f"上一季 {signed(values[labels.index(q_prev)])}，" if q_prev else "")
+        charts.append(line(
+            e, fmt="pct1", ylab="同比 %",
+            note=("单店收入 = 当季 ZEGNA 品牌 DTC 收入 ÷ 季末 ZEGNA 直营门店数（上季稿的口径）。"
+                  f"{before}本季 {signed(e['actual'])}，同期门店 {doors_then} → {doors_now} 家。"
+                  f"季末门店数从 2022-03-31 起按季印出，此前只有年末数，所以同比从 {first} 起。"),
+            src="ZEGNA 品牌 DTC 收入与季末直营门店数取自各季营收与业绩新闻稿（D）。", rotate=True))
+    return charts, entries
+
+
+def prior_table(block: dict, entries: list[dict], n: int) -> dict:
+    rows = []
+    for e in entries:
+        met = upper_met(e)
+        rows.append([
+            e["metric"], e["trigger"],
+            prior_value(e, e["threshold"]),
+            prior_value(e, e["actual"], sign=True)
+            + (f"（上一季 {prior_value(e, e['previous'], sign=True)}）" if "previous" in e else ""),
+            (minus_sign(f"{headroom(e['direction'], e['threshold'], e['actual']):+.1f}%")
+             if e["threshold"] != 0 else ("未转负" if e["actual"] >= 0 else "已转负")),
+            "—" if met is None else ("过了" if met else "没过"),
+            e.get("source", "本页序列现算（D）"),
+        ])
+    by_id = {e["id"]: e for e in entries}
+    for w in block.get("stance_withdrawal", []):
+        if "unsettled" in w:
+            verdict = "无法结算：" + w["unsettled"]
+        else:
+            legs = [by_id[i] for i in w["legs"]]
+            broken = [headroom(e["direction"], e["threshold"], e["actual"]) < 0 for e in legs]
+            if "group_organic" in w:
+                broken.append(w["group_organic"] < w["group_organic_below"])
+            verdict = "触发" if all(broken) else "未触发"
+            if "group_organic" in w:
+                verdict += f"（集团二季度有机 {w['group_organic']:.1f}%；{w['source']}）"
+        rows.append([f"立场撤销条件 {w['n']}", w["text"], "—", "—", "—", "—", verdict])
+    return {
+        "n": n,
+        "title": "上季量化阈值的结算（阈值原文取自上季分析稿第 8 节）",
+        "headers": ["指标", "上季触发条件", "警戒线", "本期读数", "余量 D", "加仓线", "出处 / 结算"],
+        "rows": rows,
+    }
+
+
 # ── section one (c): the company's own medium-term targets ───────────────────
 def _span(values: list[float]) -> str:
     """``[2200, 2400]`` (€M) -> ``€2.2–2.4B``; ``[250, 300]`` -> ``€250–300M``."""
@@ -760,10 +1070,13 @@ QUARTER_LABEL = re.compile(r"^\d{4}Q[1-4]$")
 def next_entries(s: dict, view: dict, nk: dict) -> list[dict]:
     """The quantified thresholds, each with the reading it is judged on.
 
-    A reading the series can produce is computed here and must not be typed
-    into the block; one it cannot (an organic rate, a headroom from a note) is
-    typed with its filing. Either way the reading has to be this page's own
-    latest period, or the block is last half's.
+    A reading that is arithmetic on other figures is computed here and must not
+    also be typed into the block; one that is a printed figure (an organic rate,
+    a headroom from a note) is typed with its filing. The gap line is written on
+    the company's two printed rates, so it is their difference -- the reported
+    rate the series would give (10.29% for Q2 2026) is not the one the company
+    printed (10.3%), and the owner's rule is the printed one. Either way the
+    reading has to be this page's own latest period, or the block is last half's.
     """
     q = s["quarterly"]
 
@@ -771,16 +1084,20 @@ def next_entries(s: dict, view: dict, nk: dict) -> list[dict]:
         k = q["periods"].index(label)
         return pct(q["revenue_eur_k"][k], q["revenue_eur_k"][k - 4])
 
-    computed = {"fx_gap": lambda e: reported_growth(e["reading"]) - e["organic"]}
+    computed = {"fx_gap": lambda e: e["reported"] - e["organic"]}
     out = []
     for e in nk["quantified"]:
         wanted = view["latest_quarter"] if QUARTER_LABEL.match(e["reading"]) else s["latest"]["period_end"]
         if e["reading"] != wanted:
             raise ValueError(f"series block `next_kpi` reads `{e['id']}` at {e['reading']!r}, "
                              f"but this page's latest reading is {wanted!r}: update it with the roll")
+        if "reported" in e and round(reported_growth(e["reading"]), 1) != e["reported"]:
+            raise ValueError(f"`next_kpi.{e['id']}` says the company printed {e['reported']}% for "
+                             f"{e['reading']}, but the series gives {reported_growth(e['reading']):.2f}%")
         if e["id"] in computed:
             if "current" in e:
-                raise ValueError(f"`next_kpi.{e['id']}` is computed from the series; remove its typed value")
+                raise ValueError(f"`next_kpi.{e['id']}` is computed from its printed legs; "
+                                 "remove its typed value")
             out.append({**e, "current": computed[e["id"]](e)})
         else:
             if "current" not in e:
@@ -928,10 +1245,15 @@ def build_payload(staging: dict) -> dict:
     if nk is None:
         raise ValueError("series block `next_kpi` is required every half: the page's third part "
                          "is the current analysis's thresholds")
+    # Last quarter's analysis is optional: a half with no earlier analysis has
+    # nothing of it to settle, and the section says so instead.
+    closure = stamped_block(s, "followup_closure", period)
+    prior = stamped_block(s, "prior_kpi_settlement", period)
 
     # The four parts, in the order the site reads them. Each list holds the
     # exhibit dicts themselves, so numbering them below numbers them here too.
-    settled_ex = target_charts(s, view)
+    prior_ex, prior_list = prior_charts(s, view, prior) if prior else ([], [])
+    settled_ex = ([closure_chart(closure, view)] if closure else []) + prior_ex + target_charts(s, view)
     highlight_ex = period_charts(s, view, put)
     next_ex, next_list = next_charts(s, view, nk)
     routine_ex = channel_charts(s, view) + brand_charts(s, view) + geography_charts(s, view)
@@ -996,6 +1318,10 @@ def build_payload(staging: dict) -> dict:
     }]
     tables.append(census_table(s, first_table + len(tables)))
     tables.append(restatement_table(s, first_table + len(tables)))
+    if closure:
+        tables.append(closure_table(closure, first_table + len(tables)))
+    if prior:
+        tables.append(prior_table(prior, prior_list, first_table + len(tables)))
     tables.append(next_table(s, nk, next_list, first_table + len(tables)))
     tables.append(ai_capex_cycle_table(first_table + len(tables)))
 
@@ -1057,9 +1383,16 @@ def build_payload(staging: dict) -> dict:
     fy = nk.get("full_year")
     sections = [
         {"id": "settled", "title": "一、上季跟踪指标兑现了吗",
-         "description": (f"公司自己给出的中期目标兑现到哪一步：{mt['set_on']} 的年复合目标只走完一年，"
-                         f"就在 {mt['targets_2027']['set_on']} 被换成 {mt['targets_2027']['year']} 年的"
-                         "绝对区间；现行区间离最近一个完整年度还有多远，放在第二张图。"),
+         "description": (
+             (f"先结算上季分析稿（{(closure or prior)['set_in']} 营收那份）留下的东西："
+              + "、".join(part for part in (
+                  f"{len(closure['items'])} 条待验证问题" if closure else "",
+                  f"{len(prior['quantified'])} 条量化阈值" if prior else "") if part)
+              + "，都在本期到期；"
+              if closure or prior else
+              "本期之前没有可结算的本地分析稿，本节只结算公司自己给出的目标；")
+             + f"再看公司自己的中期目标兑现到哪一步 —— {mt['set_on']} 的年复合目标只走完一年，"
+             f"就在 {mt['targets_2027']['set_on']} 被换成 {mt['targets_2027']['year']} 年的绝对区间。"),
          "exhibits": settled_ex},
         {"id": "quarter_highlights", "title": "二、本季重点",
          "description": (f"{half_cn(half)}从收入到利润五个口径的同比方向不一致：先把落差定位到损益表的"
@@ -1083,8 +1416,16 @@ def build_payload(staging: dict) -> dict:
     both = geo_block["periods_on_both_bases"]
     releases = [x for x in s["sources"] if re.search(r"(营收|业绩)新闻稿", x["label"])]
     pre = s["pre_listing_half"]
+    headrooms = {ex.get("ref"): ex["n"] for ex in exhibits if ex["kind"] == "diverging_bars"}
     notes = [
         "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
+    ]
+    if "EX_PRIOR" in headrooms:
+        notes.append(
+            f"Exhibit {headrooms['EX_PRIOR']} 与 Exhibit {headrooms['EX_NEXT']} 的阈值是本地研究设定"
+            "（上季与本季的两份分析稿），不是公司指引，也不构成评级或投资建议；「距阈值余量」统一为正值代表安全侧，"
+            "实际值与当前读数一律取公司披露值或据其自算。")
+    notes += [
         "公司在荷兰注册、在纽约证券交易所上市，按 IFRS 以欧元列报，财年即自然年。它是美国证券法下的外国私人发行人：年度报告为 20-F，季度营收公告与半年度业绩一律以 6-K 报送。因此与本站其他欧洲奢侈品公司不同，它的全部原件都在 EDGAR 上，本页 sources 里逐份直链。",
         "披露节奏决定了本页两条时间轴的形状：收入按单季公布，一年四次，每次都带品牌、渠道、地区与分部拆分；完整损益表一年只有两次，在半年与全年。所以收入轴是真正的季度轴，上面没有一格是相减出来的；利润轴是半年轴，下半年由全年减上半年得到，表里逐行标明。本页不把这两条轴画在同一张图上。",
         f"季度记录的下限是 {P[0]}，而且不可能更早：公司 {s['company']['listed_on']} 才完成上市，此前没有公布过任何季度数字。本页的 {P[0]} 到 {P[3]} 四个季度，都是作为 2022 年各份发布的上年同期列才第一次被印出来的，表里逐格标明是哪一份。为确认这一点，除{cn_count(len(releases))}份业绩与营收新闻稿之外还读了 F-4、F-1 与 FY2021 的 20-F：三份都在正文里谈到季度，但都没有列出任何季度财务表。",
