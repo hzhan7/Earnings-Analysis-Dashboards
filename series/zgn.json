@@ -99,7 +99,7 @@
     ]
    },
    "previous_quarter_revenue_release": {
-    "source": "2026 年第一季度营收新闻稿（6-K EX-99.1，2026-04-30，pressreleaserevenuesq12026.htm）：渠道与地区收入表的 Q1 2026 vs Q1 2025 两列",
+    "source": "2026 年第一季度营收新闻稿（6-K EX-99.1，2026-04-30，pressreleaserevenuesq12026.htm）：渠道与地区收入表的 Q1 2026 vs Q1 2025 两列；品牌收入表 Total revenues 与 Thom Browne 两行，有机增速还原表 Total 行",
     "greater_china_organic_pct": 5.3,
     "dtc_eur_k": [
      371920.0,
@@ -108,7 +108,11 @@
     "wholesale_branded_eur_k": [
      64265.0,
      79483.0
-    ]
+    ],
+    "group_reported_printed_pct": 2.5,
+    "group_fx_pct": -4.9,
+    "group_organic_pct": 7.4,
+    "thom_browne_organic_pct": -3.0
    },
    "impairment_note": {
     "source": "2026 年半年报（6-K，2026-09-03，zgn-20260630.htm）附注 9「Thom Browne segment」正文与敏感性表",
@@ -135,6 +139,18 @@
      250,
      300
     ]
+   },
+   "lease_note": {
+    "source": "2026 年半年报附注 17「Lease liabilities」变动表（表格重读）",
+    "opening_eur_k": 731589.0,
+    "interest_eur_k": 17094.0,
+    "repayment_eur_k": -91727.0,
+    "additions_eur_k": 257571.0,
+    "closures_eur_k": -2554.0,
+    "translation_eur_k": 15222.0,
+    "closing_eur_k": 927195.0,
+    "non_current_eur_k": 780698.0,
+    "current_eur_k": 146497.0
    }
   },
   "note": {
@@ -1623,6 +1639,65 @@
   },
   "fair_value_scope": "€14,582 千是全部少数股东看跌期权负债的公允价值变动之差；公司写明 primarily driven by Thom Browne non-controlling interests，并给出 Thom Browne 本期亏 €1,056 千、上年同期赚 €13,835 千。汇兑那一项只属于 Thom Browne 那笔以美元计价的负债。"
  },
+ "printed_rates": {
+  "period": "H1 2026",
+  "quarters": [
+   "2026Q1",
+   "2026Q2"
+  ],
+  "group_reported_printed_pct": [
+   2.5,
+   10.3
+  ],
+  "group_fx_pct": [
+   -4.9,
+   -0.8
+  ],
+  "group_organic_pct": [
+   7.4,
+   11.0
+  ],
+  "thom_browne_organic_pct": [
+   -3.0,
+   2.7
+  ],
+  "greater_china_organic_pct": [
+   5.3,
+   8.6
+  ],
+  "source": "2026 年第一、第二季度营收新闻稿（6-K，2026-04-30 / 2026-07-23）：品牌收入表与地区收入表的单季 % 与 Organic 两列，按品牌的有机增速还原表 Total 行的 less Foreign exchange。公司每季都印这些增速；本站只接入本半年的两个季度，没有接入按季的有机增速序列。"
+ },
+ "lease_rollforward": {
+  "period": "H1 2026",
+  "opening_date": "2025-12-31",
+  "closing_date": "2026-06-30",
+  "opening_eur_k": 731589,
+  "closing_eur_k": 927195,
+  "legs_eur_k": [
+   [
+    "新租约与续租",
+    257571
+   ],
+   [
+    "利息",
+    17094
+   ],
+   [
+    "汇兑",
+    15222
+   ],
+   [
+    "关店减少",
+    -2554
+   ],
+   [
+    "偿还（含利息）",
+    -91727
+   ]
+  ],
+  "cause": "Additions during the period were primarily attributable to the extension of certain lease agreements aimed at securing long-term presence in prime retail locations in the United States and Europe.",
+  "source": "2026 年半年报（6-K，2026-09-03，zgn-20260630.htm）附注 17「Lease liabilities」变动表；期末 927,195 = 非流动 780,698 + 流动 146,497，与资产负债表两行一致"
+ },
  "next_kpi": {
   "period": "H1 2026",
   "set_in": "2026-09-03 ZGN Q2 2026 vs Q1 2026 Analysis.md 第 8 节「关键观察指标」",
@@ -1633,10 +1708,10 @@
     "direction": "up",
     "threshold": -5.0,
     "unit": "pct",
-    "current": 2.7,
     "reading": "2026Q2",
     "trigger": "< −5% 减仓；≥ 0 指引可信",
-    "source": "2026 年第二季度营收新闻稿（6-K，2026-07-23）品牌收入表 Q2 2026 vs Q2 2025：Thom Browne Organic 2.7%"
+    "source": "2026 年第二季度营收新闻稿（6-K，2026-07-23）品牌收入表：Thom Browne 的 Organic 一栏",
+    "rate": "thom_browne_organic_pct"
    },
    {
     "id": "fx_gap",
@@ -1644,12 +1719,14 @@
     "direction": "down",
     "threshold": 3.0,
     "unit": "pp",
-    "reported": 10.3,
-    "organic": 11.0,
     "organic_ceiling": 6.0,
     "reading": "2026Q2",
     "trigger": "差 > +3pp 且有机 ≤ +6% → 警示（加速已全是汇率）",
-    "source": "2026 年第二季度营收新闻稿（6-K，2026-07-23）Total revenues 行：Q2 2026 报告口径 10.3%、Organic 11.0%（两者都是公司印出的数）"
+    "source": "2026 年第二季度营收新闻稿（6-K，2026-07-23）品牌收入表 Total revenues 行：报告口径 % 与 Organic 两栏，都是公司印出的数",
+    "rates": [
+     "group_reported_printed_pct",
+     "group_organic_pct"
+    ]
    },
    {
     "id": "gcr_organic",
@@ -1657,10 +1734,10 @@
     "direction": "up",
     "threshold": 5.0,
     "unit": "pct",
-    "current": 8.6,
     "reading": "2026Q2",
     "trigger": "< +5% 警示；转负减仓",
-    "source": "同一份新闻稿地区收入表：Greater China Region Q2 2026 Organic 8.6%（报告口径 12.2%，汇率 +3.6pp）"
+    "source": "2026 年第二季度营收新闻稿（6-K，2026-07-23）地区收入表：Greater China Region 的 Organic 一栏",
+    "rate": "greater_china_organic_pct"
    },
    {
     "id": "tb_headroom",
@@ -1793,11 +1870,10 @@
     "upper_quarters": 2,
     "unit": "pct",
     "reading": "2026Q2",
-    "actual": 8.6,
-    "previous": 5.3,
     "plan_raised": false,
     "trigger": "连续两季 ≥ +5% 且管理层上调 flattish 规划 → 加仓；转负 → 洞察作废并下调中枢",
-    "source": "2026 年第二季度营收新闻稿（6-K，2026-07-23）地区收入表：Greater China Region Q2 Organic 8.6%；2026 年第一季度营收新闻稿（6-K，2026-04-30）同表 Q1 Organic 5.3%；规划未上调见本季分析稿第 0 节第 5 条"
+    "source": "2026 年第一季度营收新闻稿（6-K，2026-04-30）与2026 年第二季度营收新闻稿（6-K，2026-07-23）地区收入表：Greater China Region 的 Organic 一栏；规划未上调见本季分析稿第 0 节第 5 条",
+    "rate": "greater_china_organic_pct"
    },
    {
     "id": "fx_drag",
@@ -1806,10 +1882,10 @@
     "threshold": -3.0,
     "unit": "pp",
     "reading": "2026Q2",
-    "actual": -0.8,
     "trigger": "EUR/USD 季均 > 1.208（上季稿写明 ⇔ 拖累重回 −3pp 以上）→ 下修报告口径收入",
     "as_written": "季均 > 1.208 = 拖累重回 −3pp 以上；> 1.260 = 回到 Q1 的 −4.9pp 量级",
-    "source": "2026 年第二季度营收新闻稿（6-K，2026-07-23）有机增速还原表 Total 行：less Foreign exchange (0.8)%。EUR/USD 季均不是公司申报里的数，本页按上季稿写明的等价后果结算"
+    "source": "2026 年第二季度营收新闻稿（6-K，2026-07-23）有机增速还原表 Total 行：less Foreign exchange 一栏。EUR/USD 季均不是公司申报里的数，本页按上季稿写明的等价后果结算",
+    "rate": "group_fx_pct"
    },
    {
     "id": "zegna_per_store",

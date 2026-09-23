@@ -242,8 +242,8 @@ def period_charts(s: dict, view: dict, put: dict | None) -> list[dict]:
         "ylab": "€ 千（半年同比变动）",
         "note": ("四条腿按损益表逐行相减，四者之和恰好等于经营利润变动与税前利润变动之差 —— "
                  "这是恒等式，不是近似。"
-                 "本页把它单独画出来，是因为本期收入、毛利、经营利润、Adjusted EBIT 四个口径同时改善，"
-                 "而利润下降，落差整段发生在这里。"),
+                 + ("本页把它单独画出来，是因为本期收入、毛利、经营利润、Adjusted EBIT 四个口径同时改善，"
+                    "而利润下降，落差整段发生在这里。" if split else "")),
         "src_extra": "取自半年度业绩新闻稿与半年报的合并损益表。",
     }
 
@@ -631,6 +631,232 @@ def restatement_table(s: dict, n: int) -> dict:
     }
 
 
+# ── section two (本季重点): what moved inside the half ───────────────────────
+def eur_signed(value: float) -> str:
+    """``12531`` -> ``+€12.5M``; ``-12800`` -> ``−€12.8M``."""
+    return ("+" if value > 0 else "") + eur_m(value)
+
+
+def bridge(ref: str, title: str, legs: list[tuple[str, float]], total: float, *, total_label: str,
+           stack_name: str, net_name: str, fmt: str, digits: int, ylab: str, note: str,
+           src_extra: str) -> dict:
+    """An identity bridge whose every column carries a mark.
+
+    The renderer skips a leg worth exactly zero (`charts.js` bridge_bar,
+    `vb === 0`), leaving a labelled column with nothing in it. A leg that rounds
+    to zero at the chart's own precision is dropped here and named in the note
+    instead, so it comes back by itself the half it moves.
+    """
+    kept = [(name, v) for name, v in legs if round(v, digits) != 0]
+    flat = [name for name, v in legs if round(v, digits) == 0]
+    return {
+        "ref": ref,
+        "kind": "bridge_bar",
+        "title": title,
+        "xlabels": [name for name, _ in kept] + [total_label],
+        "stacks": [{"name": stack_name, "color": "NAVY",
+                    "values": [round(v, 6) for _, v in kept] + [None]}],
+        "net": {"name": net_name, "values": [None] * len(kept) + [round(total, 6)]},
+        "fmt": fmt, "yfmt": fmt, "label_fmt": fmt,
+        "ylab": ylab,
+        "note": note + (f"{'、'.join(flat)} 与上年同期相同（按图上的精度为零），不单画。" if flat else ""),
+        "src_extra": src_extra,
+    }
+
+
+BRAND_LEGS = [("ZEGNA", "zegna"), ("Thom Browne", "thom_browne"), ("TOM FORD FASHION", "tff"),
+              ("面料", "textile"), ("其他", "other")]
+BRANDS = ("ZEGNA", "Thom Browne", "TOM FORD FASHION")
+
+
+def quarter_brand_bridge(s: dict, view: dict) -> dict:
+    """The latest quarter's revenue increase, brand by brand."""
+    q = s["quarterly"]
+    P, b = q["periods"], q["brand"]
+    k = len(P) - 1
+    z = lambda v: 0.0 if v is None else v
+    legs = [(name, z(b[key][k]) - z(b[key][k - 4])) for name, key in BRAND_LEGS]
+    total = q["revenue_eur_k"][k] - q["revenue_eur_k"][k - 4]
+    assert abs(sum(v for _, v in legs) - total) < 0.5, "brand legs do not close to the group"
+    lead_name, lead = max(legs, key=lambda x: x[1])
+    rates = view.get("rates")
+    has = lambda label: rates is not None and label in rates["quarters"]
+    growth = (printed_rate(view, "group_reported_printed_pct", P[k]) if has(P[k])
+              else pct(q["revenue_eur_k"][k], q["revenue_eur_k"][k - 4]))
+    organic = printed_rate(view, "group_organic_pct", P[k]) if has(P[k]) else None
+    pace = ""
+    if has(P[k]) and has(P[k - 1]):
+        r0, r1 = (printed_rate(view, "group_reported_printed_pct", x) for x in (P[k - 1], P[k]))
+        o0, o1 = (printed_rate(view, "group_organic_pct", x) for x in (P[k - 1], P[k]))
+        f0, f1 = (printed_rate(view, "group_fx_pct", x) for x in (P[k - 1], P[k]))
+        pace = (f"{quarter_cn(P[k - 1])}公司印出的报告口径增速 {signed(r0)}、有机 {signed(o0)}；本季分别是 "
+                f"{signed(r1)}、{signed(o1)}，报告口径加快 {minus_sign(num(r1 - r0))}pp，"
+                f"有机加快 {minus_sign(num(o1 - o0))}pp，汇率的影响从 {minus_sign(f'{f0:+.1f}')}pp "
+                f"变成 {minus_sign(f'{f1:+.1f}')}pp。")
+    share = (f"（{num(lead / total * 100, 0)}%）" if total > 0 and lead > 0 else "")
+    return bridge(
+        "EX_Q_BRANDS",
+        (f"{quarter_cn(P[k])}收入同比 {signed(growth)}"
+         + (f"（有机 {signed(organic)}）" if organic is not None else "")
+         + (f"：增量 {eur_m(total)} 里 {lead_name}{' 品牌' if lead_name in BRANDS else ''}占 {eur_m(lead)}{share}"
+            if total > 0 and lead > 0 else "")),
+        legs, total, total_label="集团合计",
+        stack_name="较上年同期的变动（€ 千）", net_name="集团收入的同比变动",
+        fmt="f0c", digits=0, ylab="€ 千（单季同比变动）",
+        note=(f"按品牌拆单季收入的同比增量（报告口径，含汇率），{cn_count(len(legs))}条腿之和恰好等于"
+              "集团收入的同比变动。" + pace),
+        src_extra=("品牌收入取自各季营收新闻稿的品牌表（D）；报告口径与有机增速是公司印出的数，"
+                   "取自本季与上季的营收新闻稿。"),
+    )
+
+
+def margin_bridge(s: dict, view: dict) -> dict:
+    """The Adjusted EBIT margin change, split into gross margin and the costs below it."""
+    h = s["half"]
+    i, j = view["i"], view["prior"]
+    gross = lambda k: h["gross_profit"][k] / h["revenue"][k] * 100
+    ebit = lambda k: h["adjusted_ebit"][k] / h["revenue"][k] * 100
+    d_gross = (gross(i) - gross(j)) * 100
+    d_cost = -((gross(i) - ebit(i)) - (gross(j) - ebit(j))) * 100
+    d_ebit = (ebit(i) - ebit(j)) * 100
+    assert abs(d_gross + d_cost - d_ebit) < 1e-6
+    all_gross = d_ebit > 0 and d_gross >= d_ebit
+    bp = lambda v: minus_sign(f"{v:+.1f}bp")
+    return bridge(
+        "EX_MARGIN",
+        (f"{half_cn(view['half'])} Adjusted EBIT 利润率 {bp(d_ebit)}："
+         + (f"全部来自毛利率（{bp(d_gross)}），毛利以下的费用强度反而拖累 {abs(d_cost):.1f}bp"
+            if all_gross and d_cost < 0 else
+            f"毛利率 {bp(d_gross)}，毛利以下的费用强度 {bp(d_cost)}")),
+        [("毛利率", d_gross), ("毛利以下的费用强度", d_cost)], d_ebit,
+        total_label="Adjusted EBIT 利润率",
+        stack_name="对利润率的贡献（bp）", net_name="Adjusted EBIT 利润率的同比变动",
+        fmt="f1", digits=1, ylab="bp（同比）",
+        note=("Adjusted EBIT 利润率 = 毛利率 −（毛利 − Adjusted EBIT）÷ 收入，两条腿之和恰好等于利润率的变动。"
+              f"第二条腿是毛利与 Adjusted EBIT 之差占收入的比例：{num(gross(j) - ebit(j), 2)}% → "
+              f"{num(gross(i) - ebit(i), 2)}%。它是经营费用扣掉公司加回的调整项之后的强度，"
+              "所以门店减值这类被加回的项目少提多少，都不会出现在这条腿里。"),
+        src_extra="毛利、Adjusted EBIT 与收入取自两期业绩新闻稿的损益表（D）。",
+    )
+
+
+SEGMENT_LEGS = [("Zegna 分部", "zegna"), ("Thom Browne 分部", "thom_browne"),
+                ("TOM FORD FASHION 分部", "tff"), ("Corporate", "corporate"), ("分部间抵销", "eliminations")]
+
+
+def segment_bridge(s: dict, view: dict) -> dict:
+    """Which segment added and which one took away, on the period the results cover.
+
+    The segment table prints a first half as ``2026H1`` and a full year as
+    ``FY2026``; it has no second half. So an H1 page compares halves and an H2
+    page -- which is the full-year results -- compares years.
+    """
+    se = s["segment_adjusted_ebit"]
+    year = view["year"]
+    now_label, then_label = ((view["half"], f"{year - 1}H1") if view["is_h1"]
+                             else (f"FY{year}", f"FY{year - 1}"))
+    now, then = se["periods"].index(now_label), se["periods"].index(then_label)
+    z = lambda v: 0.0 if v is None else v
+    legs = [(name, z(se[key][now]) - z(se[key][then])) for name, key in SEGMENT_LEGS]
+    total = se["total"][now] - se["total"][then]
+    assert abs(sum(v for _, v in legs) - total) < 0.5, "segment legs do not close to the group"
+    zegna, tb = legs[0][1], legs[1][1]
+    q = s["quarterly"]
+
+    def segment_revenue(key: str, label: str) -> float:
+        wanted = (1, 2, 3, 4) if label.startswith("FY") else (1, 2)
+        y = label[2:6] if label.startswith("FY") else label[:4]
+        return sum(q["segment"][key][q["periods"].index(f"{y}Q{n}")] for n in wanted)
+
+    margin = lambda key, k, label: se[key][k] / segment_revenue(key, label) * 100
+    word = half_cn(view["half"]) if view["is_h1"] else f"FY{year}"
+    return bridge(
+        "EX_SEGMENTS",
+        (f"{word} Adjusted EBIT 同比 {eur_signed(total)}：Zegna 分部 {eur_signed(zegna)}，"
+         f"Thom Browne 分部 {eur_signed(tb)}"
+         + ("，一家就抵掉了 Zegna 分部的全部增量" if zegna > 0 and -tb >= zegna else "")),
+        legs, total, total_label="集团合计",
+        stack_name="较上年同期的变动（€ 千）", net_name="集团 Adjusted EBIT 的同比变动",
+        fmt="f0c", digits=0, ylab="€ 千（同比变动）",
+        note=("三个分部、集团费用与分部间抵销之和恰好等于集团 Adjusted EBIT 的同比变动。"
+              f"Zegna 分部利润率 {num(margin('zegna', then, then_label))}% → "
+              f"{num(margin('zegna', now, now_label))}%，Thom Browne 分部 "
+              f"{num(margin('thom_browne', then, then_label))}% → {num(margin('thom_browne', now, now_label))}%"
+              "（分母为分部收入，含分部间销售）。"),
+        src_extra="分部 Adjusted EBIT 取自两期业绩新闻稿的分部表；分部收入为各季之和（D）。",
+    )
+
+
+def store_productivity(s: dict, view: dict) -> dict:
+    """DTC revenue per store against the store count, brand by brand, half on half."""
+    q, st = s["quarterly"], s["stores"]
+    ch = q["channel"]
+    keys = {"ZEGNA": "dtc_zegna", "Thom Browne": "dtc_thom_browne", "TOM FORD FASHION": "dtc_tff"}
+    quarters = view["quarters"]
+    year_ago = [f"{int(x[:4]) - 1}{x[4:]}" for x in quarters]
+    end = q["period_ends"][q["periods"].index(quarters[-1])]
+    end_then = q["period_ends"][q["periods"].index(year_ago[-1])]
+    rows = []
+    for brand in BRANDS:
+        dtc_now = sum(ch[keys[brand]][q["periods"].index(x)] for x in quarters)
+        dtc_then = sum(ch[keys[brand]][q["periods"].index(x)] for x in year_ago)
+        doors_now = st["dtc"][brand][st["dates"].index(end)]
+        doors_then = st["dtc"][brand][st["dates"].index(end_then)]
+        rows.append((brand, pct(dtc_now, dtc_then), pct(doors_now, doors_then),
+                     pct(dtc_now / doors_now, dtc_then / doors_then), doors_then, doors_now))
+    zegna, tb = rows[0], rows[1]
+    return {
+        "ref": "EX_STORES",
+        "kind": "grouped_bars",
+        "title": (f"{half_cn(view['half'])}单店直营收入：ZEGNA {signed(zegna[3])}（门店 {zegna[4]} → {zegna[5]} 家），"
+                  f"Thom Browne {signed(tb[3])}（门店 {tb[4]} → {tb[5]} 家）"),
+        "xlabels": [r[0] for r in rows],
+        "groups": [
+            {"name": "直营收入同比", "color": "NAVY", "values": rounded([r[1] for r in rows], 1)},
+            {"name": "期末直营门店数同比", "color": "GOLD", "values": rounded([r[2] for r in rows], 1)},
+            {"name": "单店直营收入同比 D", "color": "MBLUE", "values": rounded([r[3] for r in rows], 1)},
+        ],
+        "bar_labels": True,
+        "fmt": "pct1", "label_fmt": "pct1", "yfmt": "pct1",
+        "ylab": "同比 %",
+        "note": ("单店直营收入 = 半年 DTC 收入 ÷ 期末直营门店数，与本季分析稿同一口径；"
+                 "用的是期末数而不是平均数，门店扩张快的品牌单店数会被低估。"
+                 + "；".join(f"{r[0]} 直营收入 {signed(r[1])}，其中门店数 {signed(r[2])}、单店 {signed(r[3])}"
+                            for r in rows)
+                 + "。"),
+        "src_extra": "各品牌 DTC 收入取自两个季度的营收新闻稿，期末门店数取自当期门店表（D）。",
+    }
+
+
+def lease_bridge(s: dict, view: dict, lease: dict) -> dict:
+    """The half's lease-liability roll-forward, as the note prints it."""
+    legs = [(name, value) for name, value in lease["legs_eur_k"]]
+    opening, closing = lease["opening_eur_k"], lease["closing_eur_k"]
+    change = closing - opening
+    if abs(opening + sum(v for _, v in legs) - closing) >= 0.5:
+        raise ValueError("series block `lease_rollforward` does not close: opening plus the legs is not the closing")
+    st = s["stores"]
+    doors = [st["dtc"]["Group"][st["dates"].index(d)] for d in (lease["opening_date"], lease["closing_date"])]
+    lead_name, lead = max(legs, key=lambda x: x[1])
+    nfp = s["net_financial_position"]
+    net_debt = nfp["net_debt_eur_k"][nfp["dates"].index(lease["closing_date"])]
+    return bridge(
+        "EX_LEASE",
+        (f"租赁负债半年 {eur_signed(change)}（{signed(pct(closing, opening))}）到 {eur_m(closing)}："
+         f"{lead_name} {eur_m(lead)}，同期直营门店 {doors[0]} → {doors[1]} 家"),
+        legs, change, total_label="半年净变动",
+        stack_name="租赁负债的变动（€ 千）", net_name="租赁负债的半年净变动",
+        fmt="f0c", digits=0, ylab="€ 千",
+        note=(f"从 {lease['opening_date']} 的 {eur_m(opening)} 到 {lease['closing_date']} 的 {eur_m(closing)}，"
+              f"{cn_count(len(legs))}条腿之和恰好等于期末减期初。"
+              f"公司在附注里的解释：「{lease['cause']}」"
+              "租赁负债不计入公司口径的净财务状况："
+              + (f"同一天公司报告的是净现金 {eur_m(-net_debt)}。" if net_debt < 0 else
+                 f"同一天公司报告的净负债是 {eur_m(net_debt)}。")),
+        src_extra=lease["source"],
+    )
+
+
 # ── section one (a): the questions last quarter's analysis left open ────────
 def check_set_in(block: dict, name: str, view: dict) -> None:
     """A block settling last quarter's analysis must name a quarter of this half.
@@ -744,6 +970,19 @@ def prior_entries(s: dict, view: dict, block: dict) -> list[dict]:
             entry = {**e, "actual": values[k]}
             if e.get("upper_quarters", 1) == 2:
                 entry["previous"] = values[k - 1]
+            out.append(entry)
+        elif "rate" in e:
+            if "actual" in e or "previous" in e:
+                raise ValueError(f"`prior_kpi_settlement.{e['id']}` reads `printed_rates`; "
+                                 "remove its typed value")
+            entry = {**e, "actual": printed_rate(view, e["rate"], e["reading"])}
+            if e.get("upper_quarters", 1) == 2:
+                quarters = view["rates"]["quarters"]
+                k = quarters.index(e["reading"])
+                if k == 0:
+                    raise ValueError(f"`prior_kpi_settlement.{e['id']}` needs the quarter before "
+                                     f"{e['reading']}, which `printed_rates` does not carry")
+                entry["previous"] = printed_rate(view, e["rate"], quarters[k - 1])
             out.append(entry)
         else:
             if "actual" not in e:
@@ -1067,38 +1306,66 @@ def target_charts(s: dict, view: dict) -> list[dict]:
 QUARTER_LABEL = re.compile(r"^\d{4}Q[1-4]$")
 
 
+def check_rates(s: dict, view: dict, rates: dict | None) -> dict | None:
+    """The half's printed growth rates, refused if they are another half's or
+    if the printed reported rate disagrees with the series' own arithmetic.
+
+    The company prints its growth rates (reported, FX, organic) every quarter;
+    this site has not connected them as a series, only this half's two quarters,
+    kept in one stamped block so that no threshold types its own copy.
+    """
+    if rates is None:
+        return None
+    if rates["quarters"] != view["quarters"]:
+        raise ValueError(f"series block `printed_rates` covers {rates['quarters']}, but this half's "
+                         f"quarters are {view['quarters']}: update it with the roll")
+    q = s["quarterly"]
+    for label, printed in zip(rates["quarters"], rates["group_reported_printed_pct"]):
+        k = q["periods"].index(label)
+        derived = pct(q["revenue_eur_k"][k], q["revenue_eur_k"][k - 4])
+        if round(derived, 1) != printed:
+            raise ValueError(f"series block `printed_rates` says the company printed {printed}% for "
+                             f"{label}, but the series gives {derived:.2f}%")
+    return rates
+
+
+def printed_rate(view: dict, name: str, label: str) -> float:
+    rates = view.get("rates")
+    if rates is None:
+        raise ValueError(f"a threshold reads the printed rate `{name}`, but the series has no "
+                         "`printed_rates` block for this half")
+    return rates[name][rates["quarters"].index(label)]
+
+
 def next_entries(s: dict, view: dict, nk: dict) -> list[dict]:
     """The quantified thresholds, each with the reading it is judged on.
 
-    A reading that is arithmetic on other figures is computed here and must not
-    also be typed into the block; one that is a printed figure (an organic rate,
-    a headroom from a note) is typed with its filing. The gap line is written on
-    the company's two printed rates, so it is their difference -- the reported
-    rate the series would give (10.29% for Q2 2026) is not the one the company
-    printed (10.3%), and the owner's rule is the printed one. Either way the
-    reading has to be this page's own latest period, or the block is last half's.
+    A printed rate is read from `printed_rates` (an entry names it); arithmetic
+    on printed rates is computed here; neither may also be typed into the block.
+    Only a figure no rate carries (a headroom from a note) is typed, with its
+    filing. The gap line is written on the company's two printed rates, so it is
+    their difference -- the reported rate the series would give (10.29% for
+    Q2 2026) is not the one the company printed (10.3%), and the owner's rule is
+    the printed one. Either way the reading has to be this page's own latest
+    period, or the block is last half's.
     """
-    q = s["quarterly"]
-
-    def reported_growth(label: str) -> float:
-        k = q["periods"].index(label)
-        return pct(q["revenue_eur_k"][k], q["revenue_eur_k"][k - 4])
-
-    computed = {"fx_gap": lambda e: e["reported"] - e["organic"]}
+    computed = {"fx_gap": lambda e: (printed_rate(view, e["rates"][0], e["reading"])
+                                     - printed_rate(view, e["rates"][1], e["reading"]))}
     out = []
     for e in nk["quantified"]:
         wanted = view["latest_quarter"] if QUARTER_LABEL.match(e["reading"]) else s["latest"]["period_end"]
         if e["reading"] != wanted:
             raise ValueError(f"series block `next_kpi` reads `{e['id']}` at {e['reading']!r}, "
                              f"but this page's latest reading is {wanted!r}: update it with the roll")
-        if "reported" in e and round(reported_growth(e["reading"]), 1) != e["reported"]:
-            raise ValueError(f"`next_kpi.{e['id']}` says the company printed {e['reported']}% for "
-                             f"{e['reading']}, but the series gives {reported_growth(e['reading']):.2f}%")
-        if e["id"] in computed:
+        if "rate" in e or e["id"] in computed:
             if "current" in e:
-                raise ValueError(f"`next_kpi.{e['id']}` is computed from its printed legs; "
-                                 "remove its typed value")
-            out.append({**e, "current": computed[e["id"]](e)})
+                raise ValueError(f"`next_kpi.{e['id']}` is read from `printed_rates` or computed from "
+                                 "its printed legs; remove its typed value")
+            if "rate" in e:
+                out.append({**e, "current": printed_rate(view, e["rate"], e["reading"])})
+            else:
+                legs = {name: printed_rate(view, name, e["reading"]) for name in e["rates"]}
+                out.append({**e, "current": computed[e["id"]](e), "legs": legs})
         else:
             if "current" not in e:
                 raise ValueError(f"`next_kpi.{e['id']}` has no reading and no way to compute one")
@@ -1141,7 +1408,8 @@ def next_charts(s: dict, view: dict, nk: dict) -> tuple[list[dict], list[dict]]:
         entries, "current",
         ("正值 = 仍在安全侧。"
          + (f"「{gap['metric']}」是合取条件：差超过 {minus_sign(unit_text(gap['unit'], gap['threshold']))} "
-            f"且有机增速不高于 {gap['organic_ceiling']:.0f}% 才算触发，本季有机 {gap['organic']:.1f}%。"
+            f"且有机增速不高于 {gap['organic_ceiling']:.0f}% 才算触发，本季有机 "
+            f"{gap['legs'][gap['rates'][1]]:.1f}%。"
             if gap else "")
          + (f"减值余量 {unit_text(tb['unit'], tb['current'])} 对应商誉 {eur_m(tb['goodwill_eur_k'])} "
             f"加无限期品牌 {eur_m(tb['brand_eur_k'])}；公司自己的敏感性表里 WACC 上调 100bp，"
@@ -1241,6 +1509,7 @@ def build_payload(staging: dict) -> dict:
     if not any(source["label"].startswith(release) for source in s["sources"]):
         raise ValueError(f"series `sources` has no entry for the {release} release: add it with the roll")
     put = stamped_block(s, "half_story", period)
+    view["rates"] = check_rates(s, view, stamped_block(s, "printed_rates", period))
     nk = stamped_block(s, "next_kpi", period)
     if nk is None:
         raise ValueError("series block `next_kpi` is required every half: the page's third part "
@@ -1254,7 +1523,13 @@ def build_payload(staging: dict) -> dict:
     # exhibit dicts themselves, so numbering them below numbers them here too.
     prior_ex, prior_list = prior_charts(s, view, prior) if prior else ([], [])
     settled_ex = ([closure_chart(closure, view)] if closure else []) + prior_ex + target_charts(s, view)
-    highlight_ex = period_charts(s, view, put)
+    # Section two, in the order the current analysis argues it: the quarter's
+    # revenue, the half's profit line by line, then the balance-sheet event.
+    period_ex = period_charts(s, view, put)
+    lease = stamped_block(s, "lease_rollforward", period)
+    highlight_ex = ([quarter_brand_bridge(s, view), period_ex[0], margin_bridge(s, view),
+                     segment_bridge(s, view), store_productivity(s, view)] + period_ex[1:]
+                    + ([lease_bridge(s, view, lease)] if lease else []))
     next_ex, next_list = next_charts(s, view, nk)
     routine_ex = channel_charts(s, view) + brand_charts(s, view) + geography_charts(s, view)
     exhibits = number_exhibits(settled_ex + highlight_ex + next_ex + routine_ex)
@@ -1330,57 +1605,91 @@ def build_payload(staging: dict) -> dict:
     margin = g("adjusted_ebit") / g("revenue") * 100
     margin_prior = p("adjusted_ebit") / p("revenue") * 100
     profit_growth = pct(g("profit"), p("profit"))
-    share_now = dtc_share(s, len(P) - 1)
-    share_first = dtc_share(s, 0)
-    rows = s["republication_census"]["rows"]
-    total_row = next(r for r in rows if r["row"] == "total" and r["kind"] == "segment")
-    changed_rows = [r for r in rows if r["periods_changed"] > 0]
-    ratio = se["zegna"][-1] / se["total"][-1] * 100
+
+    by_ref = {ex.get("ref"): ex for ex in exhibits}
+    margin_ex = by_ref["EX_MARGIN"]
+    # A leg that rounds to zero is not drawn, so read the legs by name.
+    margin_legs = dict(zip(margin_ex["xlabels"], margin_ex["stacks"][0]["values"]))
+    d_gross = margin_legs.get("毛利率", 0.0)
+    d_ebit = margin_ex["net"]["values"][-1]
+    all_gross = d_ebit > 0 and d_gross >= d_ebit
+    seg_ex = by_ref["EX_SEGMENTS"]
+    seg = dict(zip(seg_ex["xlabels"], seg_ex["stacks"][0]["values"]))
+    zegna_add, tb_add = seg.get("Zegna 分部", 0.0), seg.get("Thom Browne 分部", 0.0)
+    above = [g_ for g_ in (pct(view["revenue"], view["revenue_prior"]),
+                           pct(g("gross_profit"), p("gross_profit")),
+                           pct(g("operating_profit"), p("operating_profit")),
+                           pct(g("adjusted_ebit"), p("adjusted_ebit")))]
+    split = all(v > 0 for v in above) and profit_growth < 0
 
     headline = (f"{half_cn(half)}收入 {eur_m(view['revenue'])}，同比 "
                 f"{signed(pct(view['revenue'], view['revenue_prior']))}；"
                 f"Adjusted EBIT {eur_m(g('adjusted_ebit'))}、利润率 {num(margin)}%"
-                f"（上年同期 {num(margin_prior)}%），"
-                f"而期间利润 {eur_m(g('profit'))}、同比 {signed(profit_growth)} —— "
+                f"（上年同期 {num(margin_prior)}%）"
+                + (f"，多出的 {d_ebit:.1f}bp 全部来自毛利率" if all_gross else "")
+                + f"；分部里 Zegna {eur_signed(zegna_add)}、Thom Browne {eur_signed(tb_add)}。"
+                f"期间利润 {eur_m(g('profit'))}、同比 {signed(profit_growth)} —— "
                 "落差整段发生在经营利润之下"
                 + (f"，其中少数股东看跌期权（以 {put['brand']} 为主）的重估与汇兑两项就造成 "
                    f"{eur_m(put['fair_value_swing_eur_k'] + put['fx_swing_eur_k'])} 的不利同比变动"
                    if put else "")
-                + "。"
-                f"同期 DTC 占品牌收入升到 {num(share_now)}%，"
-                f"Zegna 一个分部的 Adjusted EBIT 相当于集团的 {num(ratio)}%。")
+                + "。")
 
-    cards = [
-        '<article><span>本期</span><b>经营线全好，利润掉了四成</b>'
-        f'<p>收入 {signed(pct(view["revenue"], view["revenue_prior"]))}、'
-        f'毛利 {signed(pct(g("gross_profit"), p("gross_profit")))}、'
-        f'经营利润 {signed(pct(g("operating_profit"), p("operating_profit")))}、'
-        f'Adjusted EBIT {signed(pct(g("adjusted_ebit"), p("adjusted_ebit")))}，'
-        f'期间利润 {signed(profit_growth)}。'
-        + (f'少数股东看跌期权（以 {put["brand"]} 为主）的公允价值与汇兑两项，'
-           '合计比经营线以下的全部净变动还大。'
-           if put else '')
-        + '</p></article>',
-        '<article><span>结构</span><b>渠道换完了，收入没动</b>'
-        f'<p>DTC 占品牌收入从 {num(share_first)}% 到 {num(share_now)}%，'
-        f'直营门店 {st["dtc"]["Group"][0]} → {st["dtc"]["Group"][-1]} 家，'
-        f'批发门店 {st["wholesale_doors"]["Group"][0]} → {st["wholesale_doors"]["Group"][-1]} 家；'
-        f'集团收入 FY{s["annual"]["years"][-3]} 到 FY{s["annual"]["years"][-1]} 只变了 '
-        f'{signed(pct(s["annual"]["revenue"][-1], s["annual"]["revenue"][-3]), 2)}。</p></article>',
-        '<article><span>口径</span><b>'
-        + ('合计从没改过，拆分改过' if total_row["periods_changed"] == 0 else '合计也改过')
+    cards = []
+    if closure or prior:
+        verified = sum(1 for it in closure["items"] if it["bucket"] == closure["buckets"][0]) if closure else 0
+        plotted = [e for e in prior_list if e["threshold"] != 0]
+        held = [e for e in plotted if headroom(e["direction"], e["threshold"], e["actual"]) >= 0]
+        upper = [e for e in prior_list if upper_met(e)]
+        cards.append(
+            '<article><span>上季兑现</span><b>'
+            + (f'{len(closure["items"])} 条问题 {verified} 条已验证' if closure else '')
+            + ('，' if closure and prior else '')
+            + (f'{len(prior_list)} 条阈值' + ('能算余量的都守住' if len(held) == len(plotted)
+                                              else f'击穿 {len(plotted) - len(held)} 条')
+               if prior else '')
+            + '</b><p>'
+            + (''.join(f'第 {it["n"]} 条：{it["reading"]}。' for it in closure["items"] if "被证伪" in it["verdict"])
+               if closure else '')
+            + (f'连加仓线也过了的是{"、".join(e["metric"] for e in upper)}。' if upper else '')
+            + '</p></article>')
+    cards.append(
+        '<article><span>本季</span><b>'
+        + (f'经营线全好，利润掉了{cn_count(round(abs(profit_growth) / 10))}成' if split
+           else f'期间利润同比 {signed(profit_growth)}')
         + '</b>'
-        f'<p>集团合计收入被重复公布 {total_row["periods_republished"]} 次，'
-        f'{total_row["periods_changed"]} 次改动；它下面'
-        f'{cn_count(len(rows) - 1)}条线里有'
-        f'{cn_count(len(changed_rows))}条改过，'
-        f'{cn_count(len(s["restatements"]))}处重述里只有'
-        f'{cn_count(sum(1 for r in s["restatements"] if r.get("footnoted_by_the_company")))}'
-        '处被公司说明过。</p></article>',
-    ]
+        f'<p>收入 {signed(above[0])}、毛利 {signed(above[1])}、经营利润 {signed(above[2])}、'
+        f'Adjusted EBIT {signed(above[3])}，期间利润 {signed(profit_growth)}。'
+        + (f'少数股东看跌期权（以 {put["brand"]} 为主）的公允价值与汇兑两项，'
+           '合计比经营线以下的全部净变动还大。' if put else '')
+        + '</p></article>')
+    stores = by_ref["EX_STORES"]
+    per_store = dict(zip(stores["xlabels"], stores["groups"][2]["values"]))
+    cards.append(
+        '<article><span>本季</span><b>'
+        + (f'利润率只多 {d_ebit:.1f}bp，全部来自毛利率' if all_gross
+           else f'利润率 {minus_sign(f"{d_ebit:+.1f}")}bp')
+        + '</b>'
+        f'<p>Zegna 分部 {eur_signed(zegna_add)}，Thom Browne 分部 {eur_signed(tb_add)}'
+        + ('，一家就抵掉了 Zegna 的全部增量' if zegna_add > 0 and -tb_add >= zegna_add else '')
+        + f'；单店直营收入 ZEGNA {signed(per_store["ZEGNA"])}、Thom Browne {signed(per_store["Thom Browne"])}。'
+        '</p></article>')
+    fy = nk.get("full_year")
+    fy_ex = by_ref.get("EX_NEXT_FY")
+    if fy_ex:
+        seconds = fy_ex["series"][0]["values"]
+        best = max(range(len(seconds)), key=lambda k: seconds[k])
+        need = fy_ex["series"][1]["values"][0]
+        nearest = min(next_list, key=lambda e: headroom(e["direction"], e["threshold"], e["current"]))
+        cards.append(
+            '<article><span>下季</span><b>'
+            f'全年 {eur_m(fy["bear_below_eur_m"] * 1000, 0)} 要下半年做到 {eur_m(need)}</b>'
+            f'<p>此前最高的下半年是 {fy_ex["xlabels"][best]} 的 {eur_m(seconds[best])}。'
+            f'有当前读数的阈值里离线最近的是{nearest["metric"]}：'
+            f'{minus_sign(unit_text(nearest["unit"], nearest["current"]))} 对 '
+            f'{minus_sign(unit_text(nearest["unit"], nearest["threshold"]))}。</p></article>')
 
     mt = s["medium_term_targets"]
-    fy = nk.get("full_year")
     sections = [
         {"id": "settled", "title": "一、上季跟踪指标兑现了吗",
          "description": (
@@ -1395,8 +1704,13 @@ def build_payload(staging: dict) -> dict:
              f"就在 {mt['targets_2027']['set_on']} 被换成 {mt['targets_2027']['year']} 年的绝对区间。"),
          "exhibits": settled_ex},
         {"id": "quarter_highlights", "title": "二、本季重点",
-         "description": (f"{half_cn(half)}从收入到利润五个口径的同比方向不一致：先把落差定位到损益表的"
-                         "哪一段，再看那一段里最大的一笔是什么。"),
+         "description": (f"{half_cn(half)}的几件事，每张图一个结论，大致按本季分析稿的顺序："
+                         f"{quarter_cn(view['latest_quarter'])}的收入增量来自哪个品牌，利润率的变化来自毛利还是费用，"
+                         "哪个分部抵掉了谁，门店与单店，经营线以下的落差"
+                         + ("与少数股东看跌期权" if put else "")
+                         + ("，以及租赁负债的变动" if lease else "")
+                         + "。本季分析稿里的「每股口径」一条（加权股数与少数股东分走的利润比例）本页没有画："
+                         "本页没有接入每股收益与股本数据。"),
          "exhibits": highlight_ex},
         {"id": "next_quarter", "title": "三、下季要跟踪什么",
          "description": (f"本季分析稿第 8 节留给下一次披露的 {len(next_list) + (1 if fy else 0)} 条阈值："
