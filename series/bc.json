@@ -51,6 +51,19 @@
     "guidance_cfx_high_pct": 11.0,
     "source": "Brunello Cucinelli 2026 年半年报新闻稿（「the Board of Directors approved the 2026 Half-Year Financial Report」，正文落款 Solomeo, 30 July 2026）：首页要点（Revenues as at 30 June 2026 €749.4 million, +13.3% constant / +9.5% current；Retail +19.3% constant；Ebit €128.2 million +12.6%, margin 17.1% vs 16.6%；Net profit €78.2 million +2.0%；Investments €57.2 million, incidence 7.6%；Net financial debt for the core business €225.1 million vs €197.2 million；2026 growth at constant exchange rates between +10% and +11%）、第 5–6 页 Revenues by Geographical Area 与 by Distribution Channel 两表（255,582 / 278,671 / 215,158；Retail 499,765 = 66.7%、Wholesale 249,646 = 33.3%，上年同期 435,837 / 248,298）、第 12 页合并损益表（Operating Income 128,199 / 113,837；Net profit 78,169 / 76,650）与现金流量表（Depreciation and amortization 98,343）。上年末核心净负债取自 2025 年年报新闻稿（Solomeo, 18 February 2026：net financial debt for the core business of €198.4 million as at 31 December 2025）。",
     "checked_on": "2026-09-19",
+    "retail_q2_growth_cfx_pct": 18.6,
+    "wholesale_growth_cfx_pct": 2.7,
+    "americas_growth_cfx_pct": 20.6,
+    "europe_growth_cfx_pct": 5.3,
+    "asia_growth_cfx_pct": 14.1,
+    "pbt_eur_k": 109789,
+    "pbt_prior_year_eur_k": 107356,
+    "fx_gains_eur_m": 1.3,
+    "fx_gains_prior_year_eur_m": 12.4,
+    "net_working_capital_eur_m": 317.6,
+    "net_working_capital_pct_rolling": 21.6,
+    "net_working_capital_prior_year_pct_rolling": 22.6,
+    "related_party_ai_services_eur_k": 340,
     "note": {
       "source": "所有者的季报分析稿（5.Earnings Analysis/BC/）：本季「2026-07-30 BC Q2 2026 vs Q1 2026 Analysis.md」第 0 节（上季遗留问题回答）与第 8 节（关键观察指标）；上季「2026-04-09 BC Q1 2026 vs Q4 2025 Analysis.md」第 8 节（关键观察指标）。本季报告的 Q2 2026 与页面的 H1 2026 是同一次披露：期末 2026-06-30、发布 2026-07-30。",
       "checked_on": "2026-09-23",
@@ -96,30 +109,56 @@
       "prior_unquantified": [
         "中东战争状态 + 该地区收入贡献",
         "Callimachus 商业化首次披露"
+      ],
+      "next_thresholds": [
+        {
+          "id": "group_cfx",
+          "report_words": "#1：≥ +12% 且 2027 指引上修 → 斜率封顶被证伪；+9~12% 且 2027 维持「约 10%」→ 符合基准；< +8% 或美洲 cc < +12% → Bear 确认",
+          "threshold": 8.0,
+          "direction": "up",
+          "unit": "pct"
+        },
+        {
+          "id": "americas_cfx",
+          "report_words": "#1：< +8% 或美洲 cc < +12% → Bear 确认",
+          "threshold": 12.0,
+          "direction": "up",
+          "unit": "pct"
+        },
+        {
+          "id": "core_net_debt",
+          "report_words": "#2：指引年底降至收入 11-12% = €169-185M。落入区间 → H1 恶化属节奏；> €195M（未低于2025年底的 €198.4M）→ 现金转化能力存疑",
+          "threshold": 195.0,
+          "direction": "down",
+          "unit": "eur_m"
+        },
+        {
+          "id": "related_party_ai",
+          "report_words": "#3：年化付费 > €10M 或 > 收入 0.5%，或出现非公平 IP/许可安排",
+          "threshold": 0.5,
+          "direction": "down",
+          "unit": "pct_of_revenue"
+        },
+        {
+          "id": "retail_cfx",
+          "report_words": "#4：H2 retail ≥ +15% cc → 有机动能确认；< +12% → 证明 H1 主要靠空间",
+          "threshold": 12.0,
+          "direction": "up",
+          "unit": "pct"
+        },
+        {
+          "id": "europe_cfx",
+          "report_words": "#5：Q3 欧洲 cc 转负或跌破 +2% → 确认传导；维持 +5% 以上 → BC 客群结构确实免疫",
+          "threshold": 2.0,
+          "direction": "up",
+          "unit": "pct"
+        }
+      ],
+      "next_unquantified": [
+        "#1 的 2027 指引上修",
+        "#3 取得实质经济权益",
+        "#4 零售 LFL 拆分是否首次披露"
       ]
-    }
-  },
-  "disclosure_regime": {
-    "printed_periods": [
-      "Q1",
-      "H1",
-      "9M",
-      "FY"
-    ],
-    "full_income_statement_periods": [
-      "H1",
-      "FY"
-    ],
-    "note": "Every figure the issuer prints is a to-date figure. Q2, Q3, Q4 and H2 are never published as discrete periods and are obtained here by subtracting one cumulative disclosure from the next.",
-    "quarter_basis": {
-      "Q1": "printed",
-      "Q2": "H1 - Q1",
-      "Q3": "9M - H1",
-      "Q4": "FY - 9M"
-    },
-    "half_basis": {
-      "H1": "printed",
-      "H2": "FY - H1"
     }
   },
   "cumulative_revenue_eur_k": {
@@ -668,6 +707,12 @@
   },
   "growth_h1_pct": {
     "years": [
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
       2022,
       2023,
       2024,
@@ -675,6 +720,12 @@
       2026
     ],
     "reported": [
+      9.7,
+      10.7,
+      9.0,
+      8.1,
+      -29.6,
+      52.9,
       32.4,
       31.0,
       14.1,
@@ -682,12 +733,19 @@
       9.5
     ],
     "cfx": [
+      10.3,
+      9.7,
+      11.9,
+      7.2,
+      -29.8,
+      null,
       28.3,
       30.5,
       14.7,
       10.7,
       13.3
-    ]
+    ],
+    "note": "Each half as its own half-year report printed it against the same half a year earlier: 2016 +9.7% / +10.3% at constant rates (revenues at constant rates EUR 221,029k); 2017 +10.7% / +9.7% (EUR 241,217k); 2018 +9.0% / +11.9% (EUR 276,777k), both against the IFRS 15 restated first half of 2017 (EUR 247,238k); 2019 +8.1% / +7.2% (EUR 288,835k); 2020 -29.6% / -29.8% (EUR 204.4 million). The 2021 report gives +52.9% against 2020 but a constant-rate rate only against the first half of 2019 (+10.0%), so 2021 has no constant-rate figure on this basis and stays null. 2022-2026 unchanged."
   },
   "net_debt_h1_eur_k": {
     "years": [
@@ -850,85 +908,109 @@
     "dos": [
       136,
       141
-    ],
-    "not_disclosed": [
-      "like-for-like growth",
-      "contribution of new space",
-      "retail selling area (sqm)",
-      "monobrand wholesale door count",
-      "store closures"
     ]
   },
   "next_kpi": {
     "period": "H1 2026",
+    "report": "本季分析稿（2026-07-30 BC Q2 2026 vs Q1 2026 Analysis）第 8 节关键观察指标",
     "quantified": [
       {
-        "metric": "H2 零售渠道 cFX 增速",
+        "id": "group_cfx",
+        "metric": "集团恒定汇率增速",
+        "direction": "up",
+        "threshold": 8.0,
+        "unit": "pct",
+        "chart": true,
+        "settles": "第三季度单季（10 月的九个月营收公告）",
+        "rule": "第三季度集团 cc ≥ +12% 且 2027 年指引从「约 10%」上修 → 上调；+9%~+12% 且 2027 年维持约 10% → 符合基准；< +8% 或美洲 cc < +12% → 减仓"
+      },
+      {
+        "id": "americas_cfx",
+        "metric": "美洲恒定汇率增速",
         "direction": "up",
         "threshold": 12.0,
         "unit": "pct",
-        "current": 19.3,
-        "source": "local",
-        "cadence": "quarter"
+        "chart": false,
+        "settles": "第三季度单季",
+        "rule": "同上一条：美洲 cc < +12% → 减仓"
       },
       {
-        "metric": "批发渠道占收入比重",
+        "id": "core_net_debt",
+        "metric": "年末核心净金融负债",
         "direction": "down",
-        "threshold": 34.0,
-        "unit": "pct",
-        "current": 33.3,
-        "source": "local",
-        "cadence": "quarter"
+        "threshold": 195.0,
+        "unit": "eur_m",
+        "chart": true,
+        "settles": "2026 年末（年报）",
+        "rule": "年末落入 €169–185M（公司给的收入的 11–12%）→ 上半年的上升属节奏；> €195M（没有低于 2025 年末的 €198.4M）→ 警示"
       },
       {
-        "metric": "核心净金融负债/收入（年末指引 11-12%）",
+        "id": "related_party_ai",
+        "metric": "付给 Solomei AI 的费用占收入（基点）",
         "direction": "down",
+        "threshold": 50.0,
+        "unit": "bps",
+        "chart": false,
+        "settles": "年报关联方交易表",
+        "rule": "年化付费 > €10M 或 > 收入 0.5%，或出现非公平的知识产权 / 许可安排 → 警示"
+      },
+      {
+        "id": "retail_cfx",
+        "metric": "下半年零售渠道恒定汇率增速",
+        "direction": "up",
         "threshold": 12.0,
         "unit": "pct",
-        "current": 14.5,
-        "basis_note": "225,100 / (2025 年营收 × 1.105)，用公司自己的 2026 年增长指引中值年化",
-        "source": "company",
-        "target_words": "年末净负债占收入 11–12%",
-        "cadence": "half"
+        "chart": false,
+        "settles": "下半年（全年减上半年）",
+        "rule": "下半年零售 cc ≥ +15% → 有机增长确认；< +12% → 说明上半年主要靠新开面积"
       },
       {
-        "metric": "资本开支占收入比重（指引约 6%）",
-        "direction": "down",
-        "threshold": 6.0,
-        "unit": "pct",
-        "current": 7.6,
-        "source": "company",
-        "target_words": "资本开支约 6%",
-        "cadence": "half"
-      },
-      {
-        "metric": "EBIT 利润率（指引约 17%）",
+        "id": "europe_cfx",
+        "metric": "欧洲恒定汇率增速",
         "direction": "up",
-        "threshold": 17.0,
+        "threshold": 2.0,
         "unit": "pct",
-        "current": 17.11,
-        "source": "company",
-        "target_words": "EBIT 利润率约 17%",
-        "cadence": "half"
-      },
-      {
-        "metric": "报告口径半年营收增速",
-        "direction": "up",
-        "threshold": 10.0,
-        "unit": "pct",
-        "current": 9.5,
-        "source": "local",
-        "cadence": "quarter"
+        "chart": false,
+        "settles": "第三季度单季",
+        "rule": "第三季度欧洲 cc 转负或跌破 +2% → 游客客流的下滑已传导到本公司；维持 +5% 以上 → 客群不受影响"
       }
     ],
+    "gated": [
+      {
+        "topic": "2027 年指引是否从「约 10%」上修",
+        "why": "是第一条的另一半，不是一个数；本期新闻稿对 2027 年仍写「around +10%」"
+      },
+      {
+        "topic": "上市公司是否取得 Solomei AI 的实质经济权益（持股、利润分成或独家授权）",
+        "why": "是有或无的事件；半年报关联方说明写明 Solomei AI 由 Foro delle Arti 与两位 CEO 持股，Salesforce 的入股尚待意大利黄金权力审批"
+      },
+      {
+        "topic": "零售同店增速是否重新披露",
+        "why": "2016–2019 年的半年报各印过一个零售同店增速（2019 年上半年为 3.7%），此后只有定性表述"
+      }
+    ],
+    "breach_story": "越线的这一条管的是年末：公司在新闻稿里说，下半年的现金生成加上投资集中在上半年，会让年末核心净负债较 2025 年末明显下降；上半年的上升里还有 {dividends} 的股息。",
+    "dividends_eur_m": 73.7,
     "excluded": [
-      "同店销售（like-for-like）—— 公司从未披露，两家券商在 2026 年 7 月 30 日的电话会上先后追问，均未获得数字",
+      "同店销售（like-for-like）—— 2016–2019 年的半年报各印过一个零售同店增速，此后只有定性表述；两家券商在 2026 年 7 月 30 日的电话会上先后追问，均未获得数字",
       "新增零售面积对增长的贡献 —— 同上，因此零售增长里「开店」与「同店」两部分无法拆分",
       "零售面积（平方米）与批发单品牌门店数 —— 2025 年起不再出现在营收更新里",
       "分产品线收入 —— 只在完整半年报与年报里披露，2026 年的半年新闻稿没有"
     ],
-    "breach_note": "资本开支上半年跑到 7.6%，隐含下半年要压到 4% 出头才够得着全年约 6%；净负债则同时高于上年末与上年同期；报告口径的半年收入增速也低于 10% 这条线。",
-    "unconnected": "同店销售（like-for-like）与新增零售面积的贡献 —— 公司从未披露，两家券商在 2026 年 7 月 30 日的业绩会上先后追问均未获得数字，因此零售增长中「开店」与「同店」两部分无法拆分；零售面积与批发单品牌门店数（2025 年起不再出现在营收更新中）；分产品线收入（只在完整半年报与年报中披露，2026 年的半年新闻稿没有）；恒定汇率口径的分区域完整历史（公司自 2025 年第三季度起才逐区给出）；"
+    "unconnected": "同店销售（like-for-like）与新增零售面积的贡献 —— 2016–2019 年的半年报各印过一个零售同店增速，此后只有定性表述，两家券商在 2026 年 7 月 30 日的业绩会上先后追问均未获得数字，因此本期零售增长中「开店」与「同店」两部分无法拆分；零售面积与批发单品牌门店数（2025 年起不再出现在营收更新中）；分产品线收入（只在完整半年报与年报中披露，2026 年的半年新闻稿没有）；分区域的恒定汇率增速的历史（本页核对过的文件里最早见于 2025 年上半年的初步营收公告，2025 年第一季度及以前的营收公告只给报告口径）；"
+  },
+  "half_story": {
+    "period": "H1 2026",
+    "undrawn": [
+      {
+        "topic": "Callimacus 的价值归属在上市公司体外",
+        "why": "这是股权结构，不是一条序列：半年报关联方说明写明 Solomei AI 由 Foro delle Arti 与两位 CEO 持股，上市公司上半年付给它的服务成本见第三节"
+      },
+      {
+        "topic": "与同业的单季增速排名",
+        "why": "同业的数属于别家公司的申报，六家奢侈品的并排对照在奢侈品组对照页"
+      }
+    ]
   },
   "followup_closure": {
     "period": "H1 2026",
@@ -963,7 +1045,7 @@
         "reading": "只有定性描述"
       }
     ],
-    "note": "部分闭环的{partial_count}条是中东：新闻稿与半年报都只写了第二季度逐步改善，没有给中东的收入或客流数字。完整闭环的{complete_count}条里，零售一条跑过了线（上半年 {retail_cfx}，其中第二季度单季 {retail_last_quarter_cfx}；直营门店从 {dos_open} 家增到 {dos_close} 家）；{adverse_count}条结算出的是坏消息 —— 利润率同比 {ebit_bp} 达标，但上半年投资占收入 {capex_pct}，高于公司自己给的全年{capex_target}，公司的解释是全年投资计划的大部分放在了上半年；Saks 一条上季判断会有拨备回拨，半年报附注里的坏账准备上半年{release_words}，动用了 {allowance_uses}，余额从 {allowance_open}降到 {allowance_close}（同一份半年报写明已与 Saks 就其申请破产保护之日的欠款达成和解）。Callimacus 一条闭环靠的是 Salesforce 入股 Solomei AI 这件事本身，本期新闻稿与半年报里都没有线上转化率或 GMV。"
+    "note": "部分闭环的{partial_count}条是中东：新闻稿与半年报都只写了第二季度逐步改善，没有给中东的收入或客流数字。完整闭环的{complete_count}条里，零售一条跑过了线（上半年 {retail_cfx}，其中第二季度单季 {retail_last_quarter_cfx}；直营门店从 {dos_open} 家增到 {dos_close} 家）；{adverse_count}条结算出的是坏消息 —— 利润率同比 {ebit_bp} 达标，但上半年投资占收入 {capex_pct}，{capex_relation}公司自己给的全年{capex_target}，公司的解释是全年投资计划的大部分放在了上半年；Saks 一条上季判断会有拨备回拨，半年报附注里的坏账准备上半年{release_words}，动用了 {allowance_uses}，余额从 {allowance_open}降到 {allowance_close}（同一份半年报写明已与 Saks 就其申请破产保护之日的欠款达成和解）。Callimacus 一条闭环靠的是 Salesforce 入股 Solomei AI 这件事本身，本期新闻稿与半年报里都没有线上转化率或 GMV。"
   },
   "prior_kpi_settlement": {
     "period": "H1 2026",
@@ -1031,10 +1113,6 @@
   },
   "half_detail": {
     "period": "H1 2026",
-    "dates": [
-      "2026-06-30",
-      "2025-06-30"
-    ],
     "retail_cfx_pct": 19.3,
     "retail_q2_cfx_pct": 18.6,
     "trade_receivables_eur_k": [
@@ -1045,7 +1123,34 @@
       57.2,
       63.5
     ],
-    "source": "2026 年半年报新闻稿（Solomeo, 30 July 2026）：首页要点 Retail channel up +19.3% at constant exchange rates ... a very positive second quarter (+18.6% at constant exchange rates)；Investments equalling €57.2 million ... compared to the €63.5 million at 30 June 2025；第 11 页合并资产负债表 Trade receivables 110,720（June 30, 2026）/ 103,606（June 30, 2025）"
+    "source": "2026 年半年报新闻稿（Solomeo, 30 July 2026）：首页要点 Retail channel up +19.3% at constant exchange rates ... a very positive second quarter (+18.6% at constant exchange rates) ... the Wholesale channel ... +2.7% at constant exchange rates；revenues at constant exchange rates up +20.6% in the Americas, +5.3% in Europe and +14.1% in Asia；Investments equalling €57.2 million ... compared to the €63.5 million at 30 June 2025；第 7 页 net expenses of €18.4 million ... gains on foreign currency, equalling €1.3 million at 30 June 2026 compared to €12.4 million at 30 June 2025；第 8 页 Net working capital, including Other net current assets/(liabilities), amounts to €317.6 million, compared to the €303.1 million at 30 June 2025；第 11 页合并资产负债表 Inventories 420,980 / 378,630、Trade receivables 110,720 / 103,606、Trade payables 171,642 / 173,932（June 30, 2026 / June 30, 2025）；第 12 页合并损益表 Profit before taxes 109,789 / 107,356。付给 Solomei AI 的费用取自 2026 年半年报关联方交易表（Costs for services 340，半年）。",
+    "wholesale_cfx_pct": 2.7,
+    "region_cfx_pct": {
+      "europe": 5.3,
+      "americas": 20.6,
+      "asia": 14.1
+    },
+    "pbt_eur_k": [
+      109789,
+      107356
+    ],
+    "fx_gains_eur_m": [
+      1.3,
+      12.4
+    ],
+    "inventories_eur_k": [
+      420980,
+      378630
+    ],
+    "trade_payables_eur_k": [
+      171642,
+      173932
+    ],
+    "net_working_capital_eur_m": [
+      317.6,
+      303.1
+    ],
+    "related_party_ai_services_eur_k": 340
   },
   "doubtful_receivables": {
     "period": "H1 2026",
@@ -1096,10 +1201,6 @@
     "capex_pct_of_revenue": 6.0,
     "capex_words": "约 6%"
   },
-  "half_story": {
-    "period": "H1 2026",
-    "mix_story": "本期跳升不是零售突然加速，是批发停住之后分母只剩一条腿在动。"
-  },
   "sources": [
     {
       "label": "2026 年上半年业绩新闻稿（2026-07-30）",
@@ -1118,29 +1219,6 @@
       "url": "https://investor.brunellocucinelli.com/en/financials/calendar"
     }
   ],
-  "basis_straddle": {
-    "periods": [
-      "2025Q1",
-      "FY2025",
-      "2026H1"
-    ],
-    "target_pct": [
-      10.0,
-      10.0,
-      10.5
-    ],
-    "reported_pct": [
-      10.5,
-      10.1,
-      9.5
-    ],
-    "cfx_pct": [
-      10.0,
-      11.5,
-      13.3
-    ],
-    "note": "Three occasions on which the two bases fall on opposite sides of the target, or far enough apart to change the verdict. For 2026 the target shown is the midpoint of the +10% to +11% constant-rate range."
-  },
   "guidance_basis_by_year": {
     "years": [
       2021,
