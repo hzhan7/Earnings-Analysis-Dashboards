@@ -67,6 +67,10 @@ def own_text(payload: dict) -> str:
 
 QUARTER = re.compile(r"^Q[1-4] \d{4}$")
 YEAR = re.compile(r"^\d{4}$")
+# The site's four parts, in order, word for word (TSM is the reference page).
+FOUR_PARTS = [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+              ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")]
+ORDER_SENTENCE = "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列"
 # Words that can only belong to a figure this company publishes twice a year.
 PROFIT_WORDS = ("利润", "每股", "现金流", "投资")
 # The blocks that describe one quarter, and the ones that describe one half.
@@ -387,6 +391,22 @@ class RmsPayloadTest(unittest.TestCase):
         cls.exhibits = exhibits(cls.payload)
         cls.by_ref = {ex["ref"]: ex for ex in cls.exhibits if "ref" in ex}
         cls.entries = rms.kpi_entries(cls.staging, cls.staging["next_kpi"])
+
+    # ── the four-part format ────────────────────────────────────────────────
+    def test_the_page_is_in_the_four_part_format(self) -> None:
+        self.assertEqual([(s["id"], s["title"]) for s in self.payload["sections"]], FOUR_PARTS)
+        for section in self.payload["sections"]:
+            self.assertTrue(section["exhibits"], f"{section['id']} is empty")
+        self.assertTrue(self.payload["notes"][0].startswith(ORDER_SENTENCE), self.payload["notes"][0])
+
+    def test_the_half_is_news_only_in_the_quarter_that_closed_it(self) -> None:
+        """The half's profit charts sit under 「本季重点」 in the quarter whose
+        release carried them, and nowhere else. The bridge is the one chart that
+        can only be about the latest half, so its section says where the half went."""
+        period, half = self.staging["periods"][-1], self.staging["half_years"][-1]["label"]
+        where = next(s["id"] for s in self.payload["sections"]
+                     for ex in s["exhibits"] if ex["kind"] == "bridge_bar")
+        self.assertEqual(where, "quarter_highlights" if rms.closes_half(period, half) else "routine")
 
     # ── the two clocks ──────────────────────────────────────────────────────
     def test_the_page_never_puts_profit_on_a_quarterly_axis(self) -> None:
@@ -1183,9 +1203,11 @@ class RmsRollTest(unittest.TestCase):
         for phrase in self.STORY_ONLY:
             with self.subTest(phrase=phrase):
                 self.assertNotIn(phrase, text)
-        self.assertNotIn("next_quarter", [s["id"] for s in payload["sections"]])
-        for index, section in enumerate(payload["sections"], start=1):
-            self.assertTrue(section["title"].startswith(f"{cn_ordinal(index)}、"))
+        # The four parts stay; the part with nothing to show says so.
+        self.assertEqual([(s["id"], s["title"]) for s in payload["sections"]], FOUR_PARTS)
+        tracking = next(s for s in payload["sections"] if s["id"] == "next_quarter")
+        self.assertEqual(tracking["exhibits"], [])
+        self.assertEqual(tracking["description"], "本季没有设定下季阈值。")
         numbers = [ex["n"] for ex in exhibits(payload)]
         self.assertEqual(numbers, list(range(2, 2 + len(numbers))))
         self.assertEqual([t["n"] for t in payload["tables"]],
@@ -1222,7 +1244,15 @@ class RmsRollTest(unittest.TestCase):
         if "half_story" in rolled:
             self.assertIn("生产线上的个别资产", text)
             self.assertNotIn("与本季普遍的读法相反", text)
-        self.assertNotIn(self.s["periods"][0], payload["sections"][0]["exhibits"][0]["xlabels"])
+        long_axis = next(ex for s in payload["sections"] for ex in s["exhibits"]
+                         if ex.get("xlabels") and QUARTER.match(ex["xlabels"][0]))
+        self.assertNotIn(self.s["periods"][0], long_axis["xlabels"])
+        # A third-quarter release carries no profit: last half's charts are not
+        # this quarter's news, so they leave part two for the routine part.
+        by_id = {s["id"]: [ex["kind"] for ex in s["exhibits"]] for s in payload["sections"]}
+        self.assertNotIn("bridge_bar", by_id["quarter_highlights"])
+        self.assertIn("bridge_bar", by_id["routine"])
+        self.assertEqual([(s["id"], s["title"]) for s in payload["sections"]], FOUR_PARTS)
 
     def test_the_flip_sentence_appears_only_while_the_flips_are_confined(self) -> None:
         """The other direction of a computed sentence, which is the harder one.

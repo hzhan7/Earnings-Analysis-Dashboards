@@ -687,7 +687,9 @@ def half_year_charts(staging: dict, hstory: dict | None, period: str) -> list[di
     gaps = [f - s for _, f, s in complete]
     every = bool(gaps) and all(g > 0 for g in gaps)
     narrowing = len(gaps) >= 2 and gaps[-1] < gaps[0]
-    title = "经常性经营利润率<b>按半年</b>"
+    # No markup in a title: the card prints it as HTML, but the same string is
+    # the chart's SVG aria-label, where a screen reader gets the literal `<b>`.
+    title = f"半年经常性经营利润率：{years[0]}–{years[-1]} 年的上半年与下半年"
     if every:
         title += (f"：上半年在{cn_count(len(gaps))}个完整年度里每一次都高于下半年，落差从 {gaps[0]:.2f}pp "
                   f"{'收窄' if narrowing else '变'}到 {gaps[-1]:.2f}pp")
@@ -824,7 +826,7 @@ def half_year_charts(staging: dict, hstory: dict | None, period: str) -> list[di
         tallest = max(s["roi_now"] for s in operating)
         small = max(abs(unallocated["roi_now"]), abs(unallocated["roi_prior"]))
         prior_year = str(int(year) - 1)
-        title = (f"<b>半年</b>分部经常性经营利润：{cn_count(len(operating))}个经营地区合计 €{six_before:,}M → €{six_now:,}M"
+        title = (f"半年分部经常性经营利润：{cn_count(len(operating))}个经营地区合计 €{six_before:,}M → €{six_now:,}M"
                  f"（{signed((six_now / six_before - 1) * 100)}）")
         if only_unallocated:
             title += (f"，集团之所以是 {signed((total_now / total_before - 1) * 100)}，"
@@ -907,7 +909,7 @@ def half_year_charts(staging: dict, hstory: dict | None, period: str) -> list[di
         charts.append({
             "ref": "EX_SEGMENT_MARGIN",
             "kind": "diverging_bars",
-            "title": (f"<b>半年</b>分部利润率变动：{big['label']}"
+            "title": (f"半年分部利润率变动：{big['label']}"
                       f"{'掉了' if margin_delta[big_i] < 0 else '升了'} "
                       f"{abs(margin_delta[big_i]):.2f}pp，而它占集团分部利润的 "
                       f"{big['roi_now'] / total_now * 100:.1f}%"),
@@ -945,7 +947,7 @@ def half_year_charts(staging: dict, hstory: dict | None, period: str) -> list[di
         prior_i = years.index(str(last_full))
         derived_years = [y for y, s in zip(years, invest_second) if s is not None and y != year]
         group_names.append(f"下半年（{derived_years[0]}–{derived_years[-1]} 为全年减上半年 D，{year} 为按全年目标反推）")
-        capex_title = (f"<b>半年</b>经营性投资：{target['said']}，而全年目标 €{fy_target:,}M 比 {last_full} 年"
+        capex_title = (f"半年经营性投资：{target['said']}，而全年目标 €{fy_target:,}M 比 {last_full} 年"
                        f"实际的 €{fy_prior:,}M {'少' if fy_target < fy_prior else '多'} {cut:.1f}%")
         weaker = implied / invest_first[-1] < invest_second[prior_i] / invest_first[prior_i]
         if ramp and all(r > 1 for r in ramp) and weaker:
@@ -970,7 +972,7 @@ def half_year_charts(staging: dict, hstory: dict | None, period: str) -> list[di
         src = SOURCE_HALF + "；" + target["source"]
     else:
         group_names.append("下半年（全年减上半年 D）")
-        capex_title = (f"<b>半年</b>经营性投资：{latest_half['label']} "
+        capex_title = (f"半年经营性投资：{latest_half['label']} "
                        f"€{latest_half['operating_investments_eur_m']:,}M，{last_full} 年全年 €{fy_prior:,}M")
         if ramp and all(r > 1 for r in ramp):
             capex_note += ("下半年投资爬坡是这家公司每年都有的季节性："
@@ -1134,13 +1136,23 @@ def build_payload(staging: dict) -> dict:
     half_year = half_year_charts(staging, hstory, period)
     next_block = next_quarter_charts(staging, kpi, entries, values) if kpi is not None else []
 
-    exhibits = number_exhibits(outlook + quarter + half_year + next_block)
+    # Four parts, in the site's order. What the latest release made news goes
+    # in part two; a long record with no reading of this quarter goes in part
+    # four. The half's profit charts are news only in the quarter whose release
+    # closed that half (the second quarter for H1, the fourth for the year): in
+    # a first- or third-quarter roll they are last half's reading, and they
+    # move to the routine part rather than sitting under 「本季重点」.
+    half_is_news = closes_half(period, half)
+    long_refs = ("EX_SECTOR_TREND", "EX_HALF_MARGIN")
+    long_run = [ex for ex in quarter + half_year if ex.get("ref") in long_refs]
+    quarter_news = [ex for ex in quarter if ex.get("ref") not in long_refs]
+    half_reading = [ex for ex in half_year if ex.get("ref") not in long_refs]
+    settled_ex = outlook
+    highlight_ex = quarter_news + (half_reading if half_is_news else [])
+    next_ex = next_block
+    routine_ex = long_run + ([] if half_is_news else half_reading)
+    exhibits = number_exhibits(settled_ex + highlight_ex + next_ex + routine_ex)
     resolve_exhibit_refs(exhibits)
-    n_out, n_qtr, n_half = len(outlook), len(quarter), len(half_year)
-    outlook_ex = exhibits[:n_out]
-    quarter_ex = exhibits[n_out:n_out + n_qtr]
-    half_ex = exhibits[n_out + n_qtr:n_out + n_qtr + n_half]
-    next_ex = exhibits[n_out + n_qtr + n_half:]
 
     increments, total_inc = cc_increments(sectors, SECTOR_ORDER, latest)
     lead = max(SECTOR_ORDER, key=lambda k: increments[k])
@@ -1314,36 +1326,34 @@ def build_payload(staging: dict) -> dict:
             f'抬升 {cc_step:.1f}pp。'
             f'真实加速是 {cc_step:.1f}pp，不是 {pub_step:.1f}pp。</p></article>')
 
+    half_words = "、".join((["上半年利润率变动的逐项拆解"] if income is not None else [])
+                           + ["分地区利润与投资节奏" if segments is not None else "投资节奏"])
+    profit_period = "上半年" if half.startswith("H1") else "全年"
     sections = [
-        {"id": "outlook", "short": "公司给了什么", "title": "公司到底给了什么可以被结算的东西",
-         "description": (f"答案是：书面展望里什么都没有。手上 {len(outlook_block['releases'])} 份公告的 Outlook 段是同一句话、"
-                         "零个数字。所以这一节结算的是公司每季确实给出的另一样东西 —— "
-                         "published 与固定汇率两个增速，以及它们之间那道逐季张开的口子。"),
-         "exhibits": outlook_ex},
-        {"id": "quarter_highlights", "short": "本季重点", "title": "本季重点：收入是唯一有季度口径的一层",
-         "description": (f"{cn_count(len(SECTOR_ORDER))}个板块与{cn_count(len(REGION_ORDER))}个地区的加减速、增长的集中度，"
-                         f"以及{cn_count(n)}个季度的板块走势。"
-                         "本节所有内容都在收入线上，因为这家公司的季度披露到收入为止。"),
-         "exhibits": quarter_ex},
-        {"id": "half_year_profit", "short": "半年利润", "title": "利润的另一个时钟：半年",
-         "description": ("、".join(["利润率的季节性"]
-                                  + (["上半年利润率变动的逐项拆解"] if income is not None else [])
-                                  + ["分地区利润与投资节奏" if segments is not None else "投资节奏"]) + "。"
-                         "本节每张图的横轴都是半年或年度，没有一张是季度 —— "
-                         f"把其中任何一个数称作「{profit_quarter}」都是错的。"),
-         "exhibits": half_ex},
+        {"id": "settled", "short": "上季兑现", "title": "一、上季跟踪指标兑现了吗",
+         "description": (f"公司自己给出、可以拿来核对的东西：书面展望里没有 —— 手上 {len(outlook_block['releases'])} 份公告的 "
+                         "Outlook 段是同一句话、零个数字。公司每季确实给出的是 published 与固定汇率两个增速，"
+                         "以及它们之间那道逐季张开的口子。"),
+         "exhibits": settled_ex},
+        {"id": "quarter_highlights", "short": "本季重点", "title": "二、本季重点",
+         "description": (f"本季的收入读数：{cn_count(len(SECTOR_ORDER))}个板块的加减速与增长的集中度"
+                         + (f"；以及随本季公告一起发布的{profit_period}利润读数：{half_words}。"
+                            "利润只有半年口径，这几张图的横轴是半年或地区，没有一张是季度 —— "
+                            f"把其中任何一个数称作「{profit_quarter}」都是错的。" if half_is_news else "。")),
+         "exhibits": highlight_ex},
+        {"id": "next_quarter", "short": "下季跟踪", "title": "三、下季要跟踪什么",
+         "description": ((f"{len(kpi['quantified'])} 条可在 "
+                          f"{kpi['settles_on']} 第{cn_ordinal(number % 4 + 1)}季度收入公告上结算的阈值，"
+                          "统一用「距阈值余量」口径；利润与投资类的 "
+                          f"{len(kpi['full_year_only'])} 条要等 {kpi['full_year_settles_on']} 的全年业绩，"
+                          "收在核对抽屉里。") if kpi is not None and next_ex else "本季没有设定下季阈值。"),
+         "exhibits": next_ex},
+        {"id": "routine", "short": "长期常规", "title": "四、长期常规跟踪",
+         "description": (f"爱马仕专属的长期序列：{cn_count(n)}个季度{cn_count(len(SECTOR_ORDER))}个板块的固定汇率增速，"
+                         f"以及 {staging['half_years'][0]['label'].split()[1]}–{half.split()[1]} 年的半年经常性经营利润率"
+                         + ("。" if half_is_news else f"；上一个利润期（{half}）的读数也收在这里，它不是本季公告的内容。")),
+         "exhibits": routine_ex},
     ]
-    if next_ex:
-        sections.append(
-            {"id": "next_quarter", "short": "下季跟踪", "title": "下季要跟踪什么",
-             "description": (f"{len(kpi['quantified'])} 条可在 "
-                             f"{kpi['settles_on']} 第{cn_ordinal(number % 4 + 1)}季度收入公告上结算的阈值，"
-                             "统一用「距阈值余量」口径；利润与投资类的 "
-                             f"{len(kpi['full_year_only'])} 条要等 {kpi['full_year_settles_on']} 的全年业绩，"
-                             "收在核对抽屉里。"),
-             "exhibits": next_ex})
-    for index, section in enumerate(sections, start=1):
-        section["title"] = f"{cn_ordinal(index)}、{section['title']}"
     order = " → ".join(section.pop("short") for section in sections)
 
     # ── reconciliations the notes state, recomputed ──
@@ -1415,7 +1425,8 @@ def build_payload(staging: dict) -> dict:
         lines = {key: (cur, prior) for key, _, cur, prior in income["lines"]}
         print_gap = abs(lines["gross_margin"][0] + lines["sga"][0] + lines["other_income_expenses"][0]
                         - lines["recurring_operating_income"][0])
-    tracking = next((i for i, s in enumerate(sections, start=1) if s["id"] == "next_quarter"), None)
+    tracking = next((i for i, s in enumerate(sections, start=1)
+                     if s["id"] == "next_quarter" and s["exhibits"]), None)
     subtraction = second_quarter_by_subtraction(staging, first_half, half)
     subtraction_words = ""
     if subtraction:
@@ -1434,7 +1445,7 @@ def build_payload(staging: dict) -> dict:
     notes = [
         f"本页按「{order}」{cn_count(len(sections))}段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
         "爱马仕不是美国证券交易委员会的申报人。CIK 0001436949 名下只有四类文件：2008-02-25 的一份 12G3-2B（依 Rule 12g3-2(b) 豁免登记）、同日的两份 ARS 与一份 SUPPL，以及 2008、2013、2017、2019 年的四份 F-6EF（存托凭证登记）—— 没有 20-F、没有 6-K、没有 F-1，也没有任何一张财务报表。因此本站其他公司页所依赖的 10-Q/10-K 渲染报表（R-files）与 companyfacts 对它都不存在。本页全部数据来自公司自己在法国发布的季度收入公告、半年度业绩新闻稿与半年度财务报告。",
-        "**这家公司有两个披露时钟，本页不把它们混在一根轴上。** 收入按季度披露，分七个 métier、六个地区，每一格都带公司自己算的固定汇率增速；损益表、现金流量表、资产负债表与分部附注一年只出两次。"
+        "这家公司有两个披露时钟，本页不把它们混在一根轴上。收入按季度披露，分七个 métier、六个地区，每一格都带公司自己算的固定汇率增速；损益表、现金流量表、资产负债表与分部附注一年只出两次。"
         f"所以本页不存在任何形式的「{profit_quarter}利润率」「{profit_quarter}每股收益」「{profit_quarter}自由现金流」—— 利润类的每一张图都走半年轴，标题与轴标里都写着「半年」。",
         "固定汇率增速一律取公司自己在该期表格里印出的那一列，绝不由「半年减第一季」反推。反推值含各行四舍五入，"
         + subtraction_words + "而这类差异恰好落在判断加减速的量级上。",
@@ -1456,7 +1467,7 @@ def build_payload(staging: dict) -> dict:
                     f"用集团口径复核，两种算法相差 {recheck:.1f}%。"))
     first_quarter = outlook_block["releases"][0]["label"].split()[:2]
     notes.append(f"公司的官方展望自 {first_quarter[1]} 年第{cn_ordinal(int(first_quarter[0][1]))}季以来逐字未变，且不含任何数字。"
-                 "本页因此不设「指引兑现」一节，也不报命中率 —— 对着一句没有数字的话报命中率，得到的只会是一列破折号。"
+                 "所以第一节里没有「公司指引兑现」这一块，本页也不报命中率 —— 对着一句没有数字的话报命中率，得到的只会是一列破折号。"
                  + (f"电话会上出现过{cn_count(len(quasi['items']))}条数字化的说法，它们收在核对抽屉的单独一张表里，"
                     f"并逐条标注了限定：{quasi['provenance_note']}" if quasi is not None else ""))
     notes.append("本页不发布市场一致预期、评级、目标价与估值。"
