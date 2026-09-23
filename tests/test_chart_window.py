@@ -280,7 +280,7 @@ def _axp_overlap_count() -> dict:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amd": 16, "amzn": 13, "arm": 0, "asml": 24, "avgo": 6, "axp": 7 + _axp_threshold_reach(), "bc": 3, "cboe": 10, "cdns": 10, "cfr": 20, "cme": 13 + _cme_threshold_reach(),
+    "amd": 16, "amzn": 13, "arm": 0, "asml": 24, "avgo": 16, "axp": 7 + _axp_threshold_reach(), "bc": 3, "cboe": 10, "cdns": 10, "cfr": 20, "cme": 13 + _cme_threshold_reach(),
     "cost": 13, "googl": 11, "hkex": 15, "ibkr": 26, "ker": 11 + _ker_threshold_reach(), "ma": 17, "mc": 9, "mco": 13, "meta": 10,
     "msci": 23, "msft": 8, "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 8, "nvda": 10, "pm": 8,
     "race": 12, "rms": 15, "samsung": 0, "schw": 10, "skhynix": 4, "snps": 8,
@@ -923,10 +923,10 @@ CONVERTED = {
         "回购的成交均价": "four fiscal years of a buyback programme.",
     },
     "avgo": {
-        # Broadcom's window is 41 quarters, not 42: the fiscal quarter matching
-        # calendar Q2 2026 has not been reported. The eight added in front
+        # Broadcom's window is 42 quarters. The eight added in front
         # (Q1 2016 - Q4 2017) carry the income statement, cash flow, balance
-        # sheet and working capital; four families genuinely do not exist there.
+        # sheet and working capital; the families below genuinely do not
+        # exist there.
         "收入（仅公司给过区间的 # 季）": "Broadcom guided a revenue *range* in only five "
                               "quarters; the rest of the record is a single point, "
                               "which is the chart beside this one.",
@@ -944,28 +944,30 @@ CONVERTED = {
                        "Wireless / Enterprise storage / Industrial, which the "
                        "company never mapped onto the later two.",
         "两个引擎": "same segment floor.",
-        "两个分部的申报营业利润": "same segment floor.",
         "AI 半导体收入：公司口头指引": "Broadcom began giving a quarterly AI revenue figure in "
                           "the 2024-06-12 release; before that there is nothing "
                           "to plot.",
-        "AI 半导体收入（季）": "same floor.",
-        "基础设施软件收入": "same segment floor.",
-        "营运资本随 AI 放量变重": "inventory and receivables do reach 2016; this chart pairs "
-                        "them with the AI-era commentary and runs on the "
-                        "reviewed window.",
-        "季度收入：阈值": "the threshold view now tracks revenue against the point guidance "
-                              "the company gives for it; Broadcom stopped publishing "
-                              "Adjusted EBITDA with the 2026-09-02 release, so the "
-                              "measure that used to sit here can no longer be settled.",
-        "non-GAAP 营业利润率：阈值": "the pre-2018 non-GAAP definition adds revenue back and "
-                           "is presented on continuing operations, so it is not "
-                           "the same measure and is not spliced.",
-        "季度回购：阈值": "no repurchase line exists in any 2016-2017 cash-flow statement "
-                   "-- Broadcom was not buying back stock then.",
-        "股东回报与其资金来源": "the buyback leg has the same floor, and the dividend leg "
-                     "cannot be split into common-only before 2018 because the "
-                     "filings give one blended total including the Broadcom "
-                     "Cayman L.P. distribution.",
+        "AI 半导体收入 US$#M：": "the previous report's AI thresholds settled on the same "
+                          "quarterly AI figure, which starts with the 2024-06-12 release.",
+        # Section one settles the previous report's margin lines on it and
+        # section three measures the next report's; one series, one floor.
+        "半导体分部毛利率": "segment cost of revenue is an ASU 2023-07 disclosure: the "
+                    "FY2025 10-K gives the year, and the FY2026 10-Qs give each "
+                    "quarter with the prior-year quarter beside it, so the first "
+                    "quarter any filing covers is FY2025 Q1 (Q4 2024 here).",
+        "软件收入 US$#M 里 US$#M 是交付即确认的 upfront license": (
+            "the word 'upfront' does not occur in the FY2024 10-K or in any of the "
+            "three FY2025 10-Qs (checked 2026-09-24). The FY2025 10-K is the first "
+            "filing to split upfront licence revenue out, with FY2024 only as a "
+            "full-year reclassification; the FY2026 10-Qs give each quarter with "
+            "the recast FY2025 quarter beside it, so FY2025 Q1 (Q4 2024 here) is "
+            "the first quarter any filing covers."),
+        # An eight-quarter cut so four grouped bars a quarter stay readable: the
+        # free cash flow, the debt and the buyback are each drawn over the whole
+        # window elsewhere on the page.
+        "本季自由现金流 US$#M 的去向": "an eight-quarter view of where this quarter's free "
+                              "cash flow went; free cash flow, total debt and the "
+                              "buyback are each drawn back to 2016 on the same page.",
     },
     "meta": {
         "收入指引兑现": "Meta published no quarterly revenue outlook range before the "
@@ -1290,15 +1292,11 @@ FLOOR_KIND = {
         'Adjusted EBITDA 利润率相对指引中值': 'disclosure',
         '收入 US$#M、同比': 'disclosure',
         '两个引擎': 'disclosure',
-        '两个分部的申报营业利润': 'disclosure',
         'AI 半导体收入：公司口头指引': 'disclosure',
-        'AI 半导体收入（季）': 'disclosure',
-        '基础设施软件收入': 'disclosure',
-        '营运资本随 AI 放量变重': 'coverage',
-        '季度收入：阈值': 'disclosure',
-        'non-GAAP 营业利润率：阈值': 'disclosure',
-        '季度回购：阈值': 'disclosure',
-        '股东回报与其资金来源': 'disclosure',
+        'AI 半导体收入 US$#M：': 'disclosure',
+        '半导体分部毛利率': 'disclosure',
+        '软件收入 US$#M 里 US$#M 是交付即确认的 upfront license': 'disclosure',
+        '本季自由现金流 US$#M 的去向': 'design',
     },
     # Why each exemption is short, in four kinds. The kind matters more than the
     # prose: three of these entries used to read like "the company never
@@ -1652,7 +1650,7 @@ class ChartWindowTest(unittest.TestCase):
         by_kind = {}
         for slug, title, kind in pending:
             by_kind.setdefault(kind, []).append(f"{slug}/{title}")
-        self.assertEqual(len(by_kind.get("coverage", [])), 36,
+        self.assertEqual(len(by_kind.get("coverage", [])), 35,
                          "charts whose data exists and has not been fetched")
         # Zero, and that is the point: every exemption on this page has now been
         # read against an actual pre-floor filing. The fourteen that had never
@@ -1665,8 +1663,8 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 185)
-        self.assertEqual(settled.count("design"), 37)
+        self.assertEqual(settled.count("disclosure"), 181)
+        self.assertEqual(settled.count("design"), 38)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
         """Every short chart either names its reason or is counted here.

@@ -395,7 +395,10 @@ class ExhibitPayloadContractTest(unittest.TestCase):
         neither = [label for label, ex in exhibits()
                    if ex.get("kind") == "gs_bar" and not ex.get("yoy")
                    and "avg12" not in ex]
-        self.assertEqual(neither, ["avgo Ex16"])
+        # The same chart as the "AVGO Exhibit 16" above (its purchase-commitments
+        # gs_bar); the number moves whenever that page's earlier sections gain or
+        # lose charts, so it is re-read from the census, never edited by hand.
+        self.assertEqual(neither, ["avgo Ex23"])
 
 
 class RenderGateRegexTest(unittest.TestCase):
