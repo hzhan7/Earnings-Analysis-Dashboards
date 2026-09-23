@@ -200,9 +200,10 @@ def zgn_view(d: dict) -> dict:
         "quarters": [_q(p) for p in q["periods"]],
         "revenue": [v * EUR_K for v in q["revenue_eur_k"]],
         # Zegna prints a constant-currency rate every quarter, but this site has
-        # not connected that series -- `series/zgn.json` carries the organic rate
-        # for one half only. So the page has no company-published quarterly rate
-        # for Zegna and says so rather than borrowing a neighbour's.
+        # not connected that series -- `series/zgn.json` carries the printed rates
+        # of the latest half's two quarters only (`printed_rates`), not a quarterly
+        # line. So the page has no company-published quarterly rate for Zegna and
+        # says so rather than borrowing a neighbour's.
         "growth": None,
         "growth_quarters": None,
         "reported_growth": None,

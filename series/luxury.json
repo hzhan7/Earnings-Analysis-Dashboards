@@ -103,7 +103,7 @@
       "excludes": null,
       "cadence": "not_connected",
       "printed_by_company": true,
-      "definition_source": "公司按季给恒定汇率增速，但不给恒定汇率的绝对额；本站 series/zgn.json 里没有按季的有机增速序列，只有 H1 2026 一个标量。所以本页给杰尼亚画的是报告口径自算同比，并在图上标出来。剔除项不详 —— 两份文件都没有记录它是否也剔除合并范围（Tom Ford Fashion 于 2023 年 4 月并表）。"
+      "definition_source": "公司按季给恒定汇率增速，但不给恒定汇率的绝对额；本站 series/zgn.json 里没有按季的有机增速序列：只接入了最近半年两个季度（2026Q1、2026Q2）的印出增速，连不成季度线。所以本页给杰尼亚画的是报告口径自算同比，并在图上标出来。剔除项不详 —— 两份文件都没有记录它是否也剔除合并范围（Tom Ford Fashion 于 2023 年 4 月并表）。"
     },
     {
       "slug": "bc",
