@@ -326,6 +326,11 @@ CONVERTED = {
         "Cloud 经营利润率": "same line floor; the margin's own numerator is later still "
                       "(2022Q1), which the chart says on itself.",
         "Search & other YoY": "revenue by line begins with the 2018Q4 release.",
+        # Settled from the Q1 2026 analysis's section 8 (「Network ads YoY <-5%
+        # 连续两季」); the same revenue-line floor as Search, a year on for the
+        # year-on-year base.
+        "Network 收入 YoY": "revenue by line begins with the 2018Q4 release, so the "
+                          "year-on-year line starts 2019Q4.",
         "Cloud backlog 环比": "remaining performance obligations first appear in the "
                          "FY2019 10-K.",
         "Cloud backlog 单季净增": "same RPO floor.",
@@ -1094,6 +1099,7 @@ FLOOR_KIND = {
         'Cloud 收入 YoY': 'disclosure',
         'Cloud 经营利润率': 'disclosure',
         'Search & other YoY': 'disclosure',
+        'Network 收入 YoY': 'disclosure',
         'Cloud backlog 环比': 'disclosure',
         'Cloud backlog 单季净增': 'disclosure',
         '单季净增从': 'disclosure',
@@ -1391,7 +1397,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 160)
+        self.assertEqual(settled.count("disclosure"), 161)
         self.assertEqual(settled.count("design"), 40)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
