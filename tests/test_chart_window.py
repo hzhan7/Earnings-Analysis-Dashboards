@@ -301,6 +301,18 @@ def _googl_threshold_reach() -> int:
                if ex["kind"] == "lines" and (first_year(ex) or TARGET_YEAR + 1) <= TARGET_YEAR)
 
 
+def _ma_threshold_reach() -> int:
+    """MA's threshold-line charts -- section one draws last report's tiers on
+    their series, section three this report's -- run the full axis, but how many
+    there are is the reports' doing: the page is rolled by editing
+    `series/ma.json` alone, and a report with more tracked series draws more of
+    them. The pin counts the permanent charts and adds these while published."""
+    page = js_payload(ROOT / "data" / "ma.js", "window.DASH")
+    return sum(1 for section in page["sections"] for ex in section["exhibits"]
+               if any(series["name"].startswith(("上季", "下季")) and "线" in series["name"]
+                      for series in ex.get("series", [])))
+
+
 def _tsm_advanced_count() -> dict:
     """The process-mix note counts the quarters since 2021Q1 in which the page's
     summed 7nm-and-below line equals TSMC's own aggregate. The count grows by
@@ -374,7 +386,7 @@ def _cost_threshold_reach() -> int:
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
     "amd": 15 + _amd_threshold_reach(), "amzn": 9 + _amzn_threshold_reach(), "arm": 0, "asml": 24, "avgo": 16, "axp": 7 + _axp_threshold_reach(), "bc": 3, "cboe": 8 + _cboe_threshold_reach(), "cdns": 10, "cfr": 20, "cme": 13 + _cme_threshold_reach(),
-    "cost": 11 + _cost_threshold_reach(), "googl": 5 + _googl_threshold_reach(), "hkex": 15, "ibkr": 26, "ker": 11 + _ker_threshold_reach(), "ma": 17, "mc": 9, "mco": 13, "meta": 10,
+    "cost": 11 + _cost_threshold_reach(), "googl": 5 + _googl_threshold_reach(), "hkex": 15, "ibkr": 26, "ker": 11 + _ker_threshold_reach(), "ma": 13 + _ma_threshold_reach(), "mc": 9, "mco": 13, "meta": 10,
     "msci": 23, "msft": 8, "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 7 + _nke_threshold_reach(), "nvda": 10, "pm": 8,
     "race": 12, "rms": 15, "samsung": 0, "schw": 10, "skhynix": 4, "snps": 8,
     "spgi": 14, "tjx": 13, "tsm": 14 + _tsm_story_reach(), "v": 17, "zgn": 0,
@@ -869,9 +881,9 @@ CONVERTED = {
         "净收入的同比增量拆成三条腿": "the rebate leg needs gross billings, which is the sum "
                           "of the four assessment lines.",
         "毛计费的同比增量": "same disaggregation floor.",
-        "返点占毛计费从": "same disaggregation floor.",
-        "返点占比的同比变化": "same disaggregation floor, one more year in for the "
-                      "year-on-year run-up.",
+        "返点占毛计费 #%：同比": "same disaggregation floor.",
+        "返点占比同比": "same disaggregation floor, one more year in for the "
+                  "year-on-year run-up.",
         "四条计费线": "the four assessment lines themselves.",
     },
     "msci": {
@@ -1544,8 +1556,8 @@ FLOOR_KIND = {
     'ma': {
         '净收入的同比增量拆成三条腿': 'disclosure',
         '毛计费的同比增量': 'disclosure',
-        '返点占毛计费从': 'disclosure',
-        '返点占比的同比变化': 'disclosure',
+        '返点占毛计费 #%：同比': 'disclosure',
+        '返点占比同比': 'disclosure',
         '四条计费线': 'disclosure',
     },
     # All five were 'coverage' -- "the filings have it, we have not fetched it".
