@@ -19,6 +19,7 @@ releases, 2016 -- which no roll can reopen.
 
 from __future__ import annotations
 
+import collections
 import copy
 import datetime
 import hashlib
@@ -861,6 +862,110 @@ class PmDashboardTest(unittest.TestCase):
         self.assertNotIn(":-infinity", compact)
 
 
+class PmSectionOneTest(unittest.TestCase):
+    """The page's four parts, and section one in the order the site's format asks.
+
+    Section one settles what last quarter left due: (a) the questions last
+    quarter's note left open, as this quarter's note answered them; (b) the
+    thresholds last quarter's note set, against this quarter's filed figures;
+    (c) the company's own guidance record. The verdicts and thresholds are the
+    notes' facts, not filed figures -- `_checks` carries them typed a second time
+    from the notes, so a roll re-keys them there and this file does not change.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.s = load()
+        cls.payload = pm.build_payload(cls.s)
+        cls.exhibits = exhibits_of(cls.payload)
+        cls.section = cls.payload["sections"][0]
+
+    def test_the_page_is_in_the_four_part_format(self) -> None:
+        self.assertEqual([(s["id"], s["title"]) for s in self.payload["sections"]],
+                         [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+                          ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+        for section in self.payload["sections"]:
+            self.assertTrue(section["exhibits"], section["id"])
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列", " ".join(self.payload["notes"]))
+
+    def test_section_one_runs_questions_then_thresholds_then_guidance(self) -> None:
+        refs = [ex.get("ref") for ex in self.section["exhibits"]]
+        self.assertEqual(refs[:2], ["EX_CLOSURE", "EX_PRIOR"])
+        self.assertEqual(refs[-6:], ["EX_FY_BAND", "EX_FY_DEV", "EX_ADJ_BAND", "EX_FX", "EX_Q_BAND", "EX_Q_DEV"])
+        description = self.section["description"]
+        self.assertIn(f"{len(self.s['followup_closure']['items'])} 条待验证问题", description)
+        prior = self.s["prior_kpi_settlement"]
+        self.assertIn(f"{len(prior['quantified']) + len(prior['unsettleable'])} 条量化阈值", description)
+        self.assertIn("第一节先结算上季本地分析稿留下的待验证问题与量化阈值", " ".join(self.payload["notes"]))
+
+    def test_the_closure_is_the_notes_own_verdicts_counted(self) -> None:
+        block, checks = self.s["followup_closure"], self.s["_checks"]
+        self.assertEqual([item["verdict"] for item in block["items"]], checks["note_followup_verdicts"])
+        for item in block["items"]:
+            # a label is the verdict's own words, never a regrouping of them
+            self.assertIn(item["label"], item["verdict"], item["question"])
+        chart = self.exhibits["EX_CLOSURE"]
+        counted = collections.Counter(item["label"] for item in block["items"])
+        self.assertEqual(dict(zip(chart["xlabels"], chart["values"])), dict(counted))
+        self.assertEqual(chart["xlabels"], [label for label in block["labels"] if counted[label]])
+        self.assertEqual(sum(chart["values"]), len(checks["note_followup_verdicts"]))
+        self.assertTrue(chart["title"].startswith(f"上季 {len(block['items'])} 条待验证问题："), chart["title"])
+        for label, count in counted.items():
+            self.assertIn(f"{count} 条{label}", chart["title"])
+        for number, item in enumerate(block["items"], 1):
+            self.assertIn(f"<br>{number}. {item['question']} —— <b>{item['verdict']}</b>：", chart["note"])
+        self.assertNotRegex(chart["note"], r"\{[a-z_:]+\}")
+        self.assertIn(block["set_in"], chart["src_extra"])
+
+    def test_the_prior_thresholds_are_the_prior_notes_settled_on_filed_figures(self) -> None:
+        block, checks = self.s["prior_kpi_settlement"], self.s["_checks"]
+        self.assertEqual(sorted((e["direction"], e["threshold"]) for e in block["quantified"]),
+                         sorted((t["direction"], t["threshold"]) for t in checks["note_prior_thresholds"]))
+        self.assertEqual(pm.yq(block["set_in"]), pm.yq(pm.previous_quarter(self.s["period_labels"][-1])))
+        chart = self.exhibits["EX_PRIOR"]
+        printed = self.s["quarter_printed"]
+        reading = {"organic_growth": printed["organic_revenue_growth_pct"],
+                   "organic_oi_growth": printed["organic_operating_income_growth_pct"],
+                   "combustible_pricing": printed["combustible_pricing_pct"],
+                   "zyn_offtake": self.s["zyn"]["offtake_yoy_pct"][-1]}
+        drawn = [e for e in block["quantified"] if reading[e["measure"]] is not None]
+        self.assertEqual(chart["xlabels"], [e["metric"] for e in drawn])
+        for entry, value in zip(drawn, chart["values"]):
+            self.assertAlmostEqual(headroom(entry["direction"], entry["threshold"], reading[entry["measure"]]),
+                                   value, places=1, msg=entry["metric"])
+        total = len(block["quantified"]) + len(block["unsettleable"])
+        self.assertTrue(chart["title"].startswith(f"上季 {total} 条量化阈值："), chart["title"])
+        held = sum(1 for v in chart["values"] if v >= 0)
+        self.assertIn(f"{held} 条守住", chart["title"])
+        worded = [e for e in block["quantified"] if reading[e["measure"]] is None]
+        self.assertEqual([e for e in block["quantified"] if "words_verdict" in e], worded)
+        for entry in worded:
+            self.assertIn(f"{pm.base_name(entry['metric'])} {pm.threshold_words(entry)} {entry['words_verdict']}",
+                          chart["title"])
+            self.assertIn(f"「{self.s['zyn']['offtake_words'][-1]}」", chart["note"])
+        for item in block["unsettleable"] + block["qualitative"]:
+            self.assertIn(item["name"], chart["note"])
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("上季阈值与本季实际"))
+        self.assertEqual([row[0] for row in table["rows"]], chart["xlabels"])
+
+    def test_a_worded_threshold_is_drawn_as_its_own_line_and_nowhere_as_a_point(self) -> None:
+        """The quarter's ZYN reading is a sentence; the line stops at the last figure."""
+        lines = [ex for ex in self.section["exhibits"] if ex["kind"] == "lines"]
+        zyn = self.s["zyn"]
+        if zyn["offtake_yoy_pct"][-1] is not None:
+            self.assertEqual(lines, [])
+            return
+        self.assertEqual(len(lines), 1)
+        line = lines[0]
+        entry = next(e for e in self.s["prior_kpi_settlement"]["quantified"] if e["measure"] == "zyn_offtake")
+        self.assertEqual(line["xlabels"], zyn["period_labels"])
+        self.assertIsNone(line["series"][0]["values"][-1])
+        self.assertEqual(set(line["series"][1]["values"]), {entry["threshold"]})
+        self.assertIn(f"{entry['words_verdict']}上季阈值 {pm.unit_text(entry['unit'], entry['threshold'])}",
+                      line["title"])
+        self.assertIn(zyn["offtake_words"][-1], line["annot"])
+
+
 def with_every_block(source: dict) -> dict:
     """The series with every optional one-release block present and stamped for
     the quarter it ends on, synthesised with placeholder words where absent."""
@@ -975,7 +1080,9 @@ def roll_forward(source: dict) -> dict:
                              "url": f"https://www.sec.gov/Archives/edgar/data/1413329/test/{new}.htm"})
     st["latest"].update(period=label, release_date=release)
     st["next_kpi"]["period"] = label
-    for key in ("quarter_story", "guidance_other"):
+    # last quarter's questions and thresholds were closed by last quarter's note;
+    # a rolled quarter without a note of its own has nothing to settle
+    for key in ("quarter_story", "guidance_other", "followup_closure", "prior_kpi_settlement"):
         st.pop(key, None)
     st["quarter_printed"] = {"period": label, "organic_revenue_growth_pct": 5.5,
                              "isf_organic_revenue_growth_pct": 10.5}
@@ -1002,7 +1109,8 @@ class PmRollTest(unittest.TestCase):
         cls.blob = text_of(cls.payload)
 
     def test_a_block_stamped_with_another_quarter_stops_the_build(self) -> None:
-        for key in ("next_kpi", "quarter_printed", "guidance_other", "quarter_story"):
+        for key in ("next_kpi", "quarter_printed", "guidance_other", "quarter_story",
+                    "followup_closure", "prior_kpi_settlement"):
             stale = copy.deepcopy(self.full)
             stale[key]["period"] = "Q1 1999"
             with self.subTest(block=key):
@@ -1072,6 +1180,69 @@ class PmRollTest(unittest.TestCase):
                 with self.subTest(block=key, text=text):
                     self.assertIn(text, self.blob)
                     self.assertNotIn(text, after)
+
+    def test_a_quarter_with_nothing_left_to_settle_says_so(self) -> None:
+        bare = copy.deepcopy(self.full)
+        del bare["followup_closure"], bare["prior_kpi_settlement"]
+        payload = pm.build_payload(bare)
+        section = payload["sections"][0]
+        self.assertEqual(section["exhibits"][0]["ref"], "EX_FY_BAND")
+        self.assertTrue(section["description"].startswith("本季没有上季分析稿留下的问题与阈值可结算。"))
+        self.assertFalse(any(t["title"].startswith("上季阈值") for t in payload["tables"]))
+        notes = " ".join(payload["notes"])
+        self.assertIn("第一节结清公司自己的指引：", notes)
+        self.assertNotIn("第一节先结算", notes)
+
+    def test_the_settlement_blocks_refuse_what_the_series_no_longer_supports(self) -> None:
+        cases = {}
+        stale = copy.deepcopy(self.full)
+        stale["followup_closure"]["set_in"] = "Q3 2025"
+        cases["closes questions set in 'Q3 2025'"] = stale
+        stale = copy.deepcopy(self.full)
+        stale["prior_kpi_settlement"]["set_in"] = "Q3 2025"
+        cases["settles thresholds set in 'Q3 2025'"] = stale
+        stray = copy.deepcopy(self.full)
+        stray["followup_closure"]["items"][0]["label"] = "测试标签"
+        cases["that `labels` does not list"] = stray
+        moved = copy.deepcopy(self.full)
+        released_record(moved)["vintages"][-1]["xfx_low"] += 0.05
+        cases["assumes 'fy_change_all_currency'"] = moved
+        figured = copy.deepcopy(self.full)
+        figured["zyn"]["offtake_yoy_pct"][-1], figured["zyn"]["offtake_words"][-1] = 3.0, None
+        cases["assumes 'zyn_words_only'"] = figured
+        figured = copy.deepcopy(figured)
+        del figured["followup_closure"]
+        cases["remove its `words_verdict`"] = figured
+        wordless = copy.deepcopy(self.full)
+        del wordless["followup_closure"]
+        next(e for e in wordless["prior_kpi_settlement"]["quantified"] if "words_verdict" in e).pop("words_verdict")
+        cases["settle it from the release's words"] = wordless
+        unknown = copy.deepcopy(self.full)
+        unknown["prior_kpi_settlement"]["quantified"][0]["measure"] = "not_a_measure"
+        cases["prior_kpi_settlement entry"] = unknown
+        unprinted = copy.deepcopy(self.full)
+        del unprinted["quarter_printed"]["combustible_pricing_pct"]
+        cases["has no 'combustible_pricing_pct'"] = unprinted
+        for message, staging in cases.items():
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(ValueError, re.escape(message)):
+                    pm.build_payload(staging)
+
+    def test_a_settled_threshold_follows_the_figure(self) -> None:
+        """A ZYN figure turns the worded entry into a bar; a pricing miss is named."""
+        st = copy.deepcopy(self.full)
+        del st["followup_closure"]
+        st["zyn"]["offtake_yoy_pct"][-1], st["zyn"]["offtake_words"][-1] = 18.0, None
+        entry = next(e for e in st["prior_kpi_settlement"]["quantified"] if e["measure"] == "zyn_offtake")
+        entry.pop("words_verdict")
+        st["quarter_printed"]["combustible_pricing_pct"] = 3.5
+        payload = pm.build_payload(st)
+        chart = exhibits_of(payload)["EX_PRIOR"]
+        self.assertIn(entry["metric"], chart["xlabels"])
+        self.assertIn("2 条没有守住（国际组合烟草定价（加仓线）、国际组合烟草定价（警示线））", chart["title"])
+        self.assertIn(f"{len(chart['xlabels']) - 2} 条守住", chart["title"])
+        self.assertNotIn("画不成柱", chart["note"])
+        self.assertEqual([ex["kind"] for ex in payload["sections"][0]["exhibits"][:2]], ["diverging_bars", "range_band"])
 
     def test_the_record_sentences_are_computed_not_remembered(self) -> None:
         """Make each "only / every / all / usually / often" claim true in the data,
@@ -1311,6 +1482,11 @@ class PmRollTest(unittest.TestCase):
         }
         for name, (make_true, make_false, claims) in cases.items():
             held = copy.deepcopy(self.full)
+            # The closure's evidence describes this release's guidance change and
+            # declares it (`requires`), so a series rewritten here would stop the
+            # build there first; the closure has its own tests, and none of the
+            # claims below is in it.
+            held.pop("followup_closure")
             make_true(held)
             before = composed(pm.build_payload(held))
             broken = copy.deepcopy(held)
@@ -1372,6 +1548,7 @@ class PmRollTest(unittest.TestCase):
 
     def test_a_currency_record_mostly_opposed_is_not_illustrated_by_a_same_direction_year(self) -> None:
         st = copy.deepcopy(self.full)
+        st.pop("followup_closure")  # its evidence declares this release's guidance change; rewritten here
         for record in st["annual_guidance"]["records"]:
             vs = [v for v in record["vintages"] if v.get("adj_low") is not None and v.get("xfx_low") is not None]
             if len(vs) >= 2 and record["year"] not in (2022, 2024):
@@ -1515,8 +1692,10 @@ class PmChecksTest(unittest.TestCase):
         for key, value in c["bridge_pmi"].items():
             self.assertEqual(bridge[key][0], value, key)
         printed = s["quarter_printed"]
-        self.assertEqual(printed["organic_revenue_growth_pct"], c["organic_revenue_growth_pct"])
-        self.assertEqual(printed["isf_organic_revenue_growth_pct"], c["isf_organic_revenue_growth_pct"])
+        for key in ("organic_revenue_growth_pct", "isf_organic_revenue_growth_pct",
+                    "organic_operating_income_growth_pct", "combustible_pricing_pct"):
+            with self.subTest(printed=key):
+                self.assertEqual(printed[key], c[key])
 
     def test_the_guidance_is_the_checked_forecast_table(self) -> None:
         c, s = self.c, self.s

@@ -58,6 +58,7 @@ from build.board import (  # noqa: E402
     ai_capex_cycle_table,
     cn_count,
     delivery_band,
+    fill_story,
     headroom,
     headroom_exhibit,
     latest_block,
@@ -66,6 +67,7 @@ from build.board import (  # noqa: E402
     stamped_block,
     threshold_exhibit,
     threshold_table,
+    unit_text,
 )
 from build.page_shell import render_shell  # noqa: E402
 from build.payload_guard import write_dash  # noqa: E402
@@ -201,7 +203,253 @@ def next_quarter_guidance(staging: dict) -> dict | None:
     return rows[-1] if rows else None
 
 
-# ── section one: the guidance record ────────────────────────────────────────
+def previous_quarter(label: str) -> str:
+    """``'Q2 2026'`` → ``'Q1 2026'``; a first quarter's predecessor is last year's fourth."""
+    year, number = yq(label)
+    year, number = (year - 1, 4) if number == 1 else (year, number - 1)
+    return f"Q{number} {year}"
+
+
+def released_vintages(staging: dict) -> tuple[dict, dict, dict | None]:
+    """The annual record this quarter's release updated, its newest vintage and the
+    one before (a fourth-quarter release opens the next year, so it has no earlier one)."""
+    released = staging["latest"]["release_date"]
+    record = next((r for r in staging["annual_guidance"]["records"]
+                   if r["vintages"] and r["vintages"][-1]["release_date"] == released), None)
+    if record is None:
+        raise ValueError(f"annual_guidance has no vintage released {released}: add this release's "
+                         "full-year forecast")
+    vintages = record["vintages"]
+    return record, vintages[-1], (vintages[-2] if len(vintages) > 1 else None)
+
+
+def page_quarter_offtake(staging: dict) -> tuple[float | None, str | None]:
+    """This quarter's U.S. ZYN offtake reading: a figure, or only the company's words."""
+    zyn = staging["zyn"]
+    ending_on_page_quarter(staging, "zyn", zyn["periods"])
+    return zyn["offtake_yoy_pct"][-1], zyn["offtake_words"][-1]
+
+
+def printed_rate(staging: dict, key: str) -> float:
+    printed = block(staging, "quarter_printed")
+    if key not in printed:
+        raise ValueError(f"series `quarter_printed` has no {key!r} for {page_period(staging)}")
+    return printed[key]
+
+
+# What a settled threshold is measured against this quarter. A figure the
+# release did not print reads as None, and the entry then has to say in words
+# what the release's words settle it as.
+READINGS = {
+    "organic_growth": lambda s: printed_rate(s, "organic_revenue_growth_pct"),
+    "organic_oi_growth": lambda s: printed_rate(s, "organic_operating_income_growth_pct"),
+    "combustible_pricing": lambda s: printed_rate(s, "combustible_pricing_pct"),
+    "zyn_offtake": lambda s: page_quarter_offtake(s)[0],
+}
+
+
+def money(value: float) -> str:
+    return f"{'−' if value < 0 else ''}US${abs(value):.2f}"
+
+
+def threshold_words(entry: dict) -> str:
+    """``≥15.0%``: the side of the line that is safe, in the entry's own unit."""
+    return f"{'≥' if entry['direction'] == 'up' else '≤'}{unit_text(entry['unit'], entry['threshold'])}"
+
+
+def base_name(metric: str) -> str:
+    """「集团有机收入增速（加仓线）」→「集团有机收入增速」: the metric without its role."""
+    return metric.split("（")[0]
+
+
+def settlement_values(staging: dict) -> tuple[dict[str, str], dict[str, bool]]:
+    """What a stamped settlement sentence may name, and the facts it may assume.
+
+    The evidence behind last quarter's questions is one quarter's prose and lives
+    in the series; a number the series already carries is named here instead of
+    typed into it, and a claim the sentence makes about those numbers is a fact
+    the sentence has to declare (`requires`) so a roll that breaks it stops.
+    """
+    values: dict[str, str] = {}
+    facts: dict[str, bool] = {}
+    offtake, words = page_quarter_offtake(staging)
+    facts["zyn_words_only"] = offtake is None and bool(words)
+    if words:
+        values["zyn_words"] = words
+    _, now, before = released_vintages(staging)
+    if before is not None and before.get("adj_low") is not None and now.get("adj_low") is not None:
+        values["xfx_band"] = f"US${now['xfx_low']:.2f}–{now['xfx_high']:.2f}"
+        values["adj_before"] = f"US${before['adj_low']:.2f}–{before['adj_high']:.2f}"
+        values["adj_now"] = f"US${now['adj_low']:.2f}–{now['adj_high']:.2f}"
+        values["fx_before"] = money(before["currency_eps"])
+        values["fx_now"] = money(now["currency_eps"])
+        moved = mid(now["adj_low"], now["adj_high"]) - mid(before["adj_low"], before["adj_high"])
+        facts["fy_change_all_currency"] = (
+            (now["xfx_low"], now["xfx_high"]) == (before["xfx_low"], before["xfx_high"])
+            and abs(moved - (now["currency_eps"] - before["currency_eps"])) < 0.005)
+    return values, facts
+
+
+# ── section one (a): the questions last quarter's note left open ───────────
+
+
+def followup_exhibit(staging: dict) -> dict | None:
+    """Last quarter's follow-up questions as this quarter's note closed them.
+
+    The verdicts are the note's own words; the chart only counts them by the
+    label each carries, so the count is computed and cannot disagree with the
+    list printed under it. A quarter without the block has nothing to close.
+    """
+    period = page_period(staging)
+    closure = stamped_block(staging, "followup_closure", period)
+    if closure is None:
+        return None
+    if yq(closure["set_in"]) != yq(previous_quarter(period)):
+        raise ValueError(f"series block `followup_closure` closes questions set in {closure['set_in']!r}, "
+                         f"but the quarter before {period!r} is {previous_quarter(period)!r}")
+    labels, items = closure["labels"], closure["items"]
+    stray = sorted({item["label"] for item in items} - set(labels))
+    if stray:
+        raise ValueError(f"followup_closure items carry labels {stray} that `labels` does not list")
+    values, facts = settlement_values(staging)
+    for item in items:
+        for fact in item.get("requires", []):
+            if not facts.get(fact):
+                raise ValueError(f"followup_closure item {item['question']!r} assumes {fact!r}, which the "
+                                 "series no longer supports: rewrite its evidence")
+    counted = [(label, sum(1 for item in items if item["label"] == label)) for label in labels]
+    # a label nobody carries this quarter would be an empty column under its name
+    counted = [(label, count) for label, count in counted if count]
+    lines = "".join(f"<br>{number}. {item['question']} —— <b>{item['verdict']}</b>："
+                    f"{fill_story(item['evidence'], values)}。"
+                    for number, item in enumerate(items, 1))
+    return {
+        "ref": "EX_CLOSURE",
+        "kind": "bars_labeled",
+        "title": f"上季 {len(items)} 条待验证问题：" + "、".join(f"{count} 条{label}" for label, count in counted),
+        "xlabels": [label for label, _ in counted],
+        "values": [count for _, count in counted],
+        "legend": "问题条数",
+        "fmt": "f0", "yfmt": "f0", "label_fmt": "f0",
+        "ylab": "条",
+        "note": ("判定逐字取自本季本地分析稿第 0 节「上季遗留问题回答」，柱只把它们按判定归类计数。"
+                 "证据只引新闻稿与 10-Q 印出的数；只在电话会上出现的数不引用。" + lines),
+        "src_extra": (f"问题清单来自上季（{closure['set_in']}）本地分析稿的下季度跟踪问题；"
+                      "验证依据本季业绩 8-K EX-99.1、10-Q 与业绩电话会。"),
+    }
+
+
+# ── section one (b): the thresholds last quarter's note set ────────────────
+
+
+def prior_settlement(staging: dict) -> tuple[list[dict], list[dict], dict | None]:
+    """Last quarter's quantified thresholds against this quarter's filed figures.
+
+    Returns the charts, the entries settled with a figure (for the audit table)
+    and the block. A threshold whose figure the release did not print is
+    settled from the release's own words, stated in the block, and is drawn
+    only where it has a series to draw; one that cannot be settled this
+    quarter at all is named with the reason.
+    """
+    period = page_period(staging)
+    kpi = stamped_block(staging, "prior_kpi_settlement", period)
+    if kpi is None:
+        return [], [], None
+    if yq(kpi["set_in"]) != yq(previous_quarter(period)):
+        raise ValueError(f"series block `prior_kpi_settlement` settles thresholds set in {kpi['set_in']!r}, "
+                         f"but the quarter before {period!r} is {previous_quarter(period)!r}")
+    numeric, worded = [], []
+    for entry in kpi["quantified"]:
+        if entry["measure"] not in READINGS:
+            raise ValueError(f"prior_kpi_settlement entry {entry['metric']!r}: this page does not know how "
+                             f"to measure {entry['measure']!r}")
+        value = READINGS[entry["measure"]](staging)
+        if value is None:
+            words = page_quarter_offtake(staging)[1] if entry["measure"] == "zyn_offtake" else None
+            if not words or entry.get("words_verdict") not in ("未达", "已达"):
+                raise ValueError(f"prior_kpi_settlement entry {entry['metric']!r}: this quarter has no figure; "
+                                 "settle it from the release's words as `words_verdict` (未达 / 已达)")
+            worded.append({**entry, "words": words})
+        elif "words_verdict" in entry:
+            raise ValueError(f"prior_kpi_settlement entry {entry['metric']!r} has a figure this quarter "
+                             f"({value}): remove its `words_verdict`")
+        else:
+            numeric.append({**entry, "actual": value})
+    unsettleable = kpi.get("unsettleable", [])
+    qualitative = kpi.get("qualitative", [])
+    held = [e for e in numeric if headroom(e["direction"], e["threshold"], e["actual"]) >= 0]
+    missed = [e for e in numeric if headroom(e["direction"], e["threshold"], e["actual"]) < 0]
+    parts = []
+    if held:
+        parts.append(f"{len(held)} 条守住")
+    if missed:
+        parts.append(f"{len(missed)} 条没有守住（" + "、".join(e["metric"] for e in missed) + "）")
+    parts += [f"{base_name(e['metric'])} {threshold_words(e)} {e['words_verdict']}" for e in worded]
+    if unsettleable:
+        parts.append(f"{len(unsettleable)} 条本季无法结算")
+    note = ("正值 = 本季实际仍在上季阈值的安全侧。阈值逐字取自上季本地分析稿的「关键观察指标」，不是公司指引；"
+            "同一个指标上季设了加仓线与警示线两条的，分开结算。"
+            f"柱只画能用本季数字结算的{cn_count(len(numeric))}条。")
+    for e in worded:
+        note += (f"<b>{base_name(e['metric'])}那条画不成柱</b>：本季公司只说「{e['words']}」，没有给百分比，"
+                 f"本页按这句话把 {threshold_words(e)} 记为「{e['words_verdict']}」，不把措辞折算成数字。")
+    if unsettleable:
+        note += (f"本季无法结算的{cn_count(len(unsettleable))}条：" + "；".join(
+            f"{x['name']} —— {x['why']}" for x in unsettleable) + "。")
+    if qualitative:
+        note += (f"另有{cn_count(len(qualitative))}行不是数字阈值：" + "；".join(
+            f"{x['name']} —— {x['result']}" for x in qualitative) + "。")
+    readings: dict[str, tuple[str, float, str]] = {}
+    for e in numeric:
+        readings.setdefault(e["measure"], (base_name(e["metric"]), e["actual"], e["unit"]))
+    overview = headroom_exhibit(
+        f"上季 {len(kpi['quantified']) + len(unsettleable)} 条量化阈值：" + "，".join(parts),
+        numeric, "actual", note,
+        ("实际值取自本季业绩 8-K EX-99.1："
+         + "、".join(f"{name} {unit_text(unit, value)}" for name, value, unit in readings.values())
+         + ("；美国 ZYN 零售出货只有新闻稿 U.S. 段的一句措辞" if worded else "") + "。"))
+    overview["ref"] = "EX_PRIOR"
+    charts = [overview]
+    zyn = staging["zyn"]
+    for e in worded:
+        if e["measure"] != "zyn_offtake":
+            continue
+        known = [(v, label) for v, label in zip(zyn["offtake_yoy_pct"], zyn["period_labels"]) if v is not None]
+        last_value, last_label = known[-1]
+        side = "之下" if last_value < e["threshold"] else "之上"
+        when = ("上季设这条线时，最近一格读数是" if yq(last_label) == yq(previous_quarter(period))
+                else "最近一个有数字的读数是")
+        chart = threshold_exhibit(
+            f"{base_name(e['metric'])}：{e['words_verdict']}上季阈值 {unit_text(e['unit'], e['threshold'])}，"
+            "本季只有措辞",
+            zyn["period_labels"], rounded(zyn["offtake_yoy_pct"]), e["threshold"],
+            fmt="pct1", ylab="同比 %", actual_name="美国 ZYN 零售出货同比（Nielsen）",
+            threshold_name="上季阈值（安全侧在上方）",
+            note=(f"{when} {last_label} 的 {last_value:.0f}%，已在 "
+                  f"{unit_text(e['unit'], e['threshold'])} {side}；本季公司只说「{e['words']}」，"
+                  "线停在有数字的最后一格，本页不把措辞折算成一个点。"),
+            src_extra="各季业绩 8-K EX-99.1 正文；Nielsen 为公司引用的第三方零售监测口径；阈值取自上季本地分析稿。")
+        chart["annot"] = f"{zyn['period_labels'][-1]}：公司口径为「{e['words']}」，无数字"
+        charts.append(chart)
+    return charts, numeric, kpi
+
+
+def settled_description(closure: dict | None, prior: dict | None) -> str:
+    """Section one's description names what it settles this quarter (plain text: it is escaped)."""
+    parts = []
+    if closure is not None:
+        parts.append(f"上季本地分析稿留下的 {sum(closure['values'])} 条待验证问题，判定逐字取自本季分析稿第 0 节")
+    if prior is not None:
+        count = len(prior["quantified"]) + len(prior.get("unsettleable", []))
+        parts.append(f"上季「关键观察指标」里的 {count} 条量化阈值，用本季申报值结算")
+    lead = ("先结算上季留下、本季到期的东西：" + "；".join(parts) + "。" if parts
+            else "本季没有上季分析稿留下的问题与阈值可结算。")
+    return (lead + "再结清公司自己给的指引：PMI 把同一个盈利数字指引两次 —— 一次是全年，一次是下一个季度 —— "
+            "而且中途把被指引的口径从 GAAP 换成了公司自定义的调整后口径，四条记录因此互相矛盾，"
+            "这里把它们并排结清，并说明矛盾来自哪里。")
+
+
+# ── section one (c): the guidance record ────────────────────────────────────
 
 
 def annual_records(staging: dict):
@@ -1341,7 +1589,12 @@ def build_payload(staging: dict) -> dict:
 
     kpi, entries = kpi_entries(staging)
 
-    settled = [
+    # Section one settles what last quarter left due, in the order the page's
+    # format asks for: the note's open questions, its quantified thresholds,
+    # then the company's own guidance record.
+    closure_chart = followup_exhibit(staging)
+    prior_charts, prior_entries, prior_block = prior_settlement(staging)
+    settled = ([closure_chart] if closure_chart else []) + prior_charts + [
         annual_reported_band(staging),
         annual_deviation(staging),
         annual_adjusted_band(staging),
@@ -1378,6 +1631,8 @@ def build_payload(staging: dict) -> dict:
         v = verdict_of(actual, low, high)
         return {"above": "高于上限", "inside": "区间内", "below": "跌破下限", None: "待披露"}[v]
 
+    if prior_entries:
+        tables.append(threshold_table(0, "上季阈值与本季实际（原始单位）", prior_entries, "actual", "本季实际"))
     tables.append({
         "n": first_table,
         "title": "全年报告口径每股收益指引：年初、年末与实际（含只给下限的年份）",
@@ -1448,6 +1703,10 @@ def build_payload(staging: dict) -> dict:
     tables.append(threshold_table(first_table + 4, "下季阈值与当前值（原始单位）",
                                   entries, "current", "当前值"))
     tables.append(ai_capex_cycle_table(first_table + 5))
+    # numbered in the order they are listed, after the last exhibit, whichever
+    # of the one-quarter tables this quarter carries
+    for offset, table in enumerate(tables):
+        table["n"] = first_table + offset
 
     # the quarter in one sentence
     seg_labels = seg["periods"]
@@ -1547,10 +1806,7 @@ def build_payload(staging: dict) -> dict:
         "guidance": guidance_table(staging),
         "sections": [
             {"id": "settled", "title": "一、上季跟踪指标兑现了吗",
-             "description": (
-                 "PMI 把同一个盈利数字指引两次 —— 一次是全年，一次是下一个季度 —— 而且中途"
-                 "把被指引的口径从 GAAP 换成了公司自定义的调整后口径。四条记录因此互相矛盾，"
-                 "这一节把它们并排结清，并说明矛盾来自哪里。"),
+             "description": settled_description(closure_chart, prior_block),
              "exhibits": settled_ex},
             {"id": "quarter_highlights", "title": "二、本季重点",
              "description": ("增量的来源、三个报告分部的分化，以及美国单位经济性这条"
@@ -1570,7 +1826,9 @@ def build_payload(staging: dict) -> dict:
         "notes": [
             "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
             "PMI 财年即自然年，本页季度标注与公司自己的口径一致，无需换算。",
-            "第一节结清的是「两个层级、两种口径」的指引记录，这是本站唯一一家同时具备的公司。"
+            ("第一节先结算上季本地分析稿留下的待验证问题与量化阈值，再结清公司自己的指引："
+             if closure_chart or prior_block else "第一节结清公司自己的指引：")
+            + "全年与下一季两个层级、报告与调整后两种口径。"
             "全年指引自 2008 年分拆起在每一份季度业绩新闻稿里发布并逐季修订"
             + (f"（{'、'.join(d for _, d in withdrawn)} 那{cn_count(len(withdrawn))}份撤回除外）" if withdrawn else "")
             + f"，本页收录 {records[0]['year']}–{records[-1]['year']} 共 "

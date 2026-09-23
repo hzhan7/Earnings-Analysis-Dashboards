@@ -2414,6 +2414,176 @@
       "同比增长 1.8%，至 29 亿袋"
     ]
   },
+  "followup_closure": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "labels": [
+      "已验证",
+      "部分验证",
+      "偏空验证",
+      "未上修",
+      "被证伪",
+      "仍未披露"
+    ],
+    "items": [
+      {
+        "question": "ZYN Ultra 的 FDA 审批状态与第二季销售",
+        "verdict": "已验证，但量化未完成",
+        "label": "已验证",
+        "evidence": "6 月首批出货（9mg 与 11mg 湿型），但公司没有给收入或净增量；6 月 30 日获批 MRTP 的是 20 个旗舰规格，与 Ultra 不是同一项审批"
+      },
+      {
+        "question": "日本 4 月 1 日提价后的加热烟弹弹性",
+        "verdict": "部分验证",
+        "label": "部分验证",
+        "evidence": "日本 IQOS 调整后 IMS 同比 −3.4%，剔除抢购回吐约 +1.0%，6 月品类份额 68%；10 月还有第二轮税价"
+      },
+      {
+        "question": "美国 ZYN 零售增速能否企稳",
+        "verdict": "偏空验证",
+        "label": "偏空验证",
+        "evidence": "公司对零售出货只说「{zyn_words}」，没有给百分比；品类在增长，ZYN 没有跟上",
+        "requires": [
+          "zyn_words_only"
+        ]
+      },
+      {
+        "question": "20 亿美元成本节约的累计进度",
+        "verdict": "已验证",
+        "label": "已验证",
+        "evidence": "累计进度只在电话会上更新，新闻稿没有印，本页不引用那个数"
+      },
+      {
+        "question": "下半年与全年指引是否上修",
+        "verdict": "未上修底层框架",
+        "label": "未上修",
+        "evidence": "剔除汇率的全年区间 {xfx_band} 原样重申，调整后区间从 {adj_before} 降到 {adj_now}，差额全部来自汇率（{fx_before} → {fx_now}）",
+        "requires": [
+          "fy_change_all_currency"
+        ]
+      },
+      {
+        "question": "CEO Olczak 是否回到电话会",
+        "verdict": "原推断被证伪",
+        "label": "被证伪",
+        "evidence": "CEO 仍未出席，电话会由即将离任的 CFO 与 8 月接任的 CFO 主持；同期 Ultra 已上市、MRTP 已获批，「CEO 缺席 = FDA 时点信号」那条推断不成立"
+      },
+      {
+        "question": "IQOS ILUMA 在美国的 FDA 进展",
+        "verdict": "仍未披露",
+        "label": "仍未披露",
+        "evidence": "仍在等 FDA，公司只说在为将来的上市做准备，没有时点"
+      },
+      {
+        "question": "台湾份额能否维持",
+        "verdict": "已验证",
+        "label": "已验证",
+        "evidence": "新闻稿把台北列为 IQOS 份额上升的重点城市"
+      },
+      {
+        "question": "VEEV 欧洲联合第一之后的催化",
+        "verdict": "已验证",
+        "label": "已验证",
+        "evidence": "第二季出货同比 +55.1%，公司称已是欧洲封闭式烟弹的明确第一"
+      },
+      {
+        "question": "中东冲突对能源成本的影响",
+        "verdict": "部分验证",
+        "label": "部分验证",
+        "evidence": "公司说影响轻微、主要在运输、能源与原料成本，没有单独量化"
+      },
+      {
+        "question": "印度、墨西哥的税价传导",
+        "verdict": "部分验证",
+        "label": "部分验证",
+        "evidence": "国际卷烟出货同比 +1.1%，两国各自的价格弹性没有披露"
+      },
+      {
+        "question": "万宝路份额能否维持 10% 以上",
+        "verdict": "已验证",
+        "label": "已验证",
+        "evidence": "国际品类份额 11.0%，同比 +0.3pp，追平纪录"
+      }
+    ],
+    "_note": "问题清单是上季（Q1 2026）本地分析稿「下季度关键跟踪问题」的 12 条；question 为中文转述，verdict 逐字取自本季（Q2 2026）本地分析稿第 0 节「上季遗留问题回答」的「验证结果」列，label 是图上的归类（#1「已验证，但量化未完成」归入已验证）。evidence 里的数均回 Q2 2026 业绩 8-K EX-99.1（0001628280-26-049107）核过：日本 −3.4% / +1.0% / 68%、VEEV +55.1%、卷烟 +1.1%、万宝路 11.0% / +0.3pp、ZYN ULTRA 9mg 与 11mg、20 个旗舰规格的 MRTP；只在电话会上出现的数（成本节约累计、台北份额）不引用。"
+  },
+  "prior_kpi_settlement": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "quantified": [
+      {
+        "metric": "集团有机收入增速（加仓线）",
+        "direction": "up",
+        "threshold": 5.0,
+        "unit": "pct",
+        "measure": "organic_growth"
+      },
+      {
+        "metric": "集团有机收入增速（警示线）",
+        "direction": "up",
+        "threshold": 3.0,
+        "unit": "pct",
+        "measure": "organic_growth"
+      },
+      {
+        "metric": "集团有机经营利润增速（加仓线）",
+        "direction": "up",
+        "threshold": 5.0,
+        "unit": "pct",
+        "measure": "organic_oi_growth"
+      },
+      {
+        "metric": "集团有机经营利润增速（警示线）",
+        "direction": "up",
+        "threshold": 3.0,
+        "unit": "pct",
+        "measure": "organic_oi_growth"
+      },
+      {
+        "metric": "国际组合烟草定价（加仓线）",
+        "direction": "up",
+        "threshold": 6.0,
+        "unit": "pct",
+        "measure": "combustible_pricing"
+      },
+      {
+        "metric": "国际组合烟草定价（警示线）",
+        "direction": "up",
+        "threshold": 4.0,
+        "unit": "pct",
+        "measure": "combustible_pricing"
+      },
+      {
+        "metric": "美国 ZYN 零售出货同比（加仓线）",
+        "direction": "up",
+        "threshold": 15.0,
+        "unit": "pct",
+        "measure": "zyn_offtake",
+        "words_verdict": "未达"
+      }
+    ],
+    "unsettleable": [
+      {
+        "name": "美国 ZYN 零售出货连续 4 周低于 +5%（减仓线）",
+        "why": "Nielsen 的周度读数公司不披露，本季只有一句措辞，无法判断是否连续 4 周低于 5%"
+      },
+      {
+        "name": "全年有机增速 ≥ +9%（加仓线）",
+        "why": "按全年结算，要等第四季新闻稿"
+      }
+    ],
+    "qualitative": [
+      {
+        "name": "ZYN Ultra 的 FDA 获批时点（第二季内获批为加仓信号，第三季仍未获批为警示）",
+        "result": "已触发：6 月首批出货"
+      },
+      {
+        "name": "IQOS 东京、台湾与国际渗透（维持并推进新市场为加仓信号）",
+        "result": "定性上维持：新闻稿列出墨西哥城、雅加达、利雅得、吉隆坡与台北份额上升，日本受提价扰动"
+      }
+    ],
+    "_note": "阈值逐字取自上季（Q1 2026）本地分析稿「七.6 关键观察指标」：第 2 行「Q2 ≥ +15% = 加仓；连续 4 周 < +5% = 减仓」、第 3 行「Q2/Q3 有机 ≥ +5% + 全年 ≥ +9% = 加仓；< +3% = 警示」（营收与 OI 两条都适用）、第 5 行「Q2/Q3 定价 ≥ +6% = 加仓；< +4% = 警示」；第 1 行（ZYN Ultra 获批时点）与第 4 行（IQOS 渗透）不是数字阈值。实际值由 builder 从 quarter_printed 与 zyn 现算，不在这里写。"
+  },
   "next_kpi": {
     "period": "Q2 2026",
     "quantified": [
@@ -2487,7 +2657,9 @@
   "quarter_printed": {
     "period": "Q2 2026",
     "organic_revenue_growth_pct": 7.6,
-    "isf_organic_revenue_growth_pct": 11.8
+    "isf_organic_revenue_growth_pct": 11.8,
+    "organic_operating_income_growth_pct": 10.7,
+    "combustible_pricing_pct": 10.0
   },
   "guidance_other": {
     "period": "Q2 2026",
@@ -2640,7 +2812,61 @@
     },
     "zyn_shipments_words": "increased by 1.8% to 2.9 billion pouches",
     "zyn_offtake_words": "flat to slightly growing versus the prior year",
-    "source": "PMI 8-K（0001628280-26-049107）EX-99.1，标题「Philip Morris International Reports 2026 Second-Quarter & First Six-Months Results and Updates 2026 Full-Year Adjusted Diluted EPS Forecast for Currency Only」、日期行「STAMFORD, CT, July 22, 2026」：Results Highlights（Net revenues increased by 10.4% (7.6% organically)；international smoke-free net revenue growth of 14.2% (11.8% organically)）；U.S. Segment 段（ZYN offtake volumes were flat to slightly growing versus the prior year；ZYN shipments increased by 1.8% to 2.9 billion pouches）；EPS 调节表（Reported 1.80 / 1.95，Adjusted 2.20 / 1.91）；2026 Full-Year Forecast 表（7.19–7.34、8.26–8.41、Less: Currency 0.15、8.11–8.26）与假设段（Third quarter adjusted diluted EPS of $2.20 to $2.25, including an estimated unfavorable currency impact of 8 cents）；Second-Quarter 2026 Operating Review 的 Net Revenues 表（10,140 → 11,192：Price 689、Volume/Mix/Other 81、Acquisitions & Divestitures (17)、Currency 299；分部 3,877 / 6,459 / 856）、Gross Profit 表（2,716 / 4,388 / 555；Adj. Gross Profit Margin 68.5% / 70.1% / 67.9% / 65.4%，vs. Q2 2025 0.7 / 1.8 / 1.0 / (6.0)pp）与 PMI 表（Gross Profit 7,659 / 6,866；Operating Income 4,530 / 3,712；Adj. Operating Income 4,773；Adj. OI Margin 42.6% / 41.9%）。",
-    "checked_on": "2026-09-19"
+    "source": "PMI 8-K（0001628280-26-049107）EX-99.1，标题「Philip Morris International Reports 2026 Second-Quarter & First Six-Months Results and Updates 2026 Full-Year Adjusted Diluted EPS Forecast for Currency Only」、日期行「STAMFORD, CT, July 22, 2026」：Results Highlights（Net revenues increased by 10.4% (7.6% organically)；international smoke-free net revenue growth of 14.2% (11.8% organically)）；U.S. Segment 段（ZYN offtake volumes were flat to slightly growing versus the prior year；ZYN shipments increased by 1.8% to 2.9 billion pouches）；EPS 调节表（Reported 1.80 / 1.95，Adjusted 2.20 / 1.91）；2026 Full-Year Forecast 表（7.19–7.34、8.26–8.41、Less: Currency 0.15、8.11–8.26）与假设段（Third quarter adjusted diluted EPS of $2.20 to $2.25, including an estimated unfavorable currency impact of 8 cents）；Second-Quarter 2026 Operating Review 的 Net Revenues 表（10,140 → 11,192：Price 689、Volume/Mix/Other 81、Acquisitions & Divestitures (17)、Currency 299；分部 3,877 / 6,459 / 856）、Gross Profit 表（2,716 / 4,388 / 555；Adj. Gross Profit Margin 68.5% / 70.1% / 67.9% / 65.4%，vs. Q2 2025 0.7 / 1.8 / 1.0 / (6.0)pp）与 PMI 表（Gross Profit 7,659 / 6,866；Operating Income 4,530 / 3,712；Adj. Operating Income 4,773；Adj. OI Margin 42.6% / 41.9%）；Results Highlights「Operating income increased by 22.0% (10.7% organically)」与 Second-Quarter 2026 Performance Highlights 表 Operating Income 的「organic vs. Q2 2025 10.7%」；International Combustibles 段「driven by an exceptional quarter of 10.0% pricing」。",
+    "checked_on": "2026-09-19",
+    "organic_operating_income_growth_pct": 10.7,
+    "combustible_pricing_pct": 10.0,
+    "note_followup_verdicts": [
+      "已验证，但量化未完成",
+      "部分验证",
+      "偏空验证",
+      "已验证",
+      "未上修底层框架",
+      "原推断被证伪",
+      "仍未披露",
+      "已验证",
+      "已验证",
+      "部分验证",
+      "部分验证",
+      "已验证"
+    ],
+    "note_prior_thresholds": [
+      {
+        "row": 2,
+        "direction": "up",
+        "threshold": 15.0
+      },
+      {
+        "row": 3,
+        "direction": "up",
+        "threshold": 5.0
+      },
+      {
+        "row": 3,
+        "direction": "up",
+        "threshold": 3.0
+      },
+      {
+        "row": 3,
+        "direction": "up",
+        "threshold": 5.0
+      },
+      {
+        "row": 3,
+        "direction": "up",
+        "threshold": 3.0
+      },
+      {
+        "row": 5,
+        "direction": "up",
+        "threshold": 6.0
+      },
+      {
+        "row": 5,
+        "direction": "up",
+        "threshold": 4.0
+      }
+    ],
+    "note_source": "本季本地分析稿（2026-07-22，Q2 2026 vs Q1 2026）第 0 节「上季遗留问题回答」的「验证结果」列；上季本地分析稿（2026-04-23，Q1 2026 vs Q4 2025）「七.6 关键观察指标」第 2 行（ZYN 零售增速 Q2 ≥ +15%）、第 3 行（有机营收与 OI：≥ +5% 加仓、< +3% 警示，营收与 OI 各一条）、第 5 行（组合烟草定价 ≥ +6% 加仓、< +4% 警示）。"
   }
 }
