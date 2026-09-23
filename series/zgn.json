@@ -1148,6 +1148,14 @@
    74455
   ]
  },
+ "pre_listing_half": {
+  "period": "2020H1",
+  "revenue": 402386,
+  "adjusted_ebit": -51981,
+  "profit": -87755,
+  "source": "F-1（2022-01-19，d247700df1.htm）：「For the six months ended June 30」合并损益表的 2020 列（Revenues 402,386；Profit/(Loss) for the period (87,755)）与 Adjusted EBIT 调节表的 2020 列（(51,981)）。同一张表的 2021 列 603,340 / 32,234 / 66,813 与本文件 half 块的 2021H1 逐格相同。",
+  "floor_note": "No filing prints a half-year before H1 2020: the F-4 of 2021-08-27 contains no “June 30, 2019” and no six-month table for 2020, and the F-1 compares H1 2021 with H1 2020 only. The block sits outside `half` on purpose: build/luxury.py reads the `half` arrays, and this page uses the 2020 half only where a chart needs the record's true floor."
+ },
  "annual": {
   "years": [
    2019,
@@ -1395,7 +1403,81 @@
    2028,
    2030
   ],
-  "source": "2026 年半年报（6-K，2026-09-03，zgn-20260630.htm）。两个变动额是公司自己写在正文里的：「Financial income and expenses」段落的 a negative impact of €14,582 thousand from the fair value remeasurement of liabilities for put options held by non-controlling interests，与「Foreign exchange」段落的 unfavorable foreign exchange impacts of €17,252 thousand relating to the Thom Browne non-controlling interest put option liability。负债余额与两档行权条款取自附注 16；实际税率与不可抵扣的说明取自所得税段落。"
+  "source": "2026 年半年报（6-K，2026-09-03，zgn-20260630.htm）。两个变动额是公司自己写在正文里的：「Financial income and expenses」段落的 a negative impact of €14,582 thousand from the fair value remeasurement of liabilities for put options held by non-controlling interests，与「Foreign exchange」段落的 unfavorable foreign exchange impacts of €17,252 thousand relating to the Thom Browne non-controlling interest put option liability。负债余额与两档行权条款取自附注 16；实际税率与不可抵扣的说明取自所得税段落。",
+  "fair_value_brand_eur_k": {
+   "current": -1056,
+   "prior": 13835
+  },
+  "fair_value_scope": "€14,582 千是全部少数股东看跌期权负债的公允价值变动之差；公司写明 primarily driven by Thom Browne non-controlling interests，并给出 Thom Browne 本期亏 €1,056 千、上年同期赚 €13,835 千。汇兑那一项只属于 Thom Browne 那笔以美元计价的负债。"
+ },
+ "next_kpi": {
+  "period": "H1 2026",
+  "set_in": "2026-09-03 ZGN Q2 2026 vs Q1 2026 Analysis.md 第 8 节「关键观察指标」",
+  "quantified": [
+   {
+    "id": "tb_organic",
+    "metric": "Thom Browne 单季有机增速",
+    "direction": "up",
+    "threshold": -5.0,
+    "unit": "pct",
+    "current": 2.7,
+    "reading": "2026Q2",
+    "trigger": "< −5% 减仓；≥ 0 指引可信",
+    "source": "2026 年第二季度营收新闻稿（6-K，2026-07-23）品牌收入表 Q2 2026 vs Q2 2025：Thom Browne Organic 2.7%"
+   },
+   {
+    "id": "fx_gap",
+    "metric": "集团报告口径减有机增速",
+    "direction": "down",
+    "threshold": 3.0,
+    "unit": "pp",
+    "organic": 11.0,
+    "organic_ceiling": 6.0,
+    "reading": "2026Q2",
+    "trigger": "差 > +3pp 且有机 ≤ +6% → 警示（加速已全是汇率）",
+    "source": "同一份新闻稿 Total revenues 行：Q2 2026 Organic 11.0%；报告口径同比由本页单季收入现算"
+   },
+   {
+    "id": "gcr_organic",
+    "metric": "大中华区单季有机增速",
+    "direction": "up",
+    "threshold": 5.0,
+    "unit": "pct",
+    "current": 8.6,
+    "reading": "2026Q2",
+    "trigger": "< +5% 警示；转负减仓",
+    "source": "同一份新闻稿地区收入表：Greater China Region Q2 2026 Organic 8.6%（报告口径 12.2%，汇率 +3.6pp）"
+   },
+   {
+    "id": "tb_headroom",
+    "metric": "Thom Browne 商誉与品牌减值余量",
+    "direction": "up",
+    "threshold": 50.0,
+    "unit": "eur_m",
+    "current": 104.0,
+    "reading": "2026-06-30",
+    "trigger": "< €50M、WACC 上调或计提减值 → 重新评估",
+    "goodwill_eur_k": 219903,
+    "brand_eur_k": 157916,
+    "wacc_pct": 8.61,
+    "ebitda_cagr_2028_vs_2025_pct": 50.3,
+    "headroom_if_wacc_plus_100bp_eur_m": -4.0,
+    "source": "2026 年半年报（6-K，2026-09-03，zgn-20260630.htm）附注 9「Thom Browne segment」：goodwill €219,903 千、无限期品牌 €157,916 千；敏感性表 Headroom 104、WACC 8.61%、EBITDA CAGR 2028 vs. 2025 50.3%、WACC +100 bps 一栏 (4)（€ millions）"
+   }
+  ],
+  "full_year": {
+   "id": "fy_adj_ebit",
+   "metric": "FY2026 Adjusted EBIT",
+   "year": 2026,
+   "bear_below_eur_m": 185,
+   "base_eur_m": [
+    185,
+    193
+   ],
+   "bull_from_eur_m": 195,
+   "trigger": "< €185M 减仓；€185–193M 为 Base；≥ €195M 加仓",
+   "settles_with": "FY2026 业绩（2027 年 3 月）"
+  }
  },
  "stores": {
   "dates": [
@@ -1993,9 +2075,30 @@
    "2025-09-05",
    "2026-03-20"
   ],
-  "reaffirmation_note": "The H1 2025 and FY2025 releases both say the Group remains focused on delivering its 2027 targets. Neither restates a number, and the phrase “2027 targets” appears in no other SEC filing by this issuer."
+  "reaffirmation_note": "The H1 2025 release (2025-09-05, chairman's quote: “we remain on track to achieve our 2027 targets”) and the FY2025 release (2026-03-20, Outlook: “remains focused on delivering on its 2027 targets”) refer to the set published with the FY2024 results on 2025-03-27, which replaced the 2023-12-05 CAGR targets. Neither restates a number. The H1 2026 results release (2026-09-03) and the H1 2026 semi-annual report do not mention the targets at all; the “lower end” wording quoted in the local analysis comes from the conference calls, not from a filing.",
+  "targets_2027": {
+   "set_on": "2025-03-27",
+   "replaces": "2023-12-05",
+   "results_year_of_the_release": 2024,
+   "year": 2027,
+   "revenue_eur_m": [
+    2200,
+    2400
+   ],
+   "adjusted_ebit_eur_m": [
+    250,
+    300
+   ],
+   "wording": "To reflect the current business environment, the Group has updated its medium-term targets. In 2027, the Group expects to reach: Revenues in the range of €2,200-€2,400 million; Adjusted EBIT of €250-€300 million",
+   "source": "FY2024 业绩新闻稿（6-K EX-99.1，2025-03-27）「Mid-term targets」段；首页要点写作「Mid-term targets updated」。"
+  }
  },
  "sources": [
+  {
+   "label": "F-1 注册说明书（2022-01-19）：2021 与 2020 年上半年损益与 Adjusted EBIT",
+   "url": "https://www.sec.gov/Archives/edgar/data/1877787/000119312522012555/d247700df1.htm",
+   "date": "2022-01-19"
+  },
   {
    "label": "FY2021 初步营收新闻稿（6-K EX-99.1，2022-02-01）",
    "url": "https://www.sec.gov/Archives/edgar/data/1877787/000119312522024048/d304558dex991.htm",
@@ -2129,6 +2232,11 @@
   {
    "label": "2026 年上半年业绩新闻稿（6-K EX-99.1，2026-09-03）",
    "url": "https://www.sec.gov/Archives/edgar/data/1877787/000187778726000035/eznv-h12026resultspressrel.htm",
+   "date": "2026-09-03"
+  },
+  {
+   "label": "2026 年半年报（6-K，2026-09-03，zgn-20260630.htm）：减值测试、租赁负债与少数股东看跌期权附注",
+   "url": "https://www.sec.gov/Archives/edgar/data/1877787/000187778726000036/zgn-20260630.htm",
    "date": "2026-09-03"
   },
   {

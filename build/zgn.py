@@ -21,8 +21,9 @@ reaches this page as the prior-year column of a 2022 release. The F-4, the F-1
 and the FY2021 20-F were read for this: they discuss quarters in prose and table
 none.
 
-Third, and this is what the last section is about: the group total has never
-been restated, and four of the lines underneath it have. Across the releases
+Third, and this is what the audit drawer's census and restatement tables
+record: the group total has never been restated, and four of the lines
+underneath it have. Across the releases
 this page reads, thirty-nine group-revenue readings were published and twenty-
 four of them were published again later; not one came back different. Over the
 same releases the `Other` product line changed eleven times, the Zegna segment
@@ -30,6 +31,14 @@ and the elimination line four each, and the old `Total Wholesale` five. Every
 one of those changes reconciles exactly. Seven restatements sit behind them and
 the company narrated two: the Tizeta segment move and the switch from a
 by-nature income statement to a by-function one.
+
+**The page is laid out in the site's four parts** -- what last quarter's local
+analysis left to settle, this half's findings, what the current analysis asks
+the next disclosures to settle, and the long-run record. The questions and
+thresholds are the local analyses' (`followup_closure`, `prior_kpi_settlement`,
+`next_kpi`, each stamped with the half it belongs to); every value they are
+settled against is the company's own, read from the series or typed into the
+stamped block with the filing it came from.
 
 **A roll edits `series/zgn.json` and nothing else** (CLAUDE.md §9). Every period,
 count and figure on the page is computed from the series; every sentence that
@@ -40,6 +49,7 @@ it. Published figures are company-reported or transparent arithmetic.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -51,11 +61,14 @@ from build.board import (  # noqa: E402
     cn_count,
     cn_ordinal,
     display_period,
+    headroom,
+    headroom_exhibit,
     latest_block,
     minus_sign,
     number_exhibits,
     round_half_up,
     stamped_block,
+    unit_text,
 )
 from build.page_shell import render_shell  # noqa: E402
 from build.payload_guard import write_dash  # noqa: E402
@@ -167,7 +180,7 @@ def half_sum(s: dict, path: list[str], half: str) -> float:
     return sum(node[q["periods"].index(f"{half[:4]}Q{n}")] for n in wanted)
 
 
-# ── section one: the period just reported ────────────────────────────────────
+# ── section two (本季重点): the half just reported ──────────────────────────
 def period_charts(s: dict, view: dict, put: dict | None) -> list[dict]:
     h = s["half"]
     i, j = view["i"], view["prior"]
@@ -239,17 +252,25 @@ def period_charts(s: dict, view: dict, put: dict | None) -> list[dict]:
     legs_put = [("公允价值重估（计入金融损益）", put["fair_value_swing_eur_k"]),
                 ("汇兑（计入汇兑损益）", put["fx_swing_eur_k"])]
     put_total = sum(v for _, v in legs_put)
+    # The fair-value figure is the swing on *all* non-controlling-interest put
+    # options; the company names the brand that drives it and prints that brand's
+    # own two halves in the same sentence. The FX figure is that brand's alone.
+    own = put["fair_value_brand_eur_k"]
+    own_swing = own["prior"] - own["current"]
     put_ex = {
         "ref": "EX_PUT",
         "kind": "bars_labeled",
-        "title": (f"{put['brand']} 少数股东看跌期权：两项合计 {eur_m(put_total)} 的不利变动，"
+        "title": (f"少数股东看跌期权（以 {put['brand']} 为主）：两项合计 {eur_m(put_total)} 的不利变动，"
                   f"比经营线以下的净变动 {eur_m(-net)} 还大"),
         "xlabels": [name for name, _ in legs_put] + ["两项合计", "经营线以下净变动（取正）"],
         "values": rounded([v for _, v in legs_put] + [put_total, -net], 1),
         "fmt": "f0c", "label_fmt": "f0c", "yfmt": "f0c",
         "ylab": "€ 千（对同比的不利影响）",
-        "note": ("公司把这两个数写在半年报正文里：期权负债的公允价值重估在金融损益里造成 "
-                 f"{eur_m(legs_put[0][1])} 的同比不利变动，该负债以美元计价，其汇兑影响在汇兑损益里"
+        "note": ("公司把这两个数写在半年报正文里：少数股东看跌期权负债的公允价值重估在金融损益里造成 "
+                 f"{eur_m(legs_put[0][1])} 的同比不利变动 —— 这是全部少数股东期权的合计，公司写明主要来自 "
+                 f"{put['brand']}：它一家本期{'亏' if own['current'] < 0 else '赚'} {eur_m(abs(own['current']))}、"
+                 f"上年同期{'赚' if own['prior'] > 0 else '亏'} {eur_m(abs(own['prior']))}，差 {eur_m(own_swing)}。"
+                 f"{put['brand']} 那笔负债以美元计价，其汇兑影响在汇兑损益里"
                  f"再造成 {eur_m(legs_put[1][1])}。两项之和比经营线以下的全部净变动还大 "
                  f"{eur_m(put_total - (-net))}，也就是说<b>其余财务项净贡献是正的</b>。"
                  f"这笔负债本身 {eur_m(put['liability_eur_k'])}，对应 {put['brand']} 尚未收购的 "
@@ -258,13 +279,14 @@ def period_charts(s: dict, view: dict, put: dict | None) -> list[dict]:
                  "重估不可抵扣，也是本期实际税率从 "
                  f"{num(put['effective_tax_rate_prior_pct'])}% 升到 "
                  f"{num(put['effective_tax_rate_pct'])}% 的原因。"),
-        "src_extra": ("两个变动额与税率说明取自 2026 年半年报「Financial income and expenses」"
-                      "与「Foreign exchange」段落；负债余额取自附注 16。"),
+        # The provenance is the stamped block's own: which document, which
+        # paragraph and which note are facts about this half's filing.
+        "src_extra": put["source"],
     }
     return [ladder_ex, bridge, put_ex]
 
 
-# ── section two: the channel conversion ──────────────────────────────────────
+# ── section four (长期常规): the channel conversion ─────────────────────────
 def channel_charts(s: dict, view: dict) -> list[dict]:
     q = s["quarterly"]
     P, ch = q["periods"], q["channel"]
@@ -316,8 +338,8 @@ def channel_charts(s: dict, view: dict) -> list[dict]:
         "fmt": "f0c", "label_fmt": "f0c", "yfmt": "f0c",
         "ylab": "€ 千（单季）",
         "ylab2": "同比 %",
-        "note": ("这一条是本页唯一可以画成真正季度线的收入序列：公司每季都把**单季**数印出来，"
-                 "没有一格是由累计相减得到的。"
+        "note": ("这条线没有一格是由累计相减得到的：公司每季都把<b>单季</b>收入印出来，"
+                 "连同品牌、渠道、地区与分部的单季拆分。"
                  + (f"自 {P[flat_from]} 起，{cn_count(len(P) - flat_from)}个季度的同比全部落在 ±10% 以内。"
                     if flat_from is not None and len(P) - flat_from >= 4 else "")
                  + "前四季没有同比，因为本页的季度记录从 "
@@ -350,7 +372,7 @@ def channel_charts(s: dict, view: dict) -> list[dict]:
     return [mix, revenue, doors]
 
 
-# ── section three: where the profit is ───────────────────────────────────────
+# ── section four (长期常规): where the profit is ────────────────────────────
 def brand_charts(s: dict, view: dict) -> list[dict]:
     se = s["segment_adjusted_ebit"]
     keep = [i for i, t in enumerate(se["total"]) if t is not None]
@@ -380,7 +402,7 @@ def brand_charts(s: dict, view: dict) -> list[dict]:
                  "而 Corporate 是一条一直为负的集团费用线。"
                  "<b>2022 年上半年之前没有 Corporate 这一行</b>："
                  "集团费用当时整体计在 Zegna 分部里，FY2022 业绩发布才把它拆出来并重述了上半年 —— "
-                 "详见下一节。"),
+                 "详见核对抽屉里的重述表。"),
         "src_extra": "各期分部 Adjusted EBIT 取自当期业绩新闻稿的分部表；每期五项之和已核对等于集团合计。",
     }
 
@@ -443,7 +465,7 @@ def brand_charts(s: dict, view: dict) -> list[dict]:
     return [grid, share, tb]
 
 
-# ── section four: the geographic rotation ────────────────────────────────────
+# ── section four (长期常规): the geographic rotation ────────────────────────
 def geography_charts(s: dict, view: dict) -> list[dict]:
     q = s["quarterly"]
     P, geo = q["periods"], q["geography"]
@@ -518,117 +540,364 @@ def geography_charts(s: dict, view: dict) -> list[dict]:
     return [regions, cross]
 
 
-# ── section five: what was republished, and what changed ─────────────────────
-def basis_charts(s: dict, view: dict) -> list[dict]:
+# ── the audit drawer: what was republished, and what changed ────────────────
+# What each restatement was, in the page's words. Fixed history: a roll never
+# rewrites a past restatement, it can only add one, and an unnamed one stops
+# the build rather than printing a key.
+RESTATEMENT_WORDS = {
+    "geography_taxonomy": "地区口径换表",
+    "other_line_absorbs_agnona": "「其他」并入 Agnona",
+    "other_line_absorbs_third_party_brands": "「其他」并入第三方品牌",
+    "pelletteria_tizeta_moves_to_the_tom_ford_fashion_segment": "Pelletteria Tizeta 调入 TOM FORD FASHION 分部",
+    "corporate_costs_leave_the_zegna_segment": "集团费用移出 Zegna 分部",
+    "fy2021_wholesale_and_other": "FY2021 批发与「其他」之间重分类",
+    "income_statement_moves_from_by_nature_to_by_function": "损益表由按性质改为按功能列报",
+}
+CENSUS_KIND_WORDS = {"segment": "分部", "brand": "品牌", "channel": "渠道", "geo": "地区"}
+
+
+def census_table(s: dict, n: int) -> dict:
+    """Every period more than one release printed, counted per line."""
     rows = s["republication_census"]["rows"]
-    unchanged = [r for r in rows if r["periods_changed"] == 0]
     changed = [r for r in rows if r["periods_changed"] > 0]
     total = next(r for r in rows if r["row"] == "total" and r["kind"] == "segment")
-
-    census = {
-        "ref": "EX_CENSUS",
-        "kind": "grouped_bars",
-        "title": (f"集团合计收入被重复公布 {total['periods_republished']} 次，"
-                  f"改过 {total['periods_changed']} 次；"
-                  f"它下面{cn_count(len(rows) - 1)}条线里有{cn_count(len(changed))}条改过"),
-        "xlabels": [r["label"] for r in rows],
-        "groups": [
-            {"name": "被重复公布过的期间数", "color": "NAVY",
-             "values": [r["periods_republished"] for r in rows]},
-            {"name": "其中回来时数字变了的", "color": "RED",
-             "values": [r["periods_changed"] for r in rows]},
-        ],
-        "bar_labels": True,
-        "fmt": "f0", "label_fmt": "f0",
-        "ylab": "期间数",
-        "xrot": 45,
-        "note": ("把本页读的每一份发布里的每一个期间都数一遍："
-                 "蓝柱是「后来又被印过一次」的期间数，红柱是「再印时数字不一样」的期间数。"
-                 f"合计那一条红柱是 {total['periods_changed']} —— "
-                 f"{total['periods_republished']} 次重复公布，没有一次改过。"
-                 f"改过的{cn_count(len(changed))}条是："
-                 + "、".join(f"{r['label']}（{r['periods_changed']} 次）" for r in changed)
-                 + "。<b>合计稳定不等于拆分稳定</b>，而读者引用的多半是拆分。"),
-        "src_extra": "普查范围为本页 sources 里列出的全部发布；每一格的比对都在同一期间、同一行名之间进行。",
+    return {
+        "n": n,
+        "title": (f"重复公布普查：集团合计收入被再印 {total['periods_republished']} 次、"
+                  f"改过 {total['periods_changed']} 次；它下面{cn_count(len(rows) - 1)}条线里"
+                  f"有{cn_count(len(changed))}条改过"),
+        "headers": ["行", "口径", "被印过的期间数", "其中后来又被印过", "再印时数字变了", "变了的期间"],
+        "rows": [[r["label"], CENSUS_KIND_WORDS[r["kind"]], str(r["periods_published"]),
+                  str(r["periods_republished"]), str(r["periods_changed"]),
+                  "、".join(r["changed"]) if r["changed"] else "—"]
+                 for r in rows],
     }
 
+
+def restatement_detail(s: dict, r: dict) -> str:
+    """The arithmetic that exposes one restatement, from the block's own figures."""
+    what = r["what"]
+    if what == "geography_taxonomy":
+        return ("美洲 = 北美 + 拉美，亚太其余 = 亚太 − 大中华区"
+                + ("，逐欧元相等" if r["identity_holds_exactly"] else "，但有差额"))
+    if what == "other_line_absorbs_agnona":
+        return "、".join(f"{p} €{v} 千" for p, v in r["size_eur_k"].items()) + " 并入「其他」"
+    if what == "other_line_absorbs_third_party_brands":
+        tpb = s["quarterly"]["brand"]["fold_overlap"]["third_party_brands"]
+        same = all(a + b == c for a, b, c in zip(tpb["other_as_first_printed"],
+                                                 tpb["third_party_brands"],
+                                                 tpb["other_as_refolded"]))
+        return "旧「其他」加第三方品牌" + ("逐期等于新「其他」" if same else "与新「其他」有差额")
+    if what == "pelletteria_tizeta_moves_to_the_tom_ford_fashion_segment":
+        return (minus_sign("、".join(f"{p} {eur_m(v)}" for p, v in r["revenue_changes_eur_k"].items()))
+                + " 移出 Zegna 分部收入" + ("，集团合计不变" if r["group_total_unchanged"] else ""))
+    if what == "corporate_costs_leave_the_zegna_segment":
+        a = r["adjusted_ebit_eur_k"]
+        return "；".join(
+            f"{p} Zegna 分部 {eur_m(a[f'{p}_as_first_published'])} → {eur_m(a[f'{p}_as_restated'])}，"
+            f"差额 {eur_m(-a[f'{p}_corporate_line'])} 即新设的 Corporate 行"
+            for p in ("2022H1", "FY2021", "FY2020"))
+    if what == "fy2021_wholesale_and_other":
+        return f"{eur_m(r['size_eur_k'])}（{r['cause']}）由批发移到「其他」，集团合计不变"
+    if what == "income_statement_moves_from_by_nature_to_by_function":
+        return ("重述 " + "、".join(r["periods_restated"])
+                + ("；两种列报下经营利润、税前利润、税与利润相同" if r["totals_unchanged"] else ""))
+    raise ValueError(f"restatement `{what}` has no arithmetic on this page")
+
+
+def restatement_table(s: dict, n: int) -> dict:
+    """The restatements behind the census, each with the arithmetic that exposes it."""
     rs = s["restatements"]
+    unnamed = [r["what"] for r in rs if r["what"] not in RESTATEMENT_WORDS]
+    if unnamed:
+        raise ValueError(f"restatements {unnamed} have no wording on this page: add them to RESTATEMENT_WORDS")
     explained = [r for r in rs if r.get("footnoted_by_the_company")]
-    sizes = []
-    for r in rs:
-        if r["what"] == "pelletteria_tizeta_moves_to_the_tom_ford_fashion_segment":
-            sizes.append(("Tizeta 调入 TFF 分部", abs(min(r["revenue_changes_eur_k"].values()))))
-        elif r["what"] == "corporate_costs_leave_the_zegna_segment":
-            sizes.append(("集团费用移出 Zegna 分部", abs(r["adjusted_ebit_eur_k"]["2022H1_corporate_line"])))
-        elif r["what"] == "fy2021_wholesale_and_other":
-            sizes.append(("FY2021 批发／其他重分类", r["size_eur_k"]))
-    corp = next(r for r in rs if r["what"] == "corporate_costs_leave_the_zegna_segment")
-    a = corp["adjusted_ebit_eur_k"]
-    restate = {
-        "ref": "EX_RESTATE",
-        "kind": "bars_labeled",
-        "title": (f"最大的一次重述把 {eur_m(abs(a['2022H1_corporate_line']))} 的集团费用"
-                  f"移出 Zegna 分部：同一个半年的分部利润从 {eur_m(a['2022H1_as_first_published'])} "
-                  f"变成 {eur_m(a['2022H1_as_restated'])}"),
-        "xlabels": ["首次公布的 Zegna 分部 Adjusted EBIT", "重述后", "差额（即新设的 Corporate 行）"],
-        "values": rounded([a["2022H1_as_first_published"], a["2022H1_as_restated"],
-                           abs(a["2022H1_corporate_line"])], 1),
-        "fmt": "f0c", "label_fmt": "f0c", "yfmt": "f0c",
-        "ylab": "€ 千（2022 年上半年）",
-        "note": (f"{corp['first_on_new_basis']} 的 FY2022 业绩发布第一次把集团费用单列成 Corporate；"
-                 "在那之前它整体计在 Zegna 分部里。2022 年上半年是唯一一个两套口径都公布过的半年，"
-                 "而差额恰好等于新设的 Corporate 行 —— 这是恒等式。"
-                 f"本页{cn_count(len(rs))}处重述里只有{cn_count(len(explained))}处被公司说明过，"
-                 "其余都只能靠算术认出来。"
-                 "2021 年上半年只有旧口径，本页不把它和后面的分部利润画在同一条线上。"),
-        "src_extra": "两个数分别取自 2022 年上半年业绩发布与 2023 年上半年业绩发布的分部表。",
+
+    def both(r: dict) -> str:
+        for key in ("periods_on_both_bases", "periods_checked_on_both_bases"):
+            if key in r:
+                return str(r[key])
+        return "—"
+
+    return {
+        "n": n,
+        "title": (f"{cn_count(len(rs))}处重述：只有{cn_count(len(explained))}处被公司说明过，"
+                  "其余都只能靠算术认出来"),
+        "headers": ["重述", "新口径首次出现", "公司是否说明", "两套口径都印过的期间数", "算术"],
+        "rows": [[RESTATEMENT_WORDS[r["what"]], r["first_on_new_basis"],
+                  "是（脚注）" if r.get("footnoted_by_the_company") else "否",
+                  both(r), restatement_detail(s, r)]
+                 for r in rs],
     }
-    return [census, restate]
 
 
-# ── section six: the targets set in December 2023 ────────────────────────────
+# ── section one (c): the company's own medium-term targets ───────────────────
+def _span(values: list[float]) -> str:
+    """``[2200, 2400]`` (€M) -> ``€2.2–2.4B``; ``[250, 300]`` -> ``€250–300M``."""
+    low, high = values
+    if low >= 1000:
+        return f"€{low / 1000:.1f}–{high / 1000:.1f}B"
+    return f"€{low:,.0f}–{high:,.0f}M"
+
+
+ACTUAL_COLORS = ["NAVY", "BLUE", "GRAY", "GREEN"]
+
+
 def target_charts(s: dict, view: dict) -> list[dict]:
     mt = s["medium_term_targets"]
+    new = mt["targets_2027"]
     a = s["annual"]
-    base_year = mt["base_year"]
-    last_year = max(y for y in a["years"] if a["revenue"][a["years"].index(y)] is not None
-                    and a["adjusted_ebit"][a["years"].index(y)] is not None)
-    span = last_year - base_year
-    bi, li = a["years"].index(base_year), a["years"].index(last_year)
-    rev_cagr = cagr(a["revenue"][bi], a["revenue"][li], span)
-    ebit_cagr = cagr(a["adjusted_ebit"][bi], a["adjusted_ebit"][li], span)
+    fy = lambda key, year: a[key][a["years"].index(year)]
+    base = mt["base_year"]
+    # The release that replaced the December 2023 set reported this year, so it
+    # is the only year that set was ever live for.
+    lived = new["results_year_of_the_release"]
+    span = lived - base
+    rev_old = cagr(fy("revenue", base), fy("revenue", lived), span)
+    ebit_old = cagr(fy("adjusted_ebit", base), fy("adjusted_ebit", lived), span)
     rev_target = next(t for t in mt["targets"] if t["metric"] == "group_revenue_cagr_pct")["floor"]
     ebit_target = next(t for t in mt["targets"]
                        if t["metric"] == "group_adjusted_ebit_cagr_pct")["around"]
-
-    settle = {
-        "ref": "EX_TARGET",
+    old = {
+        "ref": "EX_TARGET_OLD",
         "kind": "grouped_bars",
-        "title": (f"{mt['set_on']} 定下的中期目标，对 FY{base_year} 到 FY{last_year} 的实际："
-                  f"收入 {signed(rev_cagr)} 对「10% 以上」，"
-                  f"Adjusted EBIT {signed(ebit_cagr)} 对「约 20%」"),
-        "xlabels": ["集团收入 CAGR", "集团 Adjusted EBIT CAGR"],
+        "title": (f"{mt['set_on']} 定下的中期目标只走完 FY{lived} 一年：收入 {signed(rev_old)} "
+                  f"对「10% 以上」，Adjusted EBIT {signed(ebit_old)} 对「约 20%」，"
+                  f"随后在 {new['set_on']} 被换掉"),
+        "xlabels": ["集团收入", "集团 Adjusted EBIT"],
         "groups": [
-            {"name": f"{mt['set_on']} 给出的目标", "color": "RED",
+            {"name": f"{mt['set_on']} 给出的年复合目标", "color": "RED",
              "values": [rev_target, ebit_target]},
-            {"name": f"FY{base_year} → FY{last_year} 实际（按公布的 FY{base_year} 为基数）",
-             "color": "NAVY", "values": rounded([rev_cagr, ebit_cagr], 1)},
+            {"name": f"FY{base} → FY{lived} 实际（按公布的 FY{base} 为基数）",
+             "color": "NAVY", "values": rounded([rev_old, ebit_old], 1)},
         ],
         "bar_labels": True,
         "fmt": "pct1", "label_fmt": "pct1",
         "ylab": "年复合增速 %",
         "note": ("目标是公司在第二次资本市场日给出的，带基年、带口径脚注。"
-                 f"<b>但基年本身没有被公布过</b>：脚注写的是「starting from FY{base_year} "
+                 f"<b>但基年本身没有被公布过</b>：脚注写的是「starting from FY{base} "
                  "pro-rated on a 12 month basis」，即把 TOM FORD FASHION 视作全年并表之后的 "
-                 f"FY{base_year}，而公司从未印出那个数。本图用公布的 FY{base_year} 作基数。"
+                 f"FY{base}，而公司从未印出那个数。本图用公布的 FY{base} 作基数。"
                  "对收入而言这个替代基数只会偏低（并表前那几个月的收入不可能为负），"
-                 "所以图上的收入 CAGR 是<b>上界</b>，真实差距只会更大；"
+                 "所以图上的收入增速是<b>上界</b>，真实差距只会更大；"
                  "对 Adjusted EBIT 则无法判断方向，因为并表前那几个月的利润可正可负。"
-                 f"公司在 {'、'.join(mt['reaffirmed_in'])} 两次重申仍以「2027 年目标」为准，"
-                 "两次都没有重述数字。"),
-        "src_extra": ("目标原文取自 2023-12-05 资本市场日新闻稿；实际值按本页年度序列现算（D）。"),
+                 f"<b>这组目标已经不是公司的现行目标</b>：{new['set_on']} 的 FY{lived} 业绩新闻稿以"
+                 "「To reflect the current business environment」为由，把中期目标换成了 "
+                 f"{new['year']} 年的绝对区间（下一张图），所以它在任上只报过 FY{lived} 这一年。"),
+        "src_extra": ("目标原文取自 2023-12-05 资本市场日新闻稿；替换它的原文取自 "
+                      f"{new['set_on']} 的 FY{lived} 业绩新闻稿「Mid-term targets」段；"
+                      "实际值按本页年度序列现算（D）。"),
     }
-    return [settle]
+
+    last = max(y for y in a["years"] if fy("revenue", y) is not None
+               and fy("adjusted_ebit", y) is not None)
+    left = new["year"] - last
+    if left <= 0:
+        raise ValueError(f"the {new['year']} targets are settled by FY{last}: "
+                         "replace this chart with their settlement")
+    need = [(cagr(fy("revenue", last), bound_rev * 1000, left),
+             cagr(fy("adjusted_ebit", last), bound_ebit * 1000, left))
+            for bound_rev, bound_ebit in zip(new["revenue_eur_m"], new["adjusted_ebit_eur_m"])]
+    first_live = int(new["set_on"][:4])
+    live_years = list(range(first_live, last + 1))
+    groups = [{"name": f"FY{y} 实际同比", "color": ACTUAL_COLORS[k % len(ACTUAL_COLORS)],
+               "values": rounded([pct(fy("revenue", y), fy("revenue", y - 1)),
+                                  pct(fy("adjusted_ebit", y), fy("adjusted_ebit", y - 1))], 1)}
+              for k, y in enumerate(live_years)]
+    h = s["half"]
+    i, j = view["i"], view["prior"]
+    half_growth = (pct(h["revenue"][i], h["revenue"][j]),
+                   pct(h["adjusted_ebit"][i], h["adjusted_ebit"][j]))
+    half_after = int(view["half"][:4]) > last
+    if half_after:
+        groups.append({"name": f"{half_cn(view['half'])}同比", "color": "MBLUE",
+                       "values": rounded(list(half_growth), 1)})
+    groups += [
+        {"name": f"FY{last} → {new['year']} 到区间下沿所需年复合 D", "color": "GOLD",
+         "values": rounded(list(need[0]), 1)},
+        {"name": "到区间上沿所需年复合 D", "color": "RED", "values": rounded(list(need[1]), 1)},
+    ]
+    first_year_fell = (first_live in live_years
+                       and fy("revenue", first_live) < fy("revenue", first_live - 1)
+                       and fy("adjusted_ebit", first_live) < fy("adjusted_ebit", first_live - 1))
+    fell = groups[0]["values"] if first_year_fell else None
+    faster = [name for name, got, wanted in (("收入", half_growth[0], need[0][0]),
+                                               ("Adjusted EBIT", half_growth[1], need[0][1]))
+              if got >= wanted]
+    pace = ("两条都快于下沿所需的年增速" if len(faster) == 2 else
+            f"{faster[0]}快于下沿所需，另一条慢于所需" if faster else
+            "两条都慢于下沿所需的年增速")
+    reaffirmed = mt["reaffirmed_in"]
+    current = {
+        "ref": "EX_TARGET_2027",
+        "kind": "grouped_bars",
+        "title": (f"{new['year']} 年目标（{new['set_on']} 更新）：收入 {_span(new['revenue_eur_m'])}、"
+                  f"Adjusted EBIT {_span(new['adjusted_ebit_eur_m'])} —— 从 FY{last} 出发，"
+                  f"下沿要求收入年增 {num(need[0][0])}%、Adjusted EBIT 年增 {num(need[0][1])}%"),
+        "xlabels": ["集团收入", "集团 Adjusted EBIT"],
+        "groups": groups,
+        "bar_labels": True,
+        "fmt": "pct1", "label_fmt": "pct1",
+        "ylab": "增速 %",
+        "note": (f"原文：「{new['wording']}」。"
+                 + (f"目标定下之后的第一个完整年度 FY{first_live}，收入与 Adjusted EBIT 都比上一年少"
+                    f"（{signed(fell[0])}、{signed(fell[1])}）。" if fell else "")
+                 + (f"{half_cn(view['half'])}收入同比 {signed(half_growth[0])}、Adjusted EBIT "
+                    f"{signed(half_growth[1])}，{pace}（半年同比与年复合不是同一个量，只看方向）。"
+                    if half_after else "")
+                 + f"公司在 {'、'.join(reaffirmed)} {cn_count(len(reaffirmed))}份业绩新闻稿里写过"
+                 f"仍以「2027 年目标」为准，{cn_count(len(reaffirmed))}次都没有重述数字。"),
+        "src_extra": (f"目标原文取自 {new['set_on']} 的 FY{lived} 业绩新闻稿；所需年复合 = "
+                      f"（区间端点 ÷ FY{last} 实际）开 {left} 次方 − 1（D）。"),
+    }
+    return [old, current]
+
+
+# ── section three: what the current analysis asks the next disclosures ──────
+QUARTER_LABEL = re.compile(r"^\d{4}Q[1-4]$")
+
+
+def next_entries(s: dict, view: dict, nk: dict) -> list[dict]:
+    """The quantified thresholds, each with the reading it is judged on.
+
+    A reading the series can produce is computed here and must not be typed
+    into the block; one it cannot (an organic rate, a headroom from a note) is
+    typed with its filing. Either way the reading has to be this page's own
+    latest period, or the block is last half's.
+    """
+    q = s["quarterly"]
+
+    def reported_growth(label: str) -> float:
+        k = q["periods"].index(label)
+        return pct(q["revenue_eur_k"][k], q["revenue_eur_k"][k - 4])
+
+    computed = {"fx_gap": lambda e: reported_growth(e["reading"]) - e["organic"]}
+    out = []
+    for e in nk["quantified"]:
+        wanted = view["latest_quarter"] if QUARTER_LABEL.match(e["reading"]) else s["latest"]["period_end"]
+        if e["reading"] != wanted:
+            raise ValueError(f"series block `next_kpi` reads `{e['id']}` at {e['reading']!r}, "
+                             f"but this page's latest reading is {wanted!r}: update it with the roll")
+        if e["id"] in computed:
+            if "current" in e:
+                raise ValueError(f"`next_kpi.{e['id']}` is computed from the series; remove its typed value")
+            out.append({**e, "current": computed[e["id"]](e)})
+        else:
+            if "current" not in e:
+                raise ValueError(f"`next_kpi.{e['id']}` has no reading and no way to compute one")
+            out.append(dict(e))
+    return out
+
+
+def second_halves(s: dict, before: int) -> tuple[list[str], list[float]]:
+    """Every second half on record before `before`: FY minus H1 (D).
+
+    The earliest first half any filing prints is the F-1's, so the record
+    starts there, a year before this series' own half axis does.
+    """
+    h, a = s["half"], s["annual"]
+    pre = s["pre_listing_half"]
+    first = {pre["period"]: pre["adjusted_ebit"]}
+    first.update({p: v for p, v in zip(h["periods"], h["adjusted_ebit"])
+                  if p.endswith("H1") and v is not None})
+    labels, values = [], []
+    for year in range(int(pre["period"][:4]), before):
+        full = a["adjusted_ebit"][a["years"].index(year)] if year in a["years"] else None
+        if full is None or f"{year}H1" not in first:
+            continue
+        labels.append(f"{year}H2")
+        values.append(full - first[f"{year}H1"])
+    return labels, values
+
+
+def next_charts(s: dict, view: dict, nk: dict) -> tuple[list[dict], list[dict]]:
+    entries = next_entries(s, view, nk)
+    fy = nk.get("full_year")
+    safe = [e for e in entries if headroom(e["direction"], e["threshold"], e["current"]) >= 0]
+    count = len(entries) + (1 if fy else 0)
+    gap = next((e for e in entries if e["id"] == "fx_gap"), None)
+    tb = next((e for e in entries if e["id"] == "tb_headroom"), None)
+    overview = headroom_exhibit(
+        (f"下季 {count} 条阈值：有当前读数的 {len(entries)} 条"
+         + ("都在安全侧" if len(safe) == len(entries) else f"里 {len(entries) - len(safe)} 条已越线")
+         + (f"；{fy['metric']} 那条要等 {fy['settles_with']}" if fy else "")),
+        entries, "current",
+        ("正值 = 仍在安全侧。"
+         + (f"「{gap['metric']}」是合取条件：差超过 {minus_sign(unit_text(gap['unit'], gap['threshold']))} "
+            f"且有机增速不高于 {gap['organic_ceiling']:.0f}% 才算触发，本季有机 {gap['organic']:.1f}%。"
+            if gap else "")
+         + (f"减值余量 {unit_text(tb['unit'], tb['current'])} 对应商誉 {eur_m(tb['goodwill_eur_k'])} "
+            f"加无限期品牌 {eur_m(tb['brand_eur_k'])}；公司自己的敏感性表里 WACC 上调 100bp，"
+            f"余量就变成 {unit_text(tb['unit'], tb['headroom_if_wacc_plus_100bp_eur_m'])}。"
+            if tb else "")),
+        src_extra=("阈值为本地研究设定（本季分析稿第 8 节），不是公司指引。有机增速是公司印出的数，"
+                   "本站没有接入按季的有机增速序列，所以这几条只有总览、没有历史线；"
+                   "各条的出处列在核对抽屉的阈值表里。"),
+    )
+    overview["ref"] = "EX_NEXT"
+    charts = [overview]
+    if fy:
+        h = s["half"]
+        year = fy["year"]
+        if f"{year}H1" not in h["periods"] or f"{year}H2" in h["periods"]:
+            raise ValueError(f"series block `next_kpi.full_year` is for FY{year}, but the half record "
+                             f"ends at {h['periods'][-1]}: update it with the roll")
+        first = h["adjusted_ebit"][h["periods"].index(f"{year}H1")]
+        need_bear = fy["bear_below_eur_m"] * 1000 - first
+        need_bull = fy["bull_from_eur_m"] * 1000 - first
+        labels, values = second_halves(s, year)
+        best = max(range(len(values)), key=lambda k: values[k])
+        from_f1 = labels[0][:4] == s["pre_listing_half"]["period"][:4]
+        charts.append({
+            "ref": "EX_NEXT_FY",
+            "kind": "lines",
+            "title": (f"{fy['metric']}：下季阈值 {eur_m(fy['bear_below_eur_m'] * 1000, 0)}，"
+                      f"当前上半年 {eur_m(first)} —— 下半年要做到 {eur_m(need_bear)}"
+                      + ("，比此前任何一个下半年都高" if need_bear > values[best] else "")),
+            "xlabels": labels,
+            "series": [
+                {"name": "下半年 Adjusted EBIT（全年 − 上半年 D）", "color": "NAVY",
+                 "values": rounded(values)},
+                {"name": f"全年 {eur_m(fy['bear_below_eur_m'] * 1000, 0)} 所需的下半年（安全侧在上方）",
+                 "color": "RED", "values": [round(need_bear, 6)] * len(labels)},
+                {"name": f"全年 {eur_m(fy['bull_from_eur_m'] * 1000, 0)} 所需的下半年", "color": "GOLD",
+                 "values": [round(need_bull, 6)] * len(labels)},
+            ],
+            "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
+            "end_label": True,
+            "ylab": "€ 千（下半年）",
+            "note": (f"阈值是全年的：{fy['trigger']}。上半年已经报出 {eur_m(first)}，两条线就是"
+                     "全年阈值减去上半年之后、下半年必须做到的数。"
+                     f"此前最高的下半年是 {labels[best]} 的 {eur_m(values[best])}。"
+                     "下半年由全年减上半年得到（D）"
+                     + (f"；{labels[0]} 用到的上半年取自 F-1，那是任何申报里印出的第一个半年" if from_f1 else "")
+                     + "。"),
+            "src_extra": ("阈值为本地研究设定（本季分析稿第 8 节），不是公司指引；"
+                          "全年与上半年 Adjusted EBIT 取自各期业绩新闻稿与 F-1。"),
+        })
+    return charts, entries
+
+
+def next_table(s: dict, nk: dict, entries: list[dict], n: int) -> dict:
+    rows = [[e["metric"], e["trigger"], minus_sign(unit_text(e["unit"], e["threshold"])),
+             minus_sign(unit_text(e["unit"], e["current"])),
+             minus_sign(f"{headroom(e['direction'], e['threshold'], e['current']):+.1f}%"),
+             e["reading"], e["source"]]
+            for e in entries]
+    fy = nk.get("full_year")
+    if fy:
+        h = s["half"]
+        first = h["adjusted_ebit"][h["periods"].index(f"{fy['year']}H1")]
+        rows.append([fy["metric"], fy["trigger"],
+                     f"{eur_m(fy['bear_below_eur_m'] * 1000, 0)} / {eur_m(fy['bull_from_eur_m'] * 1000, 0)}",
+                     f"上半年 {eur_m(first)}", "—", fy["settles_with"],
+                     "全年减上半年（D），见第三节的下半年那张图"])
+    return {
+        "n": n,
+        "title": "下季阈值与当前读数（阈值原文取自本季分析稿第 8 节）",
+        "headers": ["指标", "触发条件", "阈值", "当前", "余量 D", "读数期间", "当前值出处"],
+        "rows": rows,
+    }
 
 
 # ── the page ─────────────────────────────────────────────────────────────────
@@ -654,22 +923,20 @@ def build_payload(staging: dict) -> dict:
     release = f"{view['year']} 年{view['word']}业绩"
     if not any(source["label"].startswith(release) for source in s["sources"]):
         raise ValueError(f"series `sources` has no entry for the {release} release: add it with the roll")
+    put = stamped_block(s, "half_story", period)
+    nk = stamped_block(s, "next_kpi", period)
+    if nk is None:
+        raise ValueError("series block `next_kpi` is required every half: the page's third part "
+                         "is the current analysis's thresholds")
 
-    period_ex = period_charts(s, view, stamped_block(s, "half_story", period))
-    channel_ex = channel_charts(s, view)
-    brand_ex = brand_charts(s, view)
-    geo_ex = geography_charts(s, view)
-    basis_ex = basis_charts(s, view)
-    target_ex = target_charts(s, view)
-
-    exhibits = number_exhibits(period_ex + channel_ex + brand_ex + geo_ex + basis_ex + target_ex)
+    # The four parts, in the order the site reads them. Each list holds the
+    # exhibit dicts themselves, so numbering them below numbers them here too.
+    settled_ex = target_charts(s, view)
+    highlight_ex = period_charts(s, view, put)
+    next_ex, next_list = next_charts(s, view, nk)
+    routine_ex = channel_charts(s, view) + brand_charts(s, view) + geography_charts(s, view)
+    exhibits = number_exhibits(settled_ex + highlight_ex + next_ex + routine_ex)
     resolve_exhibit_refs(exhibits)
-    sizes = [len(period_ex), len(channel_ex), len(brand_ex), len(geo_ex), len(basis_ex), len(target_ex)]
-    cuts, at = [], 0
-    for size in sizes:
-        cuts.append(exhibits[at:at + size])
-        at += size
-    period_ex, channel_ex, brand_ex, geo_ex, basis_ex, target_ex = cuts
 
     h, q, se, st = s["half"], s["quarterly"], s["segment_adjusted_ebit"], s["stores"]
     i, j = view["i"], view["prior"]
@@ -727,6 +994,9 @@ def build_payload(staging: dict) -> dict:
                    if d in s["net_financial_position"]["dates"] else "—")]
                  for k, d in enumerate(st["dates"])],
     }]
+    tables.append(census_table(s, first_table + len(tables)))
+    tables.append(restatement_table(s, first_table + len(tables)))
+    tables.append(next_table(s, nk, next_list, first_table + len(tables)))
     tables.append(ai_capex_cycle_table(first_table + len(tables)))
 
     g = lambda key: h[key][i]
@@ -736,19 +1006,18 @@ def build_payload(staging: dict) -> dict:
     profit_growth = pct(g("profit"), p("profit"))
     share_now = dtc_share(s, len(P) - 1)
     share_first = dtc_share(s, 0)
-    total_row = next(r for r in s["republication_census"]["rows"]
-                     if r["row"] == "total" and r["kind"] == "segment")
-    changed_rows = [r for r in s["republication_census"]["rows"] if r["periods_changed"] > 0]
+    rows = s["republication_census"]["rows"]
+    total_row = next(r for r in rows if r["row"] == "total" and r["kind"] == "segment")
+    changed_rows = [r for r in rows if r["periods_changed"] > 0]
     ratio = se["zegna"][-1] / se["total"][-1] * 100
 
-    put = stamped_block(s, "half_story", period)
     headline = (f"{half_cn(half)}收入 {eur_m(view['revenue'])}，同比 "
                 f"{signed(pct(view['revenue'], view['revenue_prior']))}；"
                 f"Adjusted EBIT {eur_m(g('adjusted_ebit'))}、利润率 {num(margin)}%"
                 f"（上年同期 {num(margin_prior)}%），"
                 f"而期间利润 {eur_m(g('profit'))}、同比 {signed(profit_growth)} —— "
                 "落差整段发生在经营利润之下"
-                + (f"，其中 {put['brand']} 少数股东看跌期权一项就造成 "
+                + (f"，其中少数股东看跌期权（以 {put['brand']} 为主）的重估与汇兑两项就造成 "
                    f"{eur_m(put['fair_value_swing_eur_k'] + put['fx_swing_eur_k'])} 的不利同比变动"
                    if put else "")
                 + "。"
@@ -762,7 +1031,8 @@ def build_payload(staging: dict) -> dict:
         f'经营利润 {signed(pct(g("operating_profit"), p("operating_profit")))}、'
         f'Adjusted EBIT {signed(pct(g("adjusted_ebit"), p("adjusted_ebit")))}，'
         f'期间利润 {signed(profit_growth)}。'
-        + (f'{put["brand"]} 看跌期权的公允价值与汇兑两项，合计比经营线以下的全部净变动还大。'
+        + (f'少数股东看跌期权（以 {put["brand"]} 为主）的公允价值与汇兑两项，'
+           '合计比经营线以下的全部净变动还大。'
            if put else '')
         + '</p></article>',
         '<article><span>结构</span><b>渠道换完了，收入没动</b>'
@@ -771,50 +1041,54 @@ def build_payload(staging: dict) -> dict:
         f'批发门店 {st["wholesale_doors"]["Group"][0]} → {st["wholesale_doors"]["Group"][-1]} 家；'
         f'集团收入 FY{s["annual"]["years"][-3]} 到 FY{s["annual"]["years"][-1]} 只变了 '
         f'{signed(pct(s["annual"]["revenue"][-1], s["annual"]["revenue"][-3]), 2)}。</p></article>',
-        '<article><span>口径</span><b>合计从没改过，拆分改过</b>'
+        '<article><span>口径</span><b>'
+        + ('合计从没改过，拆分改过' if total_row["periods_changed"] == 0 else '合计也改过')
+        + '</b>'
         f'<p>集团合计收入被重复公布 {total_row["periods_republished"]} 次，'
         f'{total_row["periods_changed"]} 次改动；它下面'
-        f'{cn_count(len(s["republication_census"]["rows"]) - 1)}条线里有'
+        f'{cn_count(len(rows) - 1)}条线里有'
         f'{cn_count(len(changed_rows))}条改过，'
         f'{cn_count(len(s["restatements"]))}处重述里只有'
         f'{cn_count(sum(1 for r in s["restatements"] if r.get("footnoted_by_the_company")))}'
         '处被公司说明过。</p></article>',
     ]
 
+    mt = s["medium_term_targets"]
+    fy = nk.get("full_year")
     sections = [
-        {"id": "period", "short": "本期", "title": f"{half_cn(half)}：落差在哪一段发生",
-         "description": ("从收入到利润五个口径的同比方向不一致，本节先把落差定位到损益表的哪一段，"
-                         "再看那一段里最大的一笔是什么。"),
-         "exhibits": period_ex},
-        {"id": "channel", "short": "渠道改造", "title": "把批发换成直营，换了几年",
-         "description": ("DTC 占品牌收入、批发品牌的绝对额、单季收入与门店数 —— "
-                         "同一件事的四个侧面。"),
-         "exhibits": channel_ex},
-        {"id": "brands", "short": "利润在哪个品牌", "title": "三个品牌，一个在赚钱",
-         "description": "分部 Adjusted EBIT、Zegna 分部占集团的比例，以及 Thom Browne 的单店产出。",
-         "exhibits": brand_ex},
-        {"id": "geography", "short": "地区", "title": "大中华区与美洲换了位置",
-         "description": f"{cn_count(len(P))}个季度的四个区域，以及换过一次的区域口径。",
-         "exhibits": geo_ex},
-        {"id": "basis", "short": "口径与重述", "title": "被重复公布的数，和被改过的数",
-         "description": ("把每一份发布里的每一个期间数一遍：合计从没改过，它下面的几条线改过。"),
-         "exhibits": basis_ex},
-        {"id": "targets", "short": "中期目标", "title": "2023 年 12 月的目标，和它没公布的基年",
-         "description": "目标带基年、带口径脚注，而基年本身是一个从未印出的数。",
-         "exhibits": target_ex},
+        {"id": "settled", "title": "一、上季跟踪指标兑现了吗",
+         "description": (f"公司自己给出的中期目标兑现到哪一步：{mt['set_on']} 的年复合目标只走完一年，"
+                         f"就在 {mt['targets_2027']['set_on']} 被换成 {mt['targets_2027']['year']} 年的"
+                         "绝对区间；现行区间离最近一个完整年度还有多远，放在第二张图。"),
+         "exhibits": settled_ex},
+        {"id": "quarter_highlights", "title": "二、本季重点",
+         "description": (f"{half_cn(half)}从收入到利润五个口径的同比方向不一致：先把落差定位到损益表的"
+                         "哪一段，再看那一段里最大的一笔是什么。"),
+         "exhibits": highlight_ex},
+        {"id": "next_quarter", "title": "三、下季要跟踪什么",
+         "description": (f"本季分析稿第 8 节留给下一次披露的 {len(next_list) + (1 if fy else 0)} 条阈值："
+                         f"有当前读数的 {len(next_list)} 条统一用「距阈值余量」表示"
+                         + (f"；{fy['metric']} 要等全年业绩才能结算，单独画出下半年必须做到的数"
+                            if fy else "")
+                         + "。"),
+         "exhibits": next_ex},
+        {"id": "routine", "title": "四、长期常规跟踪",
+         "description": (f"Zegna 专属的长期序列：{P[0]} 起的单季收入、渠道结构与门店，"
+                         "分部利润与 Thom Browne 的单店产出，以及换过一次口径的地区收入。"),
+         "exhibits": routine_ex},
     ]
-    for index, section in enumerate(sections, start=1):
-        section["title"] = f"{cn_ordinal(index)}、{section['title']}"
-    order = " → ".join(section.pop("short") for section in sections)
 
     geo_block = q["geography"]
     fold = q["brand"]["fold_overlap"]
     both = geo_block["periods_on_both_bases"]
+    releases = [x for x in s["sources"] if re.search(r"(营收|业绩)新闻稿", x["label"])]
+    pre = s["pre_listing_half"]
     notes = [
-        f"本页按「{order}」{cn_count(len(sections))}段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
+        "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
         "公司在荷兰注册、在纽约证券交易所上市，按 IFRS 以欧元列报，财年即自然年。它是美国证券法下的外国私人发行人：年度报告为 20-F，季度营收公告与半年度业绩一律以 6-K 报送。因此与本站其他欧洲奢侈品公司不同，它的全部原件都在 EDGAR 上，本页 sources 里逐份直链。",
         "披露节奏决定了本页两条时间轴的形状：收入按单季公布，一年四次，每次都带品牌、渠道、地区与分部拆分；完整损益表一年只有两次，在半年与全年。所以收入轴是真正的季度轴，上面没有一格是相减出来的；利润轴是半年轴，下半年由全年减上半年得到，表里逐行标明。本页不把这两条轴画在同一张图上。",
-        f"季度记录的下限是 {P[0]}，而且不可能更早：公司 {s['company']['listed_on']} 才完成上市，此前没有公布过任何季度数字。本页的 {P[0]} 到 {P[3]} 四个季度，都是作为 2022 年各份发布的上年同期列才第一次被印出来的，表里逐格标明是哪一份。为确认这一点，除二十七份业绩发布之外还读了 F-4、F-1 与 FY2021 的 20-F：三份都在正文里谈到季度，但都没有列出任何季度财务表。",
+        f"季度记录的下限是 {P[0]}，而且不可能更早：公司 {s['company']['listed_on']} 才完成上市，此前没有公布过任何季度数字。本页的 {P[0]} 到 {P[3]} 四个季度，都是作为 2022 年各份发布的上年同期列才第一次被印出来的，表里逐格标明是哪一份。为确认这一点，除{cn_count(len(releases))}份业绩与营收新闻稿之外还读了 F-4、F-1 与 FY2021 的 20-F：三份都在正文里谈到季度，但都没有列出任何季度财务表。",
+        f"半年的下限比季度早一年：F-1 印出了 {half_cn(pre['period'])}的收入、期间利润与 Adjusted EBIT，这是任何申报里的第一个半年数（F-4 里没有任何半年表）。本页的半年表从 {h['periods'][0]} 起；只有第三节那张下半年的图用到了这个更早的半年，以便从 {pre['period'][:4]} 年下半年算起（全年减上半年 D）。",
         f"地区口径在 {geo_block['basis_change_release']} 的发布里换过一次：此前分 EMEA / 北美 / 拉美 / 亚太（亚太下挂大中华区与日本），此后分 EMEA / 美洲 / 大中华区 / 亚太其余。这次改动在文字里没有任何说明，唯一的证据是算术 —— 美洲等于北美加拉美，亚太其余等于亚太减大中华区。两套口径同时被印出过的期间有{cn_count(both)}个，两条恒等式在每一个上都逐欧元相等，本页因此把换口径之前的季度按新口径还原并标为自算。意大利、美国与日本原本是旧表下的「其中」行，随旧表一起停在 2023 年第四季度，本页不向后补。",
         "产品线里的「其他」也被并过两次，都没有文字说明：Agnona 在 2023 年第一季度的发布里并入，第三方品牌在 2024 年第一季度的发布里并入。本页按公司最后采用的口径发布，换口径之前的季度由首次印出的几行相加还原；"
         + f"两次并线各有{cn_count(len(fold['third_party_brands']['periods']))}个和{cn_count(len(fold['agnona']['periods']))}个期间两套口径都印过，相加的结果与公司自己印出的合并行在每一个上都相等，原值列在 series 的 fold_overlap 里。",
@@ -822,12 +1096,16 @@ def build_payload(staging: dict) -> dict:
         "分部利润有一处必须先说明才能看：2022 年上半年之前没有 Corporate 这一行，集团费用整体计在 Zegna 分部里。FY2022 业绩发布第一次把它拆出来，并重述了 2022 年上半年；那是唯一一个两套口径都公布过的半年，差额恰好等于新设的 Corporate 行。2021 年上半年只有旧口径，本页不把它画进分部利润的时间轴。",
         "唯一被公司用脚注说明过的重述是 Pelletteria Tizeta：2024 年的发布把它从 Zegna 分部调入 TOM FORD FASHION 分部，并重述了 2023 年第二、第三季度的分部收入与抵销行，集团合计不变。有一处后果值得记下来：2023 年第四季度按「全年减前九个月」去算，必须用重述后的前九个月才能等于公司印出的第四季度，用首次公布的前九个月会少算一千二百八十二万六千欧元。",
         "Adjusted EBIT 是公司自定义的非 IFRS 指标，定义为税前利润加回金融收支、汇兑损益与权益法结果，再剔除管理层认为不反映经营的项目。本页照用公司的口径与公司印出的值，不自行调整剔除项；各期剔除项的构成在业绩发布里逐项列出。",
-        "本页不发布市场一致预期、评级、目标价与估值。中期目标一节引用的是公司自己在资本市场日给出的口径，本页只做结算，不给出自己的预测。",
+        (f"本页不发布市场一致预期、评级、目标价与估值。第一节结算的中期目标是公司自己给出的：{mt['set_on']} "
+         f"资本市场日的年复合目标，以及 {mt['targets_2027']['set_on']} 的 FY"
+         f"{mt['targets_2027']['results_year_of_the_release']} 业绩新闻稿换上的 {mt['targets_2027']['year']} 年区间；"
+         "第三节的阈值是本地研究设定（本季分析稿），不是公司指引。本页只做结算，不给出自己的预测。"),
         "本页只发布公司披露值与可复算的简单派生值；D 标记代表 Derived / 自算。",
         f"本页已知未接入：{quarter_cn(view['latest_quarter'])}之后的任何数据"
         + (f"；另外 {quarter_cn(view['latest_quarter'])} 已有营收披露但尚无损益，"
-           "本页的利润口径因此停在半年。"
-           if view["latest_quarter"] not in view["quarters"] else "。"),
+           "本页的利润口径因此停在半年"
+           if view["latest_quarter"] not in view["quarters"] else "")
+        + "；按季的有机增速（公司每季都印，本站没有接入序列，第三节的有机增速阈值因此只有当前读数、没有历史线）。",
         "核对抽屉最后那张「AI capex 循环」是全站共用的跨页对照块，在每一页都逐字节相同，不是对本公司的判断。它追的是四家云厂现金资本开支到 NVDA 数据中心收入再到 TSM 晶圆这条链，本公司不在这条链的任何一环上；它在折叠的抽屉里，不参与本页的论证。",
     ]
 

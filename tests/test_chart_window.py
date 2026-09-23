@@ -942,6 +942,15 @@ CONVERTED = {
         "Thom Browne 直营门店": "Thom Browne's DTC revenue is split out by brand only from "
                             "the 2021Q3 release, so FY2022 is the first year that has "
                             "four quarters of it to divide by a year-end door count.",
+        # Adjusted EBIT exists only for the half and the year, so a second half
+        # is the year minus its first half. The F-1 of 2022-01-19 tables the six
+        # months ended June 30 of 2021 and 2020; the F-4 of 2021-08-27 prints no
+        # six-month table at all (no "June 30, 2019", no 2020 half). So the
+        # earliest first half any filing prints is H1 2020, and the first second
+        # half is 2020H2.
+        "下半年要做到": "a second half is FY minus H1, and the earliest H1 any filing prints "
+                  "is H1 2020 (F-1 of 2022-01-19; the F-4 of 2021-08-27 tables no half), "
+                  "so the second-half record starts 2020H2.",
     },
 }
 
@@ -1005,6 +1014,7 @@ FLOOR_KIND = {
         '#个品牌的 Adjusted EBIT': 'disclosure',
         '分部的 Adjusted EBIT 相当于集团的': 'disclosure',
         'Thom Browne 直营门店': 'disclosure',
+        '下半年要做到': 'disclosure',
     },
     'hkex': {
         '现货市场日均成交额与交易结算费': 'disclosure',
@@ -1391,7 +1401,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 160)
+        self.assertEqual(settled.count("disclosure"), 161)
         self.assertEqual(settled.count("design"), 40)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:

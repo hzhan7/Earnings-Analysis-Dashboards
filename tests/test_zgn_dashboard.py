@@ -125,6 +125,95 @@ class ZgnDashboardTest(unittest.TestCase):
                 # a quarter cannot have been printed before it ended
                 self.assertGreater(when, q["period_ends"][q["periods"].index(period)])
 
+    # ── the four parts ───────────────────────────────────────────────────────
+    FOUR_PARTS = [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+                  ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")]
+
+    def test_the_page_is_laid_out_in_the_sites_four_parts(self) -> None:
+        sections = self.payload["sections"]
+        self.assertEqual([(s["id"], s["title"]) for s in sections], self.FOUR_PARTS)
+        for section in sections:
+            with self.subTest(section=section["id"]):
+                self.assertTrue(section["exhibits"], "an empty part is a heading with nothing under it")
+                self.assertTrue(section["description"].strip())
+                self.assertNotIn("<", section["description"])
+
+    def test_the_page_describes_the_layout_it_has(self) -> None:
+        """The self-description used to say 「六段排列」 after the page stopped
+        being six sections; now it names the four parts, and nothing else on the
+        page counts sections."""
+        self.assertEqual(
+            self.payload["notes"][0],
+            "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，"
+            "每张图下一到两句解释；支撑表格收在核对抽屉里。")
+        prose = text_of({k: v for k, v in self.payload.items() if k != "source_links"})
+        self.assertEqual(re.findall(r"(.)段排列", prose), ["四"])
+
+    def test_the_next_thresholds_are_the_ones_the_current_analysis_set(self) -> None:
+        """Section 8 of `2026-09-03 ZGN Q2 2026 vs Q1 2026 Analysis.md`, copied
+        here as the report's facts: which metric, which side is safe, where the
+        line is. The readings are the company's (Q2 2026 revenue 6-K, H1 2026
+        semi-annual report note 9) and the headroom is recomputed here."""
+        report = {
+            "tb_organic": ("up", -5.0),        # organic < −5% → 减仓
+            "fx_gap": ("down", 3.0),           # 报告 − 有机 > +3pp（且有机 ≤ +6%）→ 警示
+            "gcr_organic": ("up", 5.0),        # organic < +5% → 警示
+            "tb_headroom": ("up", 50.0),       # headroom < €50m → 重新评估
+        }
+        nk = self.st["next_kpi"]
+        self.assertEqual({e["id"]: (e["direction"], e["threshold"]) for e in nk["quantified"]}, report)
+        gap = next(e for e in nk["quantified"] if e["id"] == "fx_gap")
+        self.assertEqual((gap["organic_ceiling"], gap["organic"]), (6.0, 11.0))
+        fy = nk["full_year"]
+        self.assertEqual((fy["bear_below_eur_m"], fy["base_eur_m"], fy["bull_from_eur_m"]),
+                         (185, [185, 193], 195))
+
+        q = self.q
+        k = q["periods"].index("2026Q2")
+        reported = (q["revenue_eur_k"][k] / q["revenue_eur_k"][k - 4] - 1) * 100
+        self.assertEqual(round(reported, 1), 10.3, "the company prints +10.3% for Q2 2026")
+        readings = {"tb_organic": 2.7, "fx_gap": reported - 11.0, "gcr_organic": 8.6,
+                    "tb_headroom": 104.0}
+        ex = self.by_ref["EX_NEXT"]
+        self.assertEqual(ex["kind"], "diverging_bars")
+        self.assertTrue(ex["title"].startswith(f"下季 {len(report) + 1} 条阈值"))
+        for name, value in zip(ex["xlabels"], ex["values"]):
+            entry = next(e for e in nk["quantified"] if e["metric"] == name)
+            direction, line = report[entry["id"]]
+            sign = 1 if direction == "up" else -1
+            with self.subTest(metric=name):
+                self.assertEqual(value, round(sign * (readings[entry["id"]] - line) / abs(line) * 100, 1))
+        self.assertEqual(len(ex["xlabels"]), len(report))
+        safe = all(v >= 0 for v in ex["values"])
+        self.assertEqual("都在安全侧" in ex["title"], safe)
+
+    def test_the_second_half_the_full_year_line_needs_is_recomputed(self) -> None:
+        """FY2026 Adjusted EBIT is settled only by the full-year results, so the
+        page draws what the second half has to deliver against every second half
+        on record. Every H2 is the year minus its H1, recomputed here; the first
+        H1 comes from the F-1 because no filing prints an earlier half."""
+        nk, a, h = self.st["next_kpi"], self.a, self.h
+        pre = self.st["pre_listing_half"]
+        self.assertEqual(pre["period"], "2020H1")
+        firsts = {pre["period"]: pre["adjusted_ebit"]}
+        firsts.update({p: v for p, v in zip(h["periods"], h["adjusted_ebit"]) if p.endswith("H1")})
+        year = nk["full_year"]["year"]
+        seconds = {f"{y}H2": a["adjusted_ebit"][a["years"].index(y)] - firsts[f"{y}H1"]
+                   for y in range(2020, year)}
+        ex = self.by_ref["EX_NEXT_FY"]
+        self.assertEqual(ex["xlabels"], list(seconds))
+        self.assertEqual(ex["series"][0]["values"], list(seconds.values()))
+        first = firsts[f"{year}H1"]
+        need = nk["full_year"]["bear_below_eur_m"] * 1000 - first
+        self.assertEqual(ex["series"][1]["values"], [need] * len(seconds))
+        self.assertIn(zgn.eur_m(need), ex["title"])
+        self.assertIn(zgn.eur_m(first), ex["title"])
+        self.assertEqual("比此前任何一个下半年都高" in ex["title"], need > max(seconds.values()))
+        # where the halves overlap the series' own H2 column, the two routes agree
+        for label, value in seconds.items():
+            if label in h["periods"]:
+                self.assertEqual(h["adjusted_ebit"][h["periods"].index(label)], value)
+
     # ── the decompositions ───────────────────────────────────────────────────
     def test_the_quarterly_grid_closes_to_the_group_every_quarter(self) -> None:
         """Four independent cuts of the same quarter, each summed here."""
@@ -256,7 +345,11 @@ class ZgnDashboardTest(unittest.TestCase):
                                  agn["other_as_refolded"][i])
 
     def test_the_corporate_reallocation_is_the_corporate_line(self) -> None:
-        """The page's largest restatement claim, restated as arithmetic."""
+        """The page's largest restatement claim, restated as arithmetic.
+
+        It used to be a chart in a section of its own; a restatement is not a
+        finding about the half, so it now sits in the audit drawer's
+        restatement table, with the same three figures."""
         r = next(x for x in self.st["restatements"]
                  if x["what"] == "corporate_costs_leave_the_zegna_segment")
         a = r["adjusted_ebit_eur_k"]
@@ -265,10 +358,15 @@ class ZgnDashboardTest(unittest.TestCase):
                 self.assertEqual(a[f"{period}_as_restated"] + a[f"{period}_corporate_line"],
                                  a[f"{period}_as_first_published"])
         self.assertEqual(r["periods_on_both_bases"], 3)
-        title = self.by_ref["EX_RESTATE"]["title"]
-        self.assertIn(zgn.eur_m(abs(a["2022H1_corporate_line"])), title)
-        self.assertIn(zgn.eur_m(a["2022H1_as_first_published"]), title)
-        self.assertIn(zgn.eur_m(a["2022H1_as_restated"]), title)
+        table = next(t for t in self.payload["tables"] if "处重述" in t["title"])
+        self.assertEqual(len(table["rows"]), len(self.st["restatements"]))
+        cell = next(row for row in table["rows"] if row[0] == "集团费用移出 Zegna 分部")[-1]
+        self.assertIn(zgn.eur_m(abs(a["2022H1_corporate_line"])), cell)
+        self.assertIn(zgn.eur_m(a["2022H1_as_first_published"]), cell)
+        self.assertIn(zgn.eur_m(a["2022H1_as_restated"]), cell)
+        explained = sum(1 for x in self.st["restatements"] if x.get("footnoted_by_the_company"))
+        self.assertIn(f"只有{zgn.cn_count(explained)}处被公司说明过", table["title"])
+        self.assertEqual(sum(1 for row in table["rows"] if row[2].startswith("是")), explained)
 
     # ── the renderer contract, where this page has already been burned ───────
     def test_a_negative_bar_sits_on_a_kind_that_can_draw_below_zero(self) -> None:
@@ -400,37 +498,86 @@ class ZgnDashboardTest(unittest.TestCase):
         self.assertEqual(self.by_ref["EX_SEGSHARE"]["series"][1]["values"],
                          [100.0] * len(line))
 
-    def test_the_cagr_settlement_is_recomputed_from_the_annual_record(self) -> None:
-        """Rebuilt by a different route: the years summed from the quarters."""
+    def year_from_quarters(self, year: int) -> float:
+        q = self.q
+        return sum(q["revenue_eur_k"][q["periods"].index(f"{year}Q{n}")] for n in (1, 2, 3, 4))
+
+    def year_from_halves(self, key: str, year: int) -> float:
+        h = self.h
+        return h[key][h["periods"].index(f"{year}H1")] + h[key][h["periods"].index(f"{year}H2")]
+
+    def test_the_december_2023_targets_are_settled_on_the_one_year_they_were_live(self) -> None:
+        """The page used to settle the December 2023 CAGR targets on FY2023 to
+        FY2025 and hang the 2025/2026 reaffirmations on them. The FY2024
+        results 6-K of 2025-03-27 replaced them ("To reflect the current
+        business environment, the Group has updated its medium-term targets"),
+        so the only year they were ever the company's targets for is FY2024.
+        Rebuilt by a different route: revenue summed from the quarters,
+        Adjusted EBIT from the two halves."""
         mt = self.st["medium_term_targets"]
-        a, q = self.a, self.q
-        base, last = mt["base_year"], 2025
-        span = last - base
-        def year_from_quarters(y):
-            return sum(q["revenue_eur_k"][q["periods"].index(f"{y}Q{n}")] for n in (1, 2, 3, 4))
-        self.assertEqual(year_from_quarters(base), a["revenue"][a["years"].index(base)])
-        self.assertEqual(year_from_quarters(last), a["revenue"][a["years"].index(last)])
-        rev = ((year_from_quarters(last) / year_from_quarters(base)) ** (1 / span) - 1) * 100
-        title = self.by_ref["EX_TARGET"]["title"]
-        self.assertIn(zgn.signed(rev), title)
-        self.assertIn(mt["set_on"], title)
+        new = mt["targets_2027"]
+        base, lived = mt["base_year"], new["results_year_of_the_release"]
+        self.assertEqual((base, lived, new["set_on"]), (2023, 2024, "2025-03-27"))
+        span = lived - base
+        rev = ((self.year_from_quarters(lived) / self.year_from_quarters(base)) ** (1 / span) - 1) * 100
+        ebit = ((self.year_from_halves("adjusted_ebit", lived)
+                 / self.year_from_halves("adjusted_ebit", base)) ** (1 / span) - 1) * 100
+        old = self.by_ref["EX_TARGET_OLD"]
+        self.assertIn(zgn.signed(rev), old["title"])
+        self.assertIn(zgn.signed(ebit), old["title"])
+        self.assertIn(mt["set_on"], old["title"])
+        self.assertIn(f"随后在 {new['set_on']} 被换掉", old["title"])
+        self.assertEqual(old["groups"][1]["values"], [round(rev, 1), round(ebit, 1)])
         # the base the company actually named has never been published, and the
         # page has to say so rather than quietly using the one it can compute
-        self.assertIn("从未印出", self.by_ref["EX_TARGET"]["note"])
+        self.assertIn("从未印出", old["note"])
+        self.assertIn("已经不是公司的现行目标", old["note"])
+        # the reaffirmations belong to the set that replaced it, not to this one
+        self.assertNotIn("重申", old["note"])
+        self.assertNotIn("为准", old["note"])
+
+    def test_the_2027_targets_are_the_current_set_and_the_pace_they_need(self) -> None:
+        """The numbers the 2025-03-27 release printed, the local analysis's
+        "€2.2bn / €250m lower end", and the pace from the last full year."""
+        mt = self.st["medium_term_targets"]
+        new = mt["targets_2027"]
+        # the filing's range; its lower end is the figure both local analyses quote
+        self.assertEqual(new["revenue_eur_m"], [2200, 2400])
+        self.assertEqual(new["adjusted_ebit_eur_m"], [250, 300])
+        self.assertIn("€2,200-€2,400 million", new["wording"])
+        self.assertIn("€250-€300 million", new["wording"])
+        last = max(y for y in self.a["years"] if self.a["adjusted_ebit"][self.a["years"].index(y)])
+        left = new["year"] - last
+        rev_need = ((2200 * 1000 / self.year_from_quarters(last)) ** (1 / left) - 1) * 100
+        ebit_need = ((250 * 1000 / self.year_from_halves("adjusted_ebit", last)) ** (1 / left) - 1) * 100
+        ex = self.by_ref["EX_TARGET_2027"]
+        self.assertIn(f"收入年增 {rev_need:.1f}%", ex["title"])
+        self.assertIn(f"Adjusted EBIT 年增 {ebit_need:.1f}%", ex["title"])
+        self.assertIn(new["set_on"], ex["title"])
+        need = next(g for g in ex["groups"] if "下沿所需" in g["name"])
+        self.assertEqual(need["values"], [round(rev_need, 1), round(ebit_need, 1)])
+        self.assertIn("、".join(mt["reaffirmed_in"]), ex["note"])
+        # both lie in section one, after nothing but each other at this stage
+        settled = next(s for s in self.payload["sections"] if s["id"] == "settled")
+        refs = [e.get("ref") for e in settled["exhibits"]]
+        self.assertLess(refs.index("EX_TARGET_OLD"), refs.index("EX_TARGET_2027"))
 
     def test_the_census_counts_are_recomputed(self) -> None:
+        """The census is a data-quality record, not a finding about the half,
+        so it is a table in the audit drawer rather than a chart."""
         rows = self.st["republication_census"]["rows"]
         total = next(r for r in rows if r["kind"] == "segment" and r["row"] == "total")
         changed = [r for r in rows if r["periods_changed"] > 0]
-        title = self.by_ref["EX_CENSUS"]["title"]
-        self.assertIn(f"被重复公布 {total['periods_republished']} 次", title)
-        self.assertIn(f"改过 {total['periods_changed']} 次", title)
-        self.assertIn(f"有{zgn.cn_count(len(changed))}条改过", title)
-        groups = self.by_ref["EX_CENSUS"]["groups"]
-        self.assertEqual(groups[0]["values"], [r["periods_republished"] for r in rows])
-        self.assertEqual(groups[1]["values"], [r["periods_changed"] for r in rows])
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("重复公布普查"))
+        self.assertIn(f"被再印 {total['periods_republished']} 次", table["title"])
+        self.assertIn(f"改过 {total['periods_changed']} 次", table["title"])
+        self.assertIn(f"有{zgn.cn_count(len(changed))}条改过", table["title"])
+        self.assertEqual([r[3] for r in table["rows"]], [str(r["periods_republished"]) for r in rows])
+        self.assertEqual([r[4] for r in table["rows"]], [str(r["periods_changed"]) for r in rows])
         for row in rows:
             self.assertLessEqual(row["periods_changed"], row["periods_republished"])
+        self.assertNotIn("EX_CENSUS", self.by_ref)
+        self.assertNotIn("EX_RESTATE", self.by_ref)
 
     # ── sourcing ─────────────────────────────────────────────────────────────
     def test_sources_are_official_sec_links(self) -> None:
@@ -534,6 +681,29 @@ class ZgnRollTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "stamped"):
             zgn.build_payload(stale_latest)
 
+        stale_next = copy.deepcopy(self.source)
+        stale_next["next_kpi"]["period"] = "H2 2025"
+        with self.assertRaisesRegex(ValueError, "stamped"):
+            zgn.build_payload(stale_next)
+
+        # a threshold read at last quarter is last half's block, even if its
+        # stamp was updated
+        old_reading = copy.deepcopy(self.source)
+        old_reading["next_kpi"]["quantified"][0]["reading"] = "2026Q1"
+        with self.assertRaisesRegex(ValueError, "latest reading"):
+            zgn.build_payload(old_reading)
+
+        # a reading the series can produce must not also be typed
+        typed = copy.deepcopy(self.source)
+        gap = next(e for e in typed["next_kpi"]["quantified"] if e["id"] == "fx_gap")
+        gap["current"] = -0.7
+        with self.assertRaisesRegex(ValueError, "computed from the series"):
+            zgn.build_payload(typed)
+
+        missing = {k: v for k, v in self.source.items() if k != "next_kpi"}
+        with self.assertRaisesRegex(ValueError, "next_kpi"):
+            zgn.build_payload(missing)
+
         orphan = copy.deepcopy(self.source)
         period = self.payload["latest"]["disclosed_period_label"]
         year = period.split()[-1]
@@ -543,11 +713,16 @@ class ZgnRollTest(unittest.TestCase):
             zgn.build_payload(orphan)
 
     def test_a_half_without_its_story_leaves_it_out(self) -> None:
-        """An optional stamped block is a half's story, not a fixture."""
+        """An optional stamped block is a half's story, not a fixture.
+
+        The source list is left out of the comparison: it names the filings the
+        page reads, and the semi-annual report's label mentions the put-option
+        note whether or not this half has a story about it."""
         full = zgn.build_payload(self.source)
         bare = zgn.build_payload({k: v for k, v in self.source.items() if k != "half_story"})
-        self.assertIn("看跌期权", text_of(full))
-        self.assertNotIn("看跌期权", text_of(bare))
+        prose = lambda p: text_of({k: v for k, v in p.items() if k != "source_links"})
+        self.assertIn("看跌期权", prose(full))
+        self.assertNotIn("看跌期权", prose(bare))
 
         full_ex = [ex for sec in full["sections"] for ex in sec["exhibits"]]
         bare_ex = [ex for sec in bare["sections"] for ex in sec["exhibits"]]
@@ -565,14 +740,16 @@ class ZgnRollTest(unittest.TestCase):
         wording that disappears.
         """
         # 1. "the group total has never come back different"
+        self.assertIn("合计从没改过", self.payload["brief"])
         moved = copy.deepcopy(self.source)
         row = next(r for r in moved["republication_census"]["rows"]
                    if r["kind"] == "segment" and r["row"] == "total")
         row["periods_changed"] = 1
-        title = next(ex for sec in zgn.build_payload(moved)["sections"]
-                     for ex in sec["exhibits"] if ex.get("ref") == "EX_CENSUS")["title"]
+        rebuilt = zgn.build_payload(moved)
+        title = next(t for t in rebuilt["tables"] if t["title"].startswith("重复公布普查"))["title"]
         self.assertIn("改过 1 次", title)
         self.assertNotIn("改过 0 次", title)
+        self.assertNotIn("合计从没改过", rebuilt["brief"])
 
         # 2. "the Americas has been larger for N consecutive quarters"
         broken = copy.deepcopy(self.source)
@@ -624,6 +801,14 @@ class ZgnRollTest(unittest.TestCase):
         rolled["latest"] = dict(rolled["latest"], period="H2 2026",
                                 period_end="2026-12-31", release_date="2027-03-19")
         rolled["half_story"]["period"] = "H2 2026"
+        # A roll restamps the current analysis's thresholds with the new half's
+        # readings. The FY2026 line is settled by the half being rolled in, so
+        # the next analysis sets a different one; this roll leaves it out.
+        nk = rolled["next_kpi"]
+        nk["period"] = "H2 2026"
+        nk.pop("full_year")
+        for entry in nk["quantified"]:
+            entry["reading"] = "2026Q4" if re.match(r"^\d{4}Q[1-4]$", entry["reading"]) else "2026-12-31"
         rolled["sources"] = rolled["sources"] + [
             {"label": "2026 年下半年业绩新闻稿（6-K EX-99.1，2027-03-19）",
              "url": "https://www.sec.gov/Archives/edgar/data/1877787/x/y.htm",
