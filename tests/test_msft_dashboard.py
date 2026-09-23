@@ -33,6 +33,83 @@ def js_payload(path: Path, assignment: str) -> dict:
     return json.loads(body)
 
 
+# ── readings, computed here and not borrowed from the builder ───────────────
+# A threshold entry names the record it is read against (`reads`). These say
+# what the latest reading of each record is, from the series, by a path of
+# their own: a check that asked the builder would only agree with it.
+
+def expected_reading(source: dict, reads: str) -> float:
+    q, long = source["quarterly_usd_m"], source["long_history"]
+    kpi, fy = source["operating_kpi"], source["fiscal_year_usd_m"]
+    if reads == "azure_cc":
+        return source["azure_growth_cc_pct"][-1]
+    if reads == "cloud_gm":
+        return kpi["microsoft_cloud"]["gross_margin_pct"][-1]
+    if reads == "fy_om_change":
+        # From the fiscal-year block, where the builder reads the long record.
+        return (fy["operating_income"][-1] / fy["revenue"][-1]
+                - fy["operating_income"][-2] / fy["revenue"][-2]) * 100
+    if reads == "rpo_yoy":
+        balance = long["commercial_rpo_usd_bn"]
+        return (balance[-1] / balance[-5] - 1) * 100
+    if reads == "rpo12_yoy":
+        return [v for v in kpi["commercial_rpo"]["twelve_month_portion_yoy_pct"] if v is not None][-1]
+    if reads == "bookings_ex_largest":
+        return kpi["bookings_ex_largest_customer_yoy_pct"]["values"][-1]
+    if reads == "copilot_seats":
+        return kpi["copilot_paid_seats_m"]["values"][-1]
+    if reads == "capex_company":
+        return kpi["capex_incl_finance_leases_usd_bn"]["values"][-1]
+    if reads == "fcf_quarter":
+        return q["operating_cash_flow"][-1] - q["cash_paid_for_property_and_equipment"][-1]
+    if reads == "opex_yoy":
+        return (q["operating_expenses"][-1] / q["operating_expenses"][-5] - 1) * 100
+    raise KeyError(reads)
+
+
+# A record gets its own line chart once it has this many quarterly readings;
+# a shorter one, or a once-a-year ratio, is settled in the overview only.
+DRAWABLE = 5
+
+
+def record_length(source: dict, reads: str) -> int:
+    long, kpi = source["long_history"], source["operating_kpi"]
+
+    def filled(values: list) -> int:
+        return sum(1 for value in values if value is not None)
+
+    lengths = {
+        "azure_cc": lambda: len(source["azure_growth_cc_pct"]),
+        "cloud_gm": lambda: filled(kpi["microsoft_cloud"]["gross_margin_pct"]),
+        "fy_om_change": lambda: 0,
+        "rpo_yoy": lambda: sum(1 for now, before in zip(long["commercial_rpo_usd_bn"][4:],
+                                                        long["commercial_rpo_usd_bn"])
+                               if now is not None and before is not None),
+        "rpo12_yoy": lambda: filled(kpi["commercial_rpo"]["twelve_month_portion_yoy_pct"]),
+        "bookings_ex_largest": lambda: filled(kpi["bookings_ex_largest_customer_yoy_pct"]["values"]),
+        "copilot_seats": lambda: filled(kpi["copilot_paid_seats_m"]["values"]),
+        "capex_company": lambda: filled(kpi["capex_incl_finance_leases_usd_bn"]["values"]),
+        "fcf_quarter": lambda: len(long["quarters"]),
+        "opex_yoy": lambda: len(long["quarters"]) - 4,
+    }
+    return lengths[reads]()
+
+
+def favourable_side(entry: dict, value: float) -> bool:
+    if value == entry["threshold"]:
+        return entry.get("boundary", "safe") == "safe"
+    return (value > entry["threshold"]) == (entry["direction"] == "up")
+
+
+def headroom_pct(entry: dict, value: float) -> float:
+    sign = 1 if entry["direction"] == "up" else -1
+    return sign * (value - entry["threshold"]) / abs(entry["threshold"]) * 100
+
+
+SECTIONS = [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+            ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")]
+
+
 class MsftDashboardTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -203,12 +280,14 @@ class MsftDashboardTest(unittest.TestCase):
             self.assertTrue(exhibit.get("src_extra"), f"exhibit {exhibit['n']} has no source line")
 
     def test_section_order_matches_how_the_note_is_used(self) -> None:
-        prior = [e for e in self.source["prior_kpi_settlement"]["quantified"]
-                 if e["metric"] in ("Azure 固定汇率增速", "经营费用同比")]
+        # Section one: the closure, the overview of last quarter's lines, one
+        # chart per record long enough to draw, the company's own guide.
+        drawn = {entry["reads"] for entry in self.source["prior_kpi_settlement"]["quantified"]
+                 if record_length(self.source, entry["reads"]) >= DRAWABLE}
         nxt = [e for e in self.source["next_kpi"]["quantified"] if not e.get("annual")]
         self.assertEqual(
             [(section["id"], len(section["exhibits"])) for section in self.payload["sections"]],
-            [("settled", 2 + len(prior)), ("quarter_highlights", 5),
+            [("settled", 1 + 1 + len(drawn) + 1), ("quarter_highlights", 5),
              ("next_quarter", 1 + len(nxt)), ("routine", 5)],
         )
         # A chart whose title is a range over the whole record is not this
@@ -220,7 +299,6 @@ class MsftDashboardTest(unittest.TestCase):
 
     def test_headroom_bars_reproduce_the_thresholds(self) -> None:
         for section, block, key in (
-            ("settled", "prior_kpi_settlement", "actual"),
             ("next_quarter", "next_kpi", "current"),
         ):
             entries = self.source[block]["quantified"]
@@ -231,8 +309,6 @@ class MsftDashboardTest(unittest.TestCase):
             for entry, plotted in zip(entries, exhibit["values"]):
                 expected = headroom(entry["direction"], entry["threshold"], entry[key])
                 self.assertAlmostEqual(plotted, round(expected, 1), places=6, msg=entry["metric"])
-        settled = self.by_section["settled"][1]
-        self.assertTrue(all(value >= 0 for value in settled["values"]))
         breached = {
             label
             for label, value in zip(
@@ -367,9 +443,8 @@ class MsftDashboardTest(unittest.TestCase):
         first = len(self.exhibits) + 2
         self.assertEqual([table["n"] for table in tables], list(range(first, first + len(tables))))
         self.assertIn("AI capex", tables[-1]["title"])
-        self.assertEqual(
-            len(tables[0]["rows"]), len(self.source["prior_kpi_settlement"]["quantified"])
-        )
+        prior = self.source["prior_kpi_settlement"]
+        self.assertEqual(len(tables[0]["rows"]), len(prior["quantified"]) + len(prior["unscored"]))
         self.assertEqual(len(tables[1]["rows"]), len(self.source["next_kpi"]["quantified"]))
         segment_table = next(t for t in tables if "分部收入" in t["title"])
         self.assertEqual(len(segment_table["rows"]), WINDOW)
@@ -425,7 +500,8 @@ class MsftDashboardTest(unittest.TestCase):
         self.assertNotIn(":-infinity", compact)
 
 
-STAMPED = ("outlook", "market_expectation", "followup_closure", "prior_kpi_settlement", "next_kpi")
+STAMPED = ("outlook", "market_expectation", "followup_closure", "prior_kpi_settlement", "next_kpi",
+           "guidance_delivery")
 
 
 def published_text(payload: dict) -> str:
@@ -537,10 +613,159 @@ class MsftChecksTest(unittest.TestCase):
         for entry in self.source["next_kpi"]["quantified"]:
             with self.subTest(metric=entry["metric"]):
                 self.assertAlmostEqual(entry["current"], expected[entry["metric"]], places=1)
-        for entry in self.source["prior_kpi_settlement"]["quantified"]:
-            if entry["metric"] in expected:
-                with self.subTest(prior=entry["metric"]):
-                    self.assertAlmostEqual(entry["actual"], expected[entry["metric"]], places=1)
+
+    def test_the_settlement_readings_are_the_checked_figures(self) -> None:
+        """Last quarter's lines are settled against readings the series carries;
+        the ones the release, the 10-K and the call print are re-read here."""
+        k, source = self.checks["kpi"], self.source
+        kpi, long = source["operating_kpi"], source["long_history"]
+        self.assertEqual(long["commercial_rpo_usd_bn"][-1], k["commercial_rpo_usd_bn"])
+        self.assertEqual(round(expected_reading(source, "rpo_yoy")), k["commercial_rpo_growth_printed_pct"])
+        self.assertEqual(kpi["microsoft_cloud"]["revenue_usd_bn"][-1], k["microsoft_cloud_revenue_usd_bn"])
+        self.assertEqual(expected_reading(source, "cloud_gm"), k["microsoft_cloud_gross_margin_pct"])
+        self.assertEqual(expected_reading(source, "copilot_seats"), k["copilot_paid_seats_m_over"])
+        self.assertEqual(expected_reading(source, "capex_company"), k["capex_incl_finance_leases_usd_bn"])
+        self.assertEqual(expected_reading(source, "rpo12_yoy"), k["twelve_month_portion_growth_pct"])
+        self.assertEqual(kpi["commercial_rpo"]["twelve_month_share_pct"][-1], k["twelve_month_share_pct"])
+        self.assertEqual(expected_reading(source, "bookings_ex_largest"),
+                         k["bookings_growth_excluding_largest_customer_pct"])
+        rpo_chart = next(ex for ex in self.exhibits if ex["title"].startswith("商业剩余履约义务"))
+        self.assertIn(f"US${k['commercial_rpo_usd_bn']}B", rpo_chart["title"])
+        self.assertIn(f"余额同比 +{k['commercial_rpo_growth_printed_pct']}%", rpo_chart["note"])
+
+
+class MsftSectionOneTest(unittest.TestCase):
+    """Section one against the two analyses, as `_checks["note"]` records them.
+
+    The note is keyed from the analyses themselves -- this quarter's section 0
+    and the previous one's key-metric section -- separately from the blocks the
+    builder reads, so a threshold retyped wrong in either place turns red here.
+    Nothing below names a quarter or a count: a roll edits the series and the
+    note, and this file stays as it is.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads((ROOT / "series" / "msft.json").read_text(encoding="utf-8"))
+        cls.note = cls.source["_checks"]["note"]
+        cls.payload = build_payload(cls.source)
+        cls.settled = next(s for s in cls.payload["sections"] if s["id"] == "settled")["exhibits"]
+        cls.prior = cls.source["prior_kpi_settlement"]
+
+    def test_the_four_sections_are_the_site_s(self) -> None:
+        self.assertEqual([(s["id"], s["title"]) for s in self.payload["sections"]], SECTIONS)
+        self.assertTrue(any("上季兑现 → 本季重点 → 下季跟踪 → 长期常规" in n for n in self.payload["notes"]))
+
+    def test_the_closure_is_the_analysis_s_section_0(self) -> None:
+        closure = self.note["followup_closure"]
+        chart = self.settled[0]
+        self.assertEqual(chart["kind"], "bars_labeled")
+        self.assertTrue(chart["title"].startswith(f"上季 {closure['total']} 条待验证问题："), chart["title"])
+        self.assertEqual(dict(zip(chart["xlabels"], chart["values"])), closure["counts"])
+        self.assertEqual(sum(chart["values"]), closure["total"])
+        # Every category the analysis used is in the title, not only some.
+        for label, count in closure["counts"].items():
+            if count:
+                self.assertIn(f"{count} 条{label}", chart["title"])
+        block = self.source["followup_closure"]
+        self.assertEqual({label: len(topics) for label, topics in block["topics"].items()},
+                         {label: len(numbers) for label, numbers in closure["questions"].items()})
+        # With no tally row in the analysis, the chart says how it counted.
+        self.assertIn(block["rule"], chart["note"])
+        for item in block.get("verdicts_in_full", []):
+            self.assertIn(item["words"], chart["note"])
+
+    def test_the_prior_lines_are_the_previous_analysis_s_rows(self) -> None:
+        self.assertEqual(
+            [(e["id"], e["row"], e["tier"], e["threshold"], e["direction"]) for e in self.prior["quantified"]],
+            [(t["id"], t["row"], t["tier"], t["threshold"], t["direction"]) for t in self.note["prior_thresholds"]])
+        rows = {e["row"] for e in self.prior["quantified"]} | {i["row"] for i in self.prior["unscored"]}
+        self.assertEqual(len(rows), self.note["prior_rows"])
+        self.assertEqual(self.prior["rows"], self.note["prior_rows"])
+        self.assertEqual(sorted({i["row"] for i in self.prior["unscored"]}), self.note["prior_unscored_rows"])
+        # The reading is never typed beside the line; it is read off the record.
+        for entry in self.prior["quantified"]:
+            for typed in ("actual", "reading", "current"):
+                self.assertNotIn(typed, entry, entry["id"])
+
+    def test_the_overview_settles_every_line_at_its_reading(self) -> None:
+        overview = self.settled[1]
+        self.assertEqual(overview["kind"], "diverging_bars")
+        bars = [e for e in self.prior["quantified"] if e["threshold"] != 0]
+        self.assertTrue(overview["title"].startswith(f"上季 {len(bars)} 条量化阈值："), overview["title"])
+        self.assertEqual(overview["xlabels"], [e["label"] for e in bars])
+        for entry, plotted in zip(bars, overview["values"]):
+            reading = expected_reading(self.source, entry["reads"])
+            self.assertAlmostEqual(plotted, round(headroom_pct(entry, reading), 1), places=6, msg=entry["id"])
+        # A line at zero has no percentage headroom; the note settles it instead.
+        for entry in self.prior["quantified"]:
+            if entry["threshold"] == 0:
+                self.assertIn(f"「{entry['label']}」的阈值是 0", overview["note"])
+        for item in self.prior["unscored"]:
+            self.assertIn(item["text"], overview["note"])
+        targets = [e for e in bars if e["tier"] in ("期望", "加仓", "确认")]
+        reached = [e for e in targets if favourable_side(e, expected_reading(self.source, e["reads"]))]
+        if targets and len(reached) == len(targets):
+            self.assertIn(f"{len(targets)} 条目标线全部达到", overview["title"])
+
+    def test_every_record_long_enough_to_draw_gets_its_lines(self) -> None:
+        lines = [ex for ex in self.settled if ex["kind"] == "lines"]
+        by_reads: dict[str, list] = {}
+        for entry in self.prior["quantified"]:
+            by_reads.setdefault(entry["reads"], []).append(entry)
+        drawn = [reads for reads in by_reads if record_length(self.source, reads) >= DRAWABLE]
+        self.assertEqual(len(lines), len(drawn))
+        for reads, chart in zip(drawn, lines):
+            entries = by_reads[reads]
+            flat = {tuple(set(s["values"])) for s in chart["series"][1:]}
+            for entry in entries:
+                with self.subTest(line=entry["id"]):
+                    self.assertIn((entry["threshold"],), flat)
+                    word = "达到" if entry["tier"] in ("期望", "加仓", "确认") else "触发"
+                    self.assertRegex(chart["title"], rf"(未)?{word}上季{entry['tier']}线 ")
+            self.assertIn(entries[0]["basis"], chart["note"])
+        overview = self.settled[1]
+        for reads, entries in by_reads.items():
+            if reads not in drawn:
+                self.assertIn(f"{entries[0]['metric']}没有单独的线图", overview["note"])
+
+    def test_the_verdicts_follow_the_readings(self) -> None:
+        """Push one reading across its red line and the titles must say so."""
+        shifted = copy.deepcopy(self.source)
+        shifted["azure_growth_cc_pct"][-1] = 37
+        settled = next(s for s in build_payload(shifted)["sections"] if s["id"] == "settled")["exhibits"]
+        azure = next(ex for ex in settled if ex["kind"] == "lines" and ex["title"].startswith("Azure"))
+        self.assertIn("未达到上季期望线 40%", azure["title"])
+        self.assertIn("触发上季红旗线 38%", azure["title"])
+        self.assertNotIn("未触发上季红旗线 38%", azure["title"])
+        self.assertNotIn("全部达到", settled[1]["title"])
+
+    def test_the_company_guide_is_scored_against_the_filings(self) -> None:
+        block = self.source["guidance_delivery"]
+        chart = next(ex for ex in self.settled if ex["title"].startswith("上季电话会给本季的"))
+        self.assertIs(chart, self.settled[-1])
+        q, segments = self.source["quarterly_usd_m"], self.source["segments_usd_m"]
+        actual = {"revenue": q["revenue_total"][-1], "pbp_revenue": segments["productivity_revenue"][-1],
+                  "ic_revenue": segments["intelligent_cloud_revenue"][-1],
+                  "mpc_revenue": segments["more_personal_computing_revenue"][-1],
+                  "cogs": q["revenue_total"][-1] - q["gross_profit"][-1], "opex": q["operating_expenses"][-1]}
+        for item, plotted in zip(block["items"], chart["values"]):
+            middle = (item["low"] + item["high"]) / 2
+            self.assertAlmostEqual(plotted, round((actual[item["reads"]] / middle - 1) * 100, 1), places=6)
+        self.assertEqual(len(block["items"]), self.note["guidance_delivery"]["items"])
+        self.assertEqual(block["given_on"], self.note["guidance_delivery"]["given_on"])
+        above = sum(1 for item in block["items"] if actual[item["reads"]] > item["high"])
+        self.assertEqual(chart["title"].count("高于区间上端"), 1 if above else 0)
+
+    def test_the_falsified_call_is_dated_by_the_transcripts(self) -> None:
+        """The analysis called last quarter's AI run-rate its first disclosure;
+        the company's own transcripts carry an earlier one, and the page says so."""
+        closure = self.source["followup_closure"]
+        first, last = closure["ai_run_rate_disclosures"][-2:]
+        quarter, year = first["period"].split()
+        gap = (int(last["period"][-4:]) * 4 + int(last["period"][1])) - (int(year) * 4 + int(quarter[1]))
+        self.assertIn(f"上季时隔{cn_count(gap)}季再次给出", self.settled[0]["note"])
+        self.assertIn(f"${first['usd_bn']:g}B", self.settled[0]["note"])
 
 
 class MsftRollTest(unittest.TestCase):
