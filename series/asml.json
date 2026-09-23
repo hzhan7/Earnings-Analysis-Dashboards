@@ -25,7 +25,164 @@
   "net_income_eur_m": 2918,
   "eps_basic_eur": 7.59,
   "source": "ASML Q2 2026 press release, 6-K furnished 2026-07-15 (accession 0001628280-26-048235, EX-99.1 pressreleasefinancialresul.htm): the release's own summary table (Total net sales 9,326; ...of which Installed Base Management sales 2,762; Gross profit 5,035; Gross margin (%) 54.0; Net income 2,918; EPS (basic; in euros) 7.59), the period end from its sentence 'as of June 28, 2026' and the release date from its dateline 'VELDHOVEN, the Netherlands, July 15, 2026'. Read independently of the EX-99.3 statement exhibit the quarterly series is built from; the release prints whole euro millions, the exhibit one decimal.",
-  "checked_on": "2026-09-23"
+  "checked_on": "2026-09-23",
+  "note": {
+   "source": {
+    "this_quarter": "本地季报分析稿「2026-07-15 ASML Q2 2026 vs Q1 2026 Analysis.md」：第 0 节「上季 Follow-up 回答」与第 7.8 节「关键观察指标」",
+    "last_quarter": "本地季报分析稿「2026-04-30 ASML Q1 2026 vs Q4 2025 Analysis.md」：文末「Follow-up Questions for Next Quarter」与第 7.8 节「关键观察指标」"
+   },
+   "checked_on": "2026-09-23",
+   "followup_closure": {
+    "total": 5,
+    "counts": {
+     "完全解答": 2,
+     "部分解答": 3,
+     "未解答": 0
+    },
+    "verdicts": [
+     "完全解答",
+     "部分解答",
+     "部分解答",
+     "部分解答",
+     "完全解答"
+    ]
+   },
+   "prior_thresholds": {
+    "report_kpis": 5,
+    "settled": [
+     {
+      "kpi": 5,
+      "metric": "h1_buyback",
+      "line": "兑现线",
+      "threshold": 4000.0,
+      "direction": "up",
+      "report_text": "H1 累计回购 ≥ €4B"
+     },
+     {
+      "kpi": 5,
+      "metric": "h1_buyback",
+      "line": "警戒线",
+      "threshold": 2000.0,
+      "direction": "up",
+      "report_text": "H1 回购 < €2B"
+     },
+     {
+      "kpi": 5,
+      "metric": "interim_dividend_growth",
+      "line": "兑现线",
+      "threshold": 17.0,
+      "direction": "up",
+      "report_text": "股息维持 17% 增速"
+     },
+     {
+      "kpi": 3,
+      "metric": "china_system_share",
+      "line": "兑现线",
+      "threshold": 25.0,
+      "direction": "down",
+      "report_text": "H1 占比逐季下行至 < 25%"
+     },
+     {
+      "kpi": 3,
+      "metric": "china_system_share",
+      "line": "警戒线",
+      "threshold": 30.0,
+      "direction": "down",
+      "report_text": "占比维持 30%+"
+     }
+    ],
+    "not_settled_kpis": [
+     1,
+     2,
+     4
+    ]
+   },
+   "next_thresholds": {
+    "report_kpis": 6,
+    "quantified": [
+     {
+      "kpi": 1,
+      "metric": "total_net_sales",
+      "line": "兑现线",
+      "threshold": 11500.0,
+      "direction": "up",
+      "report_text": "Q3 达中点以上（指引 €11.0–12.0B，中点 €11.5B）",
+      "anchor": "next_sales_guide_mid"
+     },
+     {
+      "kpi": 1,
+      "metric": "total_net_sales",
+      "line": "警戒线",
+      "threshold": 11000.0,
+      "direction": "up",
+      "report_text": "Q3 低于 €11B",
+      "anchor": "next_sales_guide_low"
+     },
+     {
+      "kpi": 1,
+      "metric": "q4_sales_guide",
+      "line": "兑现线",
+      "threshold": 14000.0,
+      "direction": "up",
+      "report_text": "Q4 指引 ≥€14B"
+     },
+     {
+      "kpi": 1,
+      "metric": "q4_sales_guide",
+      "line": "警戒线",
+      "threshold": 13000.0,
+      "direction": "up",
+      "report_text": "Q4 指引 <€13B"
+     },
+     {
+      "kpi": 4,
+      "metric": "china_share_h1",
+      "line": "兑现线",
+      "threshold": 20.0,
+      "direction": "up",
+      "report_text": "Q3 占比 ≥20%"
+     },
+     {
+      "kpi": 4,
+      "metric": "china_share_h1",
+      "line": "警戒线",
+      "threshold": 18.0,
+      "direction": "up",
+      "report_text": "Q3 仍 <18%"
+     },
+     {
+      "kpi": 5,
+      "metric": "fcf_conversion",
+      "line": "警戒线",
+      "threshold": 60.0,
+      "direction": "up",
+      "report_text": "FY FCF/净利润转换率 <60%"
+     },
+     {
+      "kpi": 6,
+      "metric": "gross_margin",
+      "line": "兑现线",
+      "threshold": 55.0,
+      "direction": "up",
+      "report_text": "Q3 落在指引带内（55–57%）",
+      "anchor": "next_margin_guide_low"
+     },
+     {
+      "kpi": 6,
+      "metric": "gross_margin",
+      "line": "警戒线",
+      "threshold": 54.0,
+      "direction": "up",
+      "report_text": "Q3 <54%"
+     }
+    ],
+    "not_quantified_kpis": [
+     2,
+     3,
+     5
+    ]
+   }
+  }
  },
  "quarterly": {
   "periods": [
@@ -6367,6 +6524,10 @@
     "Logic": 7157.6,
     "Memory": 4178.9
    },
+   "end_use_units": {
+    "Logic": 157,
+    "Memory": 84
+   },
    "region_eur_m": {
     "Japan": 492.9,
     "South_Korea": 4413.6,
@@ -6405,6 +6566,10 @@
    "end_use_eur_m": {
     "Logic": 6442.7,
     "Memory": 6401.5
+   },
+   "end_use_units": {
+    "Logic": 180,
+    "Memory": 94
    },
    "region_eur_m": {
     "Japan": 440.3,
@@ -7900,6 +8065,17 @@
    "interim": 1.88
   }
  },
+ "half_year_cash_printed": {
+  "2026": {
+   "through": "2026Q2",
+   "net_income": 5674.3,
+   "cfo": -482.5,
+   "capex_ppe": -701.8,
+   "capex_intangibles": -106.6,
+   "share_buybacks": -2077.5,
+   "source": "2026-07-15 6-K EX-99.3 合并现金流量表「Six months ended Jun 28, 2026」列（accession 0001628280-26-048235）"
+  }
+ },
  "quarter_story": {
   "period": "Q2 2026",
   "release": "2026-07-15",
@@ -7920,7 +8096,18 @@
    }
   ],
   "verbatim": "we are planning to add 30% to our 2026 low NA EUV capacity of around 65 for 2027, and we are investigating to increase capacity with another 30% for 2028. Similarly, we plan to add 30% to our 2026 DUV immersion capacity of around 130 for 2027, and we are investigating to increase capacity with another 30% in 2028.",
-  "source": "2026-07-15 6-K EX-99.1 pressreleasefinancialresul.htm, CEO statement and outlook"
+  "source": "2026-07-15 6-K EX-99.1 pressreleasefinancialresul.htm, CEO statement and outlook",
+  "factoring": {
+   "half": "2026H1",
+   "sold_eur_m": 0.0,
+   "prior_half_sold_eur_m": 1500.0,
+   "verbatim": "During the first half of 2026, no receivables were sold through factoring arrangements (first half of 2025: €1.5 billion). Factored receivables are treated as net cash provided by operating activities within the Condensed Consolidated Statement of Cash Flows.",
+   "source": "2026-07-15 6-K 所附法定中期报告（statutoryinterimreport20.htm）附注 2，EU-IFRS"
+  },
+  "highlights_untracked": [
+   "High NA 的进展是事件、没有序列可画（本季演示第 6 页写的是 Intel 18A 的部分层进入大批量生产，客户仍是同一家）",
+   "分部的全年增速指引（存储、先进逻辑、EUV、非 EUV、装机管理）、中国的全年占比口径，以及下一年低数值孔径 EUV「接近全部被订单覆盖」，都只在电话会上说过，不在 EDGAR 申报里"
+  ]
  },
  "followup_closure": {
   "period": "Q2 2026",

@@ -76,47 +76,25 @@ SECTIONS = [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highl
             ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")]
 FOUR_PART_SENTENCE = "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列"
 
-# The current local report's watch list (2026-07-15 ASML Q2 2026 vs Q1 2026
-# Analysis, 关键观察指标), copied by hand -- the report's facts, not the filings':
-#   #1 🟢 Q3 达中点以上且 Q4 指引 ≥€14B；🔴 Q3 低于 €11B 或 Q4 指引 <€13B
-#      (Q3 指引 €11.0–12.0B，中点 €11.5B)
-#   #2 DRAM 合约价 / megafab 推迟              -- no figure the filings carry
-#   #3 High NA 第 2 家 HVM 客户                -- an event
-#   #4 ⚪ Q3 占比 ≥20% 视为兑现中；🟠 Q3 仍 <18%
-#   #5 ⚪ Q3/Q4 AR 回落 + FCF 大幅转正；🟠 FY FCF/净利润转换率 <60%
-#   #6 🟢 Q3 落在指引带内（55–57%）；🔴 Q3 <54%
-REPORT_NEXT_KPIS = 6
-REPORT_NEXT_THRESHOLDS = {
-    ("total_net_sales", "兑现线"): ("up", 11500.0),
-    ("total_net_sales", "警戒线"): ("up", 11000.0),
-    ("q4_sales_guide", "兑现线"): ("up", 14000.0),
-    ("q4_sales_guide", "警戒线"): ("up", 13000.0),
-    ("china_share_h1", "兑现线"): ("up", 20.0),
-    ("china_share_h1", "警戒线"): ("up", 18.0),
-    ("fcf_conversion", "警戒线"): ("up", 60.0),
-    ("gross_margin", "兑现线"): ("up", 55.0),
-    ("gross_margin", "警戒线"): ("up", 54.0),
-}
+# What the two local reports say -- last quarter's follow-up list and watch list,
+# this quarter's verdicts and watch list -- is re-entered by hand in
+# `series/asml.json` `_checks["note"]`, never in this file: a roll edits the series
+# alone (CLAUDE.md §9), so this quarter's report literals cannot live in a test.
+# The builder never reads `_checks` (tests/test_data_only_roll.py); these tests read
+# it to hold the one-quarter blocks and the payload to what the reports say.
 
 
-# Last quarter's local report (2026-04-30 ASML Q1 2026 vs Q4 2025 Analysis) left
-# five follow-up questions; this quarter's report (section 0) answered them:
-#   1 H2 ramp ✅ 完全 · 2 bookings ⚠️ 部分 · 3 High NA 2nd HVM ⚠️ 部分 ·
-#   4 China vs 20% ⚠️ 部分 · 5 immersion ✅ 完全
-REPORT_FOLLOWUP_VERDICTS = ["完全解答", "部分解答", "部分解答", "部分解答", "完全解答"]
-# ...and its watch list, of which these fell due in Q2 and carry a number:
-#   #3 H1 占比逐季下行至 < 25% = 兑现；占比维持 30%+ = 警示   (China systems revenue)
-#   #5 H1 累计回购 ≥ €4B + 股息维持 17% 增速 = 兑现；H1 回购 < €2B = 跟踪
-# #1 (Q3/Q4 systems) and #2 (High NA in H2) fall due later; #4 (半年 booking ≥ €15B)
-# has no disclosed figure to settle against.
-REPORT_PRIOR_KPIS = 5
-REPORT_PRIOR_THRESHOLDS = {
-    ("h1_buyback", "兑现线"): ("up", 4000.0),
-    ("h1_buyback", "警戒线"): ("up", 2000.0),
-    ("interim_dividend_growth", "兑现线"): ("up", 17.0),
-    ("china_system_share", "兑现线"): ("down", 25.0),
-    ("china_system_share", "警戒线"): ("down", 30.0),
-}
+def report_note(s: dict) -> dict:
+    return s["_checks"]["note"]
+
+
+# Measures the builder has no history for (a single implied figure; a dividend
+# compared across two declarations): their thresholds are bars, not lines.
+WITHOUT_HISTORY = {"q4_sales_guide", "interim_dividend_growth"}
+
+
+def report_thresholds(entries: list[dict]) -> dict:
+    return {(e["metric"], e["line"]): (e["direction"], e["threshold"]) for e in entries}
 
 
 def recomputed_measure(s: dict, key: str) -> float:
@@ -143,11 +121,14 @@ def recomputed_measure(s: dict, key: str) -> float:
         fcf = sum(q["cfo"][i] + q["capex_ppe"][i] + q["capex_intangibles"][i] for i in this_year)
         return fcf / sum(q["net_income"][i] for i in this_year) * 100
     if key == "q4_sales_guide":
+        guides = {g["guided_quarter"]: g["sales"] for g in s["guidance"] if g.get("sales")}
+        if f"{year}Q4" in guides:           # the company has guided it: its own midpoint
+            return (guides[f"{year}Q4"]["low"] + guides[f"{year}Q4"]["high"]) / 2
         fy = [it for g in s["guidance"] for it in g["full_year"]
               if it["year"] == year and it["metric"] == "total_net_sales" and it["unit"] == "eur_m"][-1]
-        q3 = next(g["sales"] for g in s["guidance"] if g["guided_quarter"] == f"{year}Q3")
-        return (fy["low"] + fy["high"]) / 2 - sum(q["total_net_sales"][i] for i in this_year) \
-            - (q3["low"] + q3["high"]) / 2
+        between = [f"{year}Q{n}" for n in range(int(P[-1][5]) + 1, 4)]
+        return ((fy["low"] + fy["high"]) / 2 - sum(q["total_net_sales"][i] for i in this_year)
+                - sum((guides[p]["low"] + guides[p]["high"]) / 2 for p in between))
     raise KeyError(key)
 
 
@@ -658,19 +639,26 @@ class AsmlFourSectionTest(unittest.TestCase):
         # between them, one threshold chart per settled measure that has a history
         between = self.section["settled"]["exhibits"][2:-3]
         self.assertEqual([ex["kind"] for ex in between], ["lines"] * len(between))
-        self.assertEqual(len(between), len({"h1_buyback", "china_system_share"}))
+        measures = {e["measure"] for e in self.st["prior_kpi_settlement"]["quantified"]}
+        self.assertEqual(len(between), len(measures - WITHOUT_HISTORY))
 
     def test_the_follow_up_closure_is_the_reports_verdicts(self) -> None:
+        said = report_note(self.st)["followup_closure"]
+        # the note is internally whole: its per-verdict counts are its verdict list, counted
+        self.assertEqual(len(said["verdicts"]), said["total"])
+        self.assertEqual({label: said["verdicts"].count(label) for label in said["counts"]}, said["counts"])
         block = self.st["followup_closure"]
-        self.assertEqual([item["verdict"] for item in block["items"]], REPORT_FOLLOWUP_VERDICTS)
+        self.assertEqual([item["verdict"] for item in block["items"]], said["verdicts"])
         self.assertEqual(asml.display_period(block["set_in"]),
                          asml.display_period(asml.shift_quarter(self.P[-1], -1)))
         chart = self.section["settled"]["exhibits"][0]
-        counts = {label: REPORT_FOLLOWUP_VERDICTS.count(label) for label in chart["xlabels"]}
-        self.assertEqual(chart["values"], [counts[label] for label in chart["xlabels"]])
-        self.assertEqual(sum(chart["values"]), 5)
-        self.assertTrue(chart["title"].startswith("上季 5 条待验证问题：2 条完全解答、3 条部分解答"))
-        self.assertIn("没有一条未解答", chart["title"])
+        self.assertEqual(dict(zip(chart["xlabels"], chart["values"])), said["counts"])
+        counted = "、".join(f"{said['counts'][label]} 条{label}" for label in chart["xlabels"]
+                           if said["counts"][label])
+        self.assertTrue(chart["title"].startswith(f"上季 {said['total']} 条待验证问题：{counted}"))
+        for label in chart["xlabels"]:
+            if not said["counts"][label]:
+                self.assertIn(f"没有一条{label}", chart["title"])
         for item in block["items"]:
             self.assertIn(item["question"], chart["note"])
 
@@ -687,11 +675,14 @@ class AsmlFourSectionTest(unittest.TestCase):
             self.assertNotRegex(item["evidence"], r"\d+\.\d%")
 
     def test_the_prior_thresholds_are_the_reports(self) -> None:
+        said = report_note(self.st)["prior_thresholds"]
         block = self.st["prior_kpi_settlement"]
         got = {(e["measure"], e["line"]): (e["direction"], e["threshold"]) for e in block["quantified"]}
-        self.assertEqual(got, REPORT_PRIOR_THRESHOLDS)
-        numbers = {e["kpi"] for e in block["quantified"] + block["not_settled"]}
-        self.assertEqual(numbers, set(range(1, REPORT_PRIOR_KPIS + 1)))
+        self.assertEqual(got, report_thresholds(said["settled"]))
+        # every row of last report's watch list is either settled here or listed as not settled
+        self.assertEqual(sorted(e["kpi"] for e in block["not_settled"]), said["not_settled_kpis"])
+        numbers = {e["kpi"] for e in block["quantified"]} | set(said["not_settled_kpis"])
+        self.assertEqual(numbers, set(range(1, said["report_kpis"] + 1)))
         for entry in block["quantified"]:
             self.assertFalse({"current", "actual", "metric", "unit"} & set(entry))
 
@@ -706,12 +697,20 @@ class AsmlFourSectionTest(unittest.TestCase):
         # the verdict words, recounted by line kind
         guards = [h for e, h in zip(block["quantified"], heads) if e["line"] == "警戒线"]
         targets = [h for e, h in zip(block["quantified"], heads) if e["line"] == "兑现线"]
-        self.assertTrue(all(h >= 0 for h in guards))
-        self.assertIn(f"{asml.cn_count(len(guards))}条警戒线都守住", chart["title"])
+        held = sum(1 for h in guards if h >= 0)
         reached = sum(1 for h in targets if h >= 0)
-        self.assertIn(f"{asml.cn_count(len(targets))}条兑现线里{asml.cn_count(reached)}条达到", chart["title"])
-        spent = recomputed_measure(self.st, "h1_buyback")
-        self.assertIn(f"未达的是上半年回购（{asml.eur_m(spent)}，兑现线 €4B）", chart["title"])
+        self.assertIn(f"{asml.cn_count(len(guards))}条警戒线"
+                      + ("都守住" if held == len(guards) else f"里{asml.cn_count(held)}条守住"), chart["title"])
+        self.assertIn(f"{asml.cn_count(len(targets))}条兑现线"
+                      + ("都达到" if reached == len(targets) else f"里{asml.cn_count(reached)}条达到"), chart["title"])
+        # every miss is named with its reading and its line
+        for entry, head in zip(block["quantified"], heads):
+            if head >= 0:
+                continue
+            value = recomputed_measure(self.st, entry["measure"])
+            self.assertIn(f"{asml.measure_name(entry['measure'], self.P[-1])}"
+                          f"（{asml.measure_text(entry['measure'], value)}，{entry['line']} "
+                          f"{asml.threshold_text(entry['measure'], entry['threshold'])}）", chart["title"])
 
     def test_the_china_condition_is_quarter_by_quarter_decline(self) -> None:
         """「H1 占比逐季下行至 < 25%」is two conditions; the note states the second."""
@@ -736,24 +735,118 @@ class AsmlFourSectionTest(unittest.TestCase):
         self.assertIn(f"另有{asml.cn_count(len(block['not_settled']))}条本季不结算",
                       self.section["settled"]["description"])
 
+    # ── section two: the quarter's findings ──────────────────────────────────
+    def test_section_two_carries_the_reports_findings_in_its_order(self) -> None:
+        refs = [ex.get("ref") for ex in self.section["quarter_highlights"]["exhibits"]]
+        self.assertEqual(refs, ["EX_FYPATH", "EX_H2H1", "EX_MEMORY", "EX_REGIONH", "EX_AR", "EX_UNITSY"])
+        # what the report concluded and no filing lets the page draw is said, not dropped
+        for sentence in (self.st.get("quarter_story") or {}).get("highlights_untracked", []):
+            self.assertIn(sentence, self.section["quarter_highlights"]["description"])
+
+    def test_the_half_year_regions_are_the_interim_reports(self) -> None:
+        chart = next(ex for ex in self.section["quarter_highlights"]["exhibits"] if ex.get("ref") == "EX_REGIONH")
+        years = sorted(int(y) for y in self.st["h1_mix"] if f"{y}Q2" in self.P)
+        self.assertEqual(chart["xlabels"], [f"{y}H1" for y in years])
+        half = self.st["h1_mix"][str(years[-1])]
+        shares = {name: half["region_eur_m"][key] / half["total_net_sales"] * 100
+                  for name, key in (("韩国", "South_Korea"), ("中国大陆", "China"), ("台湾", "Taiwan"))}
+        for sr in chart["series"]:
+            if sr["name"] in shares:
+                self.assertAlmostEqual(sr["values"][-1], round(shares[sr["name"]], 1), places=6)
+        self.assertIn(f"中国大陆 {shares['中国大陆']:.1f}%", chart["title"])
+        self.assertIn("总净销售、按客户工厂所在地", chart["note"])
+        # the same half-year's regions add up to the half-year's total net sales
+        self.assertAlmostEqual(sum(v for k, v in half["region_eur_m"].items() if k != "Total"),
+                               half["total_net_sales"], delta=0.5)
+
+    def test_the_memory_half_is_the_interim_reports(self) -> None:
+        chart = next(ex for ex in self.section["quarter_highlights"]["exhibits"] if ex.get("ref") == "EX_MEMORY")
+        year = max(int(y) for y in self.st["h1_mix"] if f"{y}Q2" in self.P)
+        now, before = self.st["h1_mix"][str(year)], self.st["h1_mix"][str(year - 1)]
+        share = now["end_use_eur_m"]["Memory"] / now["net_system_sales"] * 100
+        self.assertIn(f"{year} 年上半年 {share:.1f}%", chart["title"])
+        # end use splits net system sales, so the two slices add to it
+        self.assertAlmostEqual(sum(now["end_use_eur_m"].values()), now["net_system_sales"], delta=0.15)
+        if now.get("end_use_units") and before.get("end_use_units"):
+            for half in (now, before):
+                self.assertEqual(sum(half["end_use_units"].values()),
+                                 sum(half["technology_units"][k]
+                                     for k in ("EUV", "ArFi", "ArF_dry", "KrF", "I_line", "MI")))
+            per = now["end_use_eur_m"]["Memory"] / now["end_use_units"]["Memory"]
+            per_before = before["end_use_eur_m"]["Memory"] / before["end_use_units"]["Memory"]
+            self.assertIn(f"平均每台 {asml.eur_m(per_before)} → {asml.eur_m(per)}（D）", chart["note"])
+        else:
+            self.assertNotIn("平均每台", chart["note"])
+
+    def test_the_receivables_chart_is_recounted(self) -> None:
+        chart = next(ex for ex in self.section["quarter_highlights"]["exhibits"] if ex.get("ref") == "EX_AR")
+        ar, sales = self.q["accounts_receivable"], self.q["total_net_sales"]
+        self.assertIn(f"应收账款季末 {asml.eur_m(ar[-1])}", chart["title"])
+        if all(v < ar[-1] for v in ar[:-1]):
+            self.assertIn(f"{asml.cn_count(len(ar))}个季度里最高", chart["title"])
+        self.assertIn(f"相当于当季总净销售的 {ar[-1] / sales[-1] * 100:.1f}%", chart["title"])
+        # the year-to-date cash lines are the company's own printed column where the
+        # series carries one for this quarter, not the quarters summed
+        year = self.P[-1][:4]
+        printed = self.st.get("half_year_cash_printed", {}).get(year)
+        if printed and printed["through"] == self.P[-1]:
+            self.assertIn(f"经营现金流 {asml.eur_m(printed['cfo'])}", chart["note"])
+            self.assertIn("公司印出的年初至今列", chart["note"])
+            idx = [self.P.index(p) for p in (f"{year}Q1", f"{year}Q2", f"{year}Q3", f"{year}Q4")
+                   if p in self.P and p <= printed["through"]]
+            # the printed column and the quarters differ by rounding only
+            self.assertAlmostEqual(sum(self.q["cfo"][i] for i in idx), printed["cfo"], delta=0.15)
+            self.assertAlmostEqual(printed["net_income"], sum(self.q["net_income"][i] for i in idx), delta=0.15)
+            self.assertAlmostEqual(printed["share_buybacks"], sum(self.q["share_buybacks"][i] for i in idx),
+                                   delta=0.15)
+        else:
+            self.assertIn("各季相加", chart["note"])
+        factoring = (self.st.get("quarter_story") or {}).get("factoring")
+        if factoring:
+            self.assertIn(f"{int(factoring['half'][:4]) - 1} 年上半年是 "
+                          f"{asml.eur_b(factoring['prior_half_sold_eur_m'])}", chart["note"])
+
+    def test_the_cash_card_counts_the_negative_first_halves(self) -> None:
+        halves = {}
+        for y in sorted({int(p[:4]) for p in self.P}):
+            if f"{y}Q2" not in self.P:
+                continue
+            idx = [self.P.index(f"{y}Q1"), self.P.index(f"{y}Q2")]
+            halves[y] = sum(self.q["cfo"][i] + self.q["capex_ppe"][i] + self.q["capex_intangibles"][i]
+                            for i in idx)
+        negative = [y for y, v in halves.items() if v < 0]
+        year = int(self.P[-1][:4])
+        brief = self.payload["brief"]
+        if self.P[-1].endswith("Q2") and year in negative:
+            self.assertIn(f"上半年自由现金流为负，{asml.cn_count(len(halves))}年里第"
+                          f"{asml.cn_ordinal(negative.index(year) + 1)}次", brief)
+        else:
+            self.assertNotIn("上半年自由现金流为负", brief)
+        self.assertIn(f"本季{asml.cn_count(brief.count('<article>'))}条主线", brief)
+
     # ── section three: the current report's watch list ───────────────────────
     def test_the_next_quarter_thresholds_are_the_reports(self) -> None:
+        said = report_note(self.st)["next_thresholds"]
         got = {(e["measure"], e["line"]): (e["direction"], e["threshold"]) for e in self.kpi["quantified"]}
-        self.assertEqual(got, REPORT_NEXT_THRESHOLDS)
+        self.assertEqual(got, report_thresholds(said["quantified"]))
+        self.assertEqual(sorted(e["kpi"] for e in self.kpi["not_quantified"]), said["not_quantified_kpis"])
         numbers = {e["kpi"] for e in self.kpi["quantified"] + self.kpi["not_quantified"]}
-        self.assertEqual(numbers, set(range(1, REPORT_NEXT_KPIS + 1)))
+        self.assertEqual(numbers, set(range(1, said["report_kpis"] + 1)))
         self.assertEqual(asml.display_period(self.kpi["for_period"]),
                          asml.display_period(asml.shift_quarter(self.P[-1], 1)))
 
     def test_the_report_thresholds_sit_on_the_companys_own_guide(self) -> None:
-        """「Q3 达中点以上」「Q3 低于 €11B」「Q3 落在指引带内」: the report's
-        levels are the company's guide for the quarter, so they must equal it."""
+        """Where the report ties a level to the company's guide for the quarter
+        (「达中点以上」「低于指引下限」「落在指引带内」), the level must equal that guide."""
         following = asml.shift_quarter(self.P[-1], 1)
         guide = next(g for g in self.st["guidance"] if g["guided_quarter"] == following)
-        lines = {(e["measure"], e["line"]): e["threshold"] for e in self.kpi["quantified"]}
-        self.assertEqual(lines[("total_net_sales", "兑现线")], (guide["sales"]["low"] + guide["sales"]["high"]) / 2)
-        self.assertEqual(lines[("total_net_sales", "警戒线")], guide["sales"]["low"])
-        self.assertEqual(lines[("gross_margin", "兑现线")], guide["gross_margin"]["low"])
+        anchors = {"next_sales_guide_mid": (guide["sales"]["low"] + guide["sales"]["high"]) / 2,
+                   "next_sales_guide_low": guide["sales"]["low"],
+                   "next_margin_guide_low": guide["gross_margin"]["low"]}
+        anchored = [e for e in report_note(self.st)["next_thresholds"]["quantified"] if e.get("anchor")]
+        for entry in anchored:
+            with self.subTest(metric=entry["metric"], line=entry["line"]):
+                self.assertEqual(entry["threshold"], anchors[entry["anchor"]])
 
     def test_each_next_threshold_is_measured_from_the_series(self) -> None:
         ex = self.section["next_quarter"]["exhibits"][0]
@@ -782,31 +875,44 @@ class AsmlFourSectionTest(unittest.TestCase):
 
     def test_every_measure_with_a_history_is_drawn_against_its_thresholds(self) -> None:
         charts = [ex for ex in self.section["next_quarter"]["exhibits"] if ex["kind"] == "lines"]
-        drawn = {"total_net_sales": "总净销售：下季阈值", "gross_margin": "毛利率：下季阈值",
-                 "china_share_h1": "中国大陆占总净销售：下季阈值",
-                 "fcf_conversion": "全年自由现金流 / 净利润：下季阈值"}
+        following = asml.shift_quarter(self.P[-1], 1)
+        measures = list(dict.fromkeys(e["measure"] for e in self.kpi["quantified"]))
+        drawn = [key for key in measures if key not in WITHOUT_HISTORY]
         self.assertEqual(len(charts), len(drawn))
-        for key, words in drawn.items():
+        for key in drawn:
             with self.subTest(measure=key):
-                chart = next(ex for ex in charts if words in ex["title"])
+                words = f"{asml.measure_name(key, following)}：下季阈值"
+                chart = next(ex for ex in charts if ex["title"].startswith(words))
                 wanted = sorted(e["threshold"] for e in self.kpi["quantified"] if e["measure"] == key)
                 flat = sorted(sr["values"][0] for sr in chart["series"]
                               if sr["color"] in ("RED", "GREEN") and len(set(sr["values"])) == 1)
                 self.assertEqual(flat, wanted)
-                self.assertIn("当前 ", chart["title"])
-        # the quarterly ones end on this quarter's reading
-        sales = next(ex for ex in charts if "总净销售：下季阈值" in ex["title"])
-        self.assertEqual(sales["xlabels"][-1], self.P[-1])
-        self.assertEqual(sales["series"][0]["values"][-1], round(self.q["total_net_sales"][-1], 6))
-        self.assertIn(asml.eur_m(self.q["total_net_sales"][-1]), sales["title"])
+                self.assertIn(f"当前 {asml.measure_text(key, recomputed_measure(self.st, key))}", chart["title"])
+                # a reason the block wrote for a threshold is printed where it is drawn
+                for entry in self.kpi["quantified"]:
+                    if entry["measure"] == key and entry.get("why"):
+                        self.assertIn(entry["why"], chart["note"])
+                if chart["xlabels"] == self.P:
+                    self.assertEqual(chart["series"][0]["values"][-1],
+                                     round(recomputed_measure(self.st, key), 6))
 
     def test_the_fourth_quarter_guide_is_backed_out_of_the_full_year(self) -> None:
-        implied = recomputed_measure(self.st, "q4_sales_guide")
         note = self.section["next_quarter"]["exhibits"][0]["note"]
+        if not any(e["measure"] == "q4_sales_guide" for e in self.kpi["quantified"]):
+            # no threshold on it this quarter, so nothing may be backed out either
+            self.assertNotIn("倒推出的", note)
+            return
+        implied = recomputed_measure(self.st, "q4_sales_guide")
         self.assertIn(f"倒推出的 {asml.eur_m(implied)}（D）", note)
-        # and against the largest quarter the page has ever drawn
-        top = max(self.q["total_net_sales"])
-        self.assertGreater(implied, top)
+        # the same figure, against the largest quarter the page has drawn, in the H2/H1 note
+        top = max(range(len(self.P)), key=lambda i: self.q["total_net_sales"][i])
+        record = self.q["total_net_sales"][top]
+        h2h1 = next(ex for ex in exhibits_of(self.payload) if ex.get("ref") == "EX_H2H1")["note"]
+        self.assertIn(f"一季要做 {asml.eur_m(implied)}（D）", h2h1)
+        if implied > record:
+            self.assertIn(f"{self.P[top]}（{asml.eur_m(record)}）还高 {(implied / record - 1) * 100:.1f}%", h2h1)
+        else:
+            self.assertIn("没有超过", h2h1)
 
     def test_what_cannot_be_measured_is_listed_with_a_reason(self) -> None:
         table = next(t for t in self.payload["tables"] if t["title"].startswith("下季阈值"))
@@ -815,11 +921,17 @@ class AsmlFourSectionTest(unittest.TestCase):
         self.assertEqual(len(table["rows"]), len(self.kpi["quantified"]) + len(self.kpi["not_quantified"]))
 
     def test_the_two_china_bases_are_named_where_the_threshold_is_drawn(self) -> None:
-        chart = next(ex for ex in self.section["next_quarter"]["exhibits"]
-                     if ex["title"].startswith("中国大陆占总净销售"))
-        self.assertIn("总净销售、按客户工厂所在地", chart["note"])
-        self.assertIn(f"本季 {self.st['deck_mix']['china_pct'][-1]}%", chart["note"])
-        self.assertIn("本页不替报告决定", chart["note"])
+        """Wherever a China threshold is drawn on the interim report's half-year basis,
+        the note has to name that basis and print the slide's quarterly figure beside it
+        -- the only one a single quarter will have."""
+        charts = [ex for ex in self.section["next_quarter"]["exhibits"]
+                  if ex["title"].startswith("中国大陆占总净销售")]
+        self.assertEqual(len(charts), int(any(e["measure"] == "china_share_h1" for e in self.kpi["quantified"])))
+        for chart in charts:
+            self.assertIn("总净销售、按客户工厂所在地", chart["note"])
+            self.assertIn(f"本季 {self.st['deck_mix']['china_pct'][-1]}%", chart["note"])
+            self.assertEqual(chart["xlabels"][-1], f"{self.P[-1][:4]}H1" if self.P[-1][5] in "234"
+                             else f"{int(self.P[-1][:4]) - 1}H1")
 
 
 class AsmlRollTest(unittest.TestCase):
@@ -985,6 +1097,113 @@ class AsmlRollTest(unittest.TestCase):
         self.assertIn("没有一季低于下限", note)
         self.assertNotIn("没有一季低于下限", by_ref(self.payload)["EX_SALESDEV"]["note"])
 
+        # The five below are written both ways round (CLAUDE.md §9.3): whether each
+        # sentence prints is recomputed here for the real series AND for a copy
+        # that flips its condition, so neither a roll nor a longer window can leave
+        # a test asserting a sentence no branch still produces.
+        real = self.payload
+        refs = by_ref(real)
+
+        # 6. "四十二个季度里最高" on receivables
+        def ar_record(s: dict) -> bool:
+            ar = s["quarterly"]["accounts_receivable"]
+            return all(v < ar[-1] for v in ar[:-1])
+
+        topped_ar = copy.deepcopy(self.source)
+        ar = topped_ar["quarterly"]["accounts_receivable"]
+        if ar_record(self.source):
+            ar[0] = max(ar) + 1          # an earlier quarter overtakes the last
+        else:
+            ar[-1] = max(ar) + 1         # the last overtakes every earlier one
+        self.assertNotEqual(ar_record(topped_ar), ar_record(self.source))
+        for s, p in ((self.source, real), (topped_ar, asml.build_payload(topped_ar))):
+            self.assertEqual("个季度里最高" in self.title(p, "EX_AR").split("；")[0], ar_record(s))
+
+        # 7. "第N次" on the cash card, and the earlier negative first halves in the note
+        def negative_halves(s: dict) -> list[int]:
+            q, out = s["quarterly"], []
+            for y in sorted({int(p[:4]) for p in q["periods"]}):
+                if f"{y}Q2" in q["periods"]:
+                    idx = [q["periods"].index(f"{y}Q1"), q["periods"].index(f"{y}Q2")]
+                    if sum(q["cfo"][i] + q["capex_ppe"][i] + q["capex_intangibles"][i] for i in idx) < 0:
+                        out.append(y)
+            return out
+
+        lifted = copy.deepcopy(self.source)
+        q = lifted["quarterly"]
+        first = negative_halves(self.source)[0] if negative_halves(self.source) else 2016
+        q["cfo"][q["periods"].index(f"{first}Q1")] += 5000.0
+        self.assertNotEqual(negative_halves(lifted), negative_halves(self.source))
+        last = self.source["quarterly"]["periods"][-1]
+        year = int(last[:4])
+        for s, p in ((self.source, real), (lifted, asml.build_payload(lifted))):
+            negative = negative_halves(s)
+            if last.endswith("Q2") and year in negative:
+                self.assertIn(f"年里第{asml.cn_ordinal(negative.index(year) + 1)}次", p["brief"])
+                earlier = [y for y in negative if y != year]
+                if earlier:
+                    self.assertIn(f"此前出现过{asml.cn_count(len(earlier))}次（{'、'.join(map(str, earlier))}）",
+                                  by_ref(p)["EX_AR"]["note"])
+
+        # 8. "N条线都在它之上": next quarter's sales lines against the largest quarter drawn
+        if "EX_NEXT_TOTAL_NET_SALES" in refs:
+            lines = [e["threshold"] for e in self.source["next_kpi"]["quantified"]
+                     if e["measure"] == "total_net_sales"]
+            all_above = lambda s: all(t > max(s["quarterly"]["total_net_sales"]) for t in lines)  # noqa: E731
+            above = copy.deepcopy(self.source)
+            sales = above["quarterly"]["total_net_sales"]
+            if all_above(self.source):
+                sales[0] = max(lines) + 500.0
+            else:
+                shrink = min(lines) / max(sales) * 0.9
+                above["quarterly"]["total_net_sales"] = [v * shrink for v in sales]
+            self.assertNotEqual(all_above(above), all_above(self.source))
+            for s, p in ((self.source, real), (above, asml.build_payload(above))):
+                self.assertEqual("都在它之上" in by_ref(p)["EX_NEXT_TOTAL_NET_SALES"]["note"], all_above(s))
+
+        # 9. "全年都在警戒线以上": the years whose first half was negative, at year end
+        if "EX_NEXT_FCF_CONVERSION" in refs:
+            guard = next(e["threshold"] for e in self.source["next_kpi"]["quantified"]
+                         if e["measure"] == "fcf_conversion" and e["line"] == "警戒线")
+
+            def settled_held(s: dict) -> bool:
+                q = s["quarterly"]
+                P = q["periods"]
+                held = []
+                for y in negative_halves(s):
+                    idx = [P.index(f"{y}Q{n}") for n in range(1, 5) if f"{y}Q{n}" in P]
+                    if len(idx) == 4:
+                        fcf = sum(q["cfo"][i] + q["capex_ppe"][i] + q["capex_intangibles"][i] for i in idx)
+                        held.append(fcf / sum(q["net_income"][i] for i in idx) * 100 >= guard)
+                return bool(held) and all(held)
+
+            weak = copy.deepcopy(self.source)
+            q = weak["quarterly"]
+            done = [y for y in negative_halves(weak) if f"{y}Q4" in q["periods"]]
+            for y in (done[:1] if settled_held(self.source) else done):
+                # push the year's fourth quarter across the line, the other way round
+                q["cfo"][q["periods"].index(f"{y}Q4")] += -20000.0 if settled_held(self.source) else 20000.0
+            if done:
+                self.assertNotEqual(settled_held(weak), settled_held(self.source))
+            for s, p in ((self.source, real), (weak, asml.build_payload(weak))):
+                self.assertEqual("全年都在警戒线以上" in by_ref(p)["EX_NEXT_FCF_CONVERSION"]["note"],
+                                 settled_held(s))
+
+        # 10. "毛利率达到 X% 的季度一个都没有"
+        target = next((e["threshold"] for e in self.source["next_kpi"]["quantified"]
+                       if e["measure"] == "gross_margin" and e["line"] == "兑现线"), None)
+        if "EX_NEXT_GROSS_MARGIN" in refs and target is not None:
+            none_reached = lambda s: all(v < target for v in s["quarterly"]["gross_margin_printed_pct"])  # noqa: E731
+            reached = copy.deepcopy(self.source)
+            margins = reached["quarterly"]["gross_margin_printed_pct"]
+            if none_reached(self.source):
+                margins[0] = target
+            else:
+                reached["quarterly"]["gross_margin_printed_pct"] = [min(v, target - 1) for v in margins]
+            self.assertNotEqual(none_reached(reached), none_reached(self.source))
+            for s, p in ((self.source, real), (reached, asml.build_payload(reached))):
+                self.assertEqual("一个都没有" in by_ref(p)["EX_NEXT_GROSS_MARGIN"]["note"], none_reached(s))
+
     def test_the_next_quarter_rolls_without_touching_the_code(self) -> None:
         """Append a synthetic 2026Q3 and rebuild: no code change, new labels."""
         rolled = copy.deepcopy(self.source)
@@ -1085,6 +1304,18 @@ class AsmlChecksTest(unittest.TestCase):
         self.assertIn(f"发布 {c['release_date']}", self.payload["subtitle"])
         self.assertIn("EX-99.1", c["source"])
         self.assertNotIn("financialstatementsusgaa", c["source"])
+
+    def test_the_report_note_belongs_to_this_quarter(self) -> None:
+        """`_checks.note` holds the two local reports' facts the section tests read;
+        a note left over from last quarter must not pass for this one."""
+        note, P = self.c["note"], self.q["periods"]
+        self.assertIn(display_period(P[-1]), note["source"]["this_quarter"])
+        self.assertIn(self.q["release_dates"][-1], note["source"]["this_quarter"])
+        self.assertIn(display_period(asml.shift_quarter(P[-1], -1)), note["source"]["last_quarter"])
+        self.assertGreaterEqual(note["checked_on"], self.q["release_dates"][-1])
+        # each block it vouches for is stamped for this quarter
+        for key in ("followup_closure", "prior_kpi_settlement", "next_kpi"):
+            self.assertEqual(display_period(self.st[key]["period"]), display_period(P[-1]))
 
     def test_the_series_ends_on_the_checked_figures(self) -> None:
         """The exhibit prints one decimal, the release whole millions, and each is
