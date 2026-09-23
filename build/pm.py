@@ -1546,7 +1546,7 @@ def build_payload(staging: dict) -> dict:
         "summary": {"blocks": []},
         "guidance": guidance_table(staging),
         "sections": [
-            {"id": "settled", "title": "一、公司自己的指引兑现了吗",
+            {"id": "settled", "title": "一、上季跟踪指标兑现了吗",
              "description": (
                  "PMI 把同一个盈利数字指引两次 —— 一次是全年，一次是下一个季度 —— 而且中途"
                  "把被指引的口径从 GAAP 换成了公司自定义的调整后口径。四条记录因此互相矛盾，"
