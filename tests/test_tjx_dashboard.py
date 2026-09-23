@@ -47,7 +47,7 @@ sys.path.insert(0, str(ROOT))
 
 from build.all import ENTRIES, GROUPS, build_all, roster_payload  # noqa: E402
 from build.board import headroom  # noqa: E402
-from build.tjx import STAGING_PATH, build_payload, compact_period  # noqa: E402
+from build.tjx import STAGING_PATH, UNCHARTED, build_payload, compact_period  # noqa: E402
 
 # History up to here is closed and is pinned by value; anything later is checked
 # as an invariant. It sits well before the quarter this page was migrated at
@@ -61,7 +61,11 @@ THIN_FROM = "Q3 2024"
 EPS_HOLES = ("Q4 2012", "Q4 2013")
 STAMPED = ("prior_kpi", "next_kpi", "followup_closure", "ytd_usd_m", "full_year_outlook",
            "one_off_usd_m", "adjusted_segment_margins_pct", "store_plan", "guidance",
-           "quarter_story")
+           "threshold_readings", "quarter_story")
+# The seven releases of Q2 2020-Q4 2021 print total inventories only, no per-store figure.
+PER_STORE_HOLES = ("Q2 2020", "Q3 2020", "Q4 2020", "Q1 2021", "Q2 2021", "Q3 2021", "Q4 2021")
+OPERATORS = {"≥": lambda v, t: v >= t, ">": lambda v, t: v > t,
+             "≤": lambda v, t: v <= t, "<": lambda v, t: v < t}
 STORIES = tuple(key for key in STAMPED if key != "ytd_usd_m")
 SEGMENTS = ("marmaxx", "homegoods", "canada", "international")
 CN = "零一二三四五六七八九"
@@ -114,6 +118,11 @@ def next_period(period: str) -> str:
     return f"Q1 {year + 1}" if quarter == 4 else f"Q{quarter + 1} {year}"
 
 
+def previous(period: str) -> str:
+    quarter, year = int(period[1]), int(period.split()[1])
+    return f"Q4 {year - 1}" if quarter == 1 else f"Q{quarter - 1} {year}"
+
+
 def next_fiscal(label: str) -> str:
     year, quarter = int(label[2:6]), int(label[-1])
     return f"FY{year + 1}Q1" if quarter == 4 else f"FY{year}Q{quarter + 1}"
@@ -163,24 +172,33 @@ def with_thresholds(src: dict) -> dict:
     st = copy.deepcopy(src)
     period = st["periods"][-1]
     if "prior_kpi" not in st:
-        st["prior_kpi"] = {"period": period, "quantified": [
-            {"metric": "合并同店销售", "direction": "up", "threshold": 3.0, "unit": "pct",
-             "measure": "comp_consolidated", "meaning": "测试用的门槛"},
-            {"metric": "Marmaxx 同店销售", "direction": "up", "threshold": 2.0, "unit": "pct",
-             "measure": "comp_marmaxx"},
-            {"metric": "毛利率", "direction": "up", "threshold": 30.0, "unit": "pct",
-             "measure": "gross_margin_adjusted"},
-            {"metric": "每店存货同比 D", "direction": "down", "threshold": 5.0, "unit": "pct",
-             "measure": "inventory_per_store_yoy"},
-            {"metric": "累计资本开支 / 销售额 D", "direction": "down", "threshold": 3.8, "unit": "pct",
-             "measure": "ytd_capex_intensity"}],
-            "inventory_warning": {"comp_below_pct": 3.0, "inventory_yoy_above_pct": 5.0}}
+        st["prior_kpi"] = {"period": period, "set_in": previous(period), "rows": [
+            {"row": 1, "metric": "合并 comp", "text": "≥3% = 测试", "action": "加仓",
+             "report_reading": "测试", "handling": "测试"},
+            {"row": 2, "metric": "毛利率", "text": "<30% = 测试", "action": "警示",
+             "report_reading": "测试", "handling": "测试"},
+            {"row": 3, "metric": "每店库存与 comp", "text": "两腿同时", "action": "警示",
+             "report_reading": "测试", "handling": "测试"},
+            {"row": 4, "metric": "落后 Ross", "text": "连续两季 ≥8pp", "action": "重估",
+             "report_reading": "测试", "handling": "测试"}], "quantified": [
+            {"id": "t_comp", "row": 1, "metric": "合并 comp ≥3%", "line": "测试线", "measure": "comp_consolidated",
+             "fires": "≥", "threshold": 3.0, "kind": "target", "unit": "pct"},
+            {"id": "t_gm", "row": 2, "metric": "毛利率 <30%", "line": "测试线", "measure": "gross_margin_adjusted",
+             "fires": "<", "threshold": 30.0, "kind": "warn", "unit": "pct"},
+            {"id": "t_inv", "row": 3, "metric": "每店库存 >+5%", "line": "测试腿", "measure": "inventory_per_store_yoy",
+             "fires": ">", "threshold": 5.0, "kind": "warn", "unit": "pct", "joint": 3},
+            {"id": "t_leg", "row": 3, "metric": "合并 comp <3%", "line": "测试腿", "measure": "comp_consolidated",
+             "fires": "<", "threshold": 3.0, "kind": "warn", "unit": "pct", "joint": 3},
+            {"id": "t_gap", "row": 4, "metric": "落后 Ross ≥8pp", "line": "测试线", "measure": "ross_gap",
+             "fires": "≥", "threshold": 8.0, "kind": "warn", "unit": "pp", "consecutive": 2}]}
     if "next_kpi" not in st:
-        st["next_kpi"] = {"period": period, "quantified": [
-            {"metric": "HomeGoods 分部利润率", "direction": "up", "threshold": 10.0, "unit": "pct",
-             "measure": "homegoods_margin_adjusted"},
-            {"metric": "税前利润率", "direction": "up", "threshold": 11.0, "unit": "pct",
-             "measure": "pretax_margin_adjusted"}]}
+        st["next_kpi"] = {"period": period, "rows": [
+            {"row": 1, "metric": "HomeGoods", "text": "≥10% = 测试", "action": "测试"},
+            {"row": 2, "metric": "Marmaxx", "text": "≤+1% = 测试", "action": "测试"}], "quantified": [
+            {"id": "n_hg", "row": 1, "metric": "HomeGoods 分部利润率 ≥10%", "line": "测试线",
+             "measure": "homegoods_margin_adjusted", "fires": "≥", "threshold": 10.0, "kind": "target", "unit": "pct"},
+            {"id": "n_mmx", "row": 2, "metric": "Marmaxx comp ≤+1%", "line": "测试线",
+             "measure": "comp_marmaxx", "fires": "≤", "threshold": 1.0, "kind": "warn", "unit": "pct"}]}
     st["prior_kpi"]["period"] = st["next_kpi"]["period"] = period
     return st
 
@@ -239,8 +257,14 @@ def roll_forward(src: dict) -> dict:
     ops["store_net_additions"].append(25)
     ops["square_feet_m"].append(round(ops["square_feet_m"][-1] + 0.5, 1))
     ops["merchandise_inventories_usd_m"].append(round(ops["merchandise_inventories_usd_m"][-4] * 1.04))
-    ops["inventory_per_store_usd_k"].append(
-        round(ops["merchandise_inventories_usd_m"][-1] * 1000 / ops["store_count"][-1], 2))
+    ops["inventory_per_store_yoy_pct"].append(3.0)
+    ops["inventory_per_store_yoy_cc_pct"].append(3.0)
+    st["peer_comparable_sales_pct"]["ross"].append(4.0)
+    # capex year to date: a new fiscal year starts from its first quarter
+    fq_new = int(fiscal[-1])
+    ytd_capex = fin["property_additions_ytd_usd_m"]
+    quarter_capex = round(sales[-1] * 0.036, 3)
+    ytd_capex.append(quarter_capex if fq_new == 1 else round(ytd_capex[-1] + quarter_capex, 3))
     rec = st["quarterly_guidance_history"]
     pending = len(rec["quarters"]) - 1
     rec["actual_eps_usd"][pending] = round(rec["guide_eps_hi_usd"][pending] + 0.03, 2)
@@ -261,7 +285,6 @@ def roll_forward(src: dict) -> dict:
         "period": period,
         "periods": [f"YTD {fiscal[:6]} prior", f"YTD {fiscal[:6]}"],
         "operating_cash_flow": [round(sum(last) * 0.12), round(sum(this) * 0.13)],
-        "capital_expenditures": [round(sum(last) * 0.035), round(sum(this) * 0.036)],
         "share_repurchases": [700 * fq, 750 * fq],
         "dividends_paid": [450 * fq, 500 * fq],
         "receivables_and_other_assets_change": [-40, 60],
@@ -364,6 +387,10 @@ class TjxDashboardTest(unittest.TestCase):
                                     f"{group}.{key}")
                 elif key in ("other_charges_usd_m", "adjusted_pretax_margin_pct"):
                     continue
+                elif key in ("inventory_per_store_yoy_pct", "inventory_per_store_yoy_cc_pct"):
+                    # the company's own per-store figure: printed in every release but seven
+                    holes = [periods[i] for i, value in enumerate(values) if value is None]
+                    self.assertEqual(holes, list(PER_STORE_HOLES), f"{group}.{key}")
                 elif key == "net_sales_yoy_pct":
                     self.assertEqual(reported, list(range(4, len(periods))), "no year-ago base for 2016")
                 else:
@@ -528,13 +555,8 @@ class TjxDashboardTest(unittest.TestCase):
                 self.assertAlmostEqual(
                     fin["net_sales_yoy_pct"][index],
                     (sales / fin["net_sales_usd_m"][index - 4] - 1) * 100, places=3, msg=period)
-            if ops["merchandise_inventories_usd_m"][index] is None:
-                self.assertIsNone(ops["inventory_per_store_usd_k"][index], period)
-                continue
-            self.assertAlmostEqual(
-                ops["inventory_per_store_usd_k"][index],
-                ops["merchandise_inventories_usd_m"][index] * 1000
-                / ops["store_count"][index], places=1, msg=period)
+        # the per-store inventory figure is the company's, not a division this page does
+        self.assertNotIn("inventory_per_store_usd_k", ops)
 
     def test_the_adjusted_segment_margins_are_the_companys_own_arithmetic(self) -> None:
         """reported + disclosed tariff impact = disclosed adjusted, per segment."""
@@ -704,6 +726,17 @@ class TjxDashboardTest(unittest.TestCase):
         # is what a division by two of a cent-quoted range leaves behind.
         for value in record["guide_eps_lo_usd"][:index]:
             self.assertAlmostEqual(value * 200, round(value * 200), places=6)
+
+    def test_only_the_open_quarter_reads_as_pending(self) -> None:
+        """「待披露」 is for the guided quarter not yet reported; a finished quarter with
+        no figure (the 2022 consolidated comps, the Q1 2020 comp) was never printed."""
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("指引兑现明细"))
+        for row in table["rows"]:
+            with self.subTest(quarter=row[0]):
+                if order(row[0]) > order(self.periods[-1]):
+                    self.assertEqual([row[4], row[6], row[8]], ["待披露"] * 3)
+                else:
+                    self.assertNotIn("待披露", row)
 
     def test_the_publication_lag_is_computed_from_the_dates(self) -> None:
         """The outlook goes out with the previous quarter's results, so it lands
@@ -905,10 +938,16 @@ class TjxDashboardTest(unittest.TestCase):
         chart = find(self.payload, "全年指引拆成")
         if chart is None:
             return
+        # the quarter's own pair on the outlook's basis; where the guidance record holds the
+        # same quarter on that basis, the two have to agree
+        guided_mid = sum(outlook["quarter_guide_usd"]) / 2
+        actual = outlook["quarter_actual_usd"]
         record = self.record
         r = record["quarters"].index(self.periods[-1])
-        guided_mid = (record["guide_eps_lo_usd"][r] + record["guide_eps_hi_usd"][r]) / 2
-        actual = record["actual_eps_usd"][r]
+        if self.periods[-1] in record["scored_on_adjusted"] or self.fin["adjusted_diluted_eps_usd"][-1] is None:
+            self.assertEqual([record["guide_eps_lo_usd"][r], record["guide_eps_hi_usd"][r]],
+                             outlook["quarter_guide_usd"])
+            self.assertEqual(record["actual_eps_usd"][r], actual)
         old_mid, new_mid = sum(outlook["prior_fy_guide_usd"]) / 2, sum(outlook["fy_guide_usd"]) / 2
         unmoved = abs((new_mid - outlook["ytd_eps_usd"])
                       - (old_mid - (outlook["ytd_eps_usd"] - actual + guided_mid))) < 5e-4
@@ -919,77 +958,164 @@ class TjxDashboardTest(unittest.TestCase):
             self.assertIn(f"${new_mid - outlook['ytd_eps_usd']:.3f}", self.payload["guidance"]["note"])
 
     # ── thresholds ───────────────────────────────────────────────────────────
+    def history(self, measure: str) -> list[float | None]:
+        """Each threshold measure's quarterly readings, computed here independently."""
+        st, fin = self.source, self.fin
+        comp = st["comparable_sales_pct"]
+        pick = lambda adjusted, reported: [a if a is not None else r  # noqa: E731
+                                           for a, r in zip(fin[adjusted], fin[reported])]
+        if measure in ("comp_consolidated", "comp_marmaxx"):
+            return [None if v is None else float(v) for v in comp[measure.split("_")[1]]]
+        if measure == "gross_margin_adjusted":
+            return pick("adjusted_gross_margin_pct", "gross_margin_pct")
+        if measure == "pretax_margin_adjusted":
+            return pick("adjusted_pretax_margin_pct", "pretax_margin_pct")
+        if measure == "adjusted_eps":
+            return pick("adjusted_diluted_eps_usd", "diluted_eps_usd")
+        if measure == "homegoods_margin_adjusted":
+            values = list(st["segment_margins_pct"]["homegoods_margin_pct"])
+            if st.get("adjusted_segment_margins_pct"):
+                values[-1] = st["adjusted_segment_margins_pct"]["homegoods"]["adjusted"]
+            return values
+        if measure == "inventory_per_store_yoy":
+            return st["operations"]["inventory_per_store_yoy_pct"]
+        if measure == "ross_gap":
+            return [None if r is None or m is None else r - m
+                    for r, m in zip(st["peer_comparable_sales_pct"]["ross"], comp["marmaxx"])]
+        if measure == "ytd_capex_intensity":
+            fq = int(st["fiscal_labels"][-1][-1])
+            value = fin["property_additions_ytd_usd_m"][-1] / sum(fin["net_sales_usd_m"][-fq:]) * 100
+            return [value]
+        raise KeyError(measure)
+
     def measured(self, measure: str) -> float:
-        """What each threshold measure reads, computed here independently."""
-        fin, comp = self.fin, self.source["comparable_sales_pct"]
-        ips = self.source["operations"]["inventory_per_store_usd_k"]
-        ytd = self.source["ytd_usd_m"]
-        adj = self.source.get("adjusted_segment_margins_pct")
-        return {
-            "comp_consolidated": comp["consolidated"][-1],
-            "comp_marmaxx": comp["marmaxx"][-1],
-            "gross_margin_adjusted": fin["adjusted_gross_margin_pct"][-1] or fin["gross_margin_pct"][-1],
-            "pretax_margin_adjusted": fin["adjusted_pretax_margin_pct"][-1] or fin["pretax_margin_pct"][-1],
-            "homegoods_margin_adjusted": (adj["homegoods"]["adjusted"] if adj
-                                          else self.source["segment_margins_pct"]["homegoods_margin_pct"][-1]),
-            "inventory_per_store_yoy": (ips[-1] / ips[-5] - 1) * 100,
-            "ytd_capex_intensity": ytd["capital_expenditures"][1] / sum(
-                fin["net_sales_usd_m"][-int(self.source["fiscal_labels"][-1][-1]):]) * 100,
-        }[measure]
+        st = self.source
+        if measure == "fy_capex_plan_high":
+            return st["threshold_readings"]["fy_capex_plan_usd_bn"][1]
+        if measure == "fy_raise_minus_beat":
+            outlook = st["full_year_outlook"]
+            mid = lambda pair: (pair[0] + pair[1]) / 2  # noqa: E731
+            return ((mid(outlook["fy_guide_usd"]) - mid(outlook["prior_fy_guide_usd"]))
+                    - (outlook["quarter_actual_usd"] - mid(outlook["quarter_guide_usd"])))
+        if measure == "tariff_refund_net_eps":
+            return st.get("threshold_readings", {}).get("tariff_refund_net_eps_usd",
+                                                        st["one_off_usd_m"]["eps_impact_usd"])
+        return self.history(measure)[-1]
 
-    def test_threshold_current_values_come_from_the_series(self) -> None:
-        for key, table in (("prior_kpi", "上季阈值核对（原始单位）"), ("next_kpi", "下季阈值（原始单位）")):
-            block = self.source.get(key)
-            titles = [t["title"] for t in self.payload["tables"]]
-            if block is None:
-                self.assertNotIn(table, titles)
-                continue
-            rows = next(t for t in self.payload["tables"] if t["title"] == table)["rows"]
-            self.assertEqual(len(rows), len(block["quantified"]))
-            for entry, row in zip(block["quantified"], rows):
-                value = self.measured(entry["measure"])
-                with self.subTest(block=key, metric=entry["metric"]):
-                    self.assertNotIn("actual", entry)
-                    self.assertNotIn("current", entry)
-                    self.assertEqual(row[0], entry["metric"])
-                    self.assertEqual(row[3], f"{value:.1f}%")
-                    self.assertEqual(row[4], f"{headroom(entry['direction'], entry['threshold'], value):+.1f}%")
+    def settled(self, entry: dict) -> bool:
+        """Whether a line fired, by the comparator the report wrote -- over its run if it has one."""
+        run = entry.get("consecutive", 1)
+        values = [self.measured(entry["measure"])] if run == 1 else self.history(entry["measure"])[-run:]
+        return all(v is not None and OPERATORS[entry["fires"]](round(v, 6), entry["threshold"]) for v in values)
 
-    def test_the_headroom_titles_count_what_the_bars_show(self) -> None:
-        for key, prefix in (("prior_kpi", "上季设下的"), ("next_kpi", "下季")):
-            block = self.source.get(key)
-            if block is None:
-                continue
-            room = [headroom(e["direction"], e["threshold"], self.measured(e["measure"]))
-                    for e in block["quantified"]]
-            chart = next(ex for ex in self.exhibits if ex["kind"] == "diverging_bars"
-                         and ex["title"].startswith(prefix))
-            self.assertEqual(chart["values"], [round(v, 1) for v in room])
-            breached = sum(1 for v in room if v < 0)
-            with self.subTest(block=key):
-                self.assertIn(f"{cn(len(room))}条阈值", chart["title"])
-                self.assertIn(f"{cn(breached)}条", chart["title"])
+    @staticmethod
+    def favourable_side(entry: dict) -> str:
+        rising = entry["fires"] in ("≥", ">")
+        return "up" if rising == (entry["kind"] == "target") else "down"
+
+    def test_prior_lines_are_read_from_the_series_and_settled_by_their_comparator(self) -> None:
+        block = self.source.get("prior_kpi")
+        table = next((t for t in self.payload["tables"] if t["title"] == "上季第 8 节逐条结算（原始单位）"), None)
+        if block is None:
+            self.assertIsNone(table)
+            return
+        self.assertEqual(len(table["rows"]), len(block["quantified"]))
+        for entry, row in zip(block["quantified"], table["rows"]):
+            with self.subTest(metric=entry["metric"]):
+                self.assertNotIn("actual", entry, "the reading is measured, never typed")
+                self.assertEqual(row[2], entry["metric"])
+                self.assertTrue(row[3].startswith(entry["fires"]))
+                fired = self.settled(entry)
+                words = (("触发" if fired else "未触发") if entry["kind"] == "warn"
+                         else ("达到" if fired else "未达到"))
+                self.assertEqual(row[6], words)
+                if entry["threshold"] != 0:
+                    room = headroom(self.favourable_side(entry), entry["threshold"], self.measured(entry["measure"]))
+                    self.assertEqual(row[5], f"{room:+.1f}%")
+
+    def test_the_prior_overview_counts_what_its_bars_show(self) -> None:
+        block = self.source.get("prior_kpi")
+        if block is None:
+            return
+        lines = [e for e in block["quantified"] if e["threshold"] != 0]
+        chart = next(ex for ex in self.exhibits if ex["kind"] == "diverging_bars"
+                     and ex["title"].startswith("上季"))
+        self.assertEqual(chart["xlabels"], [e["metric"] for e in lines])
+        self.assertEqual(chart["values"], [
+            round(headroom(self.favourable_side(e), e["threshold"], self.measured(e["measure"])), 1)
+            for e in lines])
+        good = sum(1 for e in lines if self.settled(e) == (e["kind"] == "target"))
+        self.assertTrue(chart["title"].startswith(f"上季 {len(lines)} 条量化阈值："), chart["title"])
+        if 0 < good < len(lines):
+            self.assertIn(f"{good} 条落在有利一侧、{len(lines) - good} 条在不利一侧", chart["title"])
+        # a zero line has no percentage distance: named in the note, never a bar
+        for entry in block["quantified"]:
+            if entry["threshold"] == 0:
+                self.assertNotIn(entry["metric"], chart["xlabels"])
+                self.assertIn(f"「{entry['metric']}」阈值是 0", chart["note"])
+
+    def test_next_quarter_lines_are_read_from_the_series(self) -> None:
+        """Next quarter's lines are placed, not settled: which side the current reading is on,
+        and a line whose number only the next quarter brings waits for it."""
+        block = self.source.get("next_kpi")
+        table = next((t for t in self.payload["tables"] if t["title"] == "本季第 8 节下季阈值（原始单位）"), None)
+        if block is None:
+            self.assertIsNone(table)
+            return
+        self.assertEqual(len(table["rows"]), len(block["quantified"]))
+        for entry, row in zip(block["quantified"], table["rows"]):
+            with self.subTest(metric=entry["metric"]):
+                self.assertNotIn("current", entry, "the reading is measured, never typed")
+                self.assertEqual(row[2], entry["metric"])
+                if entry.get("no_current"):
+                    self.assertEqual((row[4], row[5]), ("—", "—"))
+                    self.assertTrue(row[6].startswith("待 ") and row[6].endswith(" 结算"), row[6])
+                    continue
+                fired = self.settled(entry)
+                good = fired == (entry["kind"] == "target")
+                self.assertEqual(row[6], "当前在有利一侧" if good else "当前在不利一侧")
+                if entry["threshold"] != 0:
+                    room = headroom(self.favourable_side(entry), entry["threshold"], self.measured(entry["measure"]))
+                    self.assertEqual(row[5], f"{room:+.1f}%")
+
+    def test_the_next_overview_counts_what_its_bars_show(self) -> None:
+        block = self.source.get("next_kpi")
+        if block is None:
+            return
+        lines = [e for e in block["quantified"] if e["threshold"] != 0 and not e.get("no_current")]
+        chart = next(ex for ex in self.exhibits if ex["kind"] == "diverging_bars"
+                     and ex["title"].startswith("下季"))
+        self.assertEqual(chart["xlabels"], [e["metric"] for e in lines])
+        self.assertEqual(chart["values"], [
+            round(headroom(self.favourable_side(e), e["threshold"], self.measured(e["measure"])), 1)
+            for e in lines])
+        self.assertTrue(chart["title"].startswith(f"下季 {len(lines)} 条阈值："), chart["title"])
+        # every line that is not a bar is named under it, with why
+        for entry in block["quantified"]:
+            if entry.get("no_current"):
+                self.assertIn(f"「{entry['metric']}」不进柱图", chart["note"])
+            elif entry["threshold"] == 0:
+                self.assertIn(f"「{entry['metric']}」阈值是 0", chart["note"])
 
     def test_every_threshold_entry_is_renderable(self) -> None:
         for key in ("prior_kpi", "next_kpi"):
             for item in self.source.get(key, {}).get("quantified", []):
-                self.assertIn(item["direction"], ("up", "down"), item["metric"])
-                self.assertNotEqual(item["threshold"], 0, item["metric"])
-                self.assertIsInstance(self.measured(item["measure"]), (int, float))
+                with self.subTest(block=key, metric=item["metric"]):
+                    self.assertIn(item["fires"], OPERATORS)
+                    self.assertIn(item["kind"], ("warn", "target"))
+                    if not item.get("no_current"):
+                        self.assertIsInstance(self.measured(item["measure"]), (int, float))
 
     def test_the_peer_gap_is_counted_from_both_companies_numbers(self) -> None:
-        """The threshold this page cannot plot is still settled on numbers: the
-        peer's two printed comps less Marmaxx's, and "确实触发" only while both clear it."""
-        entry = next((e for e in self.source.get("prior_kpi", {}).get("not_plotted", [])
-                      if e["kind"] == "peer_gap"), None)
-        if entry is None:
-            self.assertNotIn("同业同期 comp 差距」需要另一家公司", text_of(self.payload))
-            return
-        own = self.source["comparable_sales_pct"]["marmaxx"][-len(entry["peer_comp_pct"]):]
-        gaps = [p - o for p, o in zip(entry["peer_comp_pct"], own)]
-        note = next(ex for ex in self.exhibits if ex["title"].startswith("上季设下的"))["note"]
-        self.assertIn(f"差距 {gaps[-1]:.0f}pp", note)
-        self.assertIn("确实触发" if min(gaps) >= entry["threshold_pp"] else "没有触发", note)
+        """Ross's printed comp less Marmaxx's, quarter by quarter, on the page's axis."""
+        chart = next(ex for ex in self.exhibits if ex["title"].startswith("Marmaxx 落后 Ross 的同店差距"))
+        gap = self.history("ross_gap")
+        self.assertEqual(chart["series"][0]["values"], gap)
+        self.assertEqual(len(chart["xlabels"]), len(self.periods))
+        ross = self.source["peer_comparable_sales_pct"]["ross"]
+        mmx = self.source["comparable_sales_pct"]["marmaxx"]
+        self.assertIn(f"本季 Ross {ross[-1]:+.0f}%、Marmaxx {mmx[-1]:+.0f}%", chart["note"])
+        self.assertTrue(chart["title"].startswith(f"Marmaxx 落后 Ross 的同店差距 {gap[-1]:.0f}pp："))
 
     # ── page wiring ──────────────────────────────────────────────────────────
     def test_exhibit_numbers_run_without_a_gap(self) -> None:
@@ -1160,7 +1286,8 @@ class TjxChecksTest(unittest.TestCase):
         self.assertEqual(st["operations"]["store_count"][-1], checks["store_count"])
         ytd = st["ytd_usd_m"]
         self.assertEqual(ytd["operating_cash_flow"][1], checks["ytd_operating_cash_flow_usd_m"])
-        self.assertEqual(ytd["capital_expenditures"][1], checks["ytd_property_additions_usd_m"])
+        self.assertEqual(fin["property_additions_ytd_usd_m"][-1], checks["ytd_property_additions_usd_m"])
+        self.assertNotIn("capital_expenditures", ytd, "read from the filed year-to-date series, not typed twice")
         fq = int(st["fiscal_labels"][-1][-1])
         self.assertEqual(sum(fin["net_sales_usd_m"][-fq:]), checks["ytd_net_sales_usd_m"])
         outlook = st.get("full_year_outlook")
@@ -1224,6 +1351,230 @@ class TjxChecksTest(unittest.TestCase):
             self.assertIn(f"{checks['long_term_store_target']:,}", stores["title"])
 
 
+class TjxSettlementTest(unittest.TestCase):
+    """Section one against the two local analyses, as `_checks["note"]` records them.
+
+    The note is typed from the reports -- the section-0 verdicts, the previous
+    report's section-8 lines and how this quarter's report read each one --
+    separately from the blocks the builder reads, and the builder never reads it.
+    Nothing here names a quarter or a figure: a roll re-keys the note, not this.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = load()
+        cls.note = cls.staging["_checks"]["note"]
+        cls.payload = build_payload(cls.staging)
+        cls.settled = next(s for s in cls.payload["sections"] if s["id"] == "settled")
+        cls.periods = cls.staging["periods"]
+
+    def test_the_reports_cover_this_quarter_and_the_one_before(self) -> None:
+        st, note = self.staging, self.note
+        self.assertEqual(note["report"], {"period_end": st["period_ends"][-1],
+                                          "release_date": st["release_dates"][-1]})
+        self.assertEqual(note["last_report"], {"period_end": st["period_ends"][-2],
+                                               "release_date": st["release_dates"][-2]})
+
+    def test_section_one_opens_with_what_last_quarter_left(self) -> None:
+        exhibits = self.settled["exhibits"]
+        closure = self.note["followup_closure"]
+        self.assertEqual(exhibits[0]["kind"], "bars_labeled")
+        self.assertTrue(exhibits[0]["title"].startswith(f"上季 {closure['total']} 条待验证问题："))
+        self.assertEqual(dict(zip(exhibits[0]["xlabels"], exhibits[0]["values"])), closure["counts"])
+        lines = [t for t in self.note["prior_thresholds"] if t["threshold"] != 0]
+        self.assertEqual(exhibits[1]["kind"], "diverging_bars")
+        self.assertTrue(exhibits[1]["title"].startswith(f"上季 {len(lines)} 条量化阈值："))
+        # then the settlement lines, then the company's own guidance record
+        kinds = [ex["kind"] for ex in exhibits]
+        first_band = kinds.index("range_band")
+        self.assertGreater(first_band, 2)
+        for exhibit in exhibits[2:first_band]:
+            with self.subTest(title=exhibit["title"][:30]):
+                self.assertEqual(exhibit["kind"], "lines")
+                self.assertRegex(exhibit["title"], r"(守住|击穿|达到|触发)上季")
+        self.assertNotIn("<", self.settled["title"] + self.settled["description"])
+
+    def test_the_closure_is_the_reports_section_zero(self) -> None:
+        closure = self.staging["followup_closure"]
+        note = self.note["followup_closure"]
+        self.assertEqual(len(closure["items"]), note["total"])
+        self.assertEqual([item["wording"] for item in closure["items"]], note["wordings"])
+        counts = {label: sum(1 for item in closure["items"] if item["verdict"] == label)
+                  for label in closure["labels"]}
+        self.assertEqual(counts, note["counts"])
+        # the rule the chart states: each item is counted under the verdict its wording opens with
+        for item in closure["items"]:
+            self.assertTrue(item["wording"].startswith(item["verdict"]), item["wording"])
+        table = next(t for t in self.payload["tables"] if "条待验证问题：问题、本季证据" in t["title"])
+        self.assertEqual([row[3] for row in table["rows"]], note["wordings"])
+        for row in table["rows"]:
+            self.assertIsNone(re.search(r"\{[a-z_]+\}", " ".join(row)), row[0])
+
+    def test_the_prior_lines_are_the_previous_reports_section_eight(self) -> None:
+        quantified = self.staging["prior_kpi"]["quantified"]
+        self.assertEqual(
+            [(e["row"], e["fires"], e["threshold"], e.get("consecutive", 1)) for e in quantified],
+            [(t["row"], t["fires"], t["threshold"], t.get("consecutive", 1)) for t in self.note["prior_thresholds"]])
+
+    def test_each_line_settles_the_way_the_report_read_it(self) -> None:
+        table = next(t for t in self.payload["tables"] if t["title"] == "上季第 8 节逐条结算（原始单位）")
+        self.assertEqual(len(table["rows"]), len(self.note["prior_thresholds"]))
+        for truth, row in zip(self.note["prior_thresholds"], table["rows"]):
+            with self.subTest(line=row[2]):
+                self.assertEqual(row[6] in ("触发", "达到"), truth["report_fired"])
+
+    def test_every_drawn_measure_is_drawn_against_its_lines(self) -> None:
+        drawn = [e for e in self.staging["prior_kpi"]["quantified"] if e["threshold"] != 0]
+        groups: dict[str, list[dict]] = {}
+        for entry in drawn:
+            groups.setdefault(entry["measure"], []).append(entry)
+        charted = [(measure, entries) for measure, entries in groups.items() if measure not in UNCHARTED]
+        charts = [ex for ex in self.settled["exhibits"] if ex["kind"] == "lines"]
+        self.assertEqual(len(charts), len(charted))
+        for chart, (measure, entries) in zip(charts, charted):
+            lines = chart["series"][-len(entries):]
+            with self.subTest(measure=measure):
+                self.assertEqual([series["values"][0] for series in lines], [e["threshold"] for e in entries])
+                for series in lines:
+                    self.assertEqual(series["values"], [series["values"][0]] * len(chart["xlabels"]))
+        overview = self.settled["exhibits"][1]
+        for entry in drawn:
+            if entry["measure"] in UNCHARTED:
+                self.assertIn(f"「{entry['metric']}」没有单独的线图", overview["note"])
+
+    def test_the_per_store_line_is_the_companys_and_names_its_scope_changes(self) -> None:
+        chart = next(ex for ex in self.settled["exhibits"] if ex["title"].startswith("每店库存同比"))
+        ops = self.staging["operations"]
+        self.assertEqual(chart["series"][0]["values"],
+                         [None if v is None else float(v) for v in ops["inventory_per_store_yoy_pct"]])
+        info = self.staging["inventory_per_store_note"]
+        for item in info["scope_changes"]:
+            self.assertIn(f"{item['from']} {item['change']}", chart["note"])
+        for period, value in zip(self.periods, ops["inventory_per_store_yoy_pct"]):
+            self.assertRegex(info["filings"][period], r"^\d{10}-\d{2}-\d{6}$", period)
+
+    def test_the_ross_series_is_read_from_ross_filings(self) -> None:
+        peer = self.staging["peer_comparable_sales_pct"]
+        self.assertEqual(len(peer["ross"]), len(self.periods))
+        self.assertEqual(sorted(peer["_sources"], key=order), self.periods)
+        for period, value in zip(self.periods, peer["ross"]):
+            source = peer["_sources"][period]
+            with self.subTest(period=period):
+                self.assertRegex(source["accession"], r"^0000745732-\d{2}-\d{6}$")
+                words = source["words"]
+                if value is None:
+                    self.assertRegex(words, r"not reporting|reopened|2019")
+                    continue
+                if "flat" in words:
+                    self.assertEqual(value, 0)
+                    continue
+                sign = -1 if re.search(r"down|declin|decreas", words) else 1
+                self.assertEqual(value, sign * int(re.search(r"(\d+)%", words).group(1)))
+
+    def verdict_of(self, staging: dict, metric: str) -> str:
+        payload = build_payload(staging)
+        table = next(t for t in payload["tables"] if t["title"] == "上季第 8 节逐条结算（原始单位）")
+        return next(row[6] for row in table["rows"] if row[2] == metric)
+
+    def test_a_run_line_fires_only_when_every_quarter_of_the_run_does(self) -> None:
+        """「连续两季 ≥8pp」: this quarter alone over the line is not enough."""
+        runs = [e for e in self.staging["prior_kpi"]["quantified"] if e.get("consecutive", 1) > 1]
+        if not runs:
+            return
+        entry = runs[0]
+        assert entry["measure"] == "ross_gap" and entry["fires"] == "≥", "the case below is built for this line"
+        both = copy.deepcopy(self.staging)
+        ross, mmx = both["peer_comparable_sales_pct"]["ross"], both["comparable_sales_pct"]["marmaxx"]
+        ross[-1], ross[-2] = mmx[-1] + entry["threshold"] + 1, mmx[-2] + entry["threshold"] + 1
+        self.assertEqual(self.verdict_of(both, entry["metric"]), "触发")
+        broken = copy.deepcopy(both)
+        broken["peer_comparable_sales_pct"]["ross"][-2] = mmx[-2] + entry["threshold"] - 1
+        self.assertEqual(self.verdict_of(broken, entry["metric"]), "未触发")
+
+    def test_a_joint_row_fires_only_when_both_legs_do(self) -> None:
+        """「comp <3% 且每店库存 >+5%」: one leg over its line is not a warning."""
+        legs = [e for e in self.staging["prior_kpi"]["quantified"] if e.get("joint")]
+        if not legs:
+            return
+        inventory = next(e for e in legs if e["measure"] == "inventory_per_store_yoy")
+        comp_leg = next(e for e in legs if e["measure"] == "comp_consolidated")
+        row = f"第 {inventory['row']} 行要两腿同时触发才算警示"
+
+        def overview(st: dict) -> str:
+            payload = build_payload(st)
+            return next(ex for ex in payload["sections"][0]["exhibits"] if ex["kind"] == "diverging_bars")["note"]
+        one = copy.deepcopy(self.staging)
+        one["operations"]["inventory_per_store_yoy_pct"][-1] = inventory["threshold"] + 1
+        one["comparable_sales_pct"]["consolidated"][-1] = comp_leg["threshold"] + 1
+        self.assertIn("），这一行未触发。", overview(one).split(row, 1)[1][:400])
+        both = copy.deepcopy(one)
+        both["comparable_sales_pct"]["consolidated"][-1] = comp_leg["threshold"] - 1
+        self.assertIn("），这一行触发。", overview(both).split(row, 1)[1][:400])
+
+    def test_the_next_lines_are_this_reports_section_eight(self) -> None:
+        block = self.staging["next_kpi"]
+        self.assertEqual(len(block["rows"]), self.note["next_rows"])
+        self.assertEqual([(e["row"], e["fires"], e["threshold"]) for e in block["quantified"]],
+                         [(t["row"], t["fires"], t["threshold"]) for t in self.note["next_thresholds"]])
+
+    def test_section_three_is_the_overview_then_one_chart_per_reading(self) -> None:
+        section = next(s for s in self.payload["sections"] if s["id"] == "next_quarter")
+        block = self.staging["next_kpi"]
+        bars = [e for e in block["quantified"] if e["threshold"] != 0 and not e.get("no_current")]
+        exhibits = section["exhibits"]
+        self.assertEqual(exhibits[0]["kind"], "diverging_bars")
+        self.assertTrue(exhibits[0]["title"].startswith(f"下季 {len(bars)} 条阈值："))
+        groups: dict[str, list[dict]] = {}
+        for entry in bars:
+            groups.setdefault(entry["measure"], []).append(entry)
+        charted = [(m, es) for m, es in groups.items() if m not in UNCHARTED]
+        self.assertEqual(len(exhibits) - 1, len(charted))
+        for chart, (measure, entries) in zip(exhibits[1:], charted):
+            with self.subTest(measure=measure):
+                self.assertEqual(chart["kind"], "lines")
+                self.assertIn("：下季阈值 ", chart["title"])
+                lines = chart["series"][-len(entries):]
+                self.assertEqual([s["values"][0] for s in lines], [e["threshold"] for e in entries])
+        # the section says how many lines it drew and names the rest
+        rest = [e for e in block["quantified"] if e not in bars]
+        self.assertIn(f"拆成 {len(block['quantified'])} 条线：{len(bars)} 条", section["description"])
+        for entry in rest:
+            row = f"第 {entry['row']} 行" if isinstance(entry["row"], int) else f"撤销条件{entry['row'][2:]}"
+            gap = " " if entry["line"][0].isascii() else ""
+            self.assertIn(f"{row}的{gap}{entry['line']}", section["description"])
+        self.assertNotIn("<", section["description"])
+
+    def test_the_working_capital_share_is_the_filed_lines(self) -> None:
+        """The report's cash-flow point, on the release's six working-capital lines."""
+        filed = self.staging["_checks"]["ytd_changes_in_assets_and_liabilities_usd_m"]
+        ytd = self.staging["ytd_usd_m"]
+        self.assertEqual([ytd[key][1] for key in ytd["working_capital_lines"]], filed["now"])
+        self.assertEqual([ytd[key][0] for key in ytd["working_capital_lines"]], filed["prior"])
+        self.assertEqual(ytd["operating_cash_flow"][::-1], filed["operating_cash_flow"])
+        working = sum(filed["now"]) - sum(filed["prior"])
+        share = working / (filed["operating_cash_flow"][0] - filed["operating_cash_flow"][1]) * 100
+        self.assertEqual(round(share, 1), self.note["working_capital_share_pct"])
+        chart = next(ex for section in self.payload["sections"] for ex in section["exhibits"]
+                     if ex["title"].startswith("资本强度："))
+        self.assertIn(f"合计贡献 ${working:,.0f}M（{share:.1f}%）", chart["note"])
+
+    def test_quarterly_capex_adds_up_to_each_fiscal_year(self) -> None:
+        """The quarters are differences of filed year-to-date figures; four of them
+        have to make the year each 10-K printed."""
+        st = self.staging
+        ytd = st["financials"]["property_additions_ytd_usd_m"]
+        labels = st["fiscal_labels"]
+        long = st["long_history"]
+        for year, capex in zip(long["fiscal_years"], long["capital_expenditures_usd_m"]):
+            q4 = [i for i, label in enumerate(labels) if label == f"{year}Q4"]
+            if q4:
+                with self.subTest(year=year):
+                    self.assertAlmostEqual(ytd[q4[0]], capex, delta=1.0)
+        for i in range(1, len(ytd)):
+            if not labels[i].endswith("Q1"):
+                self.assertGreaterEqual(ytd[i], ytd[i - 1], labels[i])
+
+
 class TjxRollTest(unittest.TestCase):
     """What a roll has to change in `series/tjx.json`, and what the page does when it does not.
 
@@ -1284,6 +1635,25 @@ class TjxRollTest(unittest.TestCase):
         misdated = copy.deepcopy(full)
         misdated["period_ends"][-1] = (day(misdated["period_ends"][-1]) + datetime.timedelta(days=2)).isoformat()
         cases["not a whole number of weeks"] = misdated
+        # the previous analysis's blocks: a line nobody can measure, a plan that was
+        # not recorded, a closure of the wrong quarter's questions, a verdict with no bar
+        unmeasured = copy.deepcopy(full)
+        unmeasured["prior_kpi"]["quantified"][0]["measure"] = "not_a_measure"
+        cases["prior_kpi entry"] = unmeasured
+        if any(e["measure"] == "fy_capex_plan_high" for e in full["prior_kpi"]["quantified"]):
+            planless = copy.deepcopy(full)
+            del planless["threshold_readings"]
+            cases["threshold_readings.fy_capex_plan_usd_bn"] = planless
+        if "followup_closure" in full:
+            misfiled = copy.deepcopy(full)
+            misfiled["followup_closure"]["set_in"] = "Q1 1999"
+            cases["settles what was set in 'Q1 1999'"] = misfiled
+            stray = copy.deepcopy(full)
+            stray["followup_closure"]["items"][0]["verdict"] = "不知道"
+            cases["are not among its labels"] = stray
+        comparatorless = copy.deepcopy(full)
+        comparatorless["prior_kpi"]["quantified"][0]["fires"] = "=="
+        cases["fires must be one of"] = comparatorless
         for message, staging in cases.items():
             with self.subTest(message=message):
                 with self.assertRaisesRegex(ValueError, re.escape(message)):
@@ -1294,9 +1664,9 @@ class TjxRollTest(unittest.TestCase):
         full = with_thresholds(self.source)
         blob = text_of(build_payload(full))
         probes = {
-            "prior_kpi": ["上季阈值核对（原始单位）", "上季设下的"],
+            "prior_kpi": ["上季第 8 节逐条结算（原始单位）", "条量化阈值：", "上季第 8 节：本季分析"],
             "next_kpi": ["下季阈值（原始单位）"],
-            "followup_closure": ["待验证问题的结清情况"],
+            "followup_closure": ["条待验证问题：", "问题、本季证据与报告原文判定"],
             "one_off_usd_m": ["本季每股收益"],
             "full_year_outlook": ["全年指引拆成"],
             "store_plan": ["长期目标刚从"],
@@ -1311,13 +1681,17 @@ class TjxRollTest(unittest.TestCase):
             bare = copy.deepcopy(full)
             del bare[key]
             if key == "full_year_outlook":
-                # what names a number read from the outlook goes with the outlook
-                bare.get("next_kpi", {})["not_plotted"] = [
-                    item for item in bare.get("next_kpi", {}).get("not_plotted", [])
-                    if "{raise}" not in item["why"]]
+                # what is read from the outlook goes with the outlook
+                for kpi in ("next_kpi", "prior_kpi"):
+                    if kpi in bare:
+                        bare[kpi]["quantified"] = [e for e in bare[kpi]["quantified"]
+                                                   if e["measure"] != "fy_raise_minus_beat"]
                 bare.pop("guidance", None)
             if key == "one_off_usd_m":
                 bare.pop("store_plan", None)
+            if "store_plan" not in bare:
+                # the follow-up evidence names the store plan's figures, so it goes with it
+                bare.pop("followup_closure", None)
             after = text_of(build_payload(bare))
             for text in texts:
                 if key == "store_plan" and full["store_plan"]["announced"] != full["release_dates"][-1]:
@@ -1506,24 +1880,25 @@ class TjxRollTest(unittest.TestCase):
 
         def carried(st):
             one_rising(st)
-            entry = next(e for e in st["prior_kpi"]["quantified"] if e["measure"] == "comp_consolidated")
-            entry["threshold"] = 4.0
+            # a target line on consolidated comp at 4%, reached this quarter
+            entry = next(e for e in st["prior_kpi"]["quantified"]
+                         if e["measure"] == "comp_consolidated" and e["kind"] == "target")
+            entry["fires"], entry["threshold"] = "≥", 4.0
 
         def not_carried(st):
             carried(st)
             st["comparable_sales_pct"]["canada"][-1] = 3.0
 
-        def q3_peaks(st):
-            ips = st["operations"]["inventory_per_store_usd_k"]
-            for i in range(len(ips) - 9, len(ips)):
-                ips[i] = 2000.0 + i if base["periods"][i].startswith("Q3") else 1400.0 + i
+        def gap_record(st):
+            # Ross's lead over Marmaxx in the last two quarters above every earlier one
+            ross, mmx = st["peer_comparable_sales_pct"]["ross"], st["comparable_sales_pct"]["marmaxx"]
+            ross[-2], ross[-1] = mmx[-2] + 19.0, mmx[-1] + 20.0
 
-        def q1_peak(st):
-            q3_peaks(st)
-            ips = st["operations"]["inventory_per_store_usd_k"]
-            first_q1 = next(i for i, label in enumerate(base["periods"])
-                            if ips[i] is not None and label.startswith("Q1"))
-            ips[first_q1] = 3000.0
+        def gap_not_record(st):
+            gap_record(st)
+            ross, mmx = st["peer_comparable_sales_pct"]["ross"], st["comparable_sales_pct"]["marmaxx"]
+            earlier = next(i for i in range(len(ross) - 2) if ross[i] is not None and mmx[i] is not None)
+            ross[earlier] = mmx[earlier] + 25.0
 
         cases = [
             (comp_clean, comp_miss, ["<b>一次都没有跌破过下限</b>", "一次没跌破过。"]),
@@ -1540,7 +1915,7 @@ class TjxRollTest(unittest.TestCase):
             (one_rising, two_rising, ["是唯一环比加速的分部", "（唯一加速的）"]),
             (both_beat, comp_inside, ["双双高于自身指引"]),
             (carried, not_carried, ["过线全靠 Marmaxx 以外的三个分部", "三强一弱"]),
-            (q3_peaks, q1_peak, ["两格的高点是进入假日季前的季节性备货"]),
+            (gap_record, gap_not_record, ["本季与上季是最大的两格"]),
         ]
         for make_true, break_it, claims in cases:
             true, broken = page(make_true), page(break_it)
@@ -1576,21 +1951,17 @@ class TjxRollTest(unittest.TestCase):
         rolled = with_thresholds(roll_forward(self.source))
         rolled["next_kpi"]["not_plotted"] = []
         payload = build_payload(rolled)
-        table = next(t for t in payload["tables"] if t["title"] == "上季阈值核对（原始单位）")
+        table = next(t for t in payload["tables"] if t["title"] == "上季第 8 节逐条结算（原始单位）")
         comp = rolled["comparable_sales_pct"]
-        ips = rolled["operations"]["inventory_per_store_usd_k"]
-        ytd = rolled["ytd_usd_m"]
-        fq = int(rolled["fiscal_labels"][-1][-1])
-        sales = sum(rolled["financials"]["net_sales_usd_m"][-fq:])
-        expected = {"comp_consolidated": comp["consolidated"][-1], "comp_marmaxx": comp["marmaxx"][-1],
-                    "gross_margin_adjusted": rolled["financials"]["gross_margin_pct"][-1],
-                    "pretax_margin_adjusted": rolled["financials"]["pretax_margin_pct"][-1],
-                    "homegoods_margin_adjusted": rolled["segment_margins_pct"]["homegoods_margin_pct"][-1],
-                    "inventory_per_store_yoy": (ips[-1] / ips[-5] - 1) * 100,
-                    "ytd_capex_intensity": ytd["capital_expenditures"][1] / sales * 100}
+        ross = rolled["peer_comparable_sales_pct"]["ross"]
+        expected = {"comp_consolidated": f"{comp['consolidated'][-1]:+.0f}%",
+                    "gross_margin_adjusted": f"{rolled['financials']['gross_margin_pct'][-1]:.1f}%",
+                    "inventory_per_store_yoy": f"{rolled['operations']['inventory_per_store_yoy_pct'][-1]:+.0f}%",
+                    "ross_gap": f"{ross[-1] - comp['marmaxx'][-1]:.0f}pp"}
+        self.assertEqual(len(table["rows"]), len(rolled["prior_kpi"]["quantified"]))
         for entry, row in zip(rolled["prior_kpi"]["quantified"], table["rows"]):
             with self.subTest(metric=entry["metric"]):
-                self.assertEqual(row[3], f"{expected[entry['measure']]:.1f}%")
+                self.assertEqual(row[4], expected[entry["measure"]].replace("-", "−"))
 
     def test_a_fiscal_fourth_quarter_rolls_and_reads_as_a_year(self) -> None:
         st = self.source
@@ -1618,6 +1989,121 @@ class TjxRollTest(unittest.TestCase):
         self.assertNotIn("累计 $", gce["note"])
         self.assertIn("跨季只能用累计口径", gce["note"])
         self.assertEqual(payload["title"], f"The TJX Companies (TJX)：{st['periods'][-1]} 季报仪表盘")
+
+
+def rolled_with_settlement(src: dict, marmaxx: float = 3.0) -> dict:
+    """Next quarter as a data-only roll leaves it: the arrays grow (`roll_forward`),
+    this quarter's `next_kpi` moves as it stands into `prior_kpi`, the next report's
+    section 0 judges five follow-ups, and the quarter's own outlook and readings are
+    written. Every figure is synthetic; the mechanics are the point."""
+    old = src["periods"][-1]
+    st = roll_forward(src)
+    new = st["periods"][-1]
+    st["comparable_sales_pct"]["marmaxx"][-1] = marmaxx
+    prior = copy.deepcopy(src["next_kpi"])
+    prior.update({"period": new, "set_in": old})
+    for row in prior["rows"]:
+        row.setdefault("report_reading", "演练")
+        row.setdefault("handling", "演练")
+    st["prior_kpi"] = prior
+    verdicts = ["已验证", "已验证", "部分验证", "未验证", "部分验证"]
+    st["followup_closure"] = {
+        "period": new, "set_in": old, "labels": ["已验证", "部分验证", "未验证"],
+        "rule": "演练：按原文措辞归类。",
+        "items": [{"n": i, "short": f"演练 {i}", "question": f"演练问题 {i}", "evidence": "演练证据",
+                   "wording": verdict, "verdict": verdict} for i, verdict in enumerate(verdicts, 1)]}
+    st["full_year_outlook"] = {
+        "period": new, "basis": "调整后", "ytd_eps_usd": 3.80, "prior_ytd_eps_usd": 3.30,
+        "prior_fy_eps_usd": 4.73, "fy_guide_usd": [5.25, 5.30], "prior_fy_guide_usd": [5.15, 5.20],
+        "quarter_guide_usd": [1.30, 1.32], "quarter_actual_usd": 1.36, "source": "演练"}
+    st["threshold_readings"] = {"period": new, "tariff_refund_net_eps_usd": 0.05}
+    following = copy.deepcopy(src["next_kpi"])
+    following["period"] = new
+    st["next_kpi"] = following
+    return st
+
+
+class TjxRollDrillTest(unittest.TestCase):
+    """The next quarter, rolled in memory by editing the series alone (CLAUDE.md §9).
+
+    What this quarter's report set for next quarter becomes next quarter's section
+    one: the builder has to settle every one of those lines -- including the three it
+    can only list today (the refund, the adjusted-EPS floor, the raise-versus-beat
+    difference) -- from the new quarter's own numbers, with no code change.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = load()
+        cls.rolled = rolled_with_settlement(cls.source)
+        cls.payload = build_payload(cls.rolled)
+        cls.settled = next(s for s in cls.payload["sections"] if s["id"] == "settled")
+
+    def test_the_rolled_quarter_builds_in_four_sections(self) -> None:
+        self.assertEqual([s["id"] for s in self.payload["sections"]],
+                         ["settled", "quarter_highlights", "next_quarter", "routine"])
+        self.assertTrue(all(s["exhibits"] for s in self.payload["sections"]))
+        self.assertIn(self.rolled["periods"][-1], self.payload["title"])
+        blob = text_of(self.payload)
+        self.assertIsNone(re.search(r"\{[a-z_]+\}|\{EX_", blob))
+
+    def test_section_one_opens_with_the_new_closure_and_last_quarters_lines(self) -> None:
+        exhibits = self.settled["exhibits"]
+        items = self.rolled["followup_closure"]["items"]
+        self.assertTrue(exhibits[0]["title"].startswith(f"上季 {len(items)} 条待验证问题：2 条已验证、2 条部分验证、1 条未验证"))
+        lines = [e for e in self.rolled["prior_kpi"]["quantified"] if e["threshold"] != 0]
+        # every line is measured now: the ones listed without a reading last quarter included
+        self.assertEqual(exhibits[1]["xlabels"], [e["metric"] for e in lines])
+        self.assertTrue(exhibits[1]["title"].startswith(f"上季 {len(lines)} 条量化阈值："))
+
+    def test_each_line_settles_on_the_new_quarters_reading(self) -> None:
+        st = self.rolled
+        comp, fin = st["comparable_sales_pct"], st["financials"]
+        fq = int(st["fiscal_labels"][-1][-1])
+        outlook = st["full_year_outlook"]
+        mid = lambda pair: (pair[0] + pair[1]) / 2  # noqa: E731
+        hg = st["segment_margins_pct"]["homegoods_margin_pct"][-1]
+        reading = {
+            "comp_marmaxx": comp["marmaxx"][-1],
+            "homegoods_margin_adjusted": hg,
+            "fy_raise_minus_beat": ((mid(outlook["fy_guide_usd"]) - mid(outlook["prior_fy_guide_usd"]))
+                                    - (outlook["quarter_actual_usd"] - mid(outlook["quarter_guide_usd"]))),
+            "tariff_refund_net_eps": st["threshold_readings"]["tariff_refund_net_eps_usd"],
+            "ytd_capex_intensity": fin["property_additions_ytd_usd_m"][-1] / sum(fin["net_sales_usd_m"][-fq:]) * 100,
+            "adjusted_eps": fin["diluted_eps_usd"][-1],
+            "ross_gap": st["peer_comparable_sales_pct"]["ross"][-1] - comp["marmaxx"][-1],
+        }
+        table = next(t for t in self.payload["tables"] if t["title"] == "上季第 8 节逐条结算（原始单位）")
+        for entry, row in zip(st["prior_kpi"]["quantified"], table["rows"]):
+            value = reading[entry["measure"]]
+            fired = OPERATORS[entry["fires"]](round(value, 6), entry["threshold"])
+            with self.subTest(line=entry["metric"]):
+                self.assertNotEqual(row[4], "—", "a line listed without a reading last quarter is measured now")
+                self.assertEqual(row[6], (("触发" if fired else "未触发") if entry["kind"] == "warn"
+                                          else ("达到" if fired else "未达到")))
+
+    def test_the_zero_line_and_the_uncharted_ones_are_named_with_their_readings(self) -> None:
+        overview = self.settled["exhibits"][1]
+        for entry in self.rolled["prior_kpi"]["quantified"]:
+            with self.subTest(line=entry["metric"]):
+                if entry["threshold"] == 0:
+                    self.assertIn(f"「{entry['metric']}」阈值是 0", overview["note"])
+                elif entry["measure"] in UNCHARTED:
+                    self.assertIn(f"「{entry['metric']}」没有单独的线图", overview["note"])
+        # the raise-versus-beat line prints both of its amounts
+        self.assertIn("指引中值上调 $0.10，当季超出指引中值 $0.05", overview["note"])
+
+    def test_a_stressed_quarter_fires_the_warning_lines(self) -> None:
+        """Marmaxx at zero: the cut line (≤+1%) fires and the add line (≥+2%) is not reached."""
+        stressed = build_payload(rolled_with_settlement(self.source, marmaxx=0.0))
+        table = next(t for t in stressed["tables"] if t["title"] == "上季第 8 节逐条结算（原始单位）")
+        verdicts = {row[2]: row[6] for row in table["rows"]}
+        by_id = {e["id"]: e for e in self.rolled["prior_kpi"]["quantified"]}
+        self.assertEqual(verdicts[by_id["marmaxx_cut"]["metric"]], "触发")
+        self.assertEqual(verdicts[by_id["marmaxx_add"]["metric"]], "未达到")
+        chart = next(ex for section in stressed["sections"] for ex in section["exhibits"]
+                     if ex["title"].startswith("Marmaxx 同店销售 +0%："))
+        self.assertIn("击穿上季减仓线 +1%", chart["title"])
 
 
 if __name__ == "__main__":
