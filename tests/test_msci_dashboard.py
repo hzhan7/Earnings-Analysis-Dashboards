@@ -61,6 +61,21 @@ def current_of(staging: dict, reads: str) -> float:
     return series_path(staging, reads)[-1]
 
 
+def actual_of(staging: dict, entry: dict) -> float:
+    """A settled threshold's value, recomputed here: typed ones as typed, net new
+    growth as the company printed it (or from the two levels where it did not)."""
+    if "actual" in entry:
+        return entry["actual"]
+    om = staging["operating_metrics"]
+    if entry["reads"] == "net_new_yoy":
+        printed = om["net_new_recurring_sales_yoy_printed_pct"][-1]
+        if printed is not None:
+            return printed
+        levels = om["net_new_recurring_sales_usd_m"]
+        return pct(levels[-1], levels[-5])
+    return current_of(staging, entry["reads"])
+
+
 def settled_years(staging: dict) -> list[int]:
     items = staging["annual_guidance_history"]["items"]
     return [year for year in staging["annual_guidance_history"]["years"]
@@ -83,7 +98,7 @@ def tally(staging: dict, key: str, vintage: int) -> tuple[int, int, int, int]:
 
 PLACEHOLDER = r"\{[A-Za-z_]+(?::[a-z_]+)?\}"
 # The blocks that describe one quarter.
-QUARTER_BLOCKS = ("guidance_update", "next_kpi")
+QUARTER_BLOCKS = ("guidance_update", "next_kpi", "followup_closure", "prior_kpi_settlement")
 
 
 class MsciDashboardTest(unittest.TestCase):
@@ -315,6 +330,43 @@ class MsciDashboardTest(unittest.TestCase):
             self.assertAlmostEqual(sum(values), om["run_rate_total_usd_m"][index],
                                    delta=0.2, msg=quarter)
 
+    def test_the_etf_flows_close_the_aum_stock_every_quarter(self) -> None:
+        """Table 7 prints begin + market + inflows = end; the flows are read from
+        one column and the stock from another, so they must still close. The
+        release printed a tenth of a billion until it switched to whole billions,
+        which is the one place the closure misses by a rounding step."""
+        om = self.staging["operating_metrics"]
+        aum, market, inflow = (om["aum_period_end_usd_b"], om["etf_market_appreciation_usd_b"],
+                               om["etf_cash_inflows_usd_b"])
+        for index in range(1, len(aum)):
+            self.assertAlmostEqual(aum[index] - aum[index - 1], market[index] + inflow[index],
+                                   delta=0.35, msg=om["quarters"][index])
+
+    def test_printed_net_new_growth_agrees_with_the_levels(self) -> None:
+        """Where the company printed the growth rate it is the page's figure; the
+        two levels it is compared with are each from their own release, so the
+        ratio may miss by the printed step and a small restatement -- not more."""
+        om = self.staging["operating_metrics"]
+        levels, printed = om["net_new_recurring_sales_usd_m"], om["net_new_recurring_sales_yoy_printed_pct"]
+        compared = 0
+        for index, rate in enumerate(printed):
+            if rate is None:
+                continue
+            compared += 1
+            self.assertAlmostEqual(pct(levels[index], levels[index - 4]), rate, delta=0.5,
+                                   msg=om["quarters"][index])
+        self.assertGreater(compared, 0)
+
+    def test_the_printed_analytics_growth_is_the_ratio_of_the_segment_revenues(self) -> None:
+        """The long printed growth line and the eight-quarter segment levels are two
+        readings of Table 5; where both exist they must agree at the printed tenth."""
+        om = self.staging["operating_metrics"]
+        revenue = self.staging["segments_usd_m"]["analytics"]["revenue"]
+        growth = om["revenue_growth_analytics_pct"][-len(revenue):]
+        for index in range(4, len(revenue)):
+            self.assertAlmostEqual(pct(revenue[index], revenue[index - 4]), growth[index], delta=0.051,
+                                   msg=self.staging["periods"][index])
+
     def test_the_long_series_runs_contiguously_from_2016_to_the_page_quarter(self) -> None:
         quarters = self.staging["operating_metrics"]["quarters"]
         self.assertEqual(quarters[0], "2016Q1")
@@ -524,7 +576,15 @@ class MsciChecksTest(unittest.TestCase):
                             ("basis_point_fee", "aum_basis_point_fee"),
                             ("run_rate_total_usd_m", "run_rate_total_usd_m"),
                             ("run_rate_recurring_usd_m", "run_rate_recurring_usd_m"),
-                            ("run_rate_abf_usd_m", "run_rate_abf_usd_m")):
+                            ("run_rate_abf_usd_m", "run_rate_abf_usd_m"),
+                            ("net_new_recurring_sales_usd_m", "net_new_recurring_sales_usd_m"),
+                            ("net_new_recurring_sales_yoy_pct", "net_new_recurring_sales_yoy_printed_pct"),
+                            ("etf_market_appreciation_usd_b", "etf_market_appreciation_usd_b"),
+                            ("etf_cash_inflows_usd_b", "etf_cash_inflows_usd_b"),
+                            ("retention_rate_sustainability_pct", "retention_rate_sustainability_pct"),
+                            ("analytics_revenue_growth_pct", "revenue_growth_analytics_pct"),
+                            ("private_assets_organic_revenue_growth_pct",
+                             "organic_revenue_growth_private_assets_pct")):
             with self.subTest(key=key):
                 self.assertAlmostEqual(om[series][-1], c[key], places=6)
 
@@ -559,6 +619,16 @@ class MsciChecksTest(unittest.TestCase):
                                          f"收入 +{c['revenue_yoy_pct']:.1f}%") for t in titles))
         self.assertTrue(any(f"Index {c['segment_adj_ebitda_margin_pct']['index']:.1f}%" in t for t in titles))
         self.assertEqual(msci.headline_metrics(self.staging)[0], f"Revenue ${c['revenue_usd_m']:.0f}M")
+        closure = next(ex for ex in exhibits(self.payload) if ex["kind"] == "bars_labeled")
+        self.assertIn(f"本季 US${c['net_new_recurring_sales_usd_m']:.1f}M，同比 +{c['net_new_recurring_sales_yoy_pct']:.1f}%",
+                      closure["note"])
+        self.assertIn(f"现金净流入 US${c['etf_cash_inflows_usd_b']:.0f}B", closure["note"])
+        self.assertIn(f"Sustainability and Climate 分部留存率 {c['retention_rate_sustainability_pct']:.1f}%",
+                      closure["note"])
+        self.assertTrue(any(t.startswith(f"Analytics 收入同比本季 +{c['analytics_revenue_growth_pct']:.1f}%")
+                            for t in titles))
+        self.assertTrue(any(t.startswith(f"Private Assets 分部有机收入增速本季 +"
+                                         f"{c['private_assets_organic_revenue_growth_pct']:.1f}%") for t in titles))
 
     def test_the_revision_chart_moves_by_the_checked_guidance(self) -> None:
         """The chart's net move runs from the year's first range to the current
@@ -575,6 +645,86 @@ class MsciChecksTest(unittest.TestCase):
             self.assertIn(f"营业费用中值{verb} {move['operating_expense']:+.1f}%", chart["title"])
             self.assertIn(f"{move['free_cash_flow']:+.1f}%", chart["title"])
             self.assertIn(f"本季（{c['release_date']}）", chart["note"])
+
+
+class MsciReportFactsTest(unittest.TestCase):
+    """What the two local analyses say, held against what the page publishes.
+
+    `_checks["note"]` is a reading of the analyses themselves -- this quarter's
+    section 0 (the follow-up closure) and last quarter's section 8 (the
+    thresholds due now) -- typed apart from the stamped blocks the builder reads,
+    so a roll that edits one and not the other turns this red. A roll edits the
+    series file only: the expected values live there, not in this file.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(msci.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.note = cls.staging["_checks"]["note"]
+        cls.payload = msci.build_payload(cls.staging)
+        cls.settled = cls.payload["sections"][0]["exhibits"]
+
+    def test_the_note_names_both_analyses_and_when_it_was_read(self) -> None:
+        self.assertTrue(self.note["source"])
+        self.assertTrue(self.note["checked_on"])
+        self.assertIn(self.staging["latest"]["period"], self.note["source"])
+
+    def test_the_closure_counts_are_the_analysis_counts(self) -> None:
+        closure = next(ex for ex in self.settled if ex["kind"] == "bars_labeled")
+        expected = self.note["closure"]
+        self.assertEqual(sum(closure["values"]), expected["total"])
+        self.assertEqual({label: count for label, count in zip(closure["xlabels"], closure["values"]) if count},
+                         expected["counts"])
+        self.assertTrue(closure["title"].startswith(f"上季 {expected['total']} 条待验证问题："))
+        items = self.staging["followup_closure"]["items"]
+        self.assertEqual([item["verdict"] for item in items], expected["verdicts"])
+        for verdict in expected["verdicts"]:
+            self.assertIn(f"<b>{verdict}</b>", closure["note"])
+
+    def test_every_prior_threshold_the_analysis_set_is_settled_or_explained(self) -> None:
+        block = self.staging["prior_kpi_settlement"]
+        by_id = {e["id"]: e for e in block["quantified"] + block.get("precision_limited", [])}
+        self.assertEqual(sorted(by_id), sorted(e["id"] for e in self.note["prior_thresholds"]))
+        for expected in self.note["prior_thresholds"]:
+            entry = by_id[expected["id"]]
+            with self.subTest(threshold=expected["id"]):
+                self.assertEqual((entry["threshold"], entry["direction"]),
+                                 (expected["threshold"], expected["direction"]))
+        self.assertEqual(len(block.get("not_due", [])), len(self.note["prior_not_due"]))
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("上季量化阈值的结算"))
+        self.assertEqual(len(table["rows"]), len(by_id) + len(block.get("not_due", []))
+                         + len(block.get("unquantified", [])))
+
+    def test_the_prior_headroom_bars_are_the_thresholds_against_this_quarter(self) -> None:
+        block = self.staging["prior_kpi_settlement"]
+        bar = next(ex for ex in self.settled if ex["kind"] == "diverging_bars")
+        self.assertEqual(bar["xlabels"], [e["metric"] for e in block["quantified"]])
+        for entry, value in zip(block["quantified"], bar["values"]):
+            with self.subTest(threshold=entry["id"]):
+                self.assertAlmostEqual(headroom(entry["direction"], entry["threshold"],
+                                                actual_of(self.staging, entry)), value, places=1)
+        held = sum(1 for value in bar["values"] if value >= 0)
+        self.assertTrue(bar["title"].startswith(
+            f"上季 {len(block['quantified'])} 条量化阈值：{held} 条守住、{len(block['quantified']) - held} 条击穿"))
+
+    def test_every_settled_series_draws_all_its_thresholds(self) -> None:
+        block = self.staging["prior_kpi_settlement"]
+        drawn = {}
+        for entry in block["quantified"]:
+            if entry.get("chart"):
+                drawn.setdefault(entry["reads"], []).append(entry)
+        lines = [ex for ex in self.settled if ex["kind"] == "lines"]
+        self.assertEqual(len(lines), len(drawn))
+        for chart, group in zip(lines, drawn.values()):
+            flat = [s["values"][0] for s in chart["series"][1:]]
+            self.assertEqual(flat, [e["threshold"] for e in group], chart["title"])
+
+    def test_section_one_runs_closure_then_thresholds_then_the_company_record(self) -> None:
+        kinds = [ex["kind"] for ex in self.settled]
+        self.assertEqual(kinds[:2], ["bars_labeled", "diverging_bars"])
+        first_band = kinds.index("range_band")
+        self.assertTrue(all(kind == "lines" for kind in kinds[2:first_band]))
+        self.assertEqual(kinds[first_band:], ["range_band", "grouped_bars"] * 3)
 
 
 def rolled_back(staging: dict) -> dict:
@@ -691,7 +841,7 @@ class MsciRollTest(unittest.TestCase):
     """What a roll can change without touching the builder."""
 
     # Words that exist only because a stamped block said them.
-    STORY_ONLY = ("4 月只把折旧摊销", "利息与折旧摊销", "判断为可吸收")
+    STORY_ONLY = ("4 月只把折旧摊销", "利息与折旧摊销", "判断为可吸收", "条待验证问题", "上季分析稿第 8 节")
 
     @classmethod
     def setUpClass(cls) -> None:
