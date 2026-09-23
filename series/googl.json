@@ -563,8 +563,54 @@
     "operating_eps_high": 2.91,
     "operating_eps_mid": 2.89,
     "revenue_usd_m": 117000,
-    "post_earnings_price_change_pct": -4.9,
-    "search_yoy_pct": 17
+    "post_earnings_price_change_pct": -4.9
+  },
+  "capital_allocation": {
+    "period": "Q2 2026",
+    "_note": "本季现金流量表里融资与投资的几行，取自 Q2 2026 EX-99.1（acc 0001652044-26-000066）现金流量表「Quarter Ended June 30, 2026」一列，单位 US$M，流入为正、流出为负。资本开支与回购不在这里存，由 builder 从 long_history 与 quarterly 读。first_time 是只属于这一季的事实：发行普通股与强制可转优先股两行本季第一次出现（见 first_time_source）。",
+    "sources": [
+      {
+        "label": "发行普通股",
+        "kind": "equity",
+        "value": 30499,
+        "line": "Proceeds from issuance of common stock, net of costs"
+      },
+      {
+        "label": "发行强制可转优先股",
+        "kind": "equity",
+        "value": 19063,
+        "line": "Proceeds from issuance of mandatory convertible preferred stock, net of costs"
+      },
+      {
+        "label": "发债净额",
+        "kind": "debt",
+        "value": 21071,
+        "line": "Proceeds from issuance of debt, net of costs 24,847 − Repayments of debt 3,776"
+      }
+    ],
+    "uses": [
+      {
+        "label": "买入非上市股权证券",
+        "value": -21145,
+        "line": "Purchases of non-marketable securities"
+      },
+      {
+        "label": "股权激励相关税款",
+        "value": -6573,
+        "line": "Net payments related to stock-based award activities"
+      },
+      {
+        "label": "股息",
+        "value": -2689,
+        "line": "Dividend payments"
+      }
+    ],
+    "first_time": "「发行普通股」与「发行强制可转优先股」两行本季第一次出现在 Alphabet 的现金流量表上——Alphabet 2015 年组建以来的申报里这两个科目此前没有非零值；上一次公开增发普通股是 Google 2005 年 9 月那次（14,159,265 股、每股 $295）",
+    "first_time_source": "XBRL companyfacts（CIK 1652044）：ProceedsFromIssuanceOfCommonStock 与 ProceedsFromIssuanceOfConvertiblePreferredStock 的非零值只出现在 2026 年 Q2 的 10-Q；上一次公开增发普通股是 Google Inc. 2005-09-14 的 14,159,265 股 A 类股（每股 $295，424B4 acc 0001193125-05-186028），所以「史上首次增发」不成立，只是 Alphabet 组建以来的第一次。",
+    "equity_markets_quote": "At this point, we're not planning to go back to the equity markets",
+    "equity_markets_source": "Q2 2026 电话会 CFO 回答 JPMorgan 关于资本结构的提问（ATM 计划除外，用于员工股权激励的税款）。",
+    "atm_capacity_usd_bn": 40.0,
+    "atm_source": "Q2 2026 10-Q 附注「At-the-Market Program」：2026-06-01 签订，aggregate sales proceeds of up to $40.0 billion。"
   },
   "capex_guidance_history": {
     "calls": [
@@ -1034,7 +1080,7 @@
         "direction": "up",
         "threshold": 35000.0,
         "unit": "usd_m",
-        "why": "本季分析判定这条线失效并退役：它可以被增发直接绕过（本季正是增发让它远离阈值），现金与有价证券里还含权益证券，口径已失真；替代它的是下季的 TTM 自由现金流与 ATM 发行额两条"
+        "why": "本季分析判定这条线失效并退役：它可以被增发直接绕过，而且有价证券里含上市权益证券——6 月 30 日有 $87,063M，其中 $80.0B 是有出售限制的 SpaceX 股份（Q2 2026 10-Q 公允价值表），本季的读数主要是它们推高的；替代它的是下季的 TTM 自由现金流与 ATM 发行额两条"
       }
     ],
     "conditions": [
@@ -2614,7 +2660,14 @@
   "quarter_story": {
     "period": "Q2 2026",
     "youtube_driver": "由世界杯驱动，下季无对应赛事",
-    "backlog_reading": "{prev_q} 的 +{prev_add} 是一次性大单，{cur_q} 的 +{add} 才是常态化水平。TPU 系统销售已计入 backlog，但公司拒绝给出占比。",
+    "search_outlook": "CFO 在电话会上预告 Q3 会「begin lapping an acceleration in Search performance that began in the third quarter last year」，汇率也由 Q2 约 1 个百分点的顺风转为小幅逆风、主要落在 Search 与 YouTube 广告上（电话会口径）",
+    "search_outlook_source": "Q2 2026 电话会（2026-07-22）CFO 展望段，逐字核对过电话会全文稿。",
+    "search_brief": "CFO 预告 Q3 要跨过去年 Q3 起的 Search 加速基数，汇率也转为小幅逆风（电话会口径）。",
+    "services_reading": "本季分析把 Services 利润率的环比回落读作「结构性季节现象」（Q2 有世界杯内容成本与营销投放），依据是 2025 年 Q1→Q2 也回落了 2.24pp",
+    "services_reading_source": "2026-07-22 本地分析 3.2 节。",
+    "undrawn": "画不了的：剔权益收益后的有效税率约 {tax_rate_now}（本季分析自评信心 3/5——公司给的是权益收益带来的增量税项，与剔除后的有效税率不必同口径），放在第三板块当阈值跟踪；折旧墙与 FY2026 全年自由现金流是分析里的模型推算，不是申报数；backlog 客户集中度与权益收益的标的只见于外部报道，公司从未披露，2026-07-23 申报的 10-Q 也没有；TPU 系统收入 10-Q 只说本季开始确认、没有金额；供给约束、第三方产能过桥与 Gemini Enterprise 换指标是电话会叙述；Waymo 本季没有任何量化披露。",
+    "undrawn_source": "2026-07-22 本地分析第 1、3、7、9 节。",
+    "backlog_reading": "按本季分析的读法，{prev_q} 的 +{prev_add} 是少数超大型多年协议（含 TPU 系统销售协议）一次性入账，{cur_q} 的 +{add} 才是常态化的新签水平。公司只说 TPU 系统销售已计入 backlog，拒绝给出占比。",
     "backlog_brief": "TPU 已计入，公司拒绝给占比。",
     "fcf_context": "本季所得税现金流实为净流入，转负不能用季节性解释。",
     "fcf_context_source": "Q2 2026 EX-99.1 现金流量表「Income taxes, net」本季 203（正数 = 经营现金流入）。"

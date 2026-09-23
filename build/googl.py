@@ -737,7 +737,9 @@ def build_payload(staging: dict) -> dict:
             step = round(eps[-1] - eps[-2], 2)
             reading = (f"剔权益收益 EPS 本季 ${eps[-1]:.2f}、上季 ${eps[-2]:.2f}，环比 "
                        f"{'+' if step >= 0 else '−'}${abs(step):.2f}")
-            return reading, ("未触发" if step > 0 else "不增长一季，还差一季")
+            # The snapshot carries this quarter and the one before, so one step is all
+            # the page can see; a second flat step would be on last quarter's page.
+            return reading, ("未触发" if step > 0 else "本季环比不增长，是否已连续两季要对照上一季的页面")
         if reads == "cloud_opm_two_down":
             steps = [round(b, 2) - round(a, 2) for a, b in zip(long_cloud_opm[-3:-1], long_cloud_opm[-2:])]
             falling = 0
@@ -914,7 +916,11 @@ def build_payload(staging: dict) -> dict:
     settled_charts = [closure_chart, prior_overview] + prior_charts
 
     # ── section two: the quarter ────────────────────────────────────────────
+    # One chart per conclusion of this quarter's analysis (sections 1, 3 and 7)
+    # that filed numbers can draw, in the analysis's order: what drove the
+    # quarter, then the arithmetic under the headline, then cash and capital.
     highlights: list[dict] = []
+    topics: list[str] = []
 
     # Cloud: growth and margin together.
     joint = 0
@@ -934,16 +940,18 @@ def build_payload(staging: dict) -> dict:
         together = "两条线本季没有同向上行；"
     eight_back = long_cloud_opm[-1 - WINDOW] if len(long_cloud_opm) > WINDOW else None
     opm_record = [value for value in long_cloud_opm if value is not None]
+    cloud_accel = rising_streak(long_cloud_yoy, 1)
+    opm_streak = rising_streak(long_cloud_opm, 2)
+    cloud_pace = (f"增速连续{cn_count(cloud_accel)}季加快" if cloud_accel >= 2 else
+                  "增速本季加快" if cloud_accel == 1 else "增速本季没有加快")
+    opm_pace = (f"利润率连续{cn_count(opm_streak)}季上升" if opm_streak >= 2 else
+                "利润率本季上升" if opm_streak == 1 else "利润率本季没有上升")
     highlights.append({
         # Growth and margin are the two curves that decide this segment; the
         # revenue level is a scale fact and belongs in the note, not the axis.
         "kind": "lines",
-        "title": (
-            f"Cloud 增速本季 {cloud_yoy_now:.1f}%，"
-            f"利润率 {cloud_opm_now:.2f}%；"
-            f"两条线自己的记录起点分别是 "
-            f"{line_labels[leading_gap(long_cloud_yoy)]} 与 {seg['quarters'][0]}"
-        ),
+        "title": (f"Cloud 增速本季 {cloud_yoy_now:.1f}%、利润率 {cloud_opm_now:.2f}%："
+                  f"{cloud_pace}，{opm_pace}"),
         "xlabels": line_labels,
         "xstep": LONG_STEP,
         "series": [
@@ -969,6 +977,7 @@ def build_payload(staging: dict) -> dict:
         ),
         "src_extra": source_note("Cloud 收入与经营利润来自公司分部表；同比与 OPM 为自算"),
     })
+    topics.append("Cloud 的增速与利润率")
 
     # Search and YouTube.
     def below_zero(values: list[float | None], name: str) -> str:
@@ -988,13 +997,9 @@ def build_payload(staging: dict) -> dict:
     recent_dip = any(value is not None and value < 0
                      for value in long_search_yoy[-WINDOW:] + long_youtube_yoy[-WINDOW:])
     search_yoy_values = [value for value in long_search_yoy if value is not None]
-    if consensus is not None and "search_yoy_pct" in consensus:
-        expected = consensus["search_yoy_pct"]
-        gap = search_yoy_now - expected
-        verdict_words = "属符合" if abs(gap) < 0.5 else ("高于预期" if gap > 0 else "低于预期")
-        expectation = f"市场预期约 {expected:+d}%，{verdict_words}；"
-    else:
-        expectation = ""
+    # At the one decimal the page prints, so a step that rounds to zero is 「持平」.
+    search_pace = ("放缓" if round(search_step, 1) < 0 else "加快" if round(search_step, 1) > 0 else "持平")
+    search_move = ("与上季持平" if search_pace == "持平" else f"比上季{search_pace} {abs(search_step):.1f}pp")
     youtube_now = long_youtube_yoy[-1]
     youtube_driver = story.get("youtube_driver")
     both_dipped = [name for name, values in (("Search", long_search_yoy), ("YouTube", long_youtube_yoy))
@@ -1002,8 +1007,8 @@ def build_payload(staging: dict) -> dict:
     highlights.append({
         "kind": "lines",
         "title": (
-            f"Search 增速本季 {search_yoy_now:.1f}%；"
-            f"{cn_count(len(line_quarters) // 4)}年的窗口里它"
+            f"Search 增速本季 {search_yoy_now:.1f}%，{search_move}；"
+            f"{cn_count(len(line_quarters) // 4)}年里它"
             + (f"跌破过零{cn_count(len(search_dips))}次，最低 {min(search_yoy_values):.1f}%"
                if search_dips else f"没有跌破过零，最低 {min(search_yoy_values):.1f}%")
         ),
@@ -1020,8 +1025,9 @@ def build_payload(staging: dict) -> dict:
         "end_label": True,
         "ylab": "同比增速",
         "note": (
-            f"Search {'减速' if search_step < 0 else '加速'} {abs(search_step):.1f}pp，"
-            + expectation
+            (f"Search 同比由 {long_search_yoy[-2]:.1f}% {search_pace}到 {search_yoy_now:.1f}%"
+             if search_pace != "持平" else f"Search 同比与上季同为 {search_yoy_now:.1f}%")
+            + (f"；{html_text(story['search_outlook'])}。" if story.get("search_outlook") else "。")
             + f"YouTube {youtube_now:+.1f}%"
             + (f" {youtube_driver}。" if youtube_driver else "。")
             + ("<b>八季的窗口里这两条线只是高低起伏，" if not recent_dip else "<b>")
@@ -1033,8 +1039,61 @@ def build_payload(staging: dict) -> dict:
             + f"起点 {line_quarters[0]} 是披露底：更早的季度公司没有按这套"
             "分类披露过收入。"
         ),
-        "src_extra": source_note("分项收入与同比来自公司季度 release；市场预期为财报前一致预期，不具名"),
+        "src_extra": source_note("分项收入来自公司季度 release，同比为自算；展望与世界杯是电话会口径"),
     })
+    topics.append(f"Search {search_pace}")
+
+    # Google Services' margin: the step into this quarter, against the same step
+    # in every earlier year of the current allocation.
+    seg_quarters = seg["quarters"]
+    seg_labels = [quarter_label(quarter) for quarter in seg_quarters]
+    services_margin = [oi / line_at["google_services"][quarter] * 100
+                       for quarter, oi in zip(seg_quarters, seg["oi_google_services"])]
+    total_margin = [oi / revenue_at[quarter] * 100 for quarter, oi in zip(seg_quarters, seg["oi_total"])]
+    step_into = [(seg_quarters[i][:4], round(services_margin[i], 2) - round(services_margin[i - 1], 2))
+                 for i in range(1, len(seg_quarters)) if seg_quarters[i][4:] == seg_quarters[-1][4:]]
+    services_step = step_into[-1][1]
+    earlier_steps = step_into[:-1]
+    fell = [year for year, step in earlier_steps if step < 0]
+    rose = [year for year, step in earlier_steps if step > 0]
+    services_yoy = round(services_margin[-1], 2) - round(services_margin[-5], 2)
+    step_name = f"{quarter_label(seg_quarters[-2])[:2]}→{quarter_label(seg_quarters[-1])[:2]}"
+    if not earlier_steps:
+        seasonal = ""
+    elif fell and not rose:
+        seasonal = f"；同一步（{step_name}）此前{cn_count(len(earlier_steps))}年都是回落"
+    elif not fell:
+        seasonal = f"；同一步（{step_name}）此前{cn_count(len(earlier_steps))}年没有一年回落"
+    else:
+        seasonal = (f"；同一步（{step_name}）此前{cn_count(len(earlier_steps))}年里"
+                    f"{cn_count(len(fell))}年回落、{cn_count(len(rose))}年上升")
+    reading = story.get("services_reading")
+    highlights.append({
+        "kind": "lines",
+        "title": (f"Services 经营利润率本季 {services_margin[-1]:.2f}%：环比 {services_step:+.2f}pp、"
+                  f"同比 {services_yoy:+.2f}pp" + seasonal),
+        "xlabels": seg_labels,
+        "series": [
+            {"name": "Google Services 经营利润率 D", "values": services_margin, "color": "NAVY"},
+            {"name": "Alphabet 经营利润率 D", "values": total_margin, "color": "GRAY"},
+        ],
+        "fmt": "pct1",
+        "yfmt": "pct1",
+        "label_fmt": "pct1",
+        "end_label": True,
+        "ylab": "经营利润率",
+        "note": (
+            (html_text(reading) + "。" if reading else "")
+            # Weighed against the record only where the analysis made the seasonal claim.
+            + (f"<b>现行分摊口径的记录只在一部分年份支持「季节性」这个读法</b>：同一步回落的是 "
+               + "、".join(fell) + "，上升的是 " + "、".join(rose) + "。" if reading and fell and rose else "")
+            + f"同比看本季 {services_yoy:+.2f}pp；Alphabet 整体经营利润率本季 {total_margin[-1]:.2f}%。"
+            f"记录始于 {seg_quarters[0]} —— 现行分部成本分摊只追溯到这一季。"
+        ),
+        "src_extra": source_note("分部经营利润与分部收入来自各期分部表，利润率为自算"),
+    })
+    topics.append("Services 利润率的环比"
+                  + ("回落" if round(services_step, 2) < 0 else "上升" if round(services_step, 2) > 0 else "持平"))
 
     # Backlog.
     level_now, add_now, add_before = backlog_levels[-1], backlog_net_add[-1], backlog_net_add[-2]
@@ -1044,9 +1103,24 @@ def build_payload(staging: dict) -> dict:
     level_words = (f"backlog 创 ${level_now:.0f}B 新高" if backlog_record else
                    f"backlog ${level_now:.0f}B，低于 {backlog_quarters[peak_at]} 的 "
                    f"${backlog_levels[peak_at]:.0f}B")
-    add_words = (f"单季净增从 ${add_before:.0f}B {'降' if add_fell else '升'}到 ${add_now:.0f}B")
+    def bn0(value: float) -> str:
+        """``-124.2`` → ``'-$124B'``: the sign in front of the currency, as the headline writes it."""
+        return f"{'-' if value < 0 else ''}${abs(value):.0f}B"
+    add_words = (f"单季净增从 {bn0(add_before)} {'降' if add_fell else '升'}到 {bn0(add_now)}")
     opposite = (level_now > backlog_levels[-2]) and add_fell
-    reading = story.get("backlog_reading")
+    backlog_story = story.get("backlog_reading")
+    change_at = backlog["basis_change_at"]
+    basis_words = ""
+    if change_at in backlog_quarters[1:] and backlog.get("total_usd_bn", {}).get(change_at) is not None:
+        at = backlog_quarters.index(change_at)
+        total_then = backlog["total_usd_bn"][change_at]
+        short_term = backlog.get("short_term_usd_bn") if backlog.get("short_term_included_at") == change_at else None
+        basis_words = (f"{change_at} 那一格跨了口径：公司从那一季起单列 Cloud 的部分（公司总额 ${total_then:.1f}B、"
+                       f"其中 Cloud ${backlog_levels[at]:.1f}B）"
+                       + (f"，并把一年以内的合同也算进来（当季约 ${short_term:.1f}B）；按旧口径同口径（公司总额、"
+                          f"扣掉一年以内合同）那一季的净增约 ${total_then - short_term - backlog_levels[at - 1]:.1f}B"
+                          if short_term is not None else "")
+                       + "。")
     highlights.append({
         "kind": "bar_line",
         "title": level_words + ("，但" if opposite else "，") + add_words,
@@ -1070,9 +1144,10 @@ def build_payload(staging: dict) -> dict:
         "ylab2": "单季净增 $B",
         "note": (
             ("余额与净增方向相反：" if opposite else "")
-            + (reading.format(prev_q=periods[-2].split()[0], cur_q=quarter_word,
-                              prev_add=f"${add_before:.0f}B", add=f"${add_now:.0f}B")
-               if reading else f"单季净增 ${add_now:.0f}B。")
+            + (backlog_story.format(prev_q=periods[-2].split()[0], cur_q=quarter_word,
+                                    prev_add=f"${add_before:.0f}B", add=f"${add_now:.0f}B")
+               if backlog_story else f"单季净增 {bn0(add_now)}。")
+            + basis_words
         ),
         "src_extra": (
             "backlog 为合同剩余履约义务，来自各期 10-Q / 10-K"
@@ -1081,6 +1156,141 @@ def build_payload(staging: dict) -> dict:
             + "公司未披露取消额与客户集中度，Q1 2026 起纳入 TPU hardware agreements。口径细节见核对表。"
         ),
     })
+    fall = (1 - add_now / add_before) * 100 if add_before > 0 and add_fell else None
+    topics.append("backlog 净增" + ("骤降" if fall is not None and fall >= 50 else "回落" if add_fell else "回升"))
+
+    # Earnings per share with and without the equity-securities gain.
+    eps_values = snapshot_values.get("gaap_diluted_eps")
+    ex_values = snapshot_values.get("eps_ex_equity_gains")
+    revenue_now = long_revenue[-1]
+    if eps_values and ex_values and consensus is not None:
+        eps_now, ex_now = eps_values[-1], ex_values[-1]
+        gain_now = round(eps_now - ex_now, 2)
+        expected_eps = consensus["operating_eps_mid"]
+        eps_gap = (ex_now / expected_eps - 1) * 100
+        side = ("略低于" if -3 < eps_gap < 0 else "低于" if eps_gap < 0 else
+                "略高于" if 0 < eps_gap < 3 else "高于" if eps_gap > 0 else "等于")
+        revenue_gap = (revenue_now / consensus["revenue_usd_m"] - 1) * 100
+        highlights.append({
+            "kind": "bars_labeled",
+            "title": (f"${eps_now:.2f} 的 GAAP EPS 里 ${gain_now:.2f} 来自权益证券收益，"
+                      f"剔除后 ${ex_now:.2f}、{side}市场预期"),
+            "xlabels": ["GAAP 摊薄 EPS", "其中：权益证券收益", "剔除后（简单自算）", "市场预期"],
+            "values": [eps_now, gain_now, ex_now, expected_eps],
+            "legend": "每股收益",
+            "fmt": "usd2",
+            "yfmt": "usd2",
+            "label_fmt": "usd2",
+            "ylab": "美元 / 股",
+            "note": (
+                f"公司披露权益证券收益贡献 EPS ${gain_now:.2f}；剔除后 ${ex_now:.2f}，较市场预期 "
+                f"${expected_eps:.2f} {'低' if eps_gap < 0 else '高'} {abs(eps_gap):.1f}%。"
+                f"同期收入{'高' if revenue_gap >= 0 else '低'}于市场预期 {abs(revenue_gap):.1f}%。"
+            ),
+            "src_extra": (
+                f"GAAP EPS 与权益收益的每股贡献来自 {quarter_word} release 脚注；${ex_now:.2f} 是 "
+                f"${eps_now:.2f} − ${gain_now:.2f} 的算术拆分，"
+                "不是公司定义的 non-GAAP。市场预期为财报前一致预期区间 "
+                f"${consensus['operating_eps_low']:.2f}–${consensus['operating_eps_high']:.2f} 的中值，不具名。"
+            ),
+        })
+        topics.append("GAAP EPS 里的权益证券收益与对市场预期")
+
+    # Free cash flow, quarter by quarter.
+    fcf_now, fcf_before = long_fcf[-1], long_fcf[-2]
+    ocf_delta = long_ocf[-1] - long_ocf[-5]
+    capex_delta = long_capex[-1] - long_capex[-5]
+    count_words = cn_count(len(long_fcf))
+    if fcf_now < 0:
+        head = (f"单季自由现金流转负至 {money_bn(fcf_now)} —— " if fcf_before >= 0 else
+                f"单季自由现金流 {money_bn(fcf_now)}，仍为负 —— ")
+        head += (f"{count_words}季里唯一的一次" if negative_fcf == 1
+                 else f"{count_words}季里的第 {negative_fcf} 次")
+    else:
+        head = (f"单季自由现金流 {money_bn(fcf_now)} —— {count_words}季里"
+                + (f"为负的有 {negative_fcf} 季" if negative_fcf else "没有一季为负"))
+    earlier_negative = [quarters[index] for index, value in enumerate(long_fcf[:-1]) if value < 0]
+    fcf_story = story.get("fcf_context", "")
+    highlights.append({
+        "kind": "diverging_bars",
+        "title": head,
+        "xlabels": long_labels,
+        "xstep": LONG_STEP,
+        "values": [round(value, 1) for value in long_fcf],
+        "legend": "自由现金流",
+        "positive_label": "正自由现金流",
+        "negative_label": "负自由现金流",
+        "fmt": "f0c",
+        "yfmt": "f0c",
+        "label_fmt": "f0c",
+        "ylab": "$M",
+        "zero_line": True,
+        "note": (
+            f"经营现金流同比{'增' if ocf_delta >= 0 else '减'} ${abs(ocf_delta) / 1000:.1f}B，"
+            + (f"被同比增 ${capex_delta / 1000:.1f}B 的 CapEx 完全吞没"
+               if capex_delta > ocf_delta > 0 else
+               f"CapEx 同比{'增' if capex_delta >= 0 else '减'} ${abs(capex_delta) / 1000:.1f}B")
+            + (f"；{fcf_story}" if fcf_story else "。")
+            + ((f"<b>把窗口从八季拉到{count_words}季，「首次转负」这句话仍然成立</b> —— "
+                f"{quarters[0][:4]} 年以来这条线只有本季一次落到零以下，"
+                f"此前最低的一格是 ${min(long_fcf[:-1]) / 1000:,.1f}B。")
+               if fcf_now < 0 and negative_fcf == 1 else
+               ("<b>八季的窗口里「首次转负」是错的说法</b> —— 更早的负值出现在 "
+                + "、".join(long_labels[i] for i, value in enumerate(long_fcf)
+                           if value < 0 and i != len(long_fcf) - 1) + "。")
+               if fcf_now < 0 else
+               (f"{quarters[0][:4]} 年以来这条线落到零以下的季度：" + "、".join(earlier_negative) + "。"
+                if earlier_negative else ""))
+        ),
+        "src_extra": source_note("FCF = 经营现金流 − 购买物业及设备"),
+    })
+    topics.append("单季自由现金流" + ("转负" if fcf_now < 0 <= fcf_before else ""))
+
+    # Where the quarter's cash came from and went: the capital-allocation bridge.
+    capital = stamped_block(staging, "capital_allocation", period)
+    buyback_now = buyback[-1]
+    equity_raised = debt_raised = 0.0
+    if capital is not None:
+        flows = (capital["sources"] + [{"label": "资本开支", "value": -long_capex[-1]}] + capital["uses"]
+                 + [{"label": "回购", "value": -buyback_now}])
+        equity_raised = sum(item["value"] for item in capital["sources"] if item["kind"] == "equity")
+        debt_raised = sum(item["value"] for item in capital["sources"] if item["kind"] == "debt")
+        raised = sum(item["value"] for item in capital["sources"])
+        spent_out = -sum(item["value"] for item in flows if item["value"] < 0)
+        atm_now = snapshot_values.get("atm_sold", [None])[-1]
+        highlights.append({
+            "kind": "diverging_bars",
+            "title": (f"本季回购 {money_m(buyback_now)}，" if buyback_now == 0 else f"本季回购 {money_bn(buyback_now)}，")
+                     + (f"发行普通股与强制可转优先股融资 {money_bn(equity_raised)}、" if equity_raised else "")
+                     + f"净发债 {money_bn(debt_raised)}",
+            "xlabels": [item["label"] for item in flows],
+            "values": [round(item["value"], 1) for item in flows],
+            "legend": "本季现金流（流入为正）",
+            "positive_label": "融资流入",
+            "negative_label": "资本开支、投资与股东回报流出",
+            "fmt": "f0c",
+            "yfmt": "f0c",
+            "label_fmt": "f0c",
+            "ylab": "$M",
+            "zero_line": True,
+            "note": (
+                f"{cn_count(len(capital['sources']))}项融资合计 {money_bn(raised)}；资本开支、"
+                + "、".join(item["label"] for item in capital["uses"])
+                + f"用掉 {money_bn(spent_out)}"
+                + (f"，回购为零" if buyback_now == 0 else "")
+                + "。"
+                + (html_text(capital["first_time"]) + "。" if capital.get("first_time") else "")
+                + (f"CFO 在电话会上说「{html_text(capital['equity_markets_quote'])}」（ATM 计划除外）。"
+                   if capital.get("equity_markets_quote") else "")
+                + (f"上限 ${capital['atm_capacity_usd_bn']:.1f}B 的 ATM 计划本季发行 {money_m(atm_now)}。"
+                   if capital.get("atm_capacity_usd_bn") and atm_now is not None else "")
+            ),
+            "src_extra": (f"{quarter_word} release 现金流量表单季列；资本开支与回购与本页其余图同一序列。"
+                          "电话会引语为公司口径。"),
+        })
+        raised_by = [words for words, amount in (("发股", equity_raised), ("发债", debt_raised)) if amount > 0]
+        topics.append(("回购归零" if buyback_now == 0 else "回购继续")
+                      + (f"而{'与'.join(raised_by)}" if raised_by else ""))
 
     # This year's capex guidance, call by call.
     guided_year = capex_guide["fiscal_years"][-1]
@@ -1137,89 +1347,7 @@ def build_payload(staging: dict) -> dict:
             f"{cn_count(len(guided))}次指引区间来自对应季度电话会；中点"
             + (f"与{spaced(rest)}{' ' if rest.isascii() else ''}隐含额" if done else "") + "为自算"),
     })
-
-    # Free cash flow, quarter by quarter.
-    fcf_now, fcf_before = long_fcf[-1], long_fcf[-2]
-    ocf_delta = long_ocf[-1] - long_ocf[-5]
-    capex_delta = long_capex[-1] - long_capex[-5]
-    count_words = cn_count(len(long_fcf))
-    if fcf_now < 0:
-        head = (f"单季自由现金流转负至 ${fcf_now / 1000:,.1f}B —— " if fcf_before >= 0 else
-                f"单季自由现金流 ${fcf_now / 1000:,.1f}B，仍为负 —— ")
-        head += (f"{count_words}季里唯一的一次" if negative_fcf == 1
-                 else f"{count_words}季里的第 {negative_fcf} 次")
-    else:
-        head = (f"单季自由现金流 ${fcf_now / 1000:,.1f}B —— {count_words}季里"
-                + (f"为负的有 {negative_fcf} 季" if negative_fcf else "没有一季为负"))
-    earlier_negative = [quarters[index] for index, value in enumerate(long_fcf[:-1]) if value < 0]
-    fcf_story = story.get("fcf_context", "")
-    highlights.append({
-        "kind": "diverging_bars",
-        "title": head,
-        "xlabels": long_labels,
-        "xstep": LONG_STEP,
-        "values": [round(value, 1) for value in long_fcf],
-        "legend": "自由现金流",
-        "positive_label": "正自由现金流",
-        "negative_label": "负自由现金流",
-        "fmt": "f0c",
-        "yfmt": "f0c",
-        "label_fmt": "f0c",
-        "ylab": "$M",
-        "zero_line": True,
-        "note": (
-            f"经营现金流同比{'增' if ocf_delta >= 0 else '减'} ${abs(ocf_delta) / 1000:.1f}B，"
-            + (f"被同比增 ${capex_delta / 1000:.1f}B 的 CapEx 完全吞没"
-               if capex_delta > ocf_delta > 0 else
-               f"CapEx 同比{'增' if capex_delta >= 0 else '减'} ${abs(capex_delta) / 1000:.1f}B")
-            + (f"；{fcf_story}" if fcf_story else "。")
-            + ((f"<b>把窗口从八季拉到{count_words}季，「首次转负」这句话仍然成立</b> —— "
-                f"{quarters[0][:4]} 年以来这条线只有本季一次落到零以下，"
-                f"此前最低的一格是 ${min(long_fcf[:-1]) / 1000:,.1f}B。")
-               if fcf_now < 0 and negative_fcf == 1 else
-               ("<b>八季的窗口里「首次转负」是错的说法</b> —— 更早的负值出现在 "
-                + "、".join(long_labels[i] for i, value in enumerate(long_fcf)
-                           if value < 0 and i != len(long_fcf) - 1) + "。")
-               if fcf_now < 0 else
-               (f"{quarters[0][:4]} 年以来这条线落到零以下的季度：" + "、".join(earlier_negative) + "。"
-                if earlier_negative else ""))
-        ),
-        "src_extra": source_note("FCF = 经营现金流 − 购买物业及设备"),
-    })
-
-    # Earnings per share with and without the equity-securities gain.
-    eps_values = snapshot_values.get("gaap_diluted_eps")
-    ex_values = snapshot_values.get("eps_ex_equity_gains")
-    revenue_now = long_revenue[-1]
-    if eps_values and ex_values and consensus is not None:
-        eps_now, ex_now = eps_values[-1], ex_values[-1]
-        gain_now = round(eps_now - ex_now, 2)
-        expected_eps = consensus["operating_eps_mid"]
-        eps_gap = (ex_now / expected_eps - 1) * 100
-        side = ("略低于" if -3 < eps_gap < 0 else "低于" if eps_gap < 0 else
-                "略高于" if 0 < eps_gap < 3 else "高于" if eps_gap > 0 else "等于")
-        highlights.append({
-            "kind": "bars_labeled",
-            "title": f"${eps_now:.2f} 的 GAAP EPS 里只有 ${ex_now:.2f} 是经营的，且{side}市场预期",
-            "xlabels": ["GAAP 摊薄 EPS", "其中：权益证券收益", "剔除后（简单自算）", "市场预期"],
-            "values": [eps_now, gain_now, ex_now, expected_eps],
-            "legend": "每股收益",
-            "fmt": "usd2",
-            "yfmt": "usd2",
-            "label_fmt": "usd2",
-            "ylab": "美元 / 股",
-            "note": (
-                f"公司披露权益证券收益贡献 EPS ${gain_now:.2f}；剔除后 ${ex_now:.2f}，较市场预期 "
-                f"${expected_eps:.2f} {'低' if eps_gap < 0 else '高'} {abs(eps_gap):.1f}%。"
-                f"同期收入 {change(revenue_now, consensus['revenue_usd_m'])} 于预期。"
-            ),
-            "src_extra": (
-                f"GAAP EPS 与权益收益的每股贡献来自 {quarter_word} release 脚注；${ex_now:.2f} 是 "
-                f"${eps_now:.2f} − ${gain_now:.2f} 的算术拆分，"
-                "不是公司定义的 non-GAAP。市场预期为财报前一致预期区间 "
-                f"${consensus['operating_eps_low']:.2f}–${consensus['operating_eps_high']:.2f} 的中值，不具名。"
-            ),
-        })
+    topics.append(f"FY{guided_year} 资本开支指引")
 
     # ── section three: this analysis's section 8 ────────────────────────────
     next_rows = {row["row"]: row for row in next_kpi["rows"]}
@@ -1360,7 +1488,9 @@ def build_payload(staging: dict) -> dict:
     dep_streak = 0
     for index in range(len(quarters) - 1, -1, -1):
         dy, ry_ = long_dep_yoy[index], long_revenue_yoy[index]
-        if dy is None or ry_ is None or dy <= ry_:
+        # compared at the one decimal the page prints, so a float's last bit
+        # cannot make an equal pair read as "higher"
+        if dy is None or ry_ is None or round(dy, 1) <= round(ry_, 1):
             break
         dep_streak += 1
     overlap = sorted(set(captions["prior_caption"]["quarters"]) & set(captions["current_caption"]["quarters"]))
@@ -1450,9 +1580,11 @@ def build_payload(staging: dict) -> dict:
         {
             "kind": "lines",
             "title": (
-                f"折旧同比 {dep_yoy[-1]:+.1f}%，{'快' if dep_yoy[-1] > revenue_yoy[-1] else '慢'}于收入的 "
-                f"{revenue_yoy[-1]:+.1f}%；"
-                f"{cn_count(years)}年里这条线换过一次科目，所以画成两条"
+                f"折旧同比 {dep_yoy[-1]:+.1f}%，"
+                + (f"快于收入的 {revenue_yoy[-1]:+.1f}%；" if round(dep_yoy[-1], 1) > round(revenue_yoy[-1], 1) else
+                   f"慢于收入的 {revenue_yoy[-1]:+.1f}%；" if round(dep_yoy[-1], 1) < round(revenue_yoy[-1], 1) else
+                   f"与收入的 {revenue_yoy[-1]:+.1f}% 持平；")
+                + f"{cn_count(years)}年里这条线换过一次科目，所以画成两条"
             ),
             "xlabels": long_labels,
             "xstep": LONG_STEP,
@@ -1492,7 +1624,8 @@ def build_payload(staging: dict) -> dict:
             "title": (
                 f"美国收入同比 {long_geography_yoy[us][-1]:+.0f}%，"
                 + (("与其余地区的差距在" + ("拉大" if leads[-1] > leads[-2] else "收窄"))
-                   if leads[-1] > 0 else f"仍慢于{spaced(fastest)}")
+                   if round(leads[-1], 1) > 0 else f"与{spaced(fastest)}持平" if round(leads[-1], 1) == 0
+                   else f"慢于{spaced(fastest)}")
             ),
             "xlabels": long_labels[yoy_from:],
             "xstep": LONG_STEP,
@@ -1511,7 +1644,9 @@ def build_payload(staging: dict) -> dict:
             "note": (
                 (f"美国同比已连续{cn_count(us_accel)}季加速，" if us_accel >= 2 else "")
                 + (f"本季比其余三个地区里最快的{spaced(fastest)}（{long_geography_yoy[fastest][-1]:+.1f}%）"
-                   f"高 {leads[-1]:.1f}pp，" if leads[-1] > 0 else
+                   f"高 {leads[-1]:.1f}pp，" if round(leads[-1], 1) > 0 else
+                   f"本季与{spaced(fastest)}（{long_geography_yoy[fastest][-1]:+.1f}%）持平，"
+                   if round(leads[-1], 1) == 0 else
                    f"本季落后于{spaced(fastest)}（{long_geography_yoy[fastest][-1]:+.1f}%），")
                 + f"占总收入 {us_share:.1f}%；"
                 "地域集中度与 AI 基础设施客户的集中度是同一件事的两个视角。"
@@ -1630,6 +1765,8 @@ def build_payload(staging: dict) -> dict:
         pressures.append(f"回购连续{cn_count(zero_run)}季归零")
     elif zero_run == 1:
         pressures.append("回购归零")
+    if equity_raised > 0:
+        pressures.append(f"发行普通股与强制可转优先股 {money_bn(equity_raised)}")
     if len(guided) > 1 and raises:
         pressures.append(f"FY{guided_year} CapEx 指引{guide_move}")
     reaction = (f"财报当日股价 {consensus['post_earnings_price_change_pct']:+.1f}%"
@@ -1656,14 +1793,19 @@ def build_payload(staging: dict) -> dict:
         + (f"连续{cn_count(opm_streak)}季上行。" if opm_streak >= 2 else
            "本季上行。" if opm_streak == 1 else "本季没有上行。")
         + "</p></article>")
-    if consensus is not None and "search_yoy_pct" in consensus:
-        expected = consensus["search_yoy_pct"]
-        gap = search_yoy_now - expected
-        tag = "符合" if abs(gap) < 0.5 else ("超预期" if gap > 0 else "不及预期")
+    # Cash and capital: the other half of the quarter's contradiction.
+    if fcf_now < 0 or buyback[-1] == 0 or equity_raised > 0:
+        funded = [words for words, amount in (("发股", equity_raised), ("发债", debt_raised)) if amount > 0]
         cards.append(
-            f"<article><span>{tag}</span><b>Search {'减速' if search_step < 0 else '加速'}"
-            + ("但落在预期上" if tag == "符合" else ("且高于预期" if gap > 0 else "且低于预期"))
-            + f"</b><p>{search_yoy_now:+.1f}%，较上季 {search_step:+.1f}pp，市场预期约 {expected:+d}%。</p></article>")
+            "<article><span>存疑</span><b>"
+            + ("单季自由现金流为负，" if fcf_now < 0 else "")
+            + ("回购归零" if buyback[-1] == 0 else "回购继续")
+            + ((f"，靠{'与'.join(funded)}补上" if fcf_now < 0 else f"，同时{'与'.join(funded)}") if funded else "")
+            + "</b><p>"
+            + f"FCF {money_bn(fcf_now)}；回购 {money_m(buyback[-1])}"
+            + (f"；发行普通股与强制可转优先股 {money_bn(equity_raised)}" if equity_raised > 0 else "")
+            + (f"、净发债 {money_bn(debt_raised)}" if debt_raised > 0 else "")
+            + "。</p></article>")
     if backlog_record and add_fell and drop is not None:
         backlog_tag, backlog_head = "存疑", f"backlog 新高，净增却降 {drop:.0f}%"
     elif backlog_record:
@@ -1674,6 +1816,12 @@ def build_payload(staging: dict) -> dict:
         f"<article><span>{backlog_tag}</span><b>{backlog_head}</b>"
         + f"<p>${level_now:.0f}B；净增 ${add_before:.0f}B → ${add_now:.0f}B。"
         + story.get("backlog_brief", "") + "</p></article>")
+    cards.append(
+        f"<article><span>{'亮点' if search_pace == '加快' else '观察'}</span>"
+        + (f"<b>Search {search_pace} {abs(search_step):.1f}pp</b>" if search_pace != "持平"
+           else "<b>Search 增速与上季持平</b>")
+        + f"<p>{search_yoy_now:+.1f}%，上季 {long_search_yoy[-2]:+.1f}%。"
+        + story.get("search_brief", "") + "</p></article>")
     brief = (f'<h4>本季{cn_count(len(cards))}条主线</h4><div class="takeaway-grid">'
              + "".join(cards) + '</div>')
 
@@ -1713,7 +1861,7 @@ def build_payload(staging: dict) -> dict:
         f"同比曲线都用各自的完整季度记录计算（总收入同比另借 {int(quarters[0][:4]) - 1} 年四季作分母，"
         f"所以从 {quarters[0]} 起就有值）；核对表另列最近{cn_count(len(periods))}季的逐季原值。",
         f"季度值来自各期 10-Q 与 10-K；无 10-Q 的第四季度按「全年 − 前三季」倒推，{period} 采用当季 earnings release。",
-        "本页已知未接入：收入成本 / R&D / S&M / G&A 四条费用线、有效税率、稀释股数、paid clicks 与 CPC，以及电话会口径的 Gemini、订阅、Waymo 等运营 KPI。",
+        "本页已知未接入：收入成本 / R&D / S&M / G&A 四条费用线、有效税率的长序列、稀释股数、paid clicks 与 CPC，以及电话会口径的 Gemini、订阅、Waymo 等运营 KPI。",
     ]
 
     if len(guided) > 1:
@@ -1732,8 +1880,12 @@ def build_payload(staging: dict) -> dict:
             + "。Alphabet 不发季度财务指引；它唯一给数的指引是全年资本开支——" + guide_words
             + "，要到年末才能结算，所以本节没有公司指引兑现图。"
         ),
-        "quarter_highlights": ("四个亮点与存疑项：Cloud、Search、backlog、资本开支与现金流"
-                               + ("，外加一张盈利质量拆解。" if len(highlights) > 5 else "。")),
+        "quarter_highlights": (
+            f"本季（{period}）本地分析第 1、3、7 节里能用申报数画的结论，一图一个：" + "、".join(topics) + "。"
+            "美国收入领先其余三个地区（分析 3.3 节）画在第四板块的地域图里。"
+            + (fill_story(story["undrawn"], {"tax_rate_now": f"{tax_rate_ex_gains():.1f}%"})
+               if story.get("undrawn") else "")
+        ),
         "next_quarter": (
             f"本季（{period}）本地分析第 8 节「关键观察指标」{len(next_rows)} 行，看 {next_kpi['for_period']}："
             f"写成数的拆成 {len(next_lines)} 条线，{len(next_priced)} 条有百分比余量、进总览（当前值离阈值多远），"

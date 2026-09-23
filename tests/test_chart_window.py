@@ -148,6 +148,20 @@ def _intc_threshold_reach() -> int:
                if "警戒线" in ex["title"])
 
 
+def _googl_threshold_reach() -> int:
+    """GOOGL's threshold-line charts that reach 2016: one per record the two
+    local analyses' section-8 blocks name -- last quarter's lines in section one,
+    this quarter's in section three. Which records they name is data (the page
+    is rolled by editing `series/googl.json` alone), and only the records on the
+    long axis (quarterly CapEx, TTM free cash flow, depreciation) run back to
+    2016, so the pin counts the permanent charts and adds these while they are
+    published."""
+    page = js_payload(ROOT / "data" / "googl.js", "window.DASH")
+    return sum(1 for section in page["sections"] if section["id"] in ("settled", "next_quarter")
+               for ex in section["exhibits"]
+               if ex["kind"] == "lines" and (first_year(ex) or TARGET_YEAR + 1) <= TARGET_YEAR)
+
+
 def _tsm_advanced_count() -> dict:
     """The process-mix note counts the quarters since 2021Q1 in which the page's
     summed 7nm-and-below line equals TSMC's own aggregate. The count grows by
@@ -173,7 +187,7 @@ def _tsm_advanced_count() -> dict:
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
     "amd": 16, "amzn": 13, "arm": 0, "asml": 16, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
-    "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
+    "cost": 13, "googl": 5 + _googl_threshold_reach(), "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
     "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
@@ -337,6 +351,12 @@ CONVERTED = {
         "单季净增从": "same RPO floor; this is the level-and-net-add view of it.",
         "Cloud 增速本季": "revenue by line begins with the 2018Q4 release.",
         "Search 增速本季": "revenue by line begins with the 2018Q4 release.",
+        # The analysis's section 3.2 conclusion (Services margin, the step into
+        # the quarter against earlier years): segment operating income on the
+        # current cost allocation was recast only back to 2022Q1 (the 2023-04-20
+        # release); the older allocation is not spliced on.
+        "Services 经营利润率本季": "segment operating income on the current cost allocation "
+                            "starts 2022Q1; the earlier allocation is a different basis.",
     },
     "msft": {
         # Four floors, all of them disclosure floors.
@@ -1105,6 +1125,7 @@ FLOOR_KIND = {
         '单季净增从': 'disclosure',
         'Cloud 增速本季': 'disclosure',
         'Search 增速本季': 'disclosure',
+        'Services 经营利润率本季': 'disclosure',
     },
     'ma': {
         '净收入的同比增量拆成三条腿': 'disclosure',
@@ -1397,7 +1418,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 161)
+        self.assertEqual(settled.count("disclosure"), 162)
         self.assertEqual(settled.count("design"), 40)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
