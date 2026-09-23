@@ -508,11 +508,13 @@ def build_payload(staging: dict) -> dict:
 
     settled, settled_tables = guidance_charts(staging)
 
-    # ── section one: how the latest revision moved ──────────────────────────
+    # ── section two opens on this quarter's revision of the open year ───────
+    # The revision is news of this quarter (the July release moved the year's
+    # ranges), not a settlement of anything set last quarter, so it leads the
+    # highlights rather than the settled section; it is settled only when the
+    # year's Q4 release lands and the year joins the bands in section one.
     moves = open_year_moves(hist)
     revision = revision_chart(staging, moves, update)
-    if revision:
-        settled.insert(0, revision)
 
     # ── section two: what moved this quarter ────────────────────────────────
     rec, abf, non = fin["recurring_usd_m"], fin["abf_usd_m"], fin["nonrecurring_usd_m"]
@@ -660,7 +662,7 @@ def build_payload(staging: dict) -> dict:
                  "Run Rate 高于收入时，未来几个季度的收入还有上行空间。"),
         "src_extra": "Run Rate 取自各季 Table 8，收入取自 Table 5；同比为本页自算（D）。",
     }
-    highlights = [mix_chart, seg_rev_chart, seg_margin_chart, aum_chart, rr_chart]
+    highlights = ([revision] if revision else []) + [mix_chart, seg_rev_chart, seg_margin_chart]
 
     # ── section three: what to watch next ───────────────────────────────────
     kpi = ([{**entry, "current": kpi_reading(staging, entry["reads"])}
@@ -817,14 +819,20 @@ def build_payload(staging: dict) -> dict:
             "src_extra": "各季业绩 8-K EX-99.1 的 Table 8；两条腿相加等于总 Run Rate。",
         },
     ]
+    # The AUM-and-fee chart and the run-rate lead chart draw the whole record and
+    # carry no finding of this quarter's own: they are the long structure the
+    # quarter sits on, so they open the routine section instead of the highlights.
+    routine = [aum_chart, rr_chart] + routine
 
     exhibits = number_exhibits(settled + highlights + next_ex + routine)
     resolve_exhibit_refs(exhibits)
-    n_settled, n_high, n_next = len(settled), len(highlights), len(next_ex)
-    settled_ex = exhibits[:n_settled]
-    highlight_ex = exhibits[n_settled:n_settled + n_high]
-    next_block = exhibits[n_settled + n_high:n_settled + n_high + n_next]
-    routine_ex = exhibits[n_settled + n_high + n_next:]
+    # Sliced by cumulative length, so inserting a chart into one section can
+    # never silently move a chart into its neighbour.
+    grouped, cursor = [], 0
+    for group in (settled, highlights, next_ex, routine):
+        grouped.append(exhibits[cursor:cursor + len(group)])
+        cursor += len(group)
+    settled_ex, highlight_ex, next_block, routine_ex = grouped
 
     first_table = exhibits[-1]["n"] + 1
     tables = [{**t, "n": first_table + i} for i, t in enumerate(settled_tables)]
@@ -945,14 +953,15 @@ def build_payload(staging: dict) -> dict:
         "summary": {"blocks": []},
         "guidance": None,
         "sections": [
-            {"id": "settled", "title": "一、公司自己的指引兑现了吗",
-             "description": ("MSCI 的指引是年度的，而且只覆盖成本与现金 —— 费用、税率、"
+            {"id": "settled", "title": "一、上季跟踪指标兑现了吗",
+             "description": ("公司自己的指引兑现记录。MSCI 的指引是年度的，而且只覆盖成本与现金 —— 费用、税率、"
                              "资本开支、经营现金流与自由现金流，从不指引收入与 EPS。"
-                             f"所以这一节结清的是{cn_count(len(finished))}个完整年度的费用与现金记录，"
+                             f"所以这里结清的是{cn_count(len(finished))}个完整年度的费用与现金记录，"
                              "并且把「年初那次」与「年末那次」分开算，因为两者的答案不一样。"),
              "exhibits": settled_ex},
             {"id": "quarter_highlights", "title": "二、本季重点",
-             "description": "三条收入腿的分化、四个分部的利润率落差，以及 AUM 与基点费率的反向移动。",
+             "description": ("本季" + (f"对 FY{moves['year']} 指引的修订、" if revision else "")
+                             + "三条收入腿的分化，以及四个分部的收入与利润率落差。"),
              "exhibits": highlight_ex},
             {"id": "next_quarter", "title": "三、下季要跟踪什么",
              "description": ((f"当前值离下季阈值还有多远，统一用「距阈值余量」口径；"
@@ -960,7 +969,11 @@ def build_payload(staging: dict) -> dict:
                              if kpi else "本季没有设定下季阈值，本节没有图。"),
              "exhibits": next_block},
             {"id": "routine", "title": "四、长期常规跟踪",
-             "description": f"MSCI 专属的常规序列：{len(om['period_labels'])} 季利润率与它的调整缺口、留存率的季节性，以及 Run Rate 的两条腿。",
+             "description": ("MSCI 专属的常规序列"
+                             + (f"，全部回到 {long_labels[0]}"
+                                if all(ex["xlabels"][0] == long_labels[0] for ex in routine_ex) else "")
+                             + "：挂钩 ETF 的 AUM 与期末基点费率、Run Rate 对收入的领先、利润率与它的调整缺口、"
+                             "留存率的季节性，以及 Run Rate 的两条腿。"),
              "exhibits": routine_ex},
         ],
         "tables": tables,

@@ -92,6 +92,28 @@ class MsciDashboardTest(unittest.TestCase):
         cls.staging = json.loads(msci.STAGING_PATH.read_text(encoding="utf-8"))
         cls.payload = msci.build_payload(cls.staging)
 
+    # ── the four-part format ────────────────────────────────────────────────
+    def test_the_page_is_in_the_four_part_format(self) -> None:
+        """Ids and titles are the site's, word for word -- TSM is the reference."""
+        self.assertEqual(
+            [(s["id"], s["title"]) for s in self.payload["sections"]],
+            [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+             ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+        for section in self.payload["sections"]:
+            self.assertTrue(section["exhibits"], section["id"])
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列", self.payload["notes"][0])
+
+    def test_each_chart_sits_in_the_section_its_content_belongs_to(self) -> None:
+        """The open year's revision is this quarter's news, not a settlement; the
+        two whole-record charts with no finding of the quarter's own are routine."""
+        by_id = {s["id"]: [ex["title"] for ex in s["exhibits"]] for s in self.payload["sections"]}
+        year = max(self.staging["annual_guidance_history"]["years"])
+        self.assertTrue(any(t.startswith(f"FY{year} 指引") for t in by_id["quarter_highlights"]))
+        self.assertFalse(any(t.startswith(f"FY{year} 指引") for t in by_id["settled"]))
+        for prefix in ("挂钩 MSCI 股票指数的 ETF AUM 与基点费率", "Run Rate 与收入的同比增速"):
+            self.assertTrue(any(t.startswith(prefix) for t in by_id["routine"]), prefix)
+            self.assertFalse(any(t.startswith(prefix) for t in by_id["quarter_highlights"]), prefix)
+
     # ── the review window ───────────────────────────────────────────────────
     def test_the_window_is_complete_and_aligned(self) -> None:
         periods = self.staging["periods"]
@@ -714,7 +736,8 @@ class MsciRollTest(unittest.TestCase):
         self.assertNotRegex(text, PLACEHOLDER)
         self.assertNotRegex(text, r"\{EX_[A-Z_0-9]+\}")
         # The revision chart still has a note: what the series alone can say.
-        revision = exhibits(payload)[0]
+        year = max(bare["annual_guidance_history"]["years"])
+        revision = next(ex for ex in exhibits(payload) if ex["title"].startswith(f"FY{year} 指引"))
         self.assertIn("一起上调", revision["note"])
 
     def test_the_quarter_before_builds_from_the_series_alone(self) -> None:
