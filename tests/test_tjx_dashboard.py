@@ -727,6 +727,17 @@ class TjxDashboardTest(unittest.TestCase):
         for value in record["guide_eps_lo_usd"][:index]:
             self.assertAlmostEqual(value * 200, round(value * 200), places=6)
 
+    def test_only_the_open_quarter_reads_as_pending(self) -> None:
+        """「待披露」 is for the guided quarter not yet reported; a finished quarter with
+        no figure (the 2022 consolidated comps, the Q1 2020 comp) was never printed."""
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("指引兑现明细"))
+        for row in table["rows"]:
+            with self.subTest(quarter=row[0]):
+                if order(row[0]) > order(self.periods[-1]):
+                    self.assertEqual([row[4], row[6], row[8]], ["待披露"] * 3)
+                else:
+                    self.assertNotIn("待披露", row)
+
     def test_the_publication_lag_is_computed_from_the_dates(self) -> None:
         """The outlook goes out with the previous quarter's results, so it lands
         inside the quarter it guides. The page used to carry the lag as a typed

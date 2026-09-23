@@ -661,24 +661,29 @@ def guidance_delivery_charts(staging: dict) -> tuple[list[dict], dict]:
         comp_dev["break_label"] = dev_labels[0] if len(dev_labels) == 1 else dev_labels
 
     delivery_rows = []
+    page = _ordinal(staging["periods"][-1])
     for index in range(len(quarters) - 1, -1, -1):
         if len(delivery_rows) >= 20:
             break
         actual_eps = eps_actual[index]
+        # Only a quarter after the page's is still to be reported; a finished quarter
+        # with no figure is one the company never printed (the 2022 consolidated comps,
+        # the Q1 2020 comp), and 「待披露」 would say the opposite.
+        missing = "待披露" if _ordinal(quarters[index]) > page else "未报"
         delivery_rows.append([
             quarters[index],
             record["fiscal_labels"][index],
             record["guidance_published"][index],
             f"${record['guide_eps_lo_usd'][index]:.2f}–{record['guide_eps_hi_usd'][index]:.2f}",
-            f"${actual_eps:.2f}" if actual_eps is not None else "待披露",
+            (("−" if actual_eps < 0 else "") + f"${abs(actual_eps):.2f}" if actual_eps is not None else missing),
             (f"{record['guide_pretax_margin_lo_pct'][index]:.1f}–"
              f"{record['guide_pretax_margin_hi_pct'][index]:.1f}%"
              if record["guide_pretax_margin_lo_pct"][index] is not None else "—"),
-            (f"{margin_actual[index]:.2f}%"
-             if margin_actual[index] is not None else "待披露"),
+            (minus_sign(f"{margin_actual[index]:.2f}%")
+             if margin_actual[index] is not None else missing),
             (f"{record['guide_comp_lo_pct'][index]:.0f}–{record['guide_comp_hi_pct'][index]:.0f}%"
              if record["guide_comp_lo_pct"][index] is not None else "—"),
-            (f"{comp_actual[index]:.0f}%" if comp_actual[index] is not None else "待披露"),
+            (f"{comp_actual[index]:.0f}%" if comp_actual[index] is not None else missing),
         ])
     delivery_table = {
         "title": (
