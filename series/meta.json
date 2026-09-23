@@ -78,7 +78,229 @@
       "其他地区": 36
     },
     "source": "Meta Q2 2026 业绩新闻稿（8-K EX-99.1，acc 0001628280-26-050596，2026-07-29）逐项读取：首段「quarter ended June 30, 2026」与发布日 July 29, 2026；Financial Highlights 表（Revenue 60,801 / 47,516、28%；Costs and expenses 42,026；Income from operations 18,775 / 20,441；Operating margin 31%；Diluted EPS 6.18）；Operational Highlights（DAP 3.60 billion；Ad impressions +14%；Average price per ad +12%；$2.40 billion legal proceedings 与 $1.18 billion severance；Headcount 75,472）；CFO Outlook Commentary（third quarter $61-64 billion；expenses $165-169 billion；capital expenditures $130-145 billion, narrowed from $125-145 billion；tax rate 15-17%, from 13-16%）；现金流量表（operating activities 31,862；Purchases of property and equipment (30,116)；Principal payments on finance leases (962)；Depreciation and amortization 6,356；Share-based compensation 7,658；Repurchases —；Proceeds from issuance of long-term debt, net 24,910）；分部表（Advertising 59,363 / 46,563；Other revenue 1,007；Reality Labs 431；FoA 23,394；RL (4,619)）；Reconciliation 表（advertising +27%；Free cash flow 784）。区域同比取同季 10-Q（acc 0001628280-26-050705）MD&A「revenue increased by 32% in United States & Canada, 24% in Europe, 19% in Asia-Pacific, and 36% in Rest of World」。",
-    "checked_on": "2026-09-19"
+    "checked_on": "2026-09-19",
+    "note": {
+      "source": {
+        "this_quarter": "2026-07-29 META Q2 2026 vs Q1 2026 Analysis.md：第 0 节「上季 Follow-up 回答」6 条逐条判定（没有统计行）；第 8 节「先校准上季 5 条指标」与「本季 5 条指标」、立场撤销条件 ①–③",
+        "previous_quarter": "2026-04-30 META Q1 2026 vs Q4 2025 Analysis.md：第 8 节「关键观察指标」5 行；文末 Follow-up Questions for Next Quarter 6 条"
+      },
+      "checked_on": "2026-09-24",
+      "report": {
+        "period_end": "2026-06-30",
+        "release_date": "2026-07-29"
+      },
+      "last_report": {
+        "period_end": "2026-03-31",
+        "release_date": "2026-04-29"
+      },
+      "followup_closure": {
+        "total": 6,
+        "wordings": [
+          "部分验证 —— 没有第三次大幅上修，但下限被抬高，方向仍向上",
+          "已验证（价格站住）——但结论方向被误导",
+          "仍未披露（口径从 sessions per user 换成\"interacting people +60%\"，仍是相对数）",
+          "部分验证：模式说清了，量化被抽走",
+          "被证伪（不但没下调，还上调）",
+          "部分验证：youth 侧已货币化，EU 侧叙事消失且仍未量化"
+        ],
+        "counts": {
+          "已验证": 1,
+          "部分验证": 3,
+          "被证伪": 1,
+          "仍未披露": 1
+        }
+      },
+      "prior_rows": 5,
+      "prior_thresholds": [
+        {
+          "row": 1,
+          "text": "H2 第三次上修到 ≥ $145B midpoint → 减仓",
+          "fires": "≥",
+          "threshold": 145.0
+        },
+        {
+          "row": 1,
+          "text": "FY2027 guide 首次给出 ≥ $160B → 减仓",
+          "fires": "≥",
+          "threshold": 160.0
+        },
+        {
+          "row": 1,
+          "text": "维持 $135B + ROIC 证据出现 → 加仓",
+          "fires": "≤",
+          "threshold": 135.0
+        },
+        {
+          "row": 2,
+          "text": "Q2/Q3 ≥ +8% YoY → 加仓",
+          "fires": "≥",
+          "threshold": 8.0
+        },
+        {
+          "row": 2,
+          "text": "Q2 ≤ +3% YoY → 警示",
+          "fires": "≤",
+          "threshold": 3.0
+        },
+        {
+          "row": 3,
+          "text": "Q2/Q3 RL revenue ≥ $500M + AI glasses ≥ 100% YoY → 跟踪",
+          "fires": "≥",
+          "threshold": 500.0
+        },
+        {
+          "row": 3,
+          "text": "连续 2 季 RL revenue YoY 转负 → 警示",
+          "fires": "<",
+          "threshold": 0.0,
+          "consecutive": 2
+        },
+        {
+          "row": 4,
+          "text": "Q2/Q3 FoA Other ≥ +60% YoY + WhatsApp ≥ $5B run rate → 加仓",
+          "fires": "≥",
+          "threshold": 60.0
+        },
+        {
+          "row": 4,
+          "text": "增速回落到 < +40% YoY → 跟踪",
+          "fires": "<",
+          "threshold": 40.0
+        },
+        {
+          "row": 5,
+          "text": "Q2/Q3 ≥ 39% → 加仓",
+          "fires": "≥",
+          "threshold": 39.0
+        },
+        {
+          "row": 5,
+          "text": "< 37% → 警示",
+          "fires": "<",
+          "threshold": 37.0
+        },
+        {
+          "row": 5,
+          "text": "连续 2 季下行 ≥ 2pp → 警示",
+          "fires": "≤",
+          "threshold": -2.0,
+          "consecutive": 2
+        }
+      ],
+      "next_rows": 5,
+      "next_thresholds": [
+        {
+          "row": 1,
+          "text": "Q3/Q4 任一季 QoQ 增量利润率回到 ≥+25% → 加仓",
+          "fires": "≥",
+          "threshold": 25.0
+        },
+        {
+          "row": 1,
+          "text": "连续两季 ≤0% → 减仓",
+          "fires": "≤",
+          "threshold": 0.0,
+          "consecutive": 2
+        },
+        {
+          "row": 2,
+          "text": "FY26 capex 走到上限 $145B → 减仓",
+          "fires": "≥",
+          "threshold": 145.0
+        },
+        {
+          "row": 2,
+          "text": "FY2027 首次指引 ≥$180B → 减仓",
+          "fires": "≥",
+          "threshold": 180.0
+        },
+        {
+          "row": 2,
+          "text": "累计残值担保/JV 承诺 >$25B 而 capex 指引未同步上调 → 减仓",
+          "fires": ">",
+          "threshold": 25.0
+        },
+        {
+          "row": 2,
+          "text": "FY26 收在 ≤$137.5B 且 2027 指引 ≤$160B 且无新增大额表外义务 → 加仓",
+          "fires": "≤",
+          "threshold": 137.5
+        },
+        {
+          "row": 3,
+          "text": "impressions ≤+10% 且 price ≤+8% → 减仓（impressions 一腿）",
+          "fires": "≤",
+          "threshold": 10.0
+        },
+        {
+          "row": 3,
+          "text": "impressions ≤+10% 且 price ≤+8% → 减仓（price 一腿）",
+          "fires": "≤",
+          "threshold": 8.0
+        },
+        {
+          "row": 3,
+          "text": "impressions ≥+14% 且 price ≥+12% → 加仓（impressions 一腿）",
+          "fires": "≥",
+          "threshold": 14.0
+        },
+        {
+          "row": 3,
+          "text": "impressions ≥+14% 且 price ≥+12% → 加仓（price 一腿）",
+          "fires": "≥",
+          "threshold": 12.0
+        },
+        {
+          "row": 4,
+          "text": "任一季 ≥$1.4B 且 ≥+50% YoY → 加仓（金额一腿）",
+          "fires": "≥",
+          "threshold": 1400.0
+        },
+        {
+          "row": 4,
+          "text": "任一季 ≥$1.4B 且 ≥+50% YoY → 加仓（增速一腿）",
+          "fires": "≥",
+          "threshold": 50.0
+        },
+        {
+          "row": 4,
+          "text": "增速回落至 <+40% YoY → 跟踪",
+          "fires": "<",
+          "threshold": 40.0
+        },
+        {
+          "row": 5,
+          "text": "Q3 实际 OI <$18.0B → 警示",
+          "fires": "<",
+          "threshold": 18000.0
+        },
+        {
+          "row": 5,
+          "text": "FY26 实际 OI < $83,276M → 减仓",
+          "fires": "<",
+          "threshold": 83276.0
+        },
+        {
+          "row": 5,
+          "text": "FY26 OI ≥$86B → 加仓",
+          "fires": "≥",
+          "threshold": 86000.0
+        },
+        {
+          "row": "撤销③",
+          "text": "youth trials 再计提 ≥$2B → 撤回立场",
+          "fires": "≥",
+          "threshold": 2.0
+        }
+      ]
+    },
+    "leases_not_yet_commenced_usd_bn": 278.99,
+    "leases_not_yet_commenced_year_end_usd_bn": 103.77,
+    "leases_signed_after_quarter_usd_bn": 68,
+    "louisiana_rvg_threshold_usd_bn": 28,
+    "el_paso_rvg_max_usd_bn": 13,
+    "restricted_escrow_usd_bn": 10.8,
+    "source_10q": "Q2 2026 10-Q（acc 0001628280-26-050705，2026-07-30 提交） 逐项读取：Note 9「In addition to the lease liabilities ... leases that have not yet commenced as of June 30, 2026. These lease obligations were approximately $278.99 billion ... In July 2026, we entered into additional data center leases with lease obligations of approximately $68 billion」；Note 5「residual value guarantees (RVG) with an aggregate threshold of approximately $28 billion」；Note 13「residual value guarantees with a maximum aggregate exposure of approximately $13 billion」；Note 4「$10.80 billion of money market funds related to escrow requirements」。FY2025 10-K（acc 0001628280-26-003942）租赁附注「$103.77 billion」。"
   },
   "periods": [
     "Q3 2023",
@@ -323,7 +545,9 @@
       5076
     ],
     "customer_address_source": "Q2 2026 10-Q 收入分解附注「Revenue disaggregated by geography, based on the addresses of our customers」，本季与去年同期两列。",
-    "management_remark": "管理层同时表示新增曝光更多来自「变现能力较低的版面与地区」，这正是价格被结构稀释的来源。"
+    "impressions_led_by": "亚太",
+    "filing_words": "Ad impressions delivered ... grew in all regions, especially in Asia-Pacific；average price per ad ... partially offset by a higher number of ad impressions delivered, especially in geographies and in products, such as Reels, that monetize at lower rates",
+    "filing_words_source": "Q2 2026 10-Q（acc 0001628280-26-050705，2026-07-30 提交） MD&A「Advertising」段"
   },
   "quarter_expense_lines_usd_m": {
     "period": "Q2 2026",
@@ -379,25 +603,62 @@
       null,
       1662
     ],
-    "restricted_cash_remark": "公司未解释性质",
     "headcount": [
       75472,
       77986,
       75945
     ],
-    "one_off_items": [
-      {
-        "name": "法律计提",
-        "usd_m": 2400
-      },
-      {
-        "name": "遣散费",
-        "usd_m": 1180
-      }
-    ],
     "workforce_reduction_positions": 8000,
     "net_debt_issuance_usd_m": 24910,
-    "sources": "Q2 2026 EX-99.1（分部表、每股收益、要点行的 headcount 与「approximately 8,000 employees」、费用行的 $2.40B 与 $1.18B、现金流量表「Proceeds from issuance of long-term debt, net」24,910）；Q2 2026 10-Q（「Property and equipment in accounts payable ...」19,502 / 10,618；受限现金 13,107 / 1,662）；Q1 2026 EX-99.1（分部经营利润 26,900 / (4,028)、稀释 EPS 10.44、headcount 77,986）。"
+    "sources": "Q2 2026 EX-99.1（分部表、每股收益、要点行的 headcount 与「approximately 8,000 employees」、现金流量表「Proceeds from issuance of long-term debt, net」24,910）；Q2 2026 10-Q（「Property and equipment in accounts payable ...」19,502 / 10,618；受限现金 13,107 / 1,662）；Q1 2026 EX-99.1（分部经营利润 26,900 / (4,028)、稀释 EPS 10.44、headcount 77,986）。"
+  },
+  "operating_income_one_offs": {
+    "why": "报告按季加回的经营利润一次性项：只列有加回的季度，金额取当季新闻稿单列的数（Q2 2026：EX-99.1 「Costs and expenses」一条写明含 $2.40 billion legal proceedings 与 $1.18 billion severance；10-Q 分部附注注明遣散费分摊在 FoA 与 RL 两个分部、未给分部金额）。没有列出的季度按 GAAP。调整后经营利润 = GAAP 经营利润 + 该季各项之和，是算术加总，不是公司定义的 non-GAAP 指标。换季时有一次性项就按季度加一行，没有就不动。",
+    "by_period": {
+      "Q2 2026": [
+        {
+          "name": "法律计提",
+          "key": "legal",
+          "usd_m": 2400
+        },
+        {
+          "name": "遣散费",
+          "key": "severance",
+          "usd_m": 1180
+        }
+      ]
+    }
+  },
+  "off_balance_sheet": {
+    "period": "Q2 2026",
+    "why": "Q2 2026 10-Q（acc 0001628280-26-050705，2026-07-30 提交） 附注里、季度数组之外的表外与受限资金事实；逐项注明出处。换季时整块按新一季 10-Q 重读并改戳。",
+    "residual_value_guarantees": [
+      {
+        "key": "rvg_louisiana",
+        "name": "路易斯安那合资",
+        "usd_bn": 28,
+        "measure_words": "RVG 门槛",
+        "basis": "2025 年 10 月成立，Meta 持 20%、不并表；门槛随时间递减，最大支付额 = 届时公允价值与门槛之差",
+        "source": "Q2 2026 10-Q（acc 0001628280-26-050705，2026-07-30 提交） Note 5「Non-Marketable Equity Investments」（FY2025 10-K Note 5 同载）"
+      },
+      {
+        "key": "rvg_el_paso",
+        "name": "El Paso 合资",
+        "usd_bn": 13,
+        "measure_words": "交割后的 RVG 最大敞口",
+        "basis": "2026 年 7 月签排他协议、预计三季度交割，Meta 将持 20%",
+        "source": "Q2 2026 10-Q（acc 0001628280-26-050705，2026-07-30 提交） Note 13「Subsequent Event」"
+      }
+    ],
+    "louisiana_max_exposure_usd_bn": 46.03,
+    "louisiana_max_exposure_year_end_usd_bn": 45.95,
+    "louisiana_consolidated": false,
+    "leases_signed_after_quarter_usd_bn": 68,
+    "leases_signed_after_quarter_words": "7 月再签约的数据中心租约，预计 2027–2028 年起租，租期 18–20 年",
+    "restricted_cash_equivalents_usd_bn": 13.55,
+    "restricted_escrow_usd_bn": 10.8,
+    "restricted_escrow_release": "2028–2030",
+    "sources": "Q2 2026 10-Q（acc 0001628280-26-050705，2026-07-30 提交）：Note 4「Restricted Cash Equivalents」（$13.55B 受限现金等价物含 $10.80B 多年期基础设施采购协议的托管货币基金，预计 2028–2030 年释放）；Note 5（路易斯安那合资：20%、承诺按比例出资约 $27B 总开发成本、租约 2029 年起租、初始租约承诺约 $12.31B、RVG 门槛约 $28B、不并表，最大损失敞口 $46.03B，2025 年末 $45.95B）；Note 9（未起租租赁义务约 $278.99B；7 月另签约约 $68B）；Note 13（El Paso：持 20%、约 $2.3B 待售资产出资、约 $1B 一次性分配、RVG 最大敞口约 $13B）。"
   },
   "annual_actuals_usd_m": {
     "2025": {
@@ -412,7 +673,7 @@
   },
   "outlook": {
     "period": "Q2 2026",
-    "why": "当季新闻稿 CFO Outlook Commentary 里、指引记录（quarterly_guidance_history）之外的几条：税率区间、经营利润承诺的措辞、FY2027 CapEx 的回应。收入、费用、资本开支三条指引从指引记录现取，不在这里重抄。",
+    "why": "当季新闻稿 CFO Outlook Commentary 里、指引记录（quarterly_guidance_history）之外的几条：税率区间、经营利润承诺的措辞；以及电话会上对 FY2027 CapEx 的回应（新闻稿没有这一条，页面注明电话会）。收入、费用、资本开支三条指引从指引记录现取，不在这里重抄。",
     "tax_rate_pct": [
       15,
       17
@@ -423,24 +684,18 @@
     ],
     "operating_income_commitment": "高于 2025 年绝对值",
     "operating_income_commitment_prior": "高于 2025 年绝对值",
-    "fy2027_capex": "明确不提供",
-    "fy2027_capex_prior": "拒绝提供",
-    "fy2027_capex_remark": "连续两季拒绝，可建模性为零",
+    "fy2027_capex": "不提供（电话会）",
+    "fy2027_capex_prior": "不提供（电话会）",
+    "fy2027_capex_remark": "两季电话会 CFO 都说「aren't providing a specific outlook for 2027」；新闻稿 Outlook 段只给 2026 年",
     "expense_change_reason": "以吸收本季法律计提"
   },
   "market_expectation": {
     "period": "Q2 2026",
-    "label": "市场预期（财报前一致预期，来源不具名）",
-    "as_of": "2026-07-29",
-    "revenue_usd_m": 60200,
-    "diluted_eps_usd": 7.22,
-    "family_daily_active_people_bn": 3.61,
-    "q3_revenue_usd_m": 63150,
     "post_earnings_price_change_range_pct": [
       -11.0,
       -7.0
     ],
-    "source_conflict_note": "各公开来源对财报后跌幅报价不一致（约 7%–11%），本页只发布区间"
+    "report_comparison": "收入高 1.0%、EPS 低 14.4%"
   },
   "followup_closure": {
     "period": "Q2 2026",
@@ -451,128 +706,519 @@
       "被证伪",
       "仍未披露"
     ],
-    "counts": [
-      1,
-      3,
-      1,
-      1
-    ],
-    "note": "被证伪的是「裁员会带来费用指引下调」——裁员约 {positions} 人、遣散费 {severance}，全年费用指引反而把下限抬高了 {expense_low_raise}；{partial}条部分验证全部因为公司换掉了原来的披露口径。"
+    "rule": "本季分析第 0 节逐条写判定、没有统计行：本页按每条判定原文开头的措辞归类（「已验证」「部分验证」「被证伪」「仍未披露」），开头之后的限定语照录在核对表里，本页不改判。",
+    "items": [
+      {
+        "n": 1,
+        "short": "CapEx 区间",
+        "question": "CapEx 是否继续维持在 $125-145B，还是 Q2/Q3 再次上修？",
+        "wording": "部分验证 —— 没有第三次大幅上修，但下限被抬高，方向仍向上",
+        "verdict": "部分验证",
+        "evidence": "全年资本开支指引由 {capex_before} 改为 {capex_now}（{capex_bounds_move}），中点 {capex_mid_before} → {capex_mid_now}"
+      },
+      {
+        "n": 2,
+        "short": "广告单价",
+        "question": "Q2 advertising price growth 是否还能维持高个位数或双位数，还是 Q1 的 +12% 只是宏观/FX 高点？",
+        "wording": "已验证（价格站住）——但结论方向被误导",
+        "verdict": "已验证",
+        "evidence": "单价同比 {price_now}（上季 {price_before}）；同期曝光同比 {impressions_before} → {impressions_now}，广告收入同比 {ads_before} → {ads_now}"
+      },
+      {
+        "n": 3,
+        "short": "Meta AI 用量",
+        "question": "Muse Spark / Meta AI 是否开始披露 DAU、retention、queries/session 或 paid conversion，而不只是 sessions per user？",
+        "wording": "仍未披露（口径从 sessions per user 换成\"interacting people +60%\"，仍是相对数）",
+        "verdict": "仍未披露",
+        "evidence": "新闻稿与 10-Q 没有 Meta AI 的用量数；电话会只给相对数（与助手日常交互的人数 +60%）"
+      },
+      {
+        "n": 4,
+        "short": "Business AIs",
+        "question": "Business AIs weekly conversations 是否继续从 10M 扩张，并出现明确 monetization model？",
+        "wording": "部分验证：模式说清了，量化被抽走",
+        "verdict": "部分验证",
+        "evidence": "电话会把「每周 10M 次对话」换成「超过 1M 家企业每周使用 business agents」，两个数不可环比；收费方式（订阅、按用量、最终按结果付费）本季电话会讲了，仍没有收入数"
+      },
+      {
+        "n": 5,
+        "short": "裁员与费用指引",
+        "question": "May workforce reduction 是否带来费用指引下调，还是完全被 infrastructure/talent cost 吃掉？",
+        "wording": "被证伪（不但没下调，还上调）",
+        "verdict": "被证伪",
+        "evidence": "裁员约 {positions} 人、遣散费 {severance}，全年总费用指引由 {expense_before} 改为 {expense_now}（{expense_bounds_move}；新闻稿写明抬高下限是为吸收本季 {legal} 的法律计提）"
+      },
+      {
+        "n": 6,
+        "short": "EU 与 youth 诉讼",
+        "question": "EU less-personalized ads 与 US youth trials 是否出现可量化收入/费用影响？",
+        "wording": "部分验证：youth 侧已货币化，EU 侧叙事消失且仍未量化",
+        "verdict": "部分验证",
+        "evidence": "本季一般及行政费用含 {legal} 法律计提，新闻稿仍写 youth 相关审判「may ultimately result in a material loss」；上季新闻稿「headwinds in the EU」一句本季不再出现，EU 影响仍无金额"
+      }
+    ]
   },
   "prior_kpi_settlement": {
     "period": "Q2 2026",
     "set_in": "Q1 2026",
-    "lead": "广告价格以 {price_margin} 的余量「达标」，但同一季广告收入减速 {ad_slowdown}——这条阈值本身已被证明会给出方向相反的信号，本季退役。",
-    "quantified": [
+    "_note": "上季（Q1 2026）本地分析第 8 节「关键观察指标」5 行在本季的结算。rows 是逐字的原文与本季分析「先校准上季 5 条指标」对每一行的读法（report_reading）与处理（handling）；quantified 是从原文拆出的每一档线：measure、fires（原文的比较符）、threshold、kind（target = 触发是好事，warn = 触发是警示）逐字取自原文，读数不在这里存，由 build/meta.py 按 measure 从本文件的序列现算；consecutive 是原文要求连续几季，also 是同一档里不进数值比较的另一半及其本季证据，year 是全年量所指的年份。text_legs 是整行里只能按文字结算的条件（{…} 由 builder 现算填入）。换季时整块换成上一季 next_kpi 的 rows 与 quantified（原样搬过来），再补上新一季报告的读法与处理，并改戳。",
+    "rows": [
       {
-        "metric": "FY2026 CapEx 指引中点",
-        "direction": "down",
-        "threshold": 145.0,
-        "actual": 137.5,
-        "unit": "usd_bn",
-        "area": "资本开支"
+        "row": 1,
+        "metric": "FY2026 CapEx midpoint（最大估值压力点）",
+        "text": "第二次上修后 $125-145B（midpoint $135B，+86.9% YoY）；Q2/Q3 维持区间 = capital intensity 锁定 → 跟踪；H2 第三次上修到 ≥ $145B midpoint 或 FY2027 guide 首次给出 ≥ $160B = 估值乘数从 25x → 20x 区间压缩、FCF haircut 折价加深 → 减仓；维持 $135B + ROIC 证据出现 = 重新评估 → 加仓",
+        "action": "跟踪 / 减仓 / 加仓",
+        "report_reading": "未触发，但阈值设计失效",
+        "handling": "重设：只盯 capex 线会漏掉 El Paso 式表外算力，改为「capex + 表外义务」合并口径"
       },
       {
-        "metric": "平均每条广告价格 YoY",
-        "direction": "up",
-        "threshold": 8.0,
-        "actual": 12.0,
-        "unit": "pct",
-        "area": "广告价格"
+        "row": 2,
+        "metric": "Average price per ad YoY（广告 AI 兑现 vs 周期性涨价见顶）",
+        "text": "Q1 +12% YoY（vs Q4 +6%，加速 +6pp，是 Q1 +33% 收入增长主要 driver）；Q2/Q3 ≥ +8% YoY = AI 性能驱动持续兑现（Lattice/GEM/Adaptive Ranking 效率传导）→ 加仓；Q2 ≤ +3% YoY = 涨价周期见顶、增长依赖 impressions → 警示（impressions +19% 已是高位）",
+        "action": "加仓 / 警示",
+        "report_reading": "指标设计失效（给出错误信号）：形式上触发「加仓」",
+        "handling": "退役：价格达标而广告收入减速，单看价格会误导，替换为「量价联合桥」"
       },
       {
-        "metric": "Reality Labs 单季收入",
-        "direction": "up",
-        "threshold": 500.0,
-        "actual": 431.0,
-        "unit": "usd_m",
-        "area": "新硬件"
+        "row": 3,
+        "metric": "Reality Labs 季度收入 + 亏损（AI glasses vs Quest lap）",
+        "text": "Q1 RL revenue $402M（-2% YoY），Q4 $955M（季节性）；Q2/Q3 RL revenue ≥ $500M + 管理层确认 AI glasses 增长 ≥ 100% YoY = AI glasses 撑住 Quest lap → 跟踪；连续 2 季 RL revenue YoY 转负 = AI glasses ramp 不及预期 → 警示（且 RL 亏损 ~$5B/Q 持续吞噬）",
+        "action": "跟踪 / 警示",
+        "report_reading": "未触发",
+        "handling": "降级为纯观察项，不占用 5 个名额：RL 连续多季稳定拖累约 -$4.5B/季，边际信息量低"
       },
       {
-        "metric": "FoA Other 收入 YoY",
-        "direction": "up",
-        "threshold": 60.0,
-        "actual": 72.7,
-        "unit": "pct",
-        "area": "非广告收入"
+        "row": 4,
+        "metric": "FoA Other revenue + WhatsApp paid messaging run rate（Insight 3 — 被低估的变现入口）",
+        "text": "Q1 FoA Other $885M（+74% YoY、+10.5% QoQ），年化 ~$3.54B（vs Q4 末公布 $2B，半年 +77%）；Q2/Q3 FoA Other ≥ +60% YoY + WhatsApp 单独披露 ≥ $5B run rate = 第二变现引擎确认 → 加仓 + 多元化里程碑；增速回落到 < +40% YoY = 早期 base effect 退潮 → 跟踪",
+        "action": "加仓 / 多元化里程碑 / 跟踪",
+        "report_reading": "已触发（加仓 / 多元化里程碑）",
+        "handling": "保留、上调阈值：从「增速」转向「绝对额 + 增速」双轨"
       },
       {
-        "metric": "经营利润率（调整后）",
-        "direction": "up",
-        "threshold": 37.0,
-        "actual": 36.77,
-        "unit": "pct",
-        "area": "利润率",
-        "basis": "adjusted"
+        "row": 5,
+        "metric": "Operating margin（41% 是否守住 vs compute / depreciation 压力）",
+        "text": "Q1/Q4 均为 41%；Q2/Q3 ≥ 39% = compute efficiency 改进消化 CapEx 折旧 → 加仓；< 37% 或连续 2 季下行 ≥ 2pp = depreciation step-up 超 efficiency gains → 警示（CapEx +87% YoY 将于 2027 H1 开始进入完整折旧周期）",
+        "action": "加仓 / 警示",
+        "report_reading": "已触发（警示）：GAAP 与调整后两种口径均低于 37%",
+        "handling": "保留但升级：静态利润率已确认转折，下一阶段改看增量利润率"
       }
     ],
-    "retired": [
-      "「平均每条广告价格」单独成线已退役：本季价格达标而广告收入减速 5.4pp，单看价格给出方向相反的信号",
-      "「Reality Labs 单季收入」降级为观察项：连续多季稳定拖累约 -$4.5B，边际信息量低"
+    "quantified": [
+      {
+        "id": "capex_mid_cut",
+        "row": 1,
+        "line": "减仓线",
+        "measure": "capex_guide_mid",
+        "year": "2026",
+        "fires": "≥",
+        "threshold": 145.0,
+        "kind": "warn",
+        "unit": "usd_bn"
+      },
+      {
+        "id": "capex_mid_hold",
+        "row": 1,
+        "line": "加仓线",
+        "measure": "capex_guide_mid",
+        "year": "2026",
+        "fires": "≤",
+        "threshold": 135.0,
+        "kind": "target",
+        "unit": "usd_bn",
+        "reads_as": "原文「维持 $135B」按中点不高于 $135B 结算",
+        "also": {
+          "text": "ROIC 证据出现",
+          "reading": "电话会上分析师直接问可量化的 ROIC，管理层没有给任何回报数字（电话会口径）"
+        }
+      },
+      {
+        "id": "fy2027_first_cut",
+        "row": 1,
+        "line": "减仓线",
+        "measure": "capex_guide_first_mid",
+        "year": "2027",
+        "fires": "≥",
+        "threshold": 160.0,
+        "kind": "warn",
+        "unit": "usd_bn",
+        "unread": "公司还没有给出 FY2027 资本开支指引：本季新闻稿 Outlook 段只给 2026 年，电话会上明确不提供 2027 年的数"
+      },
+      {
+        "id": "price_add",
+        "row": 2,
+        "line": "加仓线",
+        "measure": "price_per_ad_yoy",
+        "fires": "≥",
+        "threshold": 8.0,
+        "kind": "target",
+        "unit": "pct"
+      },
+      {
+        "id": "price_warn",
+        "row": 2,
+        "line": "警示线",
+        "measure": "price_per_ad_yoy",
+        "fires": "≤",
+        "threshold": 3.0,
+        "kind": "warn",
+        "unit": "pct"
+      },
+      {
+        "id": "rl_track",
+        "row": 3,
+        "line": "跟踪线",
+        "measure": "reality_labs_revenue",
+        "fires": "≥",
+        "threshold": 500.0,
+        "kind": "target",
+        "unit": "usd_m",
+        "also": {
+          "text": "管理层确认 AI glasses 增长 ≥ 100% YoY",
+          "reading": "新闻稿与 10-Q 只说 RL 收入增长来自 AI 眼镜、被 Quest 销量下滑部分抵消，没有给 AI 眼镜的增速"
+        }
+      },
+      {
+        "id": "rl_yoy_warn",
+        "row": 3,
+        "line": "警示线",
+        "measure": "reality_labs_revenue_yoy",
+        "fires": "<",
+        "threshold": 0.0,
+        "kind": "warn",
+        "unit": "pct",
+        "consecutive": 2
+      },
+      {
+        "id": "foa_add",
+        "row": 4,
+        "line": "加仓线",
+        "measure": "foa_other_revenue_yoy",
+        "fires": "≥",
+        "threshold": 60.0,
+        "kind": "target",
+        "unit": "pct",
+        "also": {
+          "text": "WhatsApp 单独披露 ≥ $5B run rate",
+          "reading": "10-Q 只说 FoA 其他收入的增长主要来自 WhatsApp 付费消息与订阅，没有单独披露 WhatsApp 的金额或 run rate"
+        }
+      },
+      {
+        "id": "foa_track",
+        "row": 4,
+        "line": "跟踪线",
+        "measure": "foa_other_revenue_yoy",
+        "fires": "<",
+        "threshold": 40.0,
+        "kind": "warn",
+        "unit": "pct"
+      },
+      {
+        "id": "margin_add",
+        "row": 5,
+        "line": "加仓线",
+        "measure": "operating_margin_adjusted",
+        "fires": "≥",
+        "threshold": 39.0,
+        "kind": "target",
+        "unit": "pct"
+      },
+      {
+        "id": "margin_warn",
+        "row": 5,
+        "line": "警示线",
+        "measure": "operating_margin_adjusted",
+        "fires": "<",
+        "threshold": 37.0,
+        "kind": "warn",
+        "unit": "pct"
+      },
+      {
+        "id": "margin_slide",
+        "row": 5,
+        "line": "警示线",
+        "measure": "operating_margin_adjusted_qoq_pp",
+        "fires": "≤",
+        "threshold": -2.0,
+        "kind": "warn",
+        "unit": "pp",
+        "consecutive": 2,
+        "reads_as": "原文「连续 2 季下行 ≥ 2pp」按环比变动不高于 −2pp、连续两季结算"
+      }
+    ],
+    "text_legs": [
+      {
+        "row": 1,
+        "text": "Q2/Q3 维持区间 = capital intensity 锁定 → 跟踪",
+        "reading": "全年指引由 {capex_before} 改为 {capex_now}，区间{capex_range_held}"
+      }
     ]
   },
   "next_kpi": {
     "period": "Q2 2026",
     "for_period": "Q3 2026",
-    "theme_words": {
-      "incremental_profit": "增量资本有没有产出增量利润"
-    },
-    "quantified": [
+    "_note": "本季（Q2 2026）本地分析第 8 节「本季 5 条指标」与立场撤销条件 ①–③。rows 是逐字的原文与触发动作（指标名只留指标本身，原文附在后面的评语不收）；quantified 是拆出的每一档线，measure / fires / threshold / kind 逐字取自原文，当前值由 build/meta.py 按 measure 从本文件的序列现算；joint 是「且」连着的另一腿；settles 是要等哪一季才有读数；also 是同一档里不进数值比较的另一半；text_legs 是整行里只能按文字结算的条件；gated 是没有序列、要等离散事件的条件。下季换季时把 rows / quantified / text_legs / revocation 原样搬进 prior_kpi_settlement，再换成新一季第 8 节。",
+    "rows": [
       {
-        "metric": "同比增量经营利润率",
-        "direction": "up",
-        "threshold": 25.0,
-        "current": 14.4,
-        "unit": "pct",
-        "theme": "incremental_profit",
-        "basis": "adjusted"
+        "row": 1,
+        "metric": "调整后增量经营利润率（QoQ 与 YoY）",
+        "text": "当前 QoQ -11.5%、YoY +14.4%、FY26 隐含中枢 4.6%（区间 0.8%-8.5%）。Q3/Q4 任一季 QoQ 增量利润率回到 ≥+25% = 资本开始产出利润 → 加仓；连续两季 ≤0% = 规模扩张不创造经营利润 → 减仓",
+        "action": "加仓 / 减仓"
       },
       {
-        "metric": "广告量价乘积（隐含收入增速）",
-        "direction": "up",
-        "threshold": 18.8,
-        "current": 27.7,
+        "row": 2,
+        "metric": "CapEx + 表外算力义务（合并口径）",
+        "text": "当前：FY26 capex 指引 $130-145B（midpoint $137.5B）+ El Paso 残值担保约 $13B + 最长 20 年租约。FY26 capex 走到上限 $145B，或 FY2027 首次指引 ≥$180B，或累计残值担保/JV 承诺 >$25B 而 capex 指引未同步上调 = 资本强度失控 → 减仓；FY26 收在 ≤$137.5B 且 2027 指引 ≤$160B 且无新增大额表外义务 = 上限出现 → 加仓",
+        "action": "减仓 / 加仓"
+      },
+      {
+        "row": 3,
+        "metric": "广告量价联合桥（impressions 增速 × price 增速）",
+        "text": "当前 impressions +14%、price +12%（乘积隐含 +27.7%）。impressions ≤+10% 且 price ≤+8%（乘积 ≤+18.8%）= 广告收入增速破 +20% → 减仓；impressions ≥+14% 且 price ≥+12% 同时成立 = 新增库存非低变现、两难被打破 → 加仓",
+        "action": "减仓 / 加仓"
+      },
+      {
+        "row": 4,
+        "metric": "FoA Other 绝对额 + 增速（WhatsApp / 订阅 / API）",
+        "text": "当前 $1,007M/季（+72.7% YoY），年化约 $4.0B。任一季 ≥$1.4B 且 ≥+50% YoY（年化 ≥$5.6B），或 Meta One / API 首次给出绝对收入 = 第二引擎成立 → 加仓 + 多元化里程碑；增速回落至 <+40% YoY = 早期基数效应退潮 → 跟踪",
+        "action": "加仓 / 多元化里程碑 / 跟踪"
+      },
+      {
+        "row": 5,
+        "metric": "FY2026 经营利润 vs FY2025 的 $83,276M",
+        "text": "H1 已实现 $41,647M → H2 需 ≥$41,629M。Q3 实际 OI <$18.0B（则 Q4 需 >$23.6B）= 承诺告急 → 警示；FY26 实际 OI < $83,276M = 承诺破 → 减仓；FY26 OI ≥$86B（增量利润率 >5%）= 超预期 → 加仓",
+        "action": "警示 / 减仓 / 加仓"
+      }
+    ],
+    "revocation": [
+      {
+        "n": "①",
+        "text": "FY2026 经营利润低于 FY2025 的 $83,276M",
+        "lines": [
+          "fy_oi_cut"
+        ]
+      },
+      {
+        "n": "②",
+        "text": "FY2027 capex 首次指引 ≥$180B，或 FY2026 capex 落在 $145B 上限",
+        "lines": [
+          "fy2027_cut",
+          "capex_top"
+        ]
+      },
+      {
+        "n": "③",
+        "text": "youth trials 再计提 ≥$2B，或累计残值担保/JV 承诺 >$25B 且 capex 指引未同步上调",
+        "lines": [
+          "rvg_cut"
+        ]
+      }
+    ],
+    "quantified": [
+      {
+        "id": "inc_add",
+        "row": 1,
+        "line": "加仓线",
+        "measure": "incremental_margin_qoq_adjusted",
+        "fires": "≥",
+        "threshold": 25.0,
+        "kind": "target",
+        "unit": "pct",
+        "reads_as": "原文写明按环比（QoQ）口径；同比口径的读数只作背景"
+      },
+      {
+        "id": "inc_cut",
+        "row": 1,
+        "line": "减仓线",
+        "measure": "incremental_margin_qoq_adjusted",
+        "fires": "≤",
+        "threshold": 0.0,
+        "kind": "warn",
+        "unit": "pct",
+        "consecutive": 2
+      },
+      {
+        "id": "capex_top",
+        "row": 2,
+        "line": "减仓线",
+        "measure": "fy_capex",
+        "year": "2026",
+        "fires": "≥",
+        "threshold": 145.0,
+        "kind": "warn",
+        "unit": "usd_bn",
+        "reads_as": "结算的是全年实际资本开支（Q4 财报才有），全年结束前以公司最新指引中点作当前读数"
+      },
+      {
+        "id": "fy2027_cut",
+        "row": 2,
+        "line": "减仓线",
+        "measure": "capex_guide_first_mid",
+        "year": "2027",
+        "fires": "≥",
+        "threshold": 180.0,
+        "kind": "warn",
+        "unit": "usd_bn",
+        "unread": "公司还没有给出 FY2027 资本开支指引（本季新闻稿 Outlook 段只给 2026 年，电话会上明确不提供），通常在 Q4 财报给"
+      },
+      {
+        "id": "rvg_cut",
+        "row": 2,
+        "line": "减仓线",
+        "measure": "cumulative_rvg",
+        "fires": ">",
+        "threshold": 25.0,
+        "kind": "warn",
+        "unit": "usd_bn",
+        "reads_as": "按 10-Q 披露的残值担保最大敞口相加：路易斯安那合资的 RVG 门槛与 El Paso 交割后的最大敞口",
+        "also": {
+          "text": "capex 指引未同步上调",
+          "reading": "本季指引由 {capex_before} 改为 {capex_now}（{capex_bounds_move}）；报告写这条线时只数了 El Paso 的{rvg_el_paso}，没有数 2025 年 10 月已经存在、FY2025 10-K 与本季 10-Q 都载明的路易斯安那合资（{rvg_louisiana}），所以数值一档在这条线写下时就已越过，不是本季新发生的"
+        }
+      },
+      {
+        "id": "capex_floor_add",
+        "row": 2,
+        "line": "加仓线",
+        "measure": "fy_capex",
+        "year": "2026",
+        "fires": "≤",
+        "threshold": 137.5,
+        "kind": "target",
+        "unit": "usd_bn",
+        "reads_as": "结算的是全年实际资本开支（Q4 财报才有），全年结束前以公司最新指引中点作当前读数",
+        "also": {
+          "text": "2027 指引 ≤$160B 且无新增大额表外义务",
+          "reading": "公司还没有给 2027 年资本开支指引；有没有新增表外义务要看下一份 10-Q"
+        }
+      },
+      {
+        "id": "bridge_cut_imp",
+        "row": 3,
+        "line": "减仓线",
+        "measure": "ad_impressions_yoy",
+        "fires": "≤",
+        "threshold": 10.0,
+        "kind": "warn",
+        "unit": "pct",
+        "joint": "bridge_cut_price"
+      },
+      {
+        "id": "bridge_cut_price",
+        "row": 3,
+        "line": "减仓线",
+        "measure": "price_per_ad_yoy",
+        "fires": "≤",
+        "threshold": 8.0,
+        "kind": "warn",
+        "unit": "pct",
+        "joint": "bridge_cut_imp"
+      },
+      {
+        "id": "bridge_add_imp",
+        "row": 3,
+        "line": "加仓线",
+        "measure": "ad_impressions_yoy",
+        "fires": "≥",
+        "threshold": 14.0,
+        "kind": "target",
+        "unit": "pct",
+        "joint": "bridge_add_price"
+      },
+      {
+        "id": "bridge_add_price",
+        "row": 3,
+        "line": "加仓线",
+        "measure": "price_per_ad_yoy",
+        "fires": "≥",
+        "threshold": 12.0,
+        "kind": "target",
+        "unit": "pct",
+        "joint": "bridge_add_imp"
+      },
+      {
+        "id": "foa_level_add",
+        "row": 4,
+        "line": "加仓线",
+        "measure": "foa_other_revenue",
+        "fires": "≥",
+        "threshold": 1400.0,
+        "kind": "target",
+        "unit": "usd_m",
+        "joint": "foa_yoy_add"
+      },
+      {
+        "id": "foa_yoy_add",
+        "row": 4,
+        "line": "加仓线",
+        "measure": "foa_other_revenue_yoy",
+        "fires": "≥",
+        "threshold": 50.0,
+        "kind": "target",
+        "unit": "pct",
+        "joint": "foa_level_add"
+      },
+      {
+        "id": "foa_track",
+        "row": 4,
+        "line": "跟踪线",
+        "measure": "foa_other_revenue_yoy",
+        "fires": "<",
+        "threshold": 40.0,
+        "kind": "warn",
         "unit": "pct"
       },
       {
-        "metric": "FoA Other 单季收入",
-        "direction": "up",
-        "threshold": 1400.0,
-        "current": 1007.0,
-        "unit": "usd_m"
-      },
-      {
-        "metric": "单季经营利润 vs FY2025 季均线",
-        "direction": "up",
-        "threshold": 20819.0,
-        "current": 18775.0,
+        "id": "q3_oi_warn",
+        "row": 5,
+        "line": "警示线",
+        "measure": "operating_income",
+        "fires": "<",
+        "threshold": 18000.0,
+        "kind": "warn",
         "unit": "usd_m",
-        "theme": "incremental_profit"
+        "reads_as": "结算的是 Q3 的单季经营利润（GAAP）；当前读数是本季的"
       },
       {
-        "metric": "FY2026 CapEx 指引中点",
-        "direction": "down",
-        "threshold": 145.0,
-        "current": 137.5,
-        "unit": "usd_bn"
+        "id": "fy_oi_cut",
+        "row": 5,
+        "line": "减仓线",
+        "measure": "fy_operating_income",
+        "year": "2026",
+        "fires": "<",
+        "threshold": 83276.0,
+        "kind": "warn",
+        "unit": "usd_m",
+        "settles": "Q4 2026"
+      },
+      {
+        "id": "fy_oi_add",
+        "row": 5,
+        "line": "加仓线",
+        "measure": "fy_operating_income",
+        "year": "2026",
+        "fires": "≥",
+        "threshold": 86000.0,
+        "kind": "target",
+        "unit": "usd_m",
+        "settles": "Q4 2026"
       }
     ],
-    "disclosure_gated": [
+    "text_legs": [
       {
-        "short": "数据中心合资结构的合并判定与担保",
-        "text": "Q2 2026 10-Q 中数据中心合资结构的合并判定、残值担保与租赁承诺披露"
-      },
+        "row": 4,
+        "text": "或 Meta One / API 首次给出绝对收入（与上面两腿任一成立即可）",
+        "reading": "本季新闻稿与 10-Q 都没有 Meta One 或 API 的收入数"
+      }
+    ],
+    "gated": [
       {
-        "short": "FY2027 CapEx 首次指引",
-        "text": "FY2027 CapEx 首次指引：连续两季被明确拒绝，≥US$180B 即重估"
-      },
-      {
-        "short": "企业级业务的绝对收入",
-        "text": "企业级（API / business agents / 直售算力）是否首次给出绝对收入或年化 run rate"
-      },
-      {
-        "short": "受限现金性质",
-        "text": "$13,107M 受限现金的性质：公司未解释，直接影响现金可动用性"
+        "row": "撤销③",
+        "text": "youth trials 再计提 ≥$2B",
+        "fires": "≥",
+        "threshold": 2.0,
+        "unit": "usd_bn",
+        "why": "离散事件，没有可画的序列：要等下一次法律计提出现时按其金额与事项结算；本季的 {legal} 是这条线设下之前的那一笔"
       }
     ]
   },
@@ -943,7 +1589,7 @@
       null,
       null,
       null,
-      558.0,
+      717.0,
       534.0,
       305.0,
       558.0,
@@ -987,7 +1633,7 @@
       null,
       null,
       null,
-      176.0,
+      168.0,
       198.0,
       192.0,
       176.0,
@@ -1013,8 +1659,8 @@
     ],
     "segment_first_reported": "2020Q4",
     "finance_lease_first_reported": "2016Q1",
-    "provenance": "42 个季度（2016Q1–2026Q2）来自 SEC EDGAR 上 Meta 的 10-Q / 10-K XBRL 事实（CIK 1326801）。现金流量表只按年初至今披露，故除第一季外逐季由相邻两个年初至今值相减得到，第四季为全年 − 前三季；两条腿都是申报值。分部收入（Family of Apps other / Reality Labs）带 us-gaap:StatementBusinessSegmentsAxis 维度，第四季不取相减值而取公司 Q4 新闻稿里印出来的三个月列 —— 相减的两条腿各自已四舍五入到百万，2024Q4 因此会算出 519 与 522 两个版本，而公司自己印的就是 519。与仓内已复核的 12 个季度逐格核对全部相同（2024Q4 的 522 系仓内笔误，一并改正）。",
-    "segment_note": "分部两条线只能回到 2020Q4：Meta 2020Q4 才首次按 Family of Apps / Reality Labs 分部披露，2019 与 2020 只发过年度分部数，季度值从未发布 —— 在那之前不是缺数据，是公司没有这两个类别。",
+    "provenance": "42 个季度（2016Q1–2026Q2）来自 SEC EDGAR 上 Meta 的 10-Q / 10-K XBRL 事实（CIK 1326801）。现金流量表只按年初至今披露，故除第一季外逐季由相邻两个年初至今值相减得到，第四季为全年 − 前三季；两条腿都是申报值。分部收入（Family of Apps other / Reality Labs）带 us-gaap:StatementBusinessSegmentsAxis 维度，第四季不取相减值而取公司 Q4 新闻稿里印出来的三个月列 —— 相减的两条腿各自已四舍五入到百万，2024Q4 因此会算出 519 与 522 两个版本，而公司自己印的就是 519。与仓内已复核的 12 个季度逐格核对全部相同（2024Q4 的 522 系仓内笔误，一并改正）。2020Q4 的两条分部收入此前误填成 2021Q3 的 558 / 176（逐季核对只覆盖 12 个季度，这一格在窗口之外），按 Q4 2021 新闻稿（acc 0001326801-22-000015）Segment Information 的 2020 年第四季一列改正为 717 / 168；广告 27,187 + 两条分部 = 总收入 28,072 由此闭合。",
+    "segment_note": "分部两条线只能回到 2020Q4：Meta 从 2021 年第四季起才按 Family of Apps / Reality Labs 两个分部报告（FY2021 10-K 原话「Beginning in the fourth quarter of 2021」），当季新闻稿按新分部重述、并列印出 2021 年前三季与 2020Q4 的季度数，另给 2019、2020 两年的全年数；本页查过的申报里没有更早的季度分部数。",
     "finance_lease_note": "融资租赁本金 42 季齐全。本仓此前把它的起点写成 2018Q1，理由是「ASC 842 之前公司不披露这条现金流」—— 那句话是错的：2016 与 2017 年的 10-Q / 10-K 现金流量表里逐期都有这一行，当时的行名是「Principal payments on capital lease and other financing obligations」，准则改的是名字与列报，不是有没有披露。含融资租赁口径的自由现金流因此从 2016Q1 起就成立。",
     "advertising_revenue_usd_m": [
       5201.0,
@@ -1193,6 +1839,170 @@
       3.6
     ],
     "ad_metrics_note": "广告曝光量与每条广告平均价格的同比逐季读自各季 10-Q 的 MD&A（Advertising 段的三个月数）；自 2021Q4 起业绩 8-K 的 EX-99.1 也把它印成要点。**五个第四季留空**（2016Q4–2020Q4）：那几年公司只在 10-K 里给全年变动，季度值不存在于任何申报。「家族日活跃用户」自 2018Q4 起才有 —— FY2019 10-K 是首次披露，其柱状图从 2018-12-31 起。融资租赁本金 2016Q1–2017Q4 此前在本仓留空，实际每期现金流量表都申报过（当时的行名是 Principal payments on capital lease and other financing obligations），已补齐。"
+  },
+  "leases_not_yet_commenced": {
+    "why": "季末尚未起租的经营与融资租赁义务（公司在租赁附注里逐季写一句，US$B）。2019Q1 起才有：ASC 842 从 2019 年起要求披露，FY2018 10-K 没有这个数（只有 build-to-suit 安排）。口径：2019Q1–2023Q4 公司分别写经营与融资两个数，本页相加；2024Q1–Q3 只写了经营租赁（没有提融资租赁）；2024Q4 起写经营与融资合计。逐季出处见 sources。",
+    "quarters": [
+      "2019Q1",
+      "2019Q2",
+      "2019Q3",
+      "2019Q4",
+      "2020Q1",
+      "2020Q2",
+      "2020Q3",
+      "2020Q4",
+      "2021Q1",
+      "2021Q2",
+      "2021Q3",
+      "2021Q4",
+      "2022Q1",
+      "2022Q2",
+      "2022Q3",
+      "2022Q4",
+      "2023Q1",
+      "2023Q2",
+      "2023Q3",
+      "2023Q4",
+      "2024Q1",
+      "2024Q2",
+      "2024Q3",
+      "2024Q4",
+      "2025Q1",
+      "2025Q2",
+      "2025Q3",
+      "2025Q4",
+      "2026Q1",
+      "2026Q2"
+    ],
+    "total_usd_bn": [
+      6.199,
+      5.291,
+      3.516,
+      5.357,
+      5.402,
+      5.274,
+      7.708,
+      7.853,
+      6.683,
+      6.817,
+      7.346,
+      9.96,
+      11.41,
+      10.21,
+      10.16,
+      9.79,
+      11.59,
+      10.87,
+      8.74,
+      8.44,
+      6.17,
+      6.2,
+      18.49,
+      34.12,
+      35.27,
+      52.56,
+      58.14,
+      103.77,
+      182.88,
+      278.99
+    ],
+    "operating_usd_bn": [
+      5.77,
+      4.82,
+      3.16,
+      5.04,
+      5.07,
+      4.91,
+      7.31,
+      7.41,
+      6.14,
+      5.93,
+      6.39,
+      8.34,
+      9.78,
+      8.58,
+      8.62,
+      8.36,
+      10.26,
+      9.62,
+      7.51,
+      7.07,
+      6.17,
+      6.2,
+      18.49,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "finance_usd_bn": [
+      0.429,
+      0.471,
+      0.356,
+      0.317,
+      0.332,
+      0.364,
+      0.398,
+      0.443,
+      0.543,
+      0.887,
+      0.956,
+      1.62,
+      1.63,
+      1.63,
+      1.54,
+      1.43,
+      1.33,
+      1.25,
+      1.23,
+      1.37,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "basis": [
+      "分列相加",
+      "分列相加",
+      "分列相加",
+      "分列相加",
+      "分列相加",
+      "分列相加",
+      "分列相加",
+      "分列相加",
+      "分列相加",
+      "分列相加",
+      "分列相加",
+      "分列相加",
+      "分列相加",
+      "分列相加",
+      "分列相加",
+      "分列相加",
+      "分列相加",
+      "分列相加",
+      "分列相加",
+      "分列相加",
+      "只写经营租赁",
+      "只写经营租赁",
+      "只写经营租赁",
+      "合计",
+      "合计",
+      "合计",
+      "合计",
+      "合计",
+      "合计",
+      "合计"
+    ],
+    "sources": "各季 10-Q / 10-K 的租赁附注（2025 年起为 Commitments and Contingencies）：2019Q1 acc 0001326801-19-000037、2019Q2 -19-000055、2019Q3 -19-000069、2019Q4 10-K -20-000013、2020Q1 -20-000048、2020Q2 -20-000076、2020Q3 -20-000084、2020Q4 10-K -21-000014、2021Q1 -21-000033、2021Q2 -21-000049、2021Q3 -21-000065、2021Q4 10-K -22-000018、2022Q1 -22-000057、2022Q2 -22-000082、2022Q3 -22-000108、2022Q4 10-K -23-000013、2023Q1 -23-000067、2023Q2 -23-000093、2023Q3 -23-000103、2023Q4 10-K -24-000012、2024Q1 -24-000049、2024Q2 -24-000069、2024Q3 -24-000081、2024Q4 10-K -25-000017、2025Q1 -25-000054（前缀均为 0001326801）；2025Q2 0001628280-25-036791、2025Q3 -25-047240、2025Q4 10-K 0001628280-26-003942、2026Q1 -26-028526、2026Q2 -26-050705。"
   },
   "quarterly_guidance_history": {
     "quarters": [

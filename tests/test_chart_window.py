@@ -313,6 +313,36 @@ def _ma_threshold_reach() -> int:
                       for series in ex.get("series", [])))
 
 
+def _meta_threshold_reach() -> int:
+    """META settles last quarter's section-8 lines and places this quarter's, one
+    chart per reading that has a record, each on the full 42-quarter axis. Which
+    readings the two reports chose changes every roll -- the page is rolled by
+    editing `series/meta.json` alone -- so the pin counts the permanent charts
+    and adds the threshold charts that reach 2016 while they are published (a
+    threshold chart is one that draws a 「上季…」/「下季…」 line)."""
+    page = js_payload(ROOT / "data" / "meta.js", "window.DASH")
+    return sum(1 for section in page["sections"] for ex in section["exhibits"]
+               if ex["kind"] == "lines"
+               and any(s["name"].startswith(("上季", "下季")) for s in ex.get("series", []))
+               and (first_year(ex) or TARGET_YEAR + 1) <= TARGET_YEAR)
+
+
+def _meta_price_dips() -> dict:
+    """The ad chart counts the quarters in which price per ad fell year on year --
+    a conditional count, not a window. Pinned at the series' own count, and at
+    the chart's number as the page prints it, since that moves whenever a chart
+    before it comes or goes."""
+    series = json.loads((ROOT / "series" / "meta.json").read_text(encoding="utf-8"))
+    negative = sum(1 for v in series["long_history"]["price_per_ad_yoy_pct"] if v is not None and v < 0)
+    page = js_payload(ROOT / "data" / "meta.js", "window.DASH")
+    for section in page["sections"]:
+        for ex in section["exhibits"]:
+            names = [s["name"] for s in ex.get("series", [])]
+            if names[1:] == ["广告曝光 YoY", "平均每条广告价格 YoY"]:
+                return {f"meta Ex{ex['n']}": ([negative], "价格腿同比为负的季度数，是条件计数")}
+    return {}
+
+
 def _tsm_advanced_count() -> dict:
     """The process-mix note counts the quarters since 2021Q1 in which the page's
     summed 7nm-and-below line equals TSMC's own aggregate. The count grows by
@@ -386,7 +416,7 @@ def _cost_threshold_reach() -> int:
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
     "amd": 15 + _amd_threshold_reach(), "amzn": 9 + _amzn_threshold_reach(), "arm": 0, "asml": 24, "avgo": 16, "axp": 7 + _axp_threshold_reach(), "bc": 3, "cboe": 8 + _cboe_threshold_reach(), "cdns": 10, "cfr": 20, "cme": 13 + _cme_threshold_reach(),
-    "cost": 11 + _cost_threshold_reach(), "googl": 5 + _googl_threshold_reach(), "hkex": 15, "ibkr": 26, "ker": 11 + _ker_threshold_reach(), "ma": 13 + _ma_threshold_reach(), "mc": 9, "mco": 13, "meta": 10,
+    "cost": 11 + _cost_threshold_reach(), "googl": 5 + _googl_threshold_reach(), "hkex": 15, "ibkr": 26, "ker": 11 + _ker_threshold_reach(), "ma": 13 + _ma_threshold_reach(), "mc": 9, "mco": 13, "meta": 5 + _meta_threshold_reach(),
     "msci": 23, "msft": 8, "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 7 + _nke_threshold_reach(), "nvda": 10, "pm": 8,
     "race": 12, "rms": 15, "samsung": 0, "schw": 10, "skhynix": 4, "snps": 8,
     "spgi": 14, "tjx": 13, "tsm": 14 + _tsm_story_reach(), "v": 17, "zgn": 0,
@@ -1158,9 +1188,11 @@ CONVERTED = {
         "收入指引兑现": "Meta published no quarterly revenue outlook range before the "
                   "2022Q1 release; the record starts where the guidance does.",
         "收入相对指引中值": "the deviation view of the same record, so the same floor.",
-        "FoA Other 单季收入": "segment revenue begins with the 2020Q4 release -- before that "
-                        "the categories did not exist.",
-        "两条非广告收入线": "same segment floor, long-run version.",
+        "两条非广告收入线": "segment revenue begins with the 2020Q4 release -- before that "
+                     "the categories did not exist.",
+        "已签约未起租的租赁义务": "leases signed but not yet commenced are a disclosure ASC 842 "
+                          "introduced from 2019-01-01; the FY2018 10-K has no such figure (it "
+                          "describes build-to-suit arrangements only), so the record starts in 2019Q1.",
         "折旧摊销同比": "a year-on-year line has no denominator for the first four quarters "
                   "of the record, so it starts in 2017Q1.",
     },
@@ -1589,8 +1621,8 @@ FLOOR_KIND = {
     'meta': {
         '收入指引兑现': 'disclosure',
         '收入相对指引中值': 'disclosure',
-        'FoA Other 单季收入': 'disclosure',
         '两条非广告收入线': 'disclosure',
+        '已签约未起租的租赁义务': 'disclosure',
         '折旧摊销同比': 'coverage',
     },
     'axp': {
@@ -2120,11 +2152,11 @@ UNDERIVABLE_QUARTER_COUNTS = {
                        "图把它们单独成组，所以也不是「补集没被画」。"),
     "cdns Ex11": ([43], "指向完整指引记录的交叉引用；本图只画近 20 季"),
     **_cme_quarter_pins(),
-    "meta Ex9":  ([13], "价格腿同比为负的季度数，是条件计数"),
     "skhynix Ex10": ([22], "这一页此前的窗口长度。图注解释的正是「从 22 季拉到 42 季」"
                           "改变了什么，所以那个 22 指的是旧窗口，不是本图的任何一段"),
     **_tsm_advanced_count(),
     **_axp_overlap_count(),
+    **_meta_price_dips(),
 }
 
 
