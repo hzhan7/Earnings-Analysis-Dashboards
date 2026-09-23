@@ -3335,115 +3335,372 @@
       7.9
     ],
     "source": "S&P Global 2026 年第二季度业绩新闻稿（8-K EX-99.1，acc 0000064040-26-000040，电头「New York, NY, July 28, 2026」）：Exhibit 1 损益表（Revenue 4,146、Expenses 2,345、Gain on dispositions (11)、Operating profit 1,812、归母净利 1,217、Diluted 4.12、稀释股数 295.5）；Exhibit 4 分部收入（Ratings 1,339 / Indices 534 / Energy 568 / Market Intelligence 1,290 / Mobility 468 / Intersegment Elimination (53)）；Exhibit 7 Revenue by Type（Ratings Non-subscription / Transaction 746 / +25%、Non-transaction 593 / +8%；合计 Subscription 2,064、Transaction 895、Non-transaction 540、Asset-linked fees 348、Sales usage-based royalties 126、Recurring variable 173）；Pro Forma Diluted EPS 表 Adjusted $4.83；Full-Year 2026 Outlook 表（Diluted EPS GAAP $16.35 to $16.60、Adjusted $17.50 to $17.75，Revenue growth 5.9% to 7.9%）。",
-    "checked_on": "2026-09-19"
+    "checked_on": "2026-09-19",
+    "note": {
+      "source": {
+        "this_quarter": "2026-07-28 SPGI Q2 2026 vs Q1 2026 Analysis.md：第 0 节「上季 Follow-up 回答」逐题判定与「框架性偏差诊断」导语；第 8 节「关键观察指标」表 8 行",
+        "last_quarter": "2026-04-29 SPGI Q1 2026 vs Q4 2025 Analysis.md：「关键观察指标（板块 8）」表 5 行；「Follow-up Questions for Next Quarter (Q2 2026)」10 条。该稿第 0 节是首次分析占位，没有更早的报告"
+      },
+      "checked_on": "2026-09-24",
+      "report": {
+        "period_end": "2026-06-30",
+        "release_date": "2026-07-28"
+      },
+      "last_report": {
+        "period_end": "2026-03-31",
+        "release_date": "2026-04-28"
+      },
+      "followup_closure": {
+        "total": 10,
+        "marks": [
+          "✅",
+          "❌",
+          "❌",
+          "🟡",
+          "❌",
+          "🟡",
+          "✅",
+          "🟡",
+          "❌",
+          "❌✅"
+        ],
+        "counts": {
+          "兑现": 2,
+          "部分兑现": 4,
+          "未兑现": 3,
+          "判断错误": 1
+        },
+        "lead": "上季 10 题中，方向完全正确的只有 2 题"
+      },
+      "prior_thresholds": [
+        {
+          "row": 1,
+          "metric": "Adj Operating Margin 全年扩张幅度",
+          "values": [
+            "+75bp",
+            "+30bp"
+          ]
+        },
+        {
+          "row": 2,
+          "metric": "Mobility spin 完成时间表 + 估值",
+          "values": [
+            "25 倍"
+          ]
+        },
+        {
+          "row": 3,
+          "metric": "Ratings Q4 2026 收入 YoY",
+          "values": [
+            "−5%",
+            "−3%"
+          ]
+        },
+        {
+          "row": 4,
+          "metric": "AI 货币化 ROI 数据",
+          "values": [
+            "5%",
+            "4 季"
+          ]
+        },
+        {
+          "row": 5,
+          "metric": "季度回购金额 + Mobility spin 后资本配置",
+          "values": [
+            "$1.5B",
+            "$1B"
+          ],
+          "numeric": [
+            {
+              "threshold": 1500.0,
+              "direction": "up"
+            },
+            {
+              "threshold": 1000.0,
+              "direction": "up"
+            }
+          ]
+        }
+      ],
+      "next_thresholds": [
+        {
+          "row": 1,
+          "metric": "Q3 Ratings 收入同比",
+          "values": [
+            "+3%",
+            "−5%"
+          ],
+          "numeric": [
+            {
+              "threshold": 3.0,
+              "direction": "up"
+            },
+            {
+              "threshold": -5.0,
+              "direction": "up"
+            }
+          ]
+        },
+        {
+          "row": 2,
+          "metric": "H2 hyperscaler billed issuance",
+          "values": [
+            "$1,400 亿",
+            "$800 亿"
+          ]
+        },
+        {
+          "row": 3,
+          "metric": "递延收入现金流变动 + 全年调整后 FCF 增速",
+          "values": [
+            "+10%",
+            "+5%"
+          ],
+          "numeric": [
+            {
+              "threshold": 10.0,
+              "direction": "up"
+            },
+            {
+              "threshold": 5.0,
+              "direction": "up"
+            }
+          ]
+        },
+        {
+          "row": 4,
+          "metric": "MI 组合行动",
+          "values": [
+            "5%"
+          ],
+          "numeric": [
+            {
+              "threshold": 5.0,
+              "direction": "up"
+            }
+          ]
+        },
+        {
+          "row": 5,
+          "metric": "杠杆口径澄清 + 2027 回购指引",
+          "values": [
+            "$40 亿"
+          ]
+        },
+        {
+          "row": 6,
+          "metric": "Energy 有机恒定汇率增速",
+          "values": [
+            "+4.5%",
+            "+3%"
+          ],
+          "numeric": [
+            {
+              "threshold": 4.5,
+              "direction": "up"
+            },
+            {
+              "threshold": 3.0,
+              "direction": "up"
+            }
+          ]
+        },
+        {
+          "row": 7,
+          "metric": "AI 收入首次量化披露",
+          "values": [
+            "5%"
+          ]
+        },
+        {
+          "row": 8,
+          "metric": "SPGI vs MCO 远期 PE 折让",
+          "values": [
+            "< 10%",
+            "> 25%"
+          ]
+        }
+      ]
+    }
   },
   "prior_kpi_settlement": {
     "period": "Q2 2026",
-    "set_in": "Q1 2026 笔记",
+    "set_in": "Q1 2026",
+    "rows": [
+      {
+        "row": 1,
+        "metric": "全年调整后营业利润率扩张",
+        "condition": "FY26 全年 ≥ +75bp 且 H2 费用正常化可控 = 利润率扩张是结构性的；< +30bp = Q1 是「借自未来」",
+        "status": "未到期",
+        "note": "全年指标，要到 FY2026 年报才结算。公司本季把全年调整后营业利润率扩张指引改为 {margin_guide}（剔除 OSTTRA {margin_guide_ex}）；{ytd_words}实际已扩张 {margin_ytd}（剔除 OSTTRA {margin_ytd_ex}）。阈值原文没有写是否剔除 OSTTRA，两个口径的全年指引不同，本页不替它选一个。本季报告第 0 节已经把它背后的「margin 扩张是借自未来」判断退役。"
+      },
+      {
+        "row": 2,
+        "metric": "Mobility 分拆时间表与估值",
+        "condition": "2026 H2 完成分拆且分拆后 Mobility 独立估值 ≥ 25 倍市盈率、SPGI 母公司重估 = catalyst 兑现；分拆推迟到 2027 = catalyst 延后",
+        "status": "时间表兑现",
+        "note": "分拆于 2026-07-01 生效（2026-07-06 的 8-K/A 引言），没有推迟到 2027 年。估值那一半不结算：本页不发布股价与估值。"
+      },
+      {
+        "row": 3,
+        "metric": "Ratings 2026 年第四季度收入同比",
+        "condition": "Q4 ≤ −5% 且 H2 整体 ≤ −3% = 拉前叙事兑现；Q4 转正 = 拉前消化后真实需求强",
+        "status": "未到期",
+        "note": "要到 2026 年第四季度业绩才结算。本季 Ratings 收入同比 {ratings_yoy}，那是第二季度的读数，与这条阈值不是同一个季度，本页不拿它结算。"
+      },
+      {
+        "row": 4,
+        "metric": "AI 相关收入首次量化",
+        "condition": "Q2/Q3 任一分部首次披露 AI 相关收入占比 ≥ 5% = AI 货币化进入量化期；连续 4 季无 AI 收入量化 = 仍是叙事",
+        "status": "本季未触发",
+        "note": "本季新闻稿与 10-Q 都没有 AI 相关收入这一项，第二季度没有触发；第三季度仍在窗口内。「连续 4 季」那一半要从哪一季数起，原文没有写，本页不替它定起点。"
+      },
+      {
+        "row": 5,
+        "metric": "季度回购金额与分拆后的资本配置",
+        "condition": "H1 累计回购 ≥ $1.5B 且 Mobility 分拆后 ≥ $1B/季 = 资本回报承诺持续；H1 < $1B = 资本回报节奏放缓",
+        "status": "上半年这一半到期",
+        "note": "上半年累计回购是一季度 {buyback_prev_q} 加二季度 {buyback_q}，共 {buyback_ytd}；「分拆后每季 ≥ $1B」那一半从 {following} 起才结算。"
+      }
+    ],
     "quantified": [
       {
-        "metric": "Ratings 交易性收入同比",
+        "row": 5,
+        "metric": "上半年累计回购（持续线）",
         "direction": "up",
-        "threshold": 15.0,
-        "unit": "pct",
-        "reads": "yoy:ratings_revenue_split_usd_m.transaction"
+        "threshold": 1500.0,
+        "unit": "usd_m",
+        "reads": "ytd_buyback"
       },
       {
-        "metric": "Ratings 非交易性收入同比",
-        "direction": "up",
-        "threshold": 5.0,
-        "unit": "pct",
-        "reads": "yoy:ratings_revenue_split_usd_m.non_transaction"
-      },
-      {
-        "metric": "营业利润率（剔除处置损益与联营收益 D）",
-        "direction": "up",
-        "threshold": 41.0,
-        "unit": "pct",
-        "reads": "margin_ex_credits"
-      },
-      {
-        "metric": "订阅型收入占毛收入比重",
-        "direction": "up",
-        "threshold": 47.0,
-        "unit": "pct",
-        "reads": "subscription_share"
-      },
-      {
-        "metric": "单季自由现金流 D",
+        "row": 5,
+        "metric": "上半年累计回购（放缓线）",
         "direction": "up",
         "threshold": 1000.0,
         "unit": "usd_m",
-        "reads": "free_cash_flow"
-      },
-      {
-        "metric": "计费发行量",
-        "direction": "up",
-        "threshold": 1000.0,
-        "unit": "usd_bn",
-        "reads": "billed_issuance_usd_bn.total"
+        "reads": "ytd_buyback"
       }
     ],
-    "retired": [
-      "「FY2026 调整后 EPS 指引中值不低于 19.00 美元」<b>无法结算</b>，本季不是被跌破而是被换掉了口径：Mobility 于 2026-07-01 剥离，公司在 7 月 28 日把全年指引整体重设到17.50–17.75 美元，并在同一份新闻稿里写明「与此前指引不可直接比较」。拿 17.625 去对 19.00 得到的是一个口径差，不是一次未达标。该阈值已退役。"
-    ],
-    "note": "本节阈值是上一份笔记留下的研究设定，不是公司指引，也不是评级。"
+    "source": "阈值原文：2026-04-29《SPGI Q1 2026 vs Q4 2025 Analysis》「关键观察指标（板块 8）」表 5 行，数值与方向逐字，触发动作不发布；本季读数取自本页 series（回购为 10-Q 现金流量表「Repurchase of treasury shares」上半年 (1,500)）。"
   },
   "next_kpi": {
     "period": "Q2 2026",
     "for_period": "Q3 2026",
+    "rows": [
+      {
+        "row": 1,
+        "metric": "Q3 Ratings 收入同比",
+        "condition": "Q3 ≥ +3% = H2 保守被证实；Q3 ≤ −5% 且全年指引未上调 = 减速真实",
+        "status": "接入"
+      },
+      {
+        "row": 2,
+        "metric": "H2 hyperscaler 计费发行量",
+        "condition": "H2 ≥ $1,400 亿（即全年 > $3,000 亿）= 指引大幅保守；H2 ≤ $800 亿 = 假设下沿兑现",
+        "status": "不接入",
+        "why": "hyperscaler 发行额只在电话会上给（上半年约 1,690 亿美元）；申报文件里的计费发行量只按投资级 / 高收益 / 其他三类拆分，不单列 hyperscaler，本页没有可结算的申报读数"
+      },
+      {
+        "row": 3,
+        "metric": "递延收入现金流变动与全年调整后自由现金流增速",
+        "condition": "全年调整后 FCF 增速 ≥ +10% = 时点问题；≤ +5% = 现金转化结构性下移",
+        "status": "接入"
+      },
+      {
+        "row": 4,
+        "metric": "MI 组合行动",
+        "condition": "未来两季出现 subscale 资产剥离公告 = 价值释放；MI 报告线增速跌破 5% 且无任何组合行动 = 只降可见度",
+        "status": "接入增速这一半",
+        "why": "剥离公告是事件，出现时会在 8-K 里，本页不预设它"
+      },
+      {
+        "row": 5,
+        "metric": "杠杆口径澄清与 2027 回购指引",
+        "condition": "若澄清为含 redeemable NCI（实际约 2.2x）= 2027 回购空间充足；若 2027 回购指引 ≤ $40 亿 = 去杠杆挤压",
+        "status": "不接入",
+        "why": "2027 年指引要到 2027 年 2 月才发布；2.7–2.8 倍的杠杆口径只在电话会上给过，申报文件没有同口径的比率可对"
+      },
+      {
+        "row": 6,
+        "metric": "Energy 有机恒定汇率增速",
+        "condition": "Q3 ≥ +4.5% = 头风 transitory 成立；Q3 ≤ +3% = 全年指引将被下调",
+        "status": "接入"
+      },
+      {
+        "row": 7,
+        "metric": "AI 收入首次量化披露",
+        "condition": "任一分部披露 AI 相关收入占比 ≥ 5% = 货币化进入量化期；到 Q4 2026 仍无 = 规模不足以单列",
+        "status": "不接入",
+        "why": "至今没有任何申报文件披露 AI 相关收入；这是一条等待披露的事件，没有可以画的读数"
+      },
+      {
+        "row": 8,
+        "metric": "SPGI 对 MCO 的远期市盈率折让",
+        "condition": "折让收敛至 < 10% = 分拆重估兑现；折让扩大至 > 25% = 市场认定 MI 结构性拖累",
+        "status": "不接入",
+        "why": "本页不发布股价与估值"
+      }
+    ],
     "quantified": [
       {
-        "metric": "Ratings 交易性收入同比",
+        "row": 1,
+        "metric": "Ratings 收入同比（≥ +3% 线）",
+        "direction": "up",
+        "threshold": 3.0,
+        "unit": "pct",
+        "reads": "ratings_yoy"
+      },
+      {
+        "row": 1,
+        "metric": "Ratings 收入同比（≤ −5% 线）",
+        "direction": "up",
+        "threshold": -5.0,
+        "unit": "pct",
+        "reads": "ratings_yoy"
+      },
+      {
+        "row": 3,
+        "metric": "调整后自由现金流增速（≥ +10% 线）",
         "direction": "up",
         "threshold": 10.0,
         "unit": "pct",
-        "reads": "yoy:ratings_revenue_split_usd_m.transaction"
+        "reads": "ytd_adjusted_fcf_growth"
       },
       {
-        "metric": "交易性收入占 Ratings 比重",
-        "direction": "down",
-        "threshold": 58.0,
-        "unit": "pct",
-        "reads": "transaction_share"
-      },
-      {
-        "metric": "营业利润率（剔除处置损益与联营收益 D）",
+        "row": 3,
+        "metric": "调整后自由现金流增速（≤ +5% 线）",
         "direction": "up",
-        "threshold": 42.0,
+        "threshold": 5.0,
         "unit": "pct",
-        "reads": "margin_ex_credits"
+        "reads": "ytd_adjusted_fcf_growth"
       },
       {
-        "metric": "订阅型收入占毛收入比重",
+        "row": 4,
+        "metric": "Market Intelligence 收入同比（5% 线）",
         "direction": "up",
-        "threshold": 48.0,
+        "threshold": 5.0,
         "unit": "pct",
-        "reads": "subscription_share"
+        "reads": "mi_yoy"
       },
       {
-        "metric": "单季自由现金流 D",
+        "row": 6,
+        "metric": "Energy 有机恒定汇率增速（≥ +4.5% 线）",
         "direction": "up",
-        "threshold": 1100.0,
-        "unit": "usd_m",
-        "reads": "free_cash_flow"
-      },
-      {
-        "metric": "单季股东回报 / 自由现金流 D",
-        "direction": "down",
-        "threshold": 130.0,
+        "threshold": 4.5,
         "unit": "pct",
-        "reads": "payout_to_fcf"
+        "reads": "energy_organic_cc"
       },
       {
-        "metric": "计费发行量",
+        "row": 6,
+        "metric": "Energy 有机恒定汇率增速（≤ +3% 线）",
         "direction": "up",
-        "threshold": 1050.0,
-        "unit": "usd_bn",
-        "reads": "billed_issuance_usd_bn.total"
+        "threshold": 3.0,
+        "unit": "pct",
+        "reads": "energy_organic_cc"
       }
     ],
-    "excluded": "另有五条本页<b>不接入</b>，原因写在这里而不是省略掉：（1）<b>季度指引兑现记录</b> —— 公司从不发布季度指引，只发布全年指引并逐季修订，这是取数限制不是编辑取舍，本页第一节改用全年指引的年内修订路径来做同构的记录；（2）<b>Mobility 剥离后的重述历史</b> —— 公司称自 2026 年第三季度起把 Mobility 按终止经营重述<b>所有</b>期间，但到本页取数时点为止没有任何一份已申报的报表是重述后的，本页因此全部按已申报口径（含 Mobility）发布，并在图上标出这个断点；（3）<b>分部营业利润率的长序列</b> —— 分部营业利润是 GAAP 口径且含处置损益，Market Intelligence 在 2022Q1 因 13 亿美元处置收益出现 205% 的分部利润率，把它画成一条线会把一次剥离读成经营能力；（4）<b>按地区拆分的发行量</b> —— 公司披露的计费发行量只按评级类别（投资级 / 高收益 / 其他）拆分，从未按地区给过金额；2024 年之前那张按地区的表是口径不同的「市场发行量」，且只给同比百分比、不给金额，两者不可拼接；（5）<b>交易所衍生品成交量与共同基金 AUM</b> —— 只在投资者关系网站按月披露，未进入任何申报文件。"
+    "source": "阈值原文：2026-07-28《SPGI Q2 2026 vs Q1 2026 Analysis》第 8 节「关键观察指标」表 8 行，数值与方向逐字，触发动作不发布；当前值取自本页 series 与本季新闻稿。"
   },
   "quarter_figures": {
     "period": "Q2 2026",
@@ -3451,8 +3708,67 @@
     "pro_forma_revenue_usd_m": 3678.0,
     "pro_forma_operating_profit_usd_m": 1757.0,
     "adjusted_operating_profit_usd_m": 1998.0,
-    "source": "2026-07-28 业绩新闻稿 Exhibit 5（Unaudited Pro Forma Condensed Consolidated Statements of Income：Revenue 3,678、Operating profit 1,757）与首段「adjusted operating profit increased 15% to $1.998 billion」。",
-    "src_extra": "pro forma 与 adjusted 口径取自同日业绩 8-K EX-99.1 的 Exhibit 5 与 Exhibit 6。"
+    "source": "2026-07-28 业绩新闻稿 Exhibit 5（Unaudited Pro Forma Condensed Consolidated Statements of Income：Revenue 3,678、Operating profit 1,757）与首段「adjusted operating profit increased 15% to $1.998 billion」。Exhibit 8「Energy Adjusted (As Recast) Organic, Constant Currency Revenue」constant currency basis 621 / 607、「Market Intelligence …」1,206 / 1,136；Exhibit 7 Revenue by Type（报告口径）Market Intelligence Subscription 1,076 / 1,017。",
+    "src_extra": "pro forma 与 adjusted 口径取自同日业绩 8-K EX-99.1 的 Exhibit 5 与 Exhibit 6。",
+    "energy_organic_cc_revenue_usd_m": [
+      621.0,
+      607.0
+    ],
+    "mi_organic_cc_revenue_usd_m": [
+      1206.0,
+      1136.0
+    ],
+    "mi_subscription_revenue_usd_m": [
+      1076.0,
+      1017.0
+    ],
+    "_pairs_note": "成对的数都是 [本季, 去年同季]，取自同一份新闻稿的同一张表。"
+  },
+  "ytd_vs_guidance": {
+    "period": "Q2 2026",
+    "basis": "不含 Mobility：收入为 Article 11 pro forma，利润与 EPS 为 pro forma non-GAAP adjusted；调整后自由现金流为合并口径（6 月 30 日前含 Mobility）",
+    "revenue_usd_m": [
+      7397.0,
+      6674.0
+    ],
+    "adjusted_operating_profit_usd_m": [
+      3964.0,
+      3478.0
+    ],
+    "adjusted_equity_income_usd_m": [
+      0.0,
+      48.0
+    ],
+    "adjusted_diluted_eps_usd": [
+      9.27,
+      7.82
+    ],
+    "adjusted_effective_tax_pct": [
+      21.5,
+      23.0
+    ],
+    "adjusted_free_cash_flow_usd_m": [
+      2362.0,
+      2258.0
+    ],
+    "base_year": {
+      "fiscal_year": 2025,
+      "adjusted_operating_profit_usd_m": 6974.0,
+      "adjusted_equity_income_usd_m": 69.0,
+      "source": "2026-07-06 8-K/A（acc 0001104659-26-080571）EX-99.1 Pro Forma 损益表 Full-Year 2025：Pro forma non-GAAP adjusted operating profit 6,974；分部重述表 Equity in Income on Unconsolidated Subsidiaries 调整后 (69)。FY2025 pro forma 收入 13,589 = 本页 FY2025 申报收入 15,336 − Mobility 1,747，由 builder 现算、不另存。"
+    },
+    "guidance": {
+      "adjusted_margin_expansion_bp": [
+        35,
+        60
+      ],
+      "adjusted_margin_expansion_ex_osttra_bp": [
+        75,
+        100
+      ]
+    },
+    "_pairs_note": "成对的数都是 [本年年初至今, 上年同期]。",
+    "source": "2026-07-28 业绩新闻稿（acc 0000064040-26-000040）：Exhibit 5 六个月 pro forma 收入 7,397 / 6,674；Exhibit 6 六个月 Pro forma non-GAAP adjusted operating profit 3,964 / 3,478、Adjusted equity in income — / 48、Pro forma non-GAAP adjusted diluted EPS 9.27 / 7.82、Pro forma non-GAAP adjusted effective tax rate 21.5% / 23.0%；Exhibit 8 六个月 Adjusted free cash flow excluding certain items 2,362 / 2,258；Full-Year 2026 Outlook 表 Operating Profit Margin expansion（Adjusted）35 to 60 bps、excluding OSTTRA 75 to 100 bps。"
   },
   "quarter_story": {
     "period": "Q2 2026",
@@ -3468,34 +3784,103 @@
     "source": "S&P Global 2026-07-28 业绩新闻稿（acc 0000064040-26-000040）：首段 pro forma 收入 $3.678 billion、营业利润 $1.757 billion，「reported operating profit margin increased by 410 basis points to 47.8%」；Full-Year 2026 Outlook 表只有收入增速、利润率、EPS 等行，没有自由现金流；「Prior to this release, the Company had not previously provided GAAP guidance for 2026」。截至 2026-06-30 的 10-Q（acc 0000064040-26-000045）分部附注：Mobility 仍为五个报告分部之一。回报目标：2026-04-28 业绩新闻稿（acc 0000064040-26-000019）要点段「now expects to return 100% or more of adjusted Free Cash Flow through dividends and share repurchases in 2026」；2026-07-28 业绩新闻稿要点段「The Company now expects to repurchase more than $7 billion in shares in total in 2026」。"
   },
   "followup_closure": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
     "labels": [
-      "已验证",
-      "部分验证",
-      "仍未披露",
-      "被证伪"
+      "兑现",
+      "部分兑现",
+      "未兑现",
+      "判断错误"
     ],
-    "counts": [
-      4,
-      2,
-      3,
-      1
+    "rule": "归类按本季报告第 0 节每条判定的原文措辞：写「完全兑现」「兑现且优于预期」的计为兑现；原文判为一半对、一半错的计为部分兑现 —— 三条标黄（「方向对、幅度大错」「结构判断对、总量严重低估」「时点明确、经济条款仍完全未披露」），一条对错同标（「季度节奏判断反了，全年方向大对但幅度严重低估」）；写「未兑现」的计为未兑现；写「方向判断错误」的计为判断错误。",
+    "lead": {
+      "words": "上季 10 题中，方向完全正确的只有 2 题（Energy、Mobility 分拆）",
+      "label": "兑现",
+      "count": 2
+    },
+    "items": [
+      {
+        "n": 1,
+        "topic": "Energy 二季度是否跌破全年指引下限",
+        "short": "Energy 跌破全年指引下限",
+        "wording": "完全兑现",
+        "verdict": "兑现",
+        "reading": "Energy 重述口径有机恒定汇率收入同比 {energy_organic_cc}（新闻稿 Exhibit 8）；全年 4.5%–6% 的分部指引维持不变是电话会口径"
+      },
+      {
+        "n": 2,
+        "topic": "AI 货币化：是否首次披露 AI 相关收入",
+        "short": "AI 收入仍无数字",
+        "wording": "未兑现（我上季预期过于乐观）",
+        "verdict": "未兑现",
+        "reading": "新闻稿与 10-Q 都没有 AI 相关收入这一项；ACV 差距、LLM-ready API 客户数等代理指标只在电话会上给出"
+      },
+      {
+        "n": 3,
+        "topic": "私人信用评级是否从 +25% 减速",
+        "short": "私人市场评级",
+        "wording": "方向判断错误",
+        "verdict": "判断错误",
+        "reading": "公司在电话会上说 Ratings 的私人市场收入同比 +60%（上季 +25%）；申报文件不单列这一项，这是公司口径"
+      },
+      {
+        "n": 4,
+        "topic": "hyperscaler 发行是否如预期不再加速",
+        "short": "hyperscaler 发行",
+        "wording": "方向对、幅度大错",
+        "verdict": "部分兑现",
+        "reading": "申报的计费发行量本季 {issuance_q}、同比 {issuance_yoy}（10-Q）；hyperscaler 那一部分（上半年约 1,690 亿美元、全年假设上调到 2,500–3,000 亿美元）只在电话会上给出"
+      },
+      {
+        "n": 5,
+        "topic": "MI 的 ACV 能否回到 6.5%–7%",
+        "short": "MI 的 ACV 仍在 6%",
+        "wording": "未兑现，且质量比表面更差",
+        "verdict": "未兑现",
+        "reading": "MI 订阅收入同比 {mi_subscription_yoy}（新闻稿 Exhibit 7）；ACV 仍在 6% 是电话会口径"
+      },
+      {
+        "n": 6,
+        "topic": "二季度分部利润率格局",
+        "short": "分部利润率",
+        "wording": "结构判断对、总量严重低估",
+        "verdict": "部分兑现",
+        "reading": "新闻稿首段：adjusted operating profit margin increased 200 basis points to 54.3%"
+      },
+      {
+        "n": 7,
+        "topic": "Mobility 分拆与市场反馈",
+        "short": "Mobility 分拆",
+        "wording": "兑现且优于预期",
+        "verdict": "兑现",
+        "reading": "分拆于 2026-07-01 生效（2026-07-06 的 8-K/A 引言）；股价与合并持有回报本页不发布"
+      },
+      {
+        "n": 8,
+        "topic": "Upstream 软件出售的买方、对价与分销条款",
+        "short": "Upstream 软件出售",
+        "wording": "时点明确、经济条款仍完全未披露",
+        "verdict": "部分兑现",
+        "reading": "6 月 30 日资产负债表把这块业务列为持有待售（新闻稿 Exhibit 2 脚注）；买方与对价仍未披露，「三季度内大概率交割」是电话会口径"
+      },
+      {
+        "n": 9,
+        "topic": "CERA Titan 的上线时间表与早期客户",
+        "short": "CERA Titan",
+        "wording": "未兑现",
+        "verdict": "未兑现",
+        "reading": "仍只有「later this year」的电话会表述，没有客户数与合同金额"
+      },
+      {
+        "n": 10,
+        "topic": "二季度回购是否超过一季度、全年目标是否再上调",
+        "short": "回购节奏",
+        "wording": "季度节奏判断反了，全年方向大对但幅度严重低估",
+        "verdict": "部分兑现",
+        "reading": "二季度回购 {buyback_q}（一季度 {buyback_prev_q}）；全年目标从上季新闻稿的「100% or more of adjusted Free Cash Flow」改为本季的「more than $7 billion」"
+      }
     ],
-    "note": "上一份笔记留下 10 条待验问题，本季连同上一季申报文件一起结清。被证伪的那一条是把 FY2026 指引从 19.40–19.65 降到 17.50–17.75 读成一次下调 —— 公司在同一份新闻稿里写明这是 Mobility 剥离带来的口径重设，并给出了重述后的 FY2025 基数，按同口径看是上调而不是下调。"
-  },
-  "tracked_metric_verdicts": {
-    "labels": [
-      "继续跟踪",
-      "升级为阈值",
-      "退役：口径失效",
-      "退役：公司停披"
-    ],
-    "counts": [
-      4,
-      2,
-      1,
-      1
-    ],
-    "note": "退役的两条各有各的原因。「FY2026 调整后 EPS 指引中值」因 Mobility 剥离而口径失效，同一个数字在剥离前后不指同一个公司。「按地区的发行量」是公司<b>停止披露</b>：2024 年第一季度起，申报文件里按地区给同比百分比的「市场发行量」表被按评级类别给金额的「计费发行量」表取代，两张表口径不同，本页不拼接。"
+    "source": "问题原文：2026-04-29《SPGI Q1 2026 vs Q4 2025 Analysis》末节「Follow-up Questions for Next Quarter (Q2 2026)」10 条；逐条判定：2026-07-28《SPGI Q2 2026 vs Q1 2026 Analysis》第 0 节「逐题回答」每条开头的判定语；导语取自同节「框架性偏差诊断」。"
   },
   "market_expectation": {
     "as_of": "2026-07-28",

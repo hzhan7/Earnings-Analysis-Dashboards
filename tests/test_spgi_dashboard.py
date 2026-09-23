@@ -58,7 +58,7 @@ sys.path.insert(0, str(ROOT))
 
 from build import spgi  # noqa: E402
 from build.all import build_all, roster_payload  # noqa: E402
-from build.board import cn_count, headroom  # noqa: E402
+from build.board import cn_count, headroom, unit_text  # noqa: E402
 from build.spgi import STAGING_PATH, build_payload, operating_margin_ex_credits  # noqa: E402
 
 
@@ -599,10 +599,12 @@ class SpgiDashboardTest(unittest.TestCase):
         revenue = next(ex for ex in self.by_section["routine"] if ex["kind"] == "gs_bar")
         self.assertIn("并表", revenue["title"])
 
-    def test_the_three_places_that_describe_the_spike_agree_with_the_data(self) -> None:
-        """A margin spike caused by one disposal is described in three notes.
+    def test_the_places_that_describe_the_spike_agree_with_the_data(self) -> None:
+        """A margin spike caused by one disposal is described in more than one note.
 
-        All three used to hard-code 2022Q1 / 79.2% / US$1,344M. That was right
+        There were three until the section-one margin threshold chart went with
+        the locally-set threshold it drew; the long margin chart and the method
+        notes remain. All of them used to hard-code 2022Q1 / 79.2% / US$1,344M. That was right
         for a record starting in 2017 and wrong the moment it reached 2016 --
         the J.D. Power sale put a bigger spike in 2016Q3 -- and the failure mode
         was the nasty one: the sentence derived its quarter and its percentage
@@ -624,7 +626,7 @@ class SpgiDashboardTest(unittest.TestCase):
         # different (and correct) number
         mentions = [text for text in prose
                     if spike["label"] in text and "处置收益" in text]
-        self.assertGreaterEqual(len(mentions), 3)
+        self.assertGreaterEqual(len(mentions), 2)
         amount = f"US${spike['gain']:,.0f}M"
         for text in mentions:
             with self.subTest(note=text[:40]):
@@ -668,53 +670,67 @@ class SpgiDashboardTest(unittest.TestCase):
                     self.assertNotIn(key, entry)
                     self.assertIn("reads", entry)
 
-    def test_the_withdrawn_threshold_is_retired_rather_than_settled(self) -> None:
-        """Its basis was replaced mid-quarter by the spin-off, so it cannot be
-        resolved against the new guidance at all."""
-        settlement = self.source["prior_kpi_settlement"]
-        self.assertNotIn("FY2026 调整后 EPS 指引中值",
-                         [entry["metric"] for entry in settlement["quantified"]])
-        self.assertTrue(any("无法结算" in text for text in settlement["retired"]))
-        chart = next(ex for ex in self.by_section["settled"]
-                     if ex["kind"] == "diverging_bars")
-        self.assertIn("无法结算", chart["note"])
+    # The words each tracked reading's own chart is titled with, and the phrase
+    # the overview bar uses when a reading has no chart -- written here rather
+    # than imported, so a builder that drops a chart cannot also drop the check.
+    TRACK_TITLES = {"ytd_buyback": "累计回购", "ratings_yoy": "Ratings 收入同比",
+                    "mi_yoy": "Market Intelligence 收入同比"}
+    UNCHARTED_PHRASES = {"energy_organic_cc": "没有同口径的走势可画",
+                         "ytd_adjusted_fcf_growth": "逐年的全年实际值画在 Exhibit"}
 
-    def test_every_tracked_metric_with_a_series_gets_its_own_chart(self) -> None:
-        """The overview bar says which line broke; only the per-metric chart
-        says how it got there.
-
-        Each tracked reading is drawn once: section one draws what last
-        quarter's note settled, section three the rest of what points forward,
-        and both overview bars say where every other reading went. That is
-        worked out from the builder's own table, because the typed list sent
-        「Ratings 非交易性收入同比」 to a section-three chart that never existed."""
-        def number_of(ref: str) -> int:
-            return next(ex["n"] for ex in self.exhibits if REF_TITLES[ref](ex["title"]))
-
-        drawn = set()
-        for section, block in (("settled", "prior_kpi_settlement"), ("next_quarter", "next_kpi")):
+    def test_every_tracked_reading_is_drawn_once_or_says_why_not(self) -> None:
+        """The overview bar says which line is breached; only a reading's own chart
+        says how it got there. Each reading either has exactly one chart in its
+        section, titled with every threshold the report set on it, or the bar's
+        note says why it has none."""
+        for section, block, key in (("settled", "prior_kpi_settlement", "actual"),
+                                    ("next_quarter", "next_kpi", "current")):
+            entries = spgi.with_current(self.source, self.source[block], key)
             bar = next(ex for ex in self.by_section[section] if ex["kind"] == "diverging_bars")
-            here = [ex["title"] for ex in self.by_section[section]]
-            for entry in self.source[block]["quantified"]:
-                name = spgi.short_name(entry["metric"])
-                stem = entry["metric"].split("（")[0].strip()
-                with self.subTest(section=section, metric=name):
-                    if entry["reads"] in spgi.CHART_BUILDERS:
-                        owners = [ex for ex in self.exhibits
-                                  if ex["title"].startswith(stem) and "vs 阈值" in ex["title"]]
+            for reads, group in spgi.grouped_by_reading(entries):
+                with self.subTest(section=section, reads=reads):
+                    if reads in self.TRACK_TITLES:
+                        owners = [ex for ex in self.by_section[section]
+                                  if ex["kind"] == "lines" and self.TRACK_TITLES[reads] in ex["title"]]
                         self.assertEqual(len(owners), 1, [ex["title"] for ex in owners])
-                        drawn.add(entry["reads"])
-                        if owners[0]["title"] not in here:
-                            self.assertIn(f"「{name}」", bar["note"])
-                            if section == "settled":
-                                self.assertIn(f"Exhibit {owners[0]['n']}", bar["note"])
+                        for entry in group:
+                            self.assertIn(spgi.threshold_words(entry), owners[0]["title"])
+                        lines = [s["values"] for s in owners[0]["series"][1:]]
+                        self.assertEqual([values[0] for values in lines],
+                                         [entry["threshold"] for entry in group])
                     else:
-                        words, refs = spgi.LEVELS_DRAWN_AT[entry["reads"]]
-                        where = " 与 ".join(f"Exhibit {number_of(ref)}" for ref in refs)
-                        self.assertIn(f"「{name}」{words} {where}。", bar["note"])
-        self.assertGreaterEqual(len(drawn), 7)
-        settled = next(ex for ex in self.by_section["settled"] if ex["kind"] == "diverging_bars")
-        self.assertNotIn("它们各自的历史图在第三节向前指", settled["note"])
+                        self.assertIn(self.UNCHARTED_PHRASES[reads], bar["note"])
+
+    def test_settled_opens_with_the_closure_then_the_thresholds_then_the_record(self) -> None:
+        """(a) last report's questions, (b) its section-8 thresholds, (c) the
+        company's own guidance record -- in that order."""
+        kinds = [ex["kind"] for ex in self.by_section["settled"]]
+        self.assertEqual(kinds[0], "bars_labeled")
+        self.assertTrue(self.by_section["settled"][0]["title"].startswith("上季 "))
+        self.assertEqual(kinds[1], "diverging_bars")
+        first_band = kinds.index("range_band")
+        self.assertTrue(all(kind == "lines" for kind in kinds[2:first_band]))
+        self.assertTrue(all(kind in ("range_band", "grouped_bars") for kind in kinds[first_band:]))
+        description = next(s for s in self.payload["sections"] if s["id"] == "settled")["description"]
+        self.assertIn("第 0 节", description)
+        self.assertIn("第 8 节", description)
+
+    def test_no_locally_set_threshold_survives(self) -> None:
+        """The page used to settle six thresholds and set seven that neither
+        report contains (Ratings transaction growth 15% / 10%, an operating
+        margin of 41% / 42%, a subscription share of 47% / 48%, a US$1,000M /
+        US$1,100M quarterly FCF, billed issuance of US$1,000B / US$1,050B, a
+        payout ratio of 130%, a transaction share of 58%)."""
+        blob = own_text(self.payload)
+        for gone in ("vs 阈值", "交易性收入占 Ratings 比重", "订阅型收入占毛收入比重 vs",
+                     "单季股东回报 / 自由现金流", "上季设定的阈值"):
+            with self.subTest(phrase=gone):
+                self.assertNotIn(gone, blob)
+        for block in ("prior_kpi_settlement", "next_kpi"):
+            for entry in self.source[block]["quantified"]:
+                with self.subTest(block=block, metric=entry["metric"]):
+                    self.assertIn(entry["reads"], ("ytd_buyback", "ratings_yoy", "mi_yoy",
+                                                   "energy_organic_cc", "ytd_adjusted_fcf_growth"))
 
     # ── page shape and boundary ──────────────────────────────────────────────
     def test_page_is_chart_led(self) -> None:
@@ -915,20 +931,17 @@ class SpgiDashboardTest(unittest.TestCase):
         self.assertNotEqual(self.split["transaction"][trough], min(self.split["transaction"]))
 
     def test_the_first_quarter_seasonality_is_counted(self) -> None:
-        """「每年第一季度都是四季里最低的一档」: in 2017 the second quarter was lower."""
+        """「第一季度的经营现金流每年都是全年最低的一档」: in 2017 the second quarter was lower."""
         capital = self.source["capital_allocation_usd_m"]
-        for values, section, words in (
-                (spgi.free_cash_flow(self.source), "next_quarter", "第一季度是四季里最低的一档"),
-                (capital["operating_cash_flow"], "quarter_highlights", "第一季度的经营现金流")):
-            full, low = spgi.q1_low_years(capital["quarters"], values)
-            note = " ".join(ex["note"] for ex in self.by_section[section])
-            with self.subTest(section=section):
-                self.assertIn(words, note)
-                if len(low) < len(full):
-                    self.assertIn(f"{cn_count(len(full))}个完整年份里有{cn_count(len(low))}年", note)
-                    for year in set(full) - set(low):
-                        self.assertIn(f"{year}", note)
-        self.assertNotIn("每年第一季度都是四季里最低的一档", json.dumps(self.payload, ensure_ascii=False))
+        full, low = spgi.q1_low_years(capital["quarters"], capital["operating_cash_flow"])
+        note = " ".join(ex["note"] for ex in self.by_section["quarter_highlights"])
+        self.assertIn("第一季度的经营现金流", note)
+        if len(low) < len(full):
+            self.assertIn(f"{cn_count(len(full))}个完整年份里有{cn_count(len(low))}年", note)
+            for year in set(full) - set(low):
+                self.assertIn(f"{year}", note)
+            self.assertNotIn("第一季度的经营现金流每年都是全年最低的一档",
+                             json.dumps(self.payload, ensure_ascii=False))
 
     def test_the_revenue_type_window_is_named_from_the_series(self) -> None:
         """「窗口从 2022Q1 开始」 on a chart that starts at 2018Q1, and 「订阅稳定在
@@ -1020,8 +1033,8 @@ class SpgiDashboardTest(unittest.TestCase):
     def test_the_payout_target_is_the_companys_current_wording(self) -> None:
         """「把约 85% 的调整后自由现金流返还给股东」 is in no filing the page cites;
         the 2026 releases say 「100% or more」 and then 「more than $7 billion」."""
-        note = next(ex for ex in self.by_section["next_quarter"]
-                    if ex["title"].startswith("单季股东回报"))["note"]
+        note = next(ex for ex in self.by_section["quarter_highlights"]
+                    if ex["title"].startswith("本季自由现金流"))["note"]
         self.assertNotIn("85%", note)
         story = self.source.get("quarter_story") or {}
         if story.get("payout_target"):
@@ -1035,22 +1048,14 @@ class SpgiDashboardTest(unittest.TestCase):
                     if ex["title"].startswith("计费发行量 US$"))["note"]
         self.assertIn(f"那条 {len(self.split['quarters'])} 季的收入线", note)
         self.assertIn(f"其余{cn_count(len(issuance['quarters']) - len(issuance['derived_quarters']))}季", note)
-        threshold = next(ex for ex in self.by_section["next_quarter"] if ex["title"].startswith("计费发行量 vs"))
-        self.assertIn(f"窗口只有 {len(issuance['quarters'])} 季", threshold["note"])
 
     def test_the_only_one_claims_are_counted(self) -> None:
-        """Two 「唯一」 claims the page's own charts contradicted: ETF AUM is not
-        the only quantity the company does not control (billed issuance follows
-        the bond window), and the share threshold is not the only one where
-        lower is safer (the payout ratio is another)."""
+        """A 「唯一」 claim the page's own charts contradicted: ETF AUM is not the
+        only quantity the company does not control (billed issuance follows the
+        bond window)."""
         aum = next(ex for ex in self.by_section["routine"] if ex["title"].startswith("跟踪 S&P 指数"))
         self.assertNotIn("唯一一条不由公司经营决定的量", aum["note"])
         self.assertIn("涨到原来的", aum["title"])
-        share = next(ex for ex in self.by_section["next_quarter"] if ex["title"].startswith("交易性收入占"))
-        downs = [spgi.short_name(e["metric"]) for e in self.source["next_kpi"]["quantified"]
-                 if e["direction"] == "down" and e["reads"] != "transaction_share"]
-        for name in downs:
-            self.assertIn(f"「{name}」", share["note"])
 
     def test_the_cash_flow_line_count_is_the_series(self) -> None:
         """「六条现金流线」 against a series that carries five."""
@@ -1070,7 +1075,41 @@ def own_text(payload: dict) -> str:
     return json.dumps(own, ensure_ascii=False)
 
 
-QUARTER_BLOCKS = ("prior_kpi_settlement", "next_kpi", "quarter_figures", "quarter_story")
+QUARTER_BLOCKS = ("followup_closure", "prior_kpi_settlement", "next_kpi", "quarter_figures",
+                  "ytd_vs_guidance", "quarter_story")
+# The blocks the two reports supply every quarter; the page will not build without them.
+REPORT_BLOCKS = ("followup_closure", "prior_kpi_settlement", "next_kpi")
+
+
+def carried_forward(s: dict, before: dict) -> None:
+    """The report blocks of the quarter after ``before``, made the way a roll makes them.
+
+    This is the drill for 「换季只改 series」: last quarter's section-three block
+    becomes this quarter's section-one block by copying its rows and thresholds
+    and writing each row's status -- the builder is not touched. The report
+    content is made up; the shape is the one a real roll writes.
+    """
+    label = s["periods"][-1]
+    old = before["next_kpi"]
+    quantified_rows = {entry["row"] for entry in old["quantified"]}
+    s["followup_closure"] = {
+        "period": label, "set_in": before["periods"][-1],
+        "labels": ["兑现", "部分兑现", "未兑现", "判断错误"],
+        "rule": "（演练）按原文措辞归类。",
+        "items": [{"n": i + 1, "topic": row["metric"], "short": row["metric"], "wording": "（演练）",
+                   "verdict": ("兑现", "未兑现", "判断错误")[i % 3], "reading": "（演练）"}
+                  for i, row in enumerate(old["rows"][:5])],
+    }
+    s["prior_kpi_settlement"] = {
+        "period": label, "set_in": before["periods"][-1],
+        "rows": [{**row, "status": "本季结算" if row["row"] in quantified_rows else "不结算",
+                  "note": "（演练）"} for row in old["rows"]],
+        "quantified": copy.deepcopy(old["quantified"]),
+    }
+    s["next_kpi"] = {**copy.deepcopy(old), "period": label, "for_period": spgi.shift_quarter(label, 1)}
+    s["quarter_figures"] = {"period": label, "energy_organic_cc_revenue_usd_m": [640.0, 612.0]}
+    s["ytd_vs_guidance"] = {**copy.deepcopy(before["ytd_vs_guidance"]), "period": label,
+                            "adjusted_free_cash_flow_usd_m": [3700.0, 3500.0]}
 QUARTERLY = ("long_history", "capital_allocation_usd_m", "ratings_revenue_split_usd_m",
              "revenue_by_type_usd_m", "segments_usd_m", "billed_issuance_usd_bn", "indices_kpi")
 PLACEHOLDER = r"\{[a-z_]+\}"
@@ -1136,6 +1175,17 @@ def rolled_back(staging: dict) -> dict:
     for key in ("_checks",) + QUARTER_BLOCKS:
         s.pop(key, None)
     label = s["periods"][-1]
+    # That quarter's own report set its section 8 -- the rows this quarter's
+    # section one settles -- so the drill hands them back as its section three.
+    prior = staging["prior_kpi_settlement"]
+    charted = {entry["row"] for entry in prior["quantified"]}
+    s["next_kpi"] = {
+        "period": label, "for_period": current,
+        "rows": [{"row": row["row"], "metric": row["metric"], "condition": row["condition"],
+                  "status": "接入" if row["row"] in charted else "不接入",
+                  **({} if row["row"] in charted else {"why": "（演练）"})} for row in prior["rows"]],
+        "quantified": copy.deepcopy(prior["quantified"]),
+    }
     s["latest"] = dict(s["latest"], period=label, period_end=s["period_ends"][-1],
                        release_date=g["filed"][-1])
     s["sources"] = ([{"label": release_words(label),
@@ -1213,6 +1263,7 @@ def rolled_forward(staging: dict) -> dict:
         add_vintage(open_year + 1, "initial", f"FY{str(open_year + 1)[2:]} 初", 1.1)
     for key in ("_checks",) + QUARTER_BLOCKS:
         s.pop(key, None)
+    carried_forward(s, staging)
     s["latest"] = dict(s["latest"], period=label, period_end=end, release_date=release)
     s["sources"] = [{"label": release_words(label),
                      "url": "https://www.sec.gov/Archives/edgar/data/64040/next.htm"}] + s["sources"]
@@ -1309,6 +1360,102 @@ class SpgiChecksTest(unittest.TestCase):
         self.assertEqual(quoted.group(1), f"{computed:.1f}")
 
 
+class SpgiReportTest(unittest.TestCase):
+    """The page against the two reports' own words, keyed once in `_checks["note"]`.
+
+    The closure count and every threshold's value and direction were read off
+    the local analyses into the note; the builder never reads it. A roll
+    replaces the note with the next quarter's, so no report fact is typed here.
+    """
+
+    # The rule the closure chart states: the mark the report gives a question
+    # decides its bucket, except a bare ❌, which the report's own words split
+    # into 未兑现 and 判断错误.
+    MARKS = {"✅": "兑现", "🟡": "部分兑现", "❌✅": "部分兑现"}
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.s = json.loads(STAGING_PATH.read_text(encoding="utf-8"))
+        cls.note = cls.s["_checks"]["note"]
+        cls.payload = build_payload(cls.s)
+        cls.sections = {section["id"]: section for section in cls.payload["sections"]}
+
+    def table(self, prefix: str) -> dict:
+        return next(t for t in self.payload["tables"] if t["title"].startswith(prefix))
+
+    def test_the_note_names_the_quarters_it_matched(self) -> None:
+        """The report files are named by fiscal quarter and the page by calendar
+        quarter; what matches them is the period end and the release date."""
+        latest = self.payload["latest"]
+        self.assertEqual(self.note["report"]["period_end"], latest["period_end"])
+        self.assertEqual(self.note["report"]["release_date"], latest["release_date"])
+        self.assertEqual(self.note["last_report"]["period_end"], self.s["period_ends"][-2])
+        self.assertEqual(self.note["last_report"]["release_date"],
+                         self.s["annual_guidance_history"]["filed"][-2])
+        self.assertTrue(self.note["source"]["this_quarter"] and self.note["source"]["last_quarter"])
+
+    def test_the_closure_counts_are_section_zeros(self) -> None:
+        closure = self.note["followup_closure"]
+        chart = self.sections["settled"]["exhibits"][0]
+        self.assertEqual(dict(zip(chart["xlabels"], chart["values"])), closure["counts"])
+        self.assertEqual(sum(chart["values"]), closure["total"])
+        self.assertTrue(chart["title"].startswith(f"上季 {closure['total']} 条待验证问题："))
+        for label, count in closure["counts"].items():
+            self.assertIn(f"{count} 条{label}", chart["title"])
+        self.assertIn(closure["lead"], chart["note"])
+        items = self.s["followup_closure"]["items"]
+        self.assertEqual(len(items), closure["total"])
+        for mark, item in zip(closure["marks"], items):
+            with self.subTest(question=item["n"]):
+                if mark in self.MARKS:
+                    self.assertEqual(item["verdict"], self.MARKS[mark])
+                else:
+                    self.assertEqual(mark, "❌")
+                    self.assertIn(item["verdict"], ("未兑现", "判断错误"))
+                    self.assertIn(item["verdict"], item["wording"])
+        rows = self.table("上季 ")["rows"]
+        self.assertEqual([row[3] for row in rows], [item["verdict"] for item in items])
+
+    def assert_numeric(self, expected: list[dict], prefix: str, block: dict) -> None:
+        numeric = [(fact["row"], n["threshold"], n["direction"])
+                   for fact in expected for n in fact.get("numeric", [])]
+        self.assertEqual([(e["row"], e["threshold"], e["direction"]) for e in block["quantified"]], numeric)
+        self.assertEqual([row[2] for row in self.table(prefix)["rows"]],
+                         [unit_text(e["unit"], e["threshold"]) for e in block["quantified"]])
+
+    def assert_rows(self, expected: list[dict], prefix: str) -> None:
+        rows = self.table(prefix)["rows"]
+        self.assertEqual([int(row[0]) for row in rows], [fact["row"] for fact in expected])
+        for row, fact in zip(rows, expected):
+            for value in fact["values"]:
+                with self.subTest(row=fact["row"], value=value):
+                    self.assertIn(value, row[2])
+
+    def test_the_prior_thresholds_are_last_reports_section_eight(self) -> None:
+        expected = self.note["prior_thresholds"]
+        self.assert_rows(expected, "上季分析稿第 8 节")
+        bar = self.sections["settled"]["exhibits"][1]
+        self.assertEqual(bar["kind"], "diverging_bars")
+        self.assertTrue(bar["title"].startswith(f"上季 {len(expected)} 条观察指标"))
+        self.assert_numeric(expected, "上季阈值与本季实际", self.s["prior_kpi_settlement"])
+
+    def test_the_next_thresholds_are_this_reports_section_eight(self) -> None:
+        expected = self.note["next_thresholds"]
+        self.assert_rows(expected, "本季分析稿第 8 节")
+        bar = self.sections["next_quarter"]["exhibits"][0]
+        self.assertEqual(bar["kind"], "diverging_bars")
+        self.assertIn(f"第 8 节 {len(expected)} 条", bar["title"])
+        self.assert_numeric(expected, "下季阈值与当前值", self.s["next_kpi"])
+        # nothing the report lists is dropped: a row with no line says why in the description
+        block = self.s["next_kpi"]
+        charted = {entry["row"] for entry in block["quantified"]}
+        description = self.sections["next_quarter"]["description"]
+        for row in block["rows"]:
+            if row["row"] not in charted:
+                with self.subTest(row=row["row"]):
+                    self.assertIn(f"{row['metric']}：{row['why']}", description)
+
+
 class SpgiRollTest(unittest.TestCase):
     """What a roll can change without touching the builder."""
 
@@ -1341,47 +1488,79 @@ class SpgiRollTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "sources"):
             build_payload(bare)
 
-    def test_a_quarter_without_its_blocks_leaves_them_out(self) -> None:
+    def test_a_quarter_without_its_story_leaves_it_out(self) -> None:
         bare = copy.deepcopy(self.s)
-        for key in QUARTER_BLOCKS:
-            del bare[key]
+        del bare["quarter_story"]
         payload = build_payload(bare)
         text = own_text(payload)
         for phrase in self.STORY_ONLY:
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, self.text)
                 self.assertNotIn(phrase, text)
-        sections = {section["id"]: section["exhibits"] for section in payload["sections"]}
-        self.assertEqual(sections["next_quarter"], [])
-        self.assertFalse(any(ex["kind"] == "diverging_bars" for ex in sections["settled"]))
         numbers = [ex["n"] for ex in exhibits_of(payload)]
         self.assertEqual(numbers, list(range(2, 2 + len(numbers))))
         self.assertEqual([t["n"] for t in payload["tables"]],
                          list(range(numbers[-1] + 1, numbers[-1] + 1 + len(payload["tables"]))))
         self.assertNotRegex(text, PLACEHOLDER)
         self.assertNotRegex(text, r"\{EX_[A-Z_]+\}")
-        margin = next(ex for ex in exhibits_of(payload) if ex["title"].startswith("同一个季度的"))
-        self.assertTrue(margin["title"].startswith("同一个季度的两个营业利润率口径"))
-        self.assertIn("本季两条主线", payload["brief"])
+
+    def test_a_quarter_without_its_report_blocks_stops(self) -> None:
+        """Both reports have to be carried every quarter after the first: a roll
+        that forgot last report's section 8 would otherwise publish a section one
+        with nothing to settle and look finished."""
+        for key in REPORT_BLOCKS:
+            bare = copy.deepcopy(self.s)
+            del bare[key]
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, key):
+                    build_payload(bare)
+        # a block a reading needs is named by the reading's own error
+        for key in ("quarter_figures", "ytd_vs_guidance"):
+            bare = copy.deepcopy(self.s)
+            del bare[key]
+            with self.subTest(block=key):
+                with self.assertRaises((ValueError, KeyError)):
+                    build_payload(bare)
 
     def test_the_quarter_before_builds_from_the_series_alone(self) -> None:
+        """Q1 2026 is the first quarter any report covers: the page says so in
+        section one instead of inventing a settlement, and its section three is
+        the rows this quarter's section one settles."""
         rolled = rolled_back(self.s)
         payload = build_payload(rolled)
         label = rolled["periods"][-1]
         self.assertEqual(payload["latest"]["disclosed_period_label"], label)
         self.assertIn(f"{label} 季报仪表盘", payload["title"])
         text = own_text(payload)
-        self.assertNotIn(self.s["periods"][-1], text)
+        # the quarter after it is named once, as the quarter section three's lines settle on
+        self.assertNotIn(self.s["periods"][-1],
+                         text.replace(f"结算的是 {self.s['periods'][-1]} 的读数", ""))
         self.assertNotRegex(text, PLACEHOLDER)
         self.assertNotRegex(text, r"\{EX_[A-Z_]+\}")
         # before the rebase there is no rebase to explain
         self.assertNotIn("口径重设", text)
         self.assertFalse(any("指引中值掉了" in ex["title"] for ex in exhibits_of(payload)))
         self.assertIn("一次都没有跌破过", payload["headline"])
+        sections = {section["id"]: section for section in payload["sections"]}
+        self.assertIn(f"本站对 S&P Global 的第一份季报分析是 {spgi.FIRST_REPORT_PERIOD}",
+                      sections["settled"]["description"])
+        self.assertFalse(any(ex["kind"] in ("bars_labeled", "diverging_bars")
+                             for ex in sections["settled"]["exhibits"]))
+        self.assertEqual(sections["next_quarter"]["exhibits"][0]["kind"], "diverging_bars")
+        margin = next(ex for ex in exhibits_of(payload) if ex["title"].startswith("同一个季度的"))
+        self.assertTrue(margin["title"].startswith("同一个季度的两个营业利润率口径"))
+        # and a report block for a quarter no report precedes stops the build
+        stray = copy.deepcopy(rolled)
+        stray["followup_closure"] = dict(self.s["followup_closure"], period=label)
+        with self.assertRaisesRegex(ValueError, "no S&P Global report precedes"):
+            build_payload(stray)
 
     def test_the_quarters_after_build_from_the_series_alone(self) -> None:
+        """The drill for the next roll: last quarter's section three becomes this
+        quarter's section one through the series alone, and renders."""
         s = self.s
         for _ in range(2):
+            before = s
             s = rolled_forward(s)
             payload = build_payload(s)
             text = own_text(payload)
@@ -1391,6 +1570,18 @@ class SpgiRollTest(unittest.TestCase):
             # the rebase is history now: marked on the band, no longer this quarter's chart
             self.assertIn("FY26 Q2† 那一档是口径重设", text)
             self.assertFalse(any("指引中值掉了" in ex["title"] for ex in exhibits_of(payload)))
+            sections = {section["id"]: section["exhibits"] for section in payload["sections"]}
+            carried = before["next_kpi"]
+            self.assertTrue(sections["settled"][0]["title"].startswith(
+                f"上季 {len(s['followup_closure']['items'])} 条待验证问题："))
+            bar = sections["settled"][1]
+            self.assertEqual(bar["kind"], "diverging_bars")
+            self.assertEqual(bar["xlabels"], [entry["metric"] for entry in carried["quantified"]])
+            self.assertTrue(bar["title"].startswith(
+                f"上季 {len(carried['rows'])} 条观察指标，本季到期 {len(carried['quantified'])} 道量化阈值"))
+            self.assertTrue(any(ex["title"].startswith("Ratings 收入同比 ") and "上季阈值 +3%" in ex["title"]
+                                for ex in sections["settled"]))
+            self.assertEqual(sections["next_quarter"][0]["kind"], "diverging_bars")
         # the fourth quarter settles FY2026 on its new basis: the two vintages
         # guided before the spin are kept out of every comparison with it
         g = s["annual_guidance_history"]
@@ -1492,8 +1683,8 @@ class SpgiFindingsTest(unittest.TestCase):
             capital["operating_cash_flow"][i] = 100.0
 
         text = self.page(q1_always_lowest)
-        self.assertIn("每年第一季度都是四季里最低的一档", text)
         self.assertIn("第一季度的经营现金流每年都是全年最低的一档", text)
+        self.assertNotIn("例外是 2017 年", text)
         self.assertIn("例外是 2017 年", self.page())
 
     def test_the_dividend_claims(self) -> None:
@@ -1515,18 +1706,30 @@ class SpgiFindingsTest(unittest.TestCase):
         self.assertNotIn("Energy +2% 落后", text)
 
     def test_the_threshold_verdict_claims(self) -> None:
-        def crossed(s):
-            s["prior_kpi_settlement"]["quantified"][0]["threshold"] = 99.0
+        """Section one's verdicts on last report's lines, and section three's
+        count of lines already crossed, follow the readings both ways."""
+        def bought_less(s):
+            s["capital_allocation_usd_m"]["buyback"][-1] -= 100
 
-        def no_payout(s):
-            s["next_kpi"]["quantified"] = [e for e in s["next_kpi"]["quantified"]
-                                           if e["reads"] != "payout_to_fcf"]
+        def bought_more(s):
+            s["capital_allocation_usd_m"]["buyback"][-1] += 100
 
-        self.assertIn("本季六条全部为正", self.page())
-        text = self.page(crossed)
-        self.assertIn("本季六条里五条为正、一条已越过阈值", text)
-        self.assertIn("与「单季股东回报 / 自由现金流」相同、与其余几条相反", self.page())
-        self.assertIn("与本节其他几条相反", self.page(no_payout))
+        def energy_recovers(s):
+            s["quarter_figures"]["energy_organic_cc_revenue_usd_m"] = [640.0, 607.0]
+
+        current = self.page()
+        self.assertIn("2 道全部守住", current)
+        self.assertIn("恰好踩在上季阈值 US$1,500M 上", current)
+        self.assertIn("余量恰好为 0，所以这一格没有柱子", current)
+        less = self.page(bought_less)
+        self.assertIn("1 道守住、1 道击穿", less)
+        self.assertIn("击穿上季阈值 US$1,500M", less)
+        self.assertNotIn("余量恰好为 0", less)
+        more = self.page(bought_more)
+        self.assertIn("守住上季阈值 US$1,500M", more)
+        self.assertNotIn("恰好踩在", more)
+        self.assertIn("当前 3 道在安全侧、4 道已在线外", current)
+        self.assertIn("当前 5 道在安全侧、2 道已在线外", self.page(energy_recovers))
 
     def test_the_issuance_cycle_claims(self) -> None:
         def downturn(s):

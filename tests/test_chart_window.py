@@ -176,7 +176,7 @@ REACH_2016 = {
     "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
-    "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
+    "spgi": 13, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
     "intc": 10 + _intc_threshold_reach(),
     # Not a company page. It is here because the ratchet now walks every
     # published payload rather than `ENTRIES`: a page that was invisible to the
@@ -631,7 +631,16 @@ CONVERTED = {
                             "in the Q1 2018 10-Q, alongside the ASC 606 adoption "
                             "of 2018-01-01; before that the company disclosed "
                             "only a two-way subscription/non-subscription split.",
-        "订阅型收入占毛收入比重": "same revenue-type table, same 2018Q1 floor.",
+        # The segment record this chart reads starts at 2018Q1, so its growth
+        # rate starts at 2019Q1. Not a disclosure floor: the Q1 2018 10-Q says
+        # "Our historical segment reporting has been retroactively revised to
+        # reflect the current organizational structure", so the 2018 10-Qs carry
+        # 2017 Market Intelligence quarters on this basis -- they are simply not
+        # in the series yet. Whether any filing prints 2016 quarters on it is
+        # unchecked (Q4 2016-2017 reported MI and Platts as one segment).
+        "Market Intelligence 收入同比": "the segment series starts 2018Q1; the 2018 10-Qs "
+                                     "retroactively revised 2017 onto this basis and those "
+                                     "quarters have not been fetched.",
         "计费发行量": "the dollar, rating-category metric first appears in the Q1 2024 "
                  "10-Q (carrying a 2023 comparative) and appears in no earnings "
                  "8-K at all. What the pre-2023 MD&A prints instead is a "
@@ -658,15 +667,8 @@ CONVERTED = {
                              "are drawn on the same metric's band chart.",
         "Ratings 的两条腿": "a deliberately recent view; the same two legs run the full 42 "
                        "quarters in the long-record section of this page.",
-        "交易性收入占 Ratings 比重": "same pair, drawn recent by design.",
-        "Ratings 交易性收入同比": "a next-quarter threshold chart, drawn on recent context by "
-                          "design.",
-        "营业利润率（剔除处置损益与联营收益 D）vs 阈值": "same, a threshold chart by design; the full "
-                                        "42-quarter version is in the long-record "
-                                        "section.",
-        "本季自由现金流": "threshold chart, recent by design.",
-        "单季自由现金流 D vs 阈值": "threshold chart, recent by design.",
-        "单季股东回报 / 自由现金流 D vs 阈值": "threshold chart, recent by design.",
+        "本季自由现金流": "a current-quarter panel, recent by design; the 42-quarter cash "
+                    "record is in the long-record section.",
     },
     "tjx": {
         # Two floors. The pretax-margin guidance joins the filed Outlook paragraph
@@ -1258,18 +1260,13 @@ FLOOR_KIND = {
     'spgi': {
         '五个分部各自占分部收入合计的比重': 'disclosure',
         '六条申报收入类型各自占毛收入的比重': 'disclosure',
-        '订阅型收入占毛收入比重': 'disclosure',
+        'Market Intelligence 收入同比': 'coverage',
         '计费发行量': 'disclosure',
         'GAAP 摊薄 EPS相对指引中值的偏离': 'disclosure',
         'GAAP 收入增速相对指引中值的偏离': 'disclosure',
         '调整后自由现金流相对指引中值的偏离': 'disclosure',
         'Ratings 的两条腿': 'design',
-        '交易性收入占 Ratings 比重': 'design',
-        'Ratings 交易性收入同比': 'design',
-        '营业利润率（剔除处置损益与联营收益 D）vs 阈值': 'design',
         '本季自由现金流': 'design',
-        '单季自由现金流 D vs 阈值': 'design',
-        '单季股东回报 / 自由现金流 D vs 阈值': 'design',
     },
     'tjx': {
         '摊薄每股收益（近 16 季）': 'coverage',
@@ -1378,7 +1375,7 @@ class ChartWindowTest(unittest.TestCase):
         by_kind = {}
         for slug, title, kind in pending:
             by_kind.setdefault(kind, []).append(f"{slug}/{title}")
-        self.assertEqual(len(by_kind.get("coverage", [])), 35,
+        self.assertEqual(len(by_kind.get("coverage", [])), 36,
                          "charts whose data exists and has not been fetched")
         # Zero, and that is the point: every exemption on this page has now been
         # read against an actual pre-floor filing. The fourteen that had never
@@ -1391,8 +1388,8 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 160)
-        self.assertEqual(settled.count("design"), 40)
+        self.assertEqual(settled.count("disclosure"), 159)
+        self.assertEqual(settled.count("design"), 35)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
         """Every short chart either names its reason or is counted here.
