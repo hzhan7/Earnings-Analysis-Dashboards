@@ -224,6 +224,23 @@ def _cme_quarter_pins() -> dict:
                             json.loads((ROOT / "series" / "cme.json").read_text(encoding="utf-8")))
 
 
+def cboe_threshold_reach(page: dict) -> int:
+    """Cboe's threshold lines that reach 2016: one per metric the previous local
+    analysis set and this quarter settles (section one, 「上季阈值」) and one per
+    metric this quarter's analysis sets (section three, 「下季阈值」). Which metrics
+    they are is data -- the page is rolled by editing `series/cboe.json` alone --
+    and only some run back to 2016 (net revenue exists only for the combined
+    company, from 2017), so the pin counts the permanent charts and adds these
+    while they are published."""
+    return sum(1 for section in page["sections"] for ex in section["exhibits"]
+               if ("上季阈值" in ex["title"] or "下季阈值" in ex["title"])
+               and (first_year(ex) or TARGET_YEAR + 1) <= TARGET_YEAR)
+
+
+def _cboe_threshold_reach() -> int:
+    return cboe_threshold_reach(js_payload(ROOT / "data" / "cboe.js", "window.DASH"))
+
+
 def _tsm_advanced_count() -> dict:
     """The process-mix note counts the quarters since 2021Q1 in which the page's
     summed 7nm-and-below line equals TSMC's own aggregate. The count grows by
@@ -280,7 +297,7 @@ def _axp_overlap_count() -> dict:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amd": 16, "amzn": 13, "arm": 0, "asml": 24, "avgo": 16, "axp": 7 + _axp_threshold_reach(), "bc": 3, "cboe": 10, "cdns": 10, "cfr": 20, "cme": 13 + _cme_threshold_reach(),
+    "amd": 16, "amzn": 13, "arm": 0, "asml": 24, "avgo": 16, "axp": 7 + _axp_threshold_reach(), "bc": 3, "cboe": 8 + _cboe_threshold_reach(), "cdns": 10, "cfr": 20, "cme": 13 + _cme_threshold_reach(),
     "cost": 13, "googl": 11, "hkex": 15, "ibkr": 26, "ker": 11 + _ker_threshold_reach(), "ma": 17, "mc": 9, "mco": 13, "meta": 10,
     "msci": 23, "msft": 8, "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 8, "nvda": 10, "pm": 8,
     "race": 12, "rms": 15, "samsung": 0, "schw": 10, "skhynix": 4, "snps": 8,
@@ -560,12 +577,20 @@ CONVERTED = {
         "最想结清的那条指引": "organic net revenue growth was guided as a number only for "
                        "2022-2024; from 2025 the guidance is a phrase, and the page "
                        "does not convert phrases into endpoints.",
-        "其中最关键的一条": "Cboe first printed a separate multi-listed options market "
-                     "share in the 2019Q2 release; ADV and RPC -- and so the money "
-                     "line beside it -- do run the whole window.",
+        # Matches both 「上季阈值」 (section one) and 「下季阈值」 (section three).
+        "季阈值": "each threshold line -- last quarter's settled in section one, the next "
+               "quarter's in section three -- is drawn on its metric's own series from its first "
+               "comparable point: the multi-listed options market share was first printed "
+               "separately in the 2019Q2 release (ADV and RPC, and so the money line, run the "
+               "whole window); net revenue (revenues less cost of revenues) exists only for the "
+               "combined company -- the Q4 2016 CBOE Holdings release (8-K of 2017-02-06) prints "
+               "Total Operating Revenues and no cost-of-revenues line anywhere -- and 2017Q2 is its "
+               "first full quarter (Bats consolidated from 2017-02-28), so a net revenue line starts "
+               "2017Q2 and a year-on-year one 2018Q2. Lines on the other metrics reach 2016.",
         "同一形状在股票撮合里重演": 'verified: Cboe acquired BIDS Trading on 2020-12-31, so the off-exchange block (share, ADV, net capture) genuinely begins 2021Q1.',
         "五个分部的净收入": 'was wrong and is now fixed in the builder: the five-segment series runs unbroken to 2017Q2 and is already in this repo -- the chart was drawing the last 20 of 37 because of a hardcoded tail, not because of anything in the filings. It now draws all 37. 2017Q2 is the real floor (Bats consolidated 2017-02-28, so 2017Q1 carries one month of the combined company).',
-        "毛收入与净收入之间那道楔子": 'verified: a genuine Bats-driven structural break -- the pre-2017 income statement had no net-revenue/liquidity-payment structure to build the wedge from.',
+        # The wedge chart's title now leads with the section-0 conclusion it carries.
+        "Section 31 规费是过路项": 'verified: a genuine Bats-driven structural break -- the pre-2017 income statement had no net-revenue/liquidity-payment structure to build the wedge from.',
         "公司自己的第二套口径": 'date corrected: Cboe introduced this three-category view in its Q1 2022 release (filed 2022-04-29), not 2021Q1. The four 2021 quarters exist only as retroactive comparatives inside the 2022 releases, which is why 2021Q1 is the practical floor -- but the reason is the recast, not an original disclosure.',
     },
     # Micron's two records give opposite answers, both read off the filings.
@@ -1328,10 +1353,10 @@ FLOOR_KIND = {
     },
     'cboe': {
         '最想结清的那条指引': 'disclosure',
-        '其中最关键的一条': 'disclosure',
+        '季阈值': 'disclosure',
         '同一形状在股票撮合里重演': 'disclosure',
         '五个分部的净收入': 'disclosure',
-        '毛收入与净收入之间那道楔子': 'disclosure',
+        'Section 31 规费是过路项': 'disclosure',
         '公司自己的第二套口径': 'disclosure',
     },
     'cdns': {
