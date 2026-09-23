@@ -1031,6 +1031,31 @@ CONVERTED = {
         "Thom Browne 直营门店": "Thom Browne's DTC revenue is split out by brand only from "
                             "the 2021Q3 release, so FY2022 is the first year that has "
                             "four quarters of it to divide by a year-end door count.",
+        # Adjusted EBIT exists only for the half and the year, so a second half
+        # is the year minus its first half. The F-1 of 2022-01-19 tables the six
+        # months ended June 30 of 2021 and 2020; the F-4 of 2021-08-27 prints no
+        # six-month table at all (no "June 30, 2019", no 2020 half). So the
+        # earliest first half any filing prints is H1 2020, and the first second
+        # half is 2020H2.
+        "下半年要做到": "a second half is FY minus H1, and the earliest H1 any filing prints "
+                  "is H1 2020 (F-1 of 2022-01-19; the F-4 of 2021-08-27 tables no half), "
+                  "so the second-half record starts 2020H2.",
+        # Section one settles last quarter's thresholds on each one's own
+        # record. Three are year-on-year lines on the quarterly record, one a
+        # first-half line on the half-year record.
+        "上半年 Adjusted EBIT 利润率：": "first halves only (the threshold compares H1 with H1); the "
+                                  "earliest H1 any filing prints is H1 2020, in the F-1 of "
+                                  "2022-01-19 -- the F-4 of 2021-08-27 tables no half.",
+        "Thom Browne 批发单季同比：": "a year-on-year line on the quarterly record, which starts "
+                               "2021Q1 (no filing tables a quarter before the listing), so it "
+                               "starts 2022Q1.",
+        "品牌收入净额（DTC 同比增量 − 批发同比减量）：": "same quarterly floor, a year-on-year change of "
+                                          "branded revenue, so it starts 2022Q1.",
+        "ZEGNA DTC 单店单季收入同比：": "quarter-end store counts are printed from 2022-03-31 on; "
+                                 "before that the only columns any release prints are "
+                                 "2021-12-31 and 2020-12-31 (Q1 2022 release), and the F-1 and "
+                                 "F-4 table none, so the first year-on-year per-store reading "
+                                 "is 2022Q4.",
     },
 }
 
@@ -1101,6 +1126,11 @@ FLOOR_KIND = {
         '#个品牌的 Adjusted EBIT': 'disclosure',
         '分部的 Adjusted EBIT 相当于集团的': 'disclosure',
         'Thom Browne 直营门店': 'disclosure',
+        '下半年要做到': 'disclosure',
+        '上半年 Adjusted EBIT 利润率：': 'disclosure',
+        'Thom Browne 批发单季同比：': 'disclosure',
+        '品牌收入净额（DTC 同比增量 − 批发同比减量）：': 'disclosure',
+        'ZEGNA DTC 单店单季收入同比：': 'disclosure',
     },
     'hkex': {
         '现货市场日均成交额与交易结算费': 'disclosure',
@@ -1494,7 +1524,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 172)
+        self.assertEqual(settled.count("disclosure"), 177)
         self.assertEqual(settled.count("design"), 42)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:

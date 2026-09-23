@@ -67,7 +67,236 @@
   "thom_browne_revenue_brand_basis_prior_year_eur_k": 129154,
   "thom_browne_revenue_segment_basis_prior_year_eur_k": 129462,
   "source": "Ermenegildo Zegna Group Semi-Annual Report for the six months ended June 30, 2026, furnished on Form 6-K on 2026-09-03 (accession 0001877787-26-000036, document zgn-20260630.htm). Read independently of the results press release that the rest of this file is built from: the income statement and the revenue tables come from 'Operating and Financial Review', the segment figures from the segment note, the put option amounts from Note 16 and the two put-option swings from the narrative under 'Financial income and expenses' and 'Foreign exchange'. `profit_margin` is not a row in this document and is therefore not pinned here.",
-  "checked_on": "2026-09-21"
+  "checked_on": "2026-09-21",
+  "other_filings": {
+   "quarter_revenue_release": {
+    "source": "2026 年第二季度营收新闻稿（6-K EX-99.1，2026-07-23，pressreleaserevenuesq22026.htm）：品牌、渠道、地区收入表的 Q2 2026 vs Q2 2025 两列，门店表，按品牌的有机增速还原表 Total 行",
+    "group_reported_printed_pct": 10.3,
+    "group_fx_pct": -0.8,
+    "group_organic_pct": 11.0,
+    "thom_browne_organic_pct": 2.7,
+    "greater_china_organic_pct": 8.6,
+    "dtc_eur_k": [
+     410860.0,
+     352901.0
+    ],
+    "wholesale_branded_eur_k": [
+     67451.0,
+     74760.0
+    ],
+    "zegna_dtc_eur_k": [
+     300968.0,
+     253706.0
+    ],
+    "thom_browne_wholesale_eur_k": [
+     13107.0,
+     18580.0
+    ],
+    "thom_browne_wholesale_reported_printed_pct": -29.5,
+    "zegna_dos": [
+     279,
+     286
+    ]
+   },
+   "previous_quarter_revenue_release": {
+    "source": "2026 年第一季度营收新闻稿（6-K EX-99.1，2026-04-30，pressreleaserevenuesq12026.htm）：渠道与地区收入表的 Q1 2026 vs Q1 2025 两列；品牌收入表 Total revenues 与 Thom Browne 两行，有机增速还原表 Total 行",
+    "greater_china_organic_pct": 5.3,
+    "dtc_eur_k": [
+     371920.0,
+     345134.0
+    ],
+    "wholesale_branded_eur_k": [
+     64265.0,
+     79483.0
+    ],
+    "group_reported_printed_pct": 2.5,
+    "group_fx_pct": -4.9,
+    "group_organic_pct": 7.4,
+    "thom_browne_organic_pct": -3.0
+   },
+   "impairment_note": {
+    "source": "2026 年半年报（6-K，2026-09-03，zgn-20260630.htm）附注 9「Thom Browne segment」正文与敏感性表",
+    "headroom_eur_m": 104.0,
+    "wacc_pct": 8.61,
+    "ebitda_cagr_2028_vs_2025_pct": 50.3,
+    "headroom_if_wacc_plus_100bp_eur_m": -4.0,
+    "goodwill_eur_k": 219903.0,
+    "brand_eur_k": 157916.0
+   },
+   "earliest_half_filing": {
+    "source": "F-1（2022-01-19，d247700df1.htm）：六个月合并损益表与 Adjusted EBIT 调节表的 2020 列",
+    "h1_2020_revenue_eur_k": 402386.0,
+    "h1_2020_profit_eur_k": -87755.0,
+    "h1_2020_adjusted_ebit_eur_k": -51981.0
+   },
+   "targets_release": {
+    "source": "FY2024 业绩新闻稿（6-K EX-99.1，2025-03-27，pressreleaseresultsfy2024.htm）「Mid-term targets」段",
+    "revenue_eur_m": [
+     2200,
+     2400
+    ],
+    "adjusted_ebit_eur_m": [
+     250,
+     300
+    ]
+   },
+   "lease_note": {
+    "source": "2026 年半年报附注 17「Lease liabilities」变动表（表格重读）",
+    "opening_eur_k": 731589.0,
+    "interest_eur_k": 17094.0,
+    "repayment_eur_k": -91727.0,
+    "additions_eur_k": 257571.0,
+    "closures_eur_k": -2554.0,
+    "translation_eur_k": 15222.0,
+    "closing_eur_k": 927195.0,
+    "non_current_eur_k": 780698.0,
+    "current_eur_k": 146497.0
+   }
+  },
+  "note": {
+   "source": {
+    "current_report": "2026-09-03 ZGN Q2 2026 vs Q1 2026 Analysis.md",
+    "current_sections": "第 0 节「上季遗留问题回答」；第 8 节「关键观察指标」本季指标表（5 条）",
+    "prior_report": "2026-04-30 ZGN Q1 2026 vs Q4 2025 Analysis.md",
+    "prior_sections": "结尾「Follow-up Questions for Next Quarter」（5 条）；第 8 节「关键观察指标」（6 条）与立场撤销条件（3 条）"
+   },
+   "checked_on": "2026-09-23",
+   "closure": {
+    "total": 5,
+    "counts": {
+     "已验证": 2,
+     "部分验证": 2,
+     "前半句验证、后半句被证伪": 1
+    },
+    "verdicts": {
+     "1": "部分验证",
+     "2": "部分验证（前半已验证，后半被证伪）",
+     "3": "已验证",
+     "4": "已验证",
+     "5": "前半句已验证；后半句被证伪"
+    },
+    "scorecard": {
+     "方向判对": [
+      1,
+      3,
+      4
+     ],
+     "方向对、幅度判反": [
+      2
+     ],
+     "分成两半后结论相反": [
+      5
+     ]
+    }
+   },
+   "prior_thresholds": [
+    {
+     "metric": "上半年 Adjusted EBIT 利润率",
+     "threshold": 7.0,
+     "direction": "up",
+     "upper": 7.8,
+     "as_written": "< 7.0% = FY26 €185–190m 在数学上失守 … ≥ 7.8% = 共识上沿可达",
+     "filed_reading": 7.541351,
+     "derivation": "半年报 adjusted_ebit_eur_k ÷ revenue_eur_k（本块上方两格）"
+    },
+    {
+     "metric": "Thom Browne 批发单季同比",
+     "threshold": -30.0,
+     "direction": "up",
+     "upper": -25.0,
+     "as_written": "Q2 劣于 −30% = 指引不可能成立；Q2 优于 −25% = 交付时点解释被证实",
+     "filed_reading": -29.456405,
+     "derivation": "季度营收新闻稿 Thom Browne 批发两列相除"
+    },
+    {
+     "metric": "品牌收入净额（DTC 同比增量 − 批发同比减量）",
+     "threshold": 5.0,
+     "direction": "up",
+     "upper": 10.0,
+     "unit": "eur_m",
+     "as_written": "连续两季 > €10m = 批发去杠杆见底 … < €5m = 重演",
+     "filed_reading": 50.65,
+     "derivation": "季度营收新闻稿 DTC 与批发品牌合计两列相减，€M",
+     "filed_previous": 11.568
+    },
+    {
+     "metric": "大中华区单季有机增速",
+     "threshold": 0.0,
+     "direction": "up",
+     "upper": 5.0,
+     "as_written": "连续两季 ≥ +5% 且管理层上调规划假设 = … upside 兑现；转负 = 洞察 3 作废",
+     "filed_reading": 8.6,
+     "derivation": "季度营收新闻稿印出的有机增速",
+     "filed_previous": 5.3
+    },
+    {
+     "metric": "汇率对集团收入增速的影响",
+     "threshold": -3.0,
+     "direction": "up",
+     "unit": "pp",
+     "as_written": "季均 > 1.208 = 拖累重回 −3pp 以上；> 1.260 = 回到 Q1 的 −4.9pp 量级",
+     "filed_reading": -0.8,
+     "derivation": "季度营收新闻稿有机还原表 Total 行 less Foreign exchange"
+    },
+    {
+     "metric": "ZEGNA DTC 单店单季收入同比",
+     "threshold": 5.0,
+     "direction": "up",
+     "upper": 10.0,
+     "as_written": "同比 < +5% = 同店动能衰减 … ≥ +10% = 结构性优势延续",
+     "filed_reading": 21.604995,
+     "derivation": "季度营收新闻稿 ZEGNA DTC 两列各除以门店表 ZEGNA 直营两列"
+    }
+   ],
+   "next_thresholds": [
+    {
+     "metric": "Thom Browne 单季有机增速",
+     "threshold": -5.0,
+     "direction": "up",
+     "as_written": "organic < −5% = FY26 close to breakeven 被证伪；organic ≥ 0 = 指引可信",
+     "filed_reading": 2.7,
+     "derivation": "季度营收新闻稿印出的有机增速"
+    },
+    {
+     "metric": "集团报告口径减有机增速",
+     "threshold": 3.0,
+     "direction": "down",
+     "organic_ceiling": 6.0,
+     "as_written": "Q3 若报告 ≥ +9% 而 organic ≤ +6%（缺口翻为 +3pp 以上顺风）",
+     "filed_reading": -0.7,
+     "derivation": "季度营收新闻稿 Total 行印出的报告口径增速减有机增速"
+    },
+    {
+     "metric": "大中华区单季有机增速",
+     "threshold": 5.0,
+     "direction": "up",
+     "as_written": "organic < +5% = 复苏证伪…；organic 转负 = Bear 情景触发器之一",
+     "filed_reading": 8.6,
+     "derivation": "季度营收新闻稿印出的有机增速"
+    },
+    {
+     "metric": "Thom Browne 商誉与品牌减值余量",
+     "threshold": 50.0,
+     "direction": "up",
+     "unit": "eur_m",
+     "as_written": "headroom < €50m、或 WACC 上调、或直接计提减值",
+     "filed_reading": 104.0,
+     "derivation": "半年报附注 9 敏感性表"
+    },
+    {
+     "metric": "FY2026 Adjusted EBIT",
+     "threshold": 185.0,
+     "direction": "up",
+     "upper": 195.0,
+     "unit": "eur_m",
+     "base": [
+      185,
+      193
+     ],
+     "as_written": "FY26 < €185m = Bear；€185–193m = Base；≥ €195m = Bull"
+    }
+   ]
+  }
  },
  "disclosure_regime": {
   "printed_periods": [
@@ -1148,6 +1377,14 @@
    74455
   ]
  },
+ "pre_listing_half": {
+  "period": "2020H1",
+  "revenue": 402386,
+  "adjusted_ebit": -51981,
+  "profit": -87755,
+  "source": "F-1（2022-01-19，d247700df1.htm）：「For the six months ended June 30」合并损益表的 2020 列（Revenues 402,386；Profit/(Loss) for the period (87,755)）与 Adjusted EBIT 调节表的 2020 列（(51,981)）。同一张表的 2021 列 603,340 / 32,234 / 66,813 与本文件 half 块的 2021H1 逐格相同。",
+  "floor_note": "No filing prints a half-year before H1 2020: the F-4 of 2021-08-27 contains no “June 30, 2019” and no six-month table for 2020, and the F-1 compares H1 2021 with H1 2020 only. The block sits outside `half` on purpose: build/luxury.py reads the `half` arrays, and this page uses the 2020 half only where a chart needs the record's true floor."
+ },
  "annual": {
   "years": [
    2019,
@@ -1395,7 +1632,296 @@
    2028,
    2030
   ],
-  "source": "2026 年半年报（6-K，2026-09-03，zgn-20260630.htm）。两个变动额是公司自己写在正文里的：「Financial income and expenses」段落的 a negative impact of €14,582 thousand from the fair value remeasurement of liabilities for put options held by non-controlling interests，与「Foreign exchange」段落的 unfavorable foreign exchange impacts of €17,252 thousand relating to the Thom Browne non-controlling interest put option liability。负债余额与两档行权条款取自附注 16；实际税率与不可抵扣的说明取自所得税段落。"
+  "source": "2026 年半年报（6-K，2026-09-03，zgn-20260630.htm）。两个变动额是公司自己写在正文里的：「Financial income and expenses」段落的 a negative impact of €14,582 thousand from the fair value remeasurement of liabilities for put options held by non-controlling interests，与「Foreign exchange」段落的 unfavorable foreign exchange impacts of €17,252 thousand relating to the Thom Browne non-controlling interest put option liability。负债余额与两档行权条款取自附注 16；实际税率与不可抵扣的说明取自所得税段落。",
+  "fair_value_brand_eur_k": {
+   "current": -1056,
+   "prior": 13835
+  },
+  "fair_value_scope": "€14,582 千是全部少数股东看跌期权负债的公允价值变动之差；公司写明 primarily driven by Thom Browne non-controlling interests，并给出 Thom Browne 本期亏 €1,056 千、上年同期赚 €13,835 千。汇兑那一项只属于 Thom Browne 那笔以美元计价的负债。"
+ },
+ "printed_rates": {
+  "period": "H1 2026",
+  "quarters": [
+   "2026Q1",
+   "2026Q2"
+  ],
+  "group_reported_printed_pct": [
+   2.5,
+   10.3
+  ],
+  "group_fx_pct": [
+   -4.9,
+   -0.8
+  ],
+  "group_organic_pct": [
+   7.4,
+   11.0
+  ],
+  "thom_browne_organic_pct": [
+   -3.0,
+   2.7
+  ],
+  "greater_china_organic_pct": [
+   5.3,
+   8.6
+  ],
+  "source": "2026 年第一、第二季度营收新闻稿（6-K，2026-04-30 / 2026-07-23）：品牌收入表与地区收入表的单季 % 与 Organic 两列，按品牌的有机增速还原表 Total 行的 less Foreign exchange。公司每季都印这些增速；本站只接入本半年的两个季度，没有接入按季的有机增速序列。"
+ },
+ "lease_rollforward": {
+  "period": "H1 2026",
+  "opening_date": "2025-12-31",
+  "closing_date": "2026-06-30",
+  "opening_eur_k": 731589,
+  "closing_eur_k": 927195,
+  "legs_eur_k": [
+   [
+    "新租约与续租",
+    257571
+   ],
+   [
+    "利息",
+    17094
+   ],
+   [
+    "汇兑",
+    15222
+   ],
+   [
+    "关店减少",
+    -2554
+   ],
+   [
+    "偿还（含利息）",
+    -91727
+   ]
+  ],
+  "cause": "Additions during the period were primarily attributable to the extension of certain lease agreements aimed at securing long-term presence in prime retail locations in the United States and Europe.",
+  "source": "2026 年半年报（6-K，2026-09-03，zgn-20260630.htm）附注 17「Lease liabilities」变动表；期末 927,195 = 非流动 780,698 + 流动 146,497，与资产负债表两行一致"
+ },
+ "next_kpi": {
+  "period": "H1 2026",
+  "set_in": "2026-09-03 ZGN Q2 2026 vs Q1 2026 Analysis.md 第 8 节「关键观察指标」",
+  "quantified": [
+   {
+    "id": "tb_organic",
+    "metric": "Thom Browne 单季有机增速",
+    "direction": "up",
+    "threshold": -5.0,
+    "unit": "pct",
+    "reading": "2026Q2",
+    "trigger": "< −5% 减仓；≥ 0 指引可信",
+    "source": "2026 年第二季度营收新闻稿（6-K，2026-07-23）品牌收入表：Thom Browne 的 Organic 一栏",
+    "rate": "thom_browne_organic_pct"
+   },
+   {
+    "id": "fx_gap",
+    "metric": "集团报告口径减有机增速",
+    "direction": "down",
+    "threshold": 3.0,
+    "unit": "pp",
+    "organic_ceiling": 6.0,
+    "reading": "2026Q2",
+    "trigger": "差 > +3pp 且有机 ≤ +6% → 警示（加速已全是汇率）",
+    "source": "2026 年第二季度营收新闻稿（6-K，2026-07-23）品牌收入表 Total revenues 行：报告口径 % 与 Organic 两栏，都是公司印出的数",
+    "rates": [
+     "group_reported_printed_pct",
+     "group_organic_pct"
+    ]
+   },
+   {
+    "id": "gcr_organic",
+    "metric": "大中华区单季有机增速",
+    "direction": "up",
+    "threshold": 5.0,
+    "unit": "pct",
+    "reading": "2026Q2",
+    "trigger": "< +5% 警示；转负减仓",
+    "source": "2026 年第二季度营收新闻稿（6-K，2026-07-23）地区收入表：Greater China Region 的 Organic 一栏",
+    "rate": "greater_china_organic_pct"
+   },
+   {
+    "id": "tb_headroom",
+    "metric": "Thom Browne 商誉与品牌减值余量",
+    "direction": "up",
+    "threshold": 50.0,
+    "unit": "eur_m",
+    "current": 104.0,
+    "reading": "2026-06-30",
+    "trigger": "< €50M、WACC 上调或计提减值 → 重新评估",
+    "goodwill_eur_k": 219903,
+    "brand_eur_k": 157916,
+    "wacc_pct": 8.61,
+    "ebitda_cagr_2028_vs_2025_pct": 50.3,
+    "headroom_if_wacc_plus_100bp_eur_m": -4.0,
+    "source": "2026 年半年报（6-K，2026-09-03，zgn-20260630.htm）附注 9「Thom Browne segment」：goodwill €219,903 千、无限期品牌 €157,916 千；敏感性表 Headroom 104、WACC 8.61%、EBITDA CAGR 2028 vs. 2025 50.3%、WACC +100 bps 一栏 (4)（€ millions）"
+   }
+  ],
+  "full_year": {
+   "id": "fy_adj_ebit",
+   "metric": "FY2026 Adjusted EBIT",
+   "year": 2026,
+   "bear_below_eur_m": 185,
+   "base_eur_m": [
+    185,
+    193
+   ],
+   "bull_from_eur_m": 195,
+   "trigger": "< €185M 减仓；€185–193M 为 Base；≥ €195M 加仓",
+   "settles_with": "FY2026 业绩（2027 年 3 月）"
+  }
+ },
+ "followup_closure": {
+  "period": "H1 2026",
+  "set_in": "2026Q1",
+  "set_in_report": "2026-04-30 ZGN Q1 2026 vs Q4 2025 Analysis.md 结尾「Follow-up Questions for Next Quarter」",
+  "closed_in_report": "2026-09-03 ZGN Q2 2026 vs Q1 2026 Analysis.md 第 0 节「上季遗留问题回答」",
+  "buckets": [
+   "已验证",
+   "部分验证",
+   "前半句验证、后半句被证伪"
+  ],
+  "items": [
+   {
+    "n": 1,
+    "question": "Thom Browne 批发二季度能否收窄到 −30% 以内，且 ASICS 联名效应消退后 DTC 仍保持正增长",
+    "verdict": "部分验证",
+    "bucket": "部分验证",
+    "call": "方向判对",
+    "reading": "批发那一半已验证，DTC 那一半表面成立、实质打折 —— 正增长主要来自开店"
+   },
+   {
+    "n": 2,
+    "question": "上半年 Adjusted EBIT 利润率能否守住上年同期的 7.4% 以上，使下半年的隐含要求不高于 FY2025 下半年",
+    "verdict": "部分验证（前半已验证，后半被证伪）",
+    "bucket": "部分验证",
+    "call": "方向对、幅度判反",
+    "reading": "利润率守住了，但卖方共识随后上修，下半年的隐含要求反而高于 FY2025 下半年"
+   },
+   {
+    "n": 3,
+    "question": "二季度与上半年的汇率拖累是否收敛到管理层说的全年约 −2pp",
+    "verdict": "已验证",
+    "bucket": "已验证",
+    "call": "方向判对",
+    "reading": "收敛得比管理层自己的指引还快，本条退役"
+   },
+   {
+    "n": 4,
+    "question": "中东冲突下，二季度当地收入降幅能否不再扩大，且对集团增速的影响仍在 1pp 以内",
+    "verdict": "已验证",
+    "bucket": "已验证",
+    "call": "方向判对",
+    "reading": "公司写明中东二季度转正，本条退役"
+   },
+   {
+    "n": 5,
+    "question": "大中华区二季度能否继续为正，并促使管理层上调 flattish 的规划假设",
+    "verdict": "前半句已验证；后半句被证伪",
+    "bucket": "前半句验证、后半句被证伪",
+    "call": "分成两半后结论相反",
+    "reading": "有机增速继续为正并加速，但管理层在两场电话会上两次被追问，都没有上调 flattish 规划"
+   }
+  ]
+ },
+ "prior_kpi_settlement": {
+  "period": "H1 2026",
+  "set_in": "2026Q1",
+  "set_in_report": "2026-04-30 ZGN Q1 2026 vs Q4 2025 Analysis.md 第 8 节「关键观察指标」",
+  "quantified": [
+   {
+    "id": "h1_margin",
+    "metric": "上半年 Adjusted EBIT 利润率",
+    "direction": "up",
+    "threshold": 7.0,
+    "upper": 7.8,
+    "unit": "pct",
+    "reading": "2026H1",
+    "trigger": "< 7.0% 减仓；7.0%–7.7% 中枢 €180–185M；≥ 7.8% 加仓"
+   },
+   {
+    "id": "tb_wholesale",
+    "metric": "Thom Browne 批发单季同比",
+    "direction": "up",
+    "threshold": -30.0,
+    "upper": -25.0,
+    "unit": "pct",
+    "reading": "2026Q2",
+    "trigger": "劣于 −30% 警示并下修 FY2026 Adjusted EBIT €5–8M；优于 −25% 跟踪转加仓",
+    "upper_strict": true
+   },
+   {
+    "id": "branded_net",
+    "metric": "品牌收入净额（DTC 同比增量 − 批发同比减量）",
+    "direction": "up",
+    "threshold": 5.0,
+    "upper": 10.0,
+    "upper_quarters": 2,
+    "unit": "eur_m",
+    "reading": "2026Q2",
+    "trigger": "连续两季 > €10M 加仓；< €5M 警示",
+    "upper_strict": true
+   },
+   {
+    "id": "gcr_organic",
+    "metric": "大中华区单季有机增速",
+    "direction": "up",
+    "threshold": 0.0,
+    "upper": 5.0,
+    "upper_quarters": 2,
+    "unit": "pct",
+    "reading": "2026Q2",
+    "plan_raised": false,
+    "trigger": "连续两季 ≥ +5% 且管理层上调 flattish 规划 → 加仓；转负 → 洞察作废并下调中枢",
+    "source": "2026 年第一季度营收新闻稿（6-K，2026-04-30）与2026 年第二季度营收新闻稿（6-K，2026-07-23）地区收入表：Greater China Region 的 Organic 一栏；规划未上调见本季分析稿第 0 节第 5 条",
+    "rate": "greater_china_organic_pct"
+   },
+   {
+    "id": "fx_drag",
+    "metric": "汇率对集团收入增速的影响",
+    "direction": "up",
+    "threshold": -3.0,
+    "unit": "pp",
+    "reading": "2026Q2",
+    "trigger": "EUR/USD 季均 > 1.208（上季稿写明 ⇔ 拖累重回 −3pp 以上）→ 下修报告口径收入",
+    "as_written": "季均 > 1.208 = 拖累重回 −3pp 以上；> 1.260 = 回到 Q1 的 −4.9pp 量级",
+    "source": "2026 年第二季度营收新闻稿（6-K，2026-07-23）有机增速还原表 Total 行：less Foreign exchange 一栏。EUR/USD 季均不是公司申报里的数，本页按上季稿写明的等价后果结算",
+    "rate": "group_fx_pct"
+   },
+   {
+    "id": "zegna_per_store",
+    "metric": "ZEGNA DTC 单店单季收入同比",
+    "direction": "up",
+    "threshold": 5.0,
+    "upper": 10.0,
+    "unit": "pct",
+    "reading": "2026Q2",
+    "trigger": "< +5% 警示；≥ +10% 护城河确认"
+   }
+  ],
+  "stance_withdrawal": [
+   {
+    "n": 1,
+    "text": "Thom Browne 批发二季度同比劣于 −30%，且集团二季度有机增速 < +6%",
+    "legs": [
+     "tb_wholesale"
+    ],
+    "group_organic": 11.0,
+    "group_organic_below": 6.0,
+    "source": "2026 年第二季度营收新闻稿 Total revenues 行：Q2 Organic 11.0%"
+   },
+   {
+    "n": 2,
+    "text": "上半年 Adjusted EBIT 利润率 < 7.0%",
+    "legs": [
+     "h1_margin"
+    ]
+   },
+   {
+    "n": 3,
+    "text": "新增 Saks / 批发商应收坏账拨备 ≥ €5M，或管理层对 FY2026 共识的措辞从 realistic 转为 challenging / more prudent",
+    "unsettled": "没有可结算的申报数：半年报只写 Thom Browne 分部「higher allowances for doubtful accounts」，没有金额；措辞那一半只在电话会里（本季分析稿引用了 09-03 的「reasonable even if, of course, a bit more challenging」），本季分析稿没有对这条撤销条件下结论"
+   }
+  ]
  },
  "stores": {
   "dates": [
@@ -1993,9 +2519,30 @@
    "2025-09-05",
    "2026-03-20"
   ],
-  "reaffirmation_note": "The H1 2025 and FY2025 releases both say the Group remains focused on delivering its 2027 targets. Neither restates a number, and the phrase “2027 targets” appears in no other SEC filing by this issuer."
+  "reaffirmation_note": "The H1 2025 release (2025-09-05, chairman's quote: “we remain on track to achieve our 2027 targets”) and the FY2025 release (2026-03-20, Outlook: “remains focused on delivering on its 2027 targets”) refer to the set published with the FY2024 results on 2025-03-27, which replaced the 2023-12-05 CAGR targets. Neither restates a number. The H1 2026 results release (2026-09-03) and the H1 2026 semi-annual report do not mention the targets at all; the “lower end” wording quoted in the local analysis comes from the conference calls, not from a filing.",
+  "targets_2027": {
+   "set_on": "2025-03-27",
+   "replaces": "2023-12-05",
+   "results_year_of_the_release": 2024,
+   "year": 2027,
+   "revenue_eur_m": [
+    2200,
+    2400
+   ],
+   "adjusted_ebit_eur_m": [
+    250,
+    300
+   ],
+   "wording": "To reflect the current business environment, the Group has updated its medium-term targets. In 2027, the Group expects to reach: Revenues in the range of €2,200-€2,400 million; Adjusted EBIT of €250-€300 million",
+   "source": "FY2024 业绩新闻稿（6-K EX-99.1，2025-03-27）「Mid-term targets」段；首页要点写作「Mid-term targets updated」。"
+  }
  },
  "sources": [
+  {
+   "label": "F-1 注册说明书（2022-01-19）：2021 与 2020 年上半年损益与 Adjusted EBIT",
+   "url": "https://www.sec.gov/Archives/edgar/data/1877787/000119312522012555/d247700df1.htm",
+   "date": "2022-01-19"
+  },
   {
    "label": "FY2021 初步营收新闻稿（6-K EX-99.1，2022-02-01）",
    "url": "https://www.sec.gov/Archives/edgar/data/1877787/000119312522024048/d304558dex991.htm",
@@ -2129,6 +2676,11 @@
   {
    "label": "2026 年上半年业绩新闻稿（6-K EX-99.1，2026-09-03）",
    "url": "https://www.sec.gov/Archives/edgar/data/1877787/000187778726000035/eznv-h12026resultspressrel.htm",
+   "date": "2026-09-03"
+  },
+  {
+   "label": "2026 年半年报（6-K，2026-09-03，zgn-20260630.htm）：减值测试、租赁负债与少数股东看跌期权附注",
+   "url": "https://www.sec.gov/Archives/edgar/data/1877787/000187778726000036/zgn-20260630.htm",
    "date": "2026-09-03"
   },
   {
