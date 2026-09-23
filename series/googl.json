@@ -58,8 +58,239 @@
     },
     "cloud_backlog_usd_bn": 513.9,
     "total_backlog_usd_bn": 519.5,
+    "cash_and_marketable_securities_usd_m": 242474,
     "source": "Alphabet Q2 2026 业绩新闻稿（8-K EX-99.1，acc 0001652044-26-000066，2026-07-22）逐项读取：首段「quarter ended June 30, 2026」与发布日 July 22, 2026；要点行「revenues increased 24%, or 23% in constant currency」「Google Cloud ... increased 82%」「operating margin expanded ... to 34%」；Q2 2026 Financial Highlights 表（Revenues 96,428 / 119,796；Operating income 40,770；Other income (expense), net 97,983；Net income available to common stockholders 112,107；Diluted net income per common share 9.11）；Supplemental Information 表（Search & other 63,271、YouTube ads 11,055、Google Network 7,303、subscriptions, platforms, and devices 12,911、Google Services total 94,540、Google Cloud 13,624 / 24,768、Other Bets 382；Total TAC 16,179；Number of employees 198,933）；Segment Operating Results（Services 39,544、Cloud 8,814、Other Bets (1,799)、Alphabet-level (5,789)）；资产负债表（Long-term debt 98,165）；现金流量表（Depreciation of property and equipment 7,104；Stock-based compensation expense 7,957；operating activities 39,069；Purchases of property and equipment (44,924)；Repurchases of stock 0）；OI&E 表（Gain on equity securities 99,031，脚注「diluted net income per common share by ... $6.26」）；FCF 对账表（Q2 2026 (5,855)，TTM 53,273）；Revenues by Geography（United States 60,846、EMEA 32,501、APAC 19,317、Other Americas 7,026）。backlog 两数取自同季 10-Q（acc 0001652044-26-000071，2026-07-23）「we had $519.5 billion of remaining performance obligations ... of which $513.9 billion related to Google Cloud」。",
-    "checked_on": "2026-09-19"
+    "checked_on": "2026-09-19",
+    "note": {
+      "source": {
+        "this_quarter": "2026-07-22 GOOGL Q2 2026 vs Q1 2026 Analysis.md：第 0 节「上季遗留问题回答」6 条（状态列）与「上季判断记分卡」8 行；第 8 节「本季 KPI 结算」12 行与「下季（Q3 2026）关键观察指标表」18 行",
+        "previous_quarter": "2026-04-29 GOOGL Q1 2026 vs Q4 2025 Analysis.md：七「关键观察指标 & 下季 Follow-up」的「关键观察指标表」13 行与 Follow-up Questions 6 条"
+      },
+      "checked_on": "2026-09-24",
+      "followup_closure": {
+        "total": 6,
+        "counts": {
+          "已答": 2,
+          "部分回答": 2,
+          "未答": 2
+        },
+        "by_question": {
+          "1": "已答",
+          "2": "部分回答",
+          "3": "未答",
+          "4": "部分回答",
+          "5": "已答",
+          "6": "未答"
+        },
+        "_report": "第 0 节状态列原文：#1 ✅ 已答，且大幅好于预期；#2 🔄 部分回答；#3 ❌ 连续第三季未答；#4 ✅ 已答（Q2）／❌ 未答（2027）；#5 ✅ 已答，答案比预想的更极端；#6 ❌ 未答，且披露质量倒退。报告没有统计行；#4 一半答一半未答，按 #2 同形归「部分回答」。"
+      },
+      "prior_rows": 13,
+      "prior_thresholds": [
+        {
+          "id": "cloud_yoy_warn",
+          "row": 1,
+          "threshold": 55.0,
+          "direction": "up"
+        },
+        {
+          "id": "cloud_yoy_cut",
+          "row": 1,
+          "threshold": 45.0,
+          "direction": "up"
+        },
+        {
+          "id": "cloud_opm_explain",
+          "row": 2,
+          "threshold": 30.0,
+          "direction": "up"
+        },
+        {
+          "id": "cloud_opm_warn",
+          "row": 2,
+          "threshold": 29.0,
+          "direction": "up"
+        },
+        {
+          "id": "cloud_opm_cut",
+          "row": 2,
+          "threshold": 27.0,
+          "direction": "up"
+        },
+        {
+          "id": "backlog_qoq_warn",
+          "row": 3,
+          "threshold": 10.0,
+          "direction": "up"
+        },
+        {
+          "id": "backlog_decline",
+          "row": 3,
+          "threshold": 0.0,
+          "direction": "up"
+        },
+        {
+          "id": "search_warn",
+          "row": 5,
+          "threshold": 14.0,
+          "direction": "up"
+        },
+        {
+          "id": "search_cut",
+          "row": 5,
+          "threshold": 10.0,
+          "direction": "up"
+        },
+        {
+          "id": "capex_low",
+          "row": 7,
+          "threshold": 42000.0,
+          "direction": "up"
+        },
+        {
+          "id": "capex_high",
+          "row": 7,
+          "threshold": 55000.0,
+          "direction": "down"
+        },
+        {
+          "id": "dep_yoy_warn",
+          "row": 8,
+          "threshold": 55.0,
+          "direction": "down",
+          "consecutive": 2
+        },
+        {
+          "id": "ttm_fcf_warn",
+          "row": 9,
+          "threshold": 55000.0,
+          "direction": "up"
+        },
+        {
+          "id": "ttm_fcf_cut",
+          "row": 9,
+          "threshold": 45000.0,
+          "direction": "up"
+        },
+        {
+          "id": "net_cash",
+          "row": 11,
+          "threshold": 35000.0,
+          "direction": "up",
+          "retired": true
+        },
+        {
+          "id": "network_yoy",
+          "row": 12,
+          "threshold": -5.0,
+          "direction": "up",
+          "consecutive": 2
+        }
+      ],
+      "prior_conditions": {
+        "4": "未触发",
+        "6": "触发",
+        "10": "触发",
+        "13": "披露倒退"
+      },
+      "prior_settlement_report": "本季分析第 8 节「本季 KPI 结算」：Cloud revenue YoY ✅、Cloud OPM ✅、Cloud backlog ⚠️ 勉强未触发（报告写 +11.3%，申报 462.3 → 513.9 为 +11.2%）、Search ✅、AI Mode 🔴 触发、Q2 CapEx ✅ 区间内、折旧 ✅、TTM FCF 🔴 触发警示、回购 🔴 触发、净现金 ⚠️ 未触发但 KPI 失效、Network ✅、Waymo 🔴 披露倒退；「Backlog 24个月确认比例」一行没有结算",
+      "next_rows": 18,
+      "next_thresholds": [
+        {
+          "id": "backlog_net_add",
+          "row": 1,
+          "threshold": 25.0,
+          "direction": "up"
+        },
+        {
+          "id": "ttm_fcf_warn",
+          "row": 2,
+          "threshold": 30000.0,
+          "direction": "up"
+        },
+        {
+          "id": "ttm_fcf_cut",
+          "row": 2,
+          "threshold": 0.0,
+          "direction": "up"
+        },
+        {
+          "id": "cloud_yoy_warn",
+          "row": 4,
+          "threshold": 60.0,
+          "direction": "up"
+        },
+        {
+          "id": "cloud_yoy_rerate",
+          "row": 4,
+          "threshold": 45.0,
+          "direction": "up"
+        },
+        {
+          "id": "cloud_opm_warn",
+          "row": 5,
+          "threshold": 30.0,
+          "direction": "up"
+        },
+        {
+          "id": "search_warn",
+          "row": 6,
+          "threshold": 13.0,
+          "direction": "up"
+        },
+        {
+          "id": "search_cut",
+          "row": 6,
+          "threshold": 10.0,
+          "direction": "up"
+        },
+        {
+          "id": "capex_low",
+          "row": 7,
+          "threshold": 52000.0,
+          "direction": "up"
+        },
+        {
+          "id": "capex_high",
+          "row": 7,
+          "threshold": 68000.0,
+          "direction": "down"
+        },
+        {
+          "id": "atm_sold",
+          "row": 10,
+          "threshold": 10000.0,
+          "direction": "down"
+        },
+        {
+          "id": "dep_yoy_warn",
+          "row": 14,
+          "threshold": 50.0,
+          "direction": "down",
+          "consecutive": 2
+        },
+        {
+          "id": "tax_rate",
+          "row": 15,
+          "threshold": 16.0,
+          "direction": "down"
+        }
+      ],
+      "next_conditions": [
+        3,
+        5,
+        11
+      ],
+      "next_gated": [
+        8,
+        9,
+        12,
+        13,
+        16,
+        17,
+        18
+      ],
+      "next_report": "第 1 行「<$25B 或负增」只画一条 $25B 线：负增必然低于 $25B，两者触发同一个动作。第 5 行拆成一条 30% 线与一个条件；第 2 行拆成 $30,000M 与 0 两条线。第 10 行「或超出 SBC 税负所需」这半句没有阈值数。"
+    }
   },
   "snapshot": {
     "period": "Q2 2026",
@@ -163,12 +394,44 @@
       {
         "label": "— 权益证券收益",
         "kind": "no_change",
+        "key": "equity_securities_gain",
         "values": [
           1286,
           36915,
           99031
         ],
         "source": "Q2 PR p.8"
+      },
+      {
+        "label": "税前利润",
+        "key": "pretax_income",
+        "values": [
+          33933,
+          77412,
+          138753
+        ],
+        "source": "各季新闻稿合并损益表「Income before income taxes」"
+      },
+      {
+        "label": "所得税",
+        "key": "income_tax",
+        "values": [
+          5737,
+          14834,
+          26560
+        ],
+        "source": "各季新闻稿合并损益表「Provision for income taxes」"
+      },
+      {
+        "label": "— 权益证券收益带来的所得税",
+        "key": "equity_gain_tax_effect",
+        "kind": "no_change",
+        "values": [
+          253,
+          8200,
+          21900
+        ],
+        "source": "各季新闻稿 OI&E 表脚注「the net effect of the gain on equity securities … increased the provision for income tax … by」：Q2 2025 $253M（含 US$83M 投资业绩费）、Q1 2026 $8.2B、Q2 2026 $21.9B"
       },
       {
         "label": "净利润（归属普通股）",
@@ -257,19 +520,31 @@
         "source": "Q2 PR p.2"
       },
       {
+        "label": "现金、现金等价物与有价证券",
+        "from": "cash_and_marketable_securities",
+        "source": "各期 10-Q / 10-K 资产负债表"
+      },
+      {
         "label": "长期债务",
-        "values": [
-          null,
-          77501,
-          98165
-        ],
-        "source": "Q2 PR p.5"
+        "from": "long_term_debt",
+        "source": "各期 10-Q / 10-K 资产负债表"
       },
       {
         "label": "股票回购",
         "from": "repurchases_of_stock",
         "kind": "buyback",
         "source": "Q2 PR p.6"
+      },
+      {
+        "label": "ATM 计划本季发行额",
+        "key": "atm_sold",
+        "kind": "no_change",
+        "values": [
+          null,
+          null,
+          0
+        ],
+        "source": "Q2 2026 10-Q 附注「At-the-Market Program」：2026-06-01 签订，As of June 30, 2026, we have not sold any shares under the ATM Program；此前没有这个计划"
       },
       {
         "label": "Cloud backlog",
@@ -288,8 +563,54 @@
     "operating_eps_high": 2.91,
     "operating_eps_mid": 2.89,
     "revenue_usd_m": 117000,
-    "post_earnings_price_change_pct": -4.9,
-    "search_yoy_pct": 17
+    "post_earnings_price_change_pct": -4.9
+  },
+  "capital_allocation": {
+    "period": "Q2 2026",
+    "_note": "本季现金流量表里融资与投资的几行，取自 Q2 2026 EX-99.1（acc 0001652044-26-000066）现金流量表「Quarter Ended June 30, 2026」一列，单位 US$M，流入为正、流出为负。资本开支与回购不在这里存，由 builder 从 long_history 与 quarterly 读。first_time 是只属于这一季的事实：发行普通股与强制可转优先股两行本季第一次出现（见 first_time_source）。",
+    "sources": [
+      {
+        "label": "发行普通股",
+        "kind": "equity",
+        "value": 30499,
+        "line": "Proceeds from issuance of common stock, net of costs"
+      },
+      {
+        "label": "发行强制可转优先股",
+        "kind": "equity",
+        "value": 19063,
+        "line": "Proceeds from issuance of mandatory convertible preferred stock, net of costs"
+      },
+      {
+        "label": "发债净额",
+        "kind": "debt",
+        "value": 21071,
+        "line": "Proceeds from issuance of debt, net of costs 24,847 − Repayments of debt 3,776"
+      }
+    ],
+    "uses": [
+      {
+        "label": "买入非上市股权证券",
+        "value": -21145,
+        "line": "Purchases of non-marketable securities"
+      },
+      {
+        "label": "股权激励相关税款",
+        "value": -6573,
+        "line": "Net payments related to stock-based award activities"
+      },
+      {
+        "label": "股息",
+        "value": -2689,
+        "line": "Dividend payments"
+      }
+    ],
+    "first_time": "「发行普通股」与「发行强制可转优先股」两行本季第一次出现在 Alphabet 的现金流量表上——Alphabet 2015 年组建以来的申报里这两个科目此前没有非零值；上一次公开增发普通股是 Google 2005 年 9 月那次（14,159,265 股、每股 $295）",
+    "first_time_source": "XBRL companyfacts（CIK 1652044）：ProceedsFromIssuanceOfCommonStock 与 ProceedsFromIssuanceOfConvertiblePreferredStock 的非零值只出现在 2026 年 Q2 的 10-Q；上一次公开增发普通股是 Google Inc. 2005-09-14 的 14,159,265 股 A 类股（每股 $295，424B4 acc 0001193125-05-186028），所以「史上首次增发」不成立，只是 Alphabet 组建以来的第一次。",
+    "equity_markets_quote": "At this point, we're not planning to go back to the equity markets",
+    "equity_markets_source": "Q2 2026 电话会 CFO 回答 JPMorgan 关于资本结构的提问（ATM 计划除外，用于员工股权激励的税款）。",
+    "atm_capacity_usd_bn": 40.0,
+    "atm_source": "Q2 2026 10-Q 附注「At-the-Market Program」：2026-06-01 签订，aggregate sales proceeds of up to $40.0 billion。"
   },
   "capex_guidance_history": {
     "calls": [
@@ -408,181 +729,717 @@
     ],
     "basis": "27 季（2019Q4–2026Q2）的合同剩余履约义务。2019Q4–2025Q4 是 10-Q / 10-K 披露的**公司总额**（公司在附注里写明主要与 Google Cloud 相关，未单列）；2026Q1 起 10-Q 单列 Google Cloud 部分，本站从那一季起改用 Cloud 口径（2026Q1 总额 467.6、Cloud 462.3；2026Q2 总额 519.5、Cloud 513.9）。起点 2019Q4 是披露底：这一项首次出现在 FY2019 10-K，更早的申报里没有。",
     "basis_change_at": "2026Q1",
+    "total_usd_bn": {
+      "2026Q1": 467.6,
+      "2026Q2": 519.5
+    },
+    "short_term_included_at": "2026Q1",
+    "short_term_usd_bn": 7.3,
+    "short_term_note": "2026Q1 的 10-Q 同时改了第二处口径：「In the first quarter of 2026, we elected to change our reporting of revenue backlog to now also include contracts with an original expected term of one year or less. As of March 31, 2026, the portion ... was approximately $7.3 billion.」（accession 0001652044-26-000048）；FY2025 10-K 的 242.8 明写不含这类合同（accession 0001652044-26-000018）。所以 2026Q1 那一格的环比与净增跨了两处口径：公司总额 → Cloud 单列，以及纳入一年以内合同。按旧口径同比同口径（公司总额、扣掉一年以内合同）是 467.6 − 7.3 − 242.8 ≈ 217.5；Q2 10-Q 没有再给一年以内合同的金额。",
     "from_call": [],
     "note_2026q2": "本站此前把 2026Q2 记成 514.0 并注明「尚无 10-Q，采用当季电话会口径」。10-Q 于 2026-07-23 已申报（accession 0001652044-26-000071），其 R41 印着 Google Cloud 513.9、公司总额 519.5，现改用申报值。",
     "rounding_note": "本站此前把这个环比印成 +11.3%，那是拿**已经四舍五入到整数**的展示值 462 → 514 算的（+11.26%）。用申报值 462.3 → 513.9 算是 +11.16%，一位小数下是 +11.2%。同一个数在同一页上曾经有两个值：snapshot 行硬写 11.3，图上由 builder 现算 11.2。"
   },
+  "followup_closure": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "_note": "上季（2026-04-29）本地分析文末「Follow-up Questions for Next Quarter」6 条在本季的闭环。status 逐字取自本季（2026-07-22）分析第 0 节「上季遗留问题回答」表的状态列，verdict 是按 rule 归类后的类别；图的条数与计数由 build/googl.py 从 items 现数。answer 里的 {…} 由 builder 从序列现算填入，不在这里写数。",
+    "labels": [
+      "已答",
+      "部分回答",
+      "未答"
+    ],
+    "rule": "本季分析第 0 节没有统计行，按各条状态原文归类：✅ 记「已答」、🔄 记「部分回答」、❌ 记「未答」；#4 同时标「✅ 已答（Q2）／❌ 未答（2027）」——一半答了一半没答，与 #2 同形，记「部分回答」。",
+    "items": [
+      {
+        "n": 1,
+        "topic": "Cloud 经营利润率在 Wiz 并表后能否守住 30%",
+        "status": "✅ 已答，且大幅好于预期",
+        "verdict": "已答",
+        "answer": "本季 {cloud_opm_now}{cloud_opm_record}；管理层拒绝拆 TPU 毛利"
+      },
+      {
+        "n": 2,
+        "topic": "backlog 的新增、取消、确认久期与 TPU 占比",
+        "status": "🔄 部分回答",
+        "verdict": "部分回答",
+        "answer": "余额与净增有了（{backlog_now}，净增 {backlog_add_now}），10-Q 仍写「just over 50%」在 24 个月内确认；TPU 占比与取消额不给"
+      },
+      {
+        "n": 3,
+        "topic": "AI Mode / AI Overviews 的 RPM、CPC、ad load 或 coverage",
+        "status": "❌ 连续第三季未答",
+        "verdict": "未答",
+        "answer": "五项一项未给，只给了广告主侧的转化率"
+      },
+      {
+        "n": 4,
+        "topic": "Q2 CapEx 实际值与 2027 CapEx 的初步区间",
+        "status": "✅ 已答（Q2）／❌ 未答（2027）",
+        "verdict": "部分回答",
+        "answer": "Q2 {capex_now}；2027 只说「continue to expect to increase significantly」，不给区间"
+      },
+      {
+        "n": 5,
+        "topic": "回购是否恢复、资本配置怎么排序",
+        "status": "✅ 已答，答案比预想的更极端",
+        "verdict": "已答",
+        "answer": "没有恢复：本季回购 {buyback_now}，CFO 的排序是经营现金流 → 债务 → 股权，回购不在其中"
+      },
+      {
+        "n": 6,
+        "topic": "Waymo 单位经济的最小可用指标",
+        "status": "❌ 未答，且披露质量倒退",
+        "verdict": "未答",
+        "answer": "四项一项未给，本季连周订单量都没再给"
+      }
+    ],
+    "scorecard": {
+      "total": 8,
+      "direction_right": 7,
+      "direction_wrong": [
+        "Cloud OPM 会因 Wiz 回落"
+      ],
+      "_report": "第 0 节「上季判断记分卡」8 行的方向列：7 行 ✅，「Cloud OPM 会因 Wiz 回落，跌破 29% 需重估」一行 ❌ 方向错。"
+    }
+  },
   "prior_kpi_settlement": {
     "period": "Q2 2026",
     "set_in": "Q1 2026",
-    "lead": "Cloud 两条大幅超出，",
-    "quantified": [
+    "_note": "上季（Q1 2026，2026-04-29）本地分析「关键观察指标表」13 行在本季的结算。rows 逐字抄该表的指标、当时的当前值、阈值警戒与触发动作四列。quantified 是写成一个数的线，一档一条（「<+55% 警示；<+45% 减仓」拆成两条），threshold / direction 取自该行，本季读数不在这里存，由 build/googl.py 按 reads 从本文件的序列现算；consecutive 是该行要求连续几季。retired 是本季分析判定失效、不进总览图但照样结算的线。conditions 是写不成一个数的行：有 reads 的由 builder 按序列判定，没有的 verdict 取自本季分析第 8 节「本季 KPI 结算」表（该表漏了第 4 行，第 4 行按 10-Q 原文判定）。换季时整块换成上一季 next_kpi 的 rows / quantified / conditions（原样搬来）并改戳。",
+    "rows": [
       {
-        "metric": "Cloud 收入 YoY",
-        "direction": "up",
-        "threshold": 55.0,
-        "actual": 81.8,
-        "unit": "pct",
-        "kind": "operating"
+        "row": 1,
+        "name": "Cloud revenue YoY",
+        "then": "+63.4%",
+        "threshold_text": "Q2 <+55%警示；<+45%减仓",
+        "action": "[模型推断阈值] 警示/减仓"
       },
       {
-        "metric": "Cloud 经营利润率",
-        "direction": "up",
-        "threshold": 30.0,
-        "actual": 35.59,
-        "unit": "pct",
-        "kind": "operating"
+        "row": 2,
+        "name": "Cloud OPM",
+        "then": "32.9%",
+        "threshold_text": "<30%需解释Wiz；<29%警示；<27%减仓",
+        "action": "[模型推断阈值] 警示"
       },
       {
-        "metric": "Search & other YoY",
-        "direction": "up",
-        "threshold": 14.0,
-        "actual": 16.8,
-        "unit": "pct",
-        "kind": "operating"
+        "row": 3,
+        "name": "Cloud backlog",
+        "then": "$462,000M",
+        "threshold_text": "QoQ <+10%警示；下降则减仓",
+        "action": "[模型推断阈值] 警示/减仓"
       },
       {
-        "metric": "折旧 YoY",
-        "direction": "down",
-        "threshold": 55.0,
-        "actual": 42.1,
-        "unit": "pct",
-        "kind": "operating"
+        "row": 4,
+        "name": "Backlog 24个月确认比例",
+        "then": "just over 50%",
+        "threshold_text": "低于50%或久期继续拉长",
+        "action": "跟踪"
       },
       {
-        "metric": "Q2 CapEx（不超上限）",
-        "direction": "down",
-        "threshold": 55000.0,
-        "actual": 44924.0,
-        "unit": "usd_m",
-        "kind": "cash"
+        "row": 5,
+        "name": "Search & other YoY",
+        "then": "+19.1%",
+        "threshold_text": "<+14%警示；<+10%减仓",
+        "action": "[模型推断阈值] 警示/减仓"
       },
       {
-        "metric": "Cloud backlog 环比",
-        "direction": "up",
-        "threshold": 10.0,
-        "actual": 11.2,
-        "unit": "pct",
-        "kind": "operating"
+        "row": 6,
+        "name": "AI Mode monetization",
+        "then": "未披露RPM/CPC",
+        "threshold_text": "Q2仍不披露且Search减速",
+        "action": "警示"
       },
       {
-        "metric": "TTM 自由现金流",
-        "direction": "up",
-        "threshold": 55000.0,
-        "actual": 53273.0,
-        "unit": "usd_m",
-        "kind": "cash"
+        "row": 7,
+        "name": "Q2 CapEx",
+        "then": "Q1 $35,674M",
+        "threshold_text": "Q2 <$42,000M或>$55,000M均需重估",
+        "action": "[模型推断阈值] 跟踪"
+      },
+      {
+        "row": 8,
+        "name": "Depreciation YoY",
+        "then": "+44.5%",
+        "threshold_text": ">+55%连续两季",
+        "action": "[模型推断阈值] 警示"
+      },
+      {
+        "row": 9,
+        "name": "TTM FCF",
+        "then": "$64,429M",
+        "threshold_text": "<$55,000M警示；<$45,000M减仓",
+        "action": "[模型推断阈值] 警示/减仓"
+      },
+      {
+        "row": 10,
+        "name": "Repurchases",
+        "then": "$0M",
+        "threshold_text": "Q2继续$0M且债务继续升",
+        "action": "警示"
+      },
+      {
+        "row": 11,
+        "name": "Net cash（cash+MS-LT debt）",
+        "then": "$49,339M",
+        "threshold_text": "<$35,000M",
+        "action": "[模型推断阈值] 减仓"
+      },
+      {
+        "row": 12,
+        "name": "Network ads YoY",
+        "then": "-3.9%",
+        "threshold_text": "<-5%连续两季",
+        "action": "跟踪"
+      },
+      {
+        "row": 13,
+        "name": "Waymo rides/week",
+        "then": ">500,000",
+        "threshold_text": "增长但Other Bets亏损继续扩大",
+        "action": "跟踪"
       }
     ],
-    "qualitative_triggered": [
+    "quantified": [
       {
-        "short": "AI Mode 变现披露",
-        "text": "AI Mode / AIO 变现指标连续三季未披露"
+        "id": "cloud_yoy_warn",
+        "row": 1,
+        "reads": "cloud_yoy",
+        "metric": "Cloud 收入 YoY",
+        "tier": "警示",
+        "kind": "operating",
+        "direction": "up",
+        "threshold": 55.0,
+        "unit": "pct"
       },
       {
-        "short": "回购归零",
-        "text": "回购连续两季 $0M 且债务续升"
+        "id": "cloud_yoy_cut",
+        "row": 1,
+        "reads": "cloud_yoy",
+        "metric": "Cloud 收入 YoY",
+        "tier": "减仓",
+        "kind": "operating",
+        "direction": "up",
+        "threshold": 45.0,
+        "unit": "pct"
       },
       {
-        "short": "Waymo 披露倒退",
-        "text": "Waymo 量化披露倒退"
+        "id": "cloud_opm_explain",
+        "row": 2,
+        "reads": "cloud_opm",
+        "metric": "Cloud 经营利润率",
+        "tier": "需解释 Wiz",
+        "kind": "operating",
+        "direction": "up",
+        "threshold": 30.0,
+        "unit": "pct"
+      },
+      {
+        "id": "cloud_opm_warn",
+        "row": 2,
+        "reads": "cloud_opm",
+        "metric": "Cloud 经营利润率",
+        "tier": "警示",
+        "kind": "operating",
+        "direction": "up",
+        "threshold": 29.0,
+        "unit": "pct"
+      },
+      {
+        "id": "cloud_opm_cut",
+        "row": 2,
+        "reads": "cloud_opm",
+        "metric": "Cloud 经营利润率",
+        "tier": "减仓",
+        "kind": "operating",
+        "direction": "up",
+        "threshold": 27.0,
+        "unit": "pct"
+      },
+      {
+        "id": "backlog_qoq_warn",
+        "row": 3,
+        "reads": "backlog_qoq",
+        "metric": "Cloud backlog 环比",
+        "tier": "警示",
+        "kind": "operating",
+        "direction": "up",
+        "threshold": 10.0,
+        "unit": "pct"
+      },
+      {
+        "id": "backlog_decline",
+        "row": 3,
+        "reads": "backlog_qoq",
+        "metric": "Cloud backlog 环比",
+        "tier": "减仓",
+        "kind": "operating",
+        "direction": "up",
+        "threshold": 0.0,
+        "unit": "pct"
+      },
+      {
+        "id": "search_warn",
+        "row": 5,
+        "reads": "search_yoy",
+        "metric": "Search & other YoY",
+        "tier": "警示",
+        "kind": "operating",
+        "direction": "up",
+        "threshold": 14.0,
+        "unit": "pct"
+      },
+      {
+        "id": "search_cut",
+        "row": 5,
+        "reads": "search_yoy",
+        "metric": "Search & other YoY",
+        "tier": "减仓",
+        "kind": "operating",
+        "direction": "up",
+        "threshold": 10.0,
+        "unit": "pct"
+      },
+      {
+        "id": "capex_low",
+        "row": 7,
+        "reads": "capex_quarter",
+        "metric": "Q2 CapEx",
+        "tier": "重估下沿",
+        "kind": "cash",
+        "direction": "up",
+        "threshold": 42000.0,
+        "unit": "usd_m"
+      },
+      {
+        "id": "capex_high",
+        "row": 7,
+        "reads": "capex_quarter",
+        "metric": "Q2 CapEx",
+        "tier": "重估上沿",
+        "kind": "cash",
+        "direction": "down",
+        "threshold": 55000.0,
+        "unit": "usd_m"
+      },
+      {
+        "id": "dep_yoy_warn",
+        "row": 8,
+        "reads": "dep_yoy",
+        "metric": "折旧 YoY",
+        "tier": "警示",
+        "kind": "operating",
+        "direction": "down",
+        "threshold": 55.0,
+        "unit": "pct",
+        "consecutive": 2
+      },
+      {
+        "id": "ttm_fcf_warn",
+        "row": 9,
+        "reads": "ttm_fcf",
+        "metric": "TTM 自由现金流",
+        "tier": "警示",
+        "kind": "cash",
+        "direction": "up",
+        "threshold": 55000.0,
+        "unit": "usd_m"
+      },
+      {
+        "id": "ttm_fcf_cut",
+        "row": 9,
+        "reads": "ttm_fcf",
+        "metric": "TTM 自由现金流",
+        "tier": "减仓",
+        "kind": "cash",
+        "direction": "up",
+        "threshold": 45000.0,
+        "unit": "usd_m"
+      },
+      {
+        "id": "network_yoy",
+        "row": 12,
+        "reads": "network_yoy",
+        "metric": "Network 收入 YoY",
+        "tier": "跟踪",
+        "kind": "operating",
+        "direction": "up",
+        "threshold": -5.0,
+        "unit": "pct",
+        "consecutive": 2
       }
     ],
     "retired": [
       {
-        "short": "净现金",
-        "reason": "可被增发规避",
-        "text": "净现金 < $35,000M：可被增发直接规避，口径已失真，退役"
+        "id": "net_cash",
+        "row": 11,
+        "reads": "net_cash",
+        "metric": "净现金（现金与有价证券 − 长期债务）",
+        "tier": "减仓",
+        "kind": "cash",
+        "direction": "up",
+        "threshold": 35000.0,
+        "unit": "usd_m",
+        "why": "本季分析判定这条线失效并退役：它可以被增发直接绕过，而且有价证券里含上市权益证券——6 月 30 日有 $87,063M，其中 $80.0B 是有出售限制的 SpaceX 股份（Q2 2026 10-Q 公允价值表），本季的读数主要是它们推高的；替代它的是下季的 TTM 自由现金流与 ATM 发行额两条"
       }
     ],
-    "excluded_from_chart": [
+    "conditions": [
       {
-        "short": "Network ads",
-        "reason": "阈值接近零会使百分比失真",
-        "text": "Network ads YoY：阈值 -5%、实际 -0.7%，未触发。阈值绝对值接近零会让「距阈值 %」失真，故不进图，只记录结果。"
+        "row": 4,
+        "short": "backlog 24 个月确认比例",
+        "reading": "10-Q 仍写「We expect to recognize just over 50% of the revenue backlog as revenues over the next 24 months」，与上季同一句",
+        "verdict": "未触发",
+        "why": "读数是一句话不是一个数：没有低于 50%，也没有久期拉长的表述。本季分析的结算表漏了这一行，按 10-Q 原文判定"
+      },
+      {
+        "row": 6,
+        "short": "AI Mode 变现披露",
+        "reading": "RPM、CPC、ad load、coverage 本季仍一项未披露；Search & other 同比由 {search_prev} 放缓到 {search_now}",
+        "verdict": "触发"
+      },
+      {
+        "row": 10,
+        "short": "回购",
+        "reads": "buyback_debt"
+      },
+      {
+        "row": 13,
+        "short": "Waymo",
+        "reading": "本季没有给每周订单量，「增长」无从判断；Other Bets 经营亏损{other_bets_move}",
+        "verdict": "披露倒退"
       }
     ]
   },
   "next_kpi": {
     "period": "Q2 2026",
     "for_period": "Q3 2026",
+    "_note": "本季（Q2 2026，2026-07-22）本地分析第 8 节「下季（Q3 2026）关键观察指标表」18 行。rows 逐字抄该表的指标、当前值、阈值警戒与触发动作（去掉加粗记号）。quantified 一档一条，读数由 build/googl.py 按 reads 从序列现算，不在这里写；conditions 是写不成一个数、但能按序列判定的条件；disclosure_gated 是要等之后的披露才能结算的行，why 写原因。换季时这三块原样搬进下一季的 prior_kpi_settlement。第 3 行指标名原文是「经营口径 EPS（剔权益收益）」：本页不把 GAAP EPS 减去权益证券收益的每股影响后的数叫「经营」EPS（它不是公司定义的 non-GAAP 指标，见页面 notes），所以只写「EPS（剔权益收益）」。",
+    "rows": [
+      {
+        "row": 1,
+        "name": "Cloud backlog 单季净增",
+        "then": "+$52B",
+        "threshold_text": "<$25B 或负增 → 撤销条件 1",
+        "action": "🔴 下调至中性"
+      },
+      {
+        "row": 2,
+        "name": "TTM 自由现金流",
+        "then": "$53,273M",
+        "threshold_text": "<$30,000M 警示；转负 → 减仓",
+        "action": "🟠 警示 / 🔴 减仓"
+      },
+      {
+        "row": 3,
+        "name": "EPS（剔权益收益）",
+        "then": "$2.85",
+        "threshold_text": "连续两季环比不增长",
+        "action": "🟠 警示"
+      },
+      {
+        "row": 4,
+        "name": "Cloud 收入 YoY",
+        "then": "+81.8%",
+        "threshold_text": "<+60% 警示；<+45% 重估 Cloud 倍数",
+        "action": "🟠 警示"
+      },
+      {
+        "row": 5,
+        "name": "Cloud OPM",
+        "then": "35.59%",
+        "threshold_text": "<30% 警示；连续两季环比下降且收入减速 → 减仓",
+        "action": "🟠/🔴"
+      },
+      {
+        "row": 6,
+        "name": "Search & other YoY",
+        "then": "+16.8%",
+        "threshold_text": "<+13% 警示（已计入 lapping + FX 逆风）；<+10% 减仓",
+        "action": "🟠/🔴"
+      },
+      {
+        "row": 7,
+        "name": "Q3 CapEx",
+        "then": "$44,924M",
+        "threshold_text": "<$52B → FY 指引下修风险；>$68B → 2027 失控",
+        "action": "🔵 双向跟踪"
+      },
+      {
+        "row": 8,
+        "name": "FY26 CapEx 指引",
+        "then": "$195B–$205B",
+        "threshold_text": "再次上调 → 折现率再上调",
+        "action": "🟠 警示"
+      },
+      {
+        "row": 9,
+        "name": "2027 CapEx 指引（预计 Q4 给出）",
+        "then": "未给",
+        "threshold_text": ">$280B 且 TTM FCF 为负 → 撤销条件 2",
+        "action": "🔴 减仓"
+      },
+      {
+        "row": 10,
+        "name": "ATM 计划实际发行额",
+        "then": "$0（额度 $40B）",
+        "threshold_text": "单季 >$10B，或超出 SBC 税负所需",
+        "action": "🟠 警示（承诺可信度）"
+      },
+      {
+        "row": 11,
+        "name": "回购",
+        "then": "$0M",
+        "threshold_text": "连续第三季 $0M",
+        "action": "🔵 跟踪"
+      },
+      {
+        "row": 12,
+        "name": "backlog 客户集中度",
+        "then": "未披露",
+        "threshold_text": "10-Q 确认单一客户 >35% → 撤销条件 3",
+        "action": "🔴 减仓"
+      },
+      {
+        "row": 13,
+        "name": "TPU 系统收入",
+        "then": "未披露（<$1.6B [自算]）",
+        "threshold_text": "首次量化即为重大催化（双向）",
+        "action": "🔵 跟踪"
+      },
+      {
+        "row": 14,
+        "name": "折旧 YoY",
+        "then": "+42.1%",
+        "threshold_text": ">+50% 连续两季",
+        "action": "🟠 警示"
+      },
+      {
+        "row": 15,
+        "name": "经营口径有效税率",
+        "then": "~11.7% [自算]",
+        "threshold_text": "回升至 >16% → 经营 EPS 下修",
+        "action": "🔵 跟踪"
+      },
+      {
+        "row": 16,
+        "name": "AI Mode / AIO 变现指标",
+        "then": "连续三季未披露",
+        "threshold_text": "仍不披露且 Search <+13%",
+        "action": "🟠 警示"
+      },
+      {
+        "row": 17,
+        "name": "优先股股息 + 稀释",
+        "then": "$86M（满季 ~$231M）",
+        "threshold_text": "强制转股条款执行时的实际稀释比例",
+        "action": "🔵 跟踪"
+      },
+      {
+        "row": 18,
+        "name": "Waymo 量化披露",
+        "then": "无",
+        "threshold_text": "再无周订单量 → 继续零估值",
+        "action": "🔵 跟踪"
+      }
+    ],
     "quantified": [
       {
+        "id": "backlog_net_add",
+        "row": 1,
+        "reads": "backlog_net_add",
         "metric": "Cloud backlog 单季净增",
+        "tier": "撤销条件 1",
+        "kind": "operating",
         "direction": "up",
         "threshold": 25.0,
-        "current": 51.6,
         "unit": "usd_bn"
       },
       {
+        "id": "ttm_fcf_warn",
+        "row": 2,
+        "reads": "ttm_fcf",
         "metric": "TTM 自由现金流",
+        "tier": "警示",
+        "kind": "cash",
         "direction": "up",
         "threshold": 30000.0,
-        "current": 53273.0,
         "unit": "usd_m"
       },
       {
+        "id": "ttm_fcf_cut",
+        "row": 2,
+        "reads": "ttm_fcf",
+        "metric": "TTM 自由现金流",
+        "tier": "减仓",
+        "kind": "cash",
+        "direction": "up",
+        "threshold": 0.0,
+        "unit": "usd_m"
+      },
+      {
+        "id": "cloud_yoy_warn",
+        "row": 4,
+        "reads": "cloud_yoy",
         "metric": "Cloud 收入 YoY",
+        "tier": "警示",
+        "kind": "operating",
         "direction": "up",
         "threshold": 60.0,
-        "current": 81.8,
         "unit": "pct"
       },
       {
+        "id": "cloud_yoy_rerate",
+        "row": 4,
+        "reads": "cloud_yoy",
+        "metric": "Cloud 收入 YoY",
+        "tier": "重估",
+        "kind": "operating",
+        "direction": "up",
+        "threshold": 45.0,
+        "unit": "pct"
+      },
+      {
+        "id": "cloud_opm_warn",
+        "row": 5,
+        "reads": "cloud_opm",
         "metric": "Cloud 经营利润率",
+        "tier": "警示",
+        "kind": "operating",
         "direction": "up",
         "threshold": 30.0,
-        "current": 35.59,
         "unit": "pct"
       },
       {
+        "id": "search_warn",
+        "row": 6,
+        "reads": "search_yoy",
         "metric": "Search & other YoY",
+        "tier": "警示",
+        "kind": "operating",
         "direction": "up",
         "threshold": 13.0,
-        "current": 16.8,
         "unit": "pct"
       },
       {
-        "metric": "折旧 YoY",
-        "direction": "down",
-        "threshold": 50.0,
-        "current": 42.1,
+        "id": "search_cut",
+        "row": 6,
+        "reads": "search_yoy",
+        "metric": "Search & other YoY",
+        "tier": "减仓",
+        "kind": "operating",
+        "direction": "up",
+        "threshold": 10.0,
         "unit": "pct"
       },
       {
-        "metric": "Q3 CapEx（不低于此值否则全年指引下修）",
+        "id": "capex_low",
+        "row": 7,
+        "reads": "capex_quarter",
+        "metric": "Q3 CapEx",
+        "tier": "指引下修",
+        "kind": "cash",
         "direction": "up",
         "threshold": 52000.0,
-        "current": 44924.0,
-        "unit": "usd_m",
-        "note": "方向相反——低于 {threshold_bn} 反而说明全年指引有下修风险"
+        "unit": "usd_m"
+      },
+      {
+        "id": "capex_high",
+        "row": 7,
+        "reads": "capex_quarter",
+        "metric": "Q3 CapEx",
+        "tier": "2027 失控",
+        "kind": "cash",
+        "direction": "down",
+        "threshold": 68000.0,
+        "unit": "usd_m"
+      },
+      {
+        "id": "atm_sold",
+        "row": 10,
+        "reads": "atm_sold",
+        "metric": "ATM 单季发行额",
+        "tier": "警示",
+        "kind": "cash",
+        "direction": "down",
+        "threshold": 10000.0,
+        "unit": "usd_m"
+      },
+      {
+        "id": "dep_yoy_warn",
+        "row": 14,
+        "reads": "dep_yoy",
+        "metric": "折旧 YoY",
+        "tier": "警示",
+        "kind": "operating",
+        "direction": "down",
+        "threshold": 50.0,
+        "unit": "pct",
+        "consecutive": 2
+      },
+      {
+        "id": "tax_rate",
+        "row": 15,
+        "reads": "tax_rate_ex_gains",
+        "metric": "剔权益收益的有效税率",
+        "tier": "跟踪",
+        "kind": "operating",
+        "direction": "down",
+        "threshold": 16.0,
+        "unit": "pct"
+      }
+    ],
+    "conditions": [
+      {
+        "row": 3,
+        "short": "剔权益收益 EPS 连续两季环比不增长",
+        "reads": "eps_ex_gains_qoq"
+      },
+      {
+        "row": 5,
+        "short": "Cloud 利润率连续两季环比下降且收入减速",
+        "reads": "cloud_opm_two_down"
+      },
+      {
+        "row": 11,
+        "short": "回购连续第三季 $0M",
+        "reads": "buyback_streak"
       }
     ],
     "disclosure_gated": [
       {
-        "metric": "backlog 客户集中度",
-        "short": "backlog 客户集中度",
-        "trigger": "10-Q 确认单一客户 > 35% 即撤销多头"
+        "row": 8,
+        "short": "FY26 CapEx 指引再上调",
+        "why": "全年资本开支指引只在电话会上给，要等 Q3 电话会"
       },
       {
-        "metric": "2027 CapEx 指引",
+        "row": 9,
         "short": "2027 CapEx 指引",
-        "trigger": "> $280,000M 且 TTM FCF 为负即减仓"
+        "why": "公司只说 2027 会「significantly increase」、细节「at a later date」，本季分析预计 Q4 给出"
       },
       {
-        "metric": "ATM 计划实际发行额",
-        "short": "ATM 发行额",
-        "trigger": "单季 > $10,000M 即警示"
+        "row": 12,
+        "short": "backlog 客户集中度",
+        "why": "2026-07-23 申报的 Q2 10-Q 没有披露 backlog 或收入的客户集中度，下一次机会是 Q3 10-Q 或 FY2026 10-K"
       },
       {
-        "metric": "TPU 系统销售收入",
+        "row": 13,
         "short": "TPU 系统收入",
-        "trigger": "首次量化即为双向重大催化"
+        "why": "Q2 10-Q 只写本季开始确认 TPU 系统协议的收入、大部分在 2027 年确认，没有给金额"
       },
       {
-        "metric": "AI Mode / AIO 变现指标",
-        "short": "AI Mode 变现指标",
-        "trigger": "仍不披露且 Search < +13% 即警示"
+        "row": 16,
+        "short": "AI Mode / AIO 变现指标",
+        "why": "条件的前一半是「仍不披露」，要看 Q3 的披露；后一半「Search 低于 +13%」已由第 6 行那条线跟踪"
+      },
+      {
+        "row": 17,
+        "short": "优先股转股稀释",
+        "why": "强制可转优先股要到转股条款执行时才有实际稀释比例；没有阈值，只跟踪"
+      },
+      {
+        "row": 18,
+        "short": "Waymo 量化披露",
+        "why": "是否恢复披露每周订单量，要看 Q3 的新闻稿与电话会"
       }
     ]
   },
@@ -773,6 +1630,36 @@
     },
     "provenance": "季度值来自各期 10-Q（含上年同期比较列）与 10-K；无 10-Q 的第四季度按 全年 − 前三季 倒推。Q4 2025 总收入沿用当季 earnings release 的 113,828，与 10-K 倒挤值相差 1。Q2 2026 尚无 10-Q，采用当季 earnings release。",
     "repurchases_provenance": "现金流量表「Repurchases of stock」，XBRL PaymentsForRepurchaseOfCommonStock 年初至今值逐季相减（2023Q3 = 45,313 − 29,526；2023Q4 = 61,504 − 45,313；2024Q2 = 31,380 − 15,696；2024Q3 = 46,671 − 31,380；2024Q4 = 62,222 − 46,671；2025Q2 = 28,306 − 15,068；2025Q3 = 40,210 − 28,306；2025Q4 = 45,709 − 40,210）；2024Q4 15,551、2025Q2 13,238、2025Q4 5,499 与各季新闻稿现金流量表的单季列一致，2026Q1、2026Q2 两季申报为 0。"
+  },
+  "balance_sheet_usd_m": {
+    "quarters": [
+      "2024Q4",
+      "2025Q1",
+      "2025Q2",
+      "2025Q3",
+      "2025Q4",
+      "2026Q1",
+      "2026Q2"
+    ],
+    "cash_and_marketable_securities": [
+      95657,
+      95328,
+      95148,
+      98496,
+      126843,
+      126840,
+      242474
+    ],
+    "long_term_debt": [
+      10883,
+      10886,
+      23607,
+      21607,
+      46547,
+      77501,
+      98165
+    ],
+    "provenance": "季末资产负债表两行：「Total cash, cash equivalents, and marketable securities」与「Long-term debt」，取自各期 10-Q / 10-K 的 XBRL（CashCashEquivalentsAndShortTermInvestments、LongTermDebtNoncurrent，时点数，不需相减）；2025-06-30、2026-03-31、2026-06-30 三格另与当季 EX-99.1 资产负债表逐格对过。起点 2024Q4：LongTermDebtNoncurrent 在 2023Q3–2024Q3 的三份 10-Q 里没有打这个标签，本页没有逐份读那几张表，所以不往前接。有价证券里含上市公司的权益证券（本季因 SpaceX 上市大增），净现金按公司两行直接相减，不作剔除。"
   },
   "long_history": {
     "quarters": [
@@ -1773,7 +2660,14 @@
   "quarter_story": {
     "period": "Q2 2026",
     "youtube_driver": "由世界杯驱动，下季无对应赛事",
-    "backlog_reading": "{prev_q} 的 +{prev_add} 是一次性大单，{cur_q} 的 +{add} 才是常态化水平。TPU 系统销售已计入 backlog，但公司拒绝给出占比。",
+    "search_outlook": "CFO 在电话会上预告 Q3 会「begin lapping an acceleration in Search performance that began in the third quarter last year」，汇率也由 Q2 约 1 个百分点的顺风转为小幅逆风、主要落在 Search 与 YouTube 广告上（电话会口径）",
+    "search_outlook_source": "Q2 2026 电话会（2026-07-22）CFO 展望段，逐字核对过电话会全文稿。",
+    "search_brief": "CFO 预告 Q3 要跨过去年 Q3 起的 Search 加速基数，汇率也转为小幅逆风（电话会口径）。",
+    "services_reading": "本季分析把 Services 利润率的环比回落读作「结构性季节现象」（Q2 有世界杯内容成本与营销投放），依据是 2025 年 Q1→Q2 也回落了 2.24pp",
+    "services_reading_source": "2026-07-22 本地分析 3.2 节。",
+    "undrawn": "画不了的：剔权益收益后的有效税率约 {tax_rate_now}（本季分析自评信心 3/5——公司给的是权益收益带来的增量税项，与剔除后的有效税率不必同口径），放在第三板块当阈值跟踪；折旧墙与 FY2026 全年自由现金流是分析里的模型推算，不是申报数；backlog 客户集中度与权益收益的标的只见于外部报道，公司从未披露，2026-07-23 申报的 10-Q 也没有；TPU 系统收入 10-Q 只说本季开始确认、没有金额；供给约束、第三方产能过桥与 Gemini Enterprise 换指标是电话会叙述；Waymo 本季没有任何量化披露。",
+    "undrawn_source": "2026-07-22 本地分析第 1、3、7、9 节。",
+    "backlog_reading": "按本季分析的读法，{prev_q} 的 +{prev_add} 是少数超大型多年协议（含 TPU 系统销售协议）一次性入账，{cur_q} 的 +{add} 才是常态化的新签水平。公司只说 TPU 系统销售已计入 backlog，拒绝给出占比。",
     "backlog_brief": "TPU 已计入，公司拒绝给占比。",
     "fcf_context": "本季所得税现金流实为净流入，转负不能用季节性解释。",
     "fcf_context_source": "Q2 2026 EX-99.1 现金流量表「Income taxes, net」本季 203（正数 = 经营现金流入）。"
