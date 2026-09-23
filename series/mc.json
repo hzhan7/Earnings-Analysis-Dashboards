@@ -16,7 +16,7 @@
     "period_end": "2026-06-30",
     "release_date": "2026-07-27",
     "analysis_date": "2026-08-30",
-    "audit_status": "limited_review_pending",
+    "audit_status": "limited_review",
     "status": "history_ready"
   },
   "_checks": {
@@ -208,16 +208,20 @@
             "said": "H2 ex-FX若仍不扩张"
           },
           {
-            "metric": "库存增速减收入增速",
+            "metric": "库存增速减收入增速（> 3pp 减仓）",
             "said": "FY26库存增速>收入增速3pp"
           },
           {
-            "metric": "中国客户总支出",
+            "metric": "中国客户总支出转正",
             "said": "中国转正"
           },
           {
-            "metric": "FY26 经营自由现金流",
+            "metric": "FY26 经营自由现金流 ≥ €7.5bn（与库存同比 > 8% 同时触发）",
             "said": "FCF<€7.5bn"
+          },
+          {
+            "metric": "H2 剔除汇率的经常性利润率同比降幅 > 50bp",
+            "said": "H2 ex-FX经常性利润率同比下降>50bps"
           }
         ]
       }
@@ -1369,6 +1373,14 @@
   "half_pro_published_total_eur_m": {
     "H1 2026": 8691
   },
+  "half_profit_bridge_eur_m": {
+    "period": "H1 2026",
+    "vs": "H1 2025",
+    "_note": "H1 2026 半年度财务报告「Comments on the consolidated income statement」里的「Change in profit from recurring operations」图（第 8 页）：有机增长、并表范围变化、汇率三条腿，公司按未取整数计算，三腿之和比两端之差多 €1M；正文同页「Exchange rate fluctuations had a negative overall impact of 686 million euros」。",
+    "organic": 341,
+    "scope": 25,
+    "currency": -686
+  },
   "half_margin_company_printed_pct": {
     "H1 2026": {
       "wines_spirits": 22.4,
@@ -1465,6 +1477,48 @@
       4100
     ]
   },
+  "half_cash_bridge_eur_m": {
+    "period": "H1 2026",
+    "vs": "H1 2025",
+    "_note": "H1 2026 半年度财务报告第 8 节「Comments on the consolidated cash flow statement」表的 Change 列（公司按未取整数计算，所以个别行与两列相减差 €1M，经营自由现金流的变动印的是 67）；working_capital 是本半年营运资金变动的总额（现金流量表「Change in working capital」(2,446)）与其中的库存变动（附注 15.2「Change in inventories and work in progress」(1,412)）；自身股份净买入取自现金流量附注「(Acquisition)/Disposal of LVMH shares」H1 2026 列。",
+    "lines": [
+      {
+        "label": "营运资金变动前的经营现金",
+        "change": -233
+      },
+      {
+        "label": "净金融负债利息",
+        "change": -35
+      },
+      {
+        "label": "租赁负债利息",
+        "change": 17
+      },
+      {
+        "label": "缴纳所得税",
+        "change": 472
+      },
+      {
+        "label": "营运资金变动",
+        "change": -456
+      },
+      {
+        "label": "经营性投资",
+        "change": 298
+      },
+      {
+        "label": "偿还租赁负债",
+        "change": 4
+      }
+    ],
+    "ofcf_change": 67,
+    "working_capital": {
+      "label": "营运资金变动",
+      "outflow_now": -2446,
+      "inventory_now": -1412
+    },
+    "own_shares_net_purchase": -1677
+  },
   "balance_dates": [
     "2024-06-30",
     "2024-12-31",
@@ -1486,6 +1540,21 @@
     68949,
     69694
   ],
+  "inventory_eur_m": {
+    "_note": "H1 2026 半年度财务报告合并资产负债表「Inventories and work in progress」三列（2026-06-30、2025-12-31、2025-06-30），2024-12-31 取自同一份报告附注 11 变动表的「As of January 1」行。附注 11 脚注 (b)：2025-12-31 与 2026-06-30 两列已把 DFS 的库存重分类到「持有待售资产」，2025-06-30 那一列没有 —— 跨这一年的同比因此比同口径略低。",
+    "dates": [
+      "2024-12-31",
+      "2025-06-30",
+      "2025-12-31",
+      "2026-06-30"
+    ],
+    "values": [
+      23669,
+      23090,
+      22659,
+      24184
+    ]
+  },
   "store_dates": [
     "2024-12-31",
     "2025-06-30",
@@ -1584,6 +1653,17 @@
       "total": 2
     }
   },
+  "middle_east_drag_pp": {
+    "_note": "公司自己印的「中东冲突对集团有机增速的影响」：Q1 2026 收入公告「The conflict had a negative impact of around 1% on organic growth for the quarter」；H1 2026 业绩新闻稿首段「organic revenue growth for the Group of 3% (4% excluding the impact of the conflict in the Middle East)」，即 1 个百分点（两个整数相减）。",
+    "quarters": [
+      "2026Q1",
+      "2026Q2"
+    ],
+    "values": [
+      1.0,
+      1.0
+    ]
+  },
   "region_mix_dates": [
     "2025-06-30",
     "2025-12-31",
@@ -1645,6 +1725,7 @@
   "followup_closure": {
     "period": "Q2 2026",
     "set_in": "Q1 2026",
+    "source": "问题清单来自上季（Q1 2026）本地分析稿的 Follow-up Questions；判定依据是 H1 2026 业绩新闻稿、半年度财务报告、业绩演示材料与 2026-07-27 电话会记录。",
     "_note": "上季（Q1 2026）本地分析稿「八、Follow-up Questions」留下的 12 条问题，按本季本地分析稿第 0 节「上季遗留问题回答」的逐条判定。labels 是判定的全部取值与图上的顺序，计数由 builder 按 items 现算；evidence 是本页回一手文件核过的依据（文件与位置），不是报告原文。",
     "labels": [
       "已验证",
@@ -1730,6 +1811,7 @@
   "prior_kpi_settlement": {
     "period": "Q2 2026",
     "set_in": "Q1 2026",
+    "source": "阈值逐字取自上季（Q1 2026）本地分析稿「关键观察指标」，不是公司指引；实际值为本季公司披露值（H1 2026 业绩新闻稿、半年度财务报告与业绩演示材料附录）。",
     "_note": "上季（Q1 2026）本地分析稿「关键观察指标（补充板块 8）」五行。rows 是该表的原文；quantified 是其中可量化且本季到期的阈值，op 与 threshold 逐字取自原文，实际值由 builder 按 reads 从序列现算；unsettled 是结不了的部分与原因。",
     "rows": [
       {
@@ -1940,7 +2022,7 @@
         "quantified_unit": "pct",
         "outcome_value": 2.0,
         "outcome_unit": "pct",
-        "outcome_zh": "H1 有机 +2%，集团经营利润率 22.49%（上年同期 22.64%），公司称降幅完全由汇率造成；毛利率反而升 30bp 至 67.1%，营销与销售费用 −2%、管理费用持平。兑现的是那句「也许比这少一点也行」的余地，不是 3–4% 这条线本身。而同一个数字在 Q2 电话会上换了说法：从「稳住利润率」变成「开始获得经营杠杆」，并被明确声明「it doesn't make it a rule」。",
+        "outcome_zh": "H1 有机 +2%，集团经营利润率 22.5%（上年同期 22.6%，公司印的一位小数），公司称降幅完全由汇率造成；毛利率反而升 30bp 至 67.1%，营销与销售费用 −2%、管理费用持平。兑现的是那句「也许比这少一点也行」的余地，不是 3–4% 这条线本身。而同一个数字在 Q2 电话会上换了说法：从「稳住利润率」变成「开始获得经营杠杆」，并被明确声明「it doesn't make it a rule」。",
         "verdict": "caveat_held",
         "chart_label": "稳住利润率所需的有机增速<br>对本半年实际有机增速（%）",
         "score_note": "上季管理层说「需要 3–4% 的有机增长才能稳住利润率」，紧接着补了一句「we could maybe do it with a bit less」。本半年有机增长 {half_organic}，利润率稳住了 —— <b>兑现的是那句补充，不是那条线</b>。而本季电话会上同一个 3–4% 换了说法：不再是「稳住利润率」的门槛，而是「开始获得经营杠杆」的门槛，并被明确声明「it doesn't make it a rule」。"
@@ -1988,7 +2070,7 @@
       },
       {
         "topic": "下半年比较基数",
-        "said": "The comp base in H2 is optically tougher than H1. But it's also on the base of easier comps in '24. So overall, it's quite similar",
+        "said": "The comp base in H1 -- in H2 is optically tougher than H1. But it's also on the base of easier comps in '24. So overall, it's quite similar",
         "quantified": "未给数"
       },
       {
@@ -2023,7 +2105,11 @@
       "said_on": "2026-07-27",
       "_note": "集团口径的并表影响，公司在 2026-07-27 电话会上给出 Q2 为 −1pp（DFS 大中华业务于第二季度出售）；Q1 记 0 是本页沿用的读法（处置在 Q2 完成）。"
     },
-    "divorg_note": "公司在电话会上说手表与珠宝的加速来自 Tiffany 与 Bvlgari 双双 mid-teens 增长，而香水与化妆品的平淡是主动选择的结果：「we have made a choice … to be very selective in distribution」。"
+    "divorg_note": "公司在电话会上说手表与珠宝的加速来自 Tiffany 与 Bvlgari 双双 mid-teens 增长，而香水与化妆品的平淡是主动选择的结果：「we have made a choice … to be very selective in distribution」。",
+    "not_drawn": [
+      "对卖方一致预期的比较（媒体转引的数字，不是公司文件）",
+      "归母净利与每股收益持平靠的是金融收益与税率这一段（利润表下半段本页没有接入）"
+    ]
   },
   "half_story": {
     "period": "H1 2026",
@@ -2043,64 +2129,148 @@
   },
   "next_kpi": {
     "period": "Q2 2026",
-    "note": "阈值为本地研究设定，不是公司指引；公司不提供任何数字指引。「距阈值余量」统一为正值代表安全侧。",
-    "headroom_note": "集团季度有机增速恰好压在 {level:total} 的线上，而这 {level:total} 里有 1pp 被中东抵掉：公司称剔除中东本季是 +4%。",
-    "entries": [
+    "for_period": "Q3 2026",
+    "_note": "本季（Q2 2026）本地分析稿第 8 节「关键观察指标」五行与该节末的三条触发条件，原文照录（去掉 markdown 加粗与立场用语）。quantified 是能画的阈值：op 与 threshold 逐字取自原文，当前值由 builder 按 reads 现算；kind 为 target 的是达到即加仓的线，alarm 是触发即减仓、警示或跟踪的线；consecutive 标记原文要求「连续」的线。table_only 是本页画不了或结不了的部分与原因。",
+    "rows": [
       {
-        "metric": "时装与皮具季度有机增速",
-        "direction": "up",
+        "row": 1,
+        "indicator": "F&LG有机增速",
+        "said": "当前Q2 +1%；连续两季≥3% = 真正跨入杠杆区；任一季<0% = 假突破",
+        "action": "≥3% 加仓；<0% 减仓"
+      },
+      {
+        "row": 2,
+        "indicator": "集团ex-FX经常性利润率",
+        "said": "H1 headline 22.5%、FX约-70bps；H2 ex-FX若仍不扩张 = 成本红利耗尽",
+        "action": "不扩张 警示"
+      },
+      {
+        "row": 3,
+        "indicator": "库存增速 vs 收入增速",
+        "said": "库存较年末+6.7%、同比+4.7%；FY26库存增速>收入增速3pp或绝对同比>8%",
+        "action": "减仓 / 重新评估"
+      },
+      {
+        "row": 4,
+        "indicator": "W&J有机增速与利润率",
+        "said": "Q2 +11%、H1利润率15.9%；连续≥8%且FY利润率≥17% = 多元化里程碑",
+        "action": "达标 加仓；<5% 跟踪"
+      },
+      {
+        "row": 5,
+        "indicator": "中国客户总支出与中东拖累",
+        "said": "中国客户Q2环比持平；中东拖累1pp；中国转正且中东<0.5pp",
+        "action": "upside / 加仓"
+      },
+      {
+        "row": 6,
+        "indicator": "第 8 节末的三条触发条件",
+        "said": "①F&LG下季organic <0%；②FY26库存同比>8%且FCF<€7.5bn；③H2 ex-FX经常性利润率同比下降>50bps",
+        "action": "任一触发即回到中性重估"
+      }
+    ],
+    "quantified": [
+      {
+        "id": "flg_add",
+        "row": 1,
+        "metric": "时装与皮具季度有机增速（加仓线）",
+        "op": "≥",
         "threshold": 3.0,
         "unit": "pct",
         "reads": "organic.fashion_leather",
-        "why": "管理层自述获得经营杠杆的门槛下沿是 3%；F&LG 占集团收入 47%，它决定集团能不能到线。"
+        "kind": "target",
+        "consecutive": 2
       },
       {
-        "metric": "集团季度有机增速",
-        "direction": "up",
-        "threshold": 3.0,
+        "id": "flg_cut",
+        "row": 1,
+        "metric": "时装与皮具季度有机增速（减仓线）",
+        "op": "≥",
+        "threshold": 0.0,
         "unit": "pct",
-        "reads": "organic.total",
-        "why": "同一条门槛的集团口径。Q2 恰好压线，且其中 1pp 被中东抵掉。"
+        "reads": "organic.fashion_leather",
+        "kind": "alarm"
       },
       {
-        "metric": "手表与珠宝季度有机增速",
-        "direction": "up",
+        "id": "wj_add",
+        "row": 4,
+        "metric": "手表与珠宝季度有机增速（加仓线）",
+        "op": "≥",
+        "threshold": 8.0,
+        "unit": "pct",
+        "reads": "organic.watches_jewelry",
+        "kind": "target",
+        "consecutive": 2
+      },
+      {
+        "id": "wj_watch",
+        "row": 4,
+        "metric": "手表与珠宝季度有机增速（跟踪线）",
+        "op": "≥",
         "threshold": 5.0,
         "unit": "pct",
         "reads": "organic.watches_jewelry",
-        "why": "本季唯一双位数的分部；Tiffany 与 Bvlgari 双双 mid-teens，跌破 5% 就说明冲量结束。"
+        "kind": "alarm"
       },
       {
-        "metric": "半年集团经营利润率",
-        "direction": "up",
-        "threshold": 22.0,
+        "id": "wj_margin",
+        "row": 4,
+        "metric": "手表与珠宝全年经营利润率",
+        "op": "≥",
+        "threshold": 17.0,
+        "unit": "margin",
+        "reads": "half_margin_printed.watches_jewelry",
+        "kind": "target"
+      },
+      {
+        "id": "inventory",
+        "row": 3,
+        "metric": "库存同比增速",
+        "op": "≤",
+        "threshold": 8.0,
         "unit": "pct",
-        "reads": "half_margin.total",
-        "why": "FY2025 全年是 22.0%；H1 高于全年是这家公司的常态，跌破全年水平才是新信息。"
+        "reads": "inventory_yoy",
+        "kind": "alarm"
       },
       {
-        "metric": "半年时装与皮具经营利润率",
-        "direction": "up",
-        "threshold": 34.0,
-        "unit": "pct",
-        "reads": "half_margin.fashion_leather",
-        "why": "H1 2026 是 34.14%，只比这条线高 0.14pp；上季分析里被讨论的 30–32% 情形并未发生。"
+        "id": "middle_east",
+        "row": 5,
+        "metric": "中东对集团有机增速的拖累",
+        "op": "<",
+        "threshold": 0.5,
+        "unit": "pp_level",
+        "reads": "middle_east.drag",
+        "kind": "target"
+      }
+    ],
+    "table_only": [
+      {
+        "row": 2,
+        "metric": "集团 ex-FX 经常性利润率（H2）",
+        "reason": "下半年到期；公司按欧元印汇率对经营利润的影响（本半年见第二节的利润桥），但不印剔除汇率的利润率，本页不自算一个公司没印的利润率"
       },
       {
-        "metric": "季度报告增速与有机增速之差",
-        "direction": "down",
+        "row": 3,
+        "id": "inventory_vs_revenue",
+        "metric": "库存增速减收入增速（> 3pp 减仓）",
+        "op": "≤",
         "threshold": 3.0,
-        "unit": "pp",
-        "reads": "gap",
-        "why": "汇率加并表的总拖累。这个差从 2026Q1 的 6.86pp 掉到 2026Q2 的 2.87pp，是本季报表改善的主因。"
+        "reason": "原文没说收入增速取哪个口径：{inventory_vs_revenue}，本页不替它选"
       },
       {
-        "metric": "亚洲（除日本）门店数",
-        "direction": "up",
-        "threshold": 1800.0,
-        "unit": "stores",
-        "reads": "stores.asia_ex_japan",
-        "why": "一年内从 1,991 家降到 1,832 家，其中含 DFS 大中华处置；跌破 1,800 意味着收缩超出已宣布的处置范围。"
+        "row": 5,
+        "metric": "中国客户总支出转正",
+        "reason": "公司不量化中国客群的支出，电话会只说中国客群环比大致持平"
+      },
+      {
+        "row": 6,
+        "metric": "FY26 经营自由现金流 ≥ €7.5bn（与库存同比 > 8% 同时触发）",
+        "reason": "全年到期；上半年 {ofcf_now} 是半年数，不与全年的线比"
+      },
+      {
+        "row": 6,
+        "metric": "H2 剔除汇率的经常性利润率同比降幅 > 50bp",
+        "reason": "同第二行：下半年到期，公司不印剔除汇率的利润率"
       }
     ]
   },
