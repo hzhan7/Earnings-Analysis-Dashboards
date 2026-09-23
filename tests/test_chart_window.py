@@ -138,6 +138,16 @@ def _tsm_story_reach() -> int:
                if ex["title"].startswith("上季判断"))
 
 
+def _intc_threshold_reach() -> int:
+    """Intel's two threshold-line charts run the full 42 quarters, but they are
+    drawn only while the series carries a `thresholds` block for the quarter --
+    the page is rolled by editing `series/intc.json` alone, so the pin counts the
+    permanent charts and adds these while they are published."""
+    page = js_payload(ROOT / "data" / "intc.js", "window.DASH")
+    return sum(1 for section in page["sections"] for ex in section["exhibits"]
+               if "警戒线" in ex["title"])
+
+
 def _tsm_advanced_count() -> dict:
     """The process-mix note counts the quarters since 2021Q1 in which the page's
     summed 7nm-and-below line equals TSMC's own aggregate. The count grows by
@@ -167,6 +177,7 @@ REACH_2016 = {
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
     "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
+    "intc": 10 + _intc_threshold_reach(),
     # Not a company page. It is here because the ratchet now walks every
     # published payload rather than `ENTRIES`: a page that was invisible to the
     # ratchet could lose ground without the count moving.
@@ -887,6 +898,28 @@ CONVERTED = {
     # none of the three tables a quarter; all three discuss quarters only in
     # prose. The earliest quarterly figure the company has ever printed is
     # 2021Q1, in the prior-year column of the Q1 2022 revenue release.
+    # Intel files a 10-Q or 10-K for every quarter, so every floor below was
+    # checked against the filings before it: the figure is either on a basis
+    # the company later rewrote, or it does not exist yet.
+    "intc": {
+        "non-GAAP EPS 对指引": "Intel's quarterly outlook first guided EPS for 2017Q1 (the "
+                              "2017-01-26 release); the four 2016 outlooks guide revenue, gross "
+                              "margin, spending, depreciation and tax, and no EPS.",
+        "分部的收入（现行口径": "the current four-segment basis (NEX folded into CCG and DCAI) is "
+                        "printed back to 2024Q1 only, in the Q1 2025 recast; earlier quarters "
+                        "exist only on the 2022 and 2024 structures, which are different segments.",
+        "分部营业利润率：DCAI": "same segment basis as the revenue chart above it.",
+        "一年后被公司重印成另一个数": "the axis lists only the quarters whose non-GAAP EPS was "
+                             "reprinted differently; the full 42-quarter comparison is in the note.",
+        "Intel Foundry 现行口径": "Intel Foundry became a reporting segment in 2024; the 2024-04-25 8-K "
+                    "EX-99.2 recast it back to 2023Q1 by quarter, and the 2024-04-02 8-K revised "
+                    "only annual figures (FY2021-FY2023).",
+        "Intel Foundry 的外部收入": "external revenue on the current basis starts with the Q1 2025 "
+                              "recast's 2024Q1 comparative; the 2024 filings printed different "
+                              "figures for the same quarters before the recast.",
+        "合伙人出资净额：": "the cash-flow statement has no partner-contribution line before the "
+                   "first SCIP closed in 2022; every earlier 10-Q/10-K was read for it.",
+    },
     "zgn": {
         "DTC 占品牌收入从": "revenue by distribution channel is quarterly only from the "
                       "Q1 2022 release; no pre-listing filing tables a quarter.",
@@ -953,6 +986,15 @@ FLOOR_KIND = {
     },
     'ker': {
         '新分部口径下的可比增速': 'disclosure',
+    },
+    'intc': {
+        'non-GAAP EPS 对指引': 'disclosure',
+        '分部的收入（现行口径': 'disclosure',
+        '分部营业利润率：DCAI': 'disclosure',
+        '一年后被公司重印成另一个数': 'design',
+        'Intel Foundry 现行口径': 'disclosure',
+        'Intel Foundry 的外部收入': 'disclosure',
+        '合伙人出资净额：': 'disclosure',
     },
     'zgn': {
         'DTC 占品牌收入从': 'disclosure',
@@ -1349,8 +1391,8 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 154)
-        self.assertEqual(settled.count("design"), 39)
+        self.assertEqual(settled.count("disclosure"), 160)
+        self.assertEqual(settled.count("design"), 40)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
         """Every short chart either names its reason or is counted here.
@@ -1450,9 +1492,10 @@ class ChartWindowTest(unittest.TestCase):
         # The lower bound is the load-bearing one: a page that disappears takes
         # a dozen or more exhibits with it. The upper bound only stops the count
         # running away unnoticed, so it is re-measured with headroom rather than
-        # tracked exhibit by exhibit (621 at the luxury page's rebuild).
+        # tracked exhibit by exhibit (621 at the luxury page's rebuild; 674 when
+        # INTC landed on top of AMD and ARM, which is what pushed past 660).
         self.assertGreaterEqual(total, 540)
-        self.assertLessEqual(total, 660)
+        self.assertLessEqual(total, 740)
 
     def test_flipping_the_alternation_changes_nothing(self) -> None:
         """The property that makes the parser safe, stated as a property.
