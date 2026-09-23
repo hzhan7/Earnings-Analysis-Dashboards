@@ -735,7 +735,127 @@
   "non_operating_breakdown_in_writing": false,
   "non_operating_breakdown_spoken": true,
   "_call_breakdown_note": "电话会 CFO 口头给过营业外净收益 ₩62.2T 里的两项：汇率相关净收益约 ₩1.1T、投资资产出售与估值收益约 ₩63.3T（转述，不录原话）。页面按既定口径不发布构成（tests 里有一条专门守着），这里只记下它在哪里说过，供 brief 那句按事实措辞。",
-  "record_margin_claimed": true
+  "record_margin_claimed": true,
+  "shipment_guidance_for_quarter": {
+   "dram": "High-single% Increase",
+   "nand": "Mid-teen% Increase",
+   "_source": "given on the 1Q26 call for 2Q26; the 2Q26 call (2026-07-29) restates both as delivered 'in line with our guidance'"
+  },
+  "shipment_delivered_per_call": true,
+  "call_words": {
+   "dram_bit": "high single-digit",
+   "dram_asp": "approximately 30%",
+   "nand_bit": "mid-teen",
+   "nand_asp": "mid-50%",
+   "_source": "2Q26 earnings call prepared remarks, 2026-07-29"
+  },
+  "capex_2026_spoken": "high KRW 40 trillion range",
+  "shareholder_return_after_quarter": {
+   "filed": "2026-08-19",
+   "buyback_krw_bn": 40004.34,
+   "policy": "2025–2027 年回报累计自由现金流的 50% 以上",
+   "_source": "Form 6-K 2026-08-19 'Decision on Acquisition of Treasury Shares' (24,070,000 common shares, Won 40,004,340,000,000, 2026-08-20 to 2026-11-19, for cancellation) and 'Shareholder Return Policy (Fair Disclosure)' (return over 50% of cumulative Free Cash Flow for 2025-2027). Filed after the quarter's release and after the local analysis was written; it answers follow-up 6 for the NEXT closure, not this one."
+  }
+ },
+ "followup_closure": {
+  "period": "Q2 2026",
+  "set_in": "Q1 2026",
+  "_source": "本季本地分析（2026-07-28 000660 Q2 2026 vs Q1 2026 Analysis.md）第 0 节「上季遗留问题回答」：上季（2026-04-23 那份）Follow-up Questions 6 条逐条判定。判定逐字取自该节；finding 是本页按申报核过的一句话证据，数字用占位符由 builder 从 series 填入。",
+  "items": [
+   {
+    "n": 1,
+    "topic": "HBM4 能否通过客户速度测试、在 Rubin Ultra 拿到多少份额",
+    "verdict": "部分验证",
+    "finding": "业绩发布写明 HBM4 达到客户要求的速度、第二季开始量产出货，份额一个数都没有"
+   },
+   {
+    "n": 2,
+    "topic": "FY26 资本开支会不会落在 ₩60–70T 甚至更高",
+    "verdict": "被证伪",
+    "finding": "电话会给的 2026 年全年口径是 “high KRW 40 trillion range”（₩40 万亿区间的高段），远在 ₩60T 之下"
+   },
+   {
+    "n": 3,
+    "topic": "HBM 占 DRAM 收入的口径",
+    "verdict": "仍未披露",
+    "finding": "没有任何文件量化过 HBM 收入"
+   },
+   {
+    "n": 4,
+    "topic": "下半年 DRAM / NAND 售价会不会进入平台期",
+    "verdict": "部分验证",
+    "finding": "DRAM 售价环比从 {dram_asp_prev} 放缓到 {dram_asp_now}，在减速、还没到平台期"
+   },
+   {
+    "n": 5,
+    "topic": "Samsung HBM4 抢走多少份额",
+    "verdict": "仍未披露",
+    "finding": "公司没有给任何份额数字"
+   },
+   {
+    "n": 6,
+    "topic": "FY26 股东回报合计与优先级",
+    "verdict": "仍未披露",
+    "finding": "本季只说受 ADR 发行程序限制、年内公布",
+    "answered_after_quarter": true
+   }
+  ]
+ },
+ "prior_kpi_settlement": {
+  "period": "Q2 2026",
+  "set_in": "Q1 2026",
+  "_source": "上季本地分析（2026-04-23 000660 Q1 2026 vs Q4 2025 Analysis.md）第 8 节「关键观察指标」6 条，threshold_text 逐字抄录「当前 / 阈值」一栏。能用本季一手数据结算的写 direction / threshold / unit；其余写 status 与 why。",
+  "entries": [
+   {
+    "id": "dram_asp",
+    "metric": "DRAM 平均售价的环比",
+    "short": "DRAM 售价",
+    "threshold_text": "Q1 +mid-60%；Q2 阈值 ≥ +15% QoQ = 维持 supercycle；< +5% = plateau 前置；< 0% = 周期反转启动",
+    "direction": "up",
+    "threshold": 15.0,
+    "unit": "pct"
+   },
+   {
+    "id": "hbm4_share",
+    "metric": "HBM4 在 NVDA Rubin Ultra 的分配份额",
+    "short": "HBM4 份额",
+    "threshold_text": "当前未披露；2026 H2 阈值 ≥ 55% = 维持领先；40-55% = Samsung 追平；< 40% = 独家溢价消失",
+    "status": "未披露",
+    "why": "公司从未披露任何客户的份额"
+   },
+   {
+    "id": "fy26_capex",
+    "metric": "FY26 资本开支",
+    "short": "FY26 资本开支",
+    "threshold_text": "Q4 旧指引\"mid-30% 营收\"；FY26 阈值 < ₩55T = upside；₩55-65T = 符合预期；> ₩70T = FCF 大幅下修",
+    "status": "未到期",
+    "why": "全年实际要等 FY2026 年报"
+   },
+   {
+    "id": "hbm_dram_share",
+    "metric": "HBM 占 DRAM 收入",
+    "short": "HBM 占 DRAM",
+    "threshold_text": "Q1 媒体口径 12%；目标 Q2 IR 澄清；阈值 ≥ 50% = 全 HBM 口径正常",
+    "status": "未披露",
+    "why": "公司从未量化 HBM 收入"
+   },
+   {
+    "id": "fy26_return",
+    "metric": "FY26 回购 + 分红 / 净利润",
+    "short": "FY26 回报率",
+    "threshold_text": "Q1 PR 弱化股东回报段；阈值 ≥ 50% = 维持承诺；30-50% = 警示；< 30% = capex 全面挤压回报",
+    "status": "未到期",
+    "why": "全年回报与全年净利润都要到年底"
+   },
+   {
+    "id": "cxmt",
+    "metric": "CXMT 国产替代率",
+    "short": "CXMT 替代率",
+    "threshold_text": "当前数据隔月通过 TrendForce 跟踪；阈值 中国 server DRAM 国产替代 > 25% = SK Hynix 中国业务大幅下修",
+    "status": "第三方数据",
+    "why": "只有第三方口径，本页只用公司申报"
+   }
+  ]
  },
  "next_kpi": {
   "period": "Q2 2026",
@@ -828,7 +948,7 @@
   "_gap": "The FY2025 annual release prints no balance-sheet figure at all, though the three quarters before it did. There is therefore no year-end 2025 cash or debt figure in any company release, and none is invented here."
  },
  "kpi_phrases": {
-  "_source": "Form 424B4. Thirteen quarters, 1Q 2023 to 1Q 2026.",
+  "_source": "Form 424B4 (2026-07-10): thirteen quarters, 1Q 2023 to 1Q 2026, as a table. 2Q 2026: the Form 6-K of 2026-08-18 (semi-annual business report for January-June 2026, section II.2.B 'Price Trends for Major Products'), which states the same four quarter-on-quarter changes in prose -- see _2q2026_text for the words and how each was entered in the table's vocabulary.",
   "_asp_currency": "USD",
   "_the_finding": "These are the two quantities whose product is revenue, and SK hynix publishes both of them as English adjectives. It did so in its registration statement, in the same document that reports revenue to the million won.",
   "quarters": [
@@ -844,7 +964,8 @@
    "2Q 2025",
    "3Q 2025",
    "4Q 2025",
-   "1Q 2026"
+   "1Q 2026",
+   "2Q 2026"
   ],
   "dram_bit_shipment": {
    "phrases": [
@@ -860,7 +981,8 @@
     "Mid-20% Increase",
     "High-single% Increase",
     "Low-single% Increase",
-    "Flat"
+    "Flat",
+    "Slight Increase"
    ],
    "low_pct": [
     -22.0,
@@ -875,7 +997,8 @@
     23.0,
     7.0,
     1.0,
-    -1.0
+    -1.0,
+    1.0
    ],
    "high_pct": [
     -18.0,
@@ -890,7 +1013,8 @@
     27.0,
     9.0,
     3.0,
-    1.0
+    1.0,
+    3.0
    ],
    "midpoint_pct": [
     -20.0,
@@ -905,9 +1029,11 @@
     25.0,
     8.0,
     2.0,
-    0.0
+    0.0,
+    2.0
    ],
    "one_sided": [
+    false,
     false,
     false,
     false,
@@ -937,7 +1063,8 @@
     "Low-single% Increase",
     "Mid-single% Increase",
     "Mid-20% Increase",
-    "Mid-60% Increase"
+    "Mid-60% Increase",
+    "Mid-30% Increase"
    ],
    "low_pct": [
     -19.0,
@@ -952,7 +1079,8 @@
     1.0,
     4.0,
     23.0,
-    63.0
+    63.0,
+    33.0
    ],
    "high_pct": [
     -17.0,
@@ -967,7 +1095,8 @@
     3.0,
     6.0,
     27.0,
-    67.0
+    67.0,
+    37.0
    ],
    "midpoint_pct": [
     -18.0,
@@ -982,7 +1111,8 @@
     2.0,
     5.0,
     25.0,
-    65.0
+    65.0,
+    35.0
    ],
    "one_sided": [
     false,
@@ -990,6 +1120,7 @@
     false,
     false,
     true,
+    false,
     false,
     false,
     false,
@@ -1014,7 +1145,8 @@
     "Over 70% Increase",
     "Mid-single% Decrease",
     "Around 10% Increase",
-    "Around 10% Decrease"
+    "Around 10% Decrease",
+    "Mid-teen% Increase"
    ],
    "low_pct": [
     -16.0,
@@ -1029,7 +1161,8 @@
     70.0,
     -6.0,
     9.0,
-    -11.0
+    -11.0,
+    14.0
    ],
    "high_pct": [
     -14.0,
@@ -1044,7 +1177,8 @@
     80.0,
     -4.0,
     11.0,
-    -9.0
+    -9.0,
+    16.0
    ],
    "midpoint_pct": [
     -15.0,
@@ -1059,7 +1193,8 @@
     75.0,
     -5.0,
     10.0,
-    -10.0
+    -10.0,
+    15.0
    ],
    "one_sided": [
     false,
@@ -1072,6 +1207,7 @@
     false,
     false,
     true,
+    false,
     false,
     false,
     false
@@ -1091,7 +1227,8 @@
     "High-single% Decrease",
     "Low-teen% Increase",
     "Low 30% Increase",
-    "Mid 70% Increase"
+    "Mid 70% Increase",
+    "Mid-50% Increase"
    ],
    "low_pct": [
     -11.0,
@@ -1106,7 +1243,8 @@
     -9.0,
     11.0,
     30.0,
-    73.0
+    73.0,
+    53.0
    ],
    "high_pct": [
     -9.0,
@@ -1121,7 +1259,8 @@
     -7.0,
     13.0,
     33.0,
-    77.0
+    77.0,
+    57.0
    ],
    "midpoint_pct": [
     -10.0,
@@ -1136,7 +1275,8 @@
     -8.0,
     12.0,
     31.5,
-    75.0
+    75.0,
+    55.0
    ],
    "one_sided": [
     false,
@@ -1144,6 +1284,7 @@
     false,
     true,
     true,
+    false,
     false,
     false,
     false,
@@ -1163,6 +1304,11 @@
    "Slight Decrease": {
     "low": -3.0,
     "high": -1.0,
+    "one_sided": false
+   },
+   "Slight Increase": {
+    "low": 1.0,
+    "high": 3.0,
     "one_sided": false
    },
    "Low-single% Increase": {
@@ -1280,6 +1426,11 @@
     "high": 67.0,
     "one_sided": false
    },
+   "Mid-50% Increase": {
+    "low": 53.0,
+    "high": 57.0,
+    "one_sided": false
+   },
    "Over 20% Increase": {
     "low": 20.0,
     "high": 30.0,
@@ -1301,7 +1452,8 @@
     "one_sided": true
    }
   },
-  "_mapping_status": "The interval assigned to each phrase is this page's reading, not a company number. Four phrases are one-sided in the filing -- Over 20%, Over 30%, Over 40% and Over 70% -- and have no upper bound at all; each is capped ten points above its floor here so that it can be drawn, and the cap is a drawing convention, not a disclosure."
+  "_mapping_status": "The interval assigned to each phrase is this page's reading, not a company number. Four phrases are one-sided in the filing -- Over 20%, Over 30%, Over 40% and Over 70% -- and have no upper bound at all; each is capped ten points above its floor here so that it can be drawn, and the cap is a drawing convention, not a disclosure.",
+  "_2q2026_text": "Filed wording (6-K 2026-08-18, II.2.B): 'DRAM shipment volume increased slightly as sales expanded centered on HBM3E and AI-oriented server DRAM products, and average selling price (“ASP”) rose in the mid-30% range due to the continuation of strong pricing for general DRAM. NAND shipment volume increased in the mid-10% range compared to the previous quarter due to the base effect from the decline in shipments in the first quarter and the impact of expanded eSSD sales, and ASP rose in the mid-50% range compared to the previous quarter due to the effect of price increases across all products.' Entered as: increased slightly -> Slight Increase; mid-30% range -> Mid-30% Increase; mid-10% range -> Mid-teen% Increase (the 424B4 table's spelling of the same Korean bucket); mid-50% range -> Mid-50% Increase. The 2Q26 earnings call (2026-07-29) worded two of the four differently -- DRAM bit shipments 'high single-digit', DRAM ASP 'approximately 30%' -- see quarter_story.call_words. The filed text is the one the series carries."
  },
  "sources": [
   {

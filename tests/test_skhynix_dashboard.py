@@ -758,6 +758,183 @@ class SkHynixRollTest(unittest.TestCase):
                     self.assertIn(f"“{phrase}”", nand["note"])
 
 
+class SkHynixSettlementTest(unittest.TestCase):
+    """Section one against the two local analyses it settles.
+
+    The literals below are copied from the analyses themselves -- they are the
+    reports' facts, not filing figures: the verdicts of §0 in the 2026-07-28
+    analysis (last quarter's six follow-up questions) and the threshold column
+    of §8 in the 2026-04-23 analysis (last quarter's six watch items). The
+    series stores its own copy; a test that read the series to get the expected
+    value would only prove the series equals itself.
+    """
+
+    # 2026-07-28 analysis, §0: question number -> verdict as the table words it.
+    REPORT_SECTION_ZERO = {1: "部分验证", 2: "被证伪", 3: "仍未披露",
+                           4: "部分验证", 5: "仍未披露", 6: "仍未披露"}
+    # 2026-04-23 analysis, §8, the 「当前 / 阈值」 column, row by row.
+    REPORT_SECTION_EIGHT = [
+        "Q1 +mid-60%；Q2 阈值 ≥ +15% QoQ = 维持 supercycle；< +5% = plateau 前置；< 0% = 周期反转启动",
+        "当前未披露；2026 H2 阈值 ≥ 55% = 维持领先；40-55% = Samsung 追平；< 40% = 独家溢价消失",
+        "Q4 旧指引\"mid-30% 营收\"；FY26 阈值 < ₩55T = upside；₩55-65T = 符合预期；> ₩70T = FCF 大幅下修",
+        "Q1 媒体口径 12%；目标 Q2 IR 澄清；阈值 ≥ 50% = 全 HBM 口径正常",
+        "Q1 PR 弱化股东回报段；阈值 ≥ 50% = 维持承诺；30-50% = 警示；< 30% = capex 全面挤压回报",
+        "当前数据隔月通过 TrendForce 跟踪；阈值 中国 server DRAM 国产替代 > 25% = SK Hynix 中国业务大幅下修",
+    ]
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(skhynix.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = skhynix.build_payload(cls.staging)
+        cls.settled = next(s for s in cls.payload["sections"] if s["id"] == "settled")["exhibits"]
+
+    def test_the_closure_is_the_reports_section_zero(self) -> None:
+        items = self.staging["followup_closure"]["items"]
+        self.assertEqual({item["n"]: item["verdict"] for item in items}, self.REPORT_SECTION_ZERO)
+        chart = self.settled[0]
+        self.assertEqual(chart["kind"], "bars_labeled")
+        self.assertEqual(chart["xlabels"], ["已验证", "部分验证", "被证伪", "仍未披露"])
+        # 0 / 2 / 1 / 3 is §0's own tally; counted here from the literal, not the series.
+        tally = [list(self.REPORT_SECTION_ZERO.values()).count(label) for label in chart["xlabels"]]
+        self.assertEqual(tally, [0, 2, 1, 3])
+        self.assertEqual(chart["values"], tally)
+        self.assertEqual(chart["title"],
+                         "上季 6 条待验证问题：2 条部分验证、1 条被证伪、3 条仍未披露，没有一条完全验证")
+
+    def test_the_closure_note_names_the_answer_that_came_after_the_quarter(self) -> None:
+        """Follow-up 6 was open at the quarter's release and answered by the 6-K
+        of 2026-08-19. The count stays as §0 judged it; the note says so."""
+        note = self.settled[0]["note"]
+        self.assertIn("2026-08-19", note)
+        self.assertIn("₩40.0T 的回购注销", note)
+        self.assertIn("这里的判定仍按本季业绩发布时的情况", note)
+
+    def test_the_prior_thresholds_are_the_reports_section_eight(self) -> None:
+        entries = self.staging["prior_kpi_settlement"]["entries"]
+        self.assertEqual([e["threshold_text"] for e in entries], self.REPORT_SECTION_EIGHT)
+        numeric = [e for e in entries if "threshold" in e]
+        self.assertEqual([(e["id"], e["direction"], e["threshold"]) for e in numeric],
+                         [("dram_asp", "up", 15.0)],
+                         "only the DRAM price line can be settled with a filed number this quarter")
+        headroom_chart = self.settled[1]
+        self.assertEqual(headroom_chart["kind"], "diverging_bars")
+        self.assertTrue(headroom_chart["title"].startswith("上季 6 条量化阈值："), headroom_chart["title"])
+        self.assertIn("5 条本季无法结算", headroom_chart["title"])
+        line = self.settled[2]
+        self.assertEqual(line["title"], "DRAM 平均售价的环比：守住上季阈值 +15%")
+        self.assertEqual(line["series"][1]["values"], [15.0] * len(line["xlabels"]))
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("上季 6 条阈值"))
+        self.assertEqual([row[1] for row in table["rows"]], self.REPORT_SECTION_EIGHT)
+
+    def test_the_price_that_settles_it_is_the_filed_word_for_this_quarter(self) -> None:
+        """2Q 2026 is worded by the semi-annual report's Price Trends section:
+        DRAM ASP 'rose in the mid-30% range'. The call said 'approximately 30%';
+        the filing is what the series carries, and both clear +15%."""
+        kpi = self.staging["kpi_phrases"]
+        self.assertEqual(kpi["quarters"][-1], "2Q 2026")
+        self.assertEqual([kpi[k]["phrases"][-1] for k in ("dram_bit_shipment", "dram_asp",
+                                                         "nand_bit_shipment", "nand_asp")],
+                         ["Slight Increase", "Mid-30% Increase", "Mid-teen% Increase", "Mid-50% Increase"])
+        for words in ("increased slightly", "rose in the mid-30% range",
+                      "increased in the mid-10% range", "rose in the mid-50% range"):
+            self.assertIn(words, kpi["_2q2026_text"])
+        self.assertEqual(self.settled[1]["values"], [round((35.0 - 15.0) / 15.0 * 100, 1)])
+
+    def test_the_word_charts_follow_the_settlements(self) -> None:
+        """(c) comes after (a) and (b), and the description counts it."""
+        refs = [e.get("ref") for e in self.settled]
+        self.assertEqual(refs[0], "EX_CLOSURE")
+        self.assertEqual(refs[3:], ["EX_DASP", "EX_NASP", "EX_DRIVER", "EX_NDRIVER", "EX_CHAIN"])
+        description = next(s for s in self.payload["sections"] if s["id"] == "settled")["description"]
+        self.assertIn(f"本节最后{skhynix.cn_count(len(refs) - 3)}张图", description)
+
+
+class SkHynixSettlementRollTest(unittest.TestCase):
+    """What section one does when the data moves under it."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads(skhynix.STAGING_PATH.read_text(encoding="utf-8"))
+
+    def build(self, staging: dict) -> dict:
+        return skhynix.build_payload(staging)
+
+    def settled(self, payload: dict) -> list[dict]:
+        return next(s for s in payload["sections"] if s["id"] == "settled")["exhibits"]
+
+    def test_a_settlement_block_from_another_quarter_stops_the_build(self) -> None:
+        for key in ("followup_closure", "prior_kpi_settlement"):
+            with self.subTest(block=key, field="period"):
+                stale = copy.deepcopy(self.source)
+                stale[key]["period"] = "Q1 1999"
+                with self.assertRaisesRegex(ValueError, "stamped"):
+                    self.build(stale)
+            with self.subTest(block=key, field="set_in"):
+                stale = copy.deepcopy(self.source)
+                stale[key]["set_in"] = "Q4 2025"
+                with self.assertRaisesRegex(ValueError, "last quarter was"):
+                    self.build(stale)
+
+    def test_a_verdict_outside_the_four_buckets_stops_the_build(self) -> None:
+        stale = copy.deepcopy(self.source)
+        stale["followup_closure"]["items"][0]["verdict"] = "大致验证"
+        with self.assertRaisesRegex(ValueError, "outside"):
+            self.build(stale)
+
+    def test_nothing_is_settled_against_a_quarter_the_words_do_not_reach(self) -> None:
+        """Drop 2Q 2026 from the phrase series: the DRAM price threshold must
+        become unsettled, not quietly settle against 1Q 2026's word."""
+        short = copy.deepcopy(self.source)
+        kpi = short["kpi_phrases"]
+        kpi["quarters"].pop()
+        for key in ("dram_bit_shipment", "dram_asp", "nand_bit_shipment", "nand_asp"):
+            for field in ("phrases", "low_pct", "high_pct", "midpoint_pct", "one_sided"):
+                kpi[key][field].pop()
+        # The closure's fourth finding quotes this quarter's DRAM price word, so
+        # with the word missing the build must stop rather than quote 1Q 2026's.
+        with self.assertRaisesRegex(KeyError, "dram_asp"):
+            self.build(short)
+        del short["followup_closure"]
+        payload = self.build(short)
+        settled = self.settled(payload)
+        # No settleable threshold left, so no overview with zero bars: the
+        # description carries the six and why each is open.
+        self.assertFalse(any(e["kind"] == "diverging_bars" for e in settled))
+        self.assertFalse(any(e["title"].startswith("DRAM 平均售价的环比：守住") for e in settled))
+        description = next(s for s in payload["sections"] if s["id"] == "settled")["description"]
+        self.assertIn("上季 6 条量化阈值本季都无法用申报值结算", description)
+        self.assertIn("DRAM 售价（未申报：本季的用词还没有申报）", description)
+        self.assertNotIn("上季电话会给本季的出货指引", description)
+
+    def test_the_guidance_mismatch_sentence_follows_the_words(self) -> None:
+        """The filed DRAM word and the guided one do not overlap this quarter,
+        and the description says so; make them agree and it must say that instead."""
+        now = next(s for s in self.build(self.source)["sections"] if s["id"] == "settled")["description"]
+        self.assertIn("公司两份文件用了互不重叠的词", now)
+        agree = copy.deepcopy(self.source)
+        voc = agree["kpi_phrases"]["phrase_vocabulary"]["High-single% Increase"]
+        block = agree["kpi_phrases"]["dram_bit_shipment"]
+        block["phrases"][-1] = "High-single% Increase"
+        block["low_pct"][-1], block["high_pct"][-1] = voc["low"], voc["high"]
+        block["midpoint_pct"][-1] = (voc["low"] + voc["high"]) / 2
+        after = next(s for s in self.build(agree)["sections"] if s["id"] == "settled")["description"]
+        self.assertNotIn("公司两份文件用了互不重叠的词", after)
+        self.assertIn("半年报的用词与之一致", after)
+
+    def test_a_breached_prior_threshold_is_called_breached(self) -> None:
+        """Push the filed word below +15% and the verdict must flip, in the
+        title of the overview and of the line."""
+        low = copy.deepcopy(self.source)
+        voc = low["kpi_phrases"]["phrase_vocabulary"]["Mid-single% Increase"]
+        block = low["kpi_phrases"]["dram_asp"]
+        block["phrases"][-1] = "Mid-single% Increase"
+        block["low_pct"][-1], block["high_pct"][-1] = voc["low"], voc["high"]
+        block["midpoint_pct"][-1] = (voc["low"] + voc["high"]) / 2
+        settled = self.settled(self.build(low))
+        self.assertIn("已击穿", settled[1]["title"])
+        self.assertTrue(any(e["title"] == "DRAM 平均售价的环比：击穿上季阈值 +15%" for e in settled))
+
+
 class SkHynixChecksTest(unittest.TestCase):
     """The page's quarter against a record keyed separately from the series.
 

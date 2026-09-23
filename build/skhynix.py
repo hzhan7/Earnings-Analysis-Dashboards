@@ -59,12 +59,15 @@ from build.board import (  # noqa: E402
     cn_fraction,
     cn_ordinal,
     display_period,
+    fill_story,
+    headroom,
     headroom_exhibit,
     latest_block,
     number_exhibits,
     stamped_block,
     threshold_exhibit,
     threshold_table,
+    unit_text,
 )
 from build.page_shell import render_shell  # noqa: E402
 from build.payload_guard import write_dash  # noqa: E402
@@ -89,6 +92,12 @@ OLD_OPM_LINE = 55.0
 # The worked example of integer-margin rounding in the notes: two consecutive
 # quarters whose printed integers overstate the step.
 ROUNDING_EXAMPLE = ("2025Q2", "2025Q3")
+
+# The last quarter the Form 424B4's thirteen-quarter phrase table reaches. It is
+# a fact about that one document, not something a roll moves: every quarter
+# after it is worded by a later periodic report (the semi-annual report for
+# 2Q 2026), and the captions say so.
+PROSPECTUS_PHRASES_END = "1Q 2026"
 
 
 def rounded(values, digits: int = 4):
@@ -177,6 +186,16 @@ def spaced_after(word: str) -> str:
     """A phrase that ends in Latin letters or digits takes a space before the
     Chinese that follows it (「向 SEC 报送的 6-K 里」); a Chinese one does not."""
     return f"{word} " if word[-1:].isascii() and word[-1:].isalnum() else word
+
+
+def spaced_before(word: str) -> str:
+    """The mirror of `spaced_after`: 「只有」 + 「DRAM 售价」 needs a space between."""
+    return f" {word}" if word[:1].isascii() and word[:1].isalnum() else word
+
+
+# The closure chart's buckets, in the order TSM's page draws them. A verdict
+# outside these stops the build rather than being dropped from the tally.
+CLOSURE_ORDER = ["已验证", "部分验证", "被证伪", "仍未披露"]
 
 
 def mean_abs(values: list[float]) -> float:
@@ -296,6 +315,9 @@ def build_payload(staging: dict) -> dict:
             for n, r in zip(net, revenue)]
 
     kq = kpi["quarters"]
+    later_words = kq[kq.index(PROSPECTUS_PHRASES_END) + 1:]
+    later_span = (f"{later_words[0]}–{later_words[-1]}" if len(later_words) > 1
+                  else later_words[0] if later_words else "")
     dram_bit, dram_asp = kpi["dram_bit_shipment"], kpi["dram_asp"]
     nand_bit, nand_asp = kpi["nand_bit_shipment"], kpi["nand_asp"]
     blocks = (dram_bit, dram_asp, nand_bit, nand_asp)
@@ -311,9 +333,159 @@ def build_payload(staging: dict) -> dict:
     def one_sided_phrases(block: dict) -> list[str]:
         return [phrase for phrase, flag in zip(block["phrases"], block["one_sided"]) if flag]
 
-    # ── section one: a record written in adjectives ─────────────────────────
+    # ── section one: settle what last quarter set ───────────────────────────
+    # (a) the follow-up questions last quarter's local analysis left, closed as
+    # this quarter's analysis §0 judged them; (b) last quarter's §8 thresholds,
+    # settled against this quarter's filed numbers; (c) the company's own forward
+    # disclosure -- which for SK hynix is words, not numbers.
+    closure = stamped_block(staging, "followup_closure", period)
+    prior_kpi = stamped_block(staging, "prior_kpi_settlement", period)
+    last_period = display_period(shift_quarter(periods[-1], -1))
+    for name, block in (("followup_closure", closure), ("prior_kpi_settlement", prior_kpi)):
+        if block is not None and block["set_in"] != last_period:
+            raise ValueError(f"series block `{name}` settles what was set in {block['set_in']!r}, "
+                             f"but last quarter was {last_period!r}")
+    # The phrase series reaches this quarter only once a filing has worded it;
+    # until then nothing below may read its last cell as this quarter's.
+    phrases_reach_quarter = iso_quarter(kq[-1]) == periods[-1]
+    after = story.get("shareholder_return_after_quarter")
+    story_values = {}
+    if story.get("capex_2026_spoken"):
+        story_values["capex_spoken"] = f"“{story['capex_2026_spoken']}”"
+    if phrases_reach_quarter:
+        # Only while the last cell IS this quarter: otherwise a finding that
+        # quotes "this quarter's word" would quote last quarter's, and
+        # `fill_story` stops the build on the missing name instead.
+        story_values["dram_asp_prev"] = f"“{dram_asp['phrases'][-2]}”"
+        story_values["dram_asp_now"] = f"“{dram_asp['phrases'][-1]}”"
     settled = []
+    settled_prior: list[dict] = []
+    open_prior: list[dict] = []
+    prior_all_open = ""
 
+    if closure is not None:
+        items = closure["items"]
+        unknown = sorted({item["verdict"] for item in items} - set(CLOSURE_ORDER))
+        if unknown:
+            raise ValueError(f"series block `followup_closure` has verdicts {unknown} "
+                             f"outside {CLOSURE_ORDER}")
+        counts = [sum(1 for item in items if item["verdict"] == label) for label in CLOSURE_ORDER]
+        groups = [(label, [item for item in items if item["verdict"] == label])
+                  for label in CLOSURE_ORDER]
+        later = next((item for item in items if item.get("answered_after_quarter")), None)
+        answered = (f"其中「{later['topic']}」在本季本地分析写成之后有了答案：{after['filed']} 报送的 6-K "
+                    f"公布约 ₩{after['buyback_krw_bn'] / 1000:.1f}T 的回购注销，以及「{after['policy']}」的"
+                    "回报政策 —— 它归下一季结算，这里的判定仍按本季业绩发布时的情况。"
+                    if later is not None and after else "")
+        settled.append({
+            "ref": "EX_CLOSURE",
+            "kind": "bars_labeled",
+            "title": (f"上季 {len(items)} 条待验证问题："
+                      + "、".join(f"{count} 条{label}" for label, count in zip(CLOSURE_ORDER, counts) if count)
+                      + ("，没有一条完全验证" if counts[0] == 0 else "")),
+            "xlabels": list(CLOSURE_ORDER),
+            "values": counts,
+            "legend": "问题条数",
+            "fmt": "f0", "yfmt": "f0", "label_fmt": "f0",
+            "ylab": "条",
+            "note": ("".join(
+                f"{label}的{cn_count(len(group))}条："
+                + "；".join(f"{item['topic']}——{fill_story(item['finding'], story_values)}" for item in group)
+                + "。"
+                for label, group in groups if group) + answered),
+            "src_extra": ("问题清单是上季本地分析稿的 Follow-up Questions，判定取自本季本地分析稿第 0 节；"
+                          "每条的证据按业绩发布、电话会与半年报核过。"),
+        })
+
+    if prior_kpi is not None:
+        def prior_actual(entry: dict) -> float | None:
+            """This quarter's filed value for a settleable threshold, or None."""
+            if entry["id"] == "dram_asp":
+                return dram_asp["midpoint_pct"][-1] if phrases_reach_quarter else None
+            raise ValueError(f"series block `prior_kpi_settlement` names {entry['id']!r}, "
+                             "which this page does not know how to settle")
+
+        prior_entries = prior_kpi["entries"]
+        for entry in prior_entries:
+            actual = prior_actual(entry) if "threshold" in entry else None
+            if actual is None:
+                open_prior.append(entry if "threshold" not in entry else
+                                  {**entry, "status": "未申报", "why": "本季的用词还没有申报"})
+            else:
+                settled_prior.append({**entry, "actual": actual})
+        held = [e for e in settled_prior if headroom(e["direction"], e["threshold"], e["actual"]) >= 0]
+        if len(settled_prior) == 1:
+            only = settled_prior[0]
+            verdict = f"能用本季实际值结算的只有{spaced_before(only['short'])}一条，{'守住' if held else '已击穿'}"
+        else:
+            verdict = (f"能用本季实际值结算的 {len(settled_prior)} 条里 {len(held)} 条守住、"
+                       f"{len(settled_prior) - len(held)} 条被击穿")
+        asp_words = ""
+        dram_entry = next((e for e in settled_prior if e["id"] == "dram_asp"), None)
+        if dram_entry is not None:
+            band = vocabulary[dram_asp["phrases"][-1]]
+            up = dram_entry["direction"] == "up"
+            clear = band["low"] >= dram_entry["threshold"] if up else band["high"] <= dram_entry["threshold"]
+            straddles = band["low"] < dram_entry["threshold"] < band["high"]
+            spoken = story.get("call_words", {}).get("dram_asp")
+            spoken_number = re.search(r"(\d+(?:\.\d+)?)%", spoken or "")
+            spoken_holds = (spoken_number is not None
+                            and (float(spoken_number.group(1)) >= dram_entry["threshold"]) == up)
+            asp_words = (f"DRAM 售价的上季阈值是「Q2 ≥ {signed(dram_entry['threshold'], 0)}」。"
+                         f"半年报把本季写成 “{dram_asp['phrases'][-1]}”，本页读成 "
+                         f"{band['low']:g}–{band['high']:g}%，"
+                         + ("整段都在安全侧；" if clear else "区间跨过了阈值；" if straddles else "整段都已越线；")
+                         + (f"电话会上的说法是 “{spoken}”，按它读也在安全侧。" if spoken and spoken_holds else
+                            f"电话会上的说法是 “{spoken}”。" if spoken else ""))
+
+        def open_reason(entry: dict) -> str:
+            extra = ""
+            if entry["id"] == "fy26_capex" and story.get("capex_2026_spoken"):
+                extra = f"；电话会给的 2026 年口径是 {story_values['capex_spoken']}"
+            if entry["id"] == "fy26_return" and after:
+                extra = f"；{after['filed']} 的 6-K 已公布约 ₩{after['buyback_krw_bn'] / 1000:.1f}T 的回购注销"
+            return f"{entry['short']}（{entry['status']}：{entry['why']}{extra}）"
+
+        open_words = "；".join(open_reason(entry) for entry in open_prior)
+        if settled_prior:
+            settled.append(headroom_exhibit(
+                f"上季 {len(prior_entries)} 条量化阈值：{verdict}"
+                + (f"；{len(open_prior)} 条本季无法结算" if open_prior else ""),
+                settled_prior,
+                "actual",
+                ("正值 = 仍在安全侧。" + asp_words
+                 + (f"无法结算的{cn_count(len(open_prior))}条：{open_words}。" if open_prior else "")),
+                ("阈值与方向逐字取自上季本地分析稿第 8 节，不是公司指引；实际值为本季申报值，"
+                 "售价用词按本页的用词表读成区间、取中点（D）。"),
+            ))
+        else:
+            # Nothing to draw a bar for: a headroom chart with no bars is not
+            # an overview. The section description carries the list instead.
+            prior_all_open = (f"上季 {len(prior_entries)} 条量化阈值本季都无法用申报值结算"
+                              f"（{open_words}），原文见核对抽屉。")
+        for entry in settled_prior:
+            if entry["id"] != "dram_asp":
+                continue
+            gap = headroom(entry["direction"], entry["threshold"], entry["actual"])
+            chart = threshold_exhibit(
+                f"{entry['metric']}：{'守住' if gap >= 0 else '击穿'}上季阈值 {signed(entry['threshold'], 0)}",
+                list(kq), rounded(dram_asp["midpoint_pct"]), entry["threshold"],
+                fmt="pct1", ylab="环比 %",
+                actual_name="DRAM 售价环比（用词中点）",
+                threshold_name=f"上季阈值（安全侧在{'上方' if entry['direction'] == 'up' else '下方'}）",
+                note=(f"阈值 {signed(entry['threshold'], 0)}，本季 “{dram_asp['phrases'][-1]}” 的中点 "
+                      f"{entry['actual']:g}%，余量 {gap:+.1f}%。线上每一点都是一个用词区间的中点 —— "
+                      "公司给的是区间不是数，区间本身见 Exhibit {EX_DASP}。"),
+                src_extra=("用词取自 Form 424B4 的量价表"
+                           + (f"与之后 6-K 定期报告里 {later_span} 的用词" if later_words else "")
+                           + "；阈值为上季本地研究设定，不是公司指引。"))
+            chart["xrot"] = 90
+            settled.append(chart)
+
+    # (c) What the company itself says about the quarter ahead: bit shipments,
+    # in words. Everything from here to the end of the section settles the
+    # words, because there is no number to settle against.
+    word_charts_from = len(settled)
     example = max(range(len(kq)), key=lambda i: dram_asp["midpoint_pct"][i])
     settled.append(phrase_band_exhibit(
         "EX_DASP",
@@ -331,7 +503,9 @@ def build_payload(staging: dict) -> dict:
             f"四条序列 {len(widths)} 次读数里，区间平均宽 {mean_width:.1f} 个百分点，"
             f"最宽 {max(widths):.0f} 个百分点。"),
         src_extra=("Form 424B4「changes in our bit sales volumes and average selling "
-                   "prices (in U.S. dollars) of our DRAMs」表；区间为本页读法（D）。"),
+                   "prices (in U.S. dollars) of our DRAMs」表，"
+                   + (f"{later_span} 取自之后报送的 6-K 定期报告（Price Trends 段）；" if later_words else "")
+                   + "区间为本页读法（D）。"),
     ))
 
     nand_asp_open = one_sided_phrases(nand_asp)
@@ -347,7 +521,9 @@ def build_payload(staging: dict) -> dict:
             + "<b>这个上界是画图约定，不是披露</b>，图上最宽的几格就是它。"
             "一个下界式的说法与一个区间不是同一种信息：对着下界，"
             "「没有低于」几乎是同义反复。"),
-        src_extra=("Form 424B4 同一节的 NAND 表；单边用词的上界为本页约定（D）。"),
+        src_extra=("Form 424B4 同一节的 NAND 表"
+                   + (f"，{later_span} 取自之后报送的 6-K 定期报告" if later_words else "")
+                   + "；单边用词的上界为本页约定（D）。"),
     ))
 
     dram_bit_mid, dram_asp_mid = dram_bit["midpoint_pct"], dram_asp["midpoint_pct"]
@@ -383,7 +559,9 @@ def build_payload(staging: dict) -> dict:
                "被指引的那个变量本来就不是决定收入的那个。" if price_moves else "")
             + (f"{cn_quarter(kq[-1])}就是极端形态：出货量用词是 “{dram_bit['phrases'][-1]}”，"
                f"售价用词是 “{dram_asp['phrases'][-1]}”。" if extreme else "")),
-        "src_extra": "Form 424B4 的两张 DRAM 表；中值为区间中点（D）。",
+        "src_extra": ("Form 424B4 的两张 DRAM 表"
+                      + (f"与之后 6-K 定期报告里 {later_span} 的用词" if later_words else "")
+                      + "；中值为区间中点（D）。"),
     })
 
     nand_open = [(phrase, "出货") for phrase in one_sided_phrases(nand_bit)] + \
@@ -422,7 +600,9 @@ def build_payload(staging: dict) -> dict:
             + ("<b>DRAM 与 NAND 的价格拐点不同步</b>，" if dram_turn != nand_turn else "")
             + "而公司只在年度层面披露两者的收入占比，"
             "所以「这一季的合并售价里有多少来自哪一边」在季度上无法还原，见 Exhibit {EX_MIX}。"),
-        "src_extra": "Form 424B4 的两张 NAND 表；中值为区间中点（D）。",
+        "src_extra": ("Form 424B4 的两张 NAND 表"
+                      + (f"与之后 6-K 定期报告里 {later_span} 的用词" if later_words else "")
+                      + "；中值为区间中点（D）。"),
     })
 
     # The chained band: what four quarters of words permit, against the one
@@ -437,6 +617,11 @@ def build_payload(staging: dict) -> dict:
         return (product - 1) * 100.0
 
     labels = prod["labels"]
+
+    def prod_source(label: str) -> str:
+        """Which filing printed this product-split cell (see the block's `_cell_sources`)."""
+        return prod.get("_cell_sources", {}).get(label, "Form 424B4")
+
     scorable = [i for i, label in enumerate(kq)
                 if i >= 3 and iso_quarter(label) in labels
                 and shift_quarter(iso_quarter(label), -4) in labels]
@@ -488,8 +673,13 @@ def build_payload(staging: dict) -> dict:
                 "在一个几十个百分点宽的区间里，几个百分点的汇率影响根本无从分辨 —— "
                 "所以任何把美元售价乘上出货量、再声称与韩元收入「闭合」的桥，"
                 "闭合的其实是区间的宽度，不是数据。"),
-            "src_extra": ("用词取自 Form 424B4 的四张表；实际同比取自同一份文件的"
-                          "分产品收入披露（note 24(2) 与中期报表）。连乘与同比为本页自算（D）。"),
+            "src_extra": ("用词取自 Form 424B4 的四张表"
+                          + ("与之后 6-K 定期报告里" + "、".join(q for q in kq[i0:i1] if q in later_words) + " 的用词"
+                             if any(q in later_words for q in kq[i0:i1]) else "")
+                          + "；实际同比取自" + spaced_before("与".join(dict.fromkeys(
+                              [prod_source(labels[then]), prod_source(labels[now])])))
+                          + " 的分产品收入附注。"
+                          "连乘与同比为本页自算（D）。"),
         })
 
     # ── section two: the quarter ────────────────────────────────────────────
@@ -926,6 +1116,59 @@ def build_payload(staging: dict) -> dict:
     next_block = exhibits[n_s + n_h:n_s + n_h + n_n]
     routine_ex = exhibits[n_s + n_h + n_n:]
 
+    # The company's one forward-looking number, settled in words: what last
+    # quarter's call guided for this quarter's bit shipments, against how this
+    # quarter's filing worded the outcome. Printed only while the phrase series
+    # reaches this quarter; the mismatch sentence only while the words disagree.
+    guided = story.get("shipment_guidance_for_quarter")
+    guidance_words = ""
+    if guided and phrases_reach_quarter:
+        def overlaps(a: str, b: str) -> bool:
+            return vocabulary[a]["low"] <= vocabulary[b]["high"] and vocabulary[a]["high"] >= vocabulary[b]["low"]
+
+        def band_text(phrase: str) -> str:
+            return f"{vocabulary[phrase]['low']:g}–{vocabulary[phrase]['high']:g}%"
+
+        filed_bits = {"dram": dram_bit["phrases"][-1], "nand": nand_bit["phrases"][-1]}
+        off = [leg for leg in ("dram", "nand") if not overlaps(guided[leg], filed_bits[leg])]
+        guidance_words = (
+            f"上季电话会给本季的出货指引是 DRAM “{guided['dram']}”、NAND “{guided['nand']}”"
+            + ("，本季电话会说两条都兑现了" if story.get("shipment_delivered_per_call") else "")
+            + (("；而同季报送的半年报把"
+                + "、".join(f" {leg.upper()} 出货记为 “{filed_bits[leg]}”（本页读成 {band_text(filed_bits[leg])}），"
+                            f"与指引的 {band_text(guided[leg])} 不重叠" for leg in off)
+                + " —— 同一个量，公司两份文件用了互不重叠的词")
+               if off else "，半年报的用词与之一致")
+            + "。")
+    word_charts = n_s - word_charts_from
+    settled_description = (
+        (("先结算上季本地分析留下的两样东西："
+          + "，".join(part for part in (
+              f"{len(closure['items'])} 条待验证问题闭环了几条" if closure else "",
+              f"{len(prior_kpi['entries'])} 条量化阈值能结算几条、守住没有" if prior_kpi else "") if part)
+          + "。" + prior_all_open + "然后是公司自己的前瞻披露 —— ") if closure or prior_kpi else "")
+        + "SK hynix 不发布任何财务指引，营收、利润率、每股收益都没有区间，季度和年度都没有；"
+        "它唯一的前瞻数字是电话会上下一季出货量的英文用词。"
+        + guidance_words
+        + f"量价的实际变化也只以用词发布，所以本节最后{cn_count(word_charts)}张图结算的是这些用词本身："
+        "它们留下多少不确定，以及为什么出货指引全部兑现、收入仍然可以对不上。")
+
+    prior_rows = []
+    for entry in (prior_kpi or {}).get("entries", []):
+        done = next((e for e in settled_prior if e["id"] == entry["id"]), None)
+        if done is None:
+            gone = next(e for e in open_prior if e["id"] == entry["id"])
+            prior_rows.append([entry["short"], entry["threshold_text"], "—", f"{gone['status']}：{gone['why']}"])
+            continue
+        gap = headroom(done["direction"], done["threshold"], done["actual"])
+        reading = unit_text(done["unit"], done["actual"])
+        if done["id"] == "dram_asp":
+            reading = (f"“{dram_asp['phrases'][-1]}”，读成 "
+                       f"{vocabulary[dram_asp['phrases'][-1]]['low']:g}–{vocabulary[dram_asp['phrases'][-1]]['high']:g}%，"
+                       f"中点 {reading}")
+        prior_rows.append([entry["short"], entry["threshold_text"], reading,
+                           f"{'守住' if gap >= 0 else '击穿'}（余量 {gap:+.1f}%）"])
+
     first_table = exhibits[-1]["n"] + 1
     audited_quarter = staging["quarterly_audited_krw_bn"]
     identity_holds = (
@@ -990,9 +1233,18 @@ def build_payload(staging: dict) -> dict:
                 ["资本开支占收入 D"] + [f"{v:.1f}%" for v in intensity],
             ],
         },
-        threshold_table(first_table + 3, "下季阈值与当前值（原始单位）",
+    ]
+    if prior_rows:
+        tables.append({
+            "n": first_table + len(tables),
+            "title": f"上季 {len(prior_rows)} 条阈值的原文与本季结算",
+            "headers": ["指标", "上季阈值（本地分析稿第 8 节原文）", "本季读数", "结算"],
+            "rows": prior_rows,
+        })
+    tables += [
+        threshold_table(first_table + len(tables), "下季阈值与当前值（原始单位）",
                         watch, "current", "当前值"),
-        ai_capex_cycle_table(first_table + 4),
+        ai_capex_cycle_table(first_table + len(tables) + 1),
     ]
 
     record = bool(story.get("record_margin_claimed")) and opm[-1] == max(opm)
@@ -1010,7 +1262,7 @@ def build_payload(staging: dict) -> dict:
     articles = [
         '<article><span>披露</span><b>营收报到百万韩元，两个驱动变量只给形容词</b>'
         f'<p>{cn_count(len(kq))}个季度的出货量与售价环比，全部是 “Mid-60% Increase”、“Flat”、'
-        '“Over 70% Increase” 这样的用词，且出自 Nasdaq 上市的注册声明书。'
+        '“Over 70% Increase” 这样的用词，出自 Nasdaq 上市的注册声明书和之后报送的半年报。'
         f'{len(widths)} 次读数平均留下 {mean_width:.1f} 个百分点的不确定，'
         f'{one_sided} 次根本没有上界。</p></article>',
     ]
@@ -1067,10 +1319,7 @@ def build_payload(staging: dict) -> dict:
         "guidance": None,
         "sections": [
             {"id": "settled", "title": "一、上季跟踪指标兑现了吗",
-             "description": ("SK hynix 不发布任何财务指引——营收、利润率、每股收益都没有区间，季度和年度都没有。"
-                             "它唯一的前瞻披露是电话会上下一季出货量的英文用词，而出货量与售价的实际变化"
-                             "也只以英文用词发布。所以本节结算的是这些用词本身：它们留下了多少不确定，"
-                             "以及为什么出货指引全部兑现、收入仍然可以对不上。"),
+             "description": settled_description,
              "exhibits": settled_ex},
             {"id": "quarter_highlights", "title": "二、本季重点",
              "description": (f"{len(periods)} 季的营收与利润率"
@@ -1093,7 +1342,7 @@ def build_payload(staging: dict) -> dict:
             "SK hynix 财年即自然年，本页季度标注与公司自己的口径一致，无需换算。",
             "本页以韩元列报，与本站其他以美元列报的页面不可直接相加。金额除特别标注外单位为万亿韩元（₩T）或十亿韩元。公司自己在业绩发布中以万亿韩元为主要单位。",
             "SK hynix 是 SEC 注册人：CIK 2120882，文件编号 001-43391，2026-07-10 起在纳斯达克以 SKHY 交易 ADR，年报为 20-F、季度以 6-K 报送。本页的一手来源因此同时包含公司自己的业绩发布与 SEC 托管的申报文件。",
-            "第一节结清的不是指引兑现率：SK hynix 不发布营收、利润、利润率或每股收益的指引，无论季度还是年度。它唯一的前瞻数字是下一季的出货量，而出货量与售价一样以英文用词发布。本站其他公司页第一节结清的是数值区间，本页不是，差别源于公司披露口径而非编辑选择。",
+            "第一节先结算上季本地分析留下的待验证问题与量化阈值，再结算公司自己的前瞻披露。SK hynix 不发布营收、利润、利润率或每股收益的指引，无论季度还是年度；它唯一的前瞻数字是下一季的出货量，而出货量与售价一样以英文用词发布。所以第一节后半段结算的是用词本身而不是数值区间，差别源于公司披露口径而非编辑选择。",
             "用词到区间的映射由本页一次性设定，对四条序列一视同仁，完整对照见核对抽屉里的用词表。其中 "
             + "、".join(phrase.replace(" Increase", "") for phrase, entry in vocabulary.items() if entry["one_sided"])
             + f" {cn_count(len([1 for entry in vocabulary.values() if entry['one_sided']]))}种说法在申报文件里没有上界，本页统一取「下限加十个百分点」以便作图，该上界是作图约定而非披露。",
