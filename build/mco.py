@@ -73,10 +73,14 @@ from build.board import (  # noqa: E402
     cn_fraction,
     delivery_band,
     fill_story,
+    headroom,
+    headroom_exhibit,
     latest_block,
     midpoint_deviation,
     number_exhibits,
     stamped_block,
+    threshold_exhibit,
+    threshold_table,
 )
 from build.page_shell import render_shell  # noqa: E402
 from build.payload_guard import write_dash  # noqa: E402
@@ -223,7 +227,268 @@ def record_facts(staging: dict) -> dict:
     }
 
 
-# ── section one: the annual guidance record ─────────────────────────────────
+def aligned(staging: dict, key: str) -> dict:
+    """A quarterly block that must run on `segment_quarterly`'s periods, cell for cell.
+
+    The cash legs and the MA KPIs live in their own blocks because they come
+    from different documents (XBRL cash-flow facts, the release's KPI tables);
+    a roll that extends one and forgets the other would otherwise pair a
+    quarter's buyback with the previous quarter's label.
+    """
+    block = staging[key]
+    periods = staging["segment_quarterly"]["periods"]
+    if block["periods"] != periods:
+        raise ValueError(f"series block `{key}` runs {block['periods'][0]}–{block['periods'][-1]}, "
+                         f"but segment_quarterly runs {periods[0]}–{periods[-1]}: extend it with the roll")
+    return block
+
+
+def first_reported(values: list) -> int:
+    """Index of the first quarter a KPI was printed; the chart starts there."""
+    return next(i for i, value in enumerate(values) if value is not None)
+
+
+def usd_m(value: float) -> str:
+    return f"{'−' if value < 0 else ''}US${abs(value):,.0f}M"
+
+
+def pct_text(value: float) -> str:
+    """``8.5`` → ``'8.5%'``, ``9.0`` → ``'9%'`` -- a threshold as the report wrote it."""
+    return f"{value:g}%"
+
+
+def tracking_chart(title: str, labels: list[str], series: list[dict],
+                   thresholds: list[tuple[str, float]], *, fmt: str, ylab: str, note: str,
+                   src_extra: str) -> dict:
+    """Actual lines against one or more flat threshold lines.
+
+    `board.threshold_exhibit` draws one line against one threshold. Several of
+    the report's rows are two-sided (a floor that says 减仓 and a bar that says
+    加仓 on the same metric), and one of its metrics changed disclosure basis
+    mid-window, so the series list and the threshold list are both open here.
+    The first threshold keeps the site's threshold colour.
+    """
+    lines = [dict(line) for line in series]
+    for (name, value), color in zip(thresholds, ("RED", "GOLD", "GRAY")):
+        lines.append({"name": name, "values": [value] * len(labels), "color": color})
+    chart = {
+        "kind": "lines",
+        "title": title,
+        "xlabels": labels,
+        "series": lines,
+        "fmt": fmt,
+        "yfmt": fmt,
+        "label_fmt": fmt,
+        "end_label": True,
+        "ylab": ylab,
+        "note": note,
+        "src_extra": src_extra,
+    }
+    if len(labels) > 16:
+        chart["xstep"] = LONG_STEP
+    return chart
+
+
+def trimmed(labels: list[str], *columns: list) -> tuple[list[str], list[list]]:
+    """Cut the leading quarters in which none of the columns was printed yet."""
+    start = min(first_reported(column) for column in columns)
+    return labels[start:], [column[start:] for column in columns]
+
+
+# ── section one (a)(b): what last quarter's analysis left to be settled ─────
+CLOSURE_LABELS = ("已验证", "部分验证", "被证伪", "仍未披露", "指标设计失效")
+
+
+def closure_counts(closure: dict) -> tuple[list[str], list[int]]:
+    """Verdict tallies, counted from the items in a fixed order.
+
+    The counts are not stored: a block that carried both the twelve verdicts and
+    a tally could disagree with itself. A verdict outside the order stops the
+    build instead of silently dropping out of the chart.
+    """
+    verdicts = [item["verdict"] for item in closure["items"]]
+    unknown = sorted(set(verdicts) - set(CLOSURE_LABELS))
+    if unknown:
+        raise ValueError(f"series block `followup_closure` has verdicts this page does not chart: {unknown}")
+    labels = [label for label in CLOSURE_LABELS if label in verdicts]
+    return labels, [verdicts.count(label) for label in labels]
+
+
+def closure_chart(closure: dict, values: dict) -> dict:
+    labels, counts = closure_counts(closure)
+    return {
+        "kind": "bars_labeled",
+        "title": (f"上季 {len(closure['items'])} 条待验证问题："
+                  + "、".join(f"{count} 条{label}" for label, count in zip(labels, counts))),
+        "xlabels": labels,
+        "values": counts,
+        "legend": "问题条数",
+        "fmt": "f0",
+        "yfmt": "f0",
+        "label_fmt": "f0",
+        "ylab": "条",
+        "note": "".join(fill_story(closure[key], values)
+                        for key in ("falsified_note", "undisclosed_note", "design_note", "earlier_note")
+                        if closure.get(key)),
+        "src_extra": (f"问题清单是上季（{closure['set_in']}）本站季报分析留下的 follow-up，逐条判定取自本季"
+                      "分析第 0 节；其中能核的证据（ARR、有机增速、出售收益、回购、准备金）已回本季业绩 8-K "
+                      "EX-99.1 逐项核对，判定与申报一致。逐条清单见核对表。"),
+    }
+
+
+def prior_entries(staging: dict, prior: dict) -> list[dict]:
+    """Last quarter's thresholds with this quarter's actual, read from the series.
+
+    The block carries only what the report wrote -- metric, direction, threshold
+    -- so a typed actual would be a second copy of a number the arrays already
+    hold, free to disagree with them. One threshold is not a number in the
+    report at all but a rule (「Q2 同比为负」), and it resolves to the
+    same quarter a year earlier.
+    """
+    seg = staging["segment_quarterly"]
+    cash = aligned(staging, "quarterly_cash")
+    kpi = aligned(staging, "ma_kpi_quarterly")
+    actual = {
+        "ma_arr_growth": lambda: kpi["arr_growth_pct"][-1],
+        "ma_organic_growth": lambda: kpi["organic_cc_revenue_growth_pct"][-1],
+        "mis_revenue": lambda: seg["mis_revenue_usd_m"][-1],
+        "share_repurchases": lambda: cash["share_repurchases_usd_m"][-1],
+    }
+    rule = {"same_quarter_last_year": lambda: seg["mis_revenue_usd_m"][-5]}
+    entries = []
+    for entry in prior["quantified"]:
+        if "actual" in entry:
+            raise ValueError(f"threshold `{entry['id']}` is computed from the series; remove its typed actual")
+        settled = dict(entry)
+        if "threshold_rule" in entry:
+            settled["threshold"] = rule[entry["threshold_rule"]]()
+        settled["actual"] = actual[entry["series"]]()
+        entries.append(settled)
+    return entries
+
+
+def exact_growth_words(entry: dict, printed_levels: list[float]) -> str:
+    """Whether a whole-percent growth rate and the rate its own printed amounts give
+    fall on the same side of a threshold set to a finer grain than the company prints."""
+    exact = pct_change(*printed_levels)
+    side_printed = entry["actual"] >= entry["threshold"]
+    side_exact = exact >= entry["threshold"]
+    return (f"按它自己印的两期金额 {usd_m(printed_levels[0])} 对 {usd_m(printed_levels[1])} 算是 {exact:.2f}%"
+            + ("，同样在阈值之上" if side_printed and side_exact else
+               "，同样在阈值之下" if not side_printed and not side_exact else
+               f"——<b>只在整数精度上{'达到' if side_printed else '没达到'}</b> {pct_text(entry['threshold'])}"))
+
+
+def prior_settlement(staging: dict, prior: dict, figures: dict | None, guidance: dict | None,
+                     values: dict) -> list[dict]:
+    """(b): last quarter's quantified thresholds, settled against this quarter."""
+    seg = staging["segment_quarterly"]
+    labels = seg["periods"]
+    cash = aligned(staging, "quarterly_cash")
+    kpi = aligned(staging, "ma_kpi_quarterly")
+    entries = prior_entries(staging, prior)
+    by_id = {entry["id"]: entry for entry in entries}
+    breached = [entry for entry in entries
+                if headroom(entry["direction"], entry["threshold"], entry["actual"]) < 0]
+    groups = sorted({entry["group"] for entry in breached})
+    title = (f"上季 {len(entries)} 条量化阈值：{len(entries) - len(breached)} 条守住、{len(breached)} 条被击穿"
+             + (f"——被击穿的{cn_count(len(breached))}条都是{groups[0]}" if len(breached) > 1 and len(groups) == 1
+                else ""))
+
+    exactness = {}
+    if figures:
+        for key, levels in (("ma_arr", "ma_arr_usd_m"), ("ma_organic", "ma_organic_cc_revenue_usd_m")):
+            if key in by_id and levels in figures:
+                exactness[key] = exact_growth_words(by_id[key], figures[levels])
+    note = ("正值 = 仍在安全侧。"
+            + ("两条增速按公司印的整数百分比结算：" + "；".join(
+                f"{by_id[key]['metric']}公司印 {pct_text(by_id[key]['actual'])}，{words}"
+                for key, words in exactness.items()) + "。" if exactness else "")
+            + fill_story(prior.get("note", ""), values))
+    overview = headroom_exhibit(
+        title, entries, "actual", note,
+        src_extra=("阈值逐字取自上季（" + prior["set_in"] + "）本站季报分析的「关键观察指标」，不是公司指引；"
+                   "实际值为本季申报值：ARR 与有机增速取业绩 8-K EX-99.1，回购取现金流量表「Treasury shares」"
+                   "（XBRL 年初至今数相减），MIS 收入取分部表。"
+                   + ("另有" + cn_count(len(prior["unquantified"])) + "行无法按数字结算，逐条写在核对表里。"
+                      if prior.get("unquantified") else "")),
+    )
+
+    charts = [overview]
+    held_word = lambda entry: ("守住" if headroom(entry["direction"], entry["threshold"], entry["actual"]) >= 0
+                               else "已击穿")
+    for key, name, columns in (
+            ("ma_arr", "MA ARR 同比", [("arr_growth_pct", "MA ARR 同比（公司印）", "NAVY")]),
+            ("ma_organic", "MA 有机固定汇率收入同比",
+             [("organic_cc_revenue_growth_pct", "有机固定汇率口径（公司印）", "NAVY"),
+              ("cc_revenue_growth_pct", "固定汇率口径（2023–2024 公司只印这一口径）", "MBLUE")])):
+        entry = by_id.get(key)
+        if entry is None:
+            continue
+        axis, drawn = trimmed(labels, *(kpi[column] for column, _, _ in columns))
+        charts.append(tracking_chart(
+            f"{name}：{held_word(entry)}上季阈值 {pct_text(entry['threshold'])}",
+            axis,
+            [{"name": label, "values": values_drawn, "color": color}
+             for (_, label, color), values_drawn in zip(columns, drawn)],
+            [(f"上季阈值 {pct_text(entry['threshold'])}（安全侧在上方）", entry["threshold"])],
+            fmt="pct1", ylab="同比 %",
+            note=(f"阈值 {pct_text(entry['threshold'])}，本季公司印 {pct_text(entry['actual'])}"
+                  + (f"；{exactness[key]}" if key in exactness else "")
+                  + "。" + kpi["notes"][columns[0][0]]),
+            src_extra=kpi["source"],
+        ))
+    mis = by_id.get("mis_yoy")
+    if mis is not None:
+        revenue = seg["mis_revenue_usd_m"]
+        yoy = [None if i < 4 else round(pct_change(revenue[i], revenue[i - 4]), 2) for i in range(len(revenue))]
+        finished = [value for value in yoy if value is not None]
+        negative = sum(1 for value in finished if value < 0)
+        charts.append(threshold_exhibit(
+            f"MIS 收入同比：{held_word(mis)}上季阈值 0%（同比为负即警示）",
+            labels, yoy, 0.0, fmt="pct1", ylab="同比 %", actual_name="MIS 收入同比",
+            threshold_name="上季阈值 0%（安全侧在上方）", xstep=LONG_STEP,
+            note=(f"上季这一行原文是「Q2 同比为负 → 警示」，所以阈值是 0%，折成金额就是去年同期的 "
+                  f"{usd_m(mis['threshold'])}；本季 {usd_m(mis['actual'])}、同比 "
+                  f"{signed(pct_change(mis['actual'], mis['threshold']))}。"
+                  f"{len(finished)} 个有同比基数的季度里 MIS 同比为负的有 {negative} 个 —— "
+                  "发行窗口一关，这条线就会掉到零下，所以它守住与否是一个季度的事，不是趋势。"),
+            src_extra="各期业绩 8-K EX-99.1 的分部表（外部收入口径）；同比为自算。",
+        ))
+    buybacks = sorted((entry for entry in entries if entry["series"] == "share_repurchases"),
+                      key=lambda entry: -entry["threshold"])
+    if buybacks:
+        spent = cash["share_repurchases_usd_m"]
+        held = [entry for entry in buybacks
+                if headroom(entry["direction"], entry["threshold"], entry["actual"]) >= 0]
+        both = "（" + " 与 ".join(usd_m(entry["threshold"]) for entry in buybacks) + "）"
+        if not held:
+            verdict = f"击穿上季{cn_count(len(buybacks))}条阈值{both}"
+        elif len(held) == len(buybacks):
+            verdict = f"守住上季{cn_count(len(buybacks))}条阈值{both}"
+        else:
+            verdict = "、".join(f"{'守住' if entry in held else '没到'}{entry['side']}线 {usd_m(entry['threshold'])}"
+                               for entry in buybacks)
+        top = buybacks[0]["threshold"]
+        above = sum(1 for value in spent if value is not None and value >= top)
+        charts.append(tracking_chart(
+            f"{labels[-1].split()[0]} 回购 {usd_m(spent[-1])}：{verdict}",
+            labels,
+            [{"name": "单季回购（Treasury shares）", "values": spent, "color": "NAVY"}],
+            [(f"上季{entry['side']}线 {usd_m(entry['threshold'])}", entry["threshold"]) for entry in buybacks],
+            fmt="usd0", ylab="US$M（单季回购）",
+            note=(f"{len(labels)} 季里单季回购"
+                  + (f"达到过 {usd_m(top)} 的只有{cn_count(above)}季" if above else f"一季都没到过 {usd_m(top)}")
+                  + f"，最高一季是 {labels[spent.index(max(spent))]} 的 {usd_m(max(spent))}。"
+                  + fill_story(prior.get("buyback_note", ""), values)
+                  + (f"本季公司把全年回购指引改成「最多 US${guidance['share_repurchases_usd_b_upto']:.1f}B」。"
+                     if guidance and guidance.get("share_repurchases_usd_b_upto") else "")),
+            src_extra=cash["source"],
+        ))
+    return charts
+
+
+# ── section one (c): the annual guidance record ─────────────────────────────
 def guidance_record(staging: dict, facts: dict) -> list[dict]:
     """The full-year guidance record, settled against the year that followed."""
     g = staging["annual_guidance_history"]
@@ -567,8 +832,8 @@ def margin_bridge_words(margin: dict) -> str:
     return f"营业利润率 {terms} = {pct_words(margin['adjusted'][0])}"
 
 
-def next_watch(staging: dict, guidance: dict | None, bridges: dict | None,
-               story: dict | None, release_date: str) -> list[dict]:
+def guidance_bridge(guidance: dict | None, bridges: dict | None, release_date: str) -> list[dict]:
+    """The open year's EPS bridge: the licence for reading the guidance table as arithmetic."""
     charts = []
     year = guidance["fiscal_year"] if guidance else None
     if bridges:
@@ -623,7 +888,12 @@ def next_watch(staging: dict, guidance: dict | None, bridges: dict | None,
                 + (f"，负号项为{'、'.join(negative)}。" if negative else "。")
             ),
         })
+    return charts
 
+
+def next_watch(staging: dict, guidance: dict | None, story: dict | None) -> list[dict]:
+    charts = []
+    year = guidance["fiscal_year"] if guidance else None
     if guidance:
         items = [(name, guidance[key], unit) for name, key, unit in WIDTH_ITEMS]
         g = staging["annual_guidance_history"]
@@ -834,21 +1104,50 @@ def build_payload(staging: dict) -> dict:
     guidance = stamped_block(staging, "current_guidance", period)
     bridges = stamped_block(staging, "guidance_bridges", period)
     story = stamped_block(staging, "quarter_story", period)
-    # Only the home card reads it, but a stale one must stop the page as well.
-    stamped_block(staging, "quarter_figures", period)
+    figures = stamped_block(staging, "quarter_figures", period)
+    closure = stamped_block(staging, "followup_closure", period)
+    prior = stamped_block(staging, "prior_kpi_settlement", period)
+    previous = seg["periods"][-2]
+    for key, block in (("followup_closure", closure), ("prior_kpi_settlement", prior)):
+        if block and block["set_in"] != previous:
+            raise ValueError(f"series block `{key}` settles what {block['set_in']!r} set, "
+                             f"but the quarter before {period!r} is {previous!r}")
+    cash = aligned(staging, "quarterly_cash")
 
     facts = record_facts(staging)
     sf = segment_facts(staging)
     ma_yoy = pct_change(seg["ma_revenue_usd_m"][-1], seg["ma_revenue_usd_m"][-5])
-    values = {"ma_yoy": f"{ma_yoy:+.0f}%"}
+    mis = seg["mis_revenue_usd_m"]
+    buybacks = cash["share_repurchases_usd_m"]
+    values = {
+        "ma_yoy": f"{ma_yoy:+.0f}%",
+        "mis_yoy": signed(pct_change(mis[-1], mis[-5])),
+        "mis_yoy_prev": signed(pct_change(mis[-2], mis[-6])),
+        "buyback_now": usd_m(buybacks[-1]),
+        "buyback_prev": usd_m(buybacks[-2]),
+    }
+    if prior:
+        top = max((entry for entry in prior["quantified"] if entry["series"] == "share_repurchases"),
+                  key=lambda entry: entry["threshold"], default=None)
+        if top:
+            values["buyback_threshold"] = usd_m(top["threshold"])
+        if prior.get("buyback_guide_prior_usd_b") is not None:
+            values["buyback_guide_prior"] = f"US${prior['buyback_guide_prior_usd_b']:.1f}B"
+            # What last quarter's full-year figure left for the rest of the year
+            # once that quarter's buyback was spent -- the arithmetic the analysis
+            # used to retire the single-quarter threshold.
+            values["buyback_room"] = usd_m(prior["buyback_guide_prior_usd_b"] * 1000 - buybacks[-2])
     if bridges:
         negative = [delta for _, delta in bridges["eps"]["addbacks"] if delta < 0]
         if negative:
             values["gain"] = money(min(negative))
 
-    settled_ex = guidance_record(staging, facts)
+    settled_ex = ([closure_chart(closure, values)] if closure else [])
+    settled_ex += prior_settlement(staging, prior, figures, guidance, values) if prior else []
+    settled_ex += guidance_record(staging, facts)
+    settled_ex += guidance_bridge(guidance, bridges, latest["release_date"])
     highlight_ex = quarter_highlights(staging, facts, sf, story, values)
-    next_ex = next_watch(staging, guidance, bridges, story, latest["release_date"])
+    next_ex = next_watch(staging, guidance, story)
     routine_ex = routine(staging, bridges)
 
     all_ex = number_exhibits(settled_ex + highlight_ex + next_ex + routine_ex, start=1)
@@ -871,7 +1170,35 @@ def build_payload(staging: dict) -> dict:
         rows_guidance.append([f"FY{y}", cell("Feb"), cell("Apr"), cell("Jul"), cell("Oct"),
                               "—" if act is None else f"{act:.2f}"])
 
-    tables = [
+    settlement_tables = []
+    if closure:
+        settlement_tables.append({
+            "title": f"上季 {len(closure['items'])} 条待验证问题的逐条判定（本季分析第 0 节）",
+            "headers": ["#", "上季问题", "本季判定", "说明"],
+            "rows": [[str(i), item["question"], item["verdict"], item["follow"]]
+                     for i, item in enumerate(closure["items"], start=1)],
+        })
+    if prior:
+        settled_entries = prior_entries(staging, prior)
+        table = threshold_table(0, "上季量化阈值与本季实际值（原单位）", settled_entries, "actual", "本季实际")
+        table.pop("n")
+        settlement_tables.append(table)
+        settlement_tables.append({
+            "title": f"上季 {len(prior['dispositions'])} 行关键观察指标：本季分析给出的处置",
+            "headers": ["上季指标（原文）", "处置"],
+            "rows": [list(row) for row in prior["dispositions"]],
+        })
+        if prior.get("unquantified"):
+            settlement_tables.append({
+                "title": "上季指标里无法按数字结算的几条",
+                "headers": ["#", "原因"],
+                "rows": [[str(i), text] for i, text in enumerate(prior["unquantified"], start=1)],
+            })
+    for offset, table in enumerate(settlement_tables):
+        table["n"] = first_table + offset
+    first_table += len(settlement_tables)
+
+    tables = settlement_tables + [
         {
             "n": first_table,
             "title": f"FY{years[0]}–FY{years[-1]} 全年调整后摊薄 EPS 指引的四个版本与实际（US$/股）",
@@ -955,8 +1282,10 @@ def build_payload(staging: dict) -> dict:
     notes = [
         "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
         "穆迪为自然年财年（12 月 31 日结束），本页季度标注与公司口径一致，无需换算。",
-        "本页最需要说明的一条：穆迪<b>从不给下一季度的数字指引</b>，它给的是全年指引并在当年逐季修订。"
-        "因此本页第一节结算的对象是财年而不是季度；末次指引落笔时全年已经过了四分之三，"
+        "本页最需要说明的一条：穆迪的业绩 8-K 里<b>只有全年指引表</b>，并在当年逐季修订；下一季度的数字"
+        "只在个别电话会上口头给过（例如 2025 年 2 月那场给 Q1、2026 年 4 月那场给 Q2 的调整后 EPS 区间），"
+        "业绩 8-K 里没有，本页不发布也不结算。本页此前写的是「从不给下一季度的数字指引」，那是错的。"
+        "因此第一节后半结算的对象是财年而不是季度；末次指引落笔时全年已经过了四分之三，"
         "所以「跌破得少」这件事本身的份量，远小于同一句话出现在按季度指引的公司身上。"
         + ("另外，本页此前把 FY2018 排除在记录之外、理由写的是「只有十月一个 vintage」，"
            f"那句话是错的（四版齐全），而那一年正是{cn_count(n_done)}年里唯一跌破末次指引下限的一年。"
@@ -1009,7 +1338,7 @@ def build_payload(staging: dict) -> dict:
             f"收入 US${seg_rev[-1]:,.0f}M、同比 "
             f"{signed(pct_change(seg_rev[-1], seg_rev[-5]))}，"
             f"调整后营业利润率 {seg['adj_operating_margin_pct'][-1]:.1f}%。"
-            "但本页真正的对象不是这个季度 —— 穆迪不给季度指引，它给的是全年指引并逐季修订。"
+            "穆迪的业绩 8-K 只给全年指引并逐季修订："
             f"{n_done} 个已完结年度里，实际值相对末次（10 月）指引"
             f"高于上限 {len(facts['final_above'])} 次、落在区间内 {len(facts['final_inside'])} 次、"
             f"跌破下限 {len(final_below)} 次；"
@@ -1034,11 +1363,15 @@ def build_payload(staging: dict) -> dict:
         "sections": [
             {
                 "id": "settled",
-                "title": "一、上季兑现了吗",
+                "title": "一、上季跟踪指标兑现了吗",
                 "description": plain_text(
-                    "这一节和本站其他几页结算的东西不是同一类。穆迪不给下一季度的数字区间，"
-                    "它在每份业绩 8-K 里给一张全年指引表，然后在当年的后三期各更新一次。"
-                    "所以这里结算的是「年」而不是「季」，而真正的变量是画线时离年末还有多远。"
+                    (f"先结算上季（{closure['set_in']}）本站季报分析留下的 {len(closure['items'])} 条待验证问题"
+                     if closure else "")
+                    + (f"与 {len(prior['dispositions'])} 行关键观察指标" if prior else "")
+                    + ("，再看公司自己的指引记录。" if closure or prior else "本季没有上季留下的问题与阈值要结算，只看公司自己的指引记录。")
+                    + "穆迪的业绩 8-K 只印全年指引表，在当年后三期各更新一次；下一季度的数字只在个别电话会上"
+                    "口头出现过，业绩 8-K 里没有，本页不结算。所以后半节结算的是「年」而不是「季」，"
+                    "真正的变量是画线时离年末还有多远。"
                 ),
                 "exhibits": settled_ex,
             },

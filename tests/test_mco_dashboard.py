@@ -547,7 +547,10 @@ def own_text(payload: dict) -> str:
     return json.dumps(own, ensure_ascii=False)
 
 
-QUARTER_BLOCKS = ("quarter_figures", "current_guidance", "guidance_bridges", "quarter_story")
+QUARTER_BLOCKS = ("quarter_figures", "current_guidance", "guidance_bridges", "quarter_story",
+                  "followup_closure", "prior_kpi_settlement")
+# Quarterly blocks that carry their own `periods` and must move with segment_quarterly.
+ALIGNED_BLOCKS = ("quarterly_cash", "ma_kpi_quarterly")
 PLACEHOLDER = r"\{[a-z_]+\}"
 
 
@@ -623,14 +626,126 @@ class McoChecksTest(unittest.TestCase):
         self.assertIn(f"US${c['guidance_current']['adj_diluted_eps_usd'][0]:.2f}", bridge["title"])
 
 
+class McoFourPartTest(unittest.TestCase):
+    """The four sections say what their titles promise, and say what the analyses say.
+
+    The owner's analyses live outside this repo, so what they concluded is
+    written into these tests as literals -- the report is the fact being
+    checked here, not a filing. What this quarter's filings printed is read
+    from the series, never from these literals.
+    """
+
+    SECTIONS = [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+                ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")]
+    # 2026-07-22《MCO Q2 2026 vs Q1 2026 Analysis》第 0 节，「验证结果」栏逐条数：
+    # #6 已验证；#1 #3 #4 #7 #8 #9 #12 部分验证；#5「Q1峰值判断被证伪」；#2 #10 仍未披露；
+    # #11「原阈值触发警示，但指标设计失效」。
+    CLOSURE = [("已验证", 1), ("部分验证", 7), ("被证伪", 1), ("仍未披露", 2), ("指标设计失效", 1)]
+    # 2026-04-23《MCO Q1 2026 vs Q4 2025 Analysis》「七.7 关键观察指标」：ARR ≥ 8.5%、有机 ≥ 8%；
+    # Q2 同比为负即警示；Q2 回购 ≥ $1.2B / < $700M。
+    PRIOR = {"ma_arr": 8.5, "ma_organic": 8.0, "buyback_add": 1200.0, "buyback_warn": 700.0}
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.s = json.loads(STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = build_payload(cls.s)
+        cls.sections = {section["id"]: section for section in cls.payload["sections"]}
+
+    def test_the_four_sections_carry_the_four_titles(self) -> None:
+        self.assertEqual([(s["id"], s["title"]) for s in self.payload["sections"]], self.SECTIONS)
+        for section in self.payload["sections"]:
+            self.assertTrue(section["exhibits"], section["id"])
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列", self.payload["notes"][0])
+
+    def test_the_closure_is_the_q2_analysis_section_zero(self) -> None:
+        closure = self.s["followup_closure"]
+        self.assertEqual(closure["set_in"], self.s["segment_quarterly"]["periods"][-2])
+        chart = self.sections["settled"]["exhibits"][0]
+        self.assertEqual(list(zip(chart["xlabels"], chart["values"])), self.CLOSURE)
+        total = sum(count for _, count in self.CLOSURE)
+        self.assertEqual(len(closure["items"]), total)
+        self.assertTrue(chart["title"].startswith(f"上季 {total} 条待验证问题："), chart["title"])
+        for label, count in self.CLOSURE:
+            self.assertIn(f"{count} 条{label}", chart["title"])
+
+    def test_a_verdict_the_chart_does_not_know_stops_the_build(self) -> None:
+        odd = copy.deepcopy(self.s)
+        odd["followup_closure"]["items"][0]["verdict"] = "大致验证"
+        with self.assertRaisesRegex(ValueError, "verdicts"):
+            build_payload(odd)
+
+    def test_the_prior_thresholds_are_the_q1_analysis_section_eight(self) -> None:
+        prior = self.s["prior_kpi_settlement"]
+        self.assertEqual(prior["set_in"], self.s["segment_quarterly"]["periods"][-2])
+        typed = {entry["id"]: entry.get("threshold") for entry in prior["quantified"]}
+        for key, threshold in self.PRIOR.items():
+            self.assertEqual(typed[key], threshold, key)
+        rule = next(entry for entry in prior["quantified"] if entry["id"] == "mis_yoy")
+        self.assertEqual(rule["threshold_rule"], "same_quarter_last_year")
+        self.assertTrue(all(entry["direction"] == "up" for entry in prior["quantified"]))
+        self.assertFalse(any("actual" in entry for entry in prior["quantified"]))
+        self.assertEqual(len(prior["dispositions"]), 5)
+
+    def test_the_prior_settlement_is_read_from_the_series(self) -> None:
+        """Recomputed here along a second route: from the arrays, not the builder."""
+        seg, cash, kpi = self.s["segment_quarterly"], self.s["quarterly_cash"], self.s["ma_kpi_quarterly"]
+        actual = {"ma_arr": kpi["arr_growth_pct"][-1], "ma_organic": kpi["organic_cc_revenue_growth_pct"][-1],
+                  "buyback_add": cash["share_repurchases_usd_m"][-1],
+                  "buyback_warn": cash["share_repurchases_usd_m"][-1]}
+        threshold = dict(self.PRIOR)
+        actual["mis_yoy"] = seg["mis_revenue_usd_m"][-1]
+        threshold["mis_yoy"] = seg["mis_revenue_usd_m"][-5]
+        order = [entry["id"] for entry in self.s["prior_kpi_settlement"]["quantified"]]
+        expected = [round((actual[key] - threshold[key]) / threshold[key] * 100, 1) for key in order]
+        overview = self.sections["settled"]["exhibits"][1]
+        self.assertEqual(overview["kind"], "diverging_bars")
+        self.assertEqual(overview["values"], expected)
+        held = sum(1 for value in expected if value >= 0)
+        self.assertTrue(overview["title"].startswith(
+            f"上季 {len(order)} 条量化阈值：{held} 条守住、{len(order) - held} 条被击穿"), overview["title"])
+
+    def test_the_rounding_that_decides_a_threshold_is_named(self) -> None:
+        """MA organic constant-currency revenue printed 8% against an 8% bar; its own
+        printed amounts give 7.98%. The page settles on the company's figure and says so."""
+        figures = self.s["quarter_figures"]
+        now, before = figures["ma_organic_cc_revenue_usd_m"]
+        exact = (now / before - 1) * 100
+        printed = self.s["ma_kpi_quarterly"]["organic_cc_revenue_growth_pct"][-1]
+        self.assertEqual(round(exact), printed)
+        overview = self.sections["settled"]["exhibits"][1]
+        if exact < self.PRIOR["ma_organic"] <= printed:
+            self.assertIn(f"算是 {exact:.2f}%——<b>只在整数精度上达到</b>", overview["note"])
+
+    def test_the_quarterly_cash_legs_sum_to_the_releases_half_year(self) -> None:
+        """Table 3 of the Q2 2026 release: six months ended June 30, 2026."""
+        cash = self.s["quarterly_cash"]
+        self.assertEqual(cash["periods"], self.s["segment_quarterly"]["periods"])
+        half = {key: round(sum(cash[key][-2:])) for key in
+                ("operating_cash_flow_usd_m", "capital_additions_usd_m", "share_repurchases_usd_m",
+                 "dividends_paid_usd_m")}
+        self.assertEqual(half, {"operating_cash_flow_usd_m": 1718, "capital_additions_usd_m": 186,
+                                "share_repurchases_usd_m": 2165, "dividends_paid_usd_m": 365})
+
+    def test_the_page_no_longer_says_moodys_never_guides_a_quarter(self) -> None:
+        """Heuland on the Q1 2026 call: 「For the second quarter, we expect … adjusted diluted
+        EPS of approximately $4.15 to $4.30」. The quarter's numbers are call-only, not absent."""
+        correction = "本页此前写的是「从不给下一季度的数字指引」"
+        text = own_text(self.payload)
+        self.assertIn(correction, text)
+        for phrase in ("从不给下一季度的数字指引", "穆迪不给季度指引", "穆迪不给下一季度的数字区间",
+                       "本页真正的对象不是这个季度"):
+            self.assertNotIn(phrase, text.replace(correction, ""))
+
+
 def rolled_back(staging: dict) -> dict:
     """The series one quarter earlier: the segment arrays lose their last cell,
     the open year loses its latest vintage, and the quarter's own blocks go."""
     s = copy.deepcopy(staging)
     seg = s["segment_quarterly"]
-    for key, values in seg.items():
-        if isinstance(values, list) and len(values) == len(staging["segment_quarterly"]["periods"]):
-            seg[key] = values[:-1]
+    for block in [seg] + [s[key] for key in ALIGNED_BLOCKS]:
+        for key, values in block.items():
+            if isinstance(values, list) and len(values) == len(staging["segment_quarterly"]["periods"]):
+                block[key] = values[:-1]
     g = s["annual_guidance_history"]
     year = max(g["fiscal_years"])
     i = g["fiscal_years"].index(year)
@@ -662,15 +777,16 @@ def rolled_forward(staging: dict) -> dict:
     label = f"Q{quarter} {year}"
     ends = {1: "03-31", 2: "06-30", 3: "09-30", 4: "12-31"}
     n = len(seg["periods"])
-    for key, values in seg.items():
-        if not isinstance(values, list) or len(values) != n:
-            continue
-        if key == "periods":
-            values.append(label)
-        elif key == "period_ends":
-            values.append(f"{year}-{ends[quarter]}")
-        else:
-            values.append(values[-1] * 1.01)
+    for block in [seg] + [s[key] for key in ALIGNED_BLOCKS]:
+        for key, values in block.items():
+            if not isinstance(values, list) or len(values) != n:
+                continue
+            if key == "periods":
+                values.append(label)
+            elif key == "period_ends":
+                values.append(f"{year}-{ends[quarter]}")
+            else:
+                values.append(None if values[-1] is None else values[-1] * 1.01)
     g = s["annual_guidance_history"]
     open_year = max(g["fiscal_years"])
     i = g["fiscal_years"].index(open_year)

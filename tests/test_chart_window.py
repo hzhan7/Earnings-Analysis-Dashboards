@@ -173,7 +173,7 @@ def _tsm_advanced_count() -> dict:
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
     "amd": 16, "amzn": 13, "arm": 0, "asml": 16, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
-    "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
+    "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 9, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
     "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
@@ -510,17 +510,32 @@ CONVERTED = {
                         "annually, not by quarter.",
     },
     "mco": {
-        # All five are the same record: Moody's began publishing a full-year
-        # adjusted-EPS range with the FY2019 outlook. The axis is fiscal years,
-        # not quarters, and there is nothing earlier to score.
-        "调整后摊薄 EPS（对末次指引）": "not fetched yet, not absent: Moody's 2018-02-09 release "
-                          "guides FY2018 diluted EPS at $7.20-$7.40 and adjusted "
-                          "diluted EPS at $7.65-$7.85. This file's record starts "
-                          "FY2019 because that is where the extraction started.",
+        # All five are the same record, and it starts at FY2018 -- the FY2018
+        # vintages are on the page. Why not earlier is set out beside FLOOR_KIND
+        # below: FY2015 has no adjusted-EPS guidance, and the non-GAAP definition
+        # was broadened with the FY2017 disclosures, so no earlier guide-versus-
+        # actual pair sits on the definition the later years use.
+        "调整后摊薄 EPS（对末次指引）": "the comparable guide-versus-actual record starts FY2018: "
+                          "FY2015 was guided on GAAP EPS only and FY2017's disclosures "
+                          "changed the adjusted definition (see the FLOOR_KIND note).",
         "调整后摊薄 EPS（对初始指引）": "same record, read at its first vintage.",
         "调整后摊薄 EPS（2 月那版）": "the deviation view of the February vintage.",
         "调整后摊薄 EPS（10 月那版）": "the deviation view of the October vintage.",
         "每一年的指引中值怎么被改到实际值上": "the same record again, as a revision path.",
+        # Checked against the pre-floor filings: the FY2021 10-K has no ARR and no
+        # constant-currency measure at all; the Q4 2021 release has no ARR; the
+        # Q1 2022 release and 10-Q are the first to print it (Organic MA ARR +9%).
+        # The same chart title prefix is used in section one (last quarter's
+        # 8.5% bar) and section three (this quarter's 8% / 9% bars).
+        "MA ARR 同比": "Moody's first printed ARR in its Q1 2022 release (2022-05-02); the "
+                     "FY2021 10-K and the Q4 2021 release carry no ARR figure.",
+        # The Q1 2022 release prints organic MA revenue growth with the FX effect
+        # left in ("Foreign currency translation unfavorably impacted both total and
+        # organic MA revenue by 2%"); the first organic constant-currency figure is
+        # Q2 2022's. 2023-2024 print constant currency only -- drawn as its own line.
+        "MA 有机固定汇率": "the first organic constant-currency MA growth rate is in the Q2 2022 "
+                     "release; Q1 2022 printed organic growth with FX included and the "
+                     "FY2021 10-K has no constant-currency measure.",
     },
     "ma": {
         # One floor, five charts. Mastercard's revenue disaggregation -- the four
@@ -1130,6 +1145,8 @@ FLOOR_KIND = {
         '调整后摊薄 EPS（2 月那版）': 'disclosure',
         '调整后摊薄 EPS（10 月那版）': 'disclosure',
         '每一年的指引中值怎么被改到实际值上': 'disclosure',
+        'MA ARR 同比': 'disclosure',
+        'MA 有机固定汇率': 'disclosure',
     },
     'meta': {
         '收入指引兑现': 'disclosure',
@@ -1391,7 +1408,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 160)
+        self.assertEqual(settled.count("disclosure"), 162)
         self.assertEqual(settled.count("design"), 40)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
