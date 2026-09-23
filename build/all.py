@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amd, amzn, arm, avgo, axp, bc, cboe, cdns, cfr, cme, cost, googl, hkex, ibkr, ker, ma, mc, mco,
+    amd, amzn, arm, avgo, axp, bc, cboe, cdns, cfr, cme, cost, googl, hkex, ibkr, intc, ker, ma, mc, mco,
     meta, msci, msft, mu, ndaq, nke, nvda, pm, race, rms, samsung, schw,
     skhynix, snps,
     spgi, tjx, tsm, v, zgn,
@@ -38,6 +38,7 @@ MODULES = {
     "googl": googl,
     "hkex": hkex,
     "ibkr": ibkr,
+    "intc": intc,
     "ker": ker,
     "ma": ma,
     "mc": mc,
@@ -226,6 +227,17 @@ ENTRIES = [
         "cadence_label": "自然年季度；完整披露",
         "search_text": ("ibkr interactive brokers 盈透证券 券商 经纪 交易 保证金 "
                         "净息差 nim 客户权益 darts 期权 期货 清算 托管 up-c"),
+    },
+    {
+        "slug": "intc",
+        "ticker": "INTC",
+        "name": "Intel Corporation",
+        "aliases": ["Intel", "英特尔", "Intel Foundry"],
+        "group": "semiconductor_ai",
+        "cadence_label": "自然年季度；52/53 周财年，季末落在自然季度末前后",
+        "search_text": ("intc intel 英特尔 半导体 cpu 处理器 xeon 至强 core 酷睿 数据中心 dcai ccpg ccg "
+                        "代工 foundry 18a 14a 晶圆厂 资本开支 scip 合伙人 altera mobileye "
+                        "chips 法案 托管股份 escrowed shares 美国商务部 净债务 指引"),
     },
     {
         "slug": "ker",

@@ -5,7 +5,7 @@ chart-led research pages. Reviewed pages currently cover Advanced Micro Devices,
 American Express, Arm Holdings, Broadcom, Brunello Cucinelli, Cadence, Cboe Global Markets,
 Charles Schwab, CME Group, Costco, Ermenegildo Zegna, Ferrari,
 Hermès International,
-Hong Kong Exchanges and Clearing, Interactive Brokers, Kering, LVMH, Mastercard,
+Hong Kong Exchanges and Clearing, Intel, Interactive Brokers, Kering, LVMH, Mastercard,
 Meta, Micron, Microsoft, Moody's, MSCI, Nasdaq, NIKE, NVIDIA,
 Philip Morris International, Richemont, S&P Global,
 Samsung Electronics, SK hynix, Synopsys, TJX, TSMC and Visa.
@@ -44,6 +44,7 @@ Open `http://127.0.0.1:8765/`, then choose:
 - `http://127.0.0.1:8765/googl/`
 - `http://127.0.0.1:8765/hkex/`
 - `http://127.0.0.1:8765/ibkr/`
+- `http://127.0.0.1:8765/intc/`
 - `http://127.0.0.1:8765/ker/`
 - `http://127.0.0.1:8765/ma/`
 - `http://127.0.0.1:8765/mc/`
@@ -202,6 +203,11 @@ Charts are ordered the way the note is actually used:
    capital intensity a fab-lite designer actually runs on, cash conversion, and
    the post-VMware deleveraging path; TSMC gets node migration, platform mix and
    working capital;
+   Intel gets every quarterly outlook since the one for 2016Q1, each scored only
+   on the metric actually guided that quarter, ten years of margins with its non-GAAP
+   redefinitions drawn as the restatements they are, Intel Foundry with its 2025
+   segment restatement drawn as a break rather than through, and the capex,
+   partner funding, net debt and share count that are paying for the turnaround;
    Mastercard gets its two revenue legs, the operating margin on the same basis
    the company adjusts to, the leverage its buyback now runs on, and the price
    it paid for its own stock quarter by quarter; Visa
