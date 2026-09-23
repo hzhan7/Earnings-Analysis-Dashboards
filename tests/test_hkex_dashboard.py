@@ -809,6 +809,88 @@ class HkexChecksTest(unittest.TestCase):
                 self.assertAlmostEqual(entry["current"], current[entry["metric"]], places=2)
 
 
+SECTIONS = [("settled", "一、上季跟踪指标兑现了吗"),
+            ("quarter_highlights", "二、本季重点"),
+            ("next_quarter", "三、下季要跟踪什么"),
+            ("routine", "四、长期常规跟踪")]
+
+# The owner's Q2 2026 analysis, section 0 ("上季遗留问题回答"): six follow-up
+# questions left by the Q1 2026 analysis, each given a verdict. These are the
+# report's facts, typed from the report -- not filing figures -- so they are
+# literals here and the page must reproduce them.
+REPORT_FOLLOWUPS = 6
+REPORT_CLOSURE = {"已验证": 4, "被证伪": 0, "仍未披露": 2}
+REPORT_CLOSURE_OPEN = [4, 6]      # minimum-spread Phase 2; CMU OmniClear / FIC revenue
+
+
+class HkexFourSectionTest(unittest.TestCase):
+    """The page runs in the site's four sections, and section one settles what
+    last quarter's analysis left open -- counted from the block, never typed."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.staging = json.loads(hkex.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = hkex.build_payload(cls.staging)
+        cls.sections = cls.payload["sections"]
+
+    def test_the_page_runs_in_the_four_sections(self) -> None:
+        self.assertEqual([(s["id"], s["title"]) for s in self.sections], SECTIONS)
+        for section in self.sections:
+            self.assertTrue(section["exhibits"], section["id"])
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列",
+                      self.payload["notes"][0])
+        # the old self-description must not survive anywhere on the page
+        self.assertNotIn("披露结构 → 本季重点", published_text(self.payload))
+
+    def test_section_one_says_why_there_is_no_guidance_record(self) -> None:
+        """(c) has nothing to settle: the company publishes no financial guidance."""
+        description = self.sections[0]["description"]
+        self.assertIn("不发布任何财务指引", description)
+        census = self.staging["guidance_census"]
+        self.assertIn(f"{census['documents']} 份业绩公告", description)
+        self.assertIn(f"{census['forward_statements_with_a_number']} 处", description)
+
+    def test_the_closure_is_the_reports_section_zero(self) -> None:
+        closure = self.staging["followup_closure"]
+        self.assertEqual(len(closure["items"]), REPORT_FOLLOWUPS)
+        counted = {label: sum(1 for item in closure["items"] if item["verdict"] == label)
+                   for label in closure["labels"]}
+        self.assertEqual(counted, REPORT_CLOSURE)
+        self.assertEqual([item["n"] for item in closure["items"] if item["verdict"] == "仍未披露"],
+                         REPORT_CLOSURE_OPEN)
+        chart = self.sections[0]["exhibits"][0]
+        self.assertEqual(chart["kind"], "bars_labeled")
+        self.assertEqual(chart["title"],
+                         "上季 6 条待验证问题：4 条已验证、2 条仍未披露，没有一条被证伪")
+        # a verdict nobody received is named in the title, never drawn as an empty column
+        self.assertEqual(dict(zip(chart["xlabels"], chart["values"])), {"已验证": 4, "仍未披露": 2})
+        self.assertNotIn(0, chart["values"])
+
+    def test_the_closure_title_is_counted_from_the_items(self) -> None:
+        changed = copy.deepcopy(self.staging)
+        changed["followup_closure"]["items"][3]["verdict"] = "被证伪"
+        chart = hkex.build_payload(changed)["sections"][0]["exhibits"][0]
+        self.assertEqual(chart["title"], "上季 6 条待验证问题：4 条已验证、1 条被证伪、1 条仍未披露")
+        self.assertEqual(chart["values"], [4, 1, 1])
+
+    def test_a_verdict_outside_the_labels_stops_the_build(self) -> None:
+        changed = copy.deepcopy(self.staging)
+        changed["followup_closure"]["items"][0]["verdict"] = "部分验证"
+        with self.assertRaisesRegex(ValueError, "followup_closure"):
+            hkex.build_payload(changed)
+
+    def test_every_built_chart_lands_in_exactly_one_section(self) -> None:
+        refs = [ex.get("ref") for section in self.sections for ex in section["exhibits"]]
+        self.assertEqual(len(refs), len(set(refs)))
+        numbers = [ex["n"] for section in self.sections for ex in section["exhibits"]]
+        self.assertEqual(numbers, list(range(1, len(numbers) + 1)))
+        # captions point at charts by number, and every number they name exists
+        text = published_text(self.payload)
+        self.assertNotRegex(text, r"\{EX_[A-Z]+\}")
+        for match in re.finditer(r"Exhibit (\d+)", text):
+            self.assertLessEqual(int(match.group(1)), len(numbers))
+
+
 class HkexRollTest(unittest.TestCase):
     """A roll edits the series and nothing else: the one-quarter blocks and the
     sentences about the record are held to what the series says."""
@@ -832,7 +914,7 @@ class HkexRollTest(unittest.TestCase):
                 self.assertEqual(claim in after, not present_before)
 
     def test_quarter_blocks_refuse_to_publish_under_another_quarter(self) -> None:
-        for key in ("next_kpi", "quarter_context"):
+        for key in ("next_kpi", "quarter_context", "followup_closure"):
             with self.subTest(block=key):
                 with self.assertRaisesRegex(ValueError, "stamped"):
                     self.rebuilt(lambda s, key=key: s[key].__setitem__("period", "Q1 1999"))
@@ -845,10 +927,12 @@ class HkexRollTest(unittest.TestCase):
         def strip(s):
             del s["next_kpi"]
             del s["quarter_context"]
+            del s["followup_closure"]
         payload = self.rebuilt(strip)
         self.assertEqual(len(payload["tables"]), len(self.payload["tables"]) - 1)
         text = published_text(payload)
-        for gone in ("条本地阈值离触发还有多远", "公司在同一份公告里印的是", "条本地阈值的原始单位"):
+        for gone in ("条本地阈值离触发还有多远", "公司在同一份公告里印的是", "条本地阈值的原始单位",
+                     "条待验证问题"):
             with self.subTest(gone=gone):
                 self.assertIn(gone, self.text)
                 self.assertNotIn(gone, text)

@@ -64,8 +64,13 @@ Published figures are company-reported or transparent arithmetic. The company
 publishes no financial guidance of any kind -- across the forty-two
 announcements, twenty-four forward statements carry a number and not one of
 them is a revenue, profit, expense or capital-expenditure figure -- so this
-page has no delivery chart, and the thresholds in section one are local
-research settings rather than anything the company said.
+page has no delivery chart, and the thresholds in section three are research
+settings rather than anything the company said.
+
+The page runs in the four sections every page on this site uses: what last
+quarter's analysis left open and how it settled, this quarter, what to watch
+next quarter, and the long-run series. The disclosure-structure charts above
+are long-run series about this company's calendar, so they sit in the fourth.
 """
 
 from __future__ import annotations
@@ -335,6 +340,14 @@ FEE_LINES = ("trading_fees", "clearing_fees", "listing_fees", "depository_fees",
 
 QUARTER_END = {"1": "-03-31", "2": "-06-30", "3": "-09-30", "4": "-12-31"}
 
+# Which built chart goes to which of the four sections. Section one is built
+# from its own stamped blocks; section three from `next_kpi`.
+HIGHLIGHT_REFS = ("EX_ROI", "EX_PROFIT", "EX_REBATE")
+ROUTINE_REFS = ("EX_LAG", "EX_FEESPLIT", "EX_CHECK",
+                "EX_MARGIN", "EX_MIX", "EX_NONTRADE", "EX_OPEX",
+                "EX_NETINV", "EX_GROSSNET",
+                "EX_ADT", "EX_SLOPE", "EX_ADV", "EX_CONNECT", "EX_ANNUAL")
+
 
 def lag_days(quarter: str, published: str) -> int:
     """Calendar days from a quarter's end to a publication date.
@@ -424,6 +437,97 @@ def reconcile_against_printed(staging: dict) -> dict:
     }
 
 
+def resolve_refs(exhibits: list[dict]) -> list[dict]:
+    """Replace ``{EX_…}`` placeholders in captions with the numbers assigned.
+
+    The captions on this page used to point at their neighbours by position
+    ("下面第一张", "第三节第一张", "上一张"). Regrouping the page into four
+    sections moved almost every chart, and a positional pointer does not move
+    with the chart it names. The ``ref`` key stays on the exhibit so a test can
+    find a chart without knowing its number.
+    """
+    numbers = {exhibit["ref"]: exhibit["n"] for exhibit in exhibits if exhibit.get("ref")}
+    for exhibit in exhibits:
+        for field in ("title", "note", "src_extra"):
+            text = exhibit.get(field)
+            if not isinstance(text, str) or "{EX_" not in text:
+                continue
+            for ref, number in numbers.items():
+                text = text.replace("{" + ref + "}", str(number))
+            if "{EX_" in text:
+                raise ValueError(f"exhibit {exhibit.get('ref')} points at a chart that is not "
+                                 f"on the page: {text[text.index('{EX_'):][:24]}")
+            exhibit[field] = text
+    return exhibits
+
+
+# ── section one (a): last quarter's open questions, closed or not ────────────
+
+def closure_counts(closure: dict) -> dict[str, int]:
+    """Verdicts counted from the items, never typed beside them.
+
+    The block lists each of last quarter's questions with the verdict the
+    current analysis gave it. A count stored next to the list could disagree
+    with the list; counting the list cannot.
+    """
+    counts = {label: 0 for label in closure["labels"]}
+    for item in closure["items"]:
+        if item["verdict"] not in counts:
+            raise ValueError(f"followup_closure item {item['n']} has verdict "
+                             f"{item['verdict']!r}, which is not one of {closure['labels']}")
+        counts[item["verdict"]] += 1
+    numbers = [item["n"] for item in closure["items"]]
+    if numbers != list(range(1, len(numbers) + 1)):
+        raise ValueError(f"followup_closure items must be numbered 1..n in order, got {numbers}")
+    return counts
+
+
+def closure_exhibit(closure: dict) -> dict:
+    counts = closure_counts(closure)
+    total = len(closure["items"])
+    drawn = [label for label in closure["labels"] if counts[label]]
+    absent = [label for label in closure["labels"] if not counts[label]]
+    by_verdict = {label: [item for item in closure["items"] if item["verdict"] == label]
+                  for label in closure["labels"]}
+    verified = by_verdict.get("已验证", [])
+    # Verified is not the same as "went the way last quarter hoped": the
+    # analysis marks the one whose answer came back worse, and the note says so.
+    worse = [item for item in verified if item.get("against_prior") == "worse"]
+    open_items = by_verdict.get("仍未披露", [])
+    note = ""
+    if verified:
+        note += (f"已验证的{cn_count(len(verified))}条是第 "
+                 + "、".join(str(item["n"]) for item in verified) + " 条"
+                 + ("" if not worse else
+                    "；其中" + "、".join(f"第 {item['n']} 条（{item['topic']}）" for item in worse)
+                    + "的答案比上季预期差：" + "；".join(item["reading"] for item in worse))
+                 + "。")
+    if open_items:
+        note += (f"仍未披露的{cn_count(len(open_items))}条："
+                 + "；".join(f"第 {item['n']} 条（{item['topic']}）—— {item['reading']}"
+                            for item in open_items)
+                 + "。")
+    return {
+        "ref": "EX_CLOSURE",
+        "kind": "bars_labeled",
+        "title": (f"上季 {total} 条待验证问题："
+                  + "、".join(f"{counts[label]} 条{label}" for label in drawn)
+                  + ("，" + "、".join(f"没有一条{label}" for label in absent) if absent else "")),
+        # A verdict nobody received is named in the title, not drawn as an
+        # empty labelled column.
+        "xlabels": drawn,
+        "values": [counts[label] for label in drawn],
+        "legend": "问题条数",
+        "fmt": "f0",
+        "yfmt": "f0",
+        "label_fmt": "f0",
+        "ylab": "条",
+        "note": note,
+        "src_extra": ("问题清单出自上季本地分析稿文末的 Follow-up；逐条判定取自本季分析稿第 0 节，"
+                      "判定所依据的数字来自本季与上季的业绩公告。"),
+    }
+
+
 # ── section one: what is printed, and what this page had to work out ─────────
 
 def disclosure_section(staging: dict, check: dict, recon: dict,
@@ -460,8 +564,10 @@ def disclosure_section(staging: dict, check: dict, recon: dict,
             f"{len(derived)} 格是 H1 减 Q1、全年减前九个月得到的。"
             "<b>但公司自己也把这些季度印出来过</b> —— 每份年报里的"
             "「Analysis of Results by Quarter」按列印全四个季度，只是要晚得多。"
-            # 「下面两张图」: the reconciliation is the third chart below, not the second.
-            "下面第一张与第三张分别是「晚多久」和「本页的减法对不对」。"),
+            # Named by number, not by position: 「下面两张图」 was wrong once (the
+            # reconciliation was the third chart below), and after the page was
+            # regrouped into four sections neither chart sits below this one.
+            "Exhibit {EX_LAG} 与 Exhibit {EX_CHECK} 分别是「晚多久」和「本页的减法对不对」。"),
         "src_extra": (
             f"各季数字取自公司 {len(staging['announcements'])} 份业绩公告的简明综合损益表。"
             "解析后先用报表自身的算术核对：六项费用相加等于收入、加其他收入等于收入及其他收益、"
@@ -549,7 +655,7 @@ def disclosure_section(staging: dict, check: dict, recon: dict,
             f"{old_gaps[0]}–{old_gaps[-1]} 的全部双数季"
             + (f"，加上{pending_words(staging, recent_gaps)}" if recent_gaps else "")
             + "。"
-            "<b>本页第二节那张收入构成图里，这些季度的分项是本页减出来的。</b>"),
+            "<b>Exhibit {EX_MIX} 那张收入构成图里，这些季度的分项是本页减出来的。</b>"),
         "src_extra": (
             "「印过」的判据是该季六项费用收入全部出现在某一份文件的三个月列或年度季度表里；"
             "逐格记在 series 的 first_printed 里。"),
@@ -601,7 +707,6 @@ def disclosure_section(staging: dict, check: dict, recon: dict,
         f"{cn_count(len(entries))}条本地阈值离触发还有多远（公司不发布任何财务指引）",
         entries, "current",
         note=(
-            "<b>这一节没有兑现图，因为没有可兑现的东西。</b>"
             f"{staging['guidance_census']['documents']} 份公告里带数字的前瞻表述共 "
             f"{staging['guidance_census']['forward_statements_with_a_number']} 处，"
             "全部是产品上线时点、指数纳入、股息寄发日期与税务安全港措辞，"
@@ -613,6 +718,7 @@ def disclosure_section(staging: dict, check: dict, recon: dict,
             f"当前值取自 {announcement_label(display_period(quarters[-1]))[5:]}："
             + kpi.get("current_from", "")),
     )
+    headroom_card["ref"] = "EX_HEADROOM"
     return [revenue_bar, coverage, fee_view, reconcile, headroom_card], entries
 
 
@@ -711,7 +817,7 @@ def quarter_section(staging: dict, context: dict | None) -> list[dict]:
             "（交易费与结算交收费）占收入及其他收益的比例。"
             f"这一比例在窗口里在 {min(trading_share):.1f}% 与 {max(trading_share):.1f}% 之间，"
             f"本季 {trading_share[-1]:.1f}%。"
-            + ("<b>右轴画的是这一条而不是投资及其他收益的占比，理由在第三节第一张</b>："
+            + ("<b>右轴画的是这一条而不是投资及其他收益的占比，理由见 Exhibit {EX_NETINV}</b>："
                f"后者在 {quarters[worst]} 为负，而这一图型的右轴自零点起算，负值会被画到画布外。"
                if non_fee[worst] < 0 else "")
             + "右轴另显式设了 100% 的上界 —— 它默认封顶在 60，超过就同样落在画布外。"),
@@ -739,7 +845,7 @@ def quarter_section(staging: dict, context: dict | None) -> list[dict]:
             f"{min(tax_rate):.1f}% 到 {max(tax_rate):.1f}% 之间。"
             "香港利得税率 16.5%，本页窗口里的偏离主要来自英国子公司（LME）与"
             "各期的过往年度调整，2024 年起另有 OECD 支柱二的补足税。"
-            "双数季的溢利同样是减出来的，而它属于第一节那道对照覆盖到的科目 —— "
+            "双数季的溢利同样是减出来的，而它属于 Exhibit {EX_CHECK} 那道对照覆盖到的科目 —— "
             "公司季度表印出的除税前溢利、税项与股东应占溢利，与本页的减法逐格相同。"),
         "src_extra": "溢利、除税前溢利与税项逐期取自损益表；有效税率为本页自算。",
     }
@@ -846,12 +952,12 @@ def investment_section(staging: dict) -> list[dict]:
               f"{non_fee_share[worst]:.2f}%。</b>"
               + ("那一季公司报的是一笔净投资亏损，"
                  "集体投资计划的公允价值在 2020 年 3 月被打下去。" if quarters[worst] == "2020Q1" else "")
-              + "本页把这一条单独画成柱线图而不是画在上一节的收入构成图右轴上，"
+              + "本页把这一条单独画成柱线图而不是画在 Exhibit {EX_MIX} 那张收入构成图的右轴上，"
               "就是因为这一格：堆叠双轴图的右轴自零点起算，"
               f"一个 {minus_sign(f'{non_fee_share[worst]:.2f}')}% 的点会被静默画到画布之外，而图例照常显示它。"
               "柱线图的右轴按数据算，负值画得出来。")
              if non_fee[worst] < 0 else "")
-            + "这条线是季度频率能看到的全部 —— 它的毛额与返还额只在半年报上，下一张才有。"),
+            + "这条线是季度频率能看到的全部 —— 它的毛额与返还额只在半年报上，见 Exhibit {EX_REBATE}。"),
         "src_extra": (
             "投资及其他收益为「收入及其他收益 − 六项费用收入」，两个端点均取自损益表；"
             "它等于净投资收益加慈善基金捐款收入与杂项收入，"
@@ -1057,7 +1163,7 @@ def volume_section(staging: dict) -> list[dict]:
             "并且口径同时从「日均成交量」改成「计费日均手数」（剔除管理性交易）—— "
             "<b>不是同一个数换了单位，是换了一个数</b>，因此本页不把两代接在一起，"
             "这张图只画公司按季印出的那一段。"),
-        "src_extra": "三条量取自各期公告的市场统计表，读法同上一张（按字形磅值筛选上标）。",
+        "src_extra": "三条量取自各期公告的市场统计表，读法同 Exhibit {EX_ADT}（按字形磅值筛选上标）。",
     }
 
     connect = {
@@ -1196,7 +1302,7 @@ def audit_tables(staging: dict, entries: list[dict], check: dict,
     tables = [ledger, reconcile, census]
     if entries:
         tables.append(threshold_table(
-            first + len(tables), f"第一节{cn_count(len(entries))}条本地阈值的原始单位",
+            first + len(tables), f"第三板块{cn_count(len(entries))}条本地阈值的原始单位",
             entries, "current", "当前值"))
     tables.append(ai_capex_cycle_table(first + len(tables)))
     return tables
@@ -1231,13 +1337,28 @@ def build_payload(staging: dict) -> dict:
     period = display_period(staging["quarters"][-1])
     kpi = stamped_block(staging, "next_kpi", period)
     context = stamped_block(staging, "quarter_context", period)
+    closure = stamped_block(staging, "followup_closure", period)
     release = release_source(staging)
 
     disclosure_ex, entries = disclosure_section(staging, check, recon, kpi)
     quarter_ex = quarter_section(staging, context)
     investment_ex = investment_section(staging)
     volume_ex = volume_section(staging)
-    exhibits = number_exhibits(disclosure_ex + quarter_ex + investment_ex + volume_ex, start=1)
+    built = {exhibit["ref"]: exhibit for exhibit in
+             disclosure_ex + quarter_ex + investment_ex + volume_ex}
+    # Four sections, in the order every page on this site uses. Each list names
+    # its charts by ref; the check below refuses a chart that was built and not
+    # placed, which is how a chart silently drops off a regrouped page.
+    settled_ex = [closure_exhibit(closure)] if closure else []
+    highlight_ex = [built[ref] for ref in HIGHLIGHT_REFS]
+    next_ex = [built["EX_HEADROOM"]] if "EX_HEADROOM" in built else []
+    routine_ex = [built[ref] for ref in ROUTINE_REFS]
+    placed = [exhibit["ref"] for exhibit in highlight_ex + next_ex + routine_ex]
+    if sorted(placed) != sorted(built):
+        raise ValueError(f"charts built but not placed in a section: {sorted(set(built) - set(placed))}; "
+                         f"placed twice: {sorted(r for r in placed if placed.count(r) > 1)}")
+    exhibits = resolve_refs(number_exhibits(settled_ex + highlight_ex + next_ex + routine_ex, start=1))
+    number = {exhibit["ref"]: exhibit["n"] for exhibit in exhibits if exhibit.get("ref")}
     tables = audit_tables(staging, entries, check, recon, len(exhibits) + 1)
 
     latest = latest_block(staging, period=period)
@@ -1331,42 +1452,43 @@ def build_payload(staging: dict) -> dict:
         "summary": {"blocks": []},
         "guidance": None,
         "sections": [
-            {"id": "disclosure", "title": "一、每个季度都印了，等待却差一个数量级",
+            {"id": "settled", "title": "一、上季跟踪指标兑现了吗",
              "description": (
-                 "先说清楚这一页的每个数字是怎么来的，再说这个季度。"
-                 "港交所的第一季与第三季公告各印一张三个月的损益表，中期只印六个月、"
-                 "全年只印十二个月，所以本页的双数季是减出来的 —— "
-                 "但公司自己也把这些季度印出来过，在年报的季度表里，FY2016 起每年都有。"
-                 "差别不在印没印，在等多久：第二季在 2022 年之前要等八个半月。"
-                 "本节用那张年度季度表逐格检验本页的减法，"
-                 + ("并说明为什么这里没有兑现图 —— 这家公司不发布任何财务指引。" if kpi else
-                    "这家公司不发布任何财务指引，所以这里没有兑现图。")),
-             "exhibits": disclosure_ex},
-            {"id": "quarter", "title": "二、本季重点",
+                 "先结算上一季留下的东西。"
+                 + (f"上季分析稿留下的 {len(closure['items'])} 条待验证问题，本季分析稿逐条给了判定。"
+                    if closure else "")
+                 + "第三类「公司自己的指引兑现了没有」这里没有：港交所不发布任何财务指引 —— "
+                 f"{staging['guidance_census']['documents']} 份业绩公告里带数字的前瞻表述共 "
+                 f"{staging['guidance_census']['forward_statements_with_a_number']} 处，"
+                 "全部是产品上线时点、指数纳入、股息寄发日期与税务措辞，"
+                 "没有一处是收入、利润、费用或资本开支的数字，分析师演示材料里也没有。"),
+             "exhibits": settled_ex},
+            {"id": "quarter_highlights", "title": "二、本季重点",
              "description": (
-                 f"{cn_count(len(quarter_ex))}张图，都画在每一季都存在、口径十年没变过的线上：利润率、收入构成、"
-                 "溢利与税率、以及不随成交量走的那部分收入。"
-                 "收入构成那一张要记住第一节的结论 —— 它的柱子有"
-                 f"{cn_fraction(derived_total / len(quarters))}是本页算出来的。"),
-             "exhibits": quarter_ex},
-            {"id": "investment", "title": "三、投资收益是一道价差，一年只露两次",
+                 f"{cn_count(len(highlight_ex))}张图，都是这一季的读数：收入及其他收益与股东应占溢利，"
+                 "以及只在半年报上看得见的那道保证金投资收益价差。"
+                 "收入那一张的柱子有"
+                 f"{cn_fraction(derived_total / len(quarters))}是本页减出来的，来历见第四板块开头。"),
+             "exhibits": highlight_ex},
+            {"id": "next_quarter", "title": "三、下季要跟踪什么",
              "description": (
-                 "保证金投资收益的毛额与返还给结算参与者的利息只出现在中期与全年的损益表上，"
-                 "季度损益表只印一个净额。本节按半年频率画那道价差，"
-                 # 「两次与净额走出相反方向的时点」: the two stretches the last chart
-                 # tells are divergences in size, not in direction.
-                 "并给出毛额与净额分道扬镳的两段时间。"),
-             "exhibits": investment_ex},
-            {"id": "volume", "title": "四、成交量：能画的那一段，和画不了的那一段",
+                 "当前值离下季阈值还有多远，统一用「距阈值余量」口径，正值 = 仍在安全侧。"
+                 + ("这里的阈值是本地研究设定：公司不发布任何财务指引，没有可以对照的公司数字。"
+                    if entries else "")),
+             "exhibits": next_ex},
+            {"id": "routine", "title": "四、长期常规跟踪",
              "description": (
-                 "市场统计是每交易日的平均，因此第一节那道减法在这里用不了：一个六个月的平均"
-                 f"减一个三个月的平均不是第二季。季度市场统计只回到 {staging['kpi_quarters'][0]}，"
-                 "本节先画那一段，再用年度口径给一个更长的背景。"),
-             "exhibits": volume_ex},
+                 "港交所特有的长期序列。先是这一页每个数字的来历：第一、三季的损益表按季印出，"
+                 "第二、四季本页由半年与全年减出来 —— 公司自己也把它们印过，只是要晚得多，"
+                 "所以先画「等多久」、再画哪些收入分项至今只有本页的算术、再逐格检验本页的减法。"
+                 "然后是利润率、收入构成与开支，投资收益，最后是成交量："
+                 "市场统计是每交易日的平均，那道减法用不了，"
+                 f"季度成交数据只回到 {staging['kpi_quarters'][0]}，更长的背景用年度口径。"),
+             "exhibits": routine_ex},
         ],
         "tables": tables,
         "notes": [
-            "本页按「披露结构 → 本季重点 → 投资价差 → 成交量」四段排列，以图为主，"
+            "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，"
             "每张图下一到两句解释；支撑表格收在核对抽屉里。",
             "港交所为自然年财年（12 月 31 日结束），本页季度标注与公司口径一致，无需换算。"
             "记账货币为港元，本页所有金额单位为百万港元（HK$M），成交额为十亿港元（HK$bn）。",
@@ -1395,7 +1517,8 @@ def build_payload(staging: dict) -> dict:
             "不是「公司在本窗口内只重分类过一次」—— 比对只覆盖本页跟踪的那些行，"
             "覆盖不到的行有没有动过，本页没有读数，也就不作断言。",
             "季度损益表只印一个「净投资收益」，投资收益毛额与「支付予参与者的利息回赠」"
-            "只出现在中期与全年的损益表上。因此第三节按半年频率，"
+            f"只出现在中期与全年的损益表上。因此 Exhibit {number['EX_REBATE']} 与 "
+            f"Exhibit {number['EX_GROSSNET']} 按半年频率，"
             f"{len(staging['halves'])} 个半年里下半年由全年减上半年得到。"
             "把返还比例读成利率的函数是对的，但要注意它同时也是保证金规模与合约结构的函数。",
             "EBITDA 利润率本页统一用「EBITDA ÷ 收入及其他收益」自算。"
@@ -1406,15 +1529,15 @@ def build_payload(staging: dict) -> dict:
             "营业开支合计由「收入及其他收益 − EBITDA」倒推，不由明细行相加："
             "明细行的行数在窗口内变过三次（2018 年起信息技术开支独立成行、"
             "2020 年起慈善基金捐款独立成行），而两个端点的定义十年没变。"
-            "第二节那张图里的「其余营业开支」因此是一个残差，不是公司印出的科目。",
-            "市场统计（日均成交额、日均张数、计费日均手数）不能用第一节那道减法："
+            f"Exhibit {number['EX_OPEX']} 里的「其余营业开支」因此是一个残差，不是公司印出的科目。",
+            "市场统计（日均成交额、日均张数、计费日均手数）不能用损益表那道减法："
             "它们是每交易日的平均值，六个月的平均减三个月的平均不是第二季，"
             "而正确的还原需要各期的交易日数，公司不在公告里印它。"
             # 「公司自 2021Q1 起按季印出」: the company began printing them in
             # 2022, with one prior-year column that reaches back to 2021Q1 (the
             # volume section's first chart says so).
             "公司自 2022 年起在公告正文按季印出这些平均值，并带一个上年比较列，"
-            f"最早的离散季度因此是 {staging['kpi_quarters'][0]}，第四节的季度图从那里开始，"
+            f"最早的离散季度因此是 {staging['kpi_quarters'][0]}，第四板块的季度成交图从那里开始，"
             "更早的部分本页留空而不是补出来。",
             "市场统计不从 PDF 的文本层读取。公司用上标标注「新的季度／半年度纪录」，"
             "而纯文本导出会把上标并进数字本身：日均成交额 283.0 变成 283.04、"
@@ -1426,12 +1549,12 @@ def build_payload(staging: dict) -> dict:
             "LME 那一行在 2019 年发生过一次同时换单位又换定义的变化："
             "2018 年及以前印的是绝对手数的「日均成交量」，2019 年起印的是千手的"
             "「计费日均手数」（剔除管理性交易）。两代不是同一个数换了单位，"
-            "因此本页不把它们接成一条线，第四节只画公司按季印出的那一段。",
+            "因此本页不把它们接成一条线，第四板块只画公司按季印出的那一段。",
             "互联互通两条线的货币不同：北向以人民币计价、南向以港元计价，"
             "公司在同一张表里并排印出，本页照原样画，不做换算 —— "
             "换算需要选一个汇率口径而公司没有给。南向成交计入现货市场日均成交额，北向不计入。",
             "本页不发布评级、目标价、估值与任何券商共识。"
-            + (f"第一节的{cn_count(len(entries))}条阈值是本地研究设定，不是公司指引："
+            + (f"第三板块的{cn_count(len(entries))}条阈值是本地研究设定，不是公司指引："
                if entries else "本页没有可以兑现的公司指引：")
             + f"{staging['guidance_census']['documents']} 份公告里带数字的前瞻表述 "
             f"{staging['guidance_census']['forward_statements_with_a_number']} 处，"

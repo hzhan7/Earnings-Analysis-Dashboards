@@ -1642,9 +1642,10 @@ UNEXPLAINED_LONG = {
 # ("42 季里 39 季为正" licenses the 39) is not listed; the anchor is checked
 # exhibit-wide, not field by field, because a title routinely anchors its note.
 UNDERIVABLE_QUARTER_COUNTS = {
-    "hkex Ex3": ([13], "Ex3 的 x 轴是 29 个「收入分项被公司印过」的季度；13 是它在 42 季"
+    "hkex Ex7": ([13], "这张图（第四板块的「收入怎么拆开的」）的 x 轴"
+                       "是 29 个「收入分项被公司印过」的季度；13 是它在 42 季"
                        "窗口里的补集，而 42 是别的图的轴长、不是这张图的任何属性 —— 这张图"
-                       "自己没有任何地方声明窗口有多长。那 13 个季度本身在本页 8 张 42 季图"
+                       "自己没有任何地方声明窗口有多长。那 13 个季度本身在本页每一张 42 季图"
                        "上都画着（画的是它们的合计数，减出来的是收入分项），只是没有任何一张"
                        "图把它们单独成组，所以也不是「补集没被画」。"),
     "cdns Ex11": ([43], "指向完整指引记录的交叉引用；本图只画近 20 季"),
