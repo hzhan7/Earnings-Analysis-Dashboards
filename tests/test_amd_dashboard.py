@@ -124,6 +124,8 @@ def signed(value: float, digits: int = 1, suffix: str = "%") -> str:
 
 
 def usd_m(value: float) -> str:
+    if value == 0:
+        return "US$0"
     return f"{'−' if value < 0 else ''}US${abs(value):,.0f}M"
 
 
@@ -243,6 +245,13 @@ def gross_margin(st: dict) -> list[float]:
 
 def payable_days(st: dict) -> list[float]:
     cost = st["financials"]["cost_of_sales_usd_m"]
+    return [p / c * DAYS_PER_QUARTER
+            for p, c in zip(st["balance_sheet_usd_m"]["payables_incl_related"], cost)]
+
+
+def payable_days_gaap(st: dict) -> list[float]:
+    """The analysis's basis: the same payables over GAAP total cost of sales."""
+    cost = st["financials"]["total_cost_of_sales_usd_m"]
     return [p / c * DAYS_PER_QUARTER
             for p, c in zip(st["balance_sheet_usd_m"]["payables_incl_related"], cost)]
 
@@ -751,18 +760,26 @@ class AmdExhibitContractTest(unittest.TestCase):
         tied to the charts, and the drop cases are exercised in AmdRollTest."""
         sections = {s["id"]: s for s in self.payload["sections"]}
         titles = [ex["title"] for ex in sections["quarter_highlights"]["exhibits"]]
-        self.assertEqual("在净利处的分叉" in sections["quarter_highlights"]["description"],
-                         any(t.startswith("GAAP 每股收益环比") for t in titles))
-        self.assertEqual("没有上表的承诺" in sections["quarter_highlights"]["description"],
-                         any(t.startswith("无条件采购承诺一季") for t in titles))
+        highlights = sections["quarter_highlights"]["description"]
+        self.assertEqual("在净利处的分叉" in highlights, any(t.startswith("GAAP 每股收益环比") for t in titles))
+        self.assertEqual("没有上表的承诺" in highlights, any(t.startswith("无条件采购承诺一季") for t in titles))
+        self.assertEqual("隐含的增量毛利率" in highlights, any("毛利率指引「约" in t for t in titles))
+        self.assertEqual("回购与资本开支的此消彼长" in highlights, any(t.startswith("过去四季回购") for t in titles))
+        self.assertTrue(highlights.endswith(self.st["quarter_story"]["highlights_not_drawn"]),
+                        "what the report concluded but no filing can draw is said, not dropped")
         nxt = sections["next_quarter"]
-        thresholds = [ex for ex in nxt["exhibits"] if "警戒线" in ex["title"]]
-        self.assertEqual(len(thresholds), len(self.st["next_kpi"]["quantified"]))
-        self.assertIn(f"{cn(len(thresholds))}条能从 AMD 自己的申报文件算出水平的阈值", nxt["description"])
-        self.assertEqual("「加速」翻成算术" in nxt["description"],
-                         any("数据中心会「加速」" in ex["title"] for ex in nxt["exhibits"]))
-        self.assertEqual("无条件采购承诺走到了哪里" in nxt["description"],
-                         any(ex["title"].startswith("无条件采购承诺 US$") for ex in nxt["exhibits"]))
+        block = self.st["next_kpi"]
+        by_n = {ex["n"]: ex for ex in exhibits_of(self.payload)}
+        revocation = len(block["revocation_rows"])
+        self.assertIn(f"指标表 {len(block['rows']) - revocation} 行与立场撤销条件 {revocation} 条", nxt["description"])
+        self.assertIn(f"能量化的 {len(block['quantified'])} 条阈值先看总览", nxt["description"])
+        overview_n = int(re.search(r"先看总览（Exhibit (\d+)）", nxt["description"]).group(1))
+        self.assertTrue(by_n[overview_n]["title"].startswith("下季 "))
+        half = re.search(r"半年算术（Exhibit (\d+)）", nxt["description"])
+        self.assertEqual(half is not None, any("数据中心会「加速」" in ex["title"] for ex in nxt["exhibits"]))
+        if half:
+            self.assertIn("数据中心会「加速」", by_n[int(half.group(1))]["title"])
+        self.assertIn("、".join(item["metric"] for item in block["not_drawn"]) + "不能作图", nxt["description"])
         routine = sections["routine"]["description"]
         self.assertIn(f"{compact(self.st['periods'][0])} 起 {len(self.st['periods'])} 季", routine)
 
@@ -879,8 +896,8 @@ class AmdExhibitContractTest(unittest.TestCase):
     def test_every_exhibit_reference_lands_on_the_chart_it_names(self) -> None:
         """A note that says "见 Exhibit N" must reach the right chart after numbering."""
         refers = {"上季 ": "non-GAAP 营业费用：", "数据中心 ": "旧的两分部口径",
-                  "经营现金流 ": "应付天数 ", "资本开支 ": "无条件采购承诺一季",
-                  "non-GAAP 营业费用占收入": "non-GAAP 营业费用："}
+                  "经营现金流 ": "应付天数：", "资本开支 ": "无条件采购承诺一季",
+                  "non-GAAP 营业费用占收入": "non-GAAP 营业费用：", "数据中心季度收入：": "公司说 "}
         by_n = {ex["n"]: ex for ex in self.exhibits}
         seen = 0
         for ex in self.exhibits:
@@ -1106,6 +1123,458 @@ class AmdSettlementTest(unittest.TestCase):
         self.assertIn("一条未到期", overview["title"])
 
 
+def next_readings(st: dict) -> dict[str, float]:
+    """Every current value a section-8 line can read, recomputed here from the arrays."""
+    seg, g, fin = st["segments"], st["guidance_history"], st["financials"]
+    dc = dict(zip(seg["quarters"], seg["data_center_usd_m"]))
+    last = seg["quarters"][-1]
+    end = last if int(last[1]) in (2, 4) else shift(last, -1)
+    base = fin["non_gaap_opex_usd_m"][st["periods"].index(shift(g["quarters"][-1], -4))]
+    return {
+        "dc_revenue": seg["data_center_usd_m"][-1],
+        "dc_half": dc[shift(end, -1)] + dc[end],
+        "gm_guide": g["non_gaap_gm_guide_pct"][-1],
+        "dpo_gaap": payable_days_gaap(st)[-1],
+        "fcf": st["cash_flow_usd_m"]["free_cash_flow"][-1],
+        "commitments_after_year": st["purchase_commitments_usd_m"]["after_current_year"][-1],
+        "opex_yoy": opex_growth_as_printed(st)[-1],
+        "opex_guide_yoy": pct(g["non_gaap_opex_guide_usd_m"][-1], base),
+    }
+
+
+class AmdNextQuarterTest(unittest.TestCase):
+    """Section three is the Q2 report's section 8, row by row, read on this quarter's figures."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.st = load()
+        cls.note = cls.st["_checks"]["note"]
+        cls.block = cls.st["next_kpi"]
+        cls.payload = amd.build_payload(cls.st)
+        cls.section = {s["id"]: s for s in cls.payload["sections"]}["next_quarter"]
+        cls.readings = next_readings(cls.st)
+
+    def test_the_lines_are_the_report_s_section_eight(self) -> None:
+        block, note = self.block, self.note
+        self.assertEqual(len(block["rows"]), note["next_rows"])
+        self.assertEqual(len(block["rows"]) - len(block["revocation_rows"]), note["next_table_rows"])
+        self.assertNotEqual(note["next_table_rows"], note["next_table_header_says"],
+                            "the report's own header undercounts its table; the page counts the rows")
+        self.assertEqual(sorted(item["row"] for item in block["not_drawn"]), note["next_not_drawn_rows"])
+        self.assertEqual(len(block["quantified"]), len(note["next_thresholds"]))
+        for entry, fact in zip(block["quantified"], note["next_thresholds"]):
+            with self.subTest(line=entry["id"]):
+                self.assertEqual(entry["threshold"], fact["threshold"])
+                self.assertEqual(entry["action"], fact["action"])
+                self.assertEqual(entry["direction"], direction_from_trigger(fact["trigger"], fact["action"]))
+                self.assertGreater(order(entry["settles"]), order(self.st["periods"][-1]))
+                self.assertNotIn("value", entry)
+        rows = {e["row"] for e in block["quantified"]} | {i["row"] for i in block["not_drawn"]}
+        self.assertEqual(rows, set(range(1, len(block["rows"]) + 1)))
+
+    def test_the_overview_is_every_line_with_a_percentage_headroom(self) -> None:
+        entries = self.block["quantified"]
+        overview = self.section["exhibits"][0]
+        self.assertEqual(overview["kind"], "diverging_bars")
+        drawn = [e for e in entries if e["threshold"] != 0]
+        self.assertEqual(overview["xlabels"], [e["metric"] for e in drawn])
+        for entry, bar in zip(drawn, overview["values"]):
+            value = self.readings[entry["reads"]]
+            sign = 1 if entry["direction"] == "up" else -1
+            with self.subTest(line=entry["id"]):
+                self.assertAlmostEqual(bar, round(sign * (value - entry["threshold"]) / abs(entry["threshold"]) * 100, 1))
+        on_line = [e for e in entries if self.readings[e["reads"]] == e["threshold"]]
+        good = [e for e in entries if e not in on_line and favourable_side(
+            e["direction"], e["threshold"], self.readings[e["reads"]], e.get("strict", False))]
+        bad = [e for e in entries if e not in on_line and e not in good]
+        following = shift(self.st["periods"][-1], 1)
+        later = [e for e in bad if order(e["settles"]) > order(following)]
+        title = (f"下季 {len(entries)} 条量化阈值：{len(good)} 条在有利一侧、{len(bad)} 条在线外"
+                 + (f"、{len(on_line)} 条就压在线上" if on_line else ""))
+        self.assertTrue(overview["title"].startswith(title), overview["title"])
+        self.assertEqual(f"线外的有 {len(later)} 条要到" in overview["title"], bool(later))
+        for entry in [e for e in entries if e["threshold"] == 0]:
+            self.assertIn(f"「{entry['metric']}」的阈值是 0，没有百分比余量，不进这张图", overview["note"])
+
+    def test_each_reading_is_drawn_once_with_all_of_its_lines(self) -> None:
+        """Two tiers on one metric are two series on one chart, never merged into one line."""
+        year = int(self.st["periods"][-1][-4:])
+        prefixes = {"dc_revenue": ("数据中心季度收入：", 1000), "gm_guide": ("non-GAAP 毛利率指引：", 1),
+                    "dpo_gaap": ("应付天数：", 1), "fcf": ("自由现金流：", 1),
+                    "commitments_after_year": (f"{year + 1} 年及以后的无条件采购承诺：", 1000)}
+        grouped = {}
+        for entry in self.block["quantified"]:
+            grouped.setdefault(entry["reads"], []).append(entry)
+        drawn = [ex for ex in self.section["exhibits"] if "下季阈值" in ex["title"]]
+        self.assertEqual(len(drawn), len([r for r in grouped if r != "dc_half"]))
+        for reads, lines in grouped.items():
+            if reads == "dc_half":
+                continue
+            prefix, scale = prefixes[reads]
+            chart = one(self.payload, prefix, "lines")
+            with self.subTest(reads=reads):
+                thresholds = chart["series"][-len(lines):]
+                for entry, series in zip(lines, thresholds):
+                    self.assertEqual(series["values"], [round(entry["threshold"] / scale, 6)] * len(chart["xlabels"]))
+                    self.assertEqual(series["color"], "GOLD" if entry["action"] == "加仓" else "RED")
+                current = self.readings[reads]
+                self.assertTrue(chart["title"].endswith("，当前 " + {
+                    "dc_revenue": usd_b(current, 2), "gm_guide": f"{current:.1f}%",
+                    "dpo_gaap": f"{current:.1f} 天", "fcf": usd_m(current),
+                    "commitments_after_year": usd_b(current, 2)}[reads]), chart["title"])
+
+    def test_the_data_center_lines_say_how_far_q4_has_to_go(self) -> None:
+        lines = [e for e in self.block["quantified"] if e["reads"] == "dc_revenue"]
+        dc = self.st["segments"]["data_center_usd_m"]
+        chart = one(self.payload, "数据中心季度收入：", "lines")
+        self.assertEqual(chart["xlabels"], [compact(q) for q in self.st["segments"]["quarters"]])
+        self.assertTrue(all(close(a, b / 1000) for a, b in zip(chart["series"][0]["values"], dc)))
+        self.assertEqual(chart["title"], "数据中心季度收入：下季阈值 "
+                         + "、".join(f"{'加仓线' if e['action'] == '加仓' else '减仓线'} {usd_b(e['threshold'], 2)}" for e in lines)
+                         + f"（{lines[0]['settles']} 结算），当前 {usd_b(dc[-1], 2)}")
+        for entry in lines:
+            if dc[-1] < entry["threshold"]:
+                self.assertIn(f"再高 {pct(entry['threshold'], dc[-1]):.0f}% 才", chart["note"])
+
+    def test_the_half_year_floor_is_the_report_s_and_the_filings(self) -> None:
+        floor_line = next(e for e in self.block["quantified"] if e["reads"] == "dc_half")
+        self.assertEqual(floor_line["threshold"], self.note["h2_floor_usd_m"])
+        seg = self.st["segments"]
+        dc = dict(zip(seg["quarters"], seg["data_center_usd_m"]))
+        year = int(self.st["periods"][-1][-4:])
+        growth = pct(dc[f"Q1 {year}"] + dc[f"Q2 {year}"], dc[f"Q1 {year - 1}"] + dc[f"Q2 {year - 1}"])
+        floor = (dc[f"Q3 {year - 1}"] + dc[f"Q4 {year - 1}"]) * (1 + growth / 100)
+        self.assertEqual(round(floor), floor_line["threshold"])
+        half = one(self.payload, "公司说 ", "bars_labeled")
+        self.assertIn("与本页按申报算出的相同", half["note"])
+        self.assertAlmostEqual(self.readings["dc_half"], dc[f"Q1 {year}"] + dc[f"Q2 {year}"])
+
+    def test_the_zero_line_is_drawn_on_its_series_and_named_in_the_overview(self) -> None:
+        fcf_line = next(e for e in self.block["quantified"] if e["reads"] == "fcf")
+        self.assertEqual(fcf_line["threshold"], 0)
+        chart = one(self.payload, "自由现金流：", "lines")
+        fcf = self.st["cash_flow_usd_m"]["free_cash_flow"]
+        self.assertEqual(chart["series"][0]["values"], fcf)
+        self.assertEqual(chart["series"][1]["values"], [0] * len(fcf))
+        negative = [i for i, v in enumerate(fcf) if v < 0]
+        self.assertIn(f"{len(fcf)} 季里有 {len(negative)} 季在 0 以下", chart["note"])
+        self.assertIn(f"{'高于' if fcf[-1] >= 0 else '低于'}警示线 US$0", chart["note"])
+
+    def test_every_row_lands_in_the_drawer_in_order(self) -> None:
+        tbl = table(self.payload, "下季阈值与当前值")
+        ordinal = {k: "二" if k == 2 else cn(k) for k in range(1, 20)}
+        for entry in self.block["quantified"]:
+            row = next(r for r in tbl["rows"] if r[1] == entry["metric"])
+            self.assertEqual(row[0], ordinal[entry["row"]])
+            self.assertEqual(row[6], entry["settles"])
+            self.assertEqual(row[2], entry["rule"])
+        self.assertEqual([r[0] for r in tbl["rows"]],
+                         sorted((r[0] for r in tbl["rows"]), key=lambda x: list(ordinal.values()).index(x)))
+
+
+class AmdQuarterConclusionsTest(unittest.TestCase):
+    """Section two's additions: the report's core conclusions that filed figures can draw."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.st = load()
+        cls.payload = amd.build_payload(cls.st)
+
+    def test_the_incremental_margin_is_three_filed_figures(self) -> None:
+        g, fin = self.st["guidance_history"], self.st["financials"]
+        revenue, gross = fin["revenue_usd_m"][-1], fin["non_gaap_gross_profit_usd_m"][-1]
+        mid, low, high, guide = (g["revenue_mid_usd_m"][-1], g["revenue_low_usd_m"][-1],
+                                 g["revenue_high_usd_m"][-1], g["non_gaap_gm_guide_pct"][-1])
+        now = gross / revenue * 100
+
+        def inc(sales, margin):
+            return (sales * margin / 100 - gross) / (sales - revenue) * 100
+        chart = one(self.payload, f"{g['quarters'][-1][:2]} 毛利率指引「约", "lines")
+        candidates = [round(guide - 0.5 + k / 10, 2) for k in range(10)]
+        self.assertEqual(chart["xlabels"], [f"{c:.1f}%" for c in candidates])
+        for series, sales in zip(chart["series"][:3], (mid, low, high)):
+            self.assertTrue(all(close(a, inc(sales, c)) for a, c in zip(series["values"], candidates)), series["name"])
+        self.assertTrue(all(close(v, now) for v in chart["series"][3]["values"]))
+        self.assertIn(f"增量毛利率 {inc(mid, guide):.1f}% D", chart["title"])
+        self.assertIn(f"新增 {usd_m(mid - revenue)} 收入", chart["title"])
+        self.assertIn(f"分界点就是本季实际的 {now:.2f}%", chart["note"])
+        self.assertIn(f"在 {inc(mid, candidates[0]):.1f}%–{inc(mid, candidates[-1]):.1f}% 之间", chart["note"])
+
+    def test_the_buyback_lines_are_trailing_sums_of_filed_quarters(self) -> None:
+        block = self.st["share_repurchases_usd_m"]
+        self.assertEqual(block["quarters"], self.st["periods"])
+        bought, capex = block["values"], self.st["cash_flow_usd_m"]["capex"]
+        trail = lambda v: [None if i < 3 else sum(v[i - 3:i + 1]) for i in range(len(v))]  # noqa: E731
+        chart = one(self.payload, "过去四季回购", "lines")
+        self.assertEqual(chart["series"][0]["values"], trail(bought))
+        self.assertEqual(chart["series"][1]["values"], trail(capex))
+        b4, c4 = trail(bought), trail(capex)
+        swapped = b4[-1] < c4[-1] and b4[-5] > c4[-5]
+        self.assertEqual(chart["title"], f"过去四季回购 {usd_m(b4[-1])}、资本开支 {usd_m(c4[-1])}："
+                                         f"一年前是 {usd_m(b4[-5])} 与 {usd_m(c4[-5])}"
+                                         + ("，两者的位置对调了" if swapped else ""))
+        first = block["quarters"].index(block["authorized_first"])
+        self.assertEqual(sum(bought[:first]), 0, "the positive control: no buyback before the first authorization")
+        self.assertIn("在那之前这条线都是 0", chart["note"])
+        # the quarters derived by subtraction are named in the source
+        self.assertTrue(block["derived"])
+        for quarter in block["derived"]:
+            self.assertIn(f"{quarter[-4:]} 年", chart["src_extra"])
+        self.assertIn("相减所得 D", chart["src_extra"])
+
+    def test_the_positions_sentence_follows_the_data(self) -> None:
+        def steady(s):
+            s["share_repurchases_usd_m"]["values"][-4:] = [900, 900, 900, 900]
+        changed = copy.deepcopy(self.st)
+        steady(changed)
+        title = one(amd.build_payload(changed), "过去四季回购", "lines")["title"]
+        self.assertNotIn("位置对调", title)
+        self.assertIn("对调了", one(self.payload, "过去四季回购", "lines")["title"])
+
+    def test_the_embedded_rate_names_the_last_faster_quarter_and_why(self) -> None:
+        seg = self.st["segments"]
+        emb, quarters = seg["embedded_usd_m"], seg["quarters"]
+        rate = [None if k < 4 else pct(emb[k], emb[k - 4]) for k in range(len(emb))]
+        faster = [k for k in range(len(emb) - 1) if rate[k] is not None and rate[k] >= rate[-1]]
+        note = one(self.payload, "数据中心 ", "stacked_dual")["note"]
+        self.assertIn(f"嵌入式 {usd_m(emb[-1])}、同比 {signed(rate[-1])}", note)
+        self.assertTrue(faster and faster[-1] < len(emb) - 5, "the positive control needs a long run of slower quarters")
+        self.assertIn(f"是 {compact(quarters[faster[-1]])} 以来最快的一季", note)
+        self.assertIn(seg["embedded_episodes"][quarters[faster[-1]]], note)
+
+        def moved(amount):
+            changed = copy.deepcopy(self.st)
+            sg = changed["segments"]
+            sg["embedded_usd_m"][-1] -= amount
+            sg["client_usd_m"][-1] += amount
+            emb2 = sg["embedded_usd_m"]
+            rate2 = [None if k < 4 else pct(emb2[k], emb2[k - 4]) for k in range(len(emb2))]
+            faster2 = [k for k in range(len(emb2) - 1) if rate2[k] is not None and rate2[k] >= rate2[-1]]
+            return one(amd.build_payload(changed), "数据中心 ", "stacked_dual")["note"], faster2
+        # slower, but still faster than a year's worth of quarters: the named quarter moves with it
+        note2, faster2 = moved(60)
+        self.assertNotEqual(faster2[-1], faster[-1])
+        self.assertIn(f"是 {compact(quarters[faster2[-1]])} 以来最快的一季", note2)
+        if quarters[faster2[-1]] not in seg["embedded_episodes"]:
+            self.assertNotIn(seg["embedded_episodes"][quarters[faster[-1]]], note2)
+        # slower than last quarter: no record is claimed at all
+        note3, faster3 = moved(120)
+        self.assertGreaterEqual(faster3[-1], len(emb) - 5)
+        self.assertNotIn("以来最快", note3)
+
+    def test_the_cash_note_carries_the_free_cash_flow_margin(self) -> None:
+        fcf, revenue = self.st["cash_flow_usd_m"]["free_cash_flow"], self.st["financials"]["revenue_usd_m"]
+        note = one(self.payload, "经营现金流 ", "grouped_bars")["note"]
+        self.assertIn(f"自由现金流 {usd_m(fcf[-1])}、占收入 {fcf[-1] / revenue[-1] * 100:.1f}%"
+                      f"（上季 {fcf[-2] / revenue[-2] * 100:.1f}%）", note)
+        self.assertIn(f"自由现金流环比 {signed(pct(fcf[-1], fcf[-2]))}", note)
+
+
+SEGMENTS = ("data_center_usd_m", "client_usd_m", "gaming_usd_m", "embedded_usd_m")
+
+
+def rolled_forward(st: dict, growth: float = 1.0) -> dict:
+    """The series as a data-only roll to the next quarter would leave it -- in memory.
+
+    Every quarter-aligned array gains one cell: flows are the year-ago quarter
+    times `growth`, levels and per-share figures repeat the year-ago quarter, and
+    the identities the builder checks are kept (the four segments sum to revenue,
+    free cash flow is operating cash flow less capex). The analysis blocks move
+    the way a roll moves them: last quarter's `next_kpi`, as it stood, becomes
+    `prior_kpi_settlement`; a new `followup_closure` closes rehearsal questions;
+    `next_kpi` carries the same lines, any that fell due pushed one quarter on.
+    The one-quarter narrative blocks are dropped -- a roll rewrites them or
+    leaves them out -- and nothing in here names a quarter.
+    """
+    s = copy.deepcopy(st)
+    old = s["periods"][-1]
+    new = shift(old, 1)
+    base = s["periods"].index(shift(new, -4))
+    s["periods"].append(new)
+    s["period_ends"].append((datetime.date.fromisoformat(s["period_ends"][-1])
+                             + datetime.timedelta(days=91)).isoformat())
+    released = (datetime.date.fromisoformat(s["release_dates"][-1]) + datetime.timedelta(days=91)).isoformat()
+    s["release_dates"].append(released)
+    accession = f"0000002488-{released[2:4]}-999999"
+    s["release_accessions"].append(accession)
+
+    seg = s["segments"]
+    k = seg["quarters"].index(shift(new, -4))
+    seg["quarters"].append(new)
+    for key in SEGMENTS:
+        seg[key].append(round(seg[key][k] * growth))
+    for key in ("data_center_oi_usd_m", "client_gaming_oi_usd_m", "embedded_oi_usd_m", "all_other_oi_usd_m"):
+        seg[key].append(seg[key][k])
+    revenue = sum(seg[key][-1] for key in SEGMENTS)
+    fin = s["financials"]
+    ratio = revenue / fin["revenue_usd_m"][base]
+    for key, values in fin.items():
+        if key == "revenue_prior_year_2015_usd_m":
+            continue
+        if key == "revenue_usd_m":
+            values.append(revenue)
+        elif key in ("gaap_eps_diluted_usd", "non_gaap_eps_usd", "diluted_shares_m"):
+            values.append(values[base])
+        else:
+            values.append(round(values[base] * ratio))
+    fin["gaap_gross_profit_usd_m"][-1] = revenue - fin["total_cost_of_sales_usd_m"][-1]
+    fin["non_gaap_operating_income_usd_m"][-1] = (fin["non_gaap_gross_profit_usd_m"][-1]
+                                                  - fin["non_gaap_opex_usd_m"][-1])
+    cash = s["cash_flow_usd_m"]
+    cash["operating"].append(round(cash["operating"][base] * ratio))
+    cash["capex"].append(round(cash["capex"][base] * ratio))
+    cash["free_cash_flow"].append(cash["operating"][-1] - cash["capex"][-1])
+    for values in s["balance_sheet_usd_m"].values():
+        values.append(values[base])
+    wc = s["working_capital_cash_flow_usd_m"]
+    wc["accounts_payable_change"].append(wc["accounts_payable_change"][wc["quarters"].index(shift(new, -4))])
+    wc["quarters"].append(new)
+    pc = s["purchase_commitments_usd_m"]
+    pc["quarters"].append(new)
+    pc["total"].append(round(pc["total"][-1] * growth))
+    pc["after_current_year"].append(round(pc["after_current_year"][-1] * growth))
+    bought = s["share_repurchases_usd_m"]
+    bought["quarters"].append(new)
+    bought["values"].append(bought["values"][base])
+
+    g = s["guidance_history"]
+    g["actual_revenue_usd_m"][-1] = revenue
+    g["actual_non_gaap_gross_profit_usd_m"][-1] = fin["non_gaap_gross_profit_usd_m"][-1]
+    g["actual_non_gaap_opex_usd_m"][-1] = fin["non_gaap_opex_usd_m"][-1]
+    mid = round(revenue * 1.05, -2)
+    nextq = {"quarters": shift(new, 1), "form": "usd", "revenue_low_usd_m": mid - 300.0,
+             "revenue_mid_usd_m": mid, "revenue_high_usd_m": mid + 300.0, "sequential_pct": None,
+             "sequential_band_pct": None, "sequential_base_usd_m": None,
+             "non_gaap_gm_guide_pct": g["non_gaap_gm_guide_pct"][-1], "gm_wording": g["gm_wording"][-1],
+             "release_dates": released, "actual_revenue_usd_m": None, "actual_non_gaap_gross_profit_usd_m": None,
+             "non_gaap_opex_guide_usd_m": round(fin["non_gaap_opex_usd_m"][-1] * 1.05, -1),
+             "opex_guide_document": g["opex_guide_document"][-1], "actual_non_gaap_opex_usd_m": None}
+    lists = [key for key, values in g.items() if isinstance(values, list)]
+    assert sorted(lists) == sorted(nextq), sorted(set(lists) ^ set(nextq))
+    for key in lists:
+        g[key].append(nextq[key])
+
+    s["latest"]["period"] = new
+    s["latest"]["source_url"] = f"https://www.sec.gov/Archives/edgar/data/2488/{accession.replace('-', '')}/rehearsal.htm"
+    # The three-column reconciliation is in every release, so a roll re-stamps it.
+    three = [new, old, shift(new, -4)]
+    at = [s["periods"].index(q) for q in three]
+    s["eps_reconciliation"] = {
+        "period": new, "quarters": three,
+        "gaap_eps_usd": [fin["gaap_eps_diluted_usd"][i] for i in at],
+        "non_gaap_eps_usd": [fin["non_gaap_eps_usd"][i] for i in at],
+        "gaap_net_income_usd_m": [fin["gaap_net_income_usd_m"][i] for i in at],
+        "long_term_investment_gains_usd_m": [0, 0, 0], "long_term_investment_gains_per_share_usd": [0, 0, 0],
+        "tax_reserve_release_usd_m": [0, 0, 0], "source": "换季演练", "reading": "",
+    }
+    for key in ("balance_sheet_exposure", "warrants", "dc_acceleration_claim", "guidance", "_checks"):
+        s.pop(key, None)
+    s["quarter_story"] = {"period": new, "headline": "收入 {revenue}、同比 {revenue_yoy}。",
+                          "brief": "<p>数据中心同比 {dc_yoy}。</p>", "highlights_not_drawn": ""}
+    s["followup_closure"] = {
+        "period": new, "set_in": old, "labels": ["已验证", "仍未披露"], "counts": [2, 1], "total": 3,
+        "items": [{"question": f"演练问题 {i}", "verdict": v, "evidence": "演练"}
+                  for i, v in enumerate(("已验证", "已验证", "仍未披露"), start=1)],
+        "note": "演练。",
+    }
+    kpi = s["next_kpi"]
+    # The lines move as they stood; the chart notes do not -- they are last quarter's
+    # narrative and name "this quarter" through placeholders that would now read the
+    # new quarter's figures (see next_kpi._roll_note).
+    s["prior_kpi_settlement"] = {
+        "period": new, "set_in": old, "source_section": kpi["source_section"], "rows": kpi["rows"],
+        "quantified": copy.deepcopy(kpi["quantified"]), "not_drawn": copy.deepcopy(kpi["not_drawn"]),
+        "dispositions": ["演练"] * len(kpi["rows"]), "chart_notes": {}, "note": "",
+    }
+    following = copy.deepcopy(kpi)
+    following["period"] = new
+    for entry in following["quantified"]:
+        if order(entry["settles"]) <= order(new):
+            entry["settles"] = shift(new, 1)
+    s["next_kpi"] = following
+    return s
+
+
+class AmdRollRehearsalTest(unittest.TestCase):
+    """A roll edits `series/amd.json` and nothing else: rolled in memory, the page
+    builds, section one settles last quarter's lines on the new quarter's figures,
+    and a second roll settles the lines that were dated a quarter further out."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from build.payload_guard import check
+        cls.check = staticmethod(check)
+        cls.st = load()
+
+    def settle(self, rolled: dict) -> dict:
+        payload = amd.build_payload(rolled)
+        self.check(payload)
+        period = rolled["periods"][-1]
+        block = rolled["prior_kpi_settlement"]
+        readings = next_readings(rolled)
+        exhibits = payload["sections"][0]["exhibits"]
+        self.assertTrue(exhibits[0]["title"].startswith("上季 3 条待验证问题：2 条已验证、1 条仍未披露"))
+        due = [e for e in block["quantified"] if e["settles"] == period]
+        later = [e for e in block["quantified"] if e not in due]
+        overview = exhibits[1]
+        self.assertEqual(overview["kind"], "diverging_bars")
+        self.assertEqual(overview["xlabels"], [e["metric"] for e in due if e["threshold"] != 0])
+        for entry in due:
+            value = readings[entry["reads"]]
+            good, bad = STATE_WORDS[entry["action"]]
+            state = good if favourable_side(entry["direction"], entry["threshold"], value, entry.get("strict", False)) else bad
+            with self.subTest(period=period, line=entry["id"]):
+                if entry["threshold"] == 0:
+                    self.assertIn(f"「{entry['metric']}」的阈值是 0", overview["note"])
+                    self.assertIn(f"，{state}。", overview["note"])
+                else:
+                    self.assertIn(f"{entry['metric']} ", overview["note"])
+                    self.assertIn(state, overview["note"])
+        for entry in later:
+            self.assertIn(f"「{entry['metric']}」未到期（{entry['settles']} 结算）", overview["note"])
+        tbl = table(payload, "原文、本页结算与本季报告的处置")
+        self.assertEqual([row[1] for row in tbl["rows"]], block["rows"])
+        # the lines for next quarter are a fresh overview in section three
+        self.assertTrue(payload["sections"][2]["exhibits"][0]["title"].startswith("下季 "))
+        self.assertEqual([s["id"] for s in payload["sections"]],
+                         ["settled", "quarter_highlights", "next_quarter", "routine"])
+        return payload
+
+    def test_one_roll_settles_the_lines_due_next_quarter(self) -> None:
+        for growth in (1.0, 1.3):
+            with self.subTest(growth=growth):
+                rolled = rolled_forward(self.st, growth)
+                payload = self.settle(rolled)
+                period = rolled["periods"][-1]
+                due_charts = [ex["title"] for ex in payload["sections"][0]["exhibits"]
+                              if re.search(r"(守住|击穿)上季|(达到|没到)上季加仓线", ex["title"])]
+                reads_due = {e["reads"] for e in rolled["prior_kpi_settlement"]["quantified"]
+                             if e["settles"] == period}
+                with_history = {"gm_guide", "dpo_gaap", "commitments_after_year", "dc_revenue", "fcf", "opex_yoy"}
+                self.assertEqual(len(due_charts), len(reads_due & with_history))
+                self.assertIn("fcf", reads_due, "the zero line settles on its series too")
+
+    def test_two_rolls_settle_the_lines_dated_a_quarter_later(self) -> None:
+        once = rolled_forward(self.st, 1.6)
+        twice = rolled_forward(once, 1.6)
+        self.settle(twice)
+        period = twice["periods"][-1]
+        dated = [e for e in self.st["next_kpi"]["quantified"] if order(e["settles"]) == order(period)]
+        self.assertTrue(dated, "the positive control needs a line dated two quarters out")
+        settled_ids = {e["id"] for e in twice["prior_kpi_settlement"]["quantified"] if e["settles"] == period}
+        self.assertTrue({e["id"] for e in dated} <= settled_ids)
+
+    def test_the_rehearsal_changes_nothing_but_the_series(self) -> None:
+        """No code path reads a quarter's name: the same builder, no edits, three quarters on."""
+        rolled = self.st
+        for _ in range(3):
+            rolled = rolled_forward(rolled)
+            payload = amd.build_payload(rolled)
+            self.assertEqual(payload["latest"]["disclosed_period_label"], rolled["periods"][-1])
+            text = text_of(payload)
+            self.assertNotIn(self.st["periods"][-1] + " 结算", text)
+
+
 class AmdChartClaimsTest(unittest.TestCase):
     """Each chart's numbers and sentences, recomputed from the series."""
 
@@ -1265,34 +1734,39 @@ class AmdChartClaimsTest(unittest.TestCase):
         self.assertEqual(len(tbl["rows"]), len(block["items"]) + len(block["table_extra"]))
 
     def test_payable_and_inventory_days_are_the_stated_definition(self) -> None:
-        """(payables + related-party payables) ÷ cost of sales ex-amortisation × 91."""
-        dpo, dio = payable_days(self.st), inventory_days(self.st)
-        chart = one(self.payload, "应付天数 ", "lines")
-        self.assertTrue(all(close(a, b) for a, b in zip(chart["series"][0]["values"], dpo)))
+        """Two bases on one chart: the analysis's (GAAP total cost of sales) that the
+        70-day line is settled on, and the page's own (cost ex-amortisation) that the
+        headline, the brief and the inventory days use. Both × 91."""
+        dpo, dio, gaap = payable_days(self.st), inventory_days(self.st), payable_days_gaap(self.st)
+        chart = one(self.payload, "应付天数：", "lines")
+        self.assertTrue(all(close(a, b) for a, b in zip(chart["series"][0]["values"], gaap)))
+        self.assertTrue(all(close(a, b) for a, b in zip(chart["series"][1]["values"], dpo)))
         inventory = one(self.payload, "存货 ", "bar_line_dual")
         self.assertTrue(all(close(a, b) for a, b in zip(inventory["line"]["values"], dio)))
-        # the denominator is visible: on the total cost line the last value would differ
-        total = self.fin["total_cost_of_sales_usd_m"][-1]
-        self.assertGreater(abs(dpo[-1] - self.st["balance_sheet_usd_m"]["payables_incl_related"][-1]
-                               / total * DAYS_PER_QUARTER), 1.0)
-        self.assertIn(f"× {DAYS_PER_QUARTER}（D）", chart["note"])
+        # the two denominators are visibly different, and the analysis's reproduces its own figures
+        self.assertGreater(abs(dpo[-1] - gaap[-1]), 1.0)
+        basis = self.st["_checks"]["note"]["next_dpo_basis"]
+        self.assertEqual((round(gaap[-2], 1), round(gaap[-1], 1)), (basis["q1"], basis["q2"]))
+        self.assertIn(f"× {DAYS_PER_QUARTER}（D）", chart["src_extra"])
         self.assertIn(f"× {DAYS_PER_QUARTER}（D）", inventory["note"])
+        kpi = next(q for q in self.st["next_kpi"]["quantified"] if q["reads"] == "dpo_gaap")
+        self.assertEqual(chart["title"], f"应付天数：下季阈值 警示线 {kpi['threshold']:.1f} 天，当前 {gaap[-1]:.1f} 天")
+        self.assertIn(f"本页按同一口径复算为 {gaap[-2]:.1f} → {gaap[-1]:.1f} 天，这条线按它结算", chart["note"])
+        self.assertIn(f"本页自己的应付天数不含摊销，是 {dpo[-2]:.1f} → {dpo[-1]:.1f} 天", chart["note"])
         jumps = [dpo[i] - dpo[i - 1] for i in range(1, self.n)]
         jump_record = jumps[-1] > max(jumps[:-1])
         peak = max(range(self.n), key=lambda i: dpo[i])
         rank = 1 + sum(1 for v in dpo[:-1] if v > dpo[-1])
-        kpi = next(q for q in self.st["next_kpi"]["quantified"] if q["id"] == "dpo")
-        self.assertTrue(chart["title"].startswith(
-            f"应付天数 {dpo[-1]:.1f} 天对 {kpi['threshold']:.0f} 天警戒线：单季 {signed(jumps[-1], 1, ' 天')}"))
-        self.assertEqual(f"是 {self.n} 季最大跳升" in chart["title"], jump_record)
+        self.assertIn(f"单季 {signed(jumps[-1], 1, ' 天')}", chart["note"])
+        self.assertEqual(f"是 {self.n} 季最大跳升" in chart["note"], jump_record)
         self.assertEqual("<b>罕见的是速度</b>" in chart["note"], jump_record)
         if peak == self.n - 1:
-            self.assertIn("水平本身也是纪录", chart["title"])
+            self.assertIn("水平本身也是纪录", chart["note"])
         elif jump_record:
-            self.assertIn(f"但水平不是纪录（{compact(self.periods[peak])} {dpo[peak]:.1f} 天）", chart["title"])
+            self.assertIn(f"但水平不是纪录（{compact(self.periods[peak])} {dpo[peak]:.1f} 天）", chart["note"])
         else:
             self.assertIn(f"水平排第 {rank}（最高是 {compact(self.periods[peak])} 的 {dpo[peak]:.1f} 天）",
-                          chart["title"])
+                          chart["note"])
         self.assertIn(f"本季水平在 {self.n} 季里排第 {rank}", chart["note"])
         early = [v for q, v in zip(self.periods, dpo) if int(q[-4:]) <= 2019]
         self.assertEqual(f"2016–2019 年 AMD 的应付天数在 {min(early):.0f}–{max(early):.0f} 天之间" in chart["note"],
@@ -1303,23 +1777,33 @@ class AmdChartClaimsTest(unittest.TestCase):
         self.assertIn(f"存货天数 {dio[-1]:.0f} 天：{self.n} 季里最高是 {compact(self.periods[peak_i])} 的 "
                       f"{dio[peak_i]:.0f} 天", inventory["title"])
 
-    def test_the_margin_threshold_chart_is_recomputed(self) -> None:
-        gm = gross_margin(self.st)
-        spec = next(q for q in self.st["next_kpi"]["quantified"] if q["id"] == "non_gaap_gm")
-        chart = one(self.payload, "non-GAAP 毛利率对 ", "lines")
-        self.assertTrue(all(close(a, b) for a, b in zip(chart["series"][0]["values"], gm)))
-        self.assertEqual(chart["series"][1]["values"], [spec["threshold"]] * self.n)
-        guide = self.st["guidance_history"]["non_gaap_gm_guide_pct"][-1]
-        self.assertEqual(chart["title"], f"non-GAAP 毛利率对 {spec['threshold']:.1f}% 警戒线：本季 {gm[-1]:.1f}%，"
-                                         f"下季公司指引约 {guide:g}%")
-        # counted at the one decimal the chart prints: 53.99% reads 54.0%, on the line
-        under = [compact(q) for q, v in zip(self.periods[-8:], gm[-8:])
-                 if half_up(v, 1) < Decimal(repr(spec["threshold"]))]
-        strictly = [compact(q) for q, v in zip(self.periods[-8:], gm[-8:]) if v < spec["threshold"]]
-        self.assertIn(f"最近八季里这条线被跌破 {len(under)} 次（{'、'.join(under)}）" if under
-                      else "最近八季没有一季跌破这条线", chart["note"])
-        if strictly != under:
-            self.assertNotIn(f"被跌破 {len(strictly)} 次", chart["note"])
+    def test_the_margin_guide_chart_is_recomputed(self) -> None:
+        """Line 2 of section 8 is about the *guide* for Q4, so the chart is the guide
+        record (43 guides) with both of the analysis's lines, the actual margin beside it."""
+        g = self.st["guidance_history"]
+        rows = scored_record(self.st)
+        lines = [q for q in self.st["next_kpi"]["quantified"] if q["reads"] == "gm_guide"]
+        self.assertEqual({q["action"] for q in lines}, {"加仓", "减仓"})
+        chart = one(self.payload, "non-GAAP 毛利率指引：", "lines")
+        self.assertEqual(chart["xlabels"], [compact(q) for q in g["quarters"]])
+        self.assertEqual(chart["series"][0]["values"], g["non_gaap_gm_guide_pct"])
+        self.assertTrue(all(close(a, b) for a, b in zip(chart["series"][1]["values"], [r["gm"] for r in rows])))
+        drawn = {s["values"][0] for s in chart["series"][2:]}
+        self.assertEqual(drawn, {q["threshold"] for q in lines})
+        guide = g["non_gaap_gm_guide_pct"][-1]
+        self.assertEqual(chart["title"], "non-GAAP 毛利率指引：下季阈值 "
+                         + "、".join(f"{'加仓线' if q['action'] == '加仓' else '减仓线'} {q['threshold']:.1f}%" for q in lines)
+                         + f"，当前 {guide:.1f}%")
+        top = max(g["non_gaap_gm_guide_pct"])
+        buy = min(q["threshold"] for q in lines if q["action"] == "加仓")
+        self.assertEqual("从没给到过加仓线" in chart["note"], top < buy)
+        self.assertIn(f"{len(g['quarters'])} 次毛利率指引里最高的是", chart["note"])
+        cut = max(q["threshold"] for q in lines if q["action"] == "减仓")
+        below = [q for q, v in zip(g["quarters"], g["non_gaap_gm_guide_pct"]) if v < cut]
+        if below:
+            v = g["non_gaap_gm_guide_pct"][g["quarters"].index(below[-1])]
+            self.assertIn(f"最近一次低于减仓线的指引是 {compact(below[-1])} 的 {v:g}%", chart["note"])
+        self.assertIn(f"真正的临界点是 Q4 指引高过 Q2 实际的 {gross_margin(self.st)[-1]:.2f}%", chart["note"])
 
     def test_the_data_center_half_threshold_is_arithmetic(self) -> None:
         """A filed "accelerates" turned into a floor, from segment figures alone.
@@ -1359,24 +1843,38 @@ class AmdChartClaimsTest(unittest.TestCase):
             self.assertIn(usd_b(floor, 2), self.payload["brief"])
 
     def test_the_commitments_line_is_recomputed(self) -> None:
+        """Line 4 of section 8 is on the part due after this fiscal year; the total is
+        drawn beside it, and its record and cycle sentences move into the note."""
         pc = self.st["purchase_commitments_usd_m"]
         self.assertEqual(pc["quarters"], self.periods[self.index[pc["quarters"][0]]:])
-        total = pc["total"]
+        total, after = pc["total"], pc["after_current_year"]
         holes = [q for q, v in zip(pc["quarters"], total) if v is None]
         self.assertEqual(holes, list(pc["not_comparable"]))
-        chart = one(self.payload, "无条件采购承诺 US$", "lines")
+        # the cut exists only where the same year boundary applies, and is total − remainder of year
+        same_cut = [q for q, v in zip(pc["quarters"], after) if v is not None]
+        self.assertTrue(all(q.endswith(self.periods[-1][-4:]) for q in same_cut), same_cut)
+        remainder = self.st["_checks"]["unconditional_commitments_after_year_usd_m"]["remainder_of_year"]
+        self.assertEqual(after[-1], total[-1] - remainder["current"])
+        self.assertEqual(after[-2], total[-2] - remainder["prior_quarter"])
+        next_year = int(self.periods[-1][-4:]) + 1
+        chart = one(self.payload, f"{next_year} 年及以后的无条件采购承诺：", "lines")
         self.assertTrue(all(close(a, None if b is None else b / 1000)
-                            for a, b in zip(chart["series"][0]["values"], total)))
+                            for a, b in zip(chart["series"][0]["values"], after)))
+        self.assertTrue(all(close(a, None if b is None else b / 1000)
+                            for a, b in zip(chart["series"][1]["values"], total)))
+        line = next(q for q in self.st["next_kpi"]["quantified"] if q["reads"] == "commitments_after_year")
+        self.assertEqual(chart["series"][2]["values"], [line["threshold"] / 1000] * len(total))
+        self.assertEqual(chart["title"], f"{next_year} 年及以后的无条件采购承诺：下季阈值 警示线 "
+                                         f"{usd_b(line['threshold'], 2)}，当前 {usd_b(after[-1], 2)}")
         known = [i for i, v in enumerate(total) if v is not None]
         trough = min(known, key=lambda i: total[i])
         before = [i for i in known if i < trough]
         peak = max(before, key=lambda i: total[i]) if before else trough
         record = total[-1] > max(total[i] for i in known[:-1])
         labels = [compact(q) for q in pc["quarters"]]
-        self.assertEqual(chart["title"],
-                         f"无条件采购承诺 {usd_b(total[-1])}" + ("，是这条序列的新高" if record else "")
-                         + (f"：上一轮高点是 {labels[peak]} 的 {usd_b(total[peak])}，"
-                            f"低点是 {labels[trough]} 的 {usd_b(total[trough])}" if peak != trough else ""))
+        self.assertIn(f"合计 {usd_b(total[-1])}" + ("，是这条序列的新高" if record else "")
+                      + (f"：上一轮高点是 {labels[peak]} 的 {usd_b(total[peak])}，"
+                         f"低点是 {labels[trough]} 的 {usd_b(total[trough])}" if peak != trough else ""), chart["note"])
         for back, word in ((1, "上季"), (4, "一年前")):
             target = len(total) - 1 - back
             nearest = max(i for i in known if i <= target)
@@ -1452,13 +1950,16 @@ class AmdChartClaimsTest(unittest.TestCase):
             self.assertEqual(row, [seg["quarters"][k]] + [usd_m(seg[key][k]) for key in keys])
         kpi = self.st["next_kpi"]
         tbl = table(self.payload, "下季阈值与当前值")
-        self.assertEqual([r[0] for r in tbl["rows"]],
-                         [q["metric"] for q in kpi["quantified"]] + [t["metric"] for t in kpi["table_only"]])
-        current = {"non_gaap_gm": gross_margin(self.st)[-1], "dpo": payable_days(self.st)[-1]}
-        for row, spec in zip(tbl["rows"], kpi["quantified"]):
-            self.assertIn(f"{current[spec['id']]:.1f}", row[3], spec["metric"])
-        for row, item in zip(tbl["rows"][len(kpi["quantified"]):], kpi["table_only"]):
-            self.assertEqual(row[4], "不作图：" + item["why"])
+        # every row of the section, in row order, quantified lines before the unquantified
+        expected = []
+        for number in range(1, len(kpi["rows"]) + 1):
+            expected += [q["metric"] for q in kpi["quantified"] if q["row"] == number]
+            expected += [t["metric"] for t in kpi["not_drawn"] if t["row"] == number]
+        self.assertEqual([r[1] for r in tbl["rows"]], expected)
+        for item in kpi["not_drawn"]:
+            row = next(r for r in tbl["rows"] if r[1] == item["metric"])
+            self.assertEqual(row[6], "不作图：" + item["why"])
+            self.assertEqual(row[2], item["threshold_text"])
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -1540,6 +2041,27 @@ class AmdChecksTest(unittest.TestCase):
         for key, got, wanted in pairs:
             with self.subTest(key=key):
                 self.assertEqual(got, wanted)
+
+    def test_the_threshold_readings_end_on_the_checked_figures(self) -> None:
+        """The three series section three reads that the stage before did not have."""
+        c, st = self.c, self.st
+        cost = st["financials"]["total_cost_of_sales_usd_m"]
+        self.assertEqual([cost[-1], cost[-2]], [c["total_cost_of_sales_usd_m"]["current"],
+                                                 c["total_cost_of_sales_usd_m"]["prior_quarter"]])
+        bought = st["share_repurchases_usd_m"]["values"]
+        r = c["share_repurchases_usd_m"]
+        ya = self.periods.index(year_ago(self.periods[-1]))
+        self.assertEqual([bought[-1], bought[-2], bought[ya]], [r["current"], r["prior_quarter"], r["year_ago"]])
+        this_year = [bought[i] for i, q in enumerate(self.periods) if q.endswith(self.periods[-1][-4:])]
+        last_year = [bought[i] for i, q in enumerate(self.periods)
+                     if q.endswith(str(int(self.periods[-1][-4:]) - 1)) and order(q) <= order(year_ago(self.periods[-1]))]
+        self.assertEqual((sum(this_year), sum(last_year)), (r["six_months"], r["six_months_year_ago"]))
+        after = st["purchase_commitments_usd_m"]["after_current_year"]
+        a = c["unconditional_commitments_after_year_usd_m"]
+        self.assertEqual([after[-1], after[-2]], [a["current"], a["prior_quarter"]])
+        exposure = st.get("balance_sheet_exposure")
+        if exposure is not None:
+            self.assertEqual(exposure["items"][1]["values"], [a["prior_quarter"], a["current"]])
 
     def test_the_printed_percentages_round_to_the_checked_digits(self) -> None:
         """The page prints one decimal; the release prints whole percents, rounded half up."""
@@ -1643,14 +2165,17 @@ class AmdRollTest(unittest.TestCase):
         """Each optional block drops its chart, its table and the words that
         describe them -- and leaves no dangling `Exhibit {EX_…}` behind."""
         full = exhibits_of(self.payload)
+        # next_kpi takes six charts with it (the overview and five threshold lines) and
+        # gives one back: the commitment total, no longer tracked, joins the long series.
         cases = (("followup_closure", ("条待验证问题",), 1, False),
                  ("eps_reconciliation", ("长期投资净收益，non-GAAP 不含", "在净利处的分叉"), 1, False),
                  ("warrants", ("认股权证未归属",), 0, False),
                  ("guidance", ("下季指引（", " 兑现与 "), 0, False),
-                 ("purchase_commitments_usd_m", ("是这条序列的新高", "无条件采购承诺走到了哪里"), 1, False),
-                 ("next_kpi", ("警戒线", "不能作图的阈值", "应付天数的完整历史见", "下季阈值与当前值"), 2, False),
+                 ("share_repurchases_usd_m", ("过去四季回购", "回购与资本开支的此消彼长"), 1, False),
+                 ("next_kpi", ("下季阈值与当前值", "应付天数的完整历史见", "列在核对抽屉里并说明原因",
+                               "正压在警示线上"), 5, False),
                  ("balance_sheet_exposure", ("无条件采购承诺一季", "表外与或有敞口", "没有上表的承诺"), 1, True),
-                 ("dc_acceleration_claim", ("数据中心会「加速」", "「加速」翻成算术"), 1, True))
+                 ("dc_acceleration_claim", ("数据中心会「加速」", "画成半年算术", "「加速」门槛见 Exhibit"), 1, True))
         for key, phrases, dropped, plain in cases:
             with self.subTest(block=key):
                 def strip(s, key=key, plain=plain):
@@ -1697,7 +2222,13 @@ class AmdRollTest(unittest.TestCase):
             ("purchase_commitments", short_block("purchase_commitments_usd_m")),
             ("followup_closure", lambda s: s["followup_closure"]["counts"].__setitem__(
                 0, s["followup_closure"]["counts"][0] + 1)),
-            ("unknown metric", lambda s: s["next_kpi"]["quantified"][0].__setitem__("id", "dso")),
+            ("map it in build/amd.py", lambda s: s["next_kpi"]["quantified"][0].__setitem__("reads", "dso")),
+            # a block a tracked line reads is no longer optional
+            ("block it needs is missing", lambda s: s.pop("purchase_commitments_usd_m")),
+            ("belongs in prior_kpi_settlement",
+             lambda s: s["next_kpi"]["quantified"][0].__setitem__("settles", s["periods"][-1])),
+            ("accounted for", lambda s: s["next_kpi"]["not_drawn"].pop()),
+            ("cover the page's quarters", lambda s: s["share_repurchases_usd_m"]["values"].pop()),
             ("release_accessions", lambda s: s["latest"].__setitem__("source_url", s["latest"]["source_url"].replace(
                 s["release_accessions"][-1].replace("-", ""), s["release_accessions"][-2].replace("-", "")))),
             ("disagree", lambda s: s["balance_sheet_exposure"]["items"][0]["values"].__setitem__(
@@ -1747,11 +2278,11 @@ class AmdRollTest(unittest.TestCase):
 
     def test_the_dpo_jump_and_level_sentences_are_computed(self) -> None:
         n = len(self.st["periods"])
-        chart = one(self.payload, "应付天数 ", "lines")
+        chart = one(self.payload, "应付天数：", "lines")
         dpo = payable_days(self.st)
-        self.assertIn(f"是 {n} 季最大跳升", chart["title"])
+        self.assertIn(f"是 {n} 季最大跳升", chart["note"])
         self.assertIn(f"是 {n} 季最大的单季跳升", self.payload["brief"])
-        self.assertIn("但水平不是纪录", chart["title"])
+        self.assertIn("但水平不是纪录", chart["note"])
 
         self.assertIn("<b>罕见的是速度</b>", chart["note"])
 
@@ -1763,9 +2294,9 @@ class AmdRollTest(unittest.TestCase):
         moved = payable_days(changed)
         rank = 1 + sum(1 for v in moved[:-1] if v > moved[-1])
         payload = amd.build_payload(changed)
-        chart = one(payload, "应付天数 ", "lines")
-        self.assertNotIn("最大跳升", chart["title"])
-        self.assertIn(f"水平排第 {rank}", chart["title"])
+        chart = one(payload, "应付天数：", "lines")
+        self.assertNotIn("最大跳升", chart["note"])
+        self.assertIn(f"水平排第 {rank}", chart["note"])
         self.assertNotIn("最大的单季跳升", payload["brief"])
         self.assertIn(f"，{n} 季里水平不是最高", payload["brief"])
         self.assertNotIn("罕见的是速度", chart["note"])
@@ -1774,9 +2305,9 @@ class AmdRollTest(unittest.TestCase):
             cost = s["financials"]["cost_of_sales_usd_m"][-1]
             s["balance_sheet_usd_m"]["payables_incl_related"][-1] = round((max(dpo) + 10) * cost / DAYS_PER_QUARTER)
         payload = self.rebuilt(level_record)
-        chart = one(payload, "应付天数 ", "lines")
-        self.assertIn("水平本身也是纪录", chart["title"])
-        self.assertNotIn("水平不是纪录", chart["title"])
+        chart = one(payload, "应付天数：", "lines")
+        self.assertIn("水平本身也是纪录", chart["note"])
+        self.assertNotIn("水平不是纪录", chart["note"])
         self.assertIn(f"水平本身也是 {n} 季最高", payload["brief"])
         self.assertIn(f"本季水平在 {n} 季里排第 1", chart["note"])
 
@@ -1832,7 +2363,8 @@ class AmdRollTest(unittest.TestCase):
         self.assertIn(f"最近一季 {compact(scored[-1]['q'])} 没有超出指引", note)
 
     def test_the_commitments_record_and_comparisons_are_computed(self) -> None:
-        self.assertIn("是这条序列的新高", one(self.payload, "无条件采购承诺 US$", "lines")["title"])
+        title = f"{int(self.st['periods'][-1][-4:]) + 1} 年及以后的无条件采购承诺："
+        self.assertIn("是这条序列的新高", one(self.payload, title, "lines")["note"])
         pc = self.st["purchase_commitments_usd_m"]
         total = pc["total"]
         prior_top = max(v for v in total[:-1] if v is not None)
@@ -1842,16 +2374,29 @@ class AmdRollTest(unittest.TestCase):
             exposure = s.get("balance_sheet_exposure")
             if exposure is not None:
                 exposure["items"][0]["values"][-1] = prior_top - 1
-        self.assertNotIn("新高", one(self.rebuilt(smaller), "无条件采购承诺 US$", "lines")["title"])
+        self.assertNotIn("新高", one(self.rebuilt(smaller), title, "lines")["note"])
 
         # a year-ago quarter that is not comparable falls back to the nearest earlier one
         labels = [compact(q) for q in pc["quarters"]]
         target = len(total) - 5
         nearest = max(i for i, v in enumerate(total[:target]) if v is not None)
-        self.assertNotIn("不可比", one(self.payload, "无条件采购承诺 US$", "lines")["note"].split("口径变化")[0])
+        self.assertNotIn("不可比", one(self.payload, title, "lines")["note"].split("口径变化")[0])
         note = one(self.rebuilt(lambda s: s["purchase_commitments_usd_m"]["total"].__setitem__(target, None)),
-                   "无条件采购承诺 US$", "lines")["note"]
+                   title, "lines")["note"]
         self.assertIn(f"一年前：{labels[target]} 不可比，取更早的 {labels[nearest]} {usd_b(total[nearest])}", note)
+
+        # untracked, the total stands on its own as a long series in section four
+        def untracked(s):
+            k = s["next_kpi"]
+            dropped = [q for q in k["quantified"] if q["reads"] == "commitments_after_year"]
+            k["quantified"] = [q for q in k["quantified"] if q not in dropped]
+            k["not_drawn"].append({"row": dropped[0]["row"], "metric": "承诺（演练）", "threshold_text": "—",
+                                   "reading": "—", "why": "演练"})
+        payload = self.rebuilt(untracked)
+        routine = payload["sections"][3]["exhibits"]
+        self.assertTrue(routine[-1]["title"].startswith("无条件采购承诺 US$"))
+        self.assertIn("以及无条件采购承诺的合计", payload["sections"][3]["description"])
+        self.assertEqual([ex for s in payload["sections"][:3] for ex in s["exhibits"] if title in ex["title"]], [])
 
     def test_the_cash_title_follows_the_sign_of_the_payables_change(self) -> None:
         wc = self.st["working_capital_cash_flow_usd_m"]
@@ -1917,17 +2462,40 @@ class AmdRollTest(unittest.TestCase):
         self.assertNotIn("之后最高", title)
         self.assertIn(f"同比增速较上季的 {new[-2]:.1f}% 回落", title)
 
-    def test_the_margin_threshold_breaches_are_computed(self) -> None:
-        note = one(self.payload, "non-GAAP 毛利率对 ", "lines")["note"]
-        self.assertIn("最近八季里这条线被跌破", note)
-        floor = min(gross_margin(self.st)[-8:]) - 1
+    def test_the_margin_guide_record_sentence_is_computed(self) -> None:
+        """「从没给到过加仓线」 is a universal claim over the guide record, so it is broken on purpose."""
+        note = one(self.payload, "non-GAAP 毛利率指引：", "lines")["note"]
+        self.assertIn("从没给到过加仓线", note, "the positive control needs a record below the buy line")
+        buy = next(q for q in self.st["next_kpi"]["quantified"] if q["reads"] == "gm_guide" and q["action"] == "加仓")
+        g = self.st["guidance_history"]
+        k = len(g["quarters"]) - 6
 
-        def lower(s):
-            spec = next(q for q in s["next_kpi"]["quantified"] if q["id"] == "non_gaap_gm")
-            spec["threshold"] = floor
-        note = one(self.rebuilt(lower), "non-GAAP 毛利率对 ", "lines")["note"]
-        self.assertIn("最近八季没有一季跌破这条线", note)
-        self.assertNotIn("被跌破", note)
+        def once_above(s):
+            s["guidance_history"]["non_gaap_gm_guide_pct"][k] = buy["threshold"]
+        note = one(self.rebuilt(once_above), "non-GAAP 毛利率指引：", "lines")["note"]
+        self.assertNotIn("从没给到过加仓线", note)
+        self.assertIn(f"最高的是 {compact(g['quarters'][k])} 的 {buy['threshold']:g}%", note)
+
+    def test_the_incremental_margin_follows_the_guide(self) -> None:
+        """Below this quarter's margin the increment is diluting; guide above it and the words turn."""
+        chart = one(self.payload, f"{self.st['guidance_history']['quarters'][-1][:2]} 毛利率指引「约", "lines")
+        self.assertIn("低于本季的", chart["title"])
+
+        def richer(s):
+            s["guidance_history"]["non_gaap_gm_guide_pct"][-1] = 57.0
+        payload = self.rebuilt(richer)
+        title = one(payload, f"{self.st['guidance_history']['quarters'][-1][:2]} 毛利率指引「约", "lines")["title"]
+        self.assertIn("不低于本季的", title)
+        self.assertNotIn("只带来", title)
+
+        def guided_down(s):
+            g = s["guidance_history"]
+            g["revenue_mid_usd_m"][-1] = s["financials"]["revenue_usd_m"][-1] - 100
+            g["revenue_low_usd_m"][-1] = g["revenue_mid_usd_m"][-1] - 300
+            g["revenue_high_usd_m"][-1] = g["revenue_mid_usd_m"][-1] + 300
+        payload = self.rebuilt(guided_down)
+        self.assertEqual([ex for ex in exhibits_of(payload) if "毛利率指引「约" in ex["title"]], [])
+        self.assertNotIn("隐含的增量毛利率", payload["sections"][1]["description"])
 
 
 # ═════════════════════════════════════════════════════════════════════════════

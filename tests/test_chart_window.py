@@ -148,6 +148,21 @@ def _intc_threshold_reach() -> int:
                if "警戒线" in ex["title"])
 
 
+def _amd_threshold_reach() -> int:
+    """AMD's threshold-line charts come and go with the two analyses' key-metric
+    sections: section one draws a history for each of last quarter's lines that
+    is due, section three for each of this quarter's -- and which of them run the
+    full 42 quarters (margins, payables, cash flow) or start at the four-segment
+    floor (data center) is the analyses' choice, not the page's. The page is
+    rolled by editing `series/amd.json` alone, so the pin counts the permanent
+    charts and adds these while they are published."""
+    page = js_payload(ROOT / "data" / "amd.js", "window.DASH")
+    marks = ("下季阈值", "上季阈值", "上季加仓线", "上季减仓线", "上季门槛")
+    return sum(1 for section in page["sections"] for ex in section["exhibits"]
+               if any(mark in ex["title"] for mark in marks)
+               and (first_year(ex) or TARGET_YEAR + 1) <= TARGET_YEAR)
+
+
 def _tsm_advanced_count() -> dict:
     """The process-mix note counts the quarters since 2021Q1 in which the page's
     summed 7nm-and-below line equals TSMC's own aggregate. The count grows by
@@ -172,7 +187,7 @@ def _tsm_advanced_count() -> dict:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amd": 17, "amzn": 13, "arm": 0, "asml": 16, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
+    "amd": 15 + _amd_threshold_reach(), "amzn": 13, "arm": 0, "asml": 16, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
     "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
@@ -223,19 +238,30 @@ CONVERTED = {
                           "year-ago quarter of the Q2 2022 release); earlier quarters "
                           "exist only in the two-segment structure, drawn separately.",
         "分部营业利润率：": "same four-segment floor as the revenue chart above it.",
+        # Section three's data-center line (and, the quarter it settles, section
+        # one's) draws the analysis's Q4 buy and sell lines on the same segment
+        # series, so it has the same floor.
+        "数据中心季度收入": "same four-segment floor: no filing prints a data-center revenue "
+                     "line before 2021Q2.",
         # The first 10-Q that tables the total unconditional commitment in its
         # notes is Q2 2021; earlier 10-Qs print an MD&A "purchase obligations"
         # row on another basis (GLOBALFOUNDRIES excluded until Q1 2019), and the
-        # three 2020 10-Qs plus Q1 2021 print nothing at all.
-        "无条件采购承诺 US$#B": "the note-basis commitment total begins with the Q2 2021 10-Q; "
-                          "earlier filings print a different MD&A row or nothing.",
+        # three 2020 10-Qs plus Q1 2021 print nothing at all. The key covers the
+        # chart in every form it takes: the total on its own in section four, or
+        # the part due after the fiscal year with the total beside it while an
+        # analysis sets a line on it.
+        "无条件采购承诺": "the note-basis commitment total begins with the Q2 2021 10-Q; "
+                   "earlier filings print a different MD&A row or nothing.",
         # Two deliberate short cuts: the current release's three-column
         # reconciliation, and an eight-quarter cash-flow split printed as a
-        # three-month column only from 2022Q2.
+        # three-month column only from 2022Q2. The second is keyed on the shape
+        # its title has whichever way payables moved (「其中 … 来自应付账款增加」 in a
+        # rising quarter, 「应付账款减少占用了 …」 in a falling one), so a roll into a
+        # falling quarter does not need an edit here.
         "GAAP 每股收益环比": "the three columns one reconciliation table prints side by side.",
-        "来自应付账款增加": "an eight-quarter cut; the three-month payables line in the "
-                     "release cash-flow statement starts 2022Q2, and the long payables "
-                     "history is the days chart in section three.",
+        "经营现金流 US$#M，": "an eight-quarter cut; the three-month payables line in the "
+                        "release cash-flow statement starts 2022Q2, and the long payables "
+                        "history is the days chart in section three.",
     },
     "luxury": {
         # Not disclosure floors and not a backlog: these axes are intersections.
@@ -950,9 +976,10 @@ FLOOR_KIND = {
     'amd': {
         '数据中心 US$#B、同比': 'disclosure',
         '分部营业利润率：': 'disclosure',
-        '无条件采购承诺 US$#B': 'disclosure',
+        '数据中心季度收入': 'disclosure',
+        '无条件采购承诺': 'disclosure',
         'GAAP 每股收益环比': 'design',
-        '来自应付账款增加': 'design',
+        '经营现金流 US$#M，': 'design',
     },
     'luxury': {
         '六家在共同的': 'design',
@@ -1391,7 +1418,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 160)
+        self.assertEqual(settled.count("disclosure"), 161)
         self.assertEqual(settled.count("design"), 40)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
