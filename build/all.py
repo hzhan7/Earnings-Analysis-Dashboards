@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build import (  # noqa: E402
-    amzn, arm, avgo, axp, bc, cboe, cdns, cfr, cme, cost, googl, hkex, ibkr, ker, ma, mc, mco,
+    amd, amzn, arm, avgo, axp, bc, cboe, cdns, cfr, cme, cost, googl, hkex, ibkr, ker, ma, mc, mco,
     meta, msci, msft, mu, ndaq, nke, nvda, pm, race, rms, samsung, schw,
     skhynix, snps,
     spgi, tjx, tsm, v, zgn,
@@ -24,6 +24,7 @@ from build.payload_guard import write_js  # noqa: E402
 DATA_DIR = ROOT / "data"
 
 MODULES = {
+    "amd": amd,
     "amzn": amzn,
     "arm": arm,
     "avgo": avgo,
@@ -82,6 +83,17 @@ GROUPS = [
 # figures come from each builder's `headline_metrics(staging)`, computed from
 # the series the page itself is built from.
 ENTRIES = [
+    {
+        "slug": "amd",
+        "ticker": "AMD",
+        "name": "Advanced Micro Devices",
+        "aliases": ["AMD", "超威", "超微", "超微半导体"],
+        "group": "semiconductor_ai",
+        "cadence_label": "自然年季度；业绩 8-K 指引收入、毛利率与费用",
+        "search_text": ("amd advanced micro devices 超威 超微 半导体 cpu gpu epyc 服务器 instinct mi450 mi355 "
+                        "helios 数据中心 ai 加速器 ryzen 客户端 radeon 游戏 半定制 嵌入式 xilinx 赛灵思 fpga "
+                        "认股权证 openai meta anthropic 采购承诺"),
+    },
     {
         "slug": "amzn",
         "ticker": "AMZN",

@@ -308,7 +308,8 @@ def midpoint_deviation(ref: str, metric: str, xlabels: list[str], low: list[floa
                        src_extra: str, extra_note: str = "", window: int = 14,
                        label: Callable[[str], str] | None = None,
                        bar_labels: bool = True, axis_note: str = "",
-                       period_word: str = "季", xstep: int | None = None) -> dict:
+                       period_word: str = "季", xstep: int | None = None,
+                       lead: str | None = None) -> dict:
     """How far past the guided midpoint the quarter landed, for one guided metric.
 
     The band charts answer "did it clear the range at all", which saturates once
@@ -326,6 +327,11 @@ def midpoint_deviation(ref: str, metric: str, xlabels: list[str], low: list[floa
     guidance is quarterly; S&P Global guides only the full year, so its bars are
     fiscal years and a hardcoded 「季」 would have counted seven years as seven
     quarters in the chart's own title.
+
+    ``lead`` replaces the opening sentence, which reads a positive bar as a
+    conservative guide. That is right for revenue and margins and wrong for a
+    cost line, where above the guide means spending more than promised; AMD's
+    operating-expense record is the first cost metric scored with this helper.
     """
     if mode not in ("pct", "pp"):
         raise ValueError(f"unknown mode {mode!r}")
@@ -365,7 +371,8 @@ def midpoint_deviation(ref: str, metric: str, xlabels: list[str], low: list[floa
         "label_fmt": "pct1" if mode == "pct" else "pp1",
         "ylab": f"{unit} vs 指引中值",
         "note": (
-            f"正值 = 高于指引区间的中值；长期为正说明公司指引偏保守，不是一连串意外。"
+            (lead if lead is not None else
+             "正值 = 高于指引区间的中值；长期为正说明公司指引偏保守，不是一连串意外。")
             + axis_note
             + f"窗口内最大的一次是 {render(xlabels[finished[deviation.index(biggest)]])} "
             f"的 {biggest:+.1f}{unit}。"
