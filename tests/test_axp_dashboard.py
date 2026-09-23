@@ -345,8 +345,16 @@ class AxpDashboardTest(unittest.TestCase):
         self.assertIsNone(billed[1], "2016Q2 proprietary billed business was never printed")
         self.assertEqual(chart["xlabels"][0], self.staging["period_labels"][first])
         self.assertEqual(len(chart["xlabels"]), len(billed) - first)
-        self.assertAlmostEqual(chart["series"][0]["values"][0],
-                               round((billed[first] / billed[first - 4] - 1) * 100, 6))
+        reported = next(line for line in chart["series"] if line["name"].startswith("报告口径"))
+        self.assertAlmostEqual(reported["values"][0], round((billed[first] / billed[first - 4] - 1) * 100, 6))
+        # the FX-adjusted line starts where the release first printed the restated base
+        fx = next(line for line in chart["series"] if line["name"].startswith("汇率调整口径"))
+        base = self.staging["operating_metrics"]["billed_business_fx_base_usd_bn"]
+        start = next(i for i, v in enumerate(base) if v is not None)
+        self.assertEqual(periods[start], "2024Q1")
+        drawn = [v for v in fx["values"] if v is not None]
+        self.assertEqual(len(drawn), sum(1 for v in base if v is not None))
+        self.assertAlmostEqual(drawn[-1], round((billed[-1] / base[-1] - 1) * 100, 6))
 
     def test_the_buyback_note_counts_shares_over_the_axis_it_plots(self) -> None:
         """The note's whole argument is a comparison of two multiples.
@@ -673,9 +681,13 @@ class AxpDashboardTest(unittest.TestCase):
                     self.assertTrue(entry.get("source"), f"{entry['metric']} is typed without a source")
 
     def test_the_thresholds_the_page_declines_are_named(self) -> None:
-        excluded = "".join(self.staging["next_kpi"]["excluded"])
-        self.assertIn("整数", excluded)
-        self.assertIn("市场一致预期", excluded)
+        block = self.staging["next_kpi"]
+        self.assertIn("市场一致预期", "".join(block["excluded"]))
+        overview = next(ex for ex in self.exhibits if ex.get("ref") == "EX_NEXT_HEADROOM")
+        for item in block["not_drawn"]:
+            self.assertIn(f"第{'一二三四五'[item['note_item'] - 1]}行不画的部分", overview["note"])
+        # the old excuse -- 「公司只把这个数披露到整数」 -- was wrong and is gone
+        self.assertNotIn("只披露到整数", own_text(self.payload))
 
     def test_no_market_expectation_is_published(self) -> None:
         blob = json.dumps(self.payload, ensure_ascii=False)
@@ -853,6 +865,8 @@ def rolled_back(staging: dict) -> dict:
     s["next_kpi"] = {
         "period": label,
         "quantified": [dict(entry) for entry in prior["quantified"] if entry["threshold"] != 0],
+        "conditions": list(prior["conditions"]),
+        "not_drawn": [{"note_item": u["note_item"], "text": u["text"]} for u in prior["unsettled"]],
     }
     folder = "https://www.sec.gov/Archives/edgar/data/4962/000000496226000188/"
     s["sources"] = ([{"label": "American Express 2026 年第一季度业绩新闻稿（8-K EX-99.1）",
@@ -927,6 +941,10 @@ def rolled_forward(staging: dict, revenue_growth: int | None = None) -> dict:
     fin["total_expenses_usd_m"][-1] = round(fin["revenue_usd_m"][-1] * 0.74, 4)
     fin["ppop_usd_m"][-1] = fin["revenue_usd_m"][-1] - fin["total_expenses_usd_m"][-1]
     fin["pretax_income_usd_m"][-1] = fin["ppop_usd_m"][-1] - fin["provisions_usd_m"][-1]
+    # a made-up quarter keeps each segment an identity, the way a filed one is
+    for seg in s["segments_usd_m"].values():
+        seg["pretax_usd_m"][-1] = round(seg["revenue_usd_m"][-1] - seg["total_expenses_usd_m"][-1]
+                                        - seg["provisions_usd_m"][-1], 4)
     g = s["annual_guidance_history"]
     keys = vintage_keys(g)
     open_year = max(g["fiscal_years"])
@@ -1045,7 +1063,7 @@ class AxpChecksTest(unittest.TestCase):
         self.assertIn(f"卡费 US${c['net_card_fees_usd_m']:,.0f}M", price["title"])
         self.assertIn(f"每卡年费 US${c['average_fee_per_card_usd']:.0f}", price["title"])
         cet1 = next(ex for ex in self.exhibits if ex["title"].startswith("CET1 比率"))
-        self.assertIn(f"当前 {c['cet1_ratio_pct']:.2f}%", cet1["title"])
+        self.assertIn(f"当前 {c['cet1_ratio_pct']:.1f}%", cet1["title"])
 
     def test_the_threshold_readings_match_the_release(self) -> None:
         """Each current value, recomputed from `_checks` alone and compared at the
@@ -1054,13 +1072,20 @@ class AxpChecksTest(unittest.TestCase):
         c, prior = self.checks, self.checks["prior_year"]
         vce = sum(c["vce_usd_m"].values())
         growth = lambda now, then: (now / then - 1) * 100  # noqa: E731
+        before = c["previous_quarter"]
+        ytd = (vce + sum(before["vce_usd_m"].values())) / (c["revenue_usd_m"] + before["revenue_usd_m"]) * 100
+        jaws = (growth(c['revenue_usd_m'], prior['revenue_usd_m'])
+                - growth(c['total_expenses_usd_m'], prior['total_expenses_usd_m']))
+        build = c["total_provisions_usd_m"] - c["net_write_offs_usd_m"]
         expected = {
-            "净卡费（季度额）": f"${c['net_card_fees_usd_m']:,.0f}M",
-            "消费额同比（报告口径）": f"{growth(c['billed_business_usd_bn'], prior['billed_business_usd_bn']):.1f}%",
+            "净卡费（Q3 预警线）": f"US${c['net_card_fees_usd_m']:,.0f}M",
+            "净卡费（Q3 加仓线）": f"US${c['net_card_fees_usd_m']:,.0f}M",
+            "消费额同比（汇率调整口径）": f"{growth(c['billed_business_usd_bn'], c['billed_business_fx_base_usd_bn'][1]):.1f}%",
             "30+ 天逾期率": f"{c['past_due_30_pct']:.1f}%",
             "净核销率（本金口径）": f"{c['net_write_off_rate_principal_pct']:.1f}%",
-            "VCE 占收入比": f"{vce / c['revenue_usd_m'] * 100:.1f}%",
-            "jaws（收入增速 − 费用增速）": f"{growth(c['revenue_usd_m'], prior['revenue_usd_m']) - growth(c['total_expenses_usd_m'], prior['total_expenses_usd_m']):+.1f}pp",
+            "单季准备金净计提": f"{'−' if build < 0 else ''}US${abs(build):,.0f}M",
+            "全年 VCE 占收入比（年初至今）": f"{ytd:.1f}%",
+            "jaws（Q4 收敛线）": f"{jaws:+.1f}pp".replace("-", "−"),
             "CET1 比率": f"{c['cet1_ratio_pct']:.1f}%",
         }
         table = next(t for t in self.payload["tables"] if t["title"].startswith("下季阈值与当前值"))
@@ -1100,8 +1125,26 @@ class AxpChecksTest(unittest.TestCase):
             self.assertEqual(block[f"{row}_fx_adjusted_pct"][-2:], printed["fx_adjusted"], row)
         for entry in self.staging["prior_kpi_settlement"]["quantified"]:
             self.assertNotIn("actual", entry, entry["metric"])
-        self.assertEqual(self.staging["next_kpi"]["figures"]["fx_adjusted_billed_growth_pct"],
-                         self.checks["billed_business_growth_printed_pct"]["fx_adjusted"])
+
+    def test_the_fx_adjusted_billed_growth_is_two_printed_amounts(self) -> None:
+        """The release prints the restated prior-year base in dollars; its own whole-percent
+        FX-adjusted rate is that quotient rounded."""
+        base = self.staging["operating_metrics"]["billed_business_fx_base_usd_bn"]
+        billed = self.staging["operating_metrics"]["billed_business_usd_bn"]
+        self.assertEqual(base[-2:], self.checks["billed_business_fx_base_usd_bn"])
+        rate = (billed[-1] / base[-1] - 1) * 100
+        self.assertEqual(round(rate), self.checks["billed_business_growth_printed_pct"]["fx_adjusted"])
+
+    def test_the_reserve_build_is_provisions_less_write_offs(self) -> None:
+        build = self.staging["credit_metrics"]["reserve_build_usd_m"]
+        c = self.checks
+        self.assertEqual(c["total_provisions_usd_m"] - c["net_write_offs_usd_m"], c["reserve_build_usd_m"]["q2_2026"])
+        self.assertEqual(build[-1], c["reserve_build_usd_m"]["q2_2026"])
+        self.assertEqual(build[-2], c["reserve_build_usd_m"]["q1_2026"])
+        self.assertEqual(build[-5], c["reserve_build_usd_m"]["q2_2025"])
+        # the series starts with CECL, not before
+        periods = self.staging["periods"]
+        self.assertEqual(periods[next(i for i, v in enumerate(build) if v is not None)], "2020Q1")
 
     def test_the_write_off_basis_the_note_names_is_the_printed_one(self) -> None:
         figures = self.staging["prior_kpi_settlement"]["figures"]
@@ -1219,6 +1262,100 @@ class AxpFourPartTest(unittest.TestCase):
             self.assertIn(phrase, overview["note"])
 
 
+    # ── section three: this quarter's analysis, section 8 ────────────────────
+    def test_the_next_thresholds_are_this_analysis_section_eight(self) -> None:
+        block = self.s["next_kpi"]
+        quarter, year = self.s["period_labels"][-1].split()
+        after = f"Q1 {int(year) + 1}" if quarter == "Q4" else f"Q{int(quarter[1]) + 1} {year}"
+        self.assertEqual(block["for_period"], after)
+        self.assertEqual(len(block["conditions"]), self.note["next_rows"])
+        typed = [(e["note_item"], e["metric"], e["threshold"], e["direction"]) for e in block["quantified"]]
+        self.assertEqual(typed, [(row["row"], row["metric"], row["threshold"], row["direction"])
+                                 for row in self.note["next_thresholds"]])
+        self.assertFalse(any("current" in entry for entry in block["quantified"]))
+        self.assertEqual(sorted(f"row_{item['note_item']}" for item in block["not_drawn"]),
+                         sorted(self.note["next_not_drawn"]))
+
+    def test_the_next_thresholds_are_measured_from_the_series(self) -> None:
+        """Recomputed from the arrays along a second route, not through the builder's readers."""
+        fin, om, credit = self.s["financials"], self.s["operating_metrics"], self.s["credit_metrics"]
+        vce = [None if bd is None else rw + sv + bd for rw, sv, bd in zip(
+            fin["rewards_usd_m"], fin["card_member_services_usd_m"], fin["business_development_usd_m"])]
+        quarter = int(self.s["periods"][-1][5])
+        ytd = sum(vce[-quarter:]) / sum(fin["revenue_usd_m"][-quarter:]) * 100
+        growth = lambda values: (values[-1] / values[-5] - 1) * 100  # noqa: E731
+        now = {
+            "financials.net_card_fees_usd_m": fin["net_card_fees_usd_m"][-1],
+            "fx_yoy:billed": (om["billed_business_usd_bn"][-1] / om["billed_business_fx_base_usd_bn"][-1] - 1) * 100,
+            "credit_metrics.past_due_30_pct": credit["past_due_30_pct"][-1],
+            "credit_metrics.net_write_off_rate_principal_pct": credit["net_write_off_rate_principal_pct"][-1],
+            "credit_metrics.reserve_build_usd_m": credit["reserve_build_usd_m"][-1],
+            "vce_ratio_ytd": ytd,
+            "jaws": growth(fin["revenue_usd_m"]) - growth(fin["total_expenses_usd_m"]),
+            "operating_metrics.cet1_ratio_pct": om["cet1_ratio_pct"][-1],
+        }
+        expected = []
+        for row, entry in zip(self.note["next_thresholds"], self.s["next_kpi"]["quantified"]):
+            sign = 1 if row["direction"] == "up" else -1
+            expected.append(round(sign * (now[entry["reads"]] - row["threshold"]) / abs(row["threshold"]) * 100, 1))
+        overview = next(ex for ex in self.sections["next_quarter"]["exhibits"] if ex["kind"] == "diverging_bars")
+        self.assertEqual(overview["xlabels"], [row["metric"] for row in self.note["next_thresholds"]])
+        self.assertEqual(overview["values"], expected)
+        safe = sum(1 for value in expected if value >= 0)
+        self.assertTrue(overview["title"].startswith(
+            f"下季 {len(expected)} 条阈值：{cn_count(safe)}条当前已在安全侧"), overview["title"])
+
+    def test_every_next_line_is_drawn_on_the_chart_of_its_reading(self) -> None:
+        charts = [ex for ex in self.sections["next_quarter"]["exhibits"] if ex["kind"] == "lines"]
+        for entry in self.s["next_kpi"]["quantified"]:
+            chart = next(ex for ex in charts if ex["ref"] == axp.reading_ref("下季", entry["reads"]))
+            flat = [line["values"][0] for line in chart["series"] if len(set(line["values"])) == 1]
+            self.assertIn(entry["threshold"], flat, entry["metric"])
+        drawn = sorted(line["values"][0] for ex in charts for line in ex["series"] if len(set(line["values"])) == 1)
+        self.assertEqual(drawn, sorted(row["threshold"] for row in self.note["next_thresholds"]))
+
+    # ── section two: the analysis's conclusions, on filed numbers ─────────────
+    def test_section_two_carries_no_range_only_chart(self) -> None:
+        """「42 季里 X 在 a–b 之间」 is routine; section two leads with the quarter."""
+        for ex in self.sections["quarter_highlights"]["exhibits"]:
+            self.assertNotRegex(ex["title"], r"\d+ 季区间|\d+ 季里.*之间", ex["title"])
+        refs = [ex.get("ref") for ex in self.sections["quarter_highlights"]["exhibits"]]
+        self.assertEqual(refs, ["EX_BILLED", "EX_PTI", "EX_SEGLEG", "EX_EPSBRIDGE", "EX_EXPENSE", "EX_JAWS"])
+
+    def test_section_two_numbers_are_the_filings(self) -> None:
+        c = self.s["_checks"]
+        prior = c["prior_year"]
+        ex = {e["ref"]: e for e in self.sections["quarter_highlights"]["exhibits"]}
+        # consumer spend: the release's own dollar amounts
+        reported = (c["billed_business_usd_bn"] / prior["billed_business_usd_bn"] - 1) * 100
+        fx = (c["billed_business_usd_bn"] / c["billed_business_fx_base_usd_bn"][1] - 1) * 100
+        title = ex["EX_BILLED"]["title"]
+        self.assertRegex(title, rf"报告口径 [\d.]+% .到 {reported:.1f}%")
+        self.assertRegex(title, rf"汇率调整口径 [\d.]+% .到 {fx:.1f}%")
+        # the segment legs: USCS's pretax change and how much of it the provision line gave
+        pretax, provisions = c["segment_pretax_usd_m"]["USCS"], c["segment_provisions_usd_m"]["USCS"]
+        leg = provisions[0] - provisions[1]
+        self.assertIn(f"USCS +US${pretax[1] - pretax[0]:,.0f}M 里 +US${leg:,.0f}M"
+                      f"（{leg / (pretax[1] - pretax[0]) * 100:.0f}%）来自拨备下降", ex["EX_SEGLEG"]["title"])
+        # tax rate and share count between pretax growth and EPS growth
+        rate_then = c["tax_provision_usd_m"][0] / prior["pretax_income_usd_m"] * 100
+        rate_now = c["tax_provision_usd_m"][1] / c["pretax_income_usd_m"] * 100
+        self.assertIn(f"税率从 {rate_then:.1f}% 升到 {rate_now:.1f}%", ex["EX_EPSBRIDGE"]["title"])
+        bars = ex["EX_EPSBRIDGE"]["groups"][0]["values"]
+        self.assertAlmostEqual(bars[0] + bars[1] + bars[2], bars[3], places=4)
+        # the one expense line that outran total expenses
+        services = c["card_member_services_usd_m"]
+        self.assertIn(f"Card Member services：+{(services[1] / services[0] - 1) * 100:.1f}%"
+                      f"（+US${services[1] - services[0]:,.0f}M）", ex["EX_EXPENSE"]["title"])
+        # the release inside the provision leg
+        self.assertIn(f"US${abs(c['reserve_build_usd_m']['q2_2026']):,.0f}M 的准备金释放", ex["EX_PTI"]["note"])
+
+    def test_the_brief_is_the_analysis_three_insights(self) -> None:
+        brief = self.payload["brief"]
+        for word in ("<span>消费</span>", "<span>成色</span>", "<span>费用</span>"):
+            self.assertIn(word, brief)
+
+
 class AxpRollTest(unittest.TestCase):
     """What a roll can change without touching the builder."""
 
@@ -1286,6 +1423,13 @@ class AxpRollTest(unittest.TestCase):
         bare["prior_kpi_settlement"]["unsettled"] = bare["prior_kpi_settlement"]["unsettled"][:1]
         with self.assertRaisesRegex(ValueError, "neither settled nor explained"):
             axp.build_payload(bare)
+
+    def test_a_roll_without_the_fx_base_stops_the_build(self) -> None:
+        """A threshold on the FX-adjusted rate cannot fall back to last quarter's base."""
+        rolled = rolled_forward(self.s)
+        rolled["operating_metrics"]["billed_business_fx_base_usd_bn"][-1] = None
+        with self.assertRaisesRegex(ValueError, "billed_business_fx_base_usd_bn"):
+            axp.build_payload(rolled)
 
     def test_a_point_vintage_without_the_companys_words_stops_the_build(self) -> None:
         bare = copy.deepcopy(self.s)
@@ -1392,8 +1536,7 @@ class AxpFindingsTest(unittest.TestCase):
             s["annual_guidance_history"]["actual_by_year"]["2023"]["eps"] = 10.9
 
         clean = self.page()
-        claims = ("能结清的部分是两面的", "四年里一次都没有跌破下限", "也是唯一一条被跌破过的",
-                  "EPS 0 次跌破下限")
+        claims = ("四年里一次都没有跌破下限", "也是唯一一条被跌破过的")
         missed = self.page(eps_miss)
         for claim in claims:
             with self.subTest(claim=claim):
@@ -1460,8 +1603,8 @@ class AxpFindingsTest(unittest.TestCase):
             fin["pretax_income_usd_m"][-1] -= 1500
 
         clean, other = self.page(), self.page(everything_else_faster)
-        self.assertIn("这条线是本季负 jaws 的来源", clean)
-        self.assertIn("本季负 jaws 不只来自这条线", other)
+        self.assertIn("VCE 是本季负 jaws 的来源", clean)
+        self.assertIn("本季负 jaws 不只来自 VCE", other)
 
     def test_the_segment_title_counts_the_quarters_above_half(self) -> None:
         """「GMNS 长期在 50% 以上，其余三个在 20% 上下」: 11 of 26, and ICS ~10%."""
@@ -1474,6 +1617,8 @@ class AxpFindingsTest(unittest.TestCase):
         def rich(s):
             block = s["segments_usd_m"]["GMNS"]
             block["pretax_usd_m"] = [r * 0.6 for r in block["revenue_usd_m"]]
+            block["total_expenses_usd_m"] = [None if p is None else r - p - pt for r, p, pt in zip(
+                block["revenue_usd_m"], block["provisions_usd_m"], block["pretax_usd_m"])]
 
         n = len(seg["revenue_usd_m"])
         self.assertIn(f"{n} 季里 {n} 季在 50% 以上", self.page(rich))
@@ -1516,8 +1661,8 @@ class AxpFindingsTest(unittest.TestCase):
             s["next_kpi"]["quantified"] = [e for e in s["next_kpi"]["quantified"]
                                            if e.get("reads") != "credit_metrics.past_due_30_pct"]
 
-        self.assertIn("第三节的两条信用阈值才分得出来", self.page())
-        self.assertIn("第三节的一条信用阈值才分得出来", self.page(one_credit))
+        self.assertIn("第三节的三条信用阈值才分得出来", self.page())
+        self.assertIn("第三节的两条信用阈值才分得出来", self.page(one_credit))
 
     def test_the_headline_says_but_only_when_the_provision_leg_leads(self) -> None:
         def operating_leads(s):

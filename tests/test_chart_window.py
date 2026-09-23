@@ -178,7 +178,7 @@ def _axp_threshold_reach() -> int:
     page = js_payload(ROOT / "data" / "axp.js", "window.DASH")
     return sum(1 for section in page["sections"] if section["id"] in ("settled", "next_quarter")
                for ex in section["exhibits"]
-               if ex["kind"] == "lines" and ("上季" in ex["title"] or "阈值" in ex["title"])
+               if ex["kind"] == "lines" and ("上季" in ex["title"] or "下季" in ex["title"])
                and (first_year(ex) or TARGET_YEAR + 1) <= TARGET_YEAR)
 
 

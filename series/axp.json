@@ -88,7 +88,7 @@
     ],
     "note": {
       "source": {
-        "this_quarter": "2026-07-24 AXP Q2 2026 vs Q1 2026 Analysis.md：第 0 节「上季遗留问题回答」7 行判定表（只有逐条文字判定，没有统计行）；第 8 节 A 表「上季 5 条 KPI 逐条校准」",
+        "this_quarter": "2026-07-24 AXP Q2 2026 vs Q1 2026 Analysis.md：第 0 节「上季遗留问题回答」7 行判定表（只有逐条文字判定，没有统计行）；第 8 节 A 表「上季 5 条 KPI 逐条校准」、B 表「本季 KPI 表」5 行、C「立场撤销条件」",
         "last_quarter": "2026-04-24 2305 AXP Q1 2026 vs Q4 2025 Analysis.md：第 8 节「关键观察指标」5 行；文末「Follow-up Questions for Next Quarter」7 条"
       },
       "checked_on": "2026-09-24",
@@ -170,9 +170,136 @@
       "prior_unquantified_rows": [
         2,
         4
+      ],
+      "next_rows": 5,
+      "next_thresholds": [
+        {
+          "row": 1,
+          "metric": "净卡费（Q3 预警线）",
+          "threshold": 2960.0,
+          "direction": "up"
+        },
+        {
+          "row": 1,
+          "metric": "净卡费（Q3 加仓线）",
+          "threshold": 2985.0,
+          "direction": "up"
+        },
+        {
+          "row": 2,
+          "metric": "消费额同比（汇率调整口径）",
+          "threshold": 8.8,
+          "direction": "up"
+        },
+        {
+          "row": 3,
+          "metric": "30+ 天逾期率",
+          "threshold": 1.4,
+          "direction": "down"
+        },
+        {
+          "row": 3,
+          "metric": "净核销率（本金口径）",
+          "threshold": 2.2,
+          "direction": "down"
+        },
+        {
+          "row": 3,
+          "metric": "单季准备金净计提",
+          "threshold": 150.0,
+          "direction": "down"
+        },
+        {
+          "row": 4,
+          "metric": "全年 VCE 占收入比（年初至今）",
+          "threshold": 45.0,
+          "direction": "down"
+        },
+        {
+          "row": 4,
+          "metric": "jaws（Q4 收敛线）",
+          "threshold": -1.0,
+          "direction": "up"
+        },
+        {
+          "row": 5,
+          "metric": "CET1 比率",
+          "threshold": 10.2,
+          "direction": "up"
+        }
+      ],
+      "next_not_drawn": {
+        "row_1": "Q4 <$3,076（撤销条件①）与 Q4 ≥$3,076 且 FY VCE ≤45%（加满）：Q4 才结算",
+        "row_2": "还原组合拖累后 ≥9.4%：还原量是分析自己的估算",
+        "row_3": "30+ 要连续两季",
+        "row_5": "回购不减；AML 罚款 >$500M 或含业务限制条款"
+      }
+    },
+    "billed_business_fx_base_usd_bn": [
+      393.6,
+      416.8
+    ],
+    "reserve_build_usd_m": {
+      "q2_2025": 222,
+      "q1_2026": -24,
+      "q2_2026": -191
+    },
+    "net_write_offs_usd_m": 1275,
+    "reserve_rate_pct": 2.7,
+    "segment_pretax_usd_m": {
+      "USCS": [
+        1676,
+        2065
+      ],
+      "CS": [
+        905,
+        970
+      ],
+      "ICS": [
+        465,
+        477
+      ],
+      "GMNS": [
+        1054,
+        1128
       ]
     },
-    "source": "American Express Q2 2026 业绩 8-K（2026-07-24，acc 0000004962-26-000318）：EX-99.1 首页表（Total Revenues Net of Interest Expense $19,637 / 10%，Pretax Income $4,071 / 15%，Net Income $3,110，Diluted EPS $4.53 / 11%，Average Diluted Common Shares 679，Billed Business $455.8 / 9% / FX-adjusted 9%）、CEO 引语（raising our full-year revenue growth guidance to 10 percent；continue to expect full-year EPS of $17.30 to $17.90）；EX-99.2 第 1 页 Consolidated Statements of Income（Discount revenue 10,163、Net card fees 2,862、Net interest income 4,649、Total provisions for credit losses 1,084、Card Member rewards 5,051、Business development 1,755、Card Member services 1,949、Total expenses 14,482）、第 3 页 Consolidated Capital（CET1 10.4%）、第 4 页 Selected Card Related Statistical Information（Proprietary cards-in-force 87.6、Average fee per card $131）、第 5 页 Network Volumes Related Growth（International Card Services Q2'26 / Q1'26：reported 13 / 20，FX-adjusted 12 / 13）、第 6 页 Card balances（Net write-off rate (principal only) 2.0%，30+ days past due 1.2%）。去年同季（prior_year）取 EX-99.1 首页表的 2025 列与 EX-99.2 第 1 页的 Q2'25 列。季末按 10-Q 封面 June 30, 2026（acc 0000004962-26-000322）。第一节新读的几格：EX-99.2 第 5 页 Network Volumes Related Growth 的 Travel & Entertainment spend （reported Q2'26 / Q1'26：10 / 12，FX-adjusted：10 / 9）；第 1 页 Other, net（Q2'26 294、Q1'26 147）；第 6 页 Card balances 的 Net write-off rate (principal, interest and fees) 2.2%、30+ days past due Q1'26 1.3%。上季的全年指引取 2026-04-23 Q1 2026 业绩 8-K（acc 0000004962-26-000188）EX-99.1 CEO 引语：reaffirming our full-year 2026 guidance for 9 to 10 percent revenue growth and EPS of $17.30 to $17.90。",
+    "segment_provisions_usd_m": {
+      "USCS": [
+        829,
+        498
+      ],
+      "CS": [
+        360,
+        353
+      ],
+      "ICS": [
+        210,
+        223
+      ],
+      "GMNS": [
+        5,
+        10
+      ]
+    },
+    "tax_provision_usd_m": [
+      665,
+      961
+    ],
+    "card_member_services_usd_m": [
+      1301,
+      1949
+    ],
+    "previous_quarter": {
+      "period": "Q1 2026",
+      "revenue_usd_m": 18907,
+      "vce_usd_m": {
+        "rewards": 4891,
+        "business_development": 1591,
+        "card_member_services": 1975
+      }
+    },
+    "source": "American Express Q2 2026 业绩 8-K（2026-07-24，acc 0000004962-26-000318）：EX-99.1 首页表（Total Revenues Net of Interest Expense $19,637 / 10%，Pretax Income $4,071 / 15%，Net Income $3,110，Diluted EPS $4.53 / 11%，Average Diluted Common Shares 679，Billed Business $455.8 / 9% / FX-adjusted 9%）、CEO 引语（raising our full-year revenue growth guidance to 10 percent；continue to expect full-year EPS of $17.30 to $17.90）；EX-99.2 第 1 页 Consolidated Statements of Income（Discount revenue 10,163、Net card fees 2,862、Net interest income 4,649、Total provisions for credit losses 1,084、Card Member rewards 5,051、Business development 1,755、Card Member services 1,949、Total expenses 14,482）、第 3 页 Consolidated Capital（CET1 10.4%）、第 4 页 Selected Card Related Statistical Information（Proprietary cards-in-force 87.6、Average fee per card $131）、第 5 页 Network Volumes Related Growth（International Card Services Q2'26 / Q1'26：reported 13 / 20，FX-adjusted 12 / 13）、第 6 页 Card balances（Net write-off rate (principal only) 2.0%，30+ days past due 1.2%）。去年同季（prior_year）取 EX-99.1 首页表的 2025 列与 EX-99.2 第 1 页的 Q2'25 列。季末按 10-Q 封面 June 30, 2026（acc 0000004962-26-000322）。第一节新读的几格：EX-99.2 第 5 页 Network Volumes Related Growth 的 Travel & Entertainment spend （reported Q2'26 / Q1'26：10 / 12，FX-adjusted：10 / 9）；第 1 页 Other, net（Q2'26 294、Q1'26 147）；第 6 页 Card balances 的 Net write-off rate (principal, interest and fees) 2.2%、30+ days past due Q1'26 1.3%。上季的全年指引取 2026-04-23 Q1 2026 业绩 8-K（acc 0000004962-26-000188）EX-99.1 CEO 引语：reaffirming our full-year 2026 guidance for 9 to 10 percent revenue growth and EPS of $17.30 to $17.90。第三节与第二节新读的几格：EX-99.1 首页 Billed Business 行的 FX-adjusted 去年同期 416.8（Q2 2026 发布）与 393.6（Q1 2026 发布，acc 0000004962-26-000188）；EX-99.2 第 6 页准备金滚动表：净核销 Card balances 1,207 + other loans 61 + 3 + other receivables 4 = 1,275，拨备 1,084，准备金净计提 −191（与 2026-07-24 业绩演示稿第 12 页 Reserve Build/(Release) ($191) 相同；该页另印 Q2'25 $222、Q1'26 ($24)）、Reserve as a % of Card balances 2.7%；第 7 页分部表 Q2'26 / Q2'25 税前 USCS 2,065 / 1,676、CS 970 / 905、ICS 477 / 465、GMNS 1,128 / 1,054，拨备 USCS 498 / 829、CS 353 / 360、ICS 223 / 210、GMNS 10 / 5；第 1 页 Income tax provision 961 / 665、Card Member services 1,949 / 1,301。上一季（Q1'26）的收入 18,907 与 VCE 三行 4,891 / 1,591 / 1,975 取自本季 EX-99.2 第 1 页的 Q1'26 列。",
     "checked_on": "2026-09-24"
   },
   "periods": [
@@ -1675,7 +1802,52 @@
       10.5,
       10.5,
       10.4
-    ]
+    ],
+    "billed_business_fx_base_usd_bn": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      344.1,
+      365.9,
+      366.4,
+      376.7,
+      363.9,
+      390.7,
+      388.1,
+      412.7,
+      393.6,
+      416.8
+    ],
+    "billed_business_fx_base_note": "去年同季消费额按本季汇率重算的金额（公司口径 FX-adjusted），读自每季业绩 8-K EX-99.1 首页那张表的 Billed Business 一行：本期金额、去年同期金额、去年同期的 FX-adjusted 金额并排印出。公司从 2024-04-19 那份（2024Q1）起才这样印，2024-01-26 那份的首页只印两期金额，更早的首页没有消费额这一行 —— 所以这一列 2024Q1 以前是空的，是披露边界。十个季度逐季核过：本期与去年同期金额都等于本页 billed_business_usd_bn 的两格，本期 ÷ FX 基数 − 1 四舍五入后等于同一行印的整数 FX-adjusted 增速。"
   },
   "segment_periods": [
     "2020Q1",
@@ -2580,7 +2752,52 @@
         "2024": "FY2024 与 FY2025 10-K",
         "2025": "FY2025 10-K（0000004962-26-000080，axp-20251231.htm）"
       }
-    }
+    },
+    "reserve_build_usd_m": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      1703,
+      628,
+      -116,
+      -674,
+      -1054,
+      -866,
+      -393,
+      -168,
+      -320,
+      58,
+      387,
+      492,
+      320,
+      327,
+      321,
+      400,
+      148,
+      101,
+      264,
+      153,
+      -73,
+      222,
+      125,
+      141,
+      -24,
+      -191
+    ],
+    "reserve_build_note": "准备金净计提（reserve build / release）按公司自己的定义：当季拨备减当季净核销，正数是计提、负数是释放。拨备取合并损益表的 Total provisions for credit losses；净核销在统计表里只按账簿印（Card Member loans、Card Member receivables、other loans、other receivables 四张准备金滚动表，2026 年起前两张合并为 Card balances），本页逐张相加。每份统计表并排印五个季度，2020-07-24 到 2026-07-24 共 25 份，每季被读到 1–5 次，读数没有一处不一致。公司业绩演示稿印出这个数的 2024Q4–2026Q2 七个季度取公司印的数：其中六季与相减的结果相同，2025Q3 公司印 125、相减得 126（各账簿净核销先各自四舍五入再相加）。序列从 2020Q1 起：公司自 2020-01-01 起按 CECL 计提准备金，此前是另一套计提口径，本页不把两段接在一条线上。"
   },
   "annual_guidance_history": {
     "vintages": [
@@ -3189,24 +3406,40 @@
   },
   "next_kpi": {
     "period": "Q2 2026",
-    "set_in": "2026-07-24 AXP Q2 2026 笔记，第 8 节关键观察指标",
+    "for_period": "Q3 2026",
+    "set_in": "Q2 2026",
     "quantified": [
       {
-        "metric": "净卡费（季度额）",
+        "metric": "净卡费（Q3 预警线）",
+        "note_item": 1,
+        "side": "警示",
         "direction": "up",
         "threshold": 2960.0,
         "unit": "usd_m",
         "reads": "financials.net_card_fees_usd_m"
       },
       {
-        "metric": "消费额同比（报告口径）",
+        "metric": "净卡费（Q3 加仓线）",
+        "note_item": 1,
+        "side": "加仓",
+        "direction": "up",
+        "threshold": 2985.0,
+        "unit": "usd_m",
+        "reads": "financials.net_card_fees_usd_m"
+      },
+      {
+        "metric": "消费额同比（汇率调整口径）",
+        "note_item": 2,
+        "side": "警示",
         "direction": "up",
         "threshold": 8.8,
         "unit": "pct",
-        "reads": "yoy:operating_metrics.billed_business_usd_bn"
+        "reads": "fx_yoy:billed"
       },
       {
         "metric": "30+ 天逾期率",
+        "note_item": 3,
+        "side": "撤销",
         "direction": "down",
         "threshold": 1.4,
         "unit": "pct",
@@ -3214,20 +3447,35 @@
       },
       {
         "metric": "净核销率（本金口径）",
+        "note_item": 3,
+        "side": "撤销",
         "direction": "down",
         "threshold": 2.2,
         "unit": "pct",
         "reads": "credit_metrics.net_write_off_rate_principal_pct"
       },
       {
-        "metric": "VCE 占收入比",
+        "metric": "单季准备金净计提",
+        "note_item": 3,
+        "side": "撤销",
+        "direction": "down",
+        "threshold": 150.0,
+        "unit": "usd_m",
+        "reads": "credit_metrics.reserve_build_usd_m"
+      },
+      {
+        "metric": "全年 VCE 占收入比（年初至今）",
+        "note_item": 4,
+        "side": "撤销",
         "direction": "down",
         "threshold": 45.0,
         "unit": "pct",
-        "reads": "vce_ratio"
+        "reads": "vce_ratio_ytd"
       },
       {
-        "metric": "jaws（收入增速 − 费用增速）",
+        "metric": "jaws（Q4 收敛线）",
+        "note_item": 4,
+        "side": "撤销",
         "direction": "up",
         "threshold": -1.0,
         "unit": "pp",
@@ -3235,20 +3483,54 @@
       },
       {
         "metric": "CET1 比率",
+        "note_item": 5,
+        "side": "警示",
         "direction": "up",
         "threshold": 10.2,
         "unit": "pct",
         "reads": "operating_metrics.cet1_ratio_pct"
       }
     ],
-    "figures": {
-      "fx_adjusted_billed_growth_pct": 9
-    },
+    "conditions": [
+      "Net card fees（季度额）：Q3 <$2,960（YoY <16%）= 预警，暂停加仓；Q4 <$3,076（high-teens miss）= 撤销条件①；加仓两级：Q3 ≥$2,985 且 BB 还原口径 ≥9.4%，Q4 ≥$3,076 且 FY VCE ≤45%",
+      "FX 调整 billed business：Q3 打印口径 <8.8%（即还原 0.5-0.7pp 后 <9.4%）= 动能脉冲见顶，暂停加仓",
+      "信用三件套：30+ 连续两季 ≥1.4%；或 NWO ≥2.2%；或单季 build >$150M = 信贷拐点复核（撤销条件 ②）",
+      "FY VCE/收入比 >45%；或 Q4 jaws 未收敛至 −1pp 以内 = J-curve 改判为结构性成本通胀（撤销条件 ③）",
+      "Q3 CET1 <10.2% 且回购不减 = 资本挤压确认；AML 罚款 >$500M 或含业务限制条款 = 单独复核"
+    ],
+    "not_drawn": [
+      {
+        "note_item": 1,
+        "text": "Q4 那条「<US$3,076M = 撤销条件①」与「≥US$3,076M 且全年 VCE ≤45% = 加满」要等 2027 年 1 月的第四季度发布才结算，不进下季总览"
+      },
+      {
+        "note_item": 2,
+        "text": "「还原组合拖累后 ≥9.4%」那半句：还原量（Lowe's 与 Amazon 两个小企业联名组合转出的 0.5–0.7pp）是本季分析按余额比例分摊出来的估算，不是申报数，本页不画"
+      },
+      {
+        "note_item": 3,
+        "text": "30+ 天逾期率要「连续两季」≥1.4% 才触发，图上的线只画阈值本身，连续与否要到下下季才判得出"
+      },
+      {
+        "note_item": 5,
+        "text": "「且回购不减」本页尚未接入季度回购金额（10-Q 的 MD&A 印当季三个月的金额）；反洗钱执法罚款 >US$500M 或含业务限制条款：公司在 {quarter} 10-Q 里只写了「预计将面临执法行动」，没有任何金额"
+      }
+    ],
     "excluded": [
-      "（1）<b>汇率调整口径的消费增速</b>：本季那份分析把阈值写在 {billed_threshold}% 上，而公司只把这个数披露到整数个百分点（本季印的是 {fx_adjusted_billed_growth_pct}%），阈值的精度比披露还细，同一个数字可以同时读成达标和不达标 —— 本页改用两个印出来的美元金额相除得到的报告口径增速，它可以被结清，并在图上写明这不是同一个口径。",
-      "（2）<b>市场一致预期</b>：没有可核对的、带日期的公开来源，站点规则允许发布带日期的对照点，但不允许凭印象填一个数。",
-      "（3）<b>反洗钱执法行动的金额</b>：公司在 {quarter} 10-Q 里新写了一句「预计将面临执法行动」，但没有任何金额，本页不为它编一个。"
-    ]
+      "<b>市场一致预期</b>：没有可核对、带日期的公开来源；站点规则允许发布带日期的对照点，但不允许凭印象填一个数。"
+    ],
+    "chart_notes": {
+      "financials.net_card_fees_usd_m": "两条线都来自本季分析第 8 节第一行，它们的来历是公司自己的说法：业绩演示稿第 14 页写着 Q3 同比加速、Q4 以 high teens 出年，本季分析据此按去年同季的金额推出 Q3 需 US$2,959M–2,985M（×1.16–1.17）、Q4 需 US$3,076M–3,128M（×1.17–1.19）。推算是那份分析做的，本页只照录阈值。",
+      "fx_yoy:billed": "本季分析第 8 节第二行：Q3 汇率调整口径 <8.8% = 动能脉冲见顶、暂停加仓。它还给了一个「还原组合转出拖累后」的口径，那是分析自己的估算，本页不画。",
+      "credit_metrics.past_due_30_pct": "本季分析第 8 节第三行：30+ 天逾期率连续两季 ≥1.4% = 信贷拐点复核（立场撤销条件②）。",
+      "credit_metrics.net_write_off_rate_principal_pct": "本季分析第 8 节第三行：净核销率（本金口径）≥2.2% = 同一条撤销条件。",
+      "credit_metrics.reserve_build_usd_m": "本季分析第 8 节第三行：单季准备金净计提 >US$150M = 同一条撤销条件。",
+      "vce_ratio_ytd": "本季分析第 8 节第四行：全年 VCE 占收入比 >45% = 立场撤销条件③。45% 是公司在本季电话会上给的全年区间「44% 到 45%」的上沿（电话会口径，业绩 8-K 里没有这句），上季电话会的说法是「约 44%」。",
+      "jaws": "本季分析第 8 节第四行：Q4 的 jaws 没收敛到 −1pp 以内 = 同一条撤销条件 —— 要的是收敛，不是转正。",
+      "operating_metrics.cet1_ratio_pct": "本季分析第 8 节第五行：Q3 CET1 <10.2% 且回购不减 = 资本挤压确认。"
+    },
+    "source": "阈值原文：2026-07-24《AXP Q2 2026 vs Q1 2026 Analysis》第 8 节 B 表「本季 KPI 表」5 行，撤销条件见同节 C「立场撤销条件」。",
+    "conditions_note": "行文是本季分析第 8 节 B 表与 C 表的节录：阈值与触发类型逐字保留，仓位比例与估值方面的字样删去 —— 本站不发布这些。"
   },
   "sources": [
     {
@@ -3276,7 +3558,18 @@
     "period": "Q2 2026",
     "not_wired": [
       "反洗钱执法行动的任何金额（公司在 {quarter} 10-Q 里只写了「预计将面临执法行动」，没有金额）"
-    ]
+    ],
+    "billed_note": "本季分析再把 Lowe's 与 Amazon 两个小企业联名组合转出的拖累（它按余额比例估 0.2–0.4pp）加回去，得出有机 9.6%–9.8%；那是分摊出来的估算，不是申报数，本页不画。公司新闻稿自己的说法是：9% 是三年来汇率调整口径的最高（the highest rate we've seen in three years on an FX-adjusted basis）。",
+    "segment_note": "ICS 本季税前比上季 {ics_qoq}，是因为上季那一格含 Swisscard 原持股的重估收益与一笔国际非所得税准备金的释放（Q1 10-Q，两者都没有单独披露金额）；同比看它只 {ics_yoy}。",
+    "expense_note": "10-Q 写的原因是持卡人权益的使用增加与美国 Platinum 的新权益（higher usage of Card Member benefits and the new U.S. Platinum benefits）。公司在本季电话会上把全年 VCE 占收入比的说法从「约 44%」改成「44% 到 45%」，并说 Q4 起 lap 掉 Platinum refresh 之后 VCE 增速会放缓（电话会口径）—— 第三节第四行那两条撤销线盯的就是这件事。",
+    "highlights_not_drawn": "本季分析的结论里还有几条本页没画：准备金占卡余额的比率本季 {reserve_rate_pct}%（统计表印），CFO 在电话会上拿 2019 年末的 {reserve_rate_call_pct}% 作参照（电话会口径）—— 本页没有接入这一口径的长序列；上半年购置房产与设备 {ppe_half_usd_m}、去年同期 {ppe_half_prior_usd_m}（10-Q 现金流量表，新总部在建），本页没接现金流；TheFork 的对价 AXP 自己的申报没有披露；GBT 约 30% 股权出售的「sizable」税前收益（10-Q）没有金额。",
+    "figures": {
+      "reserve_rate_pct": 2.7,
+      "reserve_rate_call_pct": 2.9,
+      "ppe_half_usd_m": 2047,
+      "ppe_half_prior_usd_m": 1049
+    },
+    "figures_source": "准备金率：本季 EX-99.2 第 6 页 Card balances「Reserve as a % of Card balances」2.7%；2019 年末 2.9% 是 CFO 在 2026-07-24 电话会上的说法（「lowered the credit reserve rate from 2.9% to 2.7%」）。购置房产与设备：Q2 2026 10-Q（acc 0000004962-26-000322）现金流量表 XBRL PaymentsToAcquirePropertyPlantAndEquipment，2026-01-01 至 2026-06-30 2,047、2025 年同期 1,049（百万美元）。"
   },
   "network_growth_printed_pct": {
     "periods": [
@@ -3574,10 +3867,10 @@
       }
     ],
     "conditions": [
-      "Q2/Q3 EPS beat 后 FY guide 上修 ≥ +3% = 再投资 cushion 用尽 → 加仓；连续 3 季 beat 但 FY guide 仍维持 = 再投资强度持续高位、2027 growth 兑现是 catalyst → 跟踪",
-      "Q2/Q3 back book spend uplift YoY ≥ +6% + 续约 retention 维持 95%+ = refresh 质量结构性 → 加仓 + 重估 fee-centric 估值乘数；< +3% 或 retention 下行 = refresh 仅初期效应 → 跟踪",
+      "Q2/Q3 EPS beat 后 FY guide 上修 ≥ +3% = 再投资 cushion 用尽 → 加仓；连续 3 季 beat 但 FY guide 仍维持 = 再投资强度持续高位 → 跟踪",
+      "Q2/Q3 back book spend uplift YoY ≥ +6% + 续约 retention 维持 95%+ = refresh 质量结构性 → 加仓；< +3% 或 retention 下行 = refresh 仅初期效应 → 跟踪",
       "Q2/Q3 ICS ≥ +18% + T&E ≥ +10% = 国际化 + premium 消费同步加速 → 加仓；ICS < +15% 或 T&E 转负 = 周期性消退 → 跟踪",
-      "H2 2026 ACE 商家合作公告 ≥ 3 家主流支付场景 + Agent Purchase Protection 用户量化披露 = AI optionality 进入 base case → 加仓 + multiple expansion；连续 2 季仅产品叙事无量化 = AI 仍是 option 而非 base case → 跟踪",
+      "H2 2026 ACE 商家合作公告 ≥ 3 家主流支付场景 + Agent Purchase Protection 用户量化披露 = AI optionality 进入 base case → 加仓；连续 2 季仅产品叙事无量化 → 跟踪",
       "Q2/Q3 provisions YoY < +5% + write-off rate 守住 ~2.1% = 信贷质量稳定 → 跟踪；provisions YoY +15%+ 或 write-off 升至 ≥ 2.5% = 信贷周期早期信号 → 警示"
     ],
     "dispositions": [
@@ -3596,7 +3889,8 @@
       "credit_metrics.net_write_off_rate_principal_pct": "上季原文只写了「核销率守住约 2.1%」，没写口径。本页按公司新闻稿用的本金口径结算（本季 {nwo}）；含利息与费用的口径本季是 {nwo_total_pct}%，按那个口径就越过了 2.1%。本季分析也按本金口径判为未触发，并指出原阈值口径含糊。"
     },
     "overview_note": "ICS 消退线那一根是按字面被跌破的，跌幅几乎全是汇率基数，两条口径画在下一张图里；本季分析据此把这条判为设计失效。",
-    "source": "阈值原文：2026-04-24《AXP Q1 2026 vs Q4 2025 Analysis》第 8 节「关键观察指标」5 行；处置：2026-07-24《AXP Q2 2026 vs Q1 2026 Analysis》第 8 节 A 表「上季 5 条 KPI 逐条校准」。"
+    "source": "阈值原文：2026-04-24《AXP Q1 2026 vs Q4 2025 Analysis》第 8 节「关键观察指标」5 行；处置：2026-07-24《AXP Q2 2026 vs Q1 2026 Analysis》第 8 节 A 表「上季 5 条 KPI 逐条校准」。",
+    "conditions_note": "行文是上季分析第 8 节的节录：阈值与触发类型逐字保留，估值乘数的字样删去 —— 本站不发布估值。"
   },
   "analysis_coverage": {
     "first_period": "Q1 2026",
