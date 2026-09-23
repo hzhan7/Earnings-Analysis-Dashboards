@@ -139,13 +139,18 @@ def _tsm_story_reach() -> int:
 
 
 def _intc_threshold_reach() -> int:
-    """Intel's two threshold-line charts run the full 42 quarters, but they are
-    drawn only while the series carries a `thresholds` block for the quarter --
-    the page is rolled by editing `series/intc.json` alone, so the pin counts the
-    permanent charts and adds these while they are published."""
+    """Intel's threshold-line charts -- last quarter's thresholds settled in
+    section one, next quarter's in section three -- are drawn only while the
+    series carries those period-stamped blocks, and only some of them run the
+    full 42 quarters (non-GAAP gross margin and net debt do; DCAI, external
+    Foundry revenue and adjusted free cash flow start later, each on its own
+    disclosure floor). The page is rolled by editing `series/intc.json` alone,
+    so the pin counts the permanent charts and adds the threshold lines that
+    reach 2016 while they are published."""
     page = js_payload(ROOT / "data" / "intc.js", "window.DASH")
     return sum(1 for section in page["sections"] for ex in section["exhibits"]
-               if "警戒线" in ex["title"])
+               if ("阈值" in ex["title"] or "警戒线" in ex["title"])
+               and (first_year(ex) or TARGET_YEAR + 1) <= TARGET_YEAR)
 
 
 def _tsm_advanced_count() -> dict:
@@ -917,6 +922,18 @@ CONVERTED = {
                               "figures for the same quarters before the recast.",
         "合伙人出资净额：": "the cash-flow statement has no partner-contribution line before the "
                    "first SCIP closed in 2022; every earlier 10-Q/10-K was read for it.",
+        # Last quarter's thresholds, settled in section one (drawn while the
+        # series carries a `prior_kpi_settlement` block).
+        "DCAI 收入同比：": "a year-on-year on the current segment basis needs the year-ago quarter on "
+                      "that basis, which the Q1 2025 recast printed back to 2024Q1 only -- so it "
+                      "starts 2025Q1; earlier DCAI figures sit on the 2022 and 2024 structures.",
+        "Intel Foundry 外部收入（公司口径）：": "same current-basis floor as the external-revenue chart: "
+                                   "the Q1 2025 recast starts at 2024Q1, and the 2024 filings "
+                                   "printed different figures for the same quarters.",
+        "调整后自由现金流：": "Intel first printed adjusted free cash flow in the Q1 2022 release "
+                     "(2022-04-28). Every earlier EX-99.1 was read: 2018-01-25 to 2022-01-26 "
+                     "print 'free cash flow' (operating cash flow less additions to PP&E), a "
+                     "different measure, and the 2016-2017 releases print neither.",
     },
     "zgn": {
         "DTC 占品牌收入从": "revenue by distribution channel is quarterly only from the "
@@ -992,6 +1009,9 @@ FLOOR_KIND = {
         'Intel Foundry 现行口径': 'disclosure',
         'Intel Foundry 的外部收入': 'disclosure',
         '合伙人出资净额：': 'disclosure',
+        'DCAI 收入同比：': 'disclosure',
+        'Intel Foundry 外部收入（公司口径）：': 'disclosure',
+        '调整后自由现金流：': 'disclosure',
     },
     'zgn': {
         'DTC 占品牌收入从': 'disclosure',
@@ -1388,7 +1408,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 160)
+        self.assertEqual(settled.count("disclosure"), 163)
         self.assertEqual(settled.count("design"), 39)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
