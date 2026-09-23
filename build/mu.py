@@ -370,9 +370,12 @@ def settlement_values(staging: dict, prior: dict | None) -> dict[str, str]:
     asp = worded_move(staging["technology"]["dram_asp_text"][-1])
     if asp:
         values["dram_asp_words"] = f"{asp[0]} {'increase' if asp[1] == '上升' else 'decrease'}"
-    for entry in (prior or {}).get("by_words", []):
-        if "prior_count" in entry:
-            values["sca_prior"] = str(entry["prior_count"])
+    # Figures the analysis itself states (last quarter's "当前 1 份") and no
+    # array carries: named by the series block, so the builder knows no names.
+    for name, text in (prior or {}).get("story_values", {}).items():
+        if name in values:
+            raise ValueError(f"story value {{{name}}} is computed from the series; do not type it")
+        values[name] = str(text)
     return values
 
 
@@ -402,36 +405,33 @@ def prior_actual(staging: dict, entry: dict) -> float:
     return known[entry["id"]]()
 
 
-def worded_verdict(staging: dict, entry: dict) -> tuple[str, bool | None]:
-    """Settle a threshold whose reading is a sentence rather than a number.
+# What a line settled by the company's words can come to. "已越线" is the only
+# one that counts as crossed in a title; "无法判定" is for words that bound a
+# figure on the wrong side (a "higher than X" can prove a ceiling crossed, never
+# that it held).
+WORDED_VERDICTS = ("已越线", "未触发", "守住", "无法判定")
 
-    Returns the reading as published and whether the line was crossed (None
-    when the words cannot decide it). Only what the words decide is decided:
-    a capex figure stated as "higher than the mid-40s" is a lower bound, so it
-    can prove a US$40B line crossed but can never prove it held.
+
+def worded_settlements(prior: dict) -> list[tuple[dict, dict]]:
+    """Last quarter's lines that only the company's words settle, as recorded.
+
+    Each entry carries its own `settled_by_wording` block -- the verdict, the
+    company's words and where they were said -- in the period-stamped series
+    block. The builder reads it and decides nothing, so a roll that brings a
+    new kind of worded line edits the series file only. (It used to keep a
+    table keyed by metric that decided two of them in code.)
     """
-    periods = staging["periods"]
-    spoken = stamped_block(staging, "spoken_outlook", periods[-1])
-    if spoken is None:
-        return "本季没有可读的公司口径", None
-    if entry["id"] == "second_sca":
-        signed = spoken["supply_agreements_signed"]
-        return (f"已签 {signed} 份（上季 {entry['prior_count']} 份）",
-                signed <= entry["prior_count"])
-    if entry["id"] == "fy27_capex":
-        if spoken["capex_fiscal_year"] != entry["fiscal_year"]:
-            return f"本季没有 FY{entry['fiscal_year']} 的公司口径", None
-        floor = spoken["capex_floor_usd_bn"]
-        # "Higher than X" bounds the figure from below only: it proves a
-        # ceiling crossed when X is already past it, and proves nothing else.
-        if entry["direction"] == "down" and floor >= entry["threshold"]:
-            crossed = True
-        else:
-            crossed = None
-        return (f"管理层称 FY{spoken['capex_fiscal_year']} 资本开支「{spoken['capex_words']}」"
-                "（十亿美元）", crossed)
-    raise ValueError(f"worded threshold `{entry['id']}` has no reading on this page: map it in "
-                     "build/mu.py `worded_verdict`")
+    settled = []
+    for entry in prior.get("by_words", []):
+        record = entry.get("settled_by_wording") or {}
+        missing = [key for key in ("verdict", "quote", "source") if not record.get(key)]
+        if missing:
+            raise ValueError(f"worded threshold `{entry['id']}`: settled_by_wording lacks {missing}")
+        if record["verdict"] not in WORDED_VERDICTS:
+            raise ValueError(f"worded threshold `{entry['id']}`: verdict {record['verdict']!r} "
+                             f"is not one of {WORDED_VERDICTS}")
+        settled.append((entry, record))
+    return settled
 
 
 def settlement_charts(staging: dict, closure: dict | None, prior: dict | None,
@@ -514,21 +514,29 @@ def settlement_charts(staging: dict, closure: dict | None, prior: dict | None,
         return broken
 
     broken = [entry for entry in entries if crossed(entry)]
-    worded = [(entry, *worded_verdict(staging, entry)) for entry in prior.get("by_words", [])]
-    worded_broken = [entry for entry, _, hit in worded if hit]
+    worded = worded_settlements(prior)
+    worded_crossed = [entry for entry, record in worded if record["verdict"] == "已越线"]
     total = len(entries) + len(worded) + len(prior.get("unsettled", []))
+
+    def reading_of(entry: dict, record: dict) -> str:
+        """The recorded reading, then the company's own words and where."""
+        return ((filled(entry, record["reading"]) + "，" if record.get("reading") else "")
+                + f"{record['source']}的原话是「{record['quote']}」")
 
     title = (f"上季 {len(entries)} 条量化阈值："
              + ("全部守住" if not broken else
                 f"{len(entries) - len(broken)} 条守住、{len(broken)} 条被击穿")
              + "".join(f"；{entry['metric']}按公司措辞已越过 "
                        f"{unit_text(entry['unit'], entry['threshold'])} 线"
-                       for entry in worded_broken))
+                       if "threshold" in entry else f"；{entry['metric']}按公司措辞已越线"
+                       for entry in worded_crossed))
     aside = []
-    for entry, reading, hit in worded:
-        aside.append(f"<b>{entry['metric']}</b>（{rule_of(entry)}）：{reading}，"
-                     + ("已越线" if hit else "未触发" if hit is False else "无法判定")
-                     + "；" + filled(entry, entry["why_not_charted"]) + "。")
+    for entry, record in worded:
+        aside.append(f"<b>{entry['metric']}</b>（{rule_of(entry)}）：{reading_of(entry, record)}，"
+                     f"<b>{record['verdict']}</b>"
+                     + ("；" + filled(entry, entry["why_not_charted"])
+                        if entry.get("why_not_charted") else "")
+                     + "。")
     for entry in prior.get("unsettled", []):
         aside.append(f"<b>{entry['metric']}</b>（{rule_of(entry)}）："
                      + filled(entry, entry["reason"]) + "。")
@@ -549,8 +557,8 @@ def settlement_charts(staging: dict, closure: dict | None, prior: dict | None,
         ),
         src_extra=("阈值、方向与触发动作逐字取自上季本地分析稿第 8 节，不是公司指引；"
                    "本季读数取自业绩新闻稿与 10-Q"
-                   + (f"，按公司措辞结算的{cn_count(len(worded))}条取自 {values['release']} "
-                      "业绩电话会（书面发言稿与问答）" if worded else "")
+                   + (f"；按公司措辞结算的{cn_count(len(worded))}条，判定、原话与出处逐条写在图注里"
+                      if worded else "")
                    + "。"),
     )
     overview["ref"] = "EX_PRIOR_HEADROOM"
@@ -607,10 +615,9 @@ def settlement_charts(staging: dict, closure: dict | None, prior: dict | None,
                      unit_text(entry["unit"], entry["actual"]),
                      f"{headroom(entry['direction'], entry['threshold'], entry['actual']):+.1f}%",
                      "已击穿" if crossed(entry) else "守住"])
-    for entry, reading, hit in worded:
-        rows.append([entry["metric"], rule_of(entry), "—", reading, "—",
-                     ("已越线" if hit else "未触发" if hit is False else "无法判定")
-                     + "（不入余量图）"])
+    for entry, record in worded:
+        rows.append([entry["metric"], rule_of(entry), "—", reading_of(entry, record), "—",
+                     record["verdict"] + "（按公司措辞，不入余量图）"])
     for entry in prior.get("unsettled", []):
         rows.append([entry["metric"], rule_of(entry), "—", "—", "—", "无法用一手数据结算"])
     tables.append({

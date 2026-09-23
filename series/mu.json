@@ -59,13 +59,15 @@
           "metric": "第二份长期供货协议",
           "threshold": 1,
           "direction": "up",
-          "_note": "「当前 1 份；若 6 个月无新签 = 警示」：份数须多于上季的 1 份"
+          "_note": "「当前 1 份；若 6 个月无新签 = 警示」：份数须多于上季的 1 份",
+          "verdict": "未触发"
         },
         {
           "metric": "FY27 资本开支",
           "threshold": 40.0,
           "direction": "down",
-          "_note": "「若 ≥ $40B = 过度建产 / 若 ≤ $30B = 优化信号」"
+          "_note": "「若 ≥ $40B = 过度建产 / 若 ≤ $30B = 优化信号」",
+          "verdict": "已越线"
         },
         {
           "metric": "DRAM 合约价月度环比",
@@ -4630,7 +4632,10 @@
   "prior_kpi_settlement": {
     "period": "Q2 2026",
     "set_in": "Q1 2026",
-    "_note": "上季（本页 Q1 2026）本地分析稿第 8 节「关键观察指标」共 6 条；阈值数值、方向与触发动作取自该节原文。本季读数由 builder 从本页 series 现算（收入、non-GAAP 毛利率、下季收入指引、spoken_outlook 里的协议份数与资本开支措辞），本块不存读数。第 8 节 #3 原文标注「(2026-09 报告)」，但 Q4 FY26（本页 Q3 2026）的收入指引随 2026-06-24 的业绩发布给出，本季分析稿第 0 节 #2 也按这份指引结算，这里同样按它结算。prior_count 取自该节 #4 的「当前 1 份」。",
+    "story_values": {
+      "sca_prior": "1"
+    },
+    "_note": "上季（本页 Q1 2026）本地分析稿第 8 节「关键观察指标」共 6 条；阈值数值、方向与触发动作取自该节原文。量化的三条，本季读数由 builder 从本页 series 现算（收入、non-GAAP 毛利率、下季收入指引），本块不存读数。只能按公司措辞结算的两条（by_words），判定、公司原话与出处写在各自的 settled_by_wording 里，builder 只读不判；story_values 放分析稿自己给出、数组里没有的数（第 8 节 #4 的「当前 1 份」）。第 8 节 #3 原文标注「(2026-09 报告)」，但 Q4 FY26（本页 Q3 2026）的收入指引随 2026-06-24 的业绩发布给出，本季分析稿第 0 节 #2 也按这份指引结算，这里同样按它结算。",
     "quantified": [
       {
         "id": "revenue",
@@ -4661,20 +4666,30 @@
       {
         "id": "second_sca",
         "metric": "第二份长期供货协议",
-        "prior_count": 1,
         "rule": "六个月内无新签即「SCA 模型扩散受阻」→ 警示",
-        "why_not_charted": "这是计数型的里程碑，份数从 {sca_prior} 变成 {sca_signed}，换算成「距阈值 %」是一个没有意义的大数，会把其余几条压扁"
+        "why_not_charted": "这是计数型的里程碑，份数从 {sca_prior} 变成 {sca_signed}，换算成「距阈值 %」是一个没有意义的大数，会把其余几条压扁",
+        "settled_by_wording": {
+          "verdict": "未触发",
+          "reading": "已签 {sca_signed} 份（上季 {sca_prior} 份）",
+          "quote": "we have completed 16 SCAs",
+          "source": "2026-06-24 业绩电话会书面发言稿"
+        }
       },
       {
         "id": "fy27_capex",
         "metric": "FY27 资本开支",
-        "fiscal_year": 2027,
         "direction": "down",
         "threshold": 40.0,
         "lower_threshold": 30.0,
         "unit": "usd_bn",
         "rule": "≥ {threshold} 即「过度建产」、≤ {lower_threshold} 即「优化信号」→ 重新评估",
-        "why_not_charted": "公司只给了下限式的措辞，明说不给具体数字；「{capex_words}」无论取哪个数都在 {threshold} 之上，越线的结论不依赖取值，余量却依赖，本页不替公司选一个数"
+        "why_not_charted": "公司只给了下限式的措辞，明说不给具体数字；「{capex_words}」无论取哪个数都在 {threshold} 之上，越线的结论不依赖取值，余量却依赖，本页不替公司选一个数",
+        "settled_by_wording": {
+          "verdict": "已越线",
+          "reading": "管理层称 {capex_year} 资本开支「{capex_words}」（十亿美元）",
+          "quote": "we'll be higher than the mid-40s",
+          "source": "2026-06-24 业绩电话会问答（CFO）"
+        }
       }
     ],
     "unsettled": [

@@ -848,13 +848,17 @@ class MuSettlementTest(unittest.TestCase):
                                  (expected[entry["metric"]]["direction"],
                                   expected[entry["metric"]]["threshold"]))
         for entry in block["by_words"]:
+            line = expected[entry["metric"]]
             with self.subTest(metric=entry["metric"]):
-                if "prior_count" in entry:
-                    self.assertEqual(entry["prior_count"], expected[entry["metric"]]["threshold"])
-                else:
+                # The verdict is recorded in the series, not decided in code, so
+                # it is checked against the second transcription in `_checks`.
+                self.assertEqual(entry["settled_by_wording"]["verdict"], line["verdict"])
+                if "threshold" in entry:
                     self.assertEqual((entry["direction"], entry["threshold"]),
-                                     (expected[entry["metric"]]["direction"],
-                                      expected[entry["metric"]]["threshold"]))
+                                     (line["direction"], line["threshold"]))
+        # 「当前 1 份」: the analysis's own count, supplied as a named story value.
+        self.assertEqual(block["story_values"]["sca_prior"],
+                         str(expected["第二份长期供货协议"]["threshold"]))
         # No reading is typed into the block: every one is computed.
         for group in ("quantified", "by_words"):
             for entry in block[group]:
@@ -931,6 +935,36 @@ class MuSettlementTest(unittest.TestCase):
                                     for title in titles), titles)
         self.assertEqual(re.findall(r"\{[a-z_]+\}", json.dumps(section, ensure_ascii=False)), [],
                          "a placeholder was left unfilled")
+
+    def test_a_new_worded_line_settles_with_a_series_edit_only(self) -> None:
+        """A kind of worded line no code has seen must build from the series alone.
+
+        The verdicts of the lines that only the company's words can settle used
+        to be decided in the builder, in a table keyed by metric, so a new one
+        needed a code edit on a roll. They now live in each entry's
+        `settled_by_wording`; this adds an entry nothing maps and checks the page
+        prints its verdict and the company's words, and that a verdict outside
+        the vocabulary stops the build instead of printing.
+        """
+        rolled = json.loads(json.dumps(self.staging))
+        rolled["prior_kpi_settlement"]["by_words"].append({
+            "id": "hbm_majority_new",
+            "metric": "HBM4 占 HBM 出货",
+            "rule": "本季仍未过半即警示",
+            "why_not_charted": "公司只给了措辞，没有给占比",
+            "settled_by_wording": {"verdict": "已越线",
+                                   "quote": "the majority of our HBM shipments",
+                                   "source": "某季业绩电话会书面发言稿"},
+        })
+        section = mu.build_payload(rolled)["sections"][0]
+        overview = next(e for e in section["exhibits"] if e["kind"] == "diverging_bars")
+        self.assertIn("HBM4 占 HBM 出货按公司措辞已越线", overview["title"])
+        self.assertIn("「the majority of our HBM shipments」，<b>已越线</b>", overview["note"])
+        self.assertIn("HBM4 占 HBM 出货</b>（本季仍未过半即警示）", overview["note"])
+        self.assertNotIn("HBM4 占 HBM 出货", overview["xlabels"])
+        rolled["prior_kpi_settlement"]["by_words"][-1]["settled_by_wording"]["verdict"] = "大概越线"
+        with self.assertRaisesRegex(ValueError, "verdict"):
+            mu.build_payload(rolled)
 
     def test_section_one_is_closure_then_thresholds_then_the_guided_record(self) -> None:
         kinds = [exhibit["kind"] for exhibit in self.settled]
