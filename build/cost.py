@@ -725,7 +725,11 @@ def build_payload(staging: dict) -> dict:
     operating = fin["operating_income_usd_m"]
 
     capex_ex, capex_table = capex_charts(staging)
-    settled_ex = list(capex_ex) + [warehouse_plan_chart(staging)]
+    # Section one settles in the order the four-part format fixes: what the
+    # previous local analysis left open first, then the company's own guidance
+    # record -- the capital plan, the opening plan and the year-end store count.
+    company_ex = list(capex_ex) + [warehouse_plan_chart(staging)]
+    settled_ex = []
 
     # ── the local thresholds carried into this quarter ──────────────────────
     prior = prior_block["quantified"] if prior_block else []
@@ -1103,39 +1107,42 @@ def build_payload(staging: dict) -> dict:
                      + f"{fin['operating_margin_pct'][-1] - fin['operating_margin_pct'][-5]:+.2f} 个百分点。"),
             "src_extra": "各季业绩 8-K EX-99.1 合并损益表；三个比率为本页自算（D）。",
         },
-        {
-            "ref": "EX_SEGMARGIN",
-            "kind": "lines",
-            "title": (f"三个地区分部的营业利润率：美国 "
-                      f"{seg['united_states']['operating_margin_pct'][-1]:.2f}%、加拿大 "
-                      f"{seg['canada']['operating_margin_pct'][-1]:.2f}%、其他国际 "
-                      f"{seg['other_international']['operating_margin_pct'][-1]:.2f}%"),
-            "xlabels": labels,
-            "series": [
-                {"name": "美国", "color": "NAVY",
-                 "values": rounded(seg["united_states"]["operating_margin_pct"])},
-                {"name": "加拿大", "color": "BLUE",
-                 "values": rounded(seg["canada"]["operating_margin_pct"])},
-                {"name": "其他国际", "color": "GOLD",
-                 "values": rounded(seg["other_international"]["operating_margin_pct"])},
-            ],
-            "fmt": "pct2", "yfmt": "pct2", "label_fmt": "pct2", "end_label": True,
-            "ylab": "%",
-            "note": (("<b>加拿大的分部利润率长期高于美国</b>，而它只占本季总收入的 "
-                      if canada_higher else "加拿大只占本季总收入的 ")
-                     + f"{seg['canada']['revenue_usd_m'][-1] / revenue[-1] * 100:.1f}%。"
-                     + ("三个分部的收入相加等于合并总收入、营业利润相加等于合并营业利润，"
-                        f"{cn_count(len(staging['periods']))}个季度逐季核对差额为零。"
-                        if segments_close else "")
-                     + f"<b>{'、'.join(labels[i] for i in long_quarters)} "
-                     f"{cn_count(len(long_quarters))}格是自算值（D）：</b>"
-                     "会计 Q4 没有 10-Q，分部数只能用全年减去 36 周累计。"
-                     "同一个减法在合并层面得到的净销售额与营业利润，与 Q4 业绩稿印出的 16 周数逐项相同，"
-                     "这是本页愿意用它做分部的理由。"),
-            "src_extra": ("各季 10-Q 与 10-K 分部附注；分部利润率为分部营业利润除以分部总收入，"
-                          "本页自算（D）。"),
-        },
     ]
+
+    # Segment margins are a long-run structural read: the local analysis draws no
+    # conclusion from them this quarter, so they sit in section four.
+    segment_ex = {
+        "ref": "EX_SEGMARGIN",
+        "kind": "lines",
+        "title": (f"三个地区分部的营业利润率：美国 "
+                  f"{seg['united_states']['operating_margin_pct'][-1]:.2f}%、加拿大 "
+                  f"{seg['canada']['operating_margin_pct'][-1]:.2f}%、其他国际 "
+                  f"{seg['other_international']['operating_margin_pct'][-1]:.2f}%"),
+        "xlabels": labels,
+        "series": [
+            {"name": "美国", "color": "NAVY",
+             "values": rounded(seg["united_states"]["operating_margin_pct"])},
+            {"name": "加拿大", "color": "BLUE",
+             "values": rounded(seg["canada"]["operating_margin_pct"])},
+            {"name": "其他国际", "color": "GOLD",
+             "values": rounded(seg["other_international"]["operating_margin_pct"])},
+        ],
+        "fmt": "pct2", "yfmt": "pct2", "label_fmt": "pct2", "end_label": True,
+        "ylab": "%",
+        "note": (("<b>加拿大的分部利润率长期高于美国</b>，而它只占本季总收入的 "
+                  if canada_higher else "加拿大只占本季总收入的 ")
+                 + f"{seg['canada']['revenue_usd_m'][-1] / revenue[-1] * 100:.1f}%。"
+                 + ("三个分部的收入相加等于合并总收入、营业利润相加等于合并营业利润，"
+                    f"{cn_count(len(staging['periods']))}个季度逐季核对差额为零。"
+                    if segments_close else "")
+                 + f"<b>{'、'.join(labels[i] for i in long_quarters)} "
+                 f"{cn_count(len(long_quarters))}格是自算值（D）：</b>"
+                 "会计 Q4 没有 10-Q，分部数只能用全年减去 36 周累计。"
+                 "同一个减法在合并层面得到的净销售额与营业利润，与 Q4 业绩稿印出的 16 周数逐项相同，"
+                 "这是本页愿意用它做分部的理由。"),
+        "src_extra": ("各季 10-Q 与 10-K 分部附注；分部利润率为分部营业利润除以分部总收入，"
+                      "本页自算（D）。"),
+    }
 
     # ── section three: what to watch next ───────────────────────────────────
     next_kpi = next_block["quantified"] if next_block else []
@@ -1233,46 +1240,6 @@ def build_payload(staging: dict) -> dict:
                           "自 FY2024 Q3 起同一个数字也出现在业绩 8-K 的 EX-99.2 里，两者逐季一致。"),
         },
         {
-            "ref": "EX_WH_EST",
-            "kind": "grouped_bars",
-            "title": (f"公司自己估的财年末仓库数：{cn_count(len(final_estimate))}个已完结财年"
-                      + ("都精确落在最后一次估计上，" if exact == len(final_estimate)
-                         else f"里 {exact} 个精确落在最后一次估计上，")
-                      +
-                      f"本季估 FY{est['target_fiscal_year'][-1]} 年末 "
-                      f"{est['fy_end_estimate'][-1]} 家"),
-            "xlabels": [f"{compact_period(period)}→FY{str(year)[-2:]}"
-                        for period, year in zip(est["periods"], est["target_fiscal_year"])],
-            "xrot": 90,
-            "groups": [
-                {"name": "该期估计的财年末仓库数", "color": "BLUE",
-                 "values": est["fy_end_estimate"]},
-                {"name": "该财年实际末仓库数", "color": "NAVY",
-                 "values": est["actual_fy_end"]},
-            ],
-            "bar_labels": True,
-            "fmt": "f0c", "label_fmt": "f0c", "ylab": "家",
-            "note": ("<b>这是 Costco 唯一一份按季修订的数字指引，而它指的是店的数量、不是钱。</b>"
-                     "自 2024-05-30 起，每份业绩 8-K 的 EX-99.2 都印一张仓库扩张表："
-                     "上一财年末的家数、本财年已开的每一季、剩余年度的估计，以及财年末的估计合计。"
-                     "横轴标注的是「哪一期估计 → 估的是哪个财年」，"
-                     "所以同一个财年会被连着估好几次，可以看见它怎么收敛。"
-                     "会计第四季那两份材料的估计列指向的是<b>下一个</b>财年，"
-                     "当年年末那一格在那里已经是实际数 —— 横轴的标注按每份材料自己写的目标财年，"
-                     "不按它发布的季度。"
-                     "<b>把这张图和第一节那两张放在一起，就是这家公司预测能力的两面：</b>"
-                     f"已完结的{cn_count(len(final_estimate))}个财年里，仓库数的<b>最后一次</b>估计"
-                     + ("与实际一个不差（" if exact == len(final_estimate) else "与实际的对照是（")
-                     + "；".join(settled_estimates)
-                     + "）"
-                     + ("，而同期的资本开支计划每年都差 5% 到 15%。"
-                        if plan_misses and all(5 <= value <= 15 for value in plan_misses) else
-                        "。")
-                     + "店的数量是它自己排的工期，花掉的钱不是。"
-                     + deck_note),
-            "src_extra": deck_note + "实际财年末家数取自各年 10-K。",
-        },
-        {
             "ref": "EX_CASH",
             "kind": "bars_labeled",
             "title": (f"现金及短期投资：本季末 US${cash[-1] / 1000:.1f}B，"
@@ -1305,6 +1272,48 @@ def build_payload(staging: dict) -> dict:
     ]
 
     next_ex = [exhibit for exhibit in next_ex if exhibit is not None]
+    # The year-end store count is the company's own quarterly-revised guidance, so
+    # it is settled in section one beside the capital and opening plans.
+    company_ex.append({
+        "ref": "EX_WH_EST",
+        "kind": "grouped_bars",
+        "title": (f"公司自己估的财年末仓库数：{cn_count(len(final_estimate))}个已完结财年"
+                  + ("都精确落在最后一次估计上，" if exact == len(final_estimate)
+                     else f"里 {exact} 个精确落在最后一次估计上，")
+                  +
+                  f"本季估 FY{est['target_fiscal_year'][-1]} 年末 "
+                  f"{est['fy_end_estimate'][-1]} 家"),
+        "xlabels": [f"{compact_period(period)}→FY{str(year)[-2:]}"
+                    for period, year in zip(est["periods"], est["target_fiscal_year"])],
+        "xrot": 90,
+        "groups": [
+            {"name": "该期估计的财年末仓库数", "color": "BLUE",
+             "values": est["fy_end_estimate"]},
+            {"name": "该财年实际末仓库数", "color": "NAVY",
+             "values": est["actual_fy_end"]},
+        ],
+        "bar_labels": True,
+        "fmt": "f0c", "label_fmt": "f0c", "ylab": "家",
+        "note": ("<b>这是 Costco 唯一一份按季修订的数字指引，而它指的是店的数量、不是钱。</b>"
+                 "自 2024-05-30 起，每份业绩 8-K 的 EX-99.2 都印一张仓库扩张表："
+                 "上一财年末的家数、本财年已开的每一季、剩余年度的估计，以及财年末的估计合计。"
+                 "横轴标注的是「哪一期估计 → 估的是哪个财年」，"
+                 "所以同一个财年会被连着估好几次，可以看见它怎么收敛。"
+                 "会计第四季那两份材料的估计列指向的是<b>下一个</b>财年，"
+                 "当年年末那一格在那里已经是实际数 —— 横轴的标注按每份材料自己写的目标财年，"
+                 "不按它发布的季度。"
+                 "<b>把这张图和本节前面的资本开支计划图放在一起，就是这家公司预测能力的两面：</b>"
+                 f"已完结的{cn_count(len(final_estimate))}个财年里，仓库数的<b>最后一次</b>估计"
+                 + ("与实际一个不差（" if exact == len(final_estimate) else "与实际的对照是（")
+                 + "；".join(settled_estimates)
+                 + "）"
+                 + ("，而同期的资本开支计划每年都差 5% 到 15%。"
+                    if plan_misses and all(5 <= value <= 15 for value in plan_misses) else
+                    "。")
+                 + "店的数量是它自己排的工期，花掉的钱不是。"
+                 + deck_note),
+        "src_extra": deck_note + "实际财年末家数取自各年 10-K。",
+    })
 
     # ── section four: the long routine ─────────────────────────────────────
     fy_labels = ann["fiscal_years"]
@@ -1491,6 +1500,8 @@ def build_payload(staging: dict) -> dict:
         },
     ]
 
+    settled_ex += company_ex
+    routine_ex.append(segment_ex)
     number_exhibits(settled_ex, start=1)
     number_exhibits(highlight_ex, start=settled_ex[-1]["n"] + 1)
     number_exhibits(next_ex, start=highlight_ex[-1]["n"] + 1)
@@ -1764,13 +1775,13 @@ def build_payload(staging: dict) -> dict:
         "sections": [
             {
                 "id": "settled",
-                "title": "一、上季兑现与公司自己的指引记录",
+                "title": "一、上季跟踪指标兑现了吗",
                 "description": (
                     "Costco 从不指引收入、利润或每股收益 —— 翻遍近十二份业绩 8-K，"
                     "outlook 与 guidance 这两个词只出现在前瞻性陈述的免责声明里。"
                     "但它确实在申报文件里给数字：10-K 每年给一次下一财年的资本开支区间与开店计划上限，"
                     "而自 2024 年 5 月起每季的 EX-99.2 还给一次财年末仓库数的估计。"
-                    "所以这一节先结清公司自己那份「只关于资本」的指引，再结清上一份笔记留下的阈值。"
+                    "所以这一节先结清上一份笔记留下的阈值，再结清公司自己那份「只关于资本」的指引。"
                 ),
                 "exhibits": settled_ex,
             },
@@ -1802,7 +1813,8 @@ def build_payload(staging: dict) -> dict:
                 "description": (
                     f"Costco 专属的常规序列：营业利润率的两条腿如何在{years_word}年里换位、"
                     "毛利率与 SG&A 率各走了多远、一次涨价要花多久才吃满，"
-                    f"以及一家资本强度只有 {round(intensity[-1])}% 的零售商怎么处理它攒下来的现金。"
+                    f"一家资本强度只有 {round(intensity[-1])}% 的零售商怎么处理它攒下来的现金，"
+                    "以及三个地区分部各自的利润率。"
                 ),
                 "exhibits": routine_ex,
             },

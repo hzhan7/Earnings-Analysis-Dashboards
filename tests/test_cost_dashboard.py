@@ -183,7 +183,7 @@ class CostDashboardTest(unittest.TestCase):
             total = sum(self.seg[key]["revenue_usd_m"][index]
                         for key in ("united_states", "canada", "other_international"))
             self.assertEqual(total, self.fin["total_revenue_usd_m"][index])
-        chart = next(ex for ex in self.by_section["quarter_highlights"]
+        chart = next(ex for ex in self.by_section["routine"]
                      if "分部的营业利润率" in ex["title"])
         for period in derived:
             self.assertIn(compact_period(period), chart["note"])
@@ -732,11 +732,30 @@ class CostDashboardTest(unittest.TestCase):
                                                    entry[key]), float)
 
     # ── page mechanics ──────────────────────────────────────────────────────
-    def test_section_order_and_sizes(self) -> None:
-        self.assertEqual([section["id"] for section in self.payload["sections"]],
-                         ["settled", "quarter_highlights", "next_quarter", "routine"])
+    def test_the_page_has_the_site_s_four_sections_in_order(self) -> None:
+        """The owner's four-part format, titles verbatim (TSM is the reference)."""
+        self.assertEqual(
+            [(section["id"], section["title"]) for section in self.payload["sections"]],
+            [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+             ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
         for section in self.payload["sections"]:
-            self.assertGreaterEqual(len(section["exhibits"]), 4, section["id"])
+            self.assertTrue(section["exhibits"], section["id"])
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列",
+                      self.payload["notes"][0])
+
+    def test_the_company_s_own_guidance_closes_section_one(self) -> None:
+        """Section one settles what the previous analysis left open first and the
+        company's own records -- capital plan, opening plan, year-end store count --
+        after it; the store-count estimate is guidance, not a next-quarter line."""
+        titles = [ex["title"] for ex in self.by_section["settled"]]
+        own = [i for i, title in enumerate(titles)
+               if title.startswith(("资本开支计划与实际", "实际资本开支相对计划中值的偏离",
+                                    "计划开店数与实际开店数", "公司自己估的财年末仓库数"))]
+        self.assertEqual(len(own), 4)
+        self.assertEqual(own, list(range(len(titles) - 4, len(titles))))
+        for section in ("quarter_highlights", "next_quarter", "routine"):
+            self.assertFalse(any(ex["title"].startswith("公司自己估的财年末仓库数")
+                                 for ex in self.by_section[section]), section)
 
     def test_exhibit_numbers_run_without_a_gap(self) -> None:
         self.assertEqual([ex["n"] for ex in self.exhibits],
