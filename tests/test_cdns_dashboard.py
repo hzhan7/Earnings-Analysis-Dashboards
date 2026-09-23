@@ -109,6 +109,14 @@ COMPARE = {"<": operator.lt, "≤": operator.le, ">": operator.gt, "≥": operat
 SETTLED_WORDS = ("达到", "没到", "守住", "越线")
 
 
+def quarter_order(label: str) -> tuple[int, int]:
+    """``'Q3 2026'`` / ``'2026Q3'`` → ``(2026, 3)``."""
+    text = label.replace(" ", "")
+    if text.startswith("Q"):
+        return int(text[2:]), int(text[1])
+    return int(text[:4]), int(text[-1])
+
+
 def line_reading(source: dict, entry: dict) -> tuple[float | None, tuple[float, float] | None]:
     """The value a line is judged on, and the rounding band it carries, from the series."""
     long = source["long_history"]
@@ -116,7 +124,26 @@ def line_reading(source: dict, entry: dict) -> tuple[float | None, tuple[float, 
     q, qp = source["quarterly_usd_m"], source["quarterly_pct"]
     reads = entry["reads"]
     band = None
-    if reads == "backlog":
+    page = source["periods"][-1]
+    if entry.get("period") and quarter_order(entry["period"]) != quarter_order(page):
+        return None, None
+    if reads == "margin":
+        value = qp["non_gaap_operating_margin"][-1]
+    elif reads == "coverage":
+        value = backlog[-1] * 1000 / sum(revenue[-4:])
+    elif reads == "ip_yoy":
+        share = source["category_long_pct"]["category_semiconductor_ip"]
+        value = (share[-1] * revenue[-1]) / (share[-5] * revenue[-5]) * 100 - 100
+        band = (((share[-1] - 0.5) * revenue[-1]) / ((share[-5] + 0.5) * revenue[-5]) * 100 - 100,
+                ((share[-1] + 0.5) * revenue[-1]) / ((share[-5] - 0.5) * revenue[-5]) * 100 - 100)
+    elif reads == "fy_next_margin_guide":
+        full = (source.get("guidance") or {}).get("full_year")
+        year = int(page.split()[1])
+        value = (sum(full["current"]["non_gaap_operating_margin_pct"]) / 2
+                 if full and full["fiscal_year"] == year + 1 else None)
+    elif reads == "revenue":
+        value = q["revenue_total"][-1]
+    elif reads == "backlog":
         value = backlog[-1]
     elif reads == "backlog_qoq":
         value = round(backlog[-1] - backlog[-2], 1)
@@ -408,25 +435,6 @@ class CdnsDashboardTest(unittest.TestCase):
         self.assertIn("季节性", chart["note"])
 
     # ── thresholds ───────────────────────────────────────────────────────────
-    def test_headroom_bars_reproduce_the_thresholds(self) -> None:
-        """No threshold carries a typed current value: each is recomputed here
-        from the series. The typed ones had drifted -- the IP rate was keyed as
-        43.4 against 43.3, the coverage ratio as the rounded 1.39."""
-        for section, block in (("next_quarter", "next_kpi"),):
-            entries = self.source[block]["quantified"]
-            chart = next(ex for ex in self.by_section[section]
-                         if ex["kind"] == "diverging_bars")
-            with self.subTest(section=section):
-                self.assertEqual(chart["xlabels"], [e["metric"] for e in entries])
-                for entry in entries:
-                    self.assertNotIn("current", entry)
-                    self.assertNotIn("actual", entry)
-                self.assertEqual(
-                    chart["values"],
-                    [round(headroom(e["direction"], e["threshold"], expected_value(self.source, e["id"])), 1)
-                     for e in entries],
-                )
-
     def test_a_line_inside_the_rounding_band_is_undecided_not_missed(self) -> None:
         """Book-to-bill's numerator is the difference of two backlog figures the
         company rounds to US$0.1B, so a line inside the resulting band cannot be
@@ -450,16 +458,6 @@ class CdnsDashboardTest(unittest.TestCase):
         for row in lifted["rows"]:
             if "book-to-bill" in row[1]:
                 self.assertNotEqual(row[4], "无法判定", row)
-
-    def test_every_tracked_metric_with_a_series_gets_its_own_chart(self) -> None:
-        """The overview bar says which line broke; only the per-metric chart
-        says how it got there. Which metrics get one is the block's own flag."""
-        for section, block in (("next_quarter", "next_kpi"),):
-            titles = [ex["title"] for ex in self.by_section[section] if ex["kind"] == "lines"]
-            for entry in self.source[block]["quantified"]:
-                charted = any(title.startswith(entry["metric"] + "：") for title in titles)
-                with self.subTest(section=section, metric=entry["metric"]):
-                    self.assertEqual(charted, entry["chart"])
 
     # ── page shape and boundary ──────────────────────────────────────────────
     def test_page_is_chart_led(self) -> None:
@@ -636,106 +634,265 @@ class CdnsChecksTest(unittest.TestCase):
         self.assertIn(f"同比 {yoy:+.1f}%", table["rows"][0][3])
 
 
-class CdnsSectionOneTest(unittest.TestCase):
-    """Section one against `_checks["note"]`, which is typed from the two analyses.
+ERA = {
+    "上季": {"block": "prior_kpi_settlement", "section": "settled", "rows": "prior_rows",
+             "lines": "prior_thresholds", "rest": "unsettled", "rest_note": "prior_unquantified_rows",
+             "rest_word": "无法结算", "table": "上季阈值与本季读数（原单位）"},
+    "下季": {"block": "next_kpi", "section": "next_quarter", "rows": "next_rows",
+             "lines": "next_thresholds", "rest": "not_drawn", "rest_note": "next_not_drawn_rows",
+             "rest_word": "不成线", "table": "下季阈值与本季读数（原单位）"},
+}
+
+
+def check_closure(test: unittest.TestCase, source: dict, payload: dict) -> None:
+    """Section one's follow-up chart against the note's record of section 0."""
+    closure = source["_checks"]["note"]["closure"]
+    items = source["followup_closure"]["items"]
+    chart = next(s for s in payload["sections"] if s["id"] == "settled")["exhibits"][0]
+    test.assertEqual(chart["kind"], "bars_labeled")
+    test.assertTrue(chart["title"].startswith(f"上季 {closure['total']} 条待验证问题："), chart["title"])
+    test.assertEqual(dict(zip(chart["xlabels"], chart["values"])), closure["counts"])
+    test.assertEqual(len(items), closure["total"])
+    test.assertEqual([item["verdict_text"] for item in items], closure["verdicts_verbatim"])
+    # The page's class is the analysis' own verdict word, not a verdict of the page's.
+    for item in items:
+        test.assertIn(item["verdict"], item["verdict_text"])
+    table = next(t for t in payload["tables"] if t["title"] == f"上季 {closure['total']} 条待验证问题与本季判定")
+    test.assertEqual([row[2] for row in table["rows"]], closure["verdicts_verbatim"])
+
+
+def check_lines(test: unittest.TestCase, source: dict, payload: dict, era: str) -> None:
+    """One era's threshold lines -- block, table, overview and charts -- against the note.
+
+    Every reading is recomputed here from the series, so this holds on any
+    quarter a roll produces: nothing in it names a quarter or a value.
+    """
+    spec = ERA[era]
+    note = source["_checks"]["note"]
+    block = source[spec["block"]]
+    rest = block.get(spec["rest"], [])
+    test.assertEqual(block["rows"], note[spec["rows"]])
+    test.assertEqual(
+        [(e.get("row"), e["metric"], e["kind"], e["trigger"], e["threshold"], e.get("consecutive", 1))
+         for e in block["quantified"]],
+        [(t["row"], t["metric"], t["kind"], t["trigger"], t["threshold"], t.get("consecutive", 1))
+         for t in note[spec["lines"]]])
+    test.assertEqual(sorted(str(item["row"]) for item in rest), sorted(note.get(spec["rest_note"], {})))
+    for entry in block["quantified"]:
+        test.assertNotIn("current", entry)
+        test.assertNotIn("actual", entry)
+
+    exhibits = next(s for s in payload["sections"] if s["id"] == spec["section"])["exhibits"]
+    table = next(t for t in payload["tables"] if t["title"] == spec["table"])
+    lines, others = table["rows"][:len(block["quantified"])], table["rows"][len(block["quantified"]):]
+    judged = [(entry, *line_reading(source, entry)) for entry in block["quantified"]]
+    for (entry, value, band), row in zip(judged, lines):
+        test.assertTrue(row[1].startswith(f"{entry['metric']} {entry['trigger']} "), row[1])
+        test.assertEqual(row[4], line_outcome(entry, value, band), entry["id"])
+    test.assertEqual([row[4] for row in others], [spec["rest_word"]] * len(rest))
+
+    bars = [(entry, value) for entry, value, band in judged
+            if line_outcome(entry, value, band) in SETTLED_WORDS and entry["threshold"] != 0]
+    overview = next(ex for ex in exhibits if ex["kind"] == "diverging_bars")
+    test.assertTrue(overview["title"].startswith(f"{era} {len(bars)} 条量化阈值："), overview["title"])
+    test.assertEqual(overview["values"], [round(line_headroom(entry, value), 1) for entry, value in bars])
+    for label, (entry, _) in zip(overview["xlabels"], bars):
+        test.assertTrue(label.startswith(f"{entry['metric']} {entry['trigger']} "), label)
+    drawn = {id(entry) for entry, _ in bars}
+    for entry, _, _ in judged:
+        if id(entry) not in drawn:
+            test.assertIn(f"「{entry['metric']} {entry['trigger']}", overview["note"], entry["id"])
+    for item in rest:
+        test.assertIn(item["text"], overview["note"])
+
+    charts = [ex for ex in exhibits if ex["kind"] == "lines"]
+    for entry in block["quantified"]:
+        flat = [chart for chart in charts for series in chart["series"]
+                if series["name"].startswith(era) and f"（{entry['trigger']} " in series["name"]
+                and all(v == entry["threshold"] for v in series["values"])]
+        if flat:
+            test.assertEqual(len(flat), 1, entry["id"])
+            test.assertIn(f"{'达标线' if entry['kind'] == 'hurdle' else '警示线'}", flat[0]["title"])
+        else:
+            test.assertRegex(overview["note"], re.escape(f"「{entry['metric']} {entry['trigger']}")
+                             + r"[^」]*」(没有单独画图|没有时间序列可画|未到期)", entry["id"])
+
+
+QUARTER_END = {1: "03-31", 2: "06-30", 3: "09-30", 4: "12-31"}
+RELEASED = {1: "04-27", 2: "07-27", 3: "10-27", 4: "02-17"}
+
+
+def rolled_forward(source: dict, growth: float = 1.0) -> dict:
+    """The series as a data-only roll to the next quarter would leave it, in memory.
+
+    Every aligned array gains one cell: the same quarter a year earlier, flows
+    scaled by ``growth``, shares, rates and counts kept, so every identity the
+    real quarters satisfy still holds and the rehearsal tests the mechanics,
+    not invented figures. The one-quarter blocks go the way a roll takes them:
+    this quarter's `next_kpi` list moves, as it stood, into
+    `prior_kpi_settlement`; a `followup_closure` judges this quarter's
+    follow-ups; the lines not yet due move on into a re-stamped `next_kpi`; the
+    blocks that need a release's own words (story, market, balance sheet,
+    guidance) are left out, as a quarter without them would be. The note is
+    re-keyed from those blocks. Nothing here is written to disk.
+    """
+    s = copy.deepcopy(source)
+    period = s["periods"][-1]
+    number, year = int(period[1]), int(period.split()[1])
+    number, year = (1, year + 1) if number == 4 else (number + 1, year)
+    new, key = f"Q{number} {year}", f"{year}Q{number}"
+    after = f"Q{1 if number == 4 else number + 1} {year + 1 if number == 4 else year}"
+
+    def flow(value):
+        return None if value is None else value * growth
+
+    s["periods"].append(new)
+    for values in s["quarterly_usd_m"].values():
+        values.append(flow(values[-4]))
+    for block in ("quarterly_pct", "quarterly_other"):
+        for values in s[block].values():
+            values.append(values[-4])
+    recon = s["non_gaap_reconciliation_usd_m"]
+    recon["periods"].append(new)
+    recon["operating_addbacks"].append(flow(recon["operating_addbacks"][-4]))
+    for block, label in (("long_history", key), ("category_long_pct", new)):
+        data = s[block]
+        width = len(data["quarters"])
+        for name, values in data.items():
+            if isinstance(values, list) and name != "quarters" and len(values) == width:
+                values.append(flow(values[-4]) if name.endswith("_usd_m") else values[-4])
+        data["quarters"].append(label)
+    record = s["quarterly_guidance_history"]
+    row = record["quarters"].index(key)
+    record["revenue_actual_usd_m"][row] = s["quarterly_usd_m"]["revenue_total"][-1]
+    record["non_gaap_operating_margin_actual_pct"][row] = s["quarterly_pct"]["non_gaap_operating_margin"][-1]
+    record["non_gaap_eps_actual"][row] = s["quarterly_other"]["non_gaap_eps"][-1]
+    released = f"{year + 1 if number == 4 else year}-{RELEASED[number]}"
+    s["latest"] = {**s["latest"], "period": new, "period_end": f"{year}-{QUARTER_END[number]}",
+                   "release_date": released}
+    s["sources"].insert(1, {"label": f"{new} 业绩发布 8-K（换季演练）",
+                            "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000813672"})
+    for name in ("quarter_story", "market_expectation", "balance_sheet_usd_m", "ytd_cash_bridge_usd_m", "guidance"):
+        s.pop(name, None)
+    s["operating_kpi"].pop("category_growth_company_pct", None)
+
+    kpi = s["next_kpi"]
+    labels = ["已验证", "部分验证", "未披露", "判断错误"]
+    items = [{"question": question, "verdict_text": labels[i % len(labels)], "verdict": labels[i % len(labels)],
+              "evidence": "换季演练：判定按问题顺序轮换"} for i, question in enumerate(kpi["followups"])]
+    s["followup_closure"] = {"period": new, "set_in": period, "labels": labels, "items": items,
+                             "rule": "换季演练：判定按问题顺序轮换。"}
+    s["prior_kpi_settlement"] = {"period": new, "set_in": period, "rows": kpi["rows"],
+                                 "quantified": copy.deepcopy(kpi["quantified"]),
+                                 "unsettled": copy.deepcopy(kpi.get("not_drawn", []))}
+    carried = [entry for entry in kpi["quantified"] if not entry.get("period")]
+    rows = sorted({entry["row"] for entry in carried})
+    s["next_kpi"] = {"period": new, "for_period": after, "set_in": new, "rows": len(rows),
+                     "quantified": [{**entry, "row": rows.index(entry["row"]) + 1} for entry in carried],
+                     "followups": kpi["followups"]}
+    note = s["_checks"]["note"]
+    dated = [(entry["row"], entry["threshold"]) for entry in kpi["quantified"] if entry.get("period")]
+    s["_checks"]["note"] = {
+        "source": {"this_quarter": "换季演练", "last_quarter": note["source"]["this_quarter"]},
+        "closure": {"total": len(items), "verdicts_verbatim": [item["verdict_text"] for item in items],
+                    "counts": {label: sum(1 for item in items if item["verdict"] == label) for label in labels}},
+        "prior_rows": kpi["rows"],
+        "prior_thresholds": copy.deepcopy(note["next_thresholds"]),
+        "prior_unquantified_rows": {str(item["row"]): item["text"] for item in kpi.get("not_drawn", [])},
+        "next_rows": len(rows),
+        "next_thresholds": [{**t, "row": rows.index(t["row"]) + 1} for t in note["next_thresholds"]
+                            if (t["row"], t["threshold"]) not in dated],
+    }
+    return s
+
+
+class CdnsThresholdSectionsTest(unittest.TestCase):
+    """Sections one and three against `_checks["note"]`, typed from the two analyses.
 
     The note records what this quarter's analysis wrote in its section 0 (each
-    follow-up's verdict, verbatim) and what last quarter's wrote in its section 8
-    (each line: metric, direction as printed, threshold). The builder never reads
-    the note; these tests hold the series blocks and the published page to it,
-    and recompute every reading here, so a roll that re-keys the note and the
-    blocks passes without editing this class.
+    follow-up's verdict, verbatim) and in its section 8, and what last quarter's
+    wrote in its section 8 (each line: metric, comparison as printed,
+    threshold). The builder never reads the note; the checks above hold the
+    series blocks and the published page to it and recompute every reading, so
+    a roll that re-keys the note and the blocks passes without editing them.
     """
 
     @classmethod
     def setUpClass(cls) -> None:
         cls.source = json.loads((ROOT / "series" / "cdns.json").read_text(encoding="utf-8"))
-        cls.note = cls.source["_checks"]["note"]
         cls.payload = build_payload(cls.source)
-        cls.settled = next(s for s in cls.payload["sections"] if s["id"] == "settled")["exhibits"]
-        cls.tables = {t["title"]: t for t in cls.payload["tables"]}
 
     def test_the_closure_counts_section_zero_as_written(self) -> None:
-        closure = self.note["closure"]
-        items = self.source["followup_closure"]["items"]
-        chart = self.settled[0]
-        self.assertEqual(chart["kind"], "bars_labeled")
-        self.assertTrue(chart["title"].startswith(f"上季 {closure['total']} 条待验证问题："), chart["title"])
-        self.assertEqual(dict(zip(chart["xlabels"], chart["values"])), closure["counts"])
-        self.assertEqual(len(items), closure["total"])
-        self.assertEqual([item["verdict_text"] for item in items], closure["verdicts_verbatim"])
-        # The page's class is the analysis' own verdict word, not a verdict of the page's.
-        for item in items:
-            with self.subTest(question=item["question"]):
-                self.assertIn(item["verdict"], item["verdict_text"])
-        table = self.tables[f"上季 {closure['total']} 条待验证问题与本季判定"]
-        self.assertEqual([row[2] for row in table["rows"]], closure["verdicts_verbatim"])
+        check_closure(self, self.source, self.payload)
 
-    def test_last_quarters_lines_are_the_analysis_own(self) -> None:
-        block = self.source["prior_kpi_settlement"]
-        self.assertEqual(block["rows"], self.note["prior_rows"])
-        self.assertEqual(
-            [(e.get("row"), e["metric"], e["kind"], e["trigger"], e["threshold"], e.get("consecutive", 1))
-             for e in block["quantified"]],
-            [(t["row"], t["metric"], t["kind"], t["trigger"], t["threshold"], t.get("consecutive", 1))
-             for t in self.note["prior_thresholds"]])
-        self.assertEqual(sorted(str(item["row"]) for item in block.get("unsettled", [])),
-                         sorted(self.note["prior_unquantified_rows"]))
-        for entry in block["quantified"]:
-            self.assertNotIn("current", entry)
-            self.assertNotIn("actual", entry)
+    def test_last_quarters_lines_are_settled_as_the_analysis_wrote_them(self) -> None:
+        check_lines(self, self.source, self.payload, "上季")
 
-    def test_every_line_is_settled_against_the_series(self) -> None:
-        block = self.source["prior_kpi_settlement"]
-        table = self.tables["上季阈值与本季读数（原单位）"]
-        lines, rest = table["rows"][:len(block["quantified"])], table["rows"][len(block["quantified"]):]
-        for entry, row in zip(block["quantified"], lines):
-            value, band = line_reading(self.source, entry)
-            with self.subTest(line=entry["id"]):
-                self.assertTrue(row[1].startswith(f"{entry['metric']} {entry['trigger']} "), row[1])
-                self.assertEqual(row[4], line_outcome(entry, value, band))
-        self.assertEqual([row[4] for row in rest], ["无法结算"] * len(block.get("unsettled", [])))
-
-    def test_the_overview_draws_every_settled_line_and_names_the_rest(self) -> None:
-        block = self.source["prior_kpi_settlement"]
-        judged = [(entry, *line_reading(self.source, entry)) for entry in block["quantified"]]
-        bars = [(entry, value) for entry, value, band in judged
-                if line_outcome(entry, value, band) in SETTLED_WORDS and entry["threshold"] != 0]
-        chart = next(ex for ex in self.settled if ex["kind"] == "diverging_bars")
-        self.assertTrue(chart["title"].startswith(f"上季 {len(bars)} 条量化阈值："), chart["title"])
-        self.assertEqual(chart["values"], [round(line_headroom(entry, value), 1) for entry, value in bars])
-        for label, (entry, _) in zip(chart["xlabels"], bars):
-            self.assertTrue(label.startswith(f"{entry['metric']} {entry['trigger']} "), label)
-        drawn = {id(entry) for entry, _ in bars}
-        for entry, _, _ in judged:
-            if id(entry) not in drawn:
-                with self.subTest(line=entry["id"]):
-                    self.assertIn(f"「{entry['metric']} {entry['trigger']}", chart["note"])
-        for item in block.get("unsettled", []):
-            self.assertIn(item["text"], chart["note"])
-
-    def test_every_line_with_a_history_is_drawn_or_says_why_not(self) -> None:
-        overview = next(ex for ex in self.settled if ex["kind"] == "diverging_bars")
-        charts = [ex for ex in self.settled if ex["kind"] == "lines"]
-        for entry in self.source["prior_kpi_settlement"]["quantified"]:
-            flat = [chart for chart in charts for series in chart["series"]
-                    if series["name"].startswith("上季") and f"（{entry['trigger']} " in series["name"]
-                    and all(v == entry["threshold"] for v in series["values"])]
-            with self.subTest(line=entry["id"]):
-                if flat:
-                    self.assertEqual(len(flat), 1)
-                    self.assertIn(f"上季{'达标线' if entry['kind'] == 'hurdle' else '警示线'}", flat[0]["title"])
-                else:
-                    self.assertRegex(overview["note"], re.escape(f"「{entry['metric']} {entry['trigger']}")
-                                     + r"[^」]*」(没有单独画图|没有时间序列可画)")
+    def test_this_quarters_lines_are_watched_as_the_analysis_wrote_them(self) -> None:
+        check_lines(self, self.source, self.payload, "下季")
+        self.assertEqual(len(self.source["next_kpi"].get("followups", [])),
+                         self.source["_checks"]["note"]["followups_total"])
 
     def test_a_section_eight_row_nobody_accounts_for_stops_the_build(self) -> None:
-        changed = copy.deepcopy(self.source)
-        block = changed["prior_kpi_settlement"]
-        block["quantified"] = [entry for entry in block["quantified"] if entry.get("row") != 1]
-        block["unsettled"] = [item for item in block.get("unsettled", []) if item["row"] != 1]
-        with self.assertRaisesRegex(ValueError, "prior_kpi_settlement"):
-            build_payload(changed)
+        for block in ("prior_kpi_settlement", "next_kpi"):
+            changed = copy.deepcopy(self.source)
+            changed[block]["quantified"] = [e for e in changed[block]["quantified"] if e.get("row") != 1]
+            for rest in ("unsettled", "not_drawn"):
+                if rest in changed[block]:
+                    changed[block][rest] = [item for item in changed[block][rest] if item["row"] != 1]
+            with self.subTest(block=block):
+                with self.assertRaisesRegex(ValueError, block):
+                    build_payload(changed)
+
+    def test_a_line_on_a_named_quarter_waits_for_that_quarter(self) -> None:
+        """A quarter's revenue against that quarter's guided floor cannot be read
+        off the quarter before it: revenue grows, so the line would look crossed."""
+        page = self.source["periods"][-1]
+        dated = [e for e in self.source["next_kpi"]["quantified"] if e.get("period")]
+        table = next(t for t in self.payload["tables"] if t["title"] == ERA["下季"]["table"])
+        for entry in dated:
+            row = next(r for r in table["rows"] if r[1].startswith(f"{entry['metric']} {entry['trigger']} "))
+            with self.subTest(line=entry["id"]):
+                self.assertNotEqual(quarter_order(entry["period"]), quarter_order(page))
+                self.assertEqual(row[4], "未到期")
+
+
+class CdnsRollRehearsalTest(unittest.TestCase):
+    """The next quarter, built from the series alone.
+
+    `rolled_forward` appends a quarter to every aligned array and moves this
+    quarter's `next_kpi` into `prior_kpi_settlement` unchanged. If a reading a
+    line uses could only be computed by editing `build/cdns.py`, the build
+    stops here instead of at the real roll. Two growth rates, so the lines land
+    on different sides -- one of them puts the IP rate's rounding band across
+    a line, which is the case a single rehearsal would never see.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads((ROOT / "series" / "cdns.json").read_text(encoding="utf-8"))
+        cls.rolled = {growth: rolled_forward(cls.source, growth) for growth in (1.0, 1.3)}
+        cls.payloads = {growth: build_payload(staging) for growth, staging in cls.rolled.items()}
+
+    def test_next_quarter_settles_this_quarters_lines_from_the_series_alone(self) -> None:
+        for growth, staging in self.rolled.items():
+            payload = self.payloads[growth]
+            with self.subTest(growth=growth):
+                self.assertEqual([s["id"] for s in payload["sections"]],
+                                 ["settled", "quarter_highlights", "next_quarter", "routine"])
+                self.assertEqual(staging["prior_kpi_settlement"]["quantified"],
+                                 self.source["next_kpi"]["quantified"])
+                check_closure(self, staging, payload)
+                check_lines(self, staging, payload, "上季")
+                check_lines(self, staging, payload, "下季")
+
+    def test_the_rehearsals_reach_every_kind_of_verdict(self) -> None:
+        """Otherwise the rehearsal could pass on lines that never leave one state."""
+        seen = set()
+        for payload in self.payloads.values():
+            table = next(t for t in payload["tables"] if t["title"] == ERA["上季"]["table"])
+            seen |= {row[4] for row in table["rows"]}
+        self.assertLessEqual({"达到", "没到", "守住", "越线", "无法判定", "未到期"}, seen)
 
 
 class CdnsRollTest(unittest.TestCase):
@@ -801,7 +958,7 @@ class CdnsRollTest(unittest.TestCase):
 
         def typed_again(s):
             s["next_kpi"]["quantified"][1]["current"] = 1.39
-        with self.assertRaisesRegex(ValueError, "computed from the series"):
+        with self.assertRaisesRegex(ValueError, "typed value"):
             self.rebuilt(typed_again)
 
     def test_the_record_sentences_are_computed_not_remembered(self) -> None:

@@ -172,7 +172,7 @@ def _tsm_advanced_count() -> dict:
 # number when you convert a page; the assertion below refuses to let it drift in
 # either direction, so the count is always the one the last commit measured.
 REACH_2016 = {
-    "amd": 16, "amzn": 13, "arm": 0, "asml": 16, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
+    "amd": 16, "amzn": 13, "arm": 0, "asml": 16, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 12, "cfr": 13, "cme": 14,
     "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
@@ -727,8 +727,6 @@ CONVERTED = {
         "GAAP 毛利率降到": "gross margin is carried for the reviewed window.",
         "本季非 GAAP 营业利润率": "this chart pairs the quarterly series with two guided "
                           "points, so it runs on the reviewed window plus two.",
-        "单季非 GAAP 营业利润率": "the threshold view of the same quarterly margin series, "
-                          "which this file carries for the reviewed window.",
     },
     "nke": {
         # Nike's segment revenue and EBIT reach 2016; the currency-neutral growth
@@ -1089,7 +1087,6 @@ FLOOR_KIND = {
         '三条产品线的分化': 'coverage',
         'GAAP 毛利率降到': 'coverage',
         '本季非 GAAP 营业利润率': 'coverage',
-        '单季非 GAAP 营业利润率': 'coverage',
     },
     'cme': {
         '调整后营业费用（除许可费）': 'disclosure',
@@ -1384,7 +1381,7 @@ class ChartWindowTest(unittest.TestCase):
         by_kind = {}
         for slug, title, kind in pending:
             by_kind.setdefault(kind, []).append(f"{slug}/{title}")
-        self.assertEqual(len(by_kind.get("coverage", [])), 35,
+        self.assertEqual(len(by_kind.get("coverage", [])), 34,
                          "charts whose data exists and has not been fetched")
         # Zero, and that is the point: every exemption on this page has now been
         # read against an actual pre-floor filing. The fourteen that had never

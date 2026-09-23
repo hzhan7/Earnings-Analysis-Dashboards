@@ -186,7 +186,91 @@
         "2": "Hexagon Q2 收入贡献 ≥ $47M（跟踪）/ < $40M（警示）：公司不披露",
         "3": "Intel 14A IP multi-year 合同 $400–700M：协议已公布、金额未披露",
         "4": "ChipStack/AgentStack multi-year 大订单 + ARR：没有量化披露，本季第 8 节退役"
-      }
+      },
+      "next_rows": 6,
+      "next_thresholds": [
+        {
+          "row": 1,
+          "metric": "中国收入占比",
+          "kind": "guard",
+          "trigger": "<",
+          "threshold": 13.0,
+          "report": "#1 Q3 2026 中国收入占比：< 13%（$209M，同比 −13%）= 政策或需求回落已开始 → 警示（双向：跌破减仓）"
+        },
+        {
+          "row": 1,
+          "metric": "中国收入占比",
+          "kind": "guard",
+          "trigger": "≥",
+          "threshold": 15.0,
+          "report": "#1：≥ 15% = 依赖度升至新高，尾部风险放大 → 警示（冲高则同步收紧仓位约束）"
+        },
+        {
+          "row": 2,
+          "metric": "单季非 GAAP 营业利润率",
+          "kind": "hurdle",
+          "trigger": ">",
+          "threshold": 44.5,
+          "report": "#2 Q3 2026 非 GAAP OpMargin：> 44.5% = H2 让步是 sandbag（Bull）"
+        },
+        {
+          "row": 2,
+          "metric": "单季非 GAAP 营业利润率",
+          "kind": "guard",
+          "trigger": "≤",
+          "threshold": 44.0,
+          "report": "#2：≤ 44.0% = 真实成本上台阶，2027 利润率承诺存疑 → 重新评估；立场撤销条件①同"
+        },
+        {
+          "row": 3,
+          "metric": "Semiconductor IP 同比",
+          "kind": "hurdle",
+          "trigger": "≥",
+          "threshold": 30.0,
+          "report": "#3 Q3 2026 Semiconductor IP 同比：当前 +43%；≥ 30% = 结构性份额（护城河 KPI）"
+        },
+        {
+          "row": 3,
+          "metric": "Semiconductor IP 同比",
+          "kind": "guard",
+          "trigger": "<",
+          "threshold": 20.0,
+          "report": "#3：< 20% = 证实 +43% 属 Intel 确认时点"
+        },
+        {
+          "row": 4,
+          "metric": "季末 backlog",
+          "kind": "guard",
+          "trigger": "<",
+          "threshold": 8.0,
+          "report": "#4 Q3 2026 期末 backlog：< $8.0B = 净消耗恢复、book-to-bill < 1.0x；立场撤销条件③同"
+        },
+        {
+          "row": 4,
+          "metric": "backlog / 过去四季收入",
+          "kind": "guard",
+          "trigger": "<",
+          "threshold": 1.35,
+          "report": "#4：覆盖倍数 < 1.35x = 可见度继续缩短（两者同时触发 = 减仓）"
+        },
+        {
+          "row": 5,
+          "metric": "FY2027 初始指引的非 GAAP 营业利润率",
+          "kind": "guard",
+          "trigger": "≤",
+          "threshold": 44.25,
+          "report": "#5 FY2027 初始指引（2027 年 2 月）非 GAAP OpMargin：Wall 承诺 better operating margins next year（即 > 44.25%）；≤ 44.25% = 承诺失败 → 减仓"
+        },
+        {
+          "row": 6,
+          "metric": "Q3 2026 收入",
+          "kind": "guard",
+          "trigger": "≤",
+          "threshold": 1595.0,
+          "report": "立场撤销条件②：Q3 2026 中国收入占比 < 13% 且 Q3 收入落在指引下限 $1.595B 或以下"
+        }
+      ],
+      "followups_total": 12
     }
   },
   "period_labelling": {
@@ -2486,72 +2570,143 @@
   "next_kpi": {
     "period": "Q2 2026",
     "for_period": "Q3 2026",
+    "set_in": "Q2 2026",
+    "rows": 6,
+    "rows_note": "第 8 节「本季 KPI」五行之后另列三条硬阈值：其中两条（Q3 非 GAAP 营业利润率 ≤ 44.0%、Q3 期末 backlog < $8.0B）与第二、四行的线相同；第三条是「Q3 中国占比 < 13% 且 Q3 收入落在指引下限 $1.595B 或以下」，中国那一半与第一行相同，收入那一半另列一条。",
     "quantified": [
       {
-        "id": "backlog",
-        "metric": "季末 backlog",
-        "direction": "up",
-        "threshold": 8.0,
-        "unit": "usd_bn",
-        "chart": false
-      },
-      {
-        "id": "coverage",
-        "metric": "backlog / 过去四季收入",
-        "direction": "up",
-        "threshold": 1.35,
-        "unit": "times",
-        "chart": true
-      },
-      {
-        "id": "margin",
-        "metric": "单季非 GAAP 营业利润率",
-        "direction": "up",
-        "threshold": 44.0,
-        "unit": "pct",
-        "chart": true
-      },
-      {
-        "id": "china_share",
+        "id": "china_floor",
+        "row": 1,
+        "reads": "china_share",
         "metric": "中国收入占比",
-        "direction": "up",
+        "kind": "guard",
+        "trigger": "<",
         "threshold": 13.0,
         "unit": "pct",
-        "chart": true
+        "digits": 0,
+        "meaning": "政策或需求回落已开始"
       },
       {
-        "id": "ip_yoy",
-        "metric": "Semiconductor IP 同比增速",
-        "direction": "up",
-        "threshold": 30.0,
+        "id": "china_cap",
+        "row": 1,
+        "reads": "china_share",
+        "metric": "中国收入占比",
+        "kind": "guard",
+        "trigger": "≥",
+        "threshold": 15.0,
         "unit": "pct",
-        "chart": false
+        "digits": 0,
+        "meaning": "依赖度升至新高，尾部风险放大"
       },
       {
-        "id": "implied_margin",
-        "metric": "Q4 2026 隐含非 GAAP 营业利润率",
-        "direction": "up",
+        "id": "margin_hurdle",
+        "row": 2,
+        "reads": "margin",
+        "metric": "单季非 GAAP 营业利润率",
+        "kind": "hurdle",
+        "trigger": ">",
+        "threshold": 44.5,
+        "unit": "pct",
+        "digits": 1,
+        "meaning": "下半年的利润率让步只是保守指引"
+      },
+      {
+        "id": "margin_floor",
+        "row": 2,
+        "reads": "margin",
+        "metric": "单季非 GAAP 营业利润率",
+        "kind": "guard",
+        "trigger": "≤",
         "threshold": 44.0,
         "unit": "pct",
-        "chart": false,
-        "short": "公司自己指引出来的 Q4 利润率"
+        "digits": 1,
+        "meaning": "成本真实上了台阶，2027 年利润率更好的承诺存疑"
+      },
+      {
+        "id": "ip_hurdle",
+        "row": 3,
+        "reads": "ip_yoy",
+        "metric": "Semiconductor IP 同比",
+        "kind": "hurdle",
+        "trigger": "≥",
+        "threshold": 30.0,
+        "unit": "pct",
+        "digits": 0,
+        "meaning": "结构性的份额增长"
+      },
+      {
+        "id": "ip_floor",
+        "row": 3,
+        "reads": "ip_yoy",
+        "metric": "Semiconductor IP 同比",
+        "kind": "guard",
+        "trigger": "<",
+        "threshold": 20.0,
+        "unit": "pct",
+        "digits": 0,
+        "meaning": "本季的高增长属于 Intel 合同的确认时点"
+      },
+      {
+        "id": "backlog_floor",
+        "row": 4,
+        "reads": "backlog",
+        "metric": "季末 backlog",
+        "kind": "guard",
+        "trigger": "<",
+        "threshold": 8.0,
+        "unit": "usd_bn",
+        "meaning": "backlog 重新净消耗、book-to-bill 低于 1.0x"
+      },
+      {
+        "id": "coverage_floor",
+        "row": 4,
+        "reads": "coverage",
+        "metric": "backlog / 过去四季收入",
+        "kind": "guard",
+        "trigger": "<",
+        "threshold": 1.35,
+        "unit": "times",
+        "meaning": "可见度继续缩短；与上一条同时触发时，报告的处置更重"
+      },
+      {
+        "id": "fy_margin_floor",
+        "row": 5,
+        "reads": "fy_next_margin_guide",
+        "metric": "FY2027 初始指引的非 GAAP 营业利润率",
+        "kind": "guard",
+        "trigger": "≤",
+        "threshold": 44.25,
+        "unit": "pct",
+        "digits": 2,
+        "meaning": "管理层「better operating margins next year」的承诺落空"
+      },
+      {
+        "id": "revenue_floor",
+        "row": 6,
+        "row_label": "第 8 节末尾硬阈值的第三条",
+        "reads": "revenue",
+        "period": "Q3 2026",
+        "metric": "Q3 2026 收入",
+        "kind": "guard",
+        "trigger": "≤",
+        "threshold": 1595.0,
+        "unit": "usd_m",
+        "meaning": "与中国收入占比 < 13% 同时成立，才是报告说的政策或需求风险兑现"
       }
     ],
-    "breached": [
-      "implied_margin"
-    ],
-    "note": "经营与订单{next_safe_count}条都还有余量，被击穿的那条不是已经发生的事——是全年指引隐含的 Q4 非 GAAP 营业利润率 {implied_margin}，比阈值低 {next_gap:implied_margin}。换句话说，这一季唯一越线的数字是公司自己指引出来的，不是市场或经营给的。",
-    "disclosure_gated": [
-      "Hexagon 的单季收入贡献与 EPS 稀释：Q1 给过 {hexagon_revenue} / {hexagon_eps} / {hexagon_margin} 利润率，本季被直接问到不再重申",
-      "Intel 14A 协议的金额、年限与 2026 / 2027 的确认节奏：四次被问、四次未给数字",
-      "H2「targeted investments」的具体金额：管理层给了原因没给数，残差测算约 $40M",
-      "其他长期负债 {oltl_jump_quarter} 单季增加 {oltl_jump} 的构成：管理层与分析师均未提及",
-      "AuraStack 的 GA 时点与定价：官方口径为「later in 2026」，2026 年内收入贡献为零"
-    ],
-    "revocation_thresholds": [
-      "Q3 2026 非 GAAP 营业利润率 ≤ 44.0%（未能超越指引中值，说明 H2 成本是结构性的）",
-      "Q3 2026 中国收入占比 < 13% 且当季收入落在指引下限 $1.595B 或以下",
-      "Q3 2026 期末 backlog < $8.0B（订单动能逆转）"
+    "followups": [
+      "Q4 2026 的隐含非 GAAP 营业利润率会不会被上修？Q3 财报会同时给出 Q4 指引，这是下季最重要的一条验证。",
+      "下半年的「targeted investments」到底是多少钱？Q3 的营业费用与研发增速能不能给出答案，会不会有分析师追问金额？",
+      "Q3 中国占比是多少？管理层会不会恢复全年中国口径？对 BIS 关联方规则生效前有没有前瞻表述？",
+      "Semiconductor IP 增速会不会回落到 20–30%？仍高于 35% 说明本季不是 Intel 的确认时点，低于 20% 则本季是高点。",
+      "Intel 协议会不会第一次给出金额、年限、2026 / 2027 的确认节奏，以及是否扩展到 14A 之外的节点？",
+      "Hexagon 会不会恢复量化披露：全年收入与 EPS 稀释口径是否仍然有效、2027 年转为增厚的金额、利润率是否脱离 5–10%？",
+      "Q3 期末 backlog 的绝对值与覆盖倍数：绝对值继续增长而覆盖倍数跌破 1.35x 时怎么读？",
+      "剔除并购后的经常性收入增速会不会跳到 25% 以上——那会是 agentic 用量进入数字的第一个可观测证据。",
+      "AuraStack 是否正式上市、定价是否公开？",
+      "其他长期负债半年里多出来的那一笔是什么，有没有未披露的或有对价？",
+      "Q4 回购能不能补足全年「约 50% 自由现金流」的承诺？若 Q4 仍只是 Q3 的水平，现金的优先级已经转向整合与投资。",
+      "2027 年的摊薄股数指引会不会超过 280M？超过则回购已经抵不住股权激励的稀释。"
     ]
   },
   "annual_reconciliation_usd_m": {
