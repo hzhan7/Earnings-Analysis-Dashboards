@@ -91,7 +91,33 @@
   "avolta_inflow_eur_bn": 0.4,
   "next_results_date": "2026-11-13",
   "source": "Richemont「Ad hoc announcement pursuant to Art. 53 LR」，2026-07-15，FY27 第一季度销售公告（ad-hoc-announcement-pursuant-to-art-53-lr-fy27-q1-sales-en.pdf）：首页 April-June 表（By region / By distribution channel / By business area / Total，2026 与 2025 两列 €m 及 constant rates / actual rates 两列增速）；第 2 页正文「marking a seventh consecutive quarter of double-digit growth」「The Group’s net cash position at 30 June 2026 stood at € 9.1 billion (2025: € 7.4 billion), including a € 0.4 billion cash inflow from the disposal of the stake in Avolta」「In the Middle East & Africa region, sales grew by 3%, as robust local demand more than offset the significant drop in tourist spending」「sales rose by double digits in China, Hong Kong and Macau combined」「Retail sales rose by 24% … and accounted for 71% of Group sales」；第 3 页 Corporate calendar「The interim results … will be announced on Friday 13 November 2026」。",
-  "checked_on": "2026-09-19"
+  "checked_on": "2026-09-19",
+  "note": {
+   "source": "所有者的季报笔记（本地研究）：本季「2026-07-15 CFR Q2 2026 vs Q1 2026 Analysis」第 0 节「上季遗留问题回答」表（6 行的「验证结果」列）与第 8 节两张表；上季「2026-05-22 CFR Q1 2026 vs Q4 2025 Analysis」第 8 节「关键观察指标」表。",
+   "followup_counts": {
+    "已验证": 1,
+    "部分验证": 3,
+    "仍未披露": 2
+   },
+   "followup_structural": 3,
+   "prior_quantified": [
+    [
+     "cer_jewellery",
+     "up",
+     12.0
+    ],
+    [
+     "cer_americas",
+     "up",
+     10.0
+    ]
+   ],
+   "prior_pending_settles": [
+    "2026-11-13",
+    "2026-11-13",
+    "2027-05"
+   ]
+  }
  },
  "documents": [
   {
@@ -8263,7 +8289,10 @@
   "held_for_sale_at": "2026-03-31",
   "write_down_eur_m": 59,
   "expected_close": "summer 2026",
-  "annual_report_quote": "The transaction is expected to conclude in summer 2026, subject to certain conditions precedent."
+  "annual_report_quote": "The transaction is expected to conclude in summer 2026, subject to certain conditions precedent.",
+  "completed_on": "2026-07-01",
+  "completion_url": "https://www.richemont.com/news-media/press-releases-news/richemont-and-the-damiani-group-announce-the-completion-of-the-acquisition-of-baume-mercier-by-the-damiani-group/",
+  "completion_quote": "today both Companies are pleased to announce that the transaction has now been completed following fulfilment of certain condition precedents."
  },
  "statements": [
   {
@@ -8436,42 +8465,114 @@
    }
   ]
  },
- "prior_thresholds": {
+ "followup_closure": {
   "period": "Q2 2026",
-  "set_on": "2026-05-22",
+  "set_in": "Q1 2026",
+  "_what": "上季笔记（2026-05-22 CFR Q1 2026 vs Q4 2025 Analysis）末尾 Follow-up Questions 的 6 条，在本季笔记（2026-07-15 CFR Q2 2026 vs Q1 2026 Analysis）第 0 节逐条核验的结果。verdict 是归类（labels 之一），note_verdict 是第 0 节表里的原话；图的计数由页面按 verdict 现算。note 里的 {cer_*} / {bm_completed} / {next_date} 由页面按序列填。下一季换成那一份笔记第 0 节的内容，没有就删掉整块。",
+  "labels": [
+   "已验证",
+   "部分验证",
+   "仍未披露"
+  ],
   "items": [
    {
-    "metric": "FY27 Q1 珠宝恒定汇率增速",
-    "rule": ">+12% 加仓；<+8% 警示；<+5% 减仓",
-    "settles": "2026-07-15",
-    "actual_key": "cer_jewellery",
-    "verdict": "加仓"
+    "topic": "珠宝增速",
+    "question": "FY27 第一季珠宝恒定汇率增速能否维持 +12% 以上",
+    "verdict": "已验证",
+    "note_verdict": "已验证（大幅超阈值）"
    },
    {
-    "metric": "FY27 H1 中国大陆、香港与澳门合计恒定汇率增速",
+    "topic": "中国大陆、香港与澳门合计增速",
+    "question": "FY27 上半年三地合计增速是否在 +3–5%，还是 V 型反弹或进一步恶化",
+    "verdict": "部分验证",
+    "note_verdict": "部分验证，且口径被换掉"
+   },
+   {
+    "topic": "毛利率",
+    "question": "FY27 报告毛利率能否守住 63%",
+    "verdict": "仍未披露",
+    "note_verdict": "仍未披露",
+    "structural": true
+   },
+   {
+    "topic": "腕表反弹与 Baume & Mercier",
+    "question": "腕表上季 +2% 能否在 FY27 上半年反弹，Baume & Mercier 出售的影响",
+    "verdict": "部分验证",
+    "note_verdict": "部分验证 + 问题升级"
+   },
+   {
+    "topic": "「其他」的分部利润",
+    "question": "「其他」上季 +7% 能否延续，分部经营利润何时转正",
+    "verdict": "部分验证",
+    "note_verdict": "销售部分验证 / 利润仍未披露",
+    "structural": true
+   },
+   {
+    "topic": "特别股息",
+    "question": "特别股息会不会成为常态",
+    "verdict": "仍未披露",
+    "note_verdict": "仍未披露",
+    "structural": true
+   }
+  ],
+  "note": "已验证的是珠宝：本季 {cer_jewellery}。部分验证的三条：中国大陆、香港与澳门合计，公告只写「double digits」，不给数字；腕表本季 {cer_watchmakers}，而 Baume &amp; Mercier {bm_completed} 完成出售——本季结束后的第一天，下一季的同比要看公司怎么列示；「其他」销售 {cer_other}，分部利润没有披露。本季笔记的判断是其中{structural_count}条（{structural_topics}）这一季在结构上不可能被回答：第一季销售公告不印利润与股息，要等 {next_date} 的中期业绩与 2027 年 5 月的全年业绩。"
+ },
+ "prior_kpi_settlement": {
+  "period": "Q2 2026",
+  "set_in": "Q1 2026",
+  "set_on": "2026-05-22",
+  "_what": "上季笔记（2026-05-22 CFR Q1 2026 vs Q4 2025 Analysis）第 8 节的 5 条量化指标：quantified 是本季能用公司印出的数结算的，阈值取各条的第一道线（珠宝取 >+12% 的加仓线——上季的问题就是「能否维持 +12%」；美洲只有 <+10% 一道），当前值由页面按 id 从序列现算；pending 是结算日在后面的。rule / note_verdict / disposal 是两份笔记的原话，held / breached 必须与页面算出的一致。下一季换成那一份笔记第 8 节的内容。",
+  "quantified": [
+   {
+    "id": "cer_jewellery",
+    "metric": "珠宝恒定汇率增速",
+    "direction": "up",
+    "threshold": 12.0,
+    "unit": "pct",
+    "rule": ">+12% 加仓；<+8% 警示；<+5% 减仓",
+    "note_verdict": "触发（加仓）",
+    "disposal": "退役重设，改为「珠宝两年 CER 叠加年化 ≥ +15%」（见第三节）"
+   },
+   {
+    "id": "cer_americas",
+    "metric": "美洲恒定汇率增速",
+    "direction": "up",
+    "threshold": 10.0,
+    "unit": "pct",
+    "rule": "美洲 <+10% 警示；关税退款落地 €100m+ 加仓",
+    "note_verdict": "部分触发（正面）",
+    "disposal": "美洲部分退役；关税退款部分保留，改到中报的「其他经营收入」里看"
+   }
+  ],
+  "held": [
+   "cer_jewellery",
+   "cer_americas"
+  ],
+  "breached": [],
+  "pending": [
+   {
+    "metric": "FY27 上半年中国大陆、香港与澳门合计恒定汇率增速",
     "rule": ">+8% 加仓；+3–5% 跟踪；<0% 减仓",
     "settles": "2026-11-13",
-    "actual_key": null,
-    "note": "7 月公告只写 double digits，不给数字"
+    "settles_with": "中期业绩",
+    "note_verdict": "指标设计失效",
+    "disposal": "重设：公司在季度层面不给这个数，要换成可观测的替代变量"
    },
    {
-    "metric": "FY27 H1 毛利率",
+    "metric": "FY27 上半年报告毛利率",
     "rule": "≥64% 跟踪；62.5–64% 符合；<62% 警示",
     "settles": "2026-11-13",
-    "actual_key": null
+    "settles_with": "中期业绩",
+    "note_verdict": "未触发（结构性不可验证）",
+    "disposal": "保留，验证窗口写成 2026-11-13，并把 <63% 从「符合」移到「警示」（见第三节）"
    },
    {
     "metric": "FY27 全年股息（普通 + 特别，瑞郎）",
-    "rule": "≥4.50 加仓；3.50–4.30 跟踪；<3.30 减仓",
+    "rule": "≥CHF 4.50 加仓；CHF 3.50–4.30 跟踪；<CHF 3.30 减仓",
     "settles": "2027-05",
-    "actual_key": null
-   },
-   {
-    "metric": "美洲恒定汇率增速",
-    "rule": "<+10% 警示",
-    "settles": "2026-07-15",
-    "actual_key": "cer_americas",
-    "verdict": "未触发"
+    "settles_with": "全年业绩",
+    "note_verdict": "未触发",
+    "disposal": "重设为现金约束指标：股息 ÷ 自由现金流"
    }
   ]
  },
@@ -8504,12 +8605,28 @@
    "url": "https://www.richemont.com/media/xikaciqj/ad-hoc-announcement-pursuant-to-art-53-lr-fy27-q1-sales-en.pdf"
   },
   {
+   "label": "Richemont 与 Damiani 集团宣布完成 Baume & Mercier 的交易（2026-07-01）",
+   "url": "https://www.richemont.com/news-media/press-releases-news/richemont-and-the-damiani-group-announce-the-completion-of-the-acquisition-of-baume-mercier-by-the-damiani-group/"
+  },
+  {
    "label": "Richemont FY26 全年业绩公告（2026-05-22）",
    "url": "https://www.richemont.com/media/ovfnkffy/ad-hoc-announcement-pursuant-to-art-53-lr-fy26-annual-results-en.pdf"
   },
   {
    "label": "Richemont FY26 中期业绩公告（2025-11-14）",
    "url": "https://www.richemont.com/media/ugsfheuv/ad-hoc-announcement-pursuant-to-art-53-lr-fy26-interim-results-en.pdf"
+  },
+  {
+   "label": "Richemont FY23 中期业绩电话会逐字稿（2022-11-11，腕表 17–20% 与珠宝区间的原话）",
+   "url": "https://www.richemont.com/media/ewuflkm4/fy23-interim-results-presentation-transcript-1.pdf"
+  },
+  {
+   "label": "Richemont FY24 中期业绩电话会逐字稿（2023-11-10，珠宝 30–35% 的原话）",
+   "url": "https://www.richemont.com/media/0szeemi5/fy24-interim-results-presentation-transcript.pdf"
+  },
+  {
+   "label": "Richemont FY26 全年业绩电话会逐字稿（2026-05-22，关税约 €200M 的原话）",
+   "url": "https://www.richemont.com/media/nfflfmg4/fy26-annual-results-transcript.pdf"
   },
   {
    "label": "Richemont 业绩、报告与演示材料（历年公告）",
@@ -8528,8 +8645,8 @@
   "china": "中国的数字在季度公告正文里，口径换过：2022 年 7 月那份给的是中国大陆单独一季 −37%，近两年给的是中国大陆、香港与澳门三地合计（2026 年 1 月那份是 +2%），本季只写「double digits」，没有数字。",
   "watchmaker_maisons_listed": "A. Lange & Söhne, IWC Schaffhausen, Jaeger-LeCoultre, Panerai, Piaget, Roger Dubuis and Vacheron Constantin",
   "baume_mercier_mentions": 0,
-  "baume_mercier_brief": "Baume &amp; Mercier 的出售预计 2026 年夏天完成；它出表之后腕表的同比怎么列示，要看 {next_month}的中期公告。",
-  "baume_mercier_note": "本季公告列出的腕表 Maison 已经没有 Baume & Mercier，全文也没有提到它；FY26 年报附注说这笔出售预计在 2026 年夏天完成。它何时出表、比较期如何列示，要看 {next_date} 的中期公告。"
+  "baume_mercier_brief": "Baume &amp; Mercier {bm_completed} 完成出售，本季的腕表销售仍含它；出表之后腕表的同比怎么列示，要看 {next_month}的中期公告。",
+  "baume_mercier_note": "本季公告列出的腕表 Maison 已经没有 Baume & Mercier，全文也没有提到它；公司 {bm_completed} 宣布出售完成，是本季结束后的第一天，所以本季的腕表销售仍含它。它出表之后比较期怎么列示，要看 {next_date} 的中期公告。"
  },
  "half_story": {
   "period": "FY26H2",

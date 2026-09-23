@@ -90,6 +90,7 @@ from build.board import (  # noqa: E402
     stamped_block,
     threshold_exhibit,
     threshold_table,
+    unit_text,
 )
 from build.page_shell import render_shell  # noqa: E402
 from build.payload_guard import write_dash  # noqa: E402
@@ -127,6 +128,20 @@ RELEASE_KIND = {1: ("第一季度", "销售公告"), 2: ("中期", "业绩公告
 # How each threshold's current value is read, for the sentence that says so.
 CER_KEYS = {"cer_total": "集团", "cer_watchmakers": "腕表", "cer_wholesale": "批发"}
 HALF_KEYS = {"half_gross_margin"}
+# The measures a threshold block may name by `id`: the company's own printed
+# constant-rate growth for one line of the sales table, read for the page's quarter.
+CER_LINES = {
+    "cer_total": "total", "cer_jewellery": "jewellery_maisons", "cer_watchmakers": "specialist_watchmakers",
+    "cer_other": "other", "cer_retail": "retail", "cer_online": "online_retail", "cer_wholesale": "wholesale",
+    "cer_europe": "europe", "cer_asia_pacific": "asia_pacific", "cer_americas": "americas", "cer_japan": "japan",
+    "cer_middle_east_africa": "middle_east_africa",
+}
+LINE_NAMES = {"total": "集团", "jewellery_maisons": "珠宝", "specialist_watchmakers": "腕表", "other": "其他",
+              **REGION_NAMES, **CHANNEL_NAMES}
+# A constant-rate line runs to +276% (the Americas, 2021Q2) and -65% (wholesale,
+# 2020Q2); a threshold a few points either side of zero is unreadable on that
+# axis, so threshold charts cap it here and mark the capped points with their values.
+RATE_CAP = 60
 
 
 def pct(current: float, base: float) -> float:
@@ -331,6 +346,227 @@ def band_state(value: float, low: float, high: float) -> str:
     return "below" if value < low else "above" if value > high else "inside"
 
 
+# ── what a threshold measures ────────────────────────────────────────────────
+def previous_quarter(quarter: str) -> str:
+    """`2026Q2` -> `2026Q1`, `2026Q1` -> `2025Q4`."""
+    year, number = int(quarter[:4]), int(quarter[5])
+    return f"{year - 1}Q4" if number == 1 else f"{year}Q{number - 1}"
+
+
+def next_quarter(quarter: str) -> str:
+    """`2026Q2` -> `2026Q3`, `2026Q4` -> `2027Q1`."""
+    year, number = int(quarter[:4]), int(quarter[5])
+    return f"{year + 1}Q1" if number == 4 else f"{year}Q{number + 1}"
+
+
+def two_year_rates(values: list) -> list:
+    """Each quarter's two-year stacked constant-rate growth, annualised: the square
+    root of (1 + the rate a year earlier) x (1 + this quarter's rate), less one. Only
+    where the company printed both rates; a rate is never derived."""
+    return [None if i < 4 or values[i] is None or values[i - 4] is None
+            else ((1 + values[i - 4] / 100) * (1 + values[i] / 100)) ** 0.5 * 100 - 100
+            for i in range(len(values))]
+
+
+def measure(s: dict, qv: dict, hv: dict, key: str) -> dict:
+    """What a threshold key measures: its value now, the record a threshold chart
+    draws it against, and how the value was read. Current values are computed here
+    and never typed into a threshold block -- a typed value is free to disagree with
+    the series it claims to come from."""
+    q, last = s["quarters"], qv["last"]
+    cer = s["quarterly_cer_pct"]
+    if key in CER_LINES:
+        line = CER_LINES[key]
+        values = cer[line]
+        if values[last] is None:
+            raise ValueError(f"threshold `{key}` reads {line!r} for {q[last]}, which the company did not print")
+        return {"now": values[last], "xlabels": list(q), "values": rounded(values), "fmt": "pct0",
+                "ylab": "恒定汇率增速 %", "name": f"{LINE_NAMES[line]}恒定汇率增速（公司印出）",
+                "how": f"{LINE_NAMES[line]}取本季恒定汇率增速", "unit_word": "季度", "gappy": True, "rate": True,
+                "src": "实际值是公司各季公告与业绩公告附录印出的恒定汇率增速。"}
+    if key == "jewellery_two_year":
+        values = two_year_rates(cer["jewellery_maisons"])
+        if values[last] is None:
+            raise ValueError("threshold `jewellery_two_year` needs the jewellery rate for this quarter and a year earlier")
+        return {"now": round(values[last], 1), "xlabels": list(q), "values": rounded(values, 2), "fmt": "pct1",
+                "ylab": "两年叠加年化 %", "name": "珠宝两年恒定汇率叠加年化 D",
+                "how": (f"珠宝两年年化取上年同季与本季两个增速连乘开方"
+                        f"（{signed(cer['jewellery_maisons'][qv['year_ago']])} 与 {signed(cer['jewellery_maisons'][last])}，"
+                        f"{values[last]:.1f}% D）"),
+                "unit_word": "季度", "gappy": True, "rate": True,
+                "src": "两年年化由公司印出的上年同季与本季两个恒定汇率增速连乘开方得到（D），两个都印出的季度才有。"}
+    if key == "half_gross_margin":
+        return {"now": round(hv["gross"][hv["last"]], 1), "xlabels": hv["labels"], "values": rounded(hv["gross"], 2),
+                "fmt": "pct1", "ylab": "半年毛利率 %", "name": "集团半年毛利率",
+                "how": f"半年毛利率取 {half_name(hv['halves'][hv['last']])}{'（D）' if hv['derived_last'] else ''}",
+                "unit_word": "半年", "gappy": False, "rate": False,
+                "src": "毛利除以销售，取自中期与全年业绩公告的合并损益表；下半年由全年减上半年得到（D）。"}
+    if key == "net_cash":
+        now = net_cash_now(s)
+        if now is None:
+            raise ValueError("series block `next_kpi` measures the quarter-end net cash, but the quarter "
+                             "does not end a half and `net_cash_quarter_end` is not stamped for it")
+        balance = s["balance"]
+        labels = [b["date"][:7] for b in balance]
+        values = [b["net_cash_position"] / 1000 for b in balance]
+        extra = now["date"] != balance[-1]["date"]
+        if extra:
+            labels.append(now["date"][:7])
+            values.append(now["eur_bn"])
+        return {"now": now["eur_bn"], "xlabels": labels, "values": rounded(values, 3), "fmt": "f1",
+                "ylab": "€B", "name": "净现金" + ("（最后一格是季度公告值，其余是半年末）" if extra else "（半年末）"),
+                "how": f"净现金取 {now['date']} 的{now['kind']}", "unit_word": "时点", "gappy": False,
+                "rate": False, "date": now["date"], "kind": now["kind"], "quarter_point": extra,
+                "src": ("半年末净现金取自中期与全年业绩公告的「net cash position」"
+                        + ("；最后一格是季度公告正文给的季末数，只印到 €0.1B。" if extra else "。"))}
+    raise ValueError(f"a threshold block names {key!r}, which this page does not know how to measure")
+
+
+def reading_value(unit: str, value: float) -> str:
+    """A growth rate reads `+24%`, the way the company prints it; anything else in its unit."""
+    if unit == "pct" and float(value).is_integer():
+        return signed(value)
+    return unit_text(unit, value)
+
+
+def threshold_chart(entry: dict, m: dict, value_key: str, title: str, threshold_label: str, reading: str) -> dict:
+    """One tracked measure over its own record, against its threshold line."""
+    side = "上方" if entry["direction"] == "up" else "下方"
+    printed = [v for v in m["values"] if v is not None]
+    unsafe = [v for v in printed if (v < entry["threshold"] if entry["direction"] == "up" else v > entry["threshold"])]
+    chart = threshold_exhibit(
+        title, m["xlabels"], m["values"], entry["threshold"],
+        fmt=m["fmt"], ylab=m["ylab"], actual_name=m["name"],
+        threshold_name=f"{threshold_label}（安全侧在{side}）",
+        note=(f"阈值 {unit_text(entry['unit'], entry['threshold'])}，当前 {unit_text(entry['unit'], entry[value_key])}，"
+              f"余量 {headroom(entry['direction'], entry['threshold'], entry[value_key]):+.1f}%。"
+              + reading
+              + f"这条线有数的 {len(printed)} 个{m['unit_word']}里，{len(unsafe)} 个落在阈值的不安全一侧。"
+              + ("线上的缺口是公司没有把增速印成单独季度的季度，不画。" if m["gappy"] else "")),
+        src_extra="阈值取自所有者的季报笔记（本地研究），不是公司指引。" + m["src"],
+        xstep=LONG_STEP if len(m["xlabels"]) > 30 else None,
+    )
+    chart["xrot"] = 90
+    if m["gappy"]:
+        # Before 2021Q2 most printed rates stand alone between gaps, and a line
+        # with no neighbour on either side draws nothing without a marker.
+        chart["markers"] = True
+    beyond = [(label, v) for label, v in zip(m["xlabels"], m["values"]) if v is not None and abs(v) > RATE_CAP]
+    high = any(v > 0 for _, v in beyond)
+    low = any(v < 0 for _, v in beyond)
+    if m["rate"] and beyond:
+        if high:
+            chart["ycap"] = RATE_CAP
+        if low:
+            chart["yfloor"] = -RATE_CAP
+        chart["cap_note"] = ((f"纵轴截在 ±{RATE_CAP}%：" if high and low else
+                              f"纵轴上界截在 +{RATE_CAP}%：" if high else f"纵轴下界截在 −{RATE_CAP}%：")
+                             + "、".join(label for label, _ in beyond) + " 以空心圈标出真值")
+    return chart
+
+
+# ── section one (a)(b): what the previous note left to settle ──────────────
+def settlement_block(s: dict, key: str) -> dict | None:
+    """A block that settles what the previous note set: stamped with this quarter, and
+    naming the quarter it was set in, which has to be the quarter before."""
+    quarter = s["quarters"][-1]
+    block = stamped_block(s, key, display_period(quarter))
+    if block is not None and display_period(block["set_in"]) != display_period(previous_quarter(quarter)):
+        raise ValueError(f"series block `{key}` settles what was set in {block['set_in']!r}, but the quarter "
+                         f"before {display_period(quarter)} is {display_period(previous_quarter(quarter))}")
+    return block
+
+
+def closure_chart(s: dict) -> dict | None:
+    """Last note's follow-up questions and how this quarter's note judged each one."""
+    block = settlement_block(s, "followup_closure")
+    if block is None:
+        return None
+    labels, items = block["labels"], block["items"]
+    stray = sorted({i["verdict"] for i in items} - set(labels))
+    if stray:
+        raise ValueError(f"series block `followup_closure` has verdicts {stray} outside its labels {labels}")
+    counts = [sum(1 for i in items if i["verdict"] == label) for label in labels]
+    shown = [(label, count) for label, count in zip(labels, counts) if count]
+    structural = [i["topic"] for i in items if i.get("structural")]
+    values = {**story_values(s), "structural_count": cn_count(len(structural)),
+              "structural_topics": "、".join(structural)}
+    return {
+        "ref": "EX_CLOSURE",
+        "kind": "bars_labeled",
+        "title": f"上季 {len(items)} 条待验证问题：" + "、".join(f"{count} 条{label}" for label, count in shown),
+        "xlabels": [label for label, _ in shown],
+        "values": [count for _, count in shown],
+        "legend": "问题条数",
+        "fmt": "f0", "yfmt": "f0", "label_fmt": "f0",
+        "ylab": "条",
+        "note": fill(block["note"], values),
+        "src_extra": ("问题清单来自上季笔记末尾的 Follow-up Questions，判定来自本季笔记第 0 节；"
+                      "逐条判定的原话见核对抽屉。文中的增速是公司本季公告印出的数。"),
+    }
+
+
+def settlement_words(s: dict, pending: list[dict]) -> str:
+    """`2026-11-13 的中期业绩与 2027 年 5 月的全年业绩`, from the pending items' own dates."""
+    nxt = next_results(s)[0]
+    words = []
+    for item in pending:
+        date, kind = item["settles"], item["settles_with"]
+        if kind == "中期业绩" and date != nxt["date"]:
+            raise ValueError(f"a pending threshold settles with the interim results on {date!r}, but "
+                             f"latest.next_release is {nxt['date']!r}: update it with the roll")
+        text = (f"{date} 的{kind}" if len(date) == 10 else f"{date[:4]} 年 {int(date[5:7])} 月的{kind}")
+        if text not in words:
+            words.append(text)
+    return "与 ".join(words)
+
+
+def prior_settlement(s: dict, qv: dict, hv: dict) -> tuple[list[dict], dict | None, list[dict]]:
+    """The previous note's quantified thresholds, settled with this quarter's figures."""
+    block = settlement_block(s, "prior_kpi_settlement")
+    if block is None:
+        return [], None, []
+    entries = []
+    for entry in block["quantified"]:
+        if "actual" in entry:
+            raise ValueError(f"threshold `{entry['id']}` is computed from the series; remove its typed value")
+        entries.append({**entry, "actual": measure(s, qv, hv, entry["id"])["now"]})
+    held = [e["id"] for e in entries if headroom(e["direction"], e["threshold"], e["actual"]) >= 0]
+    breached = [e["id"] for e in entries if e["id"] not in held]
+    for key, computed in (("held", held), ("breached", breached)):
+        if sorted(block[key]) != sorted(computed):
+            raise ValueError(f"series block `prior_kpi_settlement` says {key} = {block[key]}, the data says "
+                             f"{computed}: rewrite it for this quarter")
+    pending = block.get("pending", [])
+    total = len(entries) + len(pending)
+    title = (f"上季 {total} 条量化阈值：本季能结算的 {len(entries)} 条"
+             + ("都守住" if not breached else f"里 {len(breached)} 条被击穿")
+             + (f"，另 {len(pending)} 条要等 {settlement_words(s, pending)}" if pending else ""))
+    readings = "；".join(f"{e['metric']}本季 {reading_value(e['unit'], e['actual'])}，"
+                         f"本季笔记判定「{e['note_verdict']}」" for e in entries)
+    headroom_chart = headroom_exhibit(
+        title, entries, "actual",
+        note=("正值 = 仍在安全侧。" + readings + "。"
+              + (f"还没到期的{cn_count(len(pending))}条：" + "".join(f"「{p['metric']}」" for p in pending)
+                 + "，规则、结算日与本季笔记的处置见核对抽屉。" if pending else "")),
+        src_extra=(f"阈值与规则取自上季笔记（{block['set_on']}）第 8 节，判定与处置取自本季笔记第 8 节的校准表；"
+                   "实际值是公司本季公告印出的恒定汇率增速。阈值是本地研究设定，不是公司指引。"),
+    )
+    headroom_chart["ref"] = "EX_PRIOR_HEADROOM"
+    charts = [headroom_chart]
+    for entry in entries:
+        m = measure(s, qv, hv, entry["id"])
+        held_it = headroom(entry["direction"], entry["threshold"], entry["actual"]) >= 0
+        chart = threshold_chart(
+            entry, m, "actual",
+            f"{entry['metric']}：{'守住' if held_it else '已击穿'}上季阈值 {unit_text(entry['unit'], entry['threshold'])}",
+            "上季阈值",
+            f"上季笔记的规则是「{entry['rule']}」，本季笔记判定「{entry['note_verdict']}」，处置：{entry['disposal']}。")
+        chart["ref"] = f"EX_PRIOR_{entry['id'].upper()}"
+        charts.append(chart)
+    return charts, block, entries
+
+
 # ── section one (c): the numbers the company did give ───────────────────────
 def said_section(s: dict, hv: dict) -> list[dict]:
     labels = hv["labels"]
@@ -445,10 +681,19 @@ def next_results(s: dict) -> tuple[dict, str]:
 
 
 def story_values(s: dict) -> dict:
+    """What a story's `{placeholders}` may name: dates from the series, and the quarter's
+    printed constant-rate growth for each line (`{cer_jewellery}` -> `+24%`)."""
     bm = s["baume_mercier"]
     nxt = next_results(s)[0]["date"]
-    return {"next_date": nxt, "next_month": month_of(nxt), "announced": bm["announced"],
-            "held_for_sale_at": bm["held_for_sale_at"], "write_down_eur_m": bm["write_down_eur_m"]}
+    cer = s["quarterly_cer_pct"]
+    values = {"next_date": nxt, "next_month": month_of(nxt), "announced": bm["announced"],
+              "held_for_sale_at": bm["held_for_sale_at"], "write_down_eur_m": bm["write_down_eur_m"]}
+    if bm.get("completed_on"):
+        values["bm_completed"] = bm["completed_on"]
+    for key, line in CER_LINES.items():
+        if cer[line][-1] is not None:
+            values[key] = signed(cer[line][-1])
+    return values
 
 
 def story_text(s: dict, story: dict, key: str) -> str:
@@ -1036,7 +1281,7 @@ def tracking_section(s: dict, qv: dict, hv: dict) -> tuple[list[dict], list[dict
 
 
 # ── audit drawer ─────────────────────────────────────────────────────────────
-def audit_tables(s: dict, qv: dict, hv: dict, entries: list[dict], first: int) -> list[dict]:
+def audit_tables(s: dict, qv: dict, hv: dict, entries: list[dict], settled: dict, first: int) -> list[dict]:
     docs = {d["doc_id"]: d for d in s["documents"]}
     q = s["quarters"]
     e = s["quarterly_eur_m"]
@@ -1165,27 +1410,32 @@ def audit_tables(s: dict, qv: dict, hv: dict, entries: list[dict], first: int) -
         "rows": said_rows,
     }
 
-    tables = [ledger, checks, trap_table, census_table, half_table, said]
-    prior_block = stamped_block(s, "prior_thresholds", display_period(q[-1]))
-    if prior_block is not None:
-        prior_rows = []
-        cer = s["quarterly_cer_pct"]
-        actuals = {"cer_jewellery": cer["jewellery_maisons"][qv["last"]], "cer_americas": cer["americas"][qv["last"]]}
-        for item in prior_block["items"]:
-            if item["actual_key"] and item["actual_key"] not in actuals:
-                raise ValueError(f"series block `prior_thresholds` asks for {item['actual_key']!r}, "
-                                 "which this page does not know how to measure")
-            value = actuals.get(item["actual_key"]) if item["actual_key"] else None
-            prior_rows.append([item["metric"], item["rule"], item["settles"],
-                               "—" if value is None else signed(value),
-                               item.get("verdict", "待结算") + (f"（{item['note']}）" if item.get("note") else "")])
+    tables = [ledger, checks, trap_table, census_table, half_table]
+    closure = settled["closure"]
+    if closure is not None:
         tables.append({
             "n": first + len(tables),
-            "title": (f"{prior_block['set_on']} 设定的{cn_count(len(prior_rows))}条本地阈值："
-                      f"本季能结算 {sum(1 for r in prior_rows if r[3] != '—')} 条"),
-            "headers": ["指标", "规则", "结算日", "本季值", "结论"],
-            "rows": prior_rows,
+            "title": (f"上季笔记留下的{cn_count(len(closure['items']))}条待验证问题，"
+                      "与本季笔记第 0 节对每一条的判定"),
+            "headers": ["#", "问题", "本季笔记的判定（原话）", "图上的归类"],
+            "rows": [[str(i + 1), item["question"], item["note_verdict"], item["verdict"]]
+                     for i, item in enumerate(closure["items"])],
         })
+    prior = settled["prior"]
+    if prior is not None:
+        rows = [[e["metric"], e["rule"], s["latest"]["release_date"], reading_value(e["unit"], e["actual"]),
+                 e["note_verdict"], e["disposal"]] for e in settled["prior_entries"]]
+        rows += [[p["metric"], p["rule"], p["settles"], "—", p["note_verdict"], p["disposal"]]
+                 for p in prior.get("pending", [])]
+        tables.append({
+            "n": first + len(tables),
+            "title": (f"上季笔记（{prior['set_on']}）第 8 节的{cn_count(len(rows))}条量化阈值："
+                      f"本季能结算 {len(settled['prior_entries'])} 条"),
+            "headers": ["指标", "规则（上季笔记原话）", "结算", "本季值", "本季笔记的判定", "处置"],
+            "rows": rows,
+        })
+    said["n"] = first + len(tables)
+    tables.append(said)
 
     tables.append(threshold_table(first + len(tables), f"第三节{cn_count(len(entries))}条本地阈值的原始单位",
                                   entries, "current", "当前值"))
@@ -1220,13 +1470,17 @@ def build_payload(staging: dict) -> dict:
     # quarter, what to watch next, and the long record. Richemont's profit comes
     # only by the half, so the half-year charts are routine series here -- the
     # quarter itself carries sales and nothing else.
-    settled_ex = said_section(s, hv)
+    closure_ex = closure_chart(s)
+    prior_ex, prior_block, prior_entries = prior_settlement(s, qv, hv)
+    settled = {"closure": settlement_block(s, "followup_closure"), "prior": prior_block,
+               "prior_entries": prior_entries}
+    settled_ex = ([closure_ex] if closure_ex else []) + prior_ex + said_section(s, hv)
     quarter_ex = quarter_section(s, qv)
     track_ex, entries = tracking_section(s, qv, hv)
     mix_ex, lag_ex = long_section(s, qv)
     routine_ex = mix_ex + half_section(s, hv) + [fx_chart(s, qv)] + lag_ex
     exhibits = number_exhibits(settled_ex + quarter_ex + track_ex + routine_ex, start=1)
-    tables = audit_tables(s, qv, hv, entries, len(exhibits) + 1)
+    tables = audit_tables(s, qv, hv, entries, settled, len(exhibits) + 1)
 
     jm = hv["margin"]["jewellery_maisons"]
     wm = hv["margin"]["specialist_watchmakers"]
@@ -1356,12 +1610,20 @@ def build_payload(staging: dict) -> dict:
         "带着这张表和成为表里的一列是两件事。",
     ]
 
-    prior_block = stamped_block(s, "prior_thresholds", period)
     track_description = f"{cn_count(len(entries))}条本地阈值与其中一条的完整记录。"
-    if prior_block is not None:
-        settled = sum(1 for item in prior_block["items"] if item["actual_key"])
-        track_description += (f"上一份笔记设定的{cn_count(len(prior_block['items']))}条阈值本季能结算"
-                              f"{cn_count(settled)}条，结果在核对抽屉。")
+    closure, prior = settled["closure"], settled["prior"]
+    settled_lead = []
+    if closure is not None:
+        settled_lead.append(f"上季笔记留下的{cn_count(len(closure['items']))}个问题闭环了几条")
+    if prior is not None:
+        settled_lead.append(f"它第 8 节的{cn_count(len(settled['prior_entries']) + len(prior.get('pending', [])))}条"
+                            "量化阈值本季能结算几条")
+    settled_description = (
+        ("先看" + "、".join(settled_lead) + "，再结算公司自己说过的数。" if settled_lead else "")
+        + f"Richemont 不给销售或增速指引：{census['documents']} 份公告里带数字的前瞻表述 "
+        f"{census['forward_statements_with_a_number']} 处，没有一处是销售额或增速。"
+        "CFO 在电话会上给过利润率区间，最后两张图各画其中一个能用半年数据结算的区间和它说出之后的每一个半年；"
+        "税率、关税与 2016 年那次利润预警的结算放在核对抽屉。")
     return {
         "schema_version": "quarterly-dashboard/cfr-v1",
         "page": {"slug": "cfr", "language": "zh-CN"},
@@ -1395,11 +1657,7 @@ def build_payload(staging: dict) -> dict:
         "guidance": None,
         "sections": [
             {"id": "settled", "title": "一、上季跟踪指标兑现了吗",
-             "description": (
-                 f"Richemont 不给销售或增速指引：{census['documents']} 份公告里带数字的前瞻表述 "
-                 f"{census['forward_statements_with_a_number']} 处，没有一处是销售额或增速。"
-                 "CFO 在电话会上给过利润率区间，本节画其中能用半年数据结算的两个，各画一个区间和它说出之后的每一个半年；"
-                 "税率、关税与 2016 年那次利润预警的结算放在核对抽屉。"),
+             "description": settled_description,
              "exhibits": settled_ex},
             {"id": "quarter_highlights", "title": "二、本季重点",
              "description": (

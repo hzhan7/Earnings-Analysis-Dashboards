@@ -46,6 +46,7 @@ file does not change.
 
 from __future__ import annotations
 
+import collections
 import copy
 import datetime
 import json
@@ -588,6 +589,122 @@ class CfrPayloadTest(unittest.TestCase):
         self.assertIn(" · ".join(cfr.headline_metrics(self.s)), card)
 
 
+class CfrSettledTest(unittest.TestCase):
+    """Section one settles what the previous note left: its follow-up questions, as
+    this quarter's note (section 0) judged them, and the quantified thresholds of its
+    section 8, measured with this quarter's printed figures.
+
+    What the notes say is typed a second time into `_checks["note"]` -- which no
+    builder reads -- so the blocks the page is built from are held against a separate
+    copy of the two notes, and the page against the blocks.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.s = load()
+        cls.note = cls.s["_checks"]["note"]
+        cls.payload = cfr.build_payload(cls.s)
+        cls.settled = next(sec for sec in cls.payload["sections"] if sec["id"] == "settled")["exhibits"]
+        cls.qv = cfr.quarter_view(cls.s)
+        cls.hv = cfr.half_view(cls.s)
+
+    def test_the_closure_is_the_notes_section_zero(self) -> None:
+        block = self.s["followup_closure"]
+        tally = collections.Counter(item["verdict"] for item in block["items"])
+        self.assertEqual(dict(tally), self.note["followup_counts"])
+        self.assertEqual(sum(1 for item in block["items"] if item.get("structural")),
+                         self.note["followup_structural"])
+        chart = self.settled[0]
+        self.assertEqual(chart["kind"], "bars_labeled")
+        shown = [(label, tally[label]) for label in block["labels"] if tally[label]]
+        self.assertEqual(chart["xlabels"], [label for label, _ in shown])
+        self.assertEqual(chart["values"], [count for _, count in shown])
+        self.assertEqual(chart["title"], f"上季 {len(block['items'])} 条待验证问题："
+                         + "、".join(f"{count} 条{label}" for label, count in shown))
+        # the note prints this quarter's printed rates, not typed ones
+        cer = self.s["quarterly_cer_pct"]
+        for line in ("jewellery_maisons", "specialist_watchmakers", "other"):
+            self.assertIn(cfr.signed(cer[line][-1]), chart["note"])
+        self.assertNotIn("{", chart["note"])
+
+    def test_a_verdict_outside_the_labels_stops_the_build(self) -> None:
+        stray = copy.deepcopy(self.s)
+        stray["followup_closure"]["items"][0]["verdict"] = "被证伪"
+        with self.assertRaisesRegex(ValueError, "outside its labels"):
+            cfr.build_payload(stray)
+
+    def test_the_prior_thresholds_are_the_previous_notes_section_eight(self) -> None:
+        block = self.s["prior_kpi_settlement"]
+        self.assertEqual([[e["id"], e["direction"], e["threshold"]] for e in block["quantified"]],
+                         self.note["prior_quantified"])
+        self.assertEqual([p["settles"] for p in block["pending"]], self.note["prior_pending_settles"])
+        total = len(block["quantified"]) + len(block["pending"])
+        overview = self.settled[1]
+        self.assertEqual(overview["kind"], "diverging_bars")
+        self.assertTrue(overview["title"].startswith(f"上季 {total} 条量化阈值："), overview["title"])
+        self.assertIn(f"本季能结算的 {len(block['quantified'])} 条", overview["title"])
+        cer = self.s["quarterly_cer_pct"]
+        lines = {"cer_jewellery": "jewellery_maisons", "cer_americas": "americas"}
+        for entry, value in zip(block["quantified"], overview["values"]):
+            actual = cer[lines[entry["id"]]][-1]
+            self.assertEqual(value, round(headroom(entry["direction"], entry["threshold"], actual), 1), entry["id"])
+        # one line chart per settled threshold, drawn over the whole record, titled with its verdict
+        for entry, chart in zip(block["quantified"], self.settled[2:2 + len(block["quantified"])]):
+            actual = cer[lines[entry["id"]]][-1]
+            word = "守住" if headroom(entry["direction"], entry["threshold"], actual) >= 0 else "已击穿"
+            self.assertEqual(chart["title"], f"{entry['metric']}：{word}上季阈值 {entry['threshold']:.1f}%")
+            self.assertEqual(chart["xlabels"], self.s["quarters"])
+            self.assertEqual(chart["series"][0]["values"], cer[lines[entry["id"]]])
+            self.assertEqual(set(chart["series"][1]["values"]), {entry["threshold"]})
+
+    def test_the_held_list_has_to_be_what_the_numbers_say(self) -> None:
+        wrong = copy.deepcopy(self.s)
+        entry = wrong["prior_kpi_settlement"]["quantified"][0]
+        entry["threshold"] = self.s["quarterly_cer_pct"]["jewellery_maisons"][-1] + 1.0
+        with self.assertRaisesRegex(ValueError, "the data says"):
+            cfr.build_payload(wrong)
+        typed = copy.deepcopy(self.s)
+        typed["prior_kpi_settlement"]["quantified"][0]["actual"] = 24.0
+        with self.assertRaisesRegex(ValueError, "computed from the series"):
+            cfr.build_payload(typed)
+
+    def test_a_pending_interim_threshold_follows_the_next_results_date(self) -> None:
+        moved = copy.deepcopy(self.s)
+        moved["latest"]["next_release"]["date"] = "2099-11-13"
+        with self.assertRaisesRegex(ValueError, "latest.next_release"):
+            cfr.build_payload(moved)
+
+    def test_a_threshold_chart_draws_every_printed_rate(self) -> None:
+        """Before 2021Q2 most printed rates stand between two gaps, and a line with no
+        neighbour draws nothing: the threshold charts carry markers, and any rate past
+        the capped axis is named in the cap note."""
+        for chart in self.settled[2:4]:
+            values = chart["series"][0]["values"]
+            self.assertTrue(chart.get("markers"), chart["title"])
+            beyond = [label for label, v in zip(chart["xlabels"], values)
+                      if v is not None and abs(v) > cfr.RATE_CAP]
+            if beyond:
+                for label in beyond:
+                    self.assertIn(label, chart["cap_note"])
+            else:
+                self.assertNotIn("cap_note", chart)
+
+    def test_the_company_ranges_follow_the_settlement(self) -> None:
+        refs = [ex.get("ref") for ex in self.settled]
+        self.assertEqual(refs[-2:], ["EX_JEWEL_BAND", "EX_WATCH_BAND"])
+        self.assertEqual(refs[0], "EX_CLOSURE")
+
+    def test_the_baume_mercier_sale_is_reported_as_completed(self) -> None:
+        """The page used to say the sale was expected to close in the summer; Richemont
+        announced its completion on 1 July 2026, before the page was built."""
+        bm = self.s["baume_mercier"]
+        blob = text_of(self.payload)
+        self.assertIn(f"{bm['completed_on']} 完成出售", blob)
+        self.assertNotIn("预计 2026 年夏天完成", blob)
+        self.assertNotIn("预计在 2026 年夏天完成", blob)
+        self.assertIn(bm["completion_url"], [x["url"] for x in self.payload["source_links"]])
+
+
 def text_of(payload: dict) -> str:
     return json.dumps(payload, ensure_ascii=False)
 
@@ -623,8 +740,20 @@ def with_every_block(source: dict) -> dict:
          "count": streak, "line": "jewellery_maisons", "threshold_pct": 10}]})
     st.setdefault("net_cash_quarter_end", {"period": quarter, "date": st["latest"]["period_end"], "eur_bn": 9.0,
                                            "includes": [], "dividend_note": "测试用的股息说明。"})
-    st.setdefault("prior_thresholds", {"period": quarter, "set_on": "2000-01-01", "items": [
-        {"metric": "测试", "rule": "测试", "settles": "2000-01-01", "actual_key": "cer_jewellery", "verdict": "测试"}]})
+    before = display_period(cfr.previous_quarter(st["quarters"][-1]))
+    st.setdefault("followup_closure", {"period": quarter, "set_in": before, "labels": ["已验证", "仍未披露"],
+                                       "items": [{"topic": "测试甲", "question": "测试问题甲", "verdict": "已验证",
+                                                  "note_verdict": "已验证"},
+                                                 {"topic": "测试乙", "question": "测试问题乙", "verdict": "仍未披露",
+                                                  "note_verdict": "仍未披露", "structural": True}],
+                                       "note": "测试用的闭环说明，{structural_count}条要等 {next_date}。"})
+    jewellery_now = st["quarterly_cer_pct"]["jewellery_maisons"][-1]
+    st.setdefault("prior_kpi_settlement", {
+        "period": quarter, "set_in": before, "set_on": "2000-01-01",
+        "quantified": [{"id": "cer_jewellery", "metric": "测试珠宝增速", "direction": "up",
+                        "threshold": jewellery_now - 1.0, "unit": "pct", "rule": "测试规则",
+                        "note_verdict": "测试判定", "disposal": "测试处置"}],
+        "held": ["cer_jewellery"], "breached": [], "pending": []})
     return st
 
 
@@ -675,13 +804,15 @@ def roll_forward(source: dict) -> tuple[dict, str, bool]:
         st.pop("half_story", None)
     stamp = display_period(nxt)
     st["latest"].update(disclosed_period_label=stamp, period_end=end, release_date=release)
-    for key in ("thresholds", "prior_thresholds"):
+    for key in ("thresholds",):
         if key in st:
             st[key]["period"] = stamp
     if "net_cash_quarter_end" in st:
         st["net_cash_quarter_end"].update(period=stamp, date=end)
-    st.pop("company_claims", None)
-    st.pop("quarter_story", None)
+    # what the note settles is the next note's to write; a roll without it leaves section one
+    # with the company's own ranges only
+    for key in ("company_claims", "quarter_story", "followup_closure", "prior_kpi_settlement"):
+        st.pop(key, None)
     return st, fiscal, adds_half
 
 
@@ -704,7 +835,8 @@ class CfrRollTest(unittest.TestCase):
         cls.blob = text_of(cls.payload)
 
     def test_a_block_stamped_with_another_period_stops_the_build(self) -> None:
-        for key, stale_period in (("thresholds", "Q1 1999"), ("prior_thresholds", "Q1 1999"),
+        for key, stale_period in (("thresholds", "Q1 1999"), ("followup_closure", "Q1 1999"),
+                                  ("prior_kpi_settlement", "Q1 1999"),
                                   ("company_claims", "Q1 1999"), ("net_cash_quarter_end", "Q1 1999"),
                                   ("quarter_story", "Q1 1999"), ("half_story", "FY99H1")):
             stale = copy.deepcopy(self.full)
@@ -712,6 +844,13 @@ class CfrRollTest(unittest.TestCase):
             with self.subTest(block=key):
                 with self.assertRaisesRegex(ValueError, "stamped"):
                     cfr.build_payload(stale)
+        # what the previous note set is settled only in the quarter after it
+        for key in ("followup_closure", "prior_kpi_settlement"):
+            skipped = copy.deepcopy(self.full)
+            skipped[key]["set_in"] = "Q1 1999"
+            with self.subTest(set_in=key):
+                with self.assertRaisesRegex(ValueError, "settles what was set in"):
+                    cfr.build_payload(skipped)
         bare = copy.deepcopy(self.full)
         del bare["thresholds"]
         with self.assertRaisesRegex(ValueError, "`thresholds` is missing"):
@@ -772,7 +911,8 @@ class CfrRollTest(unittest.TestCase):
                               story["baume_mercier_note"].split("，")[0]),
             "half_story": (half["margins"].split("。")[0], half["watchmakers"].split("{")[0]),
             "company_claims": ("是公司在本季公告里的原话", "公司说是连续第"),
-            "prior_thresholds": ("上一份笔记设定的",),
+            "followup_closure": ("条待验证问题", "闭环了几条"),
+            "prior_kpi_settlement": ("条量化阈值：本季能结算", "上季阈值"),
         }
         for key, texts in cases.items():
             bare = copy.deepcopy(full)
@@ -920,6 +1060,11 @@ class CfrRollTest(unittest.TestCase):
         }
         for name, (make_true, make_false, claims) in cases.items():
             held = copy.deepcopy(self.full)
+            # The settlement block states which of last note's lines held; a case that
+            # moves the jewellery rate across one makes that statement false and stops
+            # the build, which is `test_the_held_list_has_to_be_what_the_numbers_say`'s
+            # subject, not this one's.
+            held.pop("prior_kpi_settlement")
             make_true(held)
             before = composed(cfr.build_payload(held))
             broken = copy.deepcopy(held)
@@ -979,6 +1124,10 @@ class CfrChecksTest(unittest.TestCase):
     reads it (asserted in `test_data_only_roll`). Richemont prints its growth rates
     as whole percentages and the retail share of sales as a whole percentage, so the
     page's arithmetic has to round to those.
+
+    `_checks["note"]` is the same kind of second reading, of the owner's two notes
+    rather than the announcement: section 0's verdict tally and both notes' section 8
+    thresholds, re-keyed with every roll like the rest of `_checks` (see `CfrSettledTest`).
     """
 
     @classmethod
