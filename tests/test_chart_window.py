@@ -129,13 +129,19 @@ def _tsm_page() -> dict:
 
 
 def _tsm_story_reach() -> int:
-    """TSM's section one carries a 2016-reaching chart only in a quarter whose
-    follow-up closure falsified a call with a long series behind it (2026Q2:
-    the inventory-days call). It comes and goes with the data -- the page is
-    rolled by editing `series/tsm.json` alone -- so the pin below counts the
-    permanent charts and adds this one only while it is published."""
+    """TSM's 2016-reaching charts that come and go with period-stamped blocks of
+    `series/tsm.json`, which is all a roll edits: the falsified call drawn
+    against its record (「上季判断…」, only in a quarter whose follow-up closure
+    falsified a call with a long series behind it), and the threshold lines --
+    last quarter's section-8 lines settled in section one (「上季阈值」) and this
+    quarter's in section three (「下季阈值」), each drawn on its own record,
+    counted here when that record reaches 2016 (the HPC and 2nm lines start
+    where the company started printing them). The pin below counts the
+    permanent charts and adds these while they are published."""
     return sum(1 for section in _tsm_page()["sections"] for ex in section["exhibits"]
-               if ex["title"].startswith("上季判断"))
+               if ex["title"].startswith("上季判断")
+               or (("上季阈值" in ex["title"] or "下季阈值" in ex["title"])
+                   and (first_year(ex) or TARGET_YEAR + 1) <= TARGET_YEAR))
 
 
 def _intc_threshold_reach() -> int:
@@ -329,7 +335,7 @@ REACH_2016 = {
     "cost": 11 + _cost_threshold_reach(), "googl": 11, "hkex": 15, "ibkr": 26, "ker": 11 + _ker_threshold_reach(), "ma": 17, "mc": 9, "mco": 13, "meta": 10,
     "msci": 23, "msft": 8, "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 7 + _nke_threshold_reach(), "nvda": 10, "pm": 8,
     "race": 12, "rms": 15, "samsung": 0, "schw": 10, "skhynix": 4, "snps": 8,
-    "spgi": 14, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 17, "zgn": 0,
+    "spgi": 14, "tjx": 10, "tsm": 14 + _tsm_story_reach(), "v": 17, "zgn": 0,
     "intc": 10 + _intc_threshold_reach(),
     # Not a company page. It is here because the ratchet now walks every
     # published payload rather than `ENTRIES`: a page that was invisible to the
