@@ -2980,6 +2980,135 @@
     "income_tax_benefit_prior_year_usd_m": -16,
     "working_capital_change_usd_m": 389,
     "working_capital_change_prior_year_usd_m": -89,
+    "note": {
+      "source": "本季分析稿 2026-07-29 ARM Q2 2026 vs Q1 2026 Analysis.md：第 0 节「上季遗留问题回答」（5 条 follow-up 的验证结果列与「上季判断的方向 / 幅度 / 归因 / 时点记分」）、第 8 节「关键观察指标」的「本季 KPI 表（5 条）」；上季分析稿 2026-05-06 ARM Q1 2026 vs Q4 2025 Analysis.md：第 8 节「关键观察指标」表（5 条）。从两份分析稿原文重读录入，没有从 series 的 followup_closure / prior_kpi_settlement / next_kpi 块抄。",
+      "checked_on": "2026-09-23",
+      "closure_items": 5,
+      "closure": [
+        {
+          "n": 1,
+          "verdict": "已验证",
+          "as_printed": "已验证（正面）"
+        },
+        {
+          "n": 2,
+          "verdict": "未兑现",
+          "as_printed": "未兑现（demand 未上调、firmer guide 明确推迟）"
+        },
+        {
+          "n": 3,
+          "verdict": "已验证",
+          "as_printed": "已验证（维持）"
+        },
+        {
+          "n": 4,
+          "verdict": "部分验证",
+          "as_printed": "部分验证（增速仍成立，绝对值仍未披露）"
+        },
+        {
+          "n": 5,
+          "verdict": "已验证",
+          "as_printed": "已验证且恶化"
+        }
+      ],
+      "closure_counts": {
+        "已验证": 3,
+        "部分验证": 1,
+        "未兑现": 1
+      },
+      "closure_tally_rule": "第 0 节没有单独的统计行；计数按验证结果列逐条归类，#5「已验证且恶化」归入已验证",
+      "scorecard": [
+        {
+          "dimension": "方向",
+          "verdict": "对"
+        },
+        {
+          "dimension": "幅度",
+          "verdict": "低估"
+        },
+        {
+          "dimension": "归因",
+          "verdict": "部分错"
+        },
+        {
+          "dimension": "时点",
+          "verdict": "错一个季度"
+        }
+      ],
+      "prior_thresholds": [
+        {
+          "id": "royalty_yoy",
+          "metric": "Q1 FY27 royalty YoY 增速（管理层 guide +20%）",
+          "threshold": 15.0,
+          "direction": "up",
+          "unit": "pct",
+          "as_printed": "实际 < +15% = MediaTek 高基数解释不充分，underlying 结构性减速 → 减仓（第 8 节指标 1）"
+        },
+        {
+          "id": "softbank_consulting",
+          "metric": "SoftBank technology licensing 季度 NRV",
+          "threshold": 180.0,
+          "direction": "up",
+          "unit": "usd_m",
+          "as_printed": "Q1 FY27 < $180M 或出现 transition to next-generation pricing 措辞 = 关系变化 → 跟踪（第 8 节指标 5）"
+        }
+      ],
+      "prior_unquantified": [
+        {
+          "keyword": "数据中心 royalty",
+          "metric": "数据中心 royalty YoY 增速",
+          "as_printed": "Q1 FY27 < +50% = 翻倍叙事破裂 → 警示；连续 4 季 ≥ +100% = 护城河 KPI 强化（指标 2）"
+        },
+        {
+          "keyword": "FY27 Q4",
+          "metric": "AGI CPU FY27 Q4（即 calendar 2027 Q1）silicon 实际收入",
+          "as_printed": "guide ~$90M-ish；< $50M → 警示；≥ $120M → 加仓（指标 3）"
+        },
+        {
+          "keyword": "FY27+FY28",
+          "metric": "AGI CPU FY27+FY28 累计 demand（管理层秋季 firmer estimate）",
+          "as_printed": "firmer estimate ≤ $2.0B → 重新评估；≥ $2.5B 且 FY28 silicon 上调到 $1.0–1.2B → 多元化里程碑（指标 4）"
+        }
+      ],
+      "next_thresholds": [
+        {
+          "id": "royalty",
+          "metric": "Q2 FY27 实际 royalty 收入",
+          "threshold": 690.0,
+          "direction": "up",
+          "unit": "usd_m",
+          "as_printed": "< $690M = 减速超指引 → 减仓；> $740M = 存储冲击被高估 → 加仓（指标 1）"
+        },
+        {
+          "id": "acv_yoy",
+          "metric": "ACV 同比增速",
+          "threshold": 10.0,
+          "direction": "up",
+          "unit": "pct",
+          "as_printed": "< +10% = license 端结构性走弱 → 减仓；≥ +18% → 重新评估（上修）（指标 2）"
+        },
+        {
+          "id": "fcf",
+          "metric": "可持续自由现金流（剔除营运资本）",
+          "threshold": 250.0,
+          "direction": "up",
+          "unit": "usd_m",
+          "as_printed": "Q2 FY27 FCF < $250M = 本季属纯时点 → 警示；≥ $450M 且营运资本贡献 < $100M → upside（指标 4）"
+        }
+      ],
+      "next_unquantified": [
+        {
+          "keyword": "AGI CPU",
+          "metric": "Q3 FY27（2027-02）的 AGI CPU firmer guide",
+          "as_printed": "收入口径仍停在 $1B 或毛利率低于高 30% → 重新评估；收入 ≥ $1.5B 且毛利率 ≥ 40% → 里程碑（指标 3）"
+        },
+        {
+          "keyword": "智能手机",
+          "metric": "全球智能手机季度出货同比（IDC / Counterpoint）",
+          "as_printed": "Q3 2026 同比降幅扩大到 −15% 以上 → 减仓（指标 5）"
+        }
+      ]
+    },
     "where": {
       "period_end": "Cover/TOC: 'Quarterly report for the three months ended June 30, 2026'",
       "release_date": "EDGAR filing index of the earnings 6-K acc 0001973239-26-000113: Filing Date 2026-07-29, accepted 2026-07-29 16:02:28 (the statements 6-K 0001973239-26-000114 was accepted the same day at 16:05:46; its signature block is dated July 29, 2026). EX-99.2 not read.",

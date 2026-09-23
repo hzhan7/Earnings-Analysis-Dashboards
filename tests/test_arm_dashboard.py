@@ -27,9 +27,11 @@ The four-part layout adds three more classes. `ArmFourPartTest` pins the
 section ids and titles and the next quarter's thresholds; `ArmSettledTest` pins
 section one's closure and last quarter's thresholds; `ArmHighlightsTest` pins
 the section-two readings the local note's conclusions call for. The thresholds
-and verdicts themselves are the notes' content, so they are copied by hand into
-`NOTE_FACTS`, keyed by the quarter the series blocks are stamped for; every
-value they are settled on is recomputed here from the series.
+and verdicts are the analysis notes' content, re-read from the two note files
+into `_checks["note"]` (which the builder never reads); the payload is compared
+against that block, and every value a threshold is settled on is recomputed
+here from the series. A roll re-keys `_checks` with the new note and edits
+nothing in this file.
 """
 
 from __future__ import annotations
@@ -402,37 +404,22 @@ class ArmPageTest(unittest.TestCase):
 FOUR_PARTS = [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
               ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")]
 
-# What the local analysis notes say, copied by hand and keyed by the quarter the
-# series blocks are stamped for. These are the notes' facts, not filed figures:
-# writing them out here is the check that each block carries what its note says.
-# A roll brings a new note, so a block stamped for a quarter missing from this
-# table fails loudly instead of being checked against last quarter's note.
-NOTE_FACTS = {
-    "Q2 2026": {
-        # 2026-07-29 note, section 8 (「关键观察指标」, 本季 KPI 表): three thresholds
-        # with numbers, two items that cannot be drawn.
-        "next": {"royalty": (690.0, "up", "usd_m"), "acv_yoy": (10.0, "up", "pct"),
-                 "fcf": (250.0, "up", "usd_m")},
-        "next_gated": ("AGI CPU", "智能手机"),
-        # 2026-07-29 note, section 0: the five follow-ups the 2026-05-06 note left and
-        # the verdict given each. The note prints no tally line; this is the tally of
-        # its verdict column, with #5 「已验证且恶化」 counted as verified.
-        "closure": {1: "已验证", 2: "未兑现", 3: "已验证", 4: "部分验证", 5: "已验证"},
-        "closure_counts": {"已验证": 3, "部分验证": 1, "未兑现": 1},
-        # 2026-05-06 note, section 8: two of its five thresholds are numbers this
-        # quarter can settle, three cannot (no figure / not yet due).
-        "prior": {"royalty_yoy": (15.0, "up", "pct"), "softbank_consulting": (180.0, "up", "usd_m")},
-        "prior_unsettled": ("数据中心 royalty", "FY27 Q4 芯片收入", "累计需求"),
-    },
-}
+def note_checks(staging: dict, block: str) -> dict:
+    """The analysis notes' facts for the quarter `_checks` was keyed for.
+
+    `_checks["note"]` was re-read from the two note files, not copied from the
+    series blocks the builder reads. It describes the quarter `_checks` names, so
+    a block stamped for any other quarter is being compared with the wrong note.
+    """
+    checks = staging["_checks"]
+    if staging[block]["period"] != checks["period"]:
+        raise AssertionError(f"`{block}` is stamped {staging[block]['period']!r} but `_checks` was keyed "
+                             f"for {checks['period']!r}: re-key `_checks` (and its `note`) with the roll")
+    return checks["note"]
 
 
-def note_facts(staging: dict, block: str) -> dict:
-    period = staging[block]["period"]
-    if period not in NOTE_FACTS:
-        raise AssertionError(f"`{block}` is stamped {period!r} but this test holds no note facts for it: "
-                             "copy that quarter's section 0 / section 8 into NOTE_FACTS")
-    return NOTE_FACTS[period]
+def by_id(entries: list[dict]) -> dict:
+    return {e["id"]: (e["threshold"], e["direction"], e["unit"]) for e in entries}
 
 
 def metric_values(st: dict) -> dict:
@@ -492,34 +479,45 @@ class ArmFourPartTest(unittest.TestCase):
         self.assertIn("EX_CENSUS", routine)
 
     def test_next_quarter_thresholds_are_the_notes(self) -> None:
-        kpi, facts = self.st["next_kpi"], note_facts(self.st, "next_kpi")
+        kpi, note = self.st["next_kpi"], note_checks(self.st, "next_kpi")
         self.assertEqual(kpi["period"], self.payload["latest"]["disclosed_period_label"])
         last = self.st["quarterly"]["periods"][-1]
         year, n = int(last[:4]), int(last[5])
         self.assertEqual(kpi["for_period"], f"Q1 {year + 1}" if n == 4 else f"Q{n + 1} {year}")
-        got = {e["id"]: (e["threshold"], e["direction"], e["unit"]) for e in kpi["quantified"]}
-        self.assertEqual(got, facts["next"])
-        gated = [g["metric"] for g in kpi["disclosure_gated"]]
-        self.assertEqual(len(gated), len(facts["next_gated"]))
-        for word, metric in zip(facts["next_gated"], gated):
-            self.assertIn(word, metric)
+        self.assertEqual(by_id(kpi["quantified"]), by_id(note["next_thresholds"]))
         for entry in kpi["quantified"]:
             self.assertNotIn("current", entry, "the current value is computed, never typed")
+        # the payload draws each of the note's thresholds, at its value, on its side
+        ex = by_ref(self.payload)
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("下季阈值"))
+        for fact in note["next_thresholds"]:
+            with self.subTest(threshold=fact["id"]):
+                chart = ex[f"EX_NEXT_{fact['id'].upper()}"]
+                self.assertEqual(set(chart["series"][1]["values"]), {fact["threshold"]})
+                self.assertIn(f"下季阈值 {unit(fact['unit'], fact['threshold'])}", chart["title"])
+                side = "上方" if fact["direction"] == "up" else "下方"
+                self.assertIn(f"安全侧在{side}", chart["series"][1]["name"])
+                row = next(r for r in table["rows"] if r[0] == chart["title"].split("：", 1)[0])
+                self.assertEqual(row[1:3], ["高于阈值为安全" if fact["direction"] == "up" else "低于阈值为安全",
+                                            unit(fact["unit"], fact["threshold"])])
+        # the note's items that cannot be drawn are named on the page, not dropped
+        description = self.sections["next_quarter"]["description"]
+        self.assertEqual(len(kpi["disclosure_gated"]), len(note["next_unquantified"]))
+        for item in note["next_unquantified"]:
+            self.assertIn(item["keyword"], description)
+            self.assertTrue(any(item["keyword"] in row[0] for row in table["rows"]), item["keyword"])
 
     def test_the_current_values_are_recomputed_from_the_series(self) -> None:
-        q, kpi = self.st["quarterly"], self.st["kpi"]
-        acv = dict(zip(kpi["dates"], kpi["acv"]))
-        end = q["period_ends"][-1]
-        want = {"royalty": q["royalty"][-1],
-                "acv_yoy": (acv[end] / acv[f"{int(end[:4]) - 1}{end[4:]}"] - 1) * 100,
-                "fcf": q["cash"]["free_cash_flow"][-1]}
-        facts = note_facts(self.st, "next_kpi")
+        q = self.st["quarterly"]
+        values = metric_values(self.st)
+        facts = {fact["id"]: fact for fact in note_checks(self.st, "next_kpi")["next_thresholds"]}
         bars = next(ex for ex in self.sections["next_quarter"]["exhibits"] if ex["kind"] == "diverging_bars")
-        self.assertTrue(bars["title"].startswith(f"下季 {len(want)} 条量化阈值："))
+        self.assertTrue(bars["title"].startswith(f"下季 {len(facts)} 条量化阈值："))
+        self.assertEqual(len(bars["values"]), len(facts))
         for entry, value in zip(self.st["next_kpi"]["quantified"], bars["values"]):
-            threshold, direction, _ = facts["next"][entry["id"]]
-            room = (want[entry["id"]] - threshold) / threshold * 100 * (1 if direction == "up" else -1)
-            self.assertAlmostEqual(value, round(room, 1), places=6, msg=entry["id"])
+            fact = facts[entry["id"]]
+            self.assertAlmostEqual(value, round(room(values[entry["id"]], fact["threshold"], fact["direction"]), 1),
+                                   places=6, msg=entry["id"])
         lines = [ex for ex in self.sections["next_quarter"]["exhibits"] if ex["kind"] == "lines"]
         self.assertEqual(len(lines), sum(1 for e in self.st["next_kpi"]["quantified"] if e.get("chart")))
         for ex in lines:
@@ -597,12 +595,17 @@ class ArmSettledTest(unittest.TestCase):
         self.assertEqual(refs[2 + len(lines)], "EX_REV_BAND", "the company's own record comes last")
 
     def test_the_closure_is_the_notes_section_zero(self) -> None:
-        block, facts = self.st["followup_closure"], note_facts(self.st, "followup_closure")
-        self.assertEqual({item["n"]: item["verdict"] for item in block["items"]}, facts["closure"])
+        block, note = self.st["followup_closure"], note_checks(self.st, "followup_closure")
+        self.assertEqual({item["n"]: item["verdict"] for item in block["items"]},
+                         {item["n"]: item["verdict"] for item in note["closure"]})
         ex = self.ex["EX_CLOSURE"]
-        self.assertEqual(dict(zip(ex["xlabels"], ex["values"])), facts["closure_counts"])
-        self.assertEqual(ex["title"], f"上季 {len(facts['closure'])} 条待验证问题："
-                         + "、".join(f"{n} 条{label}" for label, n in facts["closure_counts"].items()))
+        self.assertEqual(dict(zip(ex["xlabels"], ex["values"])), note["closure_counts"])
+        self.assertEqual(ex["title"], f"上季 {note['closure_items']} 条待验证问题："
+                         + "、".join(f"{n} 条{label}" for label, n in note["closure_counts"].items()))
+        # the note's own verdict for each item is on the page, in the category it was counted in
+        for item in note["closure"]:
+            self.assertIn(f"—— <b>{item['verdict']}</b>", ex["note"])
+            self.assertIn(item["as_printed"].split("（", 1)[0][:2], item["verdict"])
         # the evidence names numbers the builder computes; recompute them here
         q, rp, kpi = self.st["quarterly"], self.st["related_party"], self.st["kpi"]
         acv = dict(zip(kpi["dates"], kpi["acv"]))
@@ -615,7 +618,7 @@ class ArmSettledTest(unittest.TestCase):
         for text in texts:
             self.assertIn(text.replace("-", "−"), ex["note"])
         self.assertNotRegex(ex["note"], r"\{[a-z_]+\}", "an evidence placeholder was left unfilled")
-        for d in block["scorecard"]:
+        for d in note["scorecard"]:
             self.assertIn(d["dimension"] + d["verdict"], ex["note"])
 
     def test_the_closure_counts_follow_the_items(self) -> None:
@@ -631,14 +634,28 @@ class ArmSettledTest(unittest.TestCase):
         self.assertEqual(title, f"上季 {len(items)} 条待验证问题：" + "、".join(f"{n} 条{l}" for l, n in counts if n))
 
     def test_prior_thresholds_are_last_quarters_notes(self) -> None:
-        block, facts = self.st["prior_kpi_settlement"], note_facts(self.st, "prior_kpi_settlement")
-        got = {e["id"]: (e["threshold"], e["direction"], e["unit"]) for e in block["quantified"]}
-        self.assertEqual(got, facts["prior"])
-        self.assertEqual(len(block["unsettled"]), len(facts["prior_unsettled"]))
-        for word, item in zip(facts["prior_unsettled"], block["unsettled"]):
-            self.assertIn(word, item["metric"])
+        block, note = self.st["prior_kpi_settlement"], note_checks(self.st, "prior_kpi_settlement")
+        self.assertEqual(by_id(block["quantified"]), by_id(note["prior_thresholds"]))
         for entry in block["quantified"]:
             self.assertNotIn("actual", entry, "the settled value is computed, never typed")
+        # the payload settles each of the note's thresholds at its value, on its side
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("上季阈值"))
+        for fact in note["prior_thresholds"]:
+            with self.subTest(threshold=fact["id"]):
+                chart = self.ex[f"EX_PRIOR_{fact['id'].upper()}"]
+                self.assertEqual(set(chart["series"][1]["values"]), {fact["threshold"]})
+                self.assertIn(f"上季阈值 {unit(fact['unit'], fact['threshold'])}", chart["title"])
+                side = "上方" if fact["direction"] == "up" else "下方"
+                self.assertIn(f"安全侧在{side}", chart["series"][1]["name"])
+                row = next(r for r in table["rows"] if r[0] == chart["title"].split("：", 1)[0])
+                self.assertEqual(row[1:3], ["高于阈值为安全" if fact["direction"] == "up" else "低于阈值为安全",
+                                            unit(fact["unit"], fact["threshold"])])
+        # the note's section 8 items this quarter cannot settle are named, not dropped
+        self.assertEqual(len(block["unsettled"]), len(note["prior_unquantified"]))
+        description = self.payload["sections"][0]["description"]
+        for item in note["prior_unquantified"]:
+            self.assertIn(item["keyword"], description)
+            self.assertTrue(any(item["keyword"] in row[0] for row in table["rows"]), item["keyword"])
 
     def test_the_settlement_is_recomputed_from_the_series(self) -> None:
         entries = self.st["prior_kpi_settlement"]["quantified"]
