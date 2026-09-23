@@ -6,6 +6,10 @@
   "audit_status": "unaudited",
   "source_url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000121/q22026991.htm"
  },
+ "analysis_coverage": {
+  "first_period": "Q4 2025",
+  "_note": "所有者库里 5.Earnings Analysis/AMD/ 最早的一份是 2026-04-25 AMD Q4 2025 vs Q3 2025 Analysis.md；此后每季的第一板块都必须结算上一份分析留下的问题与监控指标。"
+ },
  "_checks": {
   "period": "Q2 2026",
   "period_end": "2026-06-27",
@@ -68,8 +72,147 @@
    "meta": 160,
    "vested": 0
   },
-  "source": "Q2 2026 业绩 8-K（acc 0000002488-26-000121）：EX-99.1 首页 GAAP/non-GAAP Quarterly Financial Results 两表、Segment Summary、SELECTED CORPORATE DATA 与三张报表；EX-99.2 幻灯片 Outlook 页（Q3 指引）。Q1 2026 业绩 8-K（acc 0000002488-26-000072）EX-99.1 Current Outlook 段与 EX-99.2 Outlook 页（本季指引）。Q2 2026 10-Q（acc 0000002488-26-000123）附注 10 Commitments 表 Total、附注 12 Warrants；Q1 2026 10-Q（acc 0000002488-26-000076）附注 10 Total。",
-  "checked_on": "2026-09-23"
+  "source": "Q2 2026 业绩 8-K（acc 0000002488-26-000121）：EX-99.1 首页 GAAP/non-GAAP Quarterly Financial Results 两表、Segment Summary、SELECTED CORPORATE DATA 与三张报表；EX-99.2 幻灯片 Outlook 页（Q3 指引）。Q1 2026 业绩 8-K（acc 0000002488-26-000072）EX-99.1 Current Outlook 段与 EX-99.2 Outlook 页（本季指引）。Q2 2026 10-Q（acc 0000002488-26-000123）附注 10 Commitments 表 Total、附注 12 Warrants；Q1 2026 10-Q（acc 0000002488-26-000076）附注 10 Total。；同一份 EX-99.1 合并损益表 Total cost of sales（5,333 / 4,837）与现金流量表 Repurchases of common stock （三个月 —、去年同季 478；六个月 221、去年同期 1,227）；两季 10-Q 附注 10 分年表的当年余下部分（XBRL）。",
+  "checked_on": "2026-09-23",
+  "note": {
+   "source": {
+    "this_report": "本季本地分析稿「2026-08-04 AMD Q2 2026 vs Q1 2026 Analysis.md」（季末 2026-06-27、发布 2026-08-04）：第 0 节上季遗留问题 5 条的「验证结果」列与其后的 Follow-up 总评；第 8 节先校准上季 6 条指标的表、本季指标表（表头写 6 条、表里 7 行）与立场撤销条件；第 2 节 C④",
+    "prior_report": "上季本地分析稿「2026-05-05 AMD Q1 2026 vs Q4 2025 Analysis.md」（季末 2026-03-28）：旧格式，6.3 节「关键监控指标（按重要性排序）」6 条相当于第 8 节；文末 Follow-up Questions 5 题"
+   },
+   "checked_on": "2026-09-24",
+   "followup_closure": {
+    "total": 5,
+    "counts": {
+     "已验证": 3,
+     "仍未披露": 2
+    },
+    "verdicts": [
+     "已验证",
+     "仍未披露",
+     "已验证",
+     "已验证",
+     "仍未披露"
+    ],
+    "_note": "第 0 节「验证结果」列：#1 已验证（超预期）、#2 仍未披露（第 2 次 punt）、#3 已验证（正向）、#4 已验证、#5 仍未披露（第 2 次 punt）；总评「5 题中 3 题闭环、2 题连续两季未答」。"
+   },
+   "prior_rows": 6,
+   "prior_thresholds": [
+    {
+     "metric": "OpEx YoY 增速（Q2）",
+     "threshold": 40.0,
+     "trigger": "≥",
+     "action": "警示",
+     "_note": "「若 Q2/Q3 持续 +40%+，市场将开始惩罚」"
+    },
+    {
+     "metric": "OpEx YoY 增速（Q3，本季读指引）",
+     "threshold": 40.0,
+     "trigger": "≥",
+     "action": "警示",
+     "_note": "同一行的 Q3 半边；本季报告第 8 节校准用的也是 Q3 指引"
+    }
+   ],
+   "prior_unquantified_rows": [
+    1,
+    2,
+    4,
+    5,
+    6
+   ],
+   "_thresholds_note": "trigger 是报告原文里触发动作的那一侧（≥ = 达到或高于阈值触发，< = 低于阈值触发）；页面 series 里的 direction 是有利一侧：警示 / 减仓线的有利一侧与 trigger 相反，加仓线与 trigger 相同。",
+   "next_rows": 8,
+   "next_table_rows": 7,
+   "next_table_header_says": 6,
+   "next_not_drawn_rows": [
+    5,
+    6,
+    7,
+    8
+   ],
+   "next_thresholds": [
+    {
+     "metric": "Q4 2026 数据中心段收入（加仓）",
+     "threshold": 10000,
+     "trigger": "≥",
+     "action": "加仓",
+     "_note": "「≥$100 亿 加仓」"
+    },
+    {
+     "metric": "Q4 2026 数据中心段收入（减仓）",
+     "threshold": 8800,
+     "trigger": "<",
+     "action": "减仓",
+     "_note": "「<$88 亿 减仓」"
+    },
+    {
+     "metric": "H2 2026 数据中心段收入（加速门槛）",
+     "threshold": 17565,
+     "trigger": "<",
+     "action": "核验",
+     "_note": "第 2 节 C④「H2 2026 DC 必须 > $17,565M 才算加速」；第 8 节 #1 的 $93.2–95.3 亿是它减去报告假设的 Q3"
+    },
+    {
+     "metric": "Q4 2026 non-GAAP 毛利率指引（加仓）",
+     "threshold": 56.5,
+     "trigger": "≥",
+     "action": "加仓",
+     "_note": "「≥56.5% 加仓」"
+    },
+    {
+     "metric": "Q4 2026 non-GAAP 毛利率指引（减仓）",
+     "threshold": 54.0,
+     "trigger": "<",
+     "action": "减仓",
+     "_note": "「<54% 减仓」"
+    },
+    {
+     "metric": "Q3 期末 DPO",
+     "threshold": 70.0,
+     "trigger": "<",
+     "action": "警示",
+     "_note": "「Q3 期末 DPO < 70 天」"
+    },
+    {
+     "metric": "Q3 自由现金流",
+     "threshold": 0,
+     "trigger": "<",
+     "action": "警示",
+     "_note": "「Q3 FCF < $0」"
+    },
+    {
+     "metric": "10-Q 2027 年及以后无条件采购承诺",
+     "threshold": 12890,
+     "trigger": "<",
+     "action": "警示",
+     "_note": "「Q1 $73.2 亿 → Q2 $128.9 亿；Q3 继续增长 = ramp 方向证实；下降且措辞未变 警示」"
+    }
+   ],
+   "next_dpo_basis": {
+    "q1": 56.4,
+    "q2": 91.4,
+    "_note": "报告「DPO 约 56 天 → 约 91 天」，审计修订写明 Q1 同口径 56.4 天：复算即 (应付账款 + 应付关联方款项) ÷ GAAP 销货成本 × 91"
+   },
+   "h2_floor_usd_m": 17565
+  },
+  "total_cost_of_sales_usd_m": {
+   "current": 5333,
+   "prior_quarter": 4837
+  },
+  "share_repurchases_usd_m": {
+   "current": 0,
+   "prior_quarter": 221,
+   "year_ago": 478,
+   "six_months": 221,
+   "six_months_year_ago": 1227
+  },
+  "unconditional_commitments_after_year_usd_m": {
+   "current": 12890,
+   "prior_quarter": 7320,
+   "remainder_of_year": {
+    "current": 17386,
+    "prior_quarter": 18342
+   }
+  }
  },
  "periods": [
   "Q1 2016",
@@ -1501,6 +1644,9 @@
   ],
   "episodes": {
    "Q2 2025": "美国出口管制使 MI308 无法对华出货，公司当季计提约 US$800M 存货及相关准备，记在数据中心分部。"
+  },
+  "embedded_episodes": {
+   "Q1 2023": "那一季的同比基数 Q1'22 只含 2022-02-14 之后的 Xilinx，增速被并表抬高"
   }
  },
  "guidance_history": {
@@ -2288,6 +2434,102 @@
    2274
   ]
  },
+ "share_repurchases_usd_m": {
+  "quarters": [
+   "Q1 2016",
+   "Q2 2016",
+   "Q3 2016",
+   "Q4 2016",
+   "Q1 2017",
+   "Q2 2017",
+   "Q3 2017",
+   "Q4 2017",
+   "Q1 2018",
+   "Q2 2018",
+   "Q3 2018",
+   "Q4 2018",
+   "Q1 2019",
+   "Q2 2019",
+   "Q3 2019",
+   "Q4 2019",
+   "Q1 2020",
+   "Q2 2020",
+   "Q3 2020",
+   "Q4 2020",
+   "Q1 2021",
+   "Q2 2021",
+   "Q3 2021",
+   "Q4 2021",
+   "Q1 2022",
+   "Q2 2022",
+   "Q3 2022",
+   "Q4 2022",
+   "Q1 2023",
+   "Q2 2023",
+   "Q3 2023",
+   "Q4 2023",
+   "Q1 2024",
+   "Q2 2024",
+   "Q3 2024",
+   "Q4 2024",
+   "Q1 2025",
+   "Q2 2025",
+   "Q3 2025",
+   "Q4 2025",
+   "Q1 2026",
+   "Q2 2026"
+  ],
+  "values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   256,
+   748,
+   758,
+   1914,
+   921,
+   617,
+   250,
+   241,
+   0,
+   511,
+   233,
+   4,
+   352,
+   250,
+   256,
+   749,
+   478,
+   89,
+   0,
+   221,
+   0
+  ],
+  "derived": [
+   "Q3 2021",
+   "Q4 2021"
+  ],
+  "authorized_first": "Q2 2021",
+  "source": "现金流量表「Repurchases of common stock」。2023 年二季度起各季业绩 8-K EX-99.1 并排印出三个月列（本季与去年同季），2022 年二季度到四季度取次年新闻稿的去年同季列；2021 年与 2022 年一季度取 10-Q / 10-K 的年初至今数相减（XBRL PaymentsForRepurchaseOfCommonStock），其中 2021 年三、四季度是相减所得 D。2019–2020 年两年这一行为 0，2016–2018 年的现金流量表没有这一行（融资活动只有发股、发债、还债与员工计划）；首个回购授权（US$4B）见于 2021 年二季度 10-Q。"
+ },
  "eps_reconciliation": {
   "period": "Q2 2026",
   "quarters": [
@@ -2361,81 +2603,175 @@
  },
  "next_kpi": {
   "period": "Q2 2026",
+  "source_section": "第 8 节「关键观察指标」",
+  "_roll_note": "换季时把本块原样搬进 prior_kpi_settlement（rows / revocation_rows / quantified / not_drawn 不改，加 set_in 与下一份报告对每一行的处置 dispositions），settles 不到期的线由 builder 列为未到期；chart_notes 与 note 是本季的叙述，占位符读的是「本季」的数，搬过去之前要按下一份报告重写或删掉。quantified 里没有当前值：每条线的读数由 build/amd.py 的 reading() 按 reads 从数组现算。",
+  "rows": [
+   "Q4 2026 数据中心段收入（2027-02 Q4 财报）：≥ $93.2–95.3 亿（随 Q3 实际值定）才符合公司自己「H2 加速」口径；< $88 亿 = Helios ramp 滑窗 —— ≥$100 亿 加仓，<$88 亿 减仓",
+   "Q4 2026 non-GAAP 毛利率指引（2026-11 Q3 财报给出）：≥56.5% = Helios 稀释被服务器 / Embedded 完全对冲；54.0–56.4% = 稀释仍在但可控（维持）；< 54% = 稀释失控 —— ≥56.5% 加仓，<54% 减仓",
+   "Q3 2026 自由现金流 / DPO：Q3 期末 DPO < 70 天 或 Q3 FCF < $0 = Q2 现金流质量证实为一次性 —— 警示（下调 FCF 转化率至 45%）",
+   "10-Q「2027 年及以后」无条件采购承诺（NOTE 10）：Q3 继续增长 = ramp 方向证实；环比下降需先读 NOTE 10 措辞 —— 增长为护城河 KPI；下降且措辞未变 警示（不单独作为减仓依据）",
+   "Mercury Research x86 服务器营收份额：>48% = Venice 换代顺利；<45% = 份额见顶 —— >48% 加仓，<45% 警示",
+   "认股权证归属披露（10-Q 股本附注）：截至 2026-06-27 零份归属；任一 tranche 归属先触发负债计量与 GAAP 其他收支波动 —— 跟踪",
+   "MI325 对华出口链条（10-Q 风险因素段措辞）：措辞出现进口放行或恢复披露对华出货 = 上行期权兑现；措辞恶化或许可被撤 —— 跟踪",
+   "立场撤销条件 ③：2027-02 给出的 2027 年毛利率框架低于 54%，或 2027 数据中心指引低于「翻倍」"
+  ],
+  "revocation_rows": [
+   8
+  ],
   "quantified": [
    {
-    "id": "non_gaap_gm",
-    "metric": "non-GAAP 毛利率",
+    "id": "dc_q4_add",
+    "row": 1,
+    "metric": "Q4 数据中心收入（加仓线）",
+    "reads": "dc_revenue",
+    "unit": "usd_b2",
+    "threshold": 10000,
     "direction": "up",
+    "action": "加仓",
+    "settles": "Q4 2026",
+    "rule": "≥$100 亿 加仓"
+   },
+   {
+    "id": "dc_q4_cut",
+    "row": 1,
+    "metric": "Q4 数据中心收入（减仓线）",
+    "reads": "dc_revenue",
+    "unit": "usd_b2",
+    "threshold": 8800,
+    "direction": "up",
+    "action": "减仓",
+    "settles": "Q4 2026",
+    "rule": "<$88 亿 = Helios ramp 滑窗，减仓（立场撤销条件 ② 同一条线）"
+   },
+   {
+    "id": "dc_h2_floor",
+    "row": 1,
+    "metric": "2026 下半年数据中心（加速门槛）",
+    "reads": "dc_half",
+    "unit": "usd_b2",
+    "threshold": 17565,
+    "direction": "up",
+    "action": "核验",
+    "settles": "Q4 2026",
+    "strict": true,
+    "rule": "H2 2026 DC 必须 > $17,565M 才算「加速」（第 2 节 C④）；Q4 的 $93.2–95.3 亿就是它减去报告假设的 Q3"
+   },
+   {
+    "id": "gm_guide_add",
+    "row": 2,
+    "metric": "Q4 毛利率指引（加仓线）",
+    "reads": "gm_guide",
+    "unit": "pct1",
+    "threshold": 56.5,
+    "direction": "up",
+    "action": "加仓",
+    "settles": "Q3 2026",
+    "rule": "≥56.5% 加仓"
+   },
+   {
+    "id": "gm_guide_cut",
+    "row": 2,
+    "metric": "Q4 毛利率指引（减仓线）",
+    "reads": "gm_guide",
+    "unit": "pct1",
     "threshold": 54.0,
-    "unit": "pct",
-    "ylab": "毛利率",
-    "why": "54% 是本地研究为下季设的警戒线：若 2026-11 给出的 Q4 毛利率指引或 Q3 实际值低于它，说明新机架产品的毛利稀释已经盖过服务器与嵌入式的正向组合变化。公司对 Instinct 自身毛利率只给过「略低于公司平均」的口头措辞。",
-    "source": "各季业绩 8-K EX-99.1 的 non-GAAP 毛利美元数 ÷ 收入（D）；阈值为本地研究设定。"
+    "direction": "up",
+    "action": "减仓",
+    "settles": "Q3 2026",
+    "rule": "<54% 减仓（立场撤销条件 ① 同一条线）"
    },
    {
     "id": "dpo",
-    "metric": "应付天数",
-    "direction": "up",
-    "threshold": 70.0,
+    "row": 3,
+    "metric": "Q3 期末应付天数（警示线）",
+    "reads": "dpo_gaap",
     "unit": "days1",
-    "ylab": "天",
-    "why": "阈值取 70 天：若下季应付天数回落到它以下，本季由应付账款拉长带来的那部分经营现金流就会反向流出，说明本季的自由现金流有一块是一次性的。",
-    "source": "各季业绩 8-K EX-99.1 资产负债表与合并损益表（D）；阈值为本地研究设定。"
+    "threshold": 70.0,
+    "direction": "up",
+    "action": "警示",
+    "settles": "Q3 2026",
+    "rule": "Q3 期末 DPO < 70 天 → 警示"
+   },
+   {
+    "id": "fcf",
+    "row": 3,
+    "metric": "Q3 自由现金流（警示线）",
+    "reads": "fcf",
+    "unit": "usd_m",
+    "threshold": 0,
+    "direction": "up",
+    "action": "警示",
+    "settles": "Q3 2026",
+    "rule": "Q3 FCF < $0 → 警示"
+   },
+   {
+    "id": "commit_later",
+    "row": 4,
+    "metric": "2027 年及以后的采购承诺（警示线）",
+    "reads": "commitments_after_year",
+    "unit": "usd_b2",
+    "threshold": 12890,
+    "direction": "up",
+    "action": "警示",
+    "settles": "Q3 2026",
+    "strict": true,
+    "rule": "Q3 继续增长（高于 Q2 的 $128.9 亿）= ramp 方向证实；下降且措辞未变 → 警示"
    }
   ],
-  "table_only": [
+  "not_drawn": [
    {
-    "metric": "数据中心下半年合计",
-    "direction": "高于门槛 = 兑现「加速」",
-    "threshold": "见第三节半年图 D",
-    "current": "待 Q3、Q4 披露",
-    "why": "门槛由公司自己的分部收入算出，但比较的对象要到 2027 年 2 月才齐。"
+    "row": 5,
+    "metric": "Mercury Research x86 服务器营收份额",
+    "threshold_text": ">48% 加仓；<45% 警示",
+    "reading": "—",
+    "why": "第三方机构的估算，AMD 的申报文件里没有这个数，本页不引用"
    },
    {
-    "metric": "无条件采购承诺",
-    "direction": "继续上升 = 供应链在为爬坡备货",
-    "threshold": "不设水平阈值",
-    "current": "见第三节承诺图",
-    "why": "这一行混了晶圆采购与可被削减的云算力协议，公司不拆分，下降也可能只是云服务商削减。"
-   },
-   {
+    "row": 6,
     "metric": "认股权证归属",
-    "direction": "任一批归属即触发负债重估与稀释",
-    "threshold": "零归属",
-    "current": "零归属（10-Q 附注 12）",
-    "why": "是事件不是水平。"
+    "threshold_text": "任一批归属 → 跟踪",
+    "reading": "零归属（10-Q 附注 12，截至季末）",
+    "why": "是事件，不是水平；归属先按负债计量、公允价值变动进 GAAP 其他收支，进入稀释股数还要满足其他条件"
    },
    {
-    "metric": "x86 服务器营收份额",
-    "direction": "—",
-    "threshold": "—",
-    "current": "—",
-    "why": "只有第三方机构的数，AMD 的申报文件里没有，本页不引用。"
+    "row": 7,
+    "metric": "MI325 对华出口链条",
+    "threshold_text": "10-Q 措辞出现进口放行或恢复披露对华出货 → 上行；措辞恶化或许可被撤 → 跟踪",
+    "reading": "美方已发部分许可，是否允许进口中国「尚不知道」（10-Q 原话，与上季相同）",
+    "why": "是措辞变化，不是数字"
    },
    {
-    "metric": "MI325 对华出口",
-    "direction": "—",
-    "threshold": "—",
-    "current": "美方已发许可；是否允许进口中国「尚不知道」（10-Q 原话）",
-    "why": "是措辞变化，不是数字。"
+    "row": 8,
+    "metric": "2027 年毛利率框架 / 2027 数据中心指引",
+    "threshold_text": "毛利率框架 <54%，或数据中心指引低于「翻倍」→ 撤回立场",
+    "reading": "尚未给出",
+    "why": "要等 2027-02 随 Q4 业绩给出的 2027 年框架，现在没有可比的数"
    }
-  ]
+  ],
+  "chart_notes": {
+   "dc_revenue": "报告对 Q3 数据中心写的是 US$8.03–8.25B，那是它自设的分部环比假设（管理层只给了定性口径），本页不画；Q4 的「加速」下限 US$9.32–9.53B 就是半年门槛减去这个假设。",
+   "gm_guide": "报告说 56.5% 是按四舍五入能分辨的最近刻度，真正的临界点是 Q4 指引高过 Q2 实际的 {gm_exact}（第 7 节洞察 1）；54.0%–56.4% 为维持。",
+   "dpo_gaap": "报告的「约 56 → 约 91 天」按 GAAP 销货成本（含无形资产摊销）算，本页按同一口径复算为 {dpo_gaap_prev} → {dpo_gaap} 天，这条线按它结算；本页自己的应付天数不含摊销，是 {dpo_page_prev} → {dpo_page} 天。",
+   "fcf": "报告的推演是：Q3 应付天数若回到 56 天，应付账款约减少 US$1.65B，叠加 US$9 亿级的资本开支，Q3 自由现金流可能接近零或为负。",
+   "commitments_after_year": "10-Q 把晶圆、基板与零部件采购和多年期云算力、软件授权混在一行，云算力部分可被云服务商削减、终止或转售 —— 所以报告规定下降时先读附注措辞，措辞没变的下降才算警示。"
+  },
+  "note": "报告另两条立场撤销条件（Q4 毛利率指引 <54%、Q4 数据中心 <$88 亿）就是上面两条减仓线，不重复计；反向条件是 Q4 毛利率 ≥56.5% 且 Q4 数据中心 ≥$100 亿同时成立。"
  },
  "quarter_story": {
   "period": "Q2 2026",
   "headline": "收入 {revenue}、同比 {revenue_yoy}，数据中心同比 {dc_yoy}、占收入 {dc_share}，non-GAAP 毛利率 {gm}；但这一季变化最大的地方不在利润表上 —— 经营现金流 {ocf} 里有 {ap_change} 来自应付账款{ap_direction}（应付天数 {dpo_prev} → {dpo} 天），{capex_phrase}，无条件采购承诺一季由 {commit_prev} 升到 {commit_now}。",
-  "brief": "<h4>本季三条主线</h4><div class=\"takeaway-grid\"><article><span>亮点</span><b>数据中心同比 {dc_yoy}</b><p>数据中心 {dc}、占收入 {dc_share}。公司在新闻稿里写下「下半年加速」：按上半年 {dc_half_growth} 的同比算，下半年至少要 {dc_floor}。</p></article><article><span>存疑</span><b>现金流里有付款节奏</b><p>经营现金流 {ocf} 里 {ap_change} 来自应付账款{ap_direction}；应付天数单季 {dpo_jump}{dpo_jump_rank}，{dpo_level}。</p></article><article><span>口径</span><b>承诺在表外变大</b><p>无条件采购承诺 {commit_prev} → {commit_now}，其中 {later_label} {commit_later_prev} → {commit_later_now}；{exposure_tail}</p></article></div>"
+  "brief": "<h4>本季三条主线</h4><div class=\"takeaway-grid\"><article><span>亮点</span><b>数据中心同比 {dc_yoy}</b><p>数据中心 {dc}、占收入 {dc_share}。公司在新闻稿里写下「下半年加速」：按上半年 {dc_half_growth} 的同比算，下半年至少要 {dc_floor}。</p></article><article><span>存疑</span><b>现金流里有付款节奏</b><p>经营现金流 {ocf} 里 {ap_change} 来自应付账款{ap_direction}；应付天数单季 {dpo_jump}{dpo_jump_rank}，{dpo_level}。</p></article><article><span>口径</span><b>承诺在表外变大</b><p>无条件采购承诺 {commit_prev} → {commit_now}，其中 {later_label} {commit_later_prev} → {commit_later_now}；{exposure_tail}</p></article></div>",
+  "highlights_not_drawn": "报告里画不出来的有三处：Helios / Instinct 的增量毛利率约 39%（区间 26–50%）是在增量毛利率之上再假设各分部毛利率与 EPYC 的增量拆出来的，2027 年 Instinct 收入 US$35.5–43.4B 与服务器 / Instinct 的季度拆分也都建在自设假设上 —— 申报文件不拆这些数，本页只画到增量毛利率为止；股价反应与市场给的倍数不是公司披露，本页不放。"
  },
  "followup_closure": {
   "period": "Q2 2026",
+  "set_in": "Q1 2026",
   "labels": [
    "已验证",
-   "部分验证",
    "仍未披露"
   ],
   "counts": [
-   1,
-   2,
+   3,
    2
   ],
   "total": 5,
@@ -2443,30 +2779,113 @@
    {
     "question": "第三个吉瓦级 MI450 锚定客户能否公布",
     "verdict": "已验证",
-    "evidence": "本季新闻稿写明与 Anthropic 合作部署至多 2 吉瓦 MI450；首个 1 吉瓦在 2027 年上半年开始部署这一时间点只在电话会上说过，10-Q 未点名 Anthropic。"
+    "evidence": "本季新闻稿写明与 Anthropic 合作部署至多 2 吉瓦 MI450，报告判为超预期；「首个 1 吉瓦在 2027 年上半年开始部署」这一时间点只在电话会上说过，10-Q 没有点名 Anthropic。"
    },
    {
     "question": "MI450 在三季度的首笔收入金额与四季度的爬坡形状",
     "verdict": "仍未披露",
-    "evidence": "管理层只给了形状（三季度刚开始、四季度上一个台阶、明年一季度再上一个台阶），没有金额。"
+    "evidence": "管理层只给了形状（三季度刚开始、四季度上一个台阶、明年一季度再上一个台阶），没有金额，报告记为连续第二季没给。"
    },
    {
-    "question": "营业费用增速能否降到 35% 以下",
-    "verdict": "部分验证",
-    "evidence": "三季度费用指引较去年同季的印出值高 {opex_guide_yoy}，按指引算已过线；但本季实际费用同比仍是 {opex_yoy}，而且公司已连续{opex_streak}季花得比自己的费用指引多（Exhibit {EX_OPEX_BAND}）。"
+    "question": "营业费用同比能否降到 35% 以下（若三季度指引仍在 +40% 以上，杠杆故事就破了）",
+    "verdict": "已验证",
+    "evidence": "报告按问题原文看三季度指引：费用指引 {next_opex} 较去年同季的印出值高 {opex_guide_yoy}，在 35% 以下（报告写作 +32.9%，它的去年同季基数是按 GAAP 费用反推的 US$2,746M，新闻稿印的是 {opex_guide_base}）。这是按指引判的：本季实际费用同比仍是 {opex_yoy}，而且按首次印出值，公司已连续{opex_streak}季花得比自己的费用指引多（Exhibit {EX_OPEX_BAND}）—— 报告写的「连续两季」少算了。"
    },
    {
     "question": "服务器 CPU 二季度同比是否超过 70%、三季度是否再加速",
-    "verdict": "部分验证",
-    "evidence": "「超过 70%」只由管理层在电话会上确认 —— 公司不单独印服务器 CPU 收入，申报文件里只有数据中心分部同比 {dc_yoy}；三季度没有单独的数，只给了下半年「超过 80%」。"
+    "verdict": "已验证",
+    "evidence": "按公司口径兑现：管理层在电话会上说云与企业两块二季度同比各超过 70%，并把下半年说成「超过 80%」。这两个数只在电话会上，申报文件不单列服务器 CPU —— 新闻稿与 10-Q 里能核的是数据中心分部同比 {dc_yoy}，以及新闻稿「EPYC 需求在加速」的措辞。"
    },
    {
     "question": "MI450 的毛利率稀释有多大、2027 年毛利率怎么走",
     "verdict": "仍未披露",
-    "evidence": "CFO 只说数据中心 AI 的毛利率「略低于公司平均」，没有数字；上季那句「低于公司平均」说的是 MI450，两句话说的不是同一样东西，不能读成措辞软化。"
+    "evidence": "CFO 只说数据中心 AI 的毛利率「略低于公司平均」，没有数字，2027 年的毛利率要等公司给 2027 年指引时再说。上季电话会那句「低于公司平均」的主语是 MI450，这季的主语是整个数据中心 AI —— 报告把它读成措辞软化，但两句话说的不是同一样东西。"
    }
   ],
-  "note": "上季本地分析稿留下 5 条待验证问题。那份稿子把其中 3 条判为已验证；逐条回到本季新闻稿、幻灯片、10-Q 与电话会原话之后，只有第一条在申报文件里站得住，费用与服务器 CPU 两条都只在一半意义上成立 —— 费用是指引过线、实际没过，服务器 CPU 的数只存在于电话会。"
+  "note": "判定取自本季报告第 0 节：5 条里 3 条闭环、2 条（MI450 的收入金额与毛利率）连续两季没有答案。第 3 条是按指引判的，第 4 条的数只在电话会上；申报文件与两条判定都不矛盾，所以照报告计为已验证，依据停在哪一层写在逐条说明里。"
+ },
+ "prior_kpi_settlement": {
+  "period": "Q2 2026",
+  "set_in": "Q1 2026",
+  "source_section": "第 6.3 节「关键监控指标」",
+  "rows": [
+   "Q3 2026 MI450 实际收入数字 —— Q2 电话会不会给，但 Q3 电话会（2026-10/11）将定调 2027 故事",
+   "第三个 multi-GW MI450 客户公布（候选：Microsoft / Google / Anthropic / xAI / Oracle）",
+   "OpEx YoY 增速 —— 若 Q2/Q3 持续 +40%+，市场将开始惩罚",
+   "Server CPU Q3/Q4 同比能否守住 +50%+ —— TAM 故事的真伪检验",
+   "MI325 China license 进展 —— 监管侧任何 update",
+   "MI450 Q4 2026 GM dilution 实际幅度"
+  ],
+  "quantified": [
+   {
+    "id": "opex_yoy",
+    "row": 3,
+    "metric": "Q2 non-GAAP 营业费用同比",
+    "reads": "opex_yoy",
+    "unit": "pct1s",
+    "threshold": 40.0,
+    "direction": "down",
+    "action": "警示",
+    "settles": "Q2 2026",
+    "rule": "若 Q2/Q3 持续 +40%+，市场将开始惩罚"
+   },
+   {
+    "id": "opex_guide_yoy",
+    "row": 3,
+    "metric": "Q3 营业费用指引隐含同比",
+    "reads": "opex_guide_yoy",
+    "unit": "pct1s",
+    "threshold": 40.0,
+    "direction": "down",
+    "action": "警示",
+    "settles": "Q2 2026",
+    "rule": "若 Q2/Q3 持续 +40%+，市场将开始惩罚（Q3 的实际值 2026-11 才有，这里读的是本季给出的 Q3 指引）"
+   }
+  ],
+  "not_drawn": [
+   {
+    "row": 1,
+    "metric": "MI450 三季度收入金额",
+    "reading": "本季仍未给金额，电话会只给了形状（三季度起步、四季度上台阶）",
+    "why": "原文没有数值阈值，看的是公司给不给这个数；本季报告把它重设为 Q4 数据中心收入的两条线（见第三节）"
+   },
+   {
+    "row": 2,
+    "metric": "第三个吉瓦级 MI450 客户",
+    "reading": "已公布：本季新闻稿写明与 Anthropic 合作部署至多 2 吉瓦 MI450",
+    "why": "是事件，不是数字"
+   },
+   {
+    "row": 4,
+    "metric": "服务器 CPU 同比（Q3/Q4 守住 +50%）",
+    "reading": "申报文件不单列服务器 CPU；电话会上的公司口径是二季度云与企业各超过 70%、下半年超过 80%，申报里能核的是数据中心分部同比 {dc_yoy}",
+    "why": "阈值原文看的是 Q3/Q4，本季还没到；而且服务器 CPU 的数只在电话会上"
+   },
+   {
+    "row": 5,
+    "metric": "MI325 对华出口许可",
+    "reading": "两份 10-Q 措辞相同：美方已发部分许可，是否允许进口中国「尚不知道」",
+    "why": "是措辞变化，不是数字"
+   },
+   {
+    "row": 6,
+    "metric": "MI450 四季度毛利率稀释幅度",
+    "reading": "本季被问到仍未量化（CFO：数据中心 AI「略低于公司平均」）",
+    "why": "原文没有数值阈值，且看的是 Q4；本季报告把它换成 Q4 毛利率指引的两条线（见第三节）"
+   }
+  ],
+  "dispositions": [
+   "未触发（管理层连续两季不给）；重设为可观测的 Q4 数据中心收入阈值",
+   "已触发（正面）：Anthropic 2GW；退役，降为催化事件",
+   "已触发（正面）：Q3 费用指引同比 +32%；退役，阈值设计已失效",
+   "已触发（正面）：+>70%，下半年上修到 +>80%；重设为份额口径",
+   "未触发，但不是信息真空：10-Q 披露美方已批出部分出口许可，卡在中国进口侧与 25% 关税；保留并改为可观测阈值",
+   "未触发（仍未量化）；保留并加硬阈值（Q4 毛利率指引）"
+  ],
+  "chart_notes": {
+   "opex_yoy": "本季报告把 Q3 那一格写作 +32.9%：它的去年同季基数是按 GAAP 费用反推的 US$2,746M（报告第 9 节自承），新闻稿印的是 {opex_guide_base}。"
+  },
+  "note": "服务器 CPU 那一条也写了数（+50%），但它看的是 Q3/Q4，而且那个数只在电话会上；其余几条是金额给不给、客户事件、许可措辞与 Q4 的稀释幅度。逐条的本季读数与本季报告的处置在核对抽屉里。"
  },
  "balance_sheet_exposure": {
   "period": "Q2 2026",
@@ -2597,6 +3016,29 @@
    25662,
    30276
   ],
+  "after_current_year": [
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   7320,
+   12890
+  ],
   "not_comparable": {
    "Q3 2025": "该季 10-Q 的合计改题为「Total commitments」并把尚未起租的租约并进去、金额未拆出（US$12,125M），与前后两季都不同口径，本页留空。"
   },
@@ -2605,7 +3047,8 @@
    "Q1 2025": "起首次计入与云服务商的多年期协议"
   },
   "floor_note": "从 2021 年二季度开始是口径边界：那是第一份在附注里印出承诺总表的 10-Q；此前的 10-Q 只在 MD&A 里印「Purchase obligations」一行，2019 年一季度以前还把 GLOBALFOUNDRIES 的晶圆供应协议单列在外，2020 年三份 10-Q 与 2021 年一季度的 10-Q 则一个数都没有。",
-  "source": "各季 10-Q / 10-K 附注的 Unconditional purchase commitments 表 Total（2025 年四季度起题为 Unconditional commitments）。"
+  "source": "各季 10-Q / 10-K 附注的 Unconditional purchase commitments 表 Total（2025 年四季度起题为 Unconditional commitments）。",
+  "after_current_year_note": "当年以后到期的部分 = 附注承诺表合计 − 当年余下部分（公司没有印这个合计，D）。2026 年两份 10-Q 的当年余下部分为 US$18,342M 与 US$17,386M（XBRL UnrecordedUnconditionalPurchaseObligationDueInRemainderOfFiscalYear），所以这两季是同一截法下的「2027 年及以后」；更早的季度截在别的年份，本页不接成一条线。"
  },
  "dc_acceleration_claim": {
   "period": "Q2 2026",
