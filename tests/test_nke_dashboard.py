@@ -30,6 +30,7 @@ charge.
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import re
@@ -41,9 +42,32 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from build.all import CROSS_ENTRIES, ENTRIES, GROUPS  # noqa: E402
-from build.board import headroom  # noqa: E402
+from build.board import cn_count, headroom  # noqa: E402
 from build.board import stamped_block  # noqa: E402
 from build.nke import build_payload, compact_period, fiscal_to_calendar  # noqa: E402
+
+
+def quarter_key(label: str) -> tuple[int, int]:
+    """``'Q4 2026'`` → ``(2026, 4)``."""
+    quarter, year = label.split()
+    return int(year), int(quarter[1])
+
+
+def expected_chart_count(staging: dict) -> int:
+    """How many charts the page should carry, counted from the series."""
+    period = staging["periods"][-1]
+    prior = stamped_block(staging, "prior_kpi_settlement", period)
+    due_readings = {e["reads"] for e in prior["quantified"]
+                    if not e.get("settles") or quarter_key(e["settles"]) <= quarter_key(period)}
+    next_readings = {e["reads"] for e in stamped_block(staging, "next_kpi", period)["quantified"]}
+    guide = stamped_block(staging, "prior_call_guidance", period)
+    charted_guide = guide is not None and any("low" in i and i.get("chart") for i in guide["items"])
+    buyback = staging.get("buyback_programme")
+    optional = ((stamped_block(staging, "one_off_usd_m", period) is not None) + charted_guide
+                + ("jordan_brand" in staging)
+                + (buyback is not None
+                   and buyback["as_of_fiscal_year"] == staging["long_history"]["fiscal_years"][-1]))
+    return 20 + len(due_readings) + len(next_readings) + optional
 
 
 def quarters_between(first: str, last: str) -> int:
@@ -410,36 +434,26 @@ class NkeDashboardTest(unittest.TestCase):
                            "most of what NIKE filed was words, and the page says so")
 
     # ── the exhibits themselves ──────────────────────────────────────────────
-    def test_headroom_bars_match_the_thresholds_they_claim_to_plot(self) -> None:
-        for key, exhibits, value_key in (
-            ("prior_kpi_settlement", self.by_section["settled"], "actual"),
-            ("next_kpi", self.by_section["next_quarter"], "current"),
-        ):
-            entries = self.source[key]
-            exhibit = next(ex for ex in exhibits if ex["kind"] == "diverging_bars"
-                           and ex["xlabels"] == [e["metric"] for e in entries])
-            expected = [round(headroom(e["direction"], e["threshold"], e[value_key]), 1)
-                        for e in entries]
-            self.assertEqual(exhibit["values"], expected, key)
+    def test_section_two_leads_with_the_quarter(self) -> None:
+        """Every chart in 本季重点 names this quarter's reading (or the fiscal year
+        that just closed) in its title -- a pure range over the long record belongs
+        in section four."""
+        closed = f"FY{self.history['fiscal_years'][-1]}"
+        for exhibit in self.by_section["quarter_highlights"]:
+            self.assertTrue("本季" in exhibit["title"] or closed in exhibit["title"], exhibit["title"])
 
-    def test_every_prior_threshold_lands_between_its_two_gates(self) -> None:
-        """The finding of the first section, asserted rather than described.
-
-        Each metric contributes a bull gate and a bear gate, so a quarter that
-        fires nothing shows up as one negative bar and one positive bar per
-        metric.  If a later quarter breaks that pattern the page's own headline
-        stops being true, and this is what says so.
-        """
-        entries = self.source["prior_kpi_settlement"]
-        # Recounted here, and the chart's title must say the same thing.
-        bull = [e for e in entries if "加仓门槛" in e["metric"]]
-        fired = sum(1 for e in entries
-                    if (headroom(e["direction"], e["threshold"], e["actual"]) > 0) == (e in bull))
-        title = self.by_section["settled"][0]["title"]
-        if fired == 0:
-            self.assertIn("一个动作都没触发", title)
-        else:
-            self.assertNotIn("一个动作都没触发", title)
+    def test_the_brief_is_this_quarter_s(self) -> None:
+        """The brief is headed 「本季…主线」, so it carries this quarter's readings."""
+        brief = self.payload["brief"]
+        self.assertTrue(brief.startswith("<h4>本季"), brief[:20])
+        self.assertEqual(brief.count("<article>"), int(
+            {"两": 2, "三": 3, "四": 4}[brief[len("<h4>本季"):len("<h4>本季") + 1]]))
+        growth = self.source["growth_pct"]
+        for key in ("total_nike_inc_currency_neutral", "greater_china_currency_neutral",
+                    "nike_direct_currency_neutral"):
+            self.assertIn(f"{growth[key][-1]:+.0f}%".replace("-", "−"), brief, key)
+        gm = self.source["release_changes"]["gross_margin_change_ex_refund_bp"][-1]
+        self.assertIn(f"{gm:+.0f}bp".replace("-", "−"), brief)
 
     def test_the_target_headroom_chart_plots_the_last_vintage_only(self) -> None:
         latest = next(v for v in self.targets["vintages"] if v["key"] == "fy2025")
@@ -450,29 +464,47 @@ class NkeDashboardTest(unittest.TestCase):
         self.assertTrue(all(value < 0 for value in exhibit["values"]),
                         "six goals, six shortfalls -- no bar should be positive")
 
+    def test_the_page_has_the_site_s_four_sections_in_order(self) -> None:
+        """The owner's four-part format, TSM's titles verbatim, and the page's
+        own sentence about its structure saying the same thing."""
+        self.assertEqual(
+            [(section["id"], section["title"]) for section in self.payload["sections"]],
+            [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+             ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+        self.assertTrue(all(section["exhibits"] for section in self.payload["sections"]))
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列",
+                      self.payload["notes"][0])
+
     def test_sections_and_exhibit_numbering(self) -> None:
         self.assertEqual([s["id"] for s in self.payload["sections"]],
                          ["settled", "quarter_highlights", "next_quarter", "routine"])
         self.assertEqual([ex["n"] for ex in self.exhibits],
                          list(range(1, len(self.exhibits) + 1)))
-        # 22 charts every quarter, plus the gross-margin bridge while a stamped
-        # one-off block exists and the buyback-price chart while the programme
-        # block describes the latest fiscal year.
-        buyback = self.source.get("buyback_programme")
-        optional = ((self.one_off is not None)
-                    + (buyback is not None
-                       and buyback["as_of_fiscal_year"] == self.history["fiscal_years"][-1]))
-        self.assertEqual(len(self.exhibits), 22 + optional)
+        # 20 charts every quarter; one threshold-history chart per reading the
+        # previous report's due thresholds are scored against, and one per
+        # reading this report's thresholds name; the call-guidance chart while
+        # last quarter's call put numbers on this quarter; the gross-margin
+        # bridge while a stamped one-off block exists; the Jordan Brand chart
+        # while its block exists; and the buyback-price chart while the
+        # programme block describes the latest fiscal year. Counted from the
+        # series, not remembered.
+        self.assertEqual(len(self.exhibits), expected_chart_count(self.source))
         for exhibit in self.exhibits:
             self.assertNotIn("ref", exhibit, exhibit["n"])
             for field in ("title", "note", "src_extra"):
                 self.assertNotIn("{EX_", exhibit.get(field) or "", exhibit["n"])
 
     def test_no_series_is_named_for_a_metric_the_company_does_not_disclose(self) -> None:
-        """NIKE reports no revenue for Sportswear, Jordan or Football, and no
-        gross margin or inventory by geography.  Management describes them in
-        words on the call, and turning a word into a number needs a
+        """NIKE reports no revenue for Sportswear, Jordan Streetwear or Football,
+        and no gross margin or inventory by geography.  Management describes
+        them in words on the call, and turning a word into a number needs a
         self-selected ratio -- an assumption, not arithmetic.
+
+        Jordan *Brand* is not on that list, and this docstring used to say it
+        was: its full-year revenue is printed in a footnote of the fiscal-Q4
+        release and of the 10-K (FY2024-FY2026 in the FY2026 10-K), and the
+        FY2025 Q4 release carried it in a table. It is annual only, so the page
+        does not draw it -- the notes say so instead of calling it undisclosed.
 
         The check is on what gets *plotted or tabulated*, not on the words
         anywhere in the payload: the notes have to be able to name these to say
@@ -492,11 +524,12 @@ class NkeDashboardTest(unittest.TestCase):
         for table in self.payload["tables"]:
             names.extend(table["headers"])
         blob = " ".join(names)
-        for banned in ("Sportswear", "Jordan", "Football", "自由现金流"):
+        for banned in ("Sportswear", "Jordan Streetwear", "Football", "自由现金流"):
             self.assertNotIn(banned, blob, banned)
         notes = " ".join(self.payload["notes"])
-        for promised in ("Sportswear", "自由现金流", "按地域拆的毛利率"):
+        for promised in ("Sportswear", "自由现金流", "按地域拆的毛利率", "Jordan Brand 的全年收入"):
             self.assertIn(promised, notes, promised)
+        self.assertNotIn("Sportswear/Jordan/Football 的收入与增速（无披露）", notes)
 
     def test_notes_carry_no_markup(self) -> None:
         """`page.js` runs every note through `esc()`, so a tag reaches the reader
@@ -585,6 +618,542 @@ class NkeDashboardTest(unittest.TestCase):
 
 
 
+# Where each reading lives in the series, for the tests that build a second state.
+READING_PATHS = {
+    "na_cn": ("growth_pct", "north_america_currency_neutral"),
+    "na_rep": ("growth_pct", "north_america_reported"),
+    "gc_cn": ("growth_pct", "greater_china_currency_neutral"),
+    "gc_rep": ("growth_pct", "greater_china_reported"),
+    "total_cn": ("growth_pct", "total_nike_inc_currency_neutral"),
+    "total_rep": ("growth_pct", "total_nike_inc_reported"),
+    "gm_change_ex_bp": ("release_changes", "gross_margin_change_ex_refund_bp"),
+    "gm_change_bp": ("release_changes", "gross_margin_change_bp"),
+    "overhead_change_pct": ("release_changes", "operating_overhead_change_pct"),
+}
+
+
+def readings(staging: dict) -> dict[str, float]:
+    """This quarter's value of every reading a threshold or a guide is scored
+    against, computed here from the series -- not through the builder's helpers."""
+    values = {key: float(staging[block][name][-1]) for key, (block, name) in READING_PATHS.items()}
+    fin, history = staging["financials"], staging["long_history"]
+    refund = history["ieepa_refund_usd_m"][-1] or 0
+    values.update({
+        "fx_points": values["total_rep"] - values["total_cn"],
+        "fy_ebit_margin_ex": (history["ebit_usd_m"][-1] - refund) / history["revenue_usd_m"][-1] * 100,
+        "fy_ebit_margin_rep": history["ebit_margin_pct"][-1],
+        "sga_change_pct": (fin["total_sga_usd_m"][-1] / fin["total_sga_usd_m"][-5] - 1) * 100,
+        "other_net_expense": (fin["interest_expense_income_net_usd_m"][-1]
+                              + fin["other_income_expense_net_usd_m"][-1]),
+        "fy_tax_rate": history["effective_tax_rate_pct"][-1],
+    })
+    return values
+
+
+def due_entries(staging: dict) -> list[dict]:
+    """The previous report's thresholds whose window has closed by this quarter."""
+    period = staging["periods"][-1]
+    return [entry for entry in staging["prior_kpi_settlement"]["quantified"]
+            if not entry.get("settles") or quarter_key(entry["settles"]) <= quarter_key(period)]
+
+
+def check_section_one(test: unittest.TestCase, staging: dict, payload: dict) -> None:
+    """Section one against `_checks["note"]` and readings computed here.
+
+    (a) the follow-up tally, (b) the overview and one chart per reading with
+    every due line on it, (c) the call-guidance chart while last quarter's call
+    put numbers on this quarter, then the filed record. Nothing here names a
+    quarter, so a roll does not edit it.
+    """
+    note = staging["_checks"]["note"]
+    settled = next(section for section in payload["sections"] if section["id"] == "settled")
+    exhibits = list(settled["exhibits"])
+    closure = exhibits.pop(0)
+    test.assertEqual(closure["kind"], "bars_labeled")
+    test.assertTrue(closure["title"].startswith(f"上季 {note['followup_closure']['total']} 条待验证问题："),
+                    closure["title"])
+    test.assertEqual(dict(zip(closure["xlabels"], closure["values"])), note["followup_closure"]["counts"])
+
+    now = readings(staging)
+    due = due_entries(staging)
+    overview = exhibits.pop(0)
+    test.assertEqual(overview["kind"], "diverging_bars")
+    test.assertTrue(overview["title"].startswith(f"上季 {len(due)} 条量化阈值："), overview["title"])
+    bars = [entry for entry in due if entry["threshold"] != 0]
+    test.assertEqual(len(overview["values"]), len(bars))
+    for entry, value in zip(bars, overview["values"]):
+        test.assertAlmostEqual(headroom(entry["direction"], entry["threshold"], now[entry["reads"]]),
+                               value, places=1, msg=entry["id"])
+    groups: dict[str, list[dict]] = {}
+    for entry in due:
+        groups.setdefault(entry["reads"], []).append(entry)
+    for reads, group in groups.items():
+        chart = exhibits.pop(0)
+        test.assertEqual(chart["kind"], "lines", reads)
+        test.assertRegex(chart["title"], r"：(守住|击穿)上季阈值 |：(越过|没够着)加仓门 ")
+        test.assertEqual(sorted(line["values"][0] for line in chart["series"][1:]),
+                         sorted(entry["threshold"] for entry in group))
+        test.assertTrue(all(len(set(line["values"])) == 1 for line in chart["series"][1:]))
+        test.assertAlmostEqual(chart["series"][0]["values"][-1], now[reads], places=4)
+
+    guide = stamped_block(staging, "prior_call_guidance", staging["periods"][-1])
+    drawn = [item for item in (guide or {}).get("items", []) if "low" in item and item.get("chart")]
+    if drawn:
+        chart = exhibits.pop(0)
+        test.assertTrue(chart["title"].startswith("上季电话会给的本季指引："), chart["title"])
+        test.assertEqual(chart["xlabels"], [item["metric"] for item in drawn])
+        for item, value in zip(drawn, chart["values"]):
+            scale = 0.01 if item["unit"] == "bps" else 1.0
+            test.assertAlmostEqual((now[item["reads"]] - (item["low"] + item["high"]) / 2) * scale,
+                                   value, places=2, msg=item["reads"])
+    # What is left is the company's own filed record, in its fixed order.
+    test.assertTrue(exhibits[0]["title"].startswith("公司自己写进 10-K 的最后一轮目标"), exhibits[0]["title"])
+    test.assertTrue(exhibits[-1]["title"].startswith("NIKE 唯一一段申报过的下季指引"), exhibits[-1]["title"])
+
+
+class NkeSettledSectionTest(unittest.TestCase):
+    """Section one, 「上季跟踪指标兑现了吗」, held to the two reports.
+
+    The expected values come from `_checks["note"]`, keyed a second time from
+    the reports themselves (this quarter's section 0, last quarter's section 8
+    and the call it quotes) -- never from the blocks the builder reads -- and
+    from readings computed here out of the series.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads((ROOT / "series" / "nke.json").read_text(encoding="utf-8"))
+        cls.payload = build_payload(cls.source)
+
+    def rebuilt(self, edit) -> dict:
+        changed = copy.deepcopy(self.source)
+        edit(changed)
+        return build_payload(changed)
+
+    def test_section_one_settles_what_the_previous_report_left(self) -> None:
+        check_section_one(self, self.source, self.payload)
+
+    def test_the_closure_is_this_report_s_section_0(self) -> None:
+        """Seven questions, judged as section 0 wrote them. Section 0 has no tally
+        row, so the note records the grouping rule next to the counts."""
+        closure = self.source["followup_closure"]
+        note = self.source["_checks"]["note"]["followup_closure"]
+        counts = {label: sum(1 for item in closure["items"] if item["verdict"] == label)
+                  for label in closure["labels"]}
+        self.assertEqual(counts, note["counts"])
+        self.assertEqual(len(closure["items"]), note["total"])
+        table = next(t for t in self.payload["tables"] if "待验证问题" in t["title"])
+        self.assertEqual([row[2] for row in table["rows"]], [item["verdict"] for item in closure["items"]])
+        self.assertTrue(all(row[3] for row in table["rows"]))
+
+    def test_the_prior_thresholds_are_the_previous_report_s_own(self) -> None:
+        prior = self.source["prior_kpi_settlement"]
+        note = self.source["_checks"]["note"]
+        self.assertEqual(
+            [(e["id"], e["item"], e["threshold"], e["direction"], e["gate"], e["unit"]) for e in prior["quantified"]],
+            [(t["id"], t["item"], t["threshold"], t["direction"], t["gate"], t["unit"])
+             for t in note["prior_thresholds"]])
+        self.assertEqual(len(prior["not_quantified"]), note["prior_not_quantified"]["count"])
+        for entry in prior["quantified"]:
+            # Nothing the page could go stale on is stored beside a threshold.
+            self.assertNotIn("actual", entry, entry["id"])
+            self.assertNotIn("current", entry, entry["id"])
+            self.assertTrue("reads" in entry or "settles" in entry, entry["id"])
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("上季（") and "阈值" in t["title"])
+        self.assertEqual(len(table["rows"]), len(prior["quantified"]) + len(prior["not_quantified"]))
+
+    def test_the_call_guidance_is_the_previous_call_s_own(self) -> None:
+        guide = stamped_block(self.source, "prior_call_guidance", self.source["periods"][-1])
+        if guide is None:
+            return
+        numeric = [(item["reads"], item["low"], item["high"]) for item in guide["items"] if "low" in item]
+        self.assertEqual(numeric, [(g["reads"], g["low"], g["high"])
+                                   for g in self.source["_checks"]["note"]["prior_call_guidance"]["numeric"]])
+
+    def test_a_basis_that_flips_a_verdict_is_named_and_only_then(self) -> None:
+        """The report did not say which basis its lines are on; the page settles on
+        one and must say so when the other would have given a different answer.
+        Both states are built here, so this does not depend on the quarter."""
+        now = readings(self.source)
+        candidates = [e for e in due_entries(self.source) if e.get("alt_reads") in READING_PATHS]
+        if not candidates:
+            return
+        entry = candidates[0]
+        main_good = (now[entry["reads"]] >= entry["threshold"] if entry["direction"] == "up"
+                     else now[entry["reads"]] <= entry["threshold"])
+        opposite = entry["threshold"] + (-1 if main_good == (entry["direction"] == "up") else 1)
+
+        def aligned(s: dict) -> None:
+            """Every alternative reading set equal to its main one: no line can flip."""
+            for other in candidates:
+                block, name = READING_PATHS[other["alt_reads"]]
+                s[block][name][-1] = now[other["reads"]]
+
+        def flipped_one(s: dict) -> None:
+            aligned(s)
+            block, name = READING_PATHS[entry["alt_reads"]]
+            s[block][name][-1] = opposite
+
+        def overview_note(payload: dict) -> str:
+            return next(s for s in payload["sections"] if s["id"] == "settled")["exhibits"][1]["note"]
+
+        flipped = overview_note(self.rebuilt(flipped_one))
+        self.assertEqual(flipped.count("口径会翻转这一条"), 1)
+        self.assertIn(entry["metric"] + "按报表口径", flipped)
+        self.assertNotIn("口径会翻转", overview_note(self.rebuilt(aligned)))
+
+    def test_a_reached_add_line_fires_only_when_nothing_is_joined_to_it(self) -> None:
+        """The report writes most 加仓 lines as two halves (北美 ≥ +5% *and* its
+        gross margin inside −250bp). Reaching the number is not the trigger while
+        the other half is open. No quarter so far has reached one, so both states
+        are built here: reached with a joined half (does not fire), and reached
+        with nothing joined (fires)."""
+        candidates = [e for e in due_entries(self.source) if e["gate"] == "加仓" and e["reads"] in READING_PATHS]
+        if not candidates:
+            return
+        entry = candidates[0]
+        block, name = READING_PATHS[entry["reads"]]
+        reach = entry["threshold"] + (1 if entry["direction"] == "up" else -1)
+
+        def reached(joint: str | None):
+            def edit(s: dict) -> None:
+                s[block][name][-1] = reach
+                target = next(e for e in s["prior_kpi_settlement"]["quantified"] if e["id"] == entry["id"])
+                target.pop("joint", None)
+                if joint:
+                    target["joint"] = joint
+            return edit
+
+        def row(payload: dict) -> str:
+            table = next(t for t in payload["tables"] if t["title"].startswith("上季（") and "阈值" in t["title"])
+            return next(r[4] for r in table["rows"]
+                        if r[0] == f"#{entry['item']} {entry['metric']}" and r[1] == "加仓")
+
+        self.assertEqual(row(self.rebuilt(reached("演练：另一半条件还没结清"))), "够着，未触发")
+        self.assertEqual(row(self.rebuilt(reached(None))), "够着，触发")
+
+    def test_section_one_refuses_a_roll_that_skips_the_settlement(self) -> None:
+        for key in ("followup_closure", "prior_kpi_settlement"):
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, key):
+                    self.rebuilt(lambda s, key=key: s.pop(key))
+                with self.assertRaisesRegex(ValueError, "stamped"):
+                    self.rebuilt(lambda s, key=key: s[key].__setitem__("period", "Q1 1999"))
+                with self.assertRaisesRegex(ValueError, "settles what"):
+                    self.rebuilt(lambda s, key=key: s[key].__setitem__("set_in", "Q1 1999"))
+        with self.assertRaisesRegex(ValueError, "stores a reading"):
+            self.rebuilt(lambda s: s["prior_kpi_settlement"]["quantified"][0].__setitem__("actual", 1.0))
+
+    def test_no_story_placeholder_survives_into_the_page(self) -> None:
+        """`fill_story` only matches lower-case names without digits; a name it
+        cannot match passes through as literal braces. So the page is scanned."""
+        blob = json.dumps(self.payload, ensure_ascii=False)
+        self.assertIsNone(re.search(r"\{[a-z][a-z0-9_:]*\}", blob))
+
+
+def check_section_three(test: unittest.TestCase, staging: dict, payload: dict) -> None:
+    """Section three against `_checks["note"]`: the overview of every non-zero
+    line, then one chart per reading with every line on it and the current value
+    as its last point. Nothing here names a quarter."""
+    kpi = staging["next_kpi"]
+    note = staging["_checks"]["note"]
+    entries = kpi["quantified"]
+    test.assertEqual(
+        [(e["id"], e["item"], e["threshold"], e["direction"], e["gate"], e["unit"]) for e in entries],
+        [(t["id"], t["item"], t["threshold"], t["direction"], t["gate"], t["unit"]) for t in note["next_thresholds"]])
+    test.assertEqual(len(kpi.get("not_quantified", [])), note["next_not_quantified"]["count"])
+    for entry in entries:
+        test.assertNotIn("actual", entry, entry["id"])
+        test.assertNotIn("current", entry, entry["id"])
+    now = readings(staging)
+    section = next(s for s in payload["sections"] if s["id"] == "next_quarter")
+    exhibits = list(section["exhibits"])
+    overview = exhibits.pop(0)
+    test.assertEqual(overview["kind"], "diverging_bars")
+    test.assertTrue(overview["title"].startswith(f"下季 {len(entries)} 条量化阈值："), overview["title"])
+    bars = [entry for entry in entries if entry["threshold"] != 0]
+    test.assertEqual(len(overview["values"]), len(bars))
+    for entry, value in zip(bars, overview["values"]):
+        test.assertAlmostEqual(headroom(entry["direction"], entry["threshold"], now[entry["reads"]]),
+                               value, places=1, msg=entry["id"])
+    groups: dict[str, list[dict]] = {}
+    for entry in entries:
+        groups.setdefault(entry["reads"], []).append(entry)
+    test.assertEqual(len(exhibits), len(groups))
+    for chart, (reads, group) in zip(exhibits, groups.items()):
+        test.assertEqual(chart["kind"], "lines", reads)
+        test.assertIn("：下季阈值 ", chart["title"])
+        test.assertIn("，当前 ", chart["title"])
+        test.assertEqual(sorted(line["values"][0] for line in chart["series"][1:]),
+                         sorted(entry["threshold"] for entry in group))
+        test.assertAlmostEqual(chart["series"][0]["values"][-1], now[reads], places=4)
+    table = next(t for t in payload["tables"] if t["title"].startswith("本季报告第 8 节里写不成"))
+    test.assertEqual(len(table["rows"]), note["next_not_quantified"]["count"])
+
+
+class NkeNextQuarterTest(unittest.TestCase):
+    """Section three, 「下季要跟踪什么」, held to this report's section 8."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads((ROOT / "series" / "nke.json").read_text(encoding="utf-8"))
+        cls.payload = build_payload(cls.source)
+
+    def test_section_three_draws_every_threshold_the_report_wrote_as_a_number(self) -> None:
+        check_section_three(self, self.source, self.payload)
+
+    def test_a_threshold_that_sits_on_zero_gets_a_line_and_no_percentage_bar(self) -> None:
+        """A 0bp or 0% line has no percentage headroom (`board.headroom` refuses
+        it), so it is named in the overview's note and drawn on its own history."""
+        section = next(s for s in self.payload["sections"] if s["id"] == "next_quarter")
+        overview = section["exhibits"][0]
+        entries = self.source["next_kpi"]["quantified"]
+        zero = [entry for entry in entries if entry["threshold"] == 0]
+        self.assertEqual(len(overview["xlabels"]), len(entries) - len(zero))
+        for entry in zero:
+            self.assertFalse(any(label.startswith(f"{entry['metric']} vs {entry['gate']}线")
+                                 for label in overview["xlabels"]), entry["id"])
+            self.assertIn(f"的{entry['gate']}线落在零上", overview["note"])
+            self.assertTrue(any(entry["gate"] in line["name"] and set(line["values"]) == {0.0}
+                                for chart in section["exhibits"][1:] for line in chart["series"][1:]),
+                            entry["id"])
+
+    def test_the_next_quarter_blocks_refuse_the_wrong_quarter(self) -> None:
+        def rebuilt(edit):
+            changed = copy.deepcopy(self.source)
+            edit(changed)
+            return build_payload(changed)
+        with self.assertRaisesRegex(ValueError, "stamped"):
+            rebuilt(lambda s: s["next_kpi"].__setitem__("period", "Q1 1999"))
+        with self.assertRaisesRegex(ValueError, "next_kpi"):
+            rebuilt(lambda s: s["next_kpi"].__setitem__("for_period", "Q1 1999"))
+        with self.assertRaisesRegex(ValueError, "next_kpi"):
+            rebuilt(lambda s: s.pop("next_kpi"))
+        with self.assertRaisesRegex(ValueError, "stores a reading"):
+            rebuilt(lambda s: s["next_kpi"]["quantified"][0].__setitem__("current", 1.0))
+
+
+# ── the roll, rehearsed in memory (CLAUDE.md §9) ─────────────────────────────
+PERIOD_END = {"Q1": "02-28", "Q2": "05-31", "Q3": "08-31", "Q4": "11-30"}
+RELEASE_DAY = {"Q1": "03-31", "Q2": "06-30", "Q3": "09-30", "Q4": "12-18"}
+
+
+def next_calendar(period: str) -> str:
+    quarter, year = period.split()
+    return f"Q1 {int(year) + 1}" if quarter == "Q4" else f"Q{int(quarter[1]) + 1} {year}"
+
+
+def next_fiscal(label: str) -> str:
+    year, quarter = int(label[2:6]), int(label[-1])
+    return f"FY{year + 1}Q1" if quarter == 4 else f"FY{year}Q{quarter + 1}"
+
+
+def rolled_forward(staging: dict, stress: bool = False) -> dict:
+    """The series as a data-only roll to the next quarter would leave it, in memory.
+
+    The eight-quarter window slides by one and the long quarterly records grow by
+    one; each new cell is the same quarter a year earlier, so every identity the
+    real quarters satisfy still holds and the rehearsal tests the mechanics, not
+    invented figures. The one-quarter blocks go the way a roll takes them: the
+    refund story, the call quotes and the outlook table are this quarter's and
+    are dropped; `next_kpi.quantified` moves, as it stands, into
+    `prior_kpi_settlement`; a `followup_closure` judges five questions; last
+    quarter's call guidance (all words but one) becomes `prior_call_guidance`;
+    `next_kpi` keeps the lines that settle later; `_checks` is re-keyed. With
+    ``stress`` the new quarter is pushed past three of the moved lines, so the
+    triggers fire whatever state the base quarter is in.
+    """
+    s = copy.deepcopy(staging)
+    period = s["periods"][-1]
+    new = next_calendar(period)
+    quarter, year = new.split()
+    fiscal = next_fiscal(s["fiscal_labels"][-1])
+    end, release = f"{year}-{PERIOD_END[quarter]}", f"{year}-{RELEASE_DAY[quarter]}"
+    width = len(s["periods"])
+
+    def slide(values: list) -> None:
+        values.append(values[-4])
+        del values[0]
+
+    for key, value in (("periods", new), ("period_ends", end), ("fiscal_labels", fiscal),
+                       ("release_dates", release)):
+        s[key].append(value)
+        del s[key][0]
+    for block in ("financials", "segments_usd_m", "segment_margins_pct", "growth_pct", "release_changes",
+                  "channels_usd_m", "product_lines_usd_m", "balance_sheet_usd_m"):
+        for values in s[block].values():
+            if isinstance(values, list) and len(values) == width:
+                slide(values)
+    for block in ("long_quarters", "channel_quarters"):
+        record = s[block]
+        length = len(record["periods"])
+        for key, values in record.items():
+            if isinstance(values, list) and len(values) == length and key not in (
+                    "periods", "fiscal_labels", "period_ends"):
+                values.append(values[-4])
+        record["periods"].append(new)
+        record["fiscal_labels"].append(fiscal)
+        if "period_ends" in record:
+            record["period_ends"].append(end)
+    for key in ("one_off_usd_m", "spoken", "guidance", "quarter_story"):
+        s.pop(key, None)
+    fiscal_words = f"{fiscal[:6]} {fiscal[6:]}"
+    s["latest"] = {**s["latest"], "period": new, "fiscal_label": fiscal_words, "period_end": end,
+                   "release_date": release, "audit_status": "unaudited"}
+    s["sources"].insert(0, {"label": f"{fiscal_words} 业绩新闻稿（换季演练）",
+                            "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000320187"})
+    if stress:
+        s["release_changes"]["gross_margin_change_ex_refund_bp"][-1] = -50.0
+        s["release_changes"]["gross_margin_change_bp"][-1] = -50.0
+        s["growth_pct"]["greater_china_currency_neutral"][-1] = -25.0
+        s["release_changes"]["operating_overhead_change_pct"][-1] = 2.0
+
+    kpi = s["next_kpi"]
+    labels = ["已验证", "部分验证", "被证伪"]
+    verdicts = ["已验证", "部分验证", "已验证", "被证伪", "部分验证"]
+    s["followup_closure"] = {
+        "period": new, "set_in": period, "labels": labels,
+        "items": [{"short": f"演练问题 {i}", "question": f"演练问题 {i}？", "verdict": verdict,
+                   "evidence": "换季演练：没有读申报文件。"} for i, verdict in enumerate(verdicts, 1)],
+    }
+    s["prior_kpi_settlement"] = {"period": new, "set_in": period,
+                                 "quantified": copy.deepcopy(kpi["quantified"]),
+                                 "not_quantified": copy.deepcopy(kpi.get("not_quantified", []))}
+    s["prior_call_guidance"] = {
+        "period": new, "set_in": period, "source": "换季演练", "filed_note": "",
+        "items": [
+            {"metric": "收入同比（报表口径）", "short": "收入", "words": "down low to mid-single digits",
+             "unit": "pct", "reads": "total_rep"},
+            {"metric": "汇率对收入增速的贡献", "short": "汇率", "words": "no expected benefit from foreign exchange",
+             "low": 0.0, "high": 0.0, "unit": "pp", "reads": "fx_points"},
+            {"metric": "毛利率同比（剔除关税退款）", "short": "毛利率", "words": "slightly positive",
+             "unit": "bps", "reads": "gm_change_ex_bp"},
+        ],
+    }
+    keep = [e for e in kpi["quantified"] if e.get("settles") and quarter_key(e["settles"]) > quarter_key(new)]
+    s["next_kpi"] = {**{k: v for k, v in kpi.items() if k != "followups_answered"},
+                     "period": new, "for_period": next_calendar(new), "quantified": keep}
+
+    checks = s["_checks"]
+    checks.update({"period": new, "fiscal_label": fiscal_words, "period_end": end, "release_date": release,
+                   "source": "换季演练：各格取自去年同季，不是申报读数"})
+    moved = [{key: e[key] for key in ("id", "item", "threshold", "direction", "gate", "unit")}
+             for e in kpi["quantified"]]
+    checks["note"] = {
+        "source": {"this_quarter": "换季演练", "previous_quarter": checks["note"]["source"]["this_quarter"]},
+        "checked_on": "换季演练",
+        "followup_closure": {"total": len(verdicts),
+                             "counts": {label: verdicts.count(label) for label in labels}},
+        "prior_thresholds": moved,
+        "prior_not_quantified": {"count": len(kpi.get("not_quantified", []))},
+        "prior_call_guidance": {"numeric": [{"reads": "fx_points", "low": 0.0, "high": 0.0}]},
+        "next_thresholds": [m for m in moved if m["id"] in {e["id"] for e in keep}],
+        "next_not_quantified": {"count": len(kpi.get("not_quantified", []))},
+    }
+    return s
+
+
+class NkeRollRehearsalTest(unittest.TestCase):
+    """The next quarter, rolled in memory by editing the series alone.
+
+    Section one must settle what this quarter's report set -- a different set of
+    readings, two of them sitting on zero, two lines not due yet -- without a code
+    change; the page must keep the shared window census; and the builder must
+    still never read `_checks`.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads((ROOT / "series" / "nke.json").read_text(encoding="utf-8"))
+        cls.variants = []
+        for stress in (False, True):
+            rolled = rolled_forward(cls.source, stress)
+            cls.variants.append((stress, rolled, build_payload(rolled)))
+
+    def test_the_next_quarter_builds_from_the_series_alone(self) -> None:
+        for stress, rolled, payload in self.variants:
+            with self.subTest(stress=stress):
+                period = rolled["periods"][-1]
+                self.assertEqual(period, next_calendar(self.source["periods"][-1]))
+                self.assertIn(period, payload["title"])
+                self.assertEqual([(s["id"], s["title"]) for s in payload["sections"]],
+                                 [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+                                  ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+                exhibits = [ex for section in payload["sections"] for ex in section["exhibits"]]
+                self.assertEqual([ex["n"] for ex in exhibits], list(range(1, len(exhibits) + 1)))
+                self.assertEqual(len(exhibits), expected_chart_count(rolled))
+                for ex in exhibits:
+                    for key in ("series", "groups", "stacks"):
+                        for item in ex.get(key) or []:
+                            self.assertEqual(len(item["values"]), len(ex["xlabels"]), ex["title"])
+                    for key in ("bar", "line"):
+                        if isinstance(ex.get(key), dict):
+                            self.assertEqual(len(ex[key]["values"]), len(ex["xlabels"]), ex["title"])
+                    if isinstance(ex.get("values"), list):
+                        self.assertEqual(len(ex["values"]), len(ex["xlabels"]), ex["title"])
+                blob = json.dumps(payload, ensure_ascii=False)
+                self.assertIsNone(re.search(r"\{[a-z][a-z0-9_:]*\}", blob))
+                self.assertNotIn("IEEPA 关税退款", " ".join(ex["title"] for ex in exhibits))
+                check_section_one(self, rolled, payload)
+                check_section_three(self, rolled, payload)
+                # ...and the builder still never reads `_checks`.
+                self.assertEqual(build_payload({k: v for k, v in rolled.items() if k != "_checks"}), payload)
+
+    def test_the_moved_lines_settle_with_the_report_s_own_triggers(self) -> None:
+        """The report's trigger rules, applied here to readings computed here: a
+        加仓 line fires when reached and nothing else is joined to it; every other
+        line fires when broken. The stressed quarter pushes the margin below 0bp,
+        Greater China below −20% and overhead above 0%, so at least those three
+        fire whatever the base quarter looks like."""
+        for stress, rolled, payload in self.variants:
+            with self.subTest(stress=stress):
+                now = readings(rolled)
+                expected, fired = [], 0
+                for entry in due_entries(rolled):
+                    value = now[entry["reads"]]
+                    good = value >= entry["threshold"] if entry["direction"] == "up" else value <= entry["threshold"]
+                    if entry["gate"] == "加仓":
+                        word, fire = ("够着" if good else "没够着"), good and not entry.get("joint")
+                    else:
+                        word, fire = ("守住" if good else "击穿"), not good
+                    expected.append(word + ("，触发" if fire else "，未触发"))
+                    fired += fire
+                table = next(t for t in payload["tables"] if t["title"].startswith("上季（") and "阈值" in t["title"])
+                settled_rows = [row[4] for row in table["rows"]
+                                if not row[4].startswith("未到期") and row[4] != "写不成可结算的数"]
+                self.assertEqual(settled_rows, expected)
+                overview = payload["sections"][0]["exhibits"][1]
+                if fired:
+                    self.assertTrue(overview["title"].endswith(f"触发了{cn_count(fired)}个动作"), overview["title"])
+                else:
+                    self.assertTrue(overview["title"].endswith("一个动作都没触发"), overview["title"])
+                if stress:
+                    self.assertGreaterEqual(fired, 3)
+                later = [row for row in table["rows"] if row[4].startswith("未到期")]
+                self.assertEqual(len(later), sum(1 for e in rolled["prior_kpi_settlement"]["quantified"]
+                                                 if e.get("settles")
+                                                 and quarter_key(e["settles"]) > quarter_key(rolled["periods"][-1])))
+
+    def test_the_rolled_page_keeps_the_shared_window_census(self) -> None:
+        """Every short time axis on the rolled page is one the census already
+        excuses, and the 2016 reach is the permanent seven plus the long
+        threshold charts the page is drawing -- the rule `test_chart_window` pins."""
+        import tests.test_chart_window as window   # a module, so no TestCase is re-collected
+        keys = window.CONVERTED["nke"]
+        for stress, rolled, payload in self.variants:
+            with self.subTest(stress=stress):
+                exhibits = [ex for section in payload["sections"] for ex in section["exhibits"]]
+                timed = [(ex, window.first_year(ex)) for ex in exhibits]
+                timed = [(ex, year) for ex, year in timed if year is not None]
+                for ex, year in timed:
+                    if year > window.TARGET_YEAR:
+                        matched = [key for key in keys if window.key_matches(key, ex["title"])]
+                        self.assertEqual(len(matched), 1, ex["title"])
+                reached = sum(1 for _, year in timed if year <= window.TARGET_YEAR)
+                dynamic = sum(1 for ex, year in timed if "阈值" in ex["title"] and year <= window.TARGET_YEAR)
+                self.assertEqual(reached, 7 + dynamic)
+
+
 class NkeChecksTest(unittest.TestCase):
     """The page's quarter against `_checks`, keyed separately from the release.
 
@@ -633,12 +1202,12 @@ class NkeChecksTest(unittest.TestCase):
     def test_the_head_prints_the_checked_figures(self) -> None:
         checks = self.checks
         self.assertIn(f"报表毛利率 {checks['gross_margin_pct']:.1f}%", self.payload["headline"])
-        exhibits = [e for section in self.payload["sections"] for e in section["exhibits"]]
-        america = next(e for e in exhibits if e["title"].startswith("北美收入同比"))
-        self.assertIn(f"本季 {checks['north_america_revenue_cn_pct']:+.0f}%", america["title"])
-        china = next(e for e in exhibits if e["title"].startswith("大中华区收入同比"))
-        self.assertIn(f"本季 {checks['greater_china_revenue_cn_pct']:+.0f}%".replace("-", "−"),
-                      china["title"])
+        settled = next(s for s in self.payload["sections"] if s["id"] == "settled")["exhibits"]
+        for prefix, key in (("北美收入同比（固定汇率）：", "north_america_revenue_cn_pct"),
+                            ("大中华区收入同比（固定汇率）：", "greater_china_revenue_cn_pct")):
+            chart = next(e for e in settled if e["title"].startswith(prefix))
+            self.assertEqual(chart["series"][0]["values"][-1], checks[key], prefix)
+            self.assertIn(f"本季 {checks[key]:+.0f}%".replace("-", "−"), chart["note"], prefix)
 
 
 if __name__ == "__main__":

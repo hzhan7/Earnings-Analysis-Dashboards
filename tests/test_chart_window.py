@@ -241,6 +241,18 @@ def _cboe_threshold_reach() -> int:
     return cboe_threshold_reach(js_payload(ROOT / "data" / "cboe.js", "window.DASH"))
 
 
+def _nke_threshold_reach() -> int:
+    """NIKE draws one threshold-history chart per reading its two threshold
+    blocks name, in section one (the previous report's lines) and section three
+    (this report's). The one on the thirteen-year annual axis -- the EBIT margin
+    against the report's double-digit line -- comes and goes with those blocks,
+    and the page is rolled by editing `series/nke.json` alone, so the pin counts
+    the permanent charts and adds these while they are published."""
+    page = js_payload(ROOT / "data" / "nke.js", "window.DASH")
+    return sum(1 for section in page["sections"] for ex in section["exhibits"]
+               if "阈值" in ex["title"] and (first_year(ex) or 9999) <= TARGET_YEAR)
+
+
 def _tsm_advanced_count() -> dict:
     """The process-mix note counts the quarters since 2021Q1 in which the page's
     summed 7nm-and-below line equals TSMC's own aggregate. The count grows by
@@ -315,7 +327,7 @@ def _cost_threshold_reach() -> int:
 REACH_2016 = {
     "amd": 16, "amzn": 13, "arm": 0, "asml": 24, "avgo": 16, "axp": 7 + _axp_threshold_reach(), "bc": 3, "cboe": 8 + _cboe_threshold_reach(), "cdns": 10, "cfr": 20, "cme": 13 + _cme_threshold_reach(),
     "cost": 11 + _cost_threshold_reach(), "googl": 11, "hkex": 15, "ibkr": 26, "ker": 11 + _ker_threshold_reach(), "ma": 17, "mc": 9, "mco": 13, "meta": 10,
-    "msci": 23, "msft": 8, "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 8, "nvda": 10, "pm": 8,
+    "msci": 23, "msft": 8, "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 7 + _nke_threshold_reach(), "nvda": 10, "pm": 8,
     "race": 12, "rms": 15, "samsung": 0, "schw": 10, "skhynix": 4, "snps": 8,
     "spgi": 14, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 17, "zgn": 0,
     "intc": 10 + _intc_threshold_reach(),
@@ -962,8 +974,22 @@ CONVERTED = {
         "应收账款": "the balance sheet is carried for the reviewed eight quarters.",
         "三年遣散与重组费用": "three fiscal years of a restructuring programme; there is no "
                      "earlier programme to draw.",
-        "毛利率同比（剔除关税退款）": "the tariff-refund adjustment exists only in the quarters "
-                          "that have a refund.",
+        # Reclassified from a disclosure floor: the old reason ("the refund
+        # adjustment exists only in refund quarters") does not stop the axis --
+        # outside the refund quarter the line is the printed gross-margin change,
+        # which every release since 2016 carries. It is a fetch gap.
+        "毛利率同比（剔除关税退款）": "the printed gross-margin change (bp) is carried for the "
+                          "reviewed eight releases; older releases print it too.",
+        "经营费用同比": "the printed operating-overhead change is carried for the reviewed "
+                  "eight releases; older releases print it too.",
+        "两个渠道本季（固定汇率）": "channel growth is an integer printed per release, carried "
+                          "for the reviewed eight.",
+        # Checked against the filings: the FY2025 10-K's Supplemental NIKE Brand
+        # Revenue Details table prints Jordan Brand revenue for FY2023-FY2025 on
+        # the revenue basis; the FY2024 10-K prints only wholesale-equivalent
+        # figures (6,988 / 6,589 / 5,122), which are not the same measure.
+        "Jordan Brand 全年收入": "the revenue-basis Jordan Brand figure starts FY2023 (FY2025 "
+                           "10-K); earlier years exist only on the wholesale-equivalent basis.",
         "#个季度的直营占比": 'date corrected, and the direction of the error matters: Nike\'s MD&A "Supplemental NIKE Brand Revenues Details" table has split wholesale from direct-to-consumer in dollars every quarter since Q1 FY2013 (quarter ended 2012-08-31). What happened in 2017-2018 was a rename -- "Sales Direct to Consumer" became "NIKE Direct" -- not a new disclosure. Fetch gap.',
         "十年经营现金流": "an annual chart -- ten fiscal years, not quarters.",
         "十年回购与资本强度": "annual.",
@@ -1519,7 +1545,10 @@ FLOOR_KIND = {
         '投入资本回报率': 'design',
         '应收账款': 'coverage',
         '三年遣散与重组费用': 'disclosure',
-        '毛利率同比（剔除关税退款）': 'disclosure',
+        '毛利率同比（剔除关税退款）': 'coverage',
+        '经营费用同比': 'coverage',
+        '两个渠道本季（固定汇率）': 'coverage',
+        'Jordan Brand 全年收入': 'disclosure',
         '#个季度的直营占比': 'coverage',
         '十年经营现金流': 'design',
         '十年回购与资本强度': 'design',
@@ -1697,7 +1726,7 @@ class ChartWindowTest(unittest.TestCase):
         by_kind = {}
         for slug, title, kind in pending:
             by_kind.setdefault(kind, []).append(f"{slug}/{title}")
-        self.assertEqual(len(by_kind.get("coverage", [])), 35,
+        self.assertEqual(len(by_kind.get("coverage", [])), 38,
                          "charts whose data exists and has not been fetched")
         # Zero, and that is the point: every exemption on this page has now been
         # read against an actual pre-floor filing. The fourteen that had never
