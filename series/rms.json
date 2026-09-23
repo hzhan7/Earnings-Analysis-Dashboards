@@ -73,7 +73,20 @@
   "next_quarter_release": "2026-10-22",
   "full_year_release": "2027-02-11",
   "source": "Hermès 2026 年半年报新闻稿（hermes_20260729_pr_firsthalfresults_va.pdf，落款 Paris, 29 July 2026，Half-year information report as at the end of June 2026）：第 1 页要点（+7% in the second quarter at constant exchange rates；Recurring operating profitability reached 41.0% of sales）、第 3 页（41.0%, compared to 41.4% at the end of June 2025）、第 4 页 Upcoming events（22 October 2026: Q3 2026 revenue；11 February 2027: 2026 full-year results）、第 5 页 First half 2026 key figures（Revenue 8,163 / 16,002 / 8,034，1.6% / 6.1%；Recurring operating income 3,351 / 6,569 / 3,327，41.0% / 41.0% / 41.4%；Net profit 2,238；Operating cash flows 2,694；Operating investments 344 / 1,161 / 316；Adjusted free cash flows 2,182）、第 6–7 页 2nd quarter 分地区与分板块两表（4,094 / 3,905，4.8% / 6.7%，各行 published 与 constant）、第 9 页合并损益表（(2,356)、5,807、(1,899)、(558)，Diluted EPS 21.32 / 21.39）。",
-  "checked_on": "2026-09-19"
+  "checked_on": "2026-09-19",
+  "treasury_share_buybacks_eur_m": 160,
+  "treasury_share_buybacks_prior_year_eur_m": 6,
+  "change_in_wcr_eur_m": 6,
+  "change_in_wcr_prior_year_eur_m": -403,
+  "other_receivables_payables_eur_m": 193,
+  "other_receivables_payables_prior_year_eur_m": -206,
+  "inventories_change_eur_m": -99,
+  "inventories_change_prior_year_eur_m": -21,
+  "operating_activities_eur_m": 2699,
+  "operating_activities_prior_year_eur_m": 2330,
+  "repayment_of_lease_liabilities_eur_m": -173,
+  "repayment_of_lease_liabilities_prior_year_eur_m": -167,
+  "cash_flow_source": "2026 半年度业绩新闻稿第 4 页 Other highlights（Hermès International redeemed 94,846 shares for €160 million, excluding transactions completed within the framework of the liquidity contract）与第 12 页现金流量表（Operating cash flows 2,694 / 2,733；Change in working capital requirements 6 / (403)；(A) 2,699 / 2,330；Repayment of lease liabilities (173) / (167)；Treasury share buybacks net of disposals (160) / (6)）；2026 半年度财务报告第 20 页附注 4.5.2（Inventories (99) / (21)；Other receivables and payables 193 / (206)）。2026-09-23 从 PDF 文本层重读。"
  },
  "periods": [
   "Q1 2016",
@@ -3259,6 +3272,78 @@
    }
   ]
  },
+ "h1_cash_flow": {
+  "period": "H1 2026",
+  "_source": "2026 半年度业绩新闻稿第 12 页 CONSOLIDATED STATEMENT OF CASH FLOWS（与 IR 原件逐字节相同）；营运资本四行取 2026 半年度财务报告附注 4.5.2（CHANGE IN WORKING CAPITAL REQUIREMENTS）；调整后自由现金流的调节见同报告附注 2。now = H1 2026，prior = H1 2025，现金流出为负。",
+  "lines": [
+   [
+    "operating_cash_flows",
+    "营运资本变动前的经营现金流",
+    2694,
+    2733
+   ],
+   [
+    "inventories",
+    "存货及在产品",
+    -99,
+    -21
+   ],
+   [
+    "trade_receivables",
+    "应收账款及其他应收款",
+    -36,
+    -67
+   ],
+   [
+    "trade_payables",
+    "应付账款及其他应付款",
+    -52,
+    -109
+   ],
+   [
+    "other_receivables_payables",
+    "其他应收应付（附注 4.5.2：主要是税项与员工款项）",
+    193,
+    -206
+   ],
+   [
+    "change_in_wcr",
+    "营运资本变动",
+    6,
+    -403
+   ],
+   [
+    "operating_activities",
+    "经营活动现金流（A）",
+    2699,
+    2330
+   ],
+   [
+    "operating_investments",
+    "经营性投资",
+    -344,
+    -316
+   ],
+   [
+    "repayment_of_lease_liabilities",
+    "租赁负债偿还",
+    -173,
+    -167
+   ],
+   [
+    "adjusted_fcf",
+    "调整后自由现金流",
+    2182,
+    1847
+   ],
+   [
+    "treasury_share_buybacks",
+    "库存股回购（扣除出售）",
+    -160,
+    -6
+   ]
+  ]
+ },
  "outlook": {
   "sentence": "In the medium-term, despite the economic, geopolitical and monetary uncertainties around the world, the group confirms an ambitious goal for revenue growth at constant exchange rates.",
   "translation": "中期而言，尽管全球存在经济、地缘政治与货币方面的不确定性，集团重申以固定汇率计的收入增长的雄心目标。",
@@ -3374,6 +3459,188 @@
   ],
   "provenance_note": "其中两条的发言人在纪要中标为未具名高管，两条是被分析师问出来的而非主动披露。"
  },
+ "followup_closure": {
+  "period": "Q2 2026",
+  "set_in": "Q1 2026",
+  "_source": "本季本地分析稿（2026-07-29 RMS Q2 2026 vs Q1 2026 Analysis.md）第 0 节「上季遗留问题回答」的逐条判定。问题来自上季分析稿（2026-04-17 RMS Q1 2026 vs Q4 2025 Analysis.md）：第 8 节的 5 条阈值（M1–M5）与 Follow-up 第 6–10 条（F6–F10），Follow-up 第 1–5 条与 M1–M5 重叠，报告按 10 个不重复条目闭环。判定栏逐字取报告；报告第 0 节没有单列统计行，条数由 builder 按判定栏现数。",
+  "labels": [
+   "已验证",
+   "部分验证",
+   "被证伪",
+   "仍未披露"
+  ],
+  "items": [
+   {
+    "id": "M1",
+    "topic": "皮具季度增速能否补回第一季的减速",
+    "verdict": "已验证"
+   },
+   {
+    "id": "M2",
+    "topic": "成衣与配饰能否反弹到 +3% 以上",
+    "verdict": "部分验证",
+    "detail": "数值达标、机制未验证"
+   },
+   {
+    "id": "M3",
+    "topic": "上半年经常性经营利润率能否守住 40.5%",
+    "verdict": "已验证",
+    "detail": "第一条腿达标；全年利润率指引那条腿公司从不给"
+   },
+   {
+    "id": "M4",
+    "topic": "大中华与中东的增速",
+    "verdict": "部分验证",
+    "detail": "阈值设计失效"
+   },
+   {
+    "id": "M5",
+    "topic": "回购金额与资本回报框架",
+    "verdict": "部分验证",
+    "detail": "金额达标；用途是员工持股计划，未给框架"
+   },
+   {
+    "id": "F6",
+    "topic": "Axel Dumas 是否重返业绩电话会",
+    "verdict": "被证伪",
+    "detail": "他主讲全场并主导绝大多数答问"
+   },
+   {
+    "id": "F7",
+    "topic": "Rodeo Drive 物业的资本开支时间表与金额",
+    "verdict": "仍未披露"
+   },
+   {
+    "id": "F8",
+    "topic": "中国下半年的具体增速预测",
+    "verdict": "仍未披露"
+   },
+   {
+    "id": "F9",
+    "topic": "Chanel / Dior 新创意总监对份额的影响",
+    "verdict": "仍未披露"
+   },
+   {
+    "id": "F10",
+    "topic": "法国第二季度的游客客流是否恢复",
+    "verdict": "已验证",
+    "detail": "改善"
+   }
+  ],
+  "falsified_story": "上季把 Axel Dumas 缺席第一季电话会读成「叙事权静默迁移」的第一道裂痕；本季他主讲全场，这条看空论证解除 —— 但同一场会上，第一季给过数的零售 / 批发拆分这次只给了方向。"
+ },
+ "prior_kpi_settlement": {
+  "period": "Q2 2026",
+  "set_in": "Q1 2026",
+  "_source": "上季本地分析稿（2026-04-17 RMS Q1 2026 vs Q4 2025 Analysis.md）第 8 节「关键观察指标」5 条；阈值原文逐字抄在 said 里，数值与方向逐字取自原文。实际值一律由 builder 从本 series 读（reads），不在这里写。",
+  "quantified": [
+   {
+    "id": "leather",
+    "metric": "皮具与马具 cc 增速",
+    "direction": "up",
+    "unit": "pct",
+    "condition": "Q2 ≥ Q4 增速",
+    "threshold_period": "Q4 2025",
+    "reads": "by_sector.leather_goods_saddlery.cc_pct",
+    "said": "Q1 皮具减速 3.6pp；管理层称 artisanal non-linear；Q2 ≥ Q4 增速 + 全年皮具增速 ≥ +6% = artisanal 节奏正常 → 跟踪；Q2 ≤ Q1 或全年 < +4% = 皮具产能瓶颈 + 二手市场 + 稀缺性危机 → 警示",
+    "warn": {
+     "condition": "Q2 ≤ Q1",
+     "below_period": "Q1 2026",
+     "inclusive": true,
+     "action": "警示"
+    },
+    "story": "本季本地分析稿第 0 节把这条复述成「Q2 ≥ Q1 的 {warn:leather}」并判为已验证 —— 两处量的不是同一条线，本图按上季原文画。公司自己在上季电话会上说的是「皮具增速会逐月回升」，按季度读数这句兑现了上一季管理层的口头承诺（{warn:leather} → {actual:leather}）。"
+   },
+   {
+    "id": "rtw",
+    "metric": "成衣与配饰 cc 增速",
+    "direction": "up",
+    "unit": "pct",
+    "condition": "Q2 反弹至 ≥ +3%",
+    "threshold": 3.0,
+    "reads": "by_sector.ready_to_wear_accessories.cc_pct",
+    "said": "Q1 RTW < +2%（弱化）；Q2 反弹至 ≥ +3% = aspirational 减速是 Q1 noise → 跟踪；连续 2 季 RTW < +2% = aspirational 客户结构性流失（即使被去风险化） → 警示（影响 \"去皮具中心化\" Insight 1 兑现）",
+    "warn": {
+     "condition": "连续 2 季 RTW < +2%",
+     "below": 2.0,
+     "consecutive": 2,
+     "action": "警示"
+    },
+    "story": "但这条阈值当初是用来检验 aspirational 客户是否结构性流失的，而 CEO 在本季电话会上把成衣的加速归给比较基数与自身的创意执行 —— 本季本地分析稿据此判为「数值验证、机制未验证」，把这条指标退役，改跟香水与美妆。"
+   },
+   {
+    "id": "h1_margin",
+    "metric": "上半年经常性经营利润率",
+    "direction": "up",
+    "unit": "pct",
+    "condition": "H1 OP margin ≥ 40.5%",
+    "threshold": 40.5,
+    "reads": "h1.roi_margin",
+    "said": "FY2025 41%；Q1 仍守 41%；H1 OP margin ≥ 40.5% + FY guidance 维持 ≥ 40% = +5-6% 涨价 + 产能效率吸收 FX -EUR 200M → 加仓；H1 < 40% = 涨价吸收失败、市场重设 OP margin 稳态到 38-39% → 警示",
+    "warn": {
+     "condition": "H1 < 40%",
+     "below": 40.0,
+     "action": "警示"
+    },
+    "story": "降幅落在哪几个科目上，见 Exhibit {EX_MARGIN_BRIDGE} 的逐项拆解。"
+   },
+   {
+    "id": "middle_east",
+    "metric": "其他（中东）cc 增速",
+    "direction": "up",
+    "unit": "pct",
+    "condition": "中东恢复至 FY2025 +15% 水平",
+    "threshold": 15.0,
+    "reads": "by_region.other_middle_east.cc_pct",
+    "said": "Q1 中国大区软化、中东减速；Q2 中国 ≥ +5% + 中东恢复至 FY2025 +15% 水平 = 两大新兴市场触底 → 加仓；中国仍 < +0% 或中东 < +5% = 双重承压 → 减仓",
+    "warn": {
+     "condition": "中东 < +5%",
+     "below": 5.0,
+     "action": "减仓"
+    },
+    "story": "本季本地分析稿把这条判为「阈值设计失效」：中东从第一季的 {prev:middle_east} 收窄到 {actual:middle_east}，方向是改善，却因为「< +5%」这道二元门槛机械地落进减仓腿 —— 它分不清「恶化」与「收窄」。本季的新指标改成「是否连续两季收窄」，见第三节。"
+   },
+   {
+    "id": "buyback",
+    "metric": "上半年累计回购",
+    "direction": "up",
+    "unit": "eur_m",
+    "condition": "H1 累计回购 ≥ €150M",
+    "threshold": 150.0,
+    "reads": "h1_cash_flow.treasury_share_buybacks",
+    "negate": true,
+    "said": "Q1 启动 €60M 回购（首次）；H1 累计回购 ≥ €150M + 管理层给出 capital return framework（payout ratio / FCF allocation） = \"常态化微回购\"成立 → 加仓 + 估值乘数支撑；Q2 回购停滞 = 单点 PR 动作、净现金问题悬而未决 → 跟踪",
+    "story": "新闻稿写明这笔回购「dedicated to employee share ownership plans」—— 上季列的三种解释里，它支持「技术性」那一种，而不是战略试水或防御性回购。"
+   }
+  ],
+  "company_said": {
+   "of": "leather",
+   "quote": "皮具增速会逐月回升",
+   "_source": "上季（2026-04-15）第一季度电话会，CFO：growth for leather goods is going to pick up, speed up in months to come gradually（本季本地分析稿第 3.2 节引）"
+  },
+  "unsettled": [
+   {
+    "of": "leather",
+    "leg": "全年皮具增速 ≥ +6%（< +4% 为警示）",
+    "why": "全年数要到 2027-02-11 的全年业绩；本季本地分析稿以上半年累计代理"
+   },
+   {
+    "of": "h1_margin",
+    "leg": "FY guidance 维持 ≥ 40%",
+    "why": "公司从不给利润率指引"
+   },
+   {
+    "of": "middle_east",
+    "leg": "大中华 Q2 ≥ +5%（< 0% 为减仓）",
+    "why": "公司不单独披露大中华增速"
+   },
+   {
+    "of": "buyback",
+    "leg": "管理层给出 capital return framework",
+    "why": "本季没有给"
+   }
+  ]
+ },
  "next_kpi": {
   "period": "Q2 2026",
   "settles_on": "2026-10-22",
@@ -3398,7 +3665,7 @@
     "unit": "pct",
     "reads": "by_sector.leather_goods_saddlery.cc_pct",
     "why": "它是集团唯一的增长引擎：本季贡献了 69.3% 的固定汇率增量。跌破 9% 意味着承重柱本身在减速，而其余板块没有一个大到能接手。",
-    "chart_note": "<b>这条线和上一条是集团的两条承重柱，而它们指向相反。</b>皮具本季 {now:leather_goods_saddlery}，兑现了上一季管理层在电话会上给出的「皮具增速会逐月回升」这句可证伪的承诺；但它同时贡献了{share_words:leather_goods_saddlery}的集团增量，所以它自己的增速已经接近等同于集团增速，单看这条线的信息量在下降 —— 这也是 Exhibit {EX_SECTOR_MIX} 那条集中度腿必须和它一起看的原因。另外公司在本季明确否认了外部普遍使用的「6% 量 + 中个位数价」这套拆解，理由是量的本质是工时而不同产品的工时价值不同，而公司又不提供替代口径 —— 量价拆分与皮具占比都被拒答。"
+    "chart_note": "<b>这条线和上一条是集团的两条承重柱，而它们指向相反。</b>皮具本季 {now:leather_goods_saddlery}，但它同时贡献了{share_words:leather_goods_saddlery}的集团增量，所以它自己的增速已经接近等同于集团增速，单看这条线的信息量在下降 —— 这也是 Exhibit {EX_SECTOR_MIX} 那条集中度腿必须和它一起看的原因。另外公司在本季明确否认了外部普遍使用的「6% 量 + 中个位数价」这套拆解，理由是量的本质是工时而不同产品的工时价值不同，而公司又不提供替代口径 —— 量价拆分与皮具占比都被拒答。"
    },
    {
     "metric": "皮具占集团 cc 增量比重",

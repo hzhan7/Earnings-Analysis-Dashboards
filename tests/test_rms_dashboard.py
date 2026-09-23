@@ -35,6 +35,7 @@ on a copy of the series to see its words go.
 
 from __future__ import annotations
 
+import collections
 import copy
 import json
 import re
@@ -74,8 +75,29 @@ ORDER_SENTENCE = "本页按「上季兑现 → 本季重点 → 下季跟踪 →
 # Words that can only belong to a figure this company publishes twice a year.
 PROFIT_WORDS = ("利润", "每股", "现金流", "投资")
 # The blocks that describe one quarter, and the ones that describe one half.
-QUARTER_BLOCKS = ("next_kpi", "quasi_guidance", "quarter_story")
-HALF_BLOCKS = ("first_half", "h1_income", "h1_segments", "half_story")
+QUARTER_BLOCKS = ("next_kpi", "quasi_guidance", "quarter_story", "followup_closure", "prior_kpi_settlement")
+HALF_BLOCKS = ("first_half", "h1_income", "h1_segments", "half_story", "h1_cash_flow")
+# Tags, not the character: a threshold quoted from the note reads 「全年 < +4%」,
+# which `esc()` prints correctly; what an escaped slot must not carry is markup.
+TAG = re.compile(r"</?[A-Za-z][A-Za-z0-9]*\b")
+
+# What the owner's two notes say, copied here by hand -- facts about the notes,
+# not filing numbers. Keyed by the quarter the settling block is stamped with:
+# a roll writes a new block from a new note, and its literals go in a new key.
+REPORT_LITERALS = {
+    "Q2 2026": {
+        # 2026-07-29 note, section 0, the verdict column (it prints no tally row).
+        "verdicts": {"M1": "已验证", "M2": "部分验证", "M3": "已验证", "M4": "部分验证", "M5": "部分验证",
+                     "F6": "被证伪", "F7": "仍未披露", "F8": "仍未披露", "F9": "仍未披露", "F10": "已验证"},
+        "tally": {"已验证": 3, "部分验证": 3, "被证伪": 1, "仍未披露": 3},
+        # 2026-04-17 note, section 8: (direction, threshold or the quarter it names, warning line).
+        "prior": {"leather": ("up", "Q4 2025", ("Q1 2026", True, 1)),
+                  "rtw": ("up", 3.0, (2.0, False, 2)),
+                  "h1_margin": ("up", 40.5, (40.0, False, 1)),
+                  "middle_east": ("up", 15.0, (5.0, False, 1)),
+                  "buyback": ("up", 150.0, None)},
+    },
+}
 PLACEHOLDER = r"\{[A-Za-z_]+(?::[a-z_]+)?\}"
 
 
@@ -549,8 +571,9 @@ class RmsPayloadTest(unittest.TestCase):
 
     # ── thresholds ──────────────────────────────────────────────────────────
     def test_every_quantified_threshold_has_a_headroom_bar(self) -> None:
+        # Two headroom bars now: last quarter's (part one) and next quarter's (part three).
         exhibit = next(ex for ex in self.exhibits if ex["kind"] == "diverging_bars"
-                       and ex["ylab"] == "距阈值 %")
+                       and ex["ylab"] == "距阈值 %" and ex["title"].startswith("下季"))
         self.assertEqual(len(exhibit["values"]), len(self.entries))
         for index, entry in enumerate(self.entries):
             self.assertAlmostEqual(
@@ -686,7 +709,12 @@ class RmsPayloadTest(unittest.TestCase):
             self.assertNotIn("<", table["title"], table["title"][:40])
             for row in table["rows"]:
                 for cell in row:
-                    self.assertNotIn("<", str(cell), str(cell)[:40])
+                    # A quoted threshold carries a bare 「<」 (「全年 < +4%」); a tag is the defect.
+                    self.assertNotRegex(str(cell), TAG, str(cell)[:40])
+        for exhibit in self.exhibits:
+            # The card prints the title as HTML, but the same string is the
+            # chart's SVG aria-label, where a reader of the label gets the literal tag.
+            self.assertNotRegex(exhibit["title"], TAG, exhibit["title"][:40])
 
     def test_table_dicts_carry_only_the_keys_the_renderer_reads(self) -> None:
         for table in self.payload["tables"]:
@@ -706,7 +734,12 @@ class RmsPayloadTest(unittest.TestCase):
         kinds = {ex["kind"] for ex in self.exhibits}
         self.assertNotIn("gs_bar", kinds)
         self.assertNotIn("stacked_dual", kinds)
-        self.assertLessEqual(kinds, {"lines", "diverging_bars", "grouped_bars", "bridge_bar"})
+        # bars_labeled is the follow-up closure (counts, never negative -- the
+        # branch pins its axis at zero, which a negative bar would fall off).
+        self.assertLessEqual(kinds, {"lines", "diverging_bars", "grouped_bars", "bridge_bar", "bars_labeled"})
+        for exhibit in self.exhibits:
+            if exhibit["kind"] == "bars_labeled":
+                self.assertTrue(all(v >= 0 for v in exhibit["values"]), exhibit["title"])
 
     # ── counts printed in prose ─────────────────────────────────────────────
     def test_every_tally_the_page_prints_is_the_tally_in_the_data(self) -> None:
@@ -754,7 +787,8 @@ class RmsPayloadTest(unittest.TestCase):
             self.assertIn(f"最近四季里有 {sum(1 for v in watches[-4:] if v > 0)} 季为正", trend)
 
         # headroom: how many thresholds are on the wrong side of their own line
-        headroom_ex = next(ex for ex in self.exhibits if ex.get("ylab") == "距阈值 %")
+        headroom_ex = next(ex for ex in self.exhibits
+                           if ex.get("ylab") == "距阈值 %" and ex["title"].startswith("下季"))
         text = headroom_ex["title"] + " " + headroom_ex["note"]
         breached = [e for e in self.entries
                     if headroom(e["direction"], e["threshold"], e["current"]) < 0]
@@ -916,6 +950,178 @@ class RmsPayloadTest(unittest.TestCase):
         self.assertEqual(published, self.payload)
 
 
+class RmsSettlementTest(unittest.TestCase):
+    """Part one settles what last quarter's note left behind, and nothing else.
+
+    Every number here is re-read from the staging by this file's own route --
+    the builder's readers are not imported -- so a builder that settled a
+    threshold against the wrong quarter or the wrong line would disagree with it.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.s = json.loads(rms.STAGING_PATH.read_text(encoding="utf-8"))
+        cls.payload = rms.build_payload(cls.s)
+        cls.part = next(s for s in cls.payload["sections"] if s["id"] == "settled")
+        cls.closure = cls.s["followup_closure"]
+        cls.prior = cls.s["prior_kpi_settlement"]
+        cls.literals = REPORT_LITERALS.get(cls.prior["period"])
+
+    def reading(self, entry: dict) -> tuple[float, float, list[float]]:
+        """(this quarter, the threshold, the series) for one of last quarter's lines."""
+        s = self.s
+        kind, *rest = entry["reads"].split(".")
+        if kind in ("by_sector", "by_region"):
+            series = s[kind][rest[0]][rest[1]]
+            values = [v for v in series if v is not None]
+            at = (series[s["periods"].index(entry["threshold_period"])]
+                  if "threshold_period" in entry else entry["threshold"])
+            return series[-1], at, values
+        if kind == "h1":
+            margins = []
+            for h in (h for h in s["half_years"] if h["label"].startswith("H1")):
+                exact = h["recurring_operating_income_eur_m"] / h["revenue_eur_m"] * 100
+                printed = h.get("roi_margin_printed_pct")
+                # the company's figure where the recomputation rounds to a different tenth
+                margins.append(printed if printed is not None and round(exact, 1) != printed else exact)
+            return margins[-1], entry["threshold"], margins
+        if kind == "h1_cash_flow":
+            cur = next(c for key, _, c, _ in s["h1_cash_flow"]["lines"] if key == rest[0])
+            return (-cur if entry.get("negate") else cur), entry["threshold"], []
+        raise AssertionError(entry["reads"])
+
+    def test_part_one_is_closure_then_thresholds_then_their_lines(self) -> None:
+        exhibits_ = self.part["exhibits"]
+        self.assertEqual(exhibits_[0]["kind"], "bars_labeled")
+        self.assertTrue(exhibits_[0]["title"].startswith(f"上季 {len(self.closure['items'])} 条待验证问题："))
+        self.assertEqual(exhibits_[1]["kind"], "diverging_bars")
+        self.assertTrue(exhibits_[1]["title"].startswith(f"上季 {len(self.prior['quantified'])} 条量化阈值："))
+        charted = [e for e in self.prior["quantified"] if not e["reads"].startswith("h1_cash_flow")]
+        self.assertEqual(len(exhibits_), 2 + len(charted))
+        for exhibit, entry in zip(exhibits_[2:], charted):
+            self.assertEqual(exhibit["kind"], "lines")
+            self.assertTrue(exhibit["title"].startswith(entry["metric"] + "："), exhibit["title"])
+            self.assertIn("上季阈值", exhibit["title"])
+
+    def test_the_closure_bars_are_the_tally_of_the_verdict_column(self) -> None:
+        bars = self.part["exhibits"][0]
+        tally = collections.Counter(item["verdict"] for item in self.closure["items"])
+        self.assertEqual(bars["xlabels"], self.closure["labels"])
+        self.assertEqual(bars["values"], [tally[label] for label in self.closure["labels"]])
+        self.assertEqual(sum(bars["values"]), len(self.closure["items"]))
+        for label in self.closure["labels"]:
+            self.assertIn(f"{tally[label]} 条{label}", bars["title"])
+
+    def test_the_closure_is_the_notes_section_zero(self) -> None:
+        """Against the note itself, for the quarter these literals were copied for."""
+        if self.literals is None:
+            return
+        self.assertEqual({item["id"]: item["verdict"] for item in self.closure["items"]}, self.literals["verdicts"])
+        self.assertEqual(dict(zip(self.closure["labels"], self.part["exhibits"][0]["values"])), self.literals["tally"])
+
+    def test_the_prior_thresholds_are_last_quarters_words(self) -> None:
+        for entry in self.prior["quantified"]:
+            with self.subTest(entry=entry["id"]):
+                # the condition the chart quotes is a verbatim piece of the quoted paragraph
+                self.assertIn(entry["condition"], entry["said"])
+                if entry.get("warn"):
+                    self.assertIn(entry["warn"]["condition"], entry["said"])
+        if self.literals is None:
+            return
+        by_id = {e["id"]: e for e in self.prior["quantified"]}
+        self.assertEqual(set(by_id), set(self.literals["prior"]))
+        for key, (direction, threshold, warn) in self.literals["prior"].items():
+            entry = by_id[key]
+            with self.subTest(entry=key):
+                self.assertEqual(entry["direction"], direction)
+                self.assertEqual(entry.get("threshold_period", entry.get("threshold")), threshold)
+                if warn is None:
+                    self.assertNotIn("warn", entry)
+                    continue
+                line, inclusive, consecutive = warn
+                self.assertEqual(entry["warn"].get("below_period", entry["warn"].get("below")), line)
+                self.assertEqual(entry["warn"].get("inclusive", False), inclusive)
+                self.assertEqual(entry["warn"].get("consecutive", 1), consecutive)
+
+    def test_each_threshold_is_settled_on_this_quarters_reading(self) -> None:
+        bars = self.part["exhibits"][1]
+        held = 0
+        for index, entry in enumerate(self.prior["quantified"]):
+            actual, threshold, _ = self.reading(entry)
+            gap = headroom(entry["direction"], threshold, actual)
+            held += gap >= 0
+            with self.subTest(entry=entry["id"]):
+                self.assertEqual(bars["xlabels"][index], entry["metric"])
+                self.assertAlmostEqual(bars["values"][index], round(gap, 1), places=6)
+        missed = len(self.prior["quantified"]) - held
+        self.assertIn(f"{held} 条达到、{missed} 条没有达到", bars["title"])
+
+    def test_a_warning_leg_is_called_fired_only_when_the_data_crossed_it(self) -> None:
+        bars = self.part["exhibits"][1]
+        lines = {ex["title"].split("：")[0]: ex for ex in self.part["exhibits"][2:]}
+        fired_names = []
+        for entry in self.prior["quantified"]:
+            warn = entry.get("warn")
+            if not warn:
+                continue
+            _, _, values = self.reading(entry)
+            if "below_period" in warn:
+                kind, key, field = entry["reads"].split(".")
+                line = self.s[kind][key][field][self.s["periods"].index(warn["below_period"])]
+            else:
+                line = warn["below"]
+            recent = values[-warn.get("consecutive", 1):]
+            fired = all((v <= line) if warn.get("inclusive") else (v < line) for v in recent)
+            if fired:
+                fired_names.append(entry["metric"])
+            if entry["metric"] in lines:
+                self.assertIn(f"警示腿「{warn['condition']}」{'已触发' if fired else '没有触发'}",
+                              lines[entry["metric"]]["note"])
+        marker = "越过了上季写下的警示线的是"
+        self.assertEqual(marker in bars["note"], bool(fired_names))
+        named = bars["note"].split(marker)[-1].split("。")[0] if fired_names else ""
+        for entry in self.prior["quantified"]:
+            self.assertEqual(entry["metric"] in named, entry["metric"] in fired_names, entry["metric"])
+
+    def test_the_legs_that_cannot_be_settled_are_named_not_dropped(self) -> None:
+        bars = self.part["exhibits"][1]
+        table = next(t for t in self.payload["tables"] if "量化阈值的原文与逐条结算" in t["title"])
+        cells = [cell for row in table["rows"] for cell in row]
+        for leg in self.prior["unsettled"]:
+            self.assertIn(leg["leg"], bars["note"])
+            self.assertIn(leg["leg"], cells)
+        self.assertIn(f"{cn_count(len(self.prior['unsettled']))}条腿本季无法结算", bars["note"])
+        for entry in self.prior["quantified"]:
+            self.assertIn(entry["said"], cells)
+
+    def test_each_threshold_line_counts_its_own_quarters(self) -> None:
+        for exhibit, entry in zip(self.part["exhibits"][2:],
+                                  [e for e in self.prior["quantified"] if not e["reads"].startswith("h1_cash_flow")]):
+            actual, threshold, values = self.reading(entry)
+            above = sum(1 for v in values if v >= threshold)
+            with self.subTest(entry=entry["id"]):
+                self.assertEqual(exhibit["series"][1]["values"], [threshold] * len(exhibit["xlabels"]))
+                if entry["reads"].startswith("h1."):
+                    self.assertIn(f"{cn_count(len(values))}个上半年里有{cn_count(above)}个不低于它", exhibit["note"])
+                    self.assertIn("半年", exhibit["title"])
+                else:
+                    self.assertIn(f"在印出增速的 {len(values)} 个季度里有 {above} 季不低于它", exhibit["note"])
+
+    def test_a_block_that_settles_another_quarter_stops_the_build(self) -> None:
+        for key in ("followup_closure", "prior_kpi_settlement"):
+            stale = copy.deepcopy(self.s)
+            stale[key]["set_in"] = "Q4 1999"
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "settles what was set in"):
+                    rms.build_payload(stale)
+
+    def test_a_verdict_outside_the_labels_stops_the_build(self) -> None:
+        odd = copy.deepcopy(self.s)
+        odd["followup_closure"]["items"][0]["verdict"] = "大概验证"
+        with self.assertRaisesRegex(ValueError, "verdicts outside its labels"):
+            rms.build_payload(odd)
+
+
 class RmsChecksTest(unittest.TestCase):
     """The page's quarter and half against a record keyed separately from the release.
 
@@ -991,6 +1197,37 @@ class RmsChecksTest(unittest.TestCase):
         self.assertEqual(list(income["eps_diluted_eur"]), [c["diluted_eps_eur"], c["diluted_eps_prior_year_eur"]])
         self.assertEqual(s["next_kpi"]["settles_on"], c["next_quarter_release"])
         self.assertEqual(s["next_kpi"]["full_year_settles_on"], c["full_year_release"])
+
+    def test_the_cash_flow_block_is_the_checked_statement(self) -> None:
+        """The half's cash-flow lines against the separate reading, and against
+        the identities the company's own statement and reconciliation print."""
+        c = self.checks
+        year = int(c["half"].split()[1])
+        lines = {key: (cur, prev) for key, _, cur, prev in self.s["h1_cash_flow"]["lines"]}
+        self.assertEqual(self.s["h1_cash_flow"]["period"], c["half"])
+        for key, field in (("change_in_wcr", "change_in_wcr"), ("operating_activities", "operating_activities"),
+                           ("other_receivables_payables", "other_receivables_payables"),
+                           ("inventories", "inventories_change"),
+                           ("repayment_of_lease_liabilities", "repayment_of_lease_liabilities")):
+            self.assertEqual(lines[key], (c[f"{field}_eur_m"], c[f"{field}_prior_year_eur_m"]), key)
+        self.assertEqual(lines["treasury_share_buybacks"],
+                         (-c["treasury_share_buybacks_eur_m"], -c["treasury_share_buybacks_prior_year_eur_m"]))
+        # one statement, two blocks: the half-year table must agree with it
+        half, prior = self.halves[c["half"]], self.halves[f"H1 {year - 1}"]
+        self.assertEqual(lines["operating_cash_flows"],
+                         (half["operating_cash_flows_eur_m"], prior["operating_cash_flows_eur_m"]))
+        self.assertEqual(lines["operating_investments"],
+                         (-half["operating_investments_eur_m"], -prior["operating_investments_eur_m"]))
+        self.assertEqual(lines["adjusted_fcf"], (half["adjusted_fcf_eur_m"], prior["adjusted_fcf_eur_m"]))
+        for i in (0, 1):
+            with self.subTest(column=i):
+                self.assertEqual(sum(lines[k][i] for k in ("inventories", "trade_receivables", "trade_payables",
+                                                           "other_receivables_payables")), lines["change_in_wcr"][i])
+                # printed to the million, so (A) may sit €1M off its two printed parts
+                self.assertLessEqual(abs(lines["operating_cash_flows"][i] + lines["change_in_wcr"][i]
+                                         - lines["operating_activities"][i]), 1)
+                self.assertEqual(lines["operating_activities"][i] + lines["operating_investments"][i]
+                                 + lines["repayment_of_lease_liabilities"][i], lines["adjusted_fcf"][i])
 
     def test_the_series_carries_the_margins_the_company_printed(self) -> None:
         """The recomputation must round to the printed margin, or the printed one is stored."""
@@ -1208,6 +1445,9 @@ class RmsRollTest(unittest.TestCase):
         tracking = next(s for s in payload["sections"] if s["id"] == "next_quarter")
         self.assertEqual(tracking["exhibits"], [])
         self.assertEqual(tracking["description"], "本季没有设定下季阈值。")
+        settled = next(s for s in payload["sections"] if s["id"] == "settled")
+        self.assertEqual(settled["exhibits"], [])
+        self.assertTrue(settled["description"].startswith("本季没有可结算的上季问题与阈值。"))
         numbers = [ex["n"] for ex in exhibits(payload)]
         self.assertEqual(numbers, list(range(2, 2 + len(numbers))))
         self.assertEqual([t["n"] for t in payload["tables"]],
