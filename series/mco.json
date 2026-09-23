@@ -2234,7 +2234,7 @@
       "organic_cc_revenue_growth_pct": "公司印「有机固定汇率」增速的是 2022Q2–Q4 与 2025Q1 以后；2022Q1 只印有机增速（含汇率影响），2023Q1–2024Q4 只印「固定汇率」增速、不单列有机口径（画成另一条线，不拼接），其中 2023Q2 与 2024Q1 两季没有印任何固定汇率数，留空。",
       "organic_cc_recurring_growth_pct": "与收入那条同一套口径：「有机固定汇率」经常性收入增速印在 2022Q2–Q4 与 2025Q1 以后，2023–2024 年只印「固定汇率」口径（另一条线），2023Q2–2024Q1 连续四季没有印。"
     },
-    "source": "各季业绩 8-K EX-99.1：ARR 取「Key Performance Metrics - Annualized Recurring Revenue」表的「Total MA ARR」（2022Q1–Q2 为「Organic MA ARR」）增速栏；收入与经常性收入取「Organic Constant Currency Revenue Growth」（2023–2024 为「Constant Currency Revenue Growth」）表的三个月栏。季度按新闻稿标题认，不按申报日；每一行的增速都与它自己印的两期金额相符。"
+    "source": "各季业绩 8-K EX-99.1：ARR 取「Key Performance Metrics - Annualized Recurring Revenue」表的「Total MA ARR」（2022Q1–Q2 为「Organic MA ARR」）增速栏；收入与经常性收入取「Organic Constant Currency Revenue Growth」（2023–2024 为「Constant Currency Revenue Growth」）表的三个月栏。季度按新闻稿标题认，不按申报日；按每一行自己印的两期金额复算，增速都落在公司印的整数上，只有 2025Q4 有机固定汇率 MA 收入一格例外（印 6%，按印出的 914 / 858 算是 6.53%，差在金额取整），页面用公司印的 6%。"
   },
   "latest": {
     "period_end": "2026-06-30",

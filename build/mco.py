@@ -1,19 +1,33 @@
 #!/usr/bin/env python3
 """Build the MCO quarterly-results page.
 
-Same four-part, chart-led shape as the other company pages (上季兑现 → 本季重点
-→ 下季跟踪 → 长期常规).  Moody's runs a calendar fiscal year, so no quarter
-label on this page needs translating.
+Same four-part, chart-led shape as the other company pages, and each part is
+what its title says:
 
-What makes this page different from the six that carry a guidance record is the
-*shape* of the guidance.  AMZN, CDNS, SNPS, NVDA, TSM and META all publish a
-range for the **next quarter**, so their records are quarter-in, quarter-out.
-Moody's publishes a **full-year outlook table** in the EX-99.1 of every earnings
-8-K and then re-issues it three times as the year runs: February sets it, April,
-July and October update it (a line it did not move is printed ``NC``).  So the
-object this page settles is a *year*, not a quarter, and the interesting
-variable is not only whether the company cleared its range but **how far ahead
-it was standing when it drew the range**.
+* 一、上季跟踪指标兑现了吗 -- (a) the follow-up questions last quarter's
+  analysis left, as this quarter's analysis settled them (``followup_closure``);
+  (b) last quarter's quantified thresholds, settled against this quarter's
+  filings (``prior_kpi_settlement``); (c) the company's own full-year guidance
+  record and the open year's EPS bridge.
+* 二、本季重点 -- one chart per finding of this quarter's analysis that the
+  filings can draw; its readings sit in the stamped ``quarter_story``.
+* 三、下季要跟踪什么 -- this quarter's analysis §8 thresholds (``next_kpi``),
+  with every current value computed from the series.
+* 四、长期常规跟踪 -- the ten-year and 42-quarter routine series.
+
+Moody's runs a calendar fiscal year, so no quarter label needs translating.
+
+What makes the guidance record different from the six other pages that carry
+one is the *shape* of the guidance.  AMZN, CDNS, SNPS, NVDA, TSM and META all
+publish a range for the **next quarter** in their releases, so their records are
+quarter-in, quarter-out.  Moody's earnings 8-K carries only a **full-year outlook
+table** in its EX-99.1, re-issued three times as the year runs: February sets it,
+April, July and October update it (a line it did not move is printed ``NC``).
+A next-quarter figure has surfaced only on a few calls (Q1 2025 and Q2 2026
+adjusted EPS), never in the 8-K, and the page does not score it.  So the object
+the record settles is a *year*, not a quarter, and the interesting variable is
+not only whether the company cleared its range but **how far ahead it was
+standing when it drew the range**.
 
 Two things make the table worth reading rather than merely quoting.
 
@@ -46,10 +60,13 @@ delivered figure was $7.39, below the final range: the excluded year was the
 only year that broke the page's headline.
 
 The page is rolled by editing ``series/mco.json`` alone.  What only one quarter
-has -- the open year's guidance table and its three bridges, the quarter's two
-EPS figures, and the quarter's story -- sits in blocks stamped with the quarter
-(``board.stamped_block``); ``_checks`` is a separate reading of the quarter's
-release that the tests hold the page to and this builder never reads.
+has -- the open year's guidance table and its three bridges, the quarter's own
+figures, the two analyses' closure and thresholds, and the quarter's story --
+sits in blocks stamped with the quarter (``board.stamped_block``); the cash legs
+and the MA KPIs are quarterly arrays aligned to ``segment_quarterly``.
+``_checks`` is a separate reading of the quarter's release and of the two
+analyses (``_checks["note"]``) that the tests hold the page to and this builder
+never reads.
 
 Published numbers are company-reported or transparent arithmetic.  The page
 publishes no rating, target price or valuation.
@@ -80,6 +97,7 @@ from build.board import (  # noqa: E402
     number_exhibits,
     stamped_block,
     threshold_exhibit,
+    unit_text,
 )
 from build.page_shell import render_shell  # noqa: E402
 from build.payload_guard import write_dash  # noqa: E402
@@ -362,12 +380,19 @@ def prior_entries(staging: dict, prior: dict) -> list[dict]:
     rule = {"same_quarter_last_year": lambda: seg["mis_revenue_usd_m"][-5]}
     entries = []
     for entry in prior["quantified"]:
-        if "actual" in entry:
-            raise ValueError(f"threshold `{entry['id']}` is computed from the series; remove its typed actual")
         settled = dict(entry)
         if "threshold_rule" in entry:
             settled["threshold"] = rule[entry["threshold_rule"]]()
-        settled["actual"] = actual[entry["series"]]()
+        if entry.get("series") in actual:
+            if "actual" in entry:
+                raise ValueError(f"threshold `{entry['id']}` is computed from the series; remove its typed actual")
+            settled["actual"] = actual[entry["series"]]()
+        elif "actual" in entry and entry.get("source"):
+            # A metric no series on this page carries (a new KPI in next quarter's
+            # analysis) is typed once, with the place in the filing it was read.
+            settled["actual"] = entry["actual"]
+        else:
+            raise ValueError(f"threshold `{entry['id']}` has no series to read and no typed actual with a source")
         entries.append(settled)
     return entries
 
@@ -460,7 +485,7 @@ def prior_settlement(staging: dict, prior: dict, figures: dict | None, guidance:
                   "发行窗口一关，这条线就会掉到零下，所以它守住与否是一个季度的事，不是趋势。"),
             src_extra="各期业绩 8-K EX-99.1 的分部表（外部收入口径）；同比为自算。",
         ))
-    buybacks = sorted((entry for entry in entries if entry["series"] == "share_repurchases"),
+    buybacks = sorted((entry for entry in entries if entry.get("series") == "share_repurchases"),
                       key=lambda entry: -entry["threshold"])
     if buybacks:
         spent = cash["share_repurchases_usd_m"]
@@ -648,7 +673,7 @@ def minus(value: float) -> str:
     return f"{value:+.1f}%".replace("-", "−")
 
 
-# ── section two: what actually moved this quarter ───────────────────────────
+# ── section four, the two businesses: facts shared by the routine charts ────
 def segment_facts(staging: dict) -> dict:
     seg = staging["segment_quarterly"]
     periods = seg["periods"]
@@ -807,7 +832,7 @@ def segment_long_charts(staging: dict, facts: dict, sf: dict, story: dict | None
     return [two_lines, share, margins]
 
 
-# ── section two: this quarter's findings, from the Q2 analysis ─────────────
+# ── section two: this quarter's findings, from this quarter's analysis ─────
 def cash_facts(staging: dict) -> dict:
     """Free cash flow and shareholder returns per quarter, and year-to-date ratios.
 
@@ -1067,7 +1092,7 @@ def short_line(name: str) -> str:
             "Decision Solutions 合计": "Decision Solutions"}.get(name, name)
 
 
-# ── section three: what to watch through the rest of the open year ─────────
+# ── section one (c) bridge, then section three: the next quarter's thresholds
 def margin_point(margin: dict) -> bool:
     """A GAAP margin guided as one number ("Approximately 45%") against a range."""
     return margin["gaap"][0] == margin["gaap"][1] and margin["adjusted"][0] != margin["adjusted"][1]
@@ -1188,11 +1213,16 @@ def next_entries(staging: dict, next_kpi: dict) -> list[dict]:
     }
     entries = []
     for entry in next_kpi["quantified"]:
-        if "current" in entry:
-            raise ValueError(f"threshold `{entry['id']}` is computed from the series; remove its typed current")
-        value = current[entry["series"]]()
-        if value is None:
-            raise ValueError(f"threshold `{entry['id']}` has no {entry['series']} reading for the quarter")
+        if entry.get("series") in current:
+            if "current" in entry:
+                raise ValueError(f"threshold `{entry['id']}` is computed from the series; remove its typed current")
+            value = current[entry["series"]]()
+            if value is None:
+                raise ValueError(f"threshold `{entry['id']}` has no {entry['series']} reading for the quarter")
+        elif "current" in entry and entry.get("source"):
+            value = entry["current"]    # a metric no series here carries: typed once, with its source
+        else:
+            raise ValueError(f"threshold `{entry['id']}` has no series to read and no typed current with a source")
         entries.append({**entry, "current": value})
     return entries
 
@@ -1237,7 +1267,7 @@ def next_watch(staging: dict, next_kpi: dict | None, guidance: dict | None, stor
     charts = [overview]
 
     def group(series: str) -> list[dict]:
-        return sorted((entry for entry in entries if entry["series"] == series), key=lambda e: e["threshold"])
+        return sorted((entry for entry in entries if entry.get("series") == series), key=lambda e: e["threshold"])
 
     def title(name: str, members: list[dict], fmt) -> str:
         return (f"{name}：下季阈值 " + " / ".join(fmt(entry["threshold"]) for entry in members)
@@ -1365,9 +1395,10 @@ def unit_value(unit: str, value: float) -> str:
     A whole-percent figure prints as the company printed it (「9%」); a computed
     ratio keeps one decimal (「165.1%」) instead of every digit the float carries.
     """
-    return {"usd_m": usd_m,
-            "pct": lambda v: pct_text(v) if float(v).is_integer() else f"{v:.1f}%",
-            "usd_bn": lambda v: f"US${v:.1f}B"}[unit](value)
+    own = {"usd_m": usd_m,
+           "pct": lambda v: pct_text(v) if float(v).is_integer() else f"{v:.1f}%",
+           "usd_bn": lambda v: f"US${v:.1f}B"}
+    return own[unit](value) if unit in own else unit_text(unit, value)
 
 
 def guidance_vintage_table(staging: dict, guidance: dict | None, prior: dict | None) -> dict | None:
@@ -1617,7 +1648,7 @@ def build_payload(staging: dict) -> dict:
         "buyback_prev": usd_m(buybacks[-2]),
     }
     if prior:
-        top = max((entry for entry in prior["quantified"] if entry["series"] == "share_repurchases"),
+        top = max((entry for entry in prior["quantified"] if entry.get("series") == "share_repurchases"),
                   key=lambda entry: entry["threshold"], default=None)
         if top:
             values["buyback_threshold"] = usd_m(top["threshold"])

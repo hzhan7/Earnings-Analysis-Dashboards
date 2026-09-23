@@ -16,7 +16,7 @@ a set of soft targets, so the tests pin all three to the cent and the tenth of a
 point.
 
 The distinction is between the two forecast horizons, and it is the whole point
-of the first section. Against the final (October) range the record looks like
+of the guidance record in section one. Against the final (October) range the record looks like
 every other "never missed" record on this site; against the initial (February)
 range the same seven years look nothing like it. A test that only counted
 "cleared its guidance" would not notice if the two were ever conflated, so this
@@ -26,7 +26,8 @@ A roll edits `series/mco.json` and nothing else (CLAUDE.md §9). Tallies,
 extremes and years named on the page are recounted here from the series rather
 than pinned; what stays pinned is history that a roll cannot move (FY2018's four
 vintages, FY2022's cut, the FY2016-17 holes). What the quarter's release printed
-is asserted from `_checks` (`McoChecksTest`); `McoRollTest` rolls the series a
+is asserted from `_checks` (`McoChecksTest`), and what the owner's two analyses
+concluded from `_checks["note"]` (`McoFourPartTest`); `McoRollTest` rolls the series a
 quarter back and a quarter forward and tampers each stamped block; and
 `McoFindingsTest` forces each judgement true and then false and checks that the
 words follow.
@@ -795,6 +796,24 @@ class McoFourPartTest(unittest.TestCase):
         fcf = ytd["operating_cash_flow"] - ytd["capital_additions"]
         self.assertTrue(any(f"回购加股息 US${returns:,.0f}M，是同期自由现金流 US${fcf:,.0f}M 的 "
                             f"{returns / fcf * 100:.0f}%" in title for title in titles), titles)
+
+    def test_a_threshold_on_a_series_the_page_holds_cannot_carry_a_typed_value(self) -> None:
+        """A typed current next to a computed one is two copies free to disagree; a metric
+        no series here carries (next quarter's analysis may add one) must bring its source."""
+        typed = copy.deepcopy(self.s)
+        typed["next_kpi"]["quantified"][0]["current"] = 1.0
+        with self.assertRaisesRegex(ValueError, "computed from the series"):
+            build_payload(typed)
+        bare = copy.deepcopy(self.s)
+        bare["next_kpi"]["quantified"].append({"id": "new", "metric": "新指标", "condition": "x", "action": "y",
+                                               "direction": "up", "threshold": 10.0, "unit": "pct"})
+        with self.assertRaisesRegex(ValueError, "no series to read"):
+            build_payload(bare)
+        bare["next_kpi"]["quantified"][-1].update(current=12.0, source="某份申报某表")
+        overview = next(ex for s in build_payload(bare)["sections"] for ex in s["exhibits"]
+                        if ex["title"].startswith("下季"))
+        self.assertEqual(overview["xlabels"][-1], "新指标")
+        self.assertEqual(overview["values"][-1], 20.0)
 
     def test_the_ma_growth_rates_are_the_releases(self) -> None:
         kpi, checks = self.s["ma_kpi_quarterly"], self.s["_checks"]
