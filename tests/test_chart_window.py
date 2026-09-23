@@ -175,7 +175,7 @@ REACH_2016 = {
     "amd": 16, "amzn": 13, "arm": 0, "asml": 16, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
     "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
-    "race": 9, "rms": 11, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
+    "race": 9, "rms": 15, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
     "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
     "intc": 10 + _intc_threshold_reach(),
     # Not a company page. It is here because the ratchet now walks every
@@ -1656,10 +1656,6 @@ UNDERIVABLE_QUARTER_COUNTS = {
     "axp Ex17":  ([16], "同上，同一句重叠区间长度出现在另一张信用图的图注里"),
     "skhynix Ex7": ([22], "这一页此前的窗口长度。图注解释的正是「从 22 季拉到 42 季」"
                           "改变了什么，所以那个 22 指的是旧窗口，不是本图的任何一段"),
-    "rms Ex19": ([30], "阈值之上的季度数，是条件计数不是窗口长度。它在八季窗口上碰巧等于 n−1 "
-                       "而被当成可推导；回补到 42 季之后不再等于任何一个轴长，这条 pin 才是它"
-                       "本来的样子。同句里的「三十八季」是印出增速的季度数（42 季轴上有 4 季"
-                       "只有欧元金额、没有增速），用中文数字写，所以不进这个正则"),
     **_tsm_advanced_count(),
 }
 

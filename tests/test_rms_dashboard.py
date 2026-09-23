@@ -80,24 +80,9 @@ HALF_BLOCKS = ("first_half", "h1_income", "h1_segments", "half_story", "h1_cash_
 # Tags, not the character: a threshold quoted from the note reads 「全年 < +4%」,
 # which `esc()` prints correctly; what an escaped slot must not carry is markup.
 TAG = re.compile(r"</?[A-Za-z][A-Za-z0-9]*\b")
-
-# What the owner's two notes say, copied here by hand -- facts about the notes,
-# not filing numbers. Keyed by the quarter the settling block is stamped with:
-# a roll writes a new block from a new note, and its literals go in a new key.
-REPORT_LITERALS = {
-    "Q2 2026": {
-        # 2026-07-29 note, section 0, the verdict column (it prints no tally row).
-        "verdicts": {"M1": "已验证", "M2": "部分验证", "M3": "已验证", "M4": "部分验证", "M5": "部分验证",
-                     "F6": "被证伪", "F7": "仍未披露", "F8": "仍未披露", "F9": "仍未披露", "F10": "已验证"},
-        "tally": {"已验证": 3, "部分验证": 3, "被证伪": 1, "仍未披露": 3},
-        # 2026-04-17 note, section 8: (direction, threshold or the quarter it names, warning line).
-        "prior": {"leather": ("up", "Q4 2025", ("Q1 2026", True, 1)),
-                  "rtw": ("up", 3.0, (2.0, False, 2)),
-                  "h1_margin": ("up", 40.5, (40.0, False, 1)),
-                  "middle_east": ("up", 15.0, (5.0, False, 1)),
-                  "buyback": ("up", 150.0, None)},
-    },
-}
+# What the owner's two notes say is not typed here: it is `_checks["note"]` in
+# the series, keyed once per roll from the notes themselves, so a roll edits the
+# series and nothing else (CLAUDE.md §9).
 PLACEHOLDER = r"\{[A-Za-z_]+(?::[a-z_]+)?\}"
 
 
@@ -510,6 +495,42 @@ class RmsPayloadTest(unittest.TestCase):
         if claimed:
             self.assertIn(f"净降幅的 {abs(legs['减值损失'] / net) * 100:.0f}%", note)
 
+    def test_the_region_pace_chart_says_what_the_two_quarters_say(self) -> None:
+        """Counted here from the regions' two readings, not from the builder's lists."""
+        chart = self.by_ref["EX_REGION_PACE"]
+        regions = self.staging["by_region"]
+        order = rms.REGION_ORDER
+        prev = {k: regions[k]["cc_pct"][-2] for k in order}
+        now = {k: regions[k]["cc_pct"][-1] for k in order}
+        self.assertEqual(chart["groups"][0]["values"], [prev[k] for k in order])
+        self.assertEqual(chart["groups"][1]["values"], [now[k] for k in order])
+        faster = [k for k in order if now[k] > prev[k]]
+        self.assertIn(f"：{len(faster)} 个在加速", chart["title"])
+        turned = [k for k in order if prev[k] < 0 <= now[k]]
+        self.assertEqual("唯一由负转正的一个" in chart["note"], len(turned) == 1)
+        if len(turned) == 1:
+            self.assertIn(f"<b>{regions[turned[0]]['label']}是", chart["note"])
+        slower = [k for k in order if now[k] < prev[k]]
+        leaders = sorted(order, key=lambda k: -prev[k])[:len(slower)]
+        self.assertEqual("正是上季增长最快的" in chart["note"], bool(slower) and set(slower) == set(leaders))
+
+    def test_the_cash_flow_bridge_closes_on_the_printed_statement(self) -> None:
+        """The half's adjusted free cash flow, leg by leg, lands on the printed change."""
+        bridge = self.by_ref["EX_FCF"]
+        lines = {key: (cur, prev) for key, _, cur, prev in self.staging["h1_cash_flow"]["lines"]}
+        legs = [v for v in bridge["stacks"][0]["values"] if v is not None]
+        net = [v for v in bridge["net"]["values"] if v is not None]
+        printed = lines["adjusted_fcf"][0] - lines["adjusted_fcf"][1]
+        self.assertEqual(net, [printed])
+        self.assertEqual(sum(legs), printed)
+        self.assertEqual(len(legs) + 1, len(bridge["xlabels"]))
+        for leg in legs:
+            self.assertNotEqual(leg, 0)
+        swing = lines["change_in_wcr"][0] - lines["change_in_wcr"][1]
+        self.assertIn(f"营运资本一项 {'+' if swing >= 0 else '−'}€{abs(swing):,}M", bridge["title"])
+        self.assertIn("半年", bridge["title"])
+        self.assertEqual("比调整后自由现金流的全部增量" in bridge["note"], swing > printed > 0)
+
     def test_the_contribution_shares_sum_to_one_hundred(self) -> None:
         for ref in ("EX_SECTOR_MIX", "EX_REGION_MIX"):
             exhibit = self.by_ref[ref]
@@ -608,8 +629,15 @@ class RmsPayloadTest(unittest.TestCase):
             self.assertEqual(entry["unit"], "pct", entry["metric"])
             if revenue_only:
                 self.assertTrue(any(word in entry["metric"] for word in ("增速", "增量")), entry["metric"])
+        # The full-year lines carry the note's words and where to read the half's
+        # figure -- never a typed current value, which went stale the last time.
         for entry in self.staging["next_kpi"]["full_year_only"]:
-            self.assertEqual(set(entry), {"metric", "current", "threshold", "why"}, entry["metric"])
+            self.assertLessEqual(set(entry), {"id", "metric", "reads", "said", "why", "revokes"}, entry["metric"])
+            self.assertIn("said", entry)
+            self.assertNotIn("current", entry)
+        later = next(t for t in self.payload["tables"] if "只有全年业绩" in t["title"])
+        for row, entry in zip(later["rows"], self.staging["next_kpi"]["full_year_only"]):
+            self.assertIn(entry["said"], row[3])
 
     # ── boundary ────────────────────────────────────────────────────────────
     def test_no_market_expectation_or_rating_is_published(self) -> None:
@@ -798,21 +826,30 @@ class RmsPayloadTest(unittest.TestCase):
         for entry in breached:
             self.assertIn(entry["metric"], text)
 
-        # each threshold chart: quarters on either side of its own line
-        by_metric = {e["metric"]: e for e in self.entries}
-        raw = {e["metric"]: e for e in self.staging["next_kpi"]["quantified"]}
-        for metric in self.staging["next_kpi"]["threshold_charts"]:
-            kind, key, _ = raw[metric]["reads"].split(".")
-            # Only the quarters that carry a rate are scored: a quarter with a
-            # euro amount and no growth beside it is neither above the
-            # threshold nor below it.
-            values = [self.staging[kind][key]["cc_pct"][i] for i in rated(self.staging)]
-            threshold = by_metric[metric]["threshold"]
-            chart = next(ex for ex in self.exhibits if ex["title"].startswith(
-                f"{self.staging[kind][key]['label']}固定汇率增速与 {threshold:g}% 阈值"))
-            self.assertIn(f"{sum(1 for v in values if v >= threshold)} 季在阈值之上", chart["title"])
-            if kind == "by_region":
-                self.assertIn(f"{sum(1 for v in values if v < threshold)} 季低于 {threshold:g}%", chart["note"])
+        # each threshold chart: quarters on its own side of its own line
+        for entry in self.entries:
+            raw = next(e for e in self.staging["next_kpi"]["quantified"] if e["metric"] == entry["metric"])
+            kind, key = raw["reads"].split(".")[:2]
+            keep = rated(self.staging)
+            if kind == "increment_share":
+                # a share of the increment is counted only where the increment is positive
+                shares = []
+                for i in keep:
+                    inc = increments(self.staging["by_sector"], rms.SECTOR_ORDER, i)
+                    if sum(inc.values()) > 0:
+                        shares.append(inc[key] / sum(inc.values()) * 100)
+                values, scope = shares, "在集团固定汇率增量为正的"
+            else:
+                # Only the quarters that carry a rate are scored: a quarter with a
+                # euro amount and no growth beside it is neither side of the line.
+                block = self.staging["group_revenue"] if kind == "group_revenue" else self.staging[kind][key]
+                values, scope = [block["cc_pct"][i] for i in keep], "在印出增速的"
+            threshold = entry["threshold"]
+            up = entry["direction"] == "up"
+            side = sum(1 for v in values if (v >= threshold if up else v < threshold))
+            chart = next(ex for ex in self.exhibits if ex["title"].startswith(f"{entry['metric']}：下季阈值"))
+            with self.subTest(metric=entry["metric"]):
+                self.assertIn(f"{scope} {len(values)} 个季度里有 {side} 季{'不低于' if up else '低于'}它", chart["note"])
 
     def test_the_section_and_table_headings_count_their_own_contents(self) -> None:
         kpi = self.staging["next_kpi"]
@@ -965,7 +1002,8 @@ class RmsSettlementTest(unittest.TestCase):
         cls.part = next(s for s in cls.payload["sections"] if s["id"] == "settled")
         cls.closure = cls.s["followup_closure"]
         cls.prior = cls.s["prior_kpi_settlement"]
-        cls.literals = REPORT_LITERALS.get(cls.prior["period"])
+        # the notes' own words, keyed separately from the blocks the builder reads
+        cls.note = cls.s["_checks"]["note"]
 
     def reading(self, entry: dict) -> tuple[float, float, list[float]]:
         """(this quarter, the threshold, the series) for one of last quarter's lines."""
@@ -1013,11 +1051,13 @@ class RmsSettlementTest(unittest.TestCase):
             self.assertIn(f"{tally[label]} 条{label}", bars["title"])
 
     def test_the_closure_is_the_notes_section_zero(self) -> None:
-        """Against the note itself, for the quarter these literals were copied for."""
-        if self.literals is None:
-            return
-        self.assertEqual({item["id"]: item["verdict"] for item in self.closure["items"]}, self.literals["verdicts"])
-        self.assertEqual(dict(zip(self.closure["labels"], self.part["exhibits"][0]["values"])), self.literals["tally"])
+        """The chart's counts against the tally keyed from the note's verdict column."""
+        expected = self.note["closure"]
+        self.assertEqual({item["id"]: item["verdict"] for item in self.closure["items"]}, expected["verdicts"])
+        bars = self.part["exhibits"][0]
+        self.assertEqual(dict(zip(bars["xlabels"], bars["values"])), expected["counts"])
+        self.assertEqual(sum(bars["values"]), expected["total"])
+        self.assertIn(f"上季 {expected['total']} 条待验证问题", bars["title"])
 
     def test_the_prior_thresholds_are_last_quarters_words(self) -> None:
         for entry in self.prior["quantified"]:
@@ -1026,22 +1066,45 @@ class RmsSettlementTest(unittest.TestCase):
                 self.assertIn(entry["condition"], entry["said"])
                 if entry.get("warn"):
                     self.assertIn(entry["warn"]["condition"], entry["said"])
-        if self.literals is None:
-            return
-        by_id = {e["id"]: e for e in self.prior["quantified"]}
-        self.assertEqual(set(by_id), set(self.literals["prior"]))
-        for key, (direction, threshold, warn) in self.literals["prior"].items():
-            entry = by_id[key]
-            with self.subTest(entry=key):
-                self.assertEqual(entry["direction"], direction)
-                self.assertEqual(entry.get("threshold_period", entry.get("threshold")), threshold)
-                if warn is None:
-                    self.assertNotIn("warn", entry)
+        expected = self.note["prior_thresholds"]
+        self.assertEqual([e["metric"] for e in self.prior["quantified"]], [e["metric"] for e in expected])
+        self.assertEqual(len(self.prior["unsettled"]), self.note["prior_unsettled"])
+        for entry, want in zip(self.prior["quantified"], expected):
+            _, threshold, _ = self.reading(entry)
+            with self.subTest(entry=entry["id"]):
+                self.assertEqual(entry["direction"], want["direction"])
+                self.assertEqual(entry["unit"], want.get("unit", "pct"))
+                # a threshold written as a quarter (「Q2 ≥ Q4 增速」) lands on that quarter's reading
+                self.assertEqual(threshold, want["threshold"])
+                warn = entry.get("warn")
+                if want["warn"] is None:
+                    self.assertIsNone(warn)
                     continue
-                line, inclusive, consecutive = warn
-                self.assertEqual(entry["warn"].get("below_period", entry["warn"].get("below")), line)
-                self.assertEqual(entry["warn"].get("inclusive", False), inclusive)
-                self.assertEqual(entry["warn"].get("consecutive", 1), consecutive)
+                if "below_period" in warn:
+                    kind, key, field = entry["reads"].split(".")
+                    line = self.s[kind][key][field][self.s["periods"].index(warn["below_period"])]
+                else:
+                    line = warn["below"]
+                self.assertEqual(line, want["warn"]["line"])
+                self.assertEqual(warn.get("inclusive", False), want["warn"]["inclusive"])
+                self.assertEqual(warn.get("consecutive", 1), want["warn"]["consecutive"])
+
+    def test_the_next_thresholds_are_this_quarters_section_eight(self) -> None:
+        kpi = self.s["next_kpi"]
+        expected = self.note["next_thresholds"]
+        self.assertEqual([(e["id"], e["metric"], e["threshold"], e["direction"]) for e in kpi["quantified"]],
+                         [(e["id"], e["metric"], e["threshold"], e["direction"]) for e in expected])
+        self.assertEqual([e["id"] for e in kpi["full_year_only"]], self.note["full_year_ids"])
+        self.assertEqual([e["id"] for e in kpi.get("qualitative", [])], self.note["qualitative_ids"])
+        tracking = next(s for s in self.payload["sections"] if s["id"] == "next_quarter")
+        bars = tracking["exhibits"][0]
+        self.assertEqual(bars["xlabels"], [e["metric"] for e in expected])
+        for chart, want in zip(tracking["exhibits"][1:], expected):
+            with self.subTest(metric=want["metric"]):
+                self.assertTrue(chart["title"].startswith(f"{want['metric']}：下季阈值 "), chart["title"])
+                self.assertEqual(set(chart["series"][1]["values"]), {want["threshold"]})
+        for word in kpi.get("qualitative", []):
+            self.assertIn(f"「{word['metric']}」无法量化", tracking["description"])
 
     def test_each_threshold_is_settled_on_this_quarters_reading(self) -> None:
         bars = self.part["exhibits"][1]
@@ -1394,6 +1457,8 @@ class RmsRollTest(unittest.TestCase):
     STORY_ONLY = ("这是本季管理层叙述的支点", "有时候是去年太差", "都没有解释原因",
                   "集团的单点依赖没有消失", "大中华区的量化增速", "不是汇率转向",
                   "生产线上的个别资产", "同期期间平均股价下跌", "日元贬值同时压低了",
+                  "法国的观察点从「客流」改成「客单价」", "营运资本需求变动稳定",
+                  "上季把 Axel Dumas 缺席第一季电话会读成", "门店之外更复杂",
                   "管理层口头说下半年会加速", "法国大企业特别税", "准指引",
                   "分析师在电话会上按亚太约 5% 的提价幅度提问", "兑现了上一季管理层")
     # Some of these ride a condition as well as a block. 「有时候是去年太差」 is
