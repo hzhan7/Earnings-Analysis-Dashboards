@@ -770,7 +770,7 @@ class TsmDashboardTest(unittest.TestCase):
         self.assertEqual(
             [item["slug"] for item in roster["items"]],
             [
-             "amzn", "avgo", "axp", "bc", "cboe", "cdns", "cfr", "cme", "cost",
+             "amzn", "arm", "avgo", "axp", "bc", "cboe", "cdns", "cfr", "cme", "cost",
              "googl", "hkex", "ibkr", "ker", "ma", "mc", "mco", "meta", "msci",
              "msft",
              "mu", "ndaq", "nke", "nvda", "pm", "race", "rms", "samsung",
