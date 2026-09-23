@@ -1357,15 +1357,13 @@ def build_payload(staging: dict) -> dict:
                 "color": "GREEN",
                 "yfmt": "pct1",
             },
+            # No consensus figure: the site's boundary statement leaves sell-side
+            # consensus out, and section two's description says so.
             "note": (
-                (f"较市场预期 ${consensus['revenue_usd_m']:,.0f}M "
-                 f"{'高' if revenue_shown[-1] >= consensus['revenue_usd_m'] else '低'} "
-                 f"{abs(pct_change(revenue_shown[-1], consensus['revenue_usd_m'])):.1f}%；"
-                 if consensus else "")
-                + (f"{period_of(coming)[:2]} 指引中点 ${q3_midpoint:,.0f}M，隐含同比 {signed(q3_yoy)}，"
-                   + (f"再减速约 {revenue_yoy[-1] - q3_yoy:.0f}pp。" if q3_yoy < revenue_yoy[-1]
-                      else f"较本季加速约 {q3_yoy - revenue_yoy[-1]:.0f}pp。")
-                   if q3_midpoint else "")
+                f"{period_of(coming)[:2]} 指引中点 ${q3_midpoint:,.0f}M，隐含同比 {signed(q3_yoy)}，"
+                + (f"再减速约 {revenue_yoy[-1] - q3_yoy:.0f}pp。" if q3_yoy < revenue_yoy[-1]
+                   else f"较本季加速约 {q3_yoy - revenue_yoy[-1]:.0f}pp。")
+                if q3_midpoint else f"本季同比 {revenue_yoy[-1]:.1f}%。"
             ),
             "src_extra": source_note("收入来自各期 10-Q / 10-K 与当季 release，同比为自算"),
         },
@@ -1978,8 +1976,8 @@ def build_payload(staging: dict) -> dict:
                  "不是公司指引，也不构成评级或投资建议；「距阈值余量」统一为正值代表落在有利一侧"
                  "（警示线未触发、目标线已到）。")
     notes += [
-        "本页只发布公司披露值、可复算的简单派生值，以及明确标注的市场预期；D 标记代表 Derived / 自算。",
-        "市场预期一律标注为「市场预期」并给出取数时点，不写卖方机构名，也不发布评级、目标价或估值。",
+        "本页只发布公司披露值与可复算的简单派生值；D 标记代表 Derived / 自算。",
+        "不写卖方机构名，也不发布评级、目标价、估值或卖方一致预期。",
     ]
     if one_offs:
         notes.append(f"调整后经营利润 = GAAP 经营利润加回本季{one_off_words_named_first}，是算术加总，"

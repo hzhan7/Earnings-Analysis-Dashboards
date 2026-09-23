@@ -691,9 +691,6 @@
   },
   "market_expectation": {
     "period": "Q2 2026",
-    "label": "市场预期（财报前一致预期，来源不具名）",
-    "as_of": "2026-07-29",
-    "revenue_usd_m": 60200,
     "post_earnings_price_change_range_pct": [
       -11.0,
       -7.0
