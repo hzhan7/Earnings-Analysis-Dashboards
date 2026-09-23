@@ -29,6 +29,16 @@ by the average collateral balance gives a retained spread that has stayed in a
 narrow band of basis points while the gross yield on the same balance moved by
 hundreds. The balance is a period-end number and the page says so.
 
+**The four sections follow the site's shape, and the local analysis decides
+what goes in them.** Section one settles what the previous local analysis left
+open; the first CME analysis covers Q2 2026 (`analysis_record`) and left
+nothing, so that quarter's section one says so and settles only the company's
+own guidance -- and any later quarter without a settlement block stops the
+build. Section two draws that quarter's analysis's conclusions that a filing
+can show and names the ones it cannot (`quarter_context.undrawn`). Section three
+is the analysis's section 8, threshold by threshold (`next_kpi`), with every
+current value computed here from the series. Section four is the long record.
+
 **Rolling a quarter edits `series/cme.json` and nothing else** (CLAUDE.md §9).
 Every figure, period and count in the prose is computed from the series, and a
 sentence that states a record, a "first", an "only", an "always" or a ranking
@@ -36,7 +46,8 @@ is printed only while the series still says so. What belongs to one quarter --
 the thresholds (`next_kpi`) and the call-only expense guidance with the list of
 filings searched for it (`quarter_context`) -- carries a ``period`` stamp and is
 read through `board.stamped_block`. `_checks` is a separate reading of the
-quarter's release that the tests hold the page to; this builder never reads it.
+quarter's release, and `_checks["note"]` of the quarter's local analysis, that
+the tests hold the page to; this builder never reads either.
 
 Published numbers are company-reported or transparent arithmetic. No market
 expectation, rating, target price or valuation is published, and neither is the
@@ -121,6 +132,11 @@ def mid(low: float, high: float) -> float:
 def usd_m(value: float, digits: int = 1) -> str:
     """US$M with the minus outside the currency symbol, as `board` formats it."""
     return f"{'−' if value < 0 else ''}US${abs(value):,.{digits}f}M"
+
+
+def signed_usd(value: float, digits: int = 1) -> str:
+    """A change in US$M that always carries its sign: +US$40.0M / −US$35.5M."""
+    return f"{'−' if value < 0 else '+'}US${abs(value):,.{digits}f}M"
 
 
 def years_of(quarters: int) -> str:
@@ -371,6 +387,8 @@ def quarter_section(staging: dict, context: dict | None) -> list[dict]:
     share = [100 * c / r for c, r in zip(span("clearing_fees"), span("total_revenues"))]
     legs = revenue_legs(fin)
     total_change = fin["total_revenues"][-1] - fin["total_revenues"][-5]
+    clearing_change = fin["clearing_fees"][-1] - fin["clearing_fees"][-5]
+    market_change = fin["market_data"][-1] - fin["market_data"][-5]
     growers = [name for name, change, _ in legs if change > 0]
     total_yoy = pct_change(fin["total_revenues"][-1], fin["total_revenues"][-5])
     small = 0 < total_yoy < 5
@@ -412,8 +430,16 @@ def quarter_section(staging: dict, context: dict | None) -> list[dict]:
     mix = {
         "ref": "EX_MIX",
         "kind": "stacked_dual",
-        "title": (f"{long_years}年三条收入线：清算与交易费 US${span('clearing_fees')[-1]:,.1f}M，"
-                  f"占总收入 {share[-1]:.1f}%（{long_years}年区间 {min(share):.1f}–{max(share):.1f}%）"),
+        # The title used to lead with the ten-year range of the clearing share;
+        # the quarter's conclusion -- the local analysis's core contradiction --
+        # sat in the note. It leads now, and only while the legs still say it.
+        "title": (
+            (f"总收入同比 {minus_sign(signed(total_yoy))}、清算与交易费同比 "
+             f"{minus_sign(signed(clearing_yoy))}：行情数据一条线多出 {signed_usd(market_change)}，"
+             f"比全公司的 {signed_usd(total_change)} 还多"
+             if market_change >= total_change > 0 > clearing_change else
+             f"总收入同比 {minus_sign(signed(total_yoy))}：清算与交易费 US${fin['clearing_fees'][-1]:,.1f}M、"
+             f"同比 {minus_sign(signed(clearing_yoy))}，占总收入 {share[-1]:.1f}%")),
         "xlabels": long_labels,
         "xstep": LONG_STEP,
         "stacks": [
@@ -736,7 +762,75 @@ def quarter_section(staging: dict, context: dict | None) -> list[dict]:
                       f"{long_labels[0].split()[1]}{long_labels[0].split()[0]} 起）；"
                       "有效税率为所得税费用 ÷ 税前利润 D。"),
     }
-    return [mix, bridge, class_rpc, margin, opex, market_data, eps]
+    return [mix, bridge, class_rpc, margin, opex, market_data, eps, collateral_exhibit(staging)]
+
+
+def collateral_exhibit(staging: dict) -> dict:
+    """The collateral line this quarter, beside the gross income it is mistaken for.
+
+    The local analysis's third insight is a claim about this quarter: gross
+    investment income fell year on year while what CME keeps rose. So the chart
+    leads with that reading, and the band of retained basis points since the
+    zero-rate quarters is the evidence under it. The collateral series skips
+    quarters (fourth quarters come only as full-year prose), so the year-ago
+    cell is found by its label, never by stepping back four places.
+    """
+    coll, lng = staging["collateral"], staging["long"]
+    post = coll["retained_bp"][ZERO_RATE_COLLATERAL_QUARTERS:]
+    post_gross = coll["gross_bp"][ZERO_RATE_COLLATERAL_QUARTERS:]
+    post_from = coll["period_labels"][ZERO_RATE_COLLATERAL_QUARTERS]
+    this = coll["quarters"][-1]
+    year_ago = f"{int(this[:4]) - 1}{this[4:]}"
+    income = lng["investment_income"]
+    income_change, income_yoy = income[-1] - income[-5], pct_change(income[-1], income[-5])
+    net_yoy = lead = None
+    if year_ago in coll["quarters"]:
+        prior = coll["quarters"].index(year_ago)
+        net_yoy = pct_change(coll["net"][-1], coll["net"][prior])
+        net_change = coll["net"][-1] - coll["net"][prior]
+        earned_change = coll["earnings"][-1] - coll["earnings"][prior]
+        paid_change = coll["distribution"][-1] - coll["distribution"][prior]
+        if income_change < 0 < net_change and paid_change < earned_change < 0:
+            lead = (f"<b>投资收益同比少了 US${abs(income_change):,.1f}M，CME 自己留下的这一块反而多了 "
+                    f"US${net_change:,.1f}M</b> —— 抵押品再投资收益同比少了 US${abs(earned_change):,.1f}M，"
+                    f"付给清算会员的利息分配少得更多（US${abs(paid_change):,.1f}M）。")
+    return {
+        "ref": "EX_SPREAD",
+        "kind": "bar_line_dual",
+        "title": (f"抵押品净利差 US${coll['net'][-1]:,.1f}M"
+                  + (f"、同比 {minus_sign(signed(net_yoy))}" if net_yoy is not None else "")
+                  + (f"，同期投资收益同比 {minus_sign(signed(income_yoy))}" if lead else "")
+                  + f"：留存约 {coll['retained_bp'][-1]:.0f} 个基点"),
+        "xlabels": coll["period_labels"],
+        "bar": {"name": "抵押品再投资收益 − 利息分配支出（US$M）", "color": "NAVY",
+                "values": rounded(coll["net"])},
+        "line": {"name": "折合留存利差 (RHS)", "color": "GOLD",
+                 "values": rounded(coll["retained_bp"]), "yfmt": "f0"},
+        "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
+        "ylab": "US$M", "ylab2": "基点",
+        "note": (
+            (lead or "")
+            + "<b>这条收入被普遍当成利率敞口，但它是一个基点数，不是一个利率。</b>"
+            # "Since 2022" used to open this sentence; Q1 2022 is in 2022 and
+            # retained 6 basis points. The band starts with Q3 2022.
+            f"{len(post)} 个 {post_from} 以来的季度里，留存利差落在 "
+            f"{min(post):.0f} 到 {max(post):.0f} 个基点之间，"
+            f"而同一笔余额上的毛收益率从 {min(post_gross):.0f} 个基点走到 "
+            f"{max(post_gross):.0f} 个基点又回到 {coll['gross_bp'][-1]:.0f}。"
+            f"最左边两格是零利率年代：{coll['period_labels'][0]} 的留存利差只有 "
+            f"{coll['retained_bp'][0]:.0f} 个基点，净额 US${coll['net'][0]:.1f}M。"
+            "<b>所以常规降息压缩的是分子和分母，留存的基点数基本不动；"
+            "真正的风险是利率低到这个基点数没地方赚 —— 那种情形图上左端已经出现过一次。</b>"
+            "反过来说，留存额随余额复利增长，而余额跟着未平仓合约走。"
+            "长期的投资收益与利息分配两条原始线见 Exhibit {EX_INVEST}。"),
+        "src_extra": (
+            "再投资收益与利息分配支出是 10-Q 与 10-K 正文里逐季用文字给出的两个数（附注四与 "
+            "MD&A，两处口径一致，本页交叉核对过）；余额取合并资产负债表的 Performance bonds "
+            "and guaranty fund contributions 一行、按本季末与上季末取平均 D；"
+            "投资收益取自合并损益表。"
+            "<b>那是期末数不是日均数</b>：公司唯一一次公开的日均现金抵押品余额比本页这个"
+            "两点平均低约 8%，因此本页的基点数相应偏低约 8%，趋势不受影响。"),
+    }
 
 
 def weighted_rpc(lng: dict) -> float:
@@ -1130,9 +1224,7 @@ def routine_section(staging: dict) -> list[dict]:
     fee_qoq = qoq(lng["clearing_fees"])
     beta_rev, r2_rev = slope_and_r2(contracts_qoq, revenue_qoq)
     beta_fee, r2_fee = slope_and_r2(contracts_qoq, fee_qoq)
-    intercept = statistics.fmean(revenue_qoq) - beta_rev * statistics.fmean(contracts_qoq)
-    residuals = [y - (intercept + beta_rev * x) for x, y in zip(contracts_qoq, revenue_qoq)]
-    on_line = abs(residuals[-1]) <= 2 * statistics.pstdev(residuals)
+    on_line = on_the_slope(lng)
     beta = {
         "ref": "EX_BETA",
         "kind": "lines",
@@ -1223,42 +1315,6 @@ def routine_section(staging: dict) -> list[dict]:
             "2021 年那一格是正的，因为里面装着一笔与利率无关的一次性收益。"
             "真正只属于抵押品的那一段公司在 10-Q 里单独用文字给出，见 Exhibit {EX_SPREAD}。"),
         "src_extra": "两条均为合并损益表的原始行，未做任何合并或净额处理。",
-    }
-
-    post = coll["retained_bp"][ZERO_RATE_COLLATERAL_QUARTERS:]
-    post_gross = coll["gross_bp"][ZERO_RATE_COLLATERAL_QUARTERS:]
-    post_from = coll["period_labels"][ZERO_RATE_COLLATERAL_QUARTERS]
-    spread = {
-        "ref": "EX_SPREAD",
-        "kind": "bar_line_dual",
-        "title": (f"抵押品净利差 US${coll['net'][-1]:,.1f}M，"
-                  f"折合留存约 {coll['retained_bp'][-1]:.0f} 个基点"),
-        "xlabels": coll["period_labels"],
-        "bar": {"name": "抵押品再投资收益 − 利息分配支出（US$M）", "color": "NAVY",
-                "values": rounded(coll["net"])},
-        "line": {"name": "折合留存利差 (RHS)", "color": "GOLD",
-                 "values": rounded(coll["retained_bp"]), "yfmt": "f0"},
-        "fmt": "f0c", "yfmt": "f0c", "label_fmt": "f0c",
-        "ylab": "US$M", "ylab2": "基点",
-        "note": (
-            "<b>这条收入被普遍当成利率敞口，但它是一个基点数，不是一个利率。</b>"
-            # "Since 2022" used to open this sentence; Q1 2022 is in 2022 and
-            # retained 6 basis points. The band starts with Q3 2022.
-            f"{len(post)} 个 {post_from} 以来的季度里，留存利差落在 "
-            f"{min(post):.0f} 到 {max(post):.0f} 个基点之间，"
-            f"而同一笔余额上的毛收益率从 {min(post_gross):.0f} 个基点走到 "
-            f"{max(post_gross):.0f} 个基点又回到 {coll['gross_bp'][-1]:.0f}。"
-            f"最左边两格是零利率年代：{coll['period_labels'][0]} 的留存利差只有 "
-            f"{coll['retained_bp'][0]:.0f} 个基点，净额 US${coll['net'][0]:.1f}M。"
-            "<b>所以常规降息压缩的是分子和分母，留存的基点数基本不动；"
-            "真正的风险是利率低到这个基点数没地方赚 —— 那种情形图上左端已经出现过一次。</b>"
-            "反过来说，留存额随余额复利增长，而余额跟着未平仓合约走。"),
-        "src_extra": (
-            "再投资收益与利息分配支出是 10-Q 与 10-K 正文里逐季用文字给出的两个数（附注四与 "
-            "MD&A，两处口径一致，本页交叉核对过）；余额取合并资产负债表的 Performance bonds "
-            "and guaranty fund contributions 一行、按本季末与上季末取平均 D。"
-            "<b>那是期末数不是日均数</b>：公司唯一一次公开的日均现金抵押品余额比本页这个"
-            "两点平均低约 8%，因此本页的基点数相应偏低约 8%，趋势不受影响。"),
     }
 
     md_share = [100 * m / r for m, r in zip(lng["market_data"], lng["total_revenues"])]
@@ -1382,7 +1438,18 @@ def routine_section(staging: dict) -> list[dict]:
             "口径与这张图的合约张数不可比，混在一起画会造出一个两边都不成立的份额。"),
         "src_extra": "各季业绩新闻稿的分品种 ADV 五季表；均为公司披露值。",
     }
-    return [adv_long, beta, residual, invest, spread, md_long, class_adv, tax]
+    return [adv_long, beta, residual, invest, md_long, class_adv, tax]
+
+
+def on_the_slope(lng: dict) -> bool:
+    """Whether this quarter's revenue move sits within two standard deviations
+    of the long-run revenue-on-contracts line (the brief and Exhibit EX_BETA
+    both say so, and both must stop saying it the quarter it stops being true)."""
+    contracts_qoq, revenue_qoq = qoq(lng["contracts_m"]), qoq(lng["total_revenues"])
+    beta, _ = slope_and_r2(contracts_qoq, revenue_qoq)
+    intercept = statistics.fmean(revenue_qoq) - beta * statistics.fmean(contracts_qoq)
+    residuals = [y - (intercept + beta * x) for x, y in zip(contracts_qoq, revenue_qoq)]
+    return abs(residuals[-1]) <= 2 * statistics.pstdev(residuals)
 
 
 def opposite_moves(lng: dict) -> int:
@@ -1582,24 +1649,27 @@ def build_payload(staging: dict) -> dict:
         + f"这是{cn_count(len(contracts_qoq))}次环比变动测出来的同一条斜率（{beta_rev:.2f}）。"
     )
 
-    over_years = over_midpoint_years(capex)
-    under = len(finished) - len(over_years)
-    over_runs = [group for group in consecutive_years(
-        [y for y in finished if capex["by_year"][y]["actual"] > capex["by_year"][y]["high"]])
-        if len(group) > 1]
+    # The first thread used to be the ten-year capital-expenditure record. That
+    # record is section one's (c), not a thread of this quarter, and the local
+    # analysis's core contradiction -- the clearing line shrinking year on year
+    # while market data carries all the growth -- was only in the headline.
+    changes = {name: change for name, change, _ in legs}
+    rates = {name: pct for name, _, pct in legs}
+    clearing, market, other = "清算与交易费", "行情数据", "其他收入"
+    carried = changes[market] >= total_change > 0 > changes[clearing]
     slope_words = str(round(beta_rev, 2))
     brief = (
         '<h4>本季三条主线</h4><div class="takeaway-grid">'
-        '<article><span>记录</span><b>申报文件里只有一条指引，而且它'
-        + (f'{cn_count(len(finished))}年里{cn_count(under)}年偏高' if under * 2 > len(finished)
-           else '没有稳定的偏向')
+        '<article><span>增长</span><b>'
+        + ("清算与交易费同比转负，行情数据一条线扛下全部增量" if carried else
+           f"总收入同比 {minus_sign(signed(pct_change(fin['total_revenues'][-1], fin['total_revenues'][-5])))}")
         + '</b>'
-        f'<p>{len(finished)} 个已完结年度里全年资本开支对 10-K 的指引 '
-        f'{tally["below"]} 年低于下限、{tally["above"]} 年高于上限、'
-        f'{tally["inside"]} 年落在区间内'
-        + ("".join(f"；{cn_count(len(group))}次超支是连续的 FY{group[0]}–FY{group[-1]}"
-                   for group in over_runs))
-        + '。市场真正拿来建模的全年费用指引只在电话会上给，任何申报文件里都没有，本页不接入。</p></article>'
+        f'<p>总收入 US${fin["total_revenues"][-1]:,.1f}M、同比 '
+        f'{minus_sign(signed(pct_change(fin["total_revenues"][-1], fin["total_revenues"][-5])))}（{signed_usd(total_change)}）：'
+        + "，".join(f"{name} {signed_usd(changes[name])}（同比 {minus_sign(signed(rates[name]))}）"
+                   for name in (clearing, market, other))
+        + ("。行情数据一条线的增量就比全公司多。" if carried else "。")
+        + '</p></article>'
         # The title used to say 零点六六 while the body printed the computed
         # 0.65: the slope moved when the series was extended and the words did not.
         '<article><span>机制</span><b>量动一个点，收入只动'
@@ -1609,7 +1679,8 @@ def build_payload(staging: dict) -> dict:
         f'清算与交易费是 {slope_and_r2(contracts_qoq, qoq(lng["clearing_fees"]))[0]:.2f}；'
         f'成交量与每手费率有 {opposite_moves(lng)}/{len(contracts_qoq)} 个季度反向。'
         f'本季成交量 {contracts_qoq[-1]:+.1f}%、收入 {qoq(lng["total_revenues"])[-1]:+.1f}%，'
-        '落在这条长期关系上。</p></article>'
+        + ('落在这条长期关系上。' if on_the_slope(lng) else '偏离了这条长期关系。')
+        + '</p></article>'
         '<article><span>口径</span><b>抵押品那条线是基点，不是利率</b>'
         f'<p>{coll["period_labels"][ZERO_RATE_COLLATERAL_QUARTERS]} 以来 {len(post_zirp)} 个季度的留存利差落在 '
         f'{min(post_zirp):.0f}–{max(post_zirp):.0f} 个基点之间，而同一笔余额上的毛收益率从 '
@@ -1647,6 +1718,8 @@ def build_payload(staging: dict) -> dict:
         "市场用来给它建成本模型的那个全年调整后营业费用指引只出现在业绩电话会上"
         + (f"，本页逐份检索过 {searched}，一次都没有找到，因此不接入。" if searched else "，因此不接入。")
     )
+
+    undrawn = context.get("undrawn", []) if context else []
 
     if kpi:
         upcoming = [entry for entry in kpi["quantified"] if not entry.get("settles")]
@@ -1746,16 +1819,19 @@ def build_payload(staging: dict) -> dict:
              "description": settled_description,
              "exhibits": settled_ex},
             {"id": "quarter_highlights", "title": "二、本季重点",
-             "description": ("先把三条收入线分开，再把清算费的环比变动拆成量与价两块，"
-                             "然后看六个品种里量价同时反向这件事，"
-                             "最后是利润率、费用与每股收益。"),
+             "description": (
+                 "本地研究对这一季的核心结论，能用申报数画的逐条画出：先把三条收入线分开，"
+                 "再把清算费的环比变动拆成量与价两块、看六个品种的量价方向，"
+                 "然后是利润率、费用、行情数据与每股收益，最后是抵押品净利差。"
+                 + (f"另有{cn_count(len(undrawn))}条画不了：" + "；".join(undrawn) + "。"
+                    if undrawn else "")),
              "exhibits": highlight_ex},
             {"id": "next_quarter", "title": "三、下季要跟踪什么",
              "description": next_description,
              "exhibits": next_ex},
             {"id": "routine", "title": "四、长期常规跟踪",
              "description": (f"{cn_count(n)}个季度的量与价、收入对成交量的斜率、清算费里看不见的那一块、"
-                             "投资收益与利息分配的镜像，以及抵押品利差、行情数据与有效税率。"),
+                             "投资收益与利息分配的镜像，以及行情数据、六个品种的成交量与有效税率。"),
              "exhibits": routine_ex},
         ],
         "tables": tables,

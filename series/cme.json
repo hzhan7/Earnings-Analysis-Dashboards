@@ -169,49 +169,86 @@
     "performance_bonds_usd_m": 158110.7,
     "adv_rank_printed": 3,
     "market_data_record_printed": true,
-    "local_analysis": {
-      "source": "本地分析稿 2026-07-22 CME Q2 2026 vs Q1 2026 Analysis.md 第 8 节：「关键观察指标」表 #1–#5 与「立场撤销条件」①②③。逐条从报告原文录入，不从 next_kpi 抄。同比、环比两条的阈值是「负增长」，按倍数记为 1.0。",
-      "thresholds": {
-        "adj_margin": [
-          "up",
-          67.5
-        ],
-        "adv_squeeze": [
-          "up",
-          29000.0
-        ],
-        "adv_revoke": [
-          "up",
-          28000.0
-        ],
-        "rpc": [
-          "up",
-          0.67
-        ],
-        "adj_opex": [
-          "down",
-          450.0
-        ],
-        "rates_adv_yoy": [
-          "up",
-          1.0
-        ],
-        "market_data_qoq": [
-          "up",
-          1.0
-        ],
-        "market_data_yoy": [
-          "up",
-          12.0
-        ]
+    "note": {
+      "source": {
+        "this_quarter": "2026-07-22 CME Q2 2026 vs Q1 2026 Analysis.md：第 0 节（上季遗留问题）、第 8 节（关键观察指标表 #1–#5 与立场撤销条件①②③）",
+        "previous_quarter": null
       },
-      "upside": {
+      "checked_on": "2026-09-23",
+      "followup_closure": {
+        "total": 0,
+        "counts": {},
+        "_why": "第 0 节原文「未找到上季遗留问题，本节不展开」：本站对 CME 的第一份季报分析，没有上一份的 follow-up。"
+      },
+      "prior_thresholds": [],
+      "next_thresholds": [
+        {
+          "id": "adj_margin",
+          "metric": "调整后营业利润率",
+          "threshold": 67.5,
+          "direction": "up",
+          "report": "立场撤销条件①：Q3 2026 调整后营业利润率 < 67.5%"
+        },
+        {
+          "id": "adv_squeeze",
+          "metric": "季度 ADV（量价双杀线）",
+          "threshold": 29000.0,
+          "direction": "up",
+          "report": "#3：ADV <29M 且 RPC <$0.67 = 量价双杀 → 减仓"
+        },
+        {
+          "id": "adv_revoke",
+          "metric": "季度 ADV（立场撤销线）",
+          "threshold": 28000.0,
+          "direction": "up",
+          "report": "立场撤销条件②：Q3 ADV < 28.0M 且 RPC < $0.670"
+        },
+        {
+          "id": "rpc",
+          "metric": "平均每手费率 RPC",
+          "threshold": 0.67,
+          "direction": "up",
+          "report": "#3 RPC <$0.67；立场撤销条件② RPC < $0.670"
+        },
+        {
+          "id": "adj_opex",
+          "metric": "调整后营业费用（除许可费）",
+          "threshold": 450.0,
+          "direction": "down",
+          "report": "#2：Q3 调整后费用（除许可费）> $450M = 指引失控 → 警示"
+        },
+        {
+          "id": "rates_adv_yoy",
+          "metric": "利率类 ADV 同比（本季 ÷ 去年同季）",
+          "threshold": 1.0,
+          "direction": "up",
+          "report": "立场撤销条件③：CME 利率 ADV 连续两季同比负增长（Q2 已 −6.1%，这是第一格）"
+        },
+        {
+          "id": "market_data_qoq",
+          "metric": "行情数据收入环比（本季 ÷ 上季）",
+          "threshold": 1.0,
+          "direction": "up",
+          "report": "#5：连续两季环比负增长 = 提价红利到期 → 减仓"
+        },
+        {
+          "id": "market_data_yoy",
+          "metric": "行情数据收入同比",
+          "threshold": 12.0,
+          "direction": "up",
+          "report": "#5：Q1 2027 同比 <+12% = 增长引擎降档 → 重新评估"
+        }
+      ],
+      "next_upside": {
         "adv": 32000.0,
         "rpc": 0.675,
-        "adj_opex_below": 415.0
+        "adj_opex_below": 415.0,
+        "_report": "#3：ADV ≥32M 而 RPC ≥$0.675 = 真实结构升级；#2：< $415M = 指引留有余量"
       },
-      "not_carried": 2,
-      "checked_on": "2026-09-23"
+      "next_not_carried": {
+        "count": 2,
+        "_report": "#1 8+9 月 ADV 均值（月度公告）；#4 与立场撤销条件③前半 FMX SOFR + 美债期货 ADV（竞争对手）"
+      }
     },
     "source": "CME Group 2Q26 业绩新闻稿（8-K EX-99.1，2026-07-22，acc 0001156375-26-000042）：电头「CHICAGO, July 22, 2026」；正文「the third highest quarterly ADV reaching 29.8 million contracts」「Market data revenue totaled a record $238 million」；Consolidated Statements of Income 本季与去年同季两栏（Clearing and transaction fees 1,352.5 / 1,388.0 … Diluted 2.88 / 2.81，摊薄股数 361,282 / 360,355）；Reconciliation of Adjusted Operating Income （Adjusted Total Expenses 521.2 / 491.2，Adjusted Operating Income 1,185.0 / 1,200.8）；Reconciliation of Adjusted Net Income（1,081.7 / 1,079.4，Adjusted diluted 2.99 / 2.96）；Quarterly Operating Statistics 五季表（2Q 2026 / 1Q 2026 / 2Q 2025 三列的分品种 ADV、RPC 与交易日 62 / 61 / 62）；资产负债表 Performance bonds and guaranty fund contributions 158,110.7。",
     "checked_on": "2026-09-19"
@@ -3420,7 +3457,15 @@
       "8-K EX-99.1 0001156375-26-000016（1Q26）",
       "8-K EX-99.1 0001156375-26-000042（2Q26）"
     ],
-    "filings_through": "2026-07-24"
+    "filings_through": "2026-07-24",
+    "undrawn": [
+      "回购的「燃料」还剩多少 —— 本地研究按 Q1 电话会上给的 OSTTRA 处置款季末余额推算，申报文件里没有这个余额",
+      "行情数据里的稽查追补 —— 金额只在电话会上给，本页按报表值画",
+      "下半年调整后费用要比上半年高多少 —— 依据的是电话会上的全年费用指引，本页不接入",
+      "预测市场与永续合约的进展、FMX 的份额 —— 数字只在电话会或对手方的季报里",
+      "财报日的股价反应与一致预期 —— 本站不发布"
+    ],
+    "_undrawn_note": "本季本地分析稿第 1–7 节里重要、但本页画不了的结论；section 2 的 description 逐条列出。只属于这一季，换季时整块重写或删掉。"
   },
   "sources": [
     {
