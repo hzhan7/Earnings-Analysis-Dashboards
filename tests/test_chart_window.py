@@ -176,7 +176,7 @@ REACH_2016 = {
     "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
     "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
-    "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 16, "zgn": 0,
+    "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 17, "zgn": 0,
     "intc": 10 + _intc_threshold_reach(),
     # Not a company page. It is here because the ratchet now walks every
     # published payload rather than `ENTRIES`: a page that was invisible to the
@@ -325,6 +325,9 @@ CONVERTED = {
         "增值服务收入同比": "quarterly value-added services revenue and its growth are first "
                      "printed in the 10-Q for the quarter ended 2024-12-31; no earlier 10-Q or "
                      "10-K carries the figure.",
+        "增值服务收入 US$": "the same disclosure floor: the amount's first quarterly print is that "
+                        "10-Q, whose year-ago column (quarter ended 2023-12-31) is where the "
+                        "chart starts.",
         # Cross-border volume excluding intra-Europe -- the volume that earns
         # international transaction revenue -- is first printed in the fiscal
         # 2020 Q3 release (2020-07-28), whose operational table rolls it back
@@ -1310,6 +1313,7 @@ FLOOR_KIND = {
     'v': {
         '美国以外贡献净收入': 'disclosure',
         '增值服务收入同比': 'disclosure',
+        '增值服务收入 US$': 'disclosure',
         '跨境交易额增速 − 国际交易收入增速': 'disclosure',
     },
 }
@@ -1414,7 +1418,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 162)
+        self.assertEqual(settled.count("disclosure"), 163)
         self.assertEqual(settled.count("design"), 40)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
