@@ -512,6 +512,23 @@ CONVERTED = {
                                    "Information Services split; the 43-quarter AUM "
                                    "series is published on its own chart.",
         "ARR 两条腿": 'date corrected: Nasdaq introduced the Financial Technology / Capital Access Platforms ARR split in its Q1 2024 release (filed 2024-04-25), not 2023Q1. The 2023 quarters are recoverable only from the four YoY comparatives inside the 2024 releases, so 2023Q1 stands as the practical floor -- but as a recast, not as an original disclosure.',
+        # Section three, rebuilt on the Q2 2026 report's section 8 (2026-09-23).
+        "总 ARR 有机同比：下季阈值": "checked against the releases before the floor: the organic ARR rate is "
+                            "printed in the 2024-01-31 and 2024-04-25 releases (6%, 5%) but the next "
+                            "three (2024-07-25, 2024-10-24, 2025-01-29) print ARR growth only on a "
+                            "reported and pro forma basis, so the continuous printed run starts 2025Q1.",
+        "Financial Technology 有机收入同比：下季阈值": "the organic rates exist earlier, but in 2024 the company's "
+                                         "organic basis drops Adenza (AxiomSL, Calypso) whole for a year "
+                                         "after the acquisition -- a different population. 2025Q1 is the "
+                                         "first quarter with Adenza in both columns.",
+        "Capital Markets Technology 有机收入同比：下季阈值": "same Adenza population break as the FinTech chart; "
+                                              "Calypso is inside Capital Markets Technology.",
+        "季度净流入：下季阈值": "checked against the four 2023 releases: they print only trailing-twelve-month "
+                       "net inflows (plus one stray quarterly $5B in Q3 and a full-year $31B in Q4); "
+                       "the quarterly figure is printed every quarter from the 2024-04-25 release.",
+        "剔除 Index 的净收入同比": "a reported year-on-year rate before 2025Q1 divides by a year-ago quarter "
+                         "with no Adenza in it (two months in 2023Q4), so most of it is the "
+                         "acquisition; the segment window itself only starts in 2022Q4.",
     },
     # All five checked against the filing immediately before each start; every
     # one is a real disclosure floor, and four of the five share a single cause:
@@ -1272,6 +1289,11 @@ FLOOR_KIND = {
         'Financial Technology 的三条子线': 'disclosure',
         'Index：挂钩纳斯达克指数的 ETP AUM': 'disclosure',
         'ARR 两条腿': 'disclosure',
+        '总 ARR 有机同比：下季阈值': 'disclosure',
+        'Financial Technology 有机收入同比：下季阈值': 'design',
+        'Capital Markets Technology 有机收入同比：下季阈值': 'design',
+        '季度净流入：下季阈值': 'disclosure',
+        '剔除 Index 的净收入同比': 'design',
     },
     'nke': {
         '大中华区收入同比（固定汇率）': 'coverage',
@@ -1472,8 +1494,8 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 170)
-        self.assertEqual(settled.count("design"), 39)
+        self.assertEqual(settled.count("disclosure"), 172)
+        self.assertEqual(settled.count("design"), 42)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
         """Every short chart either names its reason or is counted here.

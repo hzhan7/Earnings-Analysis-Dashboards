@@ -62,6 +62,90 @@ class NdaqDashboardTest(unittest.TestCase):
         cls.staging = json.loads(ndaq.STAGING_PATH.read_text(encoding="utf-8"))
         cls.payload = ndaq.build_payload(cls.staging)
 
+    # ── the four sections ───────────────────────────────────────────────────
+    def test_the_page_has_the_four_sections_in_order(self) -> None:
+        self.assertEqual([(s["id"], s["title"]) for s in self.payload["sections"]],
+                         [("settled", "一、上季跟踪指标兑现了吗"),
+                          ("quarter_highlights", "二、本季重点"),
+                          ("next_quarter", "三、下季要跟踪什么"),
+                          ("routine", "四、长期常规跟踪")])
+        for section in self.payload["sections"]:
+            self.assertTrue(section["exhibits"], section["id"])
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列",
+                      " ".join(self.payload["notes"]))
+
+    def test_section_one_settles_what_the_report_left_and_invents_nothing(self) -> None:
+        """What there is to settle comes from the report, keyed in `_checks["note"]`.
+
+        For Q2 2026 that is nothing: the site's first NDAQ analysis is this quarter's,
+        and its section 0 found no earlier questions. So section one settles no
+        follow-up list and no thresholds -- it says why -- and carries the company's
+        own guidance record. From the next quarter the note names a prior report,
+        and the same test then asks for the settlement charts instead.
+        """
+        note = self.staging["_checks"]["note"]
+        settled = self.payload["sections"][0]
+        if note["source"]["prior_quarter"] is None:
+            self.assertEqual(note["report_period"], ndaq.FIRST_REPORT_PERIOD)
+            self.assertIsNone(note["followup_closure"])
+            self.assertEqual(note["prior_thresholds"], [])
+            self.assertIn(f"本站对纳斯达克的第一份季报分析是 {note['report_period']}", settled["description"])
+            self.assertIn("没有上季留下的跟踪指标可结算", settled["description"])
+            for exhibit in settled["exhibits"]:
+                self.assertFalse(exhibit["title"].startswith("上季"), exhibit["title"])
+            self.assertEqual({ex["ref"] for ex in settled["exhibits"]},
+                             {"EX_OPEX_LAST", "EX_OPEX_FIRST", "EX_OPEX_DEV", "EX_TAX"})
+            # A settlement block stamped for the first-report quarter is a contradiction.
+            changed = copy.deepcopy(self.staging)
+            changed["prior_kpi_settlement"] = {"period": self.staging["period_labels"][-1], "quantified": []}
+            with self.assertRaisesRegex(ValueError, "nothing"):
+                ndaq.build_payload(changed)
+            return
+        prior = note["prior_thresholds"]
+        titles = [ex["title"] for ex in settled["exhibits"]]
+        self.assertTrue(any(t.startswith(f"上季 {len(prior)} 条量化阈值") for t in titles), titles)
+        self.assertEqual({(e["metric"], e["direction"], e["threshold"])
+                          for e in self.staging["prior_kpi_settlement"]["quantified"]},
+                         {(t["metric"], t["direction"], t["threshold"]) for t in prior})
+        if note["followup_closure"]:
+            total = note["followup_closure"]["total"]
+            self.assertTrue(any(t.startswith(f"上季 {total} 条待验证问题") for t in titles), titles)
+
+    def test_the_open_year_and_the_gross_net_structure_sit_where_they_belong(self) -> None:
+        """A year still running settles nothing (it is this quarter's news), and the
+        gross-to-net split argues the same structural point every quarter."""
+        by_section = {ex.get("ref"): section["id"] for section in self.payload["sections"]
+                      for ex in section["exhibits"]}
+        self.assertEqual(by_section["EX_FY26"], "quarter_highlights")
+        self.assertEqual(by_section["EX_GROSSNET"], "routine")
+
+    def test_section_two_opens_with_the_reports_core_finding(self) -> None:
+        """The report's core contradiction (section 1, insight 1): the headline rate
+        rose while net revenue without Index fell. The page draws it from each
+        release's own two columns, and at the report's precision its numbers must be
+        the report's -- which are keyed in `_checks["note"]`, not typed here."""
+        findings = self.staging["_checks"]["note"]["core_findings"]
+        core = self.payload["sections"][1]["exhibits"][0]
+        self.assertEqual(core.get("ref"), "EX_EXINDEX")
+        printed = self.staging["yoy_printed"]
+        pairs = list(zip(printed["net_revenue_usd_m"], printed["index_usd_m"], printed["solutions_usd_m"]))
+        total = [(n / a - 1) * 100 for (n, a), _, _ in pairs]
+        without = [((n - i) / (a - j) - 1) * 100 for (n, a), (i, j), _ in pairs]
+        solutions = [((s - i) / (t - j) - 1) * 100 for _, (i, j), (s, t) in pairs]
+        self.assertEqual(core["xlabels"], printed["period_labels"])
+        self.assertEqual(core["series"][0]["values"], [round(v, 6) for v in total])
+        self.assertEqual(core["series"][1]["values"], [round(v, 6) for v in without])
+        self.assertEqual(round(without[-2], 1), findings["ex_index_net_revenue_yoy_pct"]["prior"])
+        self.assertEqual(round(without[-1], 1), findings["ex_index_net_revenue_yoy_pct"]["now"])
+        self.assertEqual(round(solutions[-2], 1), findings["ex_index_solutions_yoy_pct"]["prior"])
+        self.assertEqual(round(solutions[-1], 1), findings["ex_index_solutions_yoy_pct"]["now"])
+        self.assertEqual(round(total[-2]), findings["net_revenue_yoy_pct"]["prior"])
+        self.assertEqual(round(total[-1]), findings["net_revenue_yoy_pct"]["now"])
+        self.assertIn(f"本季 {without[-1]:+.1f}%、上季 {without[-2]:+.1f}%", core["title"])
+        self.assertIn(f"{solutions[-2]:+.1f} 到本季 {solutions[-1]:+.1f}", core["note"].replace("%", ""))
+        self.assertIn(f"（剔除 Index 后 {without[-1]:+.1f}%，上季 {without[-2]:+.1f}%）", self.payload["headline"])
+        self.assertIn("核心结论", self.payload["sections"][1]["description"])
+
     # ── the short window ────────────────────────────────────────────────────
     def test_the_short_window_starts_in_2024q3_and_is_complete(self) -> None:
         """It grows by one quarter a roll; what stays true is where it starts."""
@@ -114,14 +198,28 @@ class NdaqDashboardTest(unittest.TestCase):
                                    fin["op_income"][index], delta=0.6, msg=period)
 
     def test_operating_margins_are_the_ratios_they_claim_to_be(self) -> None:
+        """Non-GAAP margin divides by NON-GAAP net revenue, the company's own definition.
+
+        The two denominators differ in 2024Q3 only (the 34 AxiomSL ratable
+        adjustment), and this test used to pin the wrong one: it divided by GAAP net
+        revenue and so held the series at 55.6% for a quarter the release prints as 54%.
+        """
         fin = self.staging["financials"]
+        adjustments = self.staging["nongaap_revenue_adjustments_usd_m"]
         for index, period in enumerate(self.staging["periods"]):
             gaap = fin["op_income"][index] / fin["net_revenue"][index] * 100
             self.assertAlmostEqual(gaap, fin["gaap_margin_pct"][index],
                                    delta=0.12, msg=period)
-            non_gaap = fin["nongaap_opinc"][index] / fin["net_revenue"][index] * 100
+            denominator = fin["net_revenue"][index] + adjustments.get(period, 0)
+            non_gaap = fin["nongaap_opinc"][index] / denominator * 100
             self.assertAlmostEqual(non_gaap, fin["nongaap_margin_pct"][index],
                                    delta=0.12, msg=period)
+        # the long record carries the same corrected figure, and it is the printed one
+        long = dict(zip(self.staging["long"]["quarters"], self.staging["long"]["nongaap_margin_pct"]))
+        short = dict(zip(self.staging["periods"], fin["nongaap_margin_pct"]))
+        for quarter in (q for q in adjustments if q in short):
+            self.assertEqual(long[quarter], short[quarter], quarter)
+        self.assertEqual(round(long["2024Q3"]), 54)
 
     def test_non_gaap_margin_exceeds_gaap_margin_every_quarter(self) -> None:
         """Non-GAAP removes costs, so its margin cannot be the lower one."""
@@ -373,7 +471,7 @@ class NdaqDashboardTest(unittest.TestCase):
         self.assertEqual(aum["quarters"][-1], self.staging["periods"][-1])
         self.assertTrue(contiguous(aum["quarters"]))
         self.assertTrue(all(v is not None for v in aum["period_end_usd_b"]))
-        for name in ("average_usd_b", "index_revenue_usd_m"):
+        for name in ("average_usd_b", "index_revenue_usd_m", "net_inflows_usd_b"):
             values = aum[name]
             first = next(i for i, v in enumerate(values) if v is not None)
             self.assertGreater(first, 0, name)
@@ -430,14 +528,193 @@ class NdaqDashboardTest(unittest.TestCase):
             self.assertNotIn("没有披露金额", by_ref["EX_INDEX"]["note"])
 
     # ── thresholds, exhibits, publication ───────────────────────────────────
+    @staticmethod
+    def reading(staging: dict, reads: str) -> float:
+        """This quarter's value of a section-8 metric, resolved here and not by the builder."""
+        printed, aum = staging["yoy_printed"], staging["etp_aum"]
+        return {
+            "arr_organic_pct": printed["arr_organic_pct"][-1],
+            "fin_organic_pct": printed["fin_organic_pct"][-1],
+            "cmt_organic_pct": printed["cmt_organic_pct"][-1],
+            "etp_aum_period_end": aum["period_end_usd_b"][-1],
+            "nongaap_opex": staging["financials"]["nongaap_opex"][-1],
+            "net_inflows": aum["net_inflows_usd_b"][-1],
+        }[reads]
+
+    def test_the_thresholds_are_the_reports_section_8(self) -> None:
+        """Every threshold the report's section 8 sets is on the page with the report's
+        direction and number, and the page scores no threshold of its own.
+
+        The report's thresholds are keyed by hand in `_checks["note"]` (the builder
+        never reads it). The page used to score six locally set thresholds instead --
+        a 55% margin floor, FinTech ARR (not revenue) at 12%, Market Services growth
+        at 5%, AUM at 1,000 -- none of which section 8 asks for.
+        """
+        note = self.staging["_checks"]["note"]
+        kpi = self.staging["next_kpi"]
+        self.assertIn("第 8 节", kpi["set_in"])
+        safe = {e["reads"]: e for e in kpi["quantified"]}
+        upside = {u["reads"]: u for u in kpi["upside"]}
+        unplotted = {n["reads"]: n for n in kpi["not_connected"]}
+        zero = kpi["zero_line"]
+        matched = set()
+        for t in note["next_thresholds"]:
+            key = (t["id"], t["role"], t["threshold"])
+            with self.subTest(threshold=key):
+                if t["id"] in unplotted:
+                    self.assertIn(f"{t['threshold']:g}%", unplotted[t["id"]]["report"])
+                elif t["role"] == "警戒" and t["id"] == zero["reads"]:
+                    self.assertEqual((t["direction"], t["threshold"]), ("up", 0.0))
+                elif t["role"] == "警戒" and t["id"] == "nongaap_opex":
+                    # the report states the half-year total; the page draws its quarterly average
+                    entry = safe[t["id"]]
+                    self.assertEqual(entry["direction"], t["direction"])
+                    self.assertEqual(entry["half_year"], t["threshold"])
+                    self.assertEqual(entry["threshold"], t["threshold"] / 2)
+                elif t["role"] == "警戒":
+                    entry = safe[t["id"]]
+                    self.assertEqual((entry["direction"], entry["threshold"]), (t["direction"], t["threshold"]))
+                    self.assertEqual(entry.get("consecutive", 1), t.get("consecutive", 1))
+                elif t["role"] == "上行":
+                    self.assertEqual(safe[t["id"]]["upside"], t["threshold"])
+                else:
+                    self.assertEqual(t["role"], "上行撤销")
+                    self.assertEqual(upside[t["id"]]["threshold"], t["threshold"])
+                matched.add(key)
+        # ...and nothing the page scores is missing from the report
+        page = ({(e["reads"], "警戒", e.get("half_year", e["threshold"])) for e in kpi["quantified"]}
+                | {(e["reads"], "上行", e["upside"]) for e in kpi["quantified"] if e.get("upside") is not None}
+                | {(u["reads"], "上行撤销", u["threshold"]) for u in kpi["upside"]}
+                | {(zero["reads"], "警戒", 0.0)})
+        self.assertLessEqual(page, matched)
+        for entry in kpi["quantified"] + kpi["upside"] + kpi["not_connected"] + [zero]:
+            self.assertTrue(entry["report"], entry["metric"])
+        text = published_text(self.payload)
+        for gone in ("本地阈值", "本地研究设定", "Market Services 净收入同比"):
+            self.assertNotIn(gone, text)
+
     def test_every_quantified_threshold_has_a_headroom_bar(self) -> None:
         kpi = self.staging["next_kpi"]["quantified"]
         bar = self.payload["sections"][2]["exhibits"][0]
+        self.assertEqual(bar["kind"], "diverging_bars")
+        self.assertTrue(bar["title"].startswith(f"下季 {len(kpi)} 条阈值："), bar["title"])
         self.assertEqual(bar["xlabels"], [entry["metric"] for entry in kpi])
         for entry, value in zip(kpi, bar["values"]):
-            self.assertAlmostEqual(
-                headroom(entry["direction"], entry["threshold"], entry["current"]),
-                value, places=1, msg=entry["metric"])
+            now = self.reading(self.staging, entry["reads"])
+            self.assertAlmostEqual(headroom(entry["direction"], entry["threshold"], now),
+                                   value, places=1, msg=entry["metric"])
+
+    def test_each_threshold_has_its_own_line_against_its_own_series(self) -> None:
+        """「X：下季阈值 A，当前 B」, one chart per threshold, drawn over the metric's own record."""
+        charts = {ex["title"].split("：")[0]: ex for ex in self.payload["sections"][2]["exhibits"][1:]}
+        kpi = self.staging["next_kpi"]
+        expected = {e["metric"]: (e["threshold"], e["reads"]) for e in kpi["quantified"]}
+        expected[kpi["zero_line"]["metric"]] = (0.0, kpi["zero_line"]["reads"])
+        self.assertEqual(set(charts), set(expected))
+        series_of = {
+            "arr_organic_pct": self.staging["yoy_printed"]["arr_organic_pct"],
+            "fin_organic_pct": self.staging["yoy_printed"]["fin_organic_pct"],
+            "cmt_organic_pct": self.staging["yoy_printed"]["cmt_organic_pct"],
+            "etp_aum_period_end": self.staging["etp_aum"]["period_end_usd_b"],
+            "nongaap_opex": self.staging["long"]["nongaap_opex"],
+            "net_inflows": [v for v in self.staging["etp_aum"]["net_inflows_usd_b"] if v is not None],
+        }
+        for metric, (threshold, reads) in expected.items():
+            with self.subTest(metric=metric):
+                chart = charts[metric]
+                self.assertEqual(chart["kind"], "lines")
+                actual, line = chart["series"][0], chart["series"][1]
+                self.assertEqual(actual["values"], series_of[reads])
+                self.assertEqual(line["values"], [threshold] * len(chart["xlabels"]))
+                self.assertEqual(line["color"], "RED")
+                self.assertIn("下季阈值", chart["title"])
+                self.assertEqual(actual["values"][-1], self.reading(self.staging, reads))
+        arr_entry = next(e for e in kpi["quantified"] if e["reads"] == "arr_organic_pct")
+        arr = charts[arr_entry["metric"]]
+        self.assertEqual(arr["series"][2]["values"], [arr_entry["upside"]] * len(arr["xlabels"]))
+        organic_now = self.staging["_checks"]["growth_printed_pct"]["arr_total_organic"]
+        self.assertTrue(arr["title"].endswith(f"当前 {organic_now}%"), arr["title"])
+
+    def test_the_opex_threshold_is_the_guide_top_less_the_printed_year_to_date(self) -> None:
+        """Section 8 says H2 above US$1,320M: the year's guided top (2,570) less the
+        six months the release printed (1,250) -- not less the two quarters added up
+        (608 + 641 = 1,249), which is what the page used to divide."""
+        entry = next(e for e in self.staging["next_kpi"]["quantified"] if e["reads"] == "nongaap_opex")
+        context = self.staging["quarter_context"]
+        record = self.staging["annual_guidance_history"]["operating_expense"]
+        top = record["by_year"][str(max(record["years"]))]["guided"][-1][1]
+        ytd = context["nongaap_opex_ytd_usd_m"]
+        quarters = int(self.staging["periods"][-1][5])
+        self.assertEqual(top - ytd, entry["half_year"])
+        self.assertEqual(entry["half_year"] / (4 - quarters), entry["threshold"])
+        added = sum(self.staging["financials"]["nongaap_opex"][-quarters:])
+        self.assertLessEqual(abs(added - ytd), quarters)
+        chart = next(ex for ex in self.payload["sections"][2]["exhibits"]
+                     if ex["title"].startswith(entry["metric"]))
+        self.assertIn(f"公司印的上半年 US${ytd:,.0f}M", chart["note"])
+        # and the in-flight guidance chart states the same figure
+        fy26 = next(ex for s in self.payload["sections"] for ex in s["exhibits"] if ex.get("ref") == "EX_FY26")
+        self.assertIn(f"已发生的非 GAAP 营业费用是 US${ytd:,.0f}M（公司印的年初至今数）", fy26["note"])
+        self.assertIn(f"还剩 US${top - ytd:,.0f}M 的额度，折合每季 US${entry['threshold']:,.0f}M", fy26["note"])
+
+    def test_the_long_opex_record_is_the_first_prints(self) -> None:
+        """Four quarters add up to the filed year within rounding (2022 is the widest,
+        3), and the tail is the page's short window to the dollar. 2024Q3 is the one
+        quarter where net revenue less non-GAAP operating income is not the expense:
+        that quarter's non-GAAP income sits on non-GAAP revenue (1,146 + 34)."""
+        long = self.staging["long"]
+        opex = dict(zip(long["quarters"], long["nongaap_opex"]))
+        record = self.staging["annual_guidance_history"]["operating_expense"]["by_year"]
+        for year in ndaq.finished_years(self.staging["annual_guidance_history"]["operating_expense"]):
+            total = sum(opex[f"{year}Q{q}"] for q in range(1, 5))
+            self.assertLessEqual(abs(total - record[str(year)]["actual"]), 3, year)
+        for quarter, value in zip(self.staging["periods"], self.staging["financials"]["nongaap_opex"]):
+            self.assertEqual(opex[quarter], value, quarter)
+        self.assertEqual(opex["2024Q3"], 543)
+
+    def test_quarterly_net_inflows_add_up_to_the_printed_trailing_twelve_months(self) -> None:
+        """A second reading of the same flows: every release also prints the
+        trailing-twelve-month figure, and four quarters must sum to it within each
+        quarter's rounding. The history is pinned as read from the 2025-01-29 to
+        2026-07-23 releases' text; the latest quarter is read from its own context."""
+        printed_ttm = {"2024Q4": 80, "2025Q1": 86, "2025Q2": 88, "2025Q3": 91,
+                       "2025Q4": 99, "2026Q1": 79, "2026Q2": 109}
+        aum = self.staging["etp_aum"]
+        flows = dict(zip(aum["quarters"], aum["net_inflows_usd_b"]))
+        order = aum["quarters"]
+        printed_ttm[order[-1]] = self.staging["quarter_context"]["aum_ttm_usd_b"]["net_inflows"]
+        for quarter, ttm in printed_ttm.items():
+            i = order.index(quarter)
+            four = [flows[q] for q in order[i - 3:i + 1]]
+            self.assertLessEqual(abs(sum(four) - ttm), 2, quarter)
+
+    def test_the_organic_block_agrees_with_the_segment_series(self) -> None:
+        """Each row of `yoy_printed` is one release's two columns. The current column
+        must be the page's own segment figure; the year-ago column the first print,
+        except 2025Q3, where the release's table sits on non-GAAP revenue (2024Q3
+        net revenue 1,146 + the 34 AxiomSL ratable adjustment = 1,180)."""
+        printed = self.staging["yoy_printed"]
+        seg = self.staging["segments"]
+        self.assertEqual(printed["quarters"][-1], self.staging["periods"][-1])
+        self.assertTrue(contiguous(printed["quarters"]))
+        for i, quarter in enumerate(printed["quarters"]):
+            k = seg["quarters"].index(quarter)
+            now, ago = printed["net_revenue_usd_m"][i]
+            self.assertEqual(now, seg["net_revenue"][k], quarter)
+            self.assertEqual(ago - seg["net_revenue"][k - 4], 34 if quarter == "2025Q3" else 0, quarter)
+            self.assertEqual(printed["index_usd_m"][i], [seg["cap_index"][k], seg["cap_index"][k - 4]], quarter)
+            for key in ("fin_organic_pct", "cmt_organic_pct", "arr_organic_pct"):
+                self.assertEqual(len(printed[key]), len(printed["quarters"]), key)
+
+    def test_a_block_that_stops_short_of_the_page_stops_the_build(self) -> None:
+        """A roll that appends a quarter everywhere but here would score next
+        quarter's thresholds against this quarter's printed rates."""
+        changed = copy.deepcopy(self.staging)
+        for key in ("quarters", "period_labels", "release_dates", "net_revenue_usd_m", "index_usd_m",
+                    "solutions_usd_m", "fin_organic_pct", "cmt_organic_pct", "arr_organic_pct"):
+            changed["yoy_printed"][key] = changed["yoy_printed"][key][:-1]
+        with self.assertRaisesRegex(ValueError, "yoy_printed"):
+            ndaq.build_payload(changed)
 
     def test_what_the_page_refuses_to_plot_is_named(self) -> None:
         excluded = self.staging["next_kpi"]["excluded"]
@@ -607,30 +884,59 @@ class NdaqChecksTest(unittest.TestCase):
         self.assertEqual(s31[self.staging["periods"][-1]], sum(now for now, _ in parts))
         self.assertEqual(s31[self.staging["periods"][-5]], sum(ago for _, ago in parts))
 
-    def test_the_thresholds_current_values_are_the_series(self) -> None:
-        """A typed 「当前值」 can flip a verdict; each one is read back here."""
-        kpi = stamped_block(self.staging, "next_kpi", self.staging["period_labels"][-1])
-        if not kpi:
-            return
-        fin, seg, arr = self.staging["financials"], self.staging["segments"], self.staging["arr"]
-        computed = {
-            "非 GAAP 经营利润率": round(fin["nongaap_margin_pct"][-1], 1),
-            "总 ARR 同比": round(arr["total_yoy_pct"][-1], 1),
-            "Financial Technology ARR 同比": round(arr["fin_yoy_pct"][-1], 1),
-            "期末 ETP AUM": self.staging["etp_aum"]["period_end_usd_b"][-1],
-            "Market Services 净收入同比": round(self.year_ago.growth("ms_net", seg["ms_net"]), 1),
-        }
-        for entry in kpi["quantified"]:
-            metric = entry["metric"]
-            with self.subTest(metric=metric):
-                if metric.startswith("非 GAAP 营业费用（季均"):
-                    self.assertEqual(entry["current"], fin["nongaap_opex"][-1])
-                    open_year = max(self.staging["annual_guidance_history"]["operating_expense"]["years"])
-                    spent, quarters = ndaq.spent_in_year(self.staging, open_year)
-                    high = self.checks["guidance"]["opex_usd_m"][1]
-                    self.assertAlmostEqual(entry["threshold"], (high - spent) / (4 - quarters), places=6)
-                else:
-                    self.assertEqual(entry["current"], computed[metric])
+    def test_the_section_31_payable_sentence_is_the_filed_balance(self) -> None:
+        """The cash-flow leg of the fee: `quarter_context` took the year-to-date change
+        from the 10-Q cash-flow statement; `_checks` took the two balances from the
+        release's balance sheet. The page's sentence must be both at once."""
+        payable = self.checks["section_31_payable_usd_m"]
+        cash = self.staging["quarter_context"]["cash_flow"]
+        self.assertEqual(cash["s31_payable_ytd_change_usd_m"], payable["end"] - payable["start"])
+        note = self.by_ref["EX_S31"]["note"]
+        self.assertIn(f"增加 US${payable['end'] - payable['start']:,.0f}M，{self.checks['period_end']} 的余额是 "
+                      f"US${payable['end']:,.0f}M（上年末 US${payable['start']:,.0f}M）", note)
+
+    def test_the_fintech_sub_lines_carry_the_printed_organic_rates(self) -> None:
+        printed = self.staging["yoy_printed"]
+        cmt = printed["cmt_organic_pct"]
+        self.assertEqual(cmt[-1], self.checks["organic_printed_pct"]["cmt_revenue"])
+        verb = "降到" if cmt[-1] < cmt[-2] else ("升到" if cmt[-1] > cmt[-2] else "持平于")
+        self.assertIn(f"Capital Markets Technology 从上季 {cmt[-2]:g}% {verb}本季 {cmt[-1]:g}%",
+                      self.by_ref["EX_FINSUB"]["note"])
+
+    def test_the_section_8_readings_are_the_checked_figures(self) -> None:
+        """Every reading section three scores is the figure keyed separately into
+        `_checks` -- the organic rates from the release's text, where `yoy_printed`
+        took them from its table -- and a typed 「当前值」 no longer exists to drift."""
+        checks = self.checks
+        printed = self.staging["yoy_printed"]
+        for entry in self.staging["next_kpi"]["quantified"]:
+            self.assertNotIn("current", entry, entry["metric"])
+        self.assertEqual(printed["fin_organic_pct"][-1], checks["organic_printed_pct"]["fin_revenue"])
+        self.assertEqual(printed["cmt_organic_pct"][-1], checks["organic_printed_pct"]["cmt_revenue"])
+        self.assertEqual(printed["arr_organic_pct"][-1], checks["growth_printed_pct"]["arr_total_organic"])
+        self.assertEqual(self.staging["quarter_context"]["arr_printed"]["fin_organic_pct"],
+                         checks["growth_printed_pct"]["arr_fin"])
+        aum = self.staging["etp_aum"]
+        self.assertEqual(aum["net_inflows_usd_b"][-1], checks["etp_aum_usd_b"]["quarter_net_inflows"])
+        self.assertEqual(aum["period_end_usd_b"][-1], checks["etp_aum_usd_b"]["period_end"][0])
+        self.assertEqual(self.staging["quarter_context"]["nongaap_opex_ytd_usd_m"],
+                         checks["nongaap_opex_six_months_usd_m"][0])
+        last = self.staging["periods"][-1]
+        spent, quarters, printed_ytd = ndaq.spent_in_year(self.staging, int(last[:4]),
+                                                          self.staging["quarter_context"])
+        self.assertEqual((spent, quarters, printed_ytd),
+                         (checks["nongaap_opex_six_months_usd_m"][0], int(last[5]), True))
+        high = checks["guidance"]["opex_usd_m"][1]
+        entry = next(e for e in self.staging["next_kpi"]["quantified"] if e["reads"] == "nongaap_opex")
+        self.assertEqual(entry["half_year"], high - spent)
+        # the same two rows of the release, read as dollars, give the ex-Index Solutions reading
+        sol_now, sol_ago = printed["solutions_usd_m"][-1]
+        idx_now, idx_ago = printed["index_usd_m"][-1]
+        self.assertEqual((idx_now, idx_ago), tuple(checks["revenue_detail_usd_m"]["cap_index"]))
+        self.assertEqual(sol_now, checks["revenue_detail_usd_m"]["cap"][0] + checks["revenue_detail_usd_m"]["fin"][0])
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("第 8 节"))
+        row = next(r for r in table["rows"] if r[0].startswith("剔除 Index 的 Solutions"))
+        self.assertEqual(row[3], f"{((sol_now - idx_now) / (sol_ago - idx_ago) - 1) * 100:.1f}%")
 
     def test_every_year_on_year_rate_divides_by_the_reprinted_year_ago(self) -> None:
         """Solovis left Capital Access and Market Services was regrossed: the
@@ -774,6 +1080,14 @@ class NdaqRollTest(unittest.TestCase):
         self.moves(("次回落",), monotone)
         self.moves(("几乎单调向上",), monotone, present_before=False)
 
+        # Index carried the whole acceleration in Q2 2026; lift the rest of the company
+        # past its prior-quarter rate and the core-finding sentences must go.
+        def index_not_the_story(s):
+            now, ago = s["yoy_printed"]["net_revenue_usd_m"][-1]
+            s["yoy_printed"]["net_revenue_usd_m"][-1] = [now + 60, ago]
+        self.moves(("合并净收入的加速全部来自 Index", "剔除 Index 之后却在放缓", "合并口径却从"),
+                   index_not_the_story)
+
         # The fee was zero for the three quarters before this one.
         def fee_never_stopped(s):
             s31 = s["section_31"]
@@ -849,13 +1163,28 @@ class NdaqRollTest(unittest.TestCase):
             tax = s["annual_guidance_history"]["tax_rate"]["by_year"]["2026"]
             tax["releases"].append("2026-10-22")
             tax["guided"].append([22.5, 23.5, "2026-10-22"])
-        payload = self.rebuilt(third_quarter)
+
+        # The Q2 2026 report set thresholds, so a Q3 page that settles none of them
+        # does not build: that is the roll guard on section one.
+        with self.assertRaisesRegex(ValueError, "prior_kpi_settlement"):
+            self.rebuilt(third_quarter)
+
+        def settled_third_quarter(s):
+            third_quarter(s)
+            s["prior_kpi_settlement"] = {
+                "period": "Q3 2026", "set_in": "Q2 2026",
+                "quantified": [{"metric": "期末 ETP AUM", "direction": "up", "threshold": 950.0,
+                                "unit": "usd_bn", "actual": 1114.0}]}
+        payload = self.rebuilt(settled_third_quarter)
         text = published_text(payload)
         self.assertIn("Q3 2026", payload["title"])
         self.assertIn("前三季已发生的非 GAAP 营业费用", text)
         self.assertIn("第四季度还剩", text)
         self.assertNotIn("上半年已发生", text)
         self.assertIn("FY2026 费用指引的四次发布", text)
+        settled = payload["sections"][0]
+        self.assertTrue(settled["exhibits"][0]["title"].startswith("上季 1 条量化阈值"))
+        self.assertNotIn("第一份季报分析", settled["description"])
 
 
 if __name__ == "__main__":
