@@ -911,6 +911,201 @@ class AmdExhibitContractTest(unittest.TestCase):
 
 
 # ═════════════════════════════════════════════════════════════════════════════
+SECTIONS = [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+            ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")]
+STATE_WORDS = {"加仓": ("达到加仓线", "没到加仓线"), "减仓": ("没有触发减仓", "触发减仓"),
+               "警示": ("没有触发警示", "触发警示"), "核验": ("兑现", "没有兑现")}
+
+
+def shift(period: str, step: int) -> str:
+    k = order(period) + step
+    return f"Q{k % 4 + 1} {k // 4}"
+
+
+def opex_growth_as_printed(st: dict) -> list[float | None]:
+    """Each quarter's first print over the year-ago quarter as the series last printed it."""
+    g, fin, periods = st["guidance_history"], st["financials"], st["periods"]
+    first = dict(zip(g["quarters"], g["actual_non_gaap_opex_usd_m"]))
+    newest = dict(zip(periods, fin["non_gaap_opex_usd_m"]))
+    return [None if shift(q, -4) not in newest else pct(first[q], newest[shift(q, -4)]) for q in periods]
+
+
+def favourable_side(direction: str, threshold: float, value: float, strict: bool = False) -> bool:
+    if direction == "up":
+        return value > threshold if strict else value >= threshold
+    return value < threshold if strict else value <= threshold
+
+
+def direction_from_trigger(trigger: str, action: str) -> str:
+    """The note records the side that *triggers* the action; the series the favourable side."""
+    triggered_up = trigger in ("≥", ">")
+    if action == "加仓":
+        return "up" if triggered_up else "down"
+    return "down" if triggered_up else "up"
+
+
+class AmdSettlementTest(unittest.TestCase):
+    """Section one against the two analyses: the closure is the Q2 report's section 0,
+    the settled lines are the Q1 report's key-metric section, each figure read
+    from the series and each report fact from `_checks["note"]`."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.st = load()
+        cls.note = cls.st["_checks"]["note"]
+        cls.payload = amd.build_payload(cls.st)
+        cls.sections = {s["id"]: s for s in cls.payload["sections"]}
+        cls.settled = cls.sections["settled"]["exhibits"]
+        cls.period = cls.st["periods"][-1]
+
+    def rebuilt(self, edit) -> dict:
+        changed = copy.deepcopy(self.st)
+        edit(changed)
+        self.assertNotEqual(changed, self.st, "the edit changed nothing")
+        return amd.build_payload(changed)
+
+    def test_the_four_sections_carry_the_site_s_titles(self) -> None:
+        self.assertEqual([(s["id"], s["title"]) for s in self.payload["sections"]], SECTIONS)
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列", self.payload["notes"][0])
+
+    def test_the_closure_is_the_report_s_section_zero(self) -> None:
+        wanted = self.note["followup_closure"]
+        block = self.st["followup_closure"]
+        self.assertEqual(block["set_in"], shift(self.period, -1))
+        self.assertEqual([item["verdict"] for item in block["items"]], wanted["verdicts"])
+        chart = self.settled[0]
+        self.assertEqual(chart["kind"], "bars_labeled")
+        self.assertEqual(dict(zip(chart["xlabels"], chart["values"])), wanted["counts"])
+        self.assertEqual(sum(chart["values"]), wanted["total"])
+        self.assertEqual(chart["title"], f"上季 {wanted['total']} 条待验证问题："
+                         + "、".join(f"{n} 条{label}" for label, n in wanted["counts"].items() if n))
+        for i, item in enumerate(block["items"], start=1):
+            self.assertIn(f"{i}. {item['question']} —— <b>{item['verdict']}</b>", chart["note"])
+
+    def test_the_closure_prints_the_filed_figures_not_the_report_s(self) -> None:
+        """Question 3: the report's +32.9% rests on a reverse-engineered base; the page
+        prints the guide over the year-ago quarter the release printed, and the
+        streak the filed first prints give, not the report's 「连续两季」."""
+        g, fin, periods = self.st["guidance_history"], self.st["financials"], self.st["periods"]
+        base = fin["non_gaap_opex_usd_m"][periods.index(shift(g["quarters"][-1], -4))]
+        growth = pct(g["non_gaap_opex_guide_usd_m"][-1], base)
+        note = self.settled[0]["note"]
+        self.assertIn(f"较去年同季的印出值高 {signed(growth)}", note)
+        self.assertIn(f"新闻稿印的是 {usd_m(base)}", note)
+        streak = opex_streak(scored_record(self.st))
+        self.assertIn(f"连续{cn(streak)}季花得比自己的费用指引多", note)
+        self.assertGreater(streak, 2, "the report's 「连续两季」 is what this sentence corrects")
+
+    def test_the_prior_lines_are_the_prior_report_s(self) -> None:
+        block = self.st["prior_kpi_settlement"]
+        self.assertEqual(block["set_in"], shift(self.period, -1))
+        self.assertEqual(len(block["rows"]), self.note["prior_rows"])
+        self.assertEqual(len(block["dispositions"]), self.note["prior_rows"])
+        self.assertEqual(sorted(item["row"] for item in block["not_drawn"]), self.note["prior_unquantified_rows"])
+        wanted = self.note["prior_thresholds"]
+        self.assertEqual(len(block["quantified"]), len(wanted))
+        for entry, fact in zip(block["quantified"], wanted):
+            with self.subTest(line=entry["id"]):
+                self.assertEqual(entry["threshold"], fact["threshold"])
+                self.assertEqual(entry["action"], fact["action"])
+                self.assertEqual(entry["direction"], direction_from_trigger(fact["trigger"], fact["action"]))
+                self.assertNotIn("value", entry)
+        rows = {entry["row"] for entry in block["quantified"]} | {item["row"] for item in block["not_drawn"]}
+        self.assertEqual(rows, set(range(1, len(block["rows"]) + 1)))
+
+    def readings(self) -> dict[str, float]:
+        """Every prior line's reading, recomputed here from the arrays."""
+        g, fin, periods = self.st["guidance_history"], self.st["financials"], self.st["periods"]
+        base = fin["non_gaap_opex_usd_m"][periods.index(shift(g["quarters"][-1], -4))]
+        return {"opex_yoy": opex_growth_as_printed(self.st)[-1],
+                "opex_guide_yoy": pct(g["non_gaap_opex_guide_usd_m"][-1], base)}
+
+    def test_the_prior_overview_settles_every_due_line_on_this_quarter_s_reading(self) -> None:
+        block = self.st["prior_kpi_settlement"]
+        readings = self.readings()
+        due = [e for e in block["quantified"] if e["settles"] == self.period and e["threshold"] != 0]
+        overview = next(ex for ex in self.settled if ex["kind"] == "diverging_bars")
+        self.assertIs(self.settled[1], overview, "the overview follows the closure")
+        self.assertTrue(overview["title"].startswith(f"上季{cn(len(block['rows']))}条监控指标的量化阈值："))
+        self.assertEqual(overview["xlabels"], [e["metric"] for e in due])
+        for entry, bar in zip(due, overview["values"]):
+            value = readings[entry["reads"]]
+            sign = 1 if entry["direction"] == "up" else -1
+            with self.subTest(line=entry["id"]):
+                self.assertAlmostEqual(bar, round(sign * (value - entry["threshold"]) / abs(entry["threshold"]) * 100, 1))
+                good, bad = STATE_WORDS[entry["action"]]
+                state = good if favourable_side(entry["direction"], entry["threshold"], value) else bad
+                self.assertIn(f"{entry['metric']} {signed(value)}，{state}", overview["note"])
+        states = {STATE_WORDS[e["action"]][0 if favourable_side(e["direction"], e["threshold"],
+                                                                   readings[e["reads"]]) else 1] for e in due}
+        if len(states) == 1 and len(due) > 1:
+            self.assertIn(f"{cn(len(due))}个读数都{states.pop()}", overview["title"])
+
+    def test_the_opex_growth_line_is_the_company_s_own_comparison(self) -> None:
+        growth = opex_growth_as_printed(self.st)
+        chart = next(ex for ex in self.settled if ex["title"].startswith("non-GAAP 营业费用同比"))
+        self.assertTrue(all(close(a, None if b is None else round(b, 6)) for a, b in zip(chart["series"][0]["values"], growth)))
+        self.assertEqual(sum(1 for v in growth if v is None), 4, "only 2016 lacks a year-ago quarter")
+        entry = next(e for e in self.st["prior_kpi_settlement"]["quantified"] if e["reads"] == "opex_yoy")
+        self.assertEqual(chart["series"][1]["values"], [entry["threshold"]] * len(growth))
+        good = favourable_side(entry["direction"], entry["threshold"], growth[-1])
+        self.assertEqual(chart["title"], f"non-GAAP 营业费用同比 {compact(self.period)} {signed(growth[-1])}："
+                                         f"{'守住' if good else '击穿'}上季阈值 {signed(entry['threshold'])}")
+        known = [v for v in growth if v is not None]
+        against = sum(1 for v in known if not favourable_side(entry["direction"], entry["threshold"], v))
+        self.assertIn(f"{len(known)} 季里有 {against} 季落在这条线的不利一侧", chart["note"])
+        # The 2024 reprint is where the two bases part: the page's rate for a 2024
+        # quarter is its own first print, not the lowered 2025 reprint.
+        g = self.st["guidance_history"]
+        first = dict(zip(g["quarters"], g["actual_non_gaap_opex_usd_m"]))
+        reprinted = [q for q, v in zip(self.st["periods"], self.st["financials"]["non_gaap_opex_usd_m"]) if first[q] != v]
+        self.assertTrue(reprinted, "the positive control needs a reprinted quarter")
+        for quarter in reprinted:
+            i = self.st["periods"].index(quarter)
+            self.assertNotAlmostEqual(growth[i], pct(self.st["financials"]["non_gaap_opex_usd_m"][i],
+                                                     self.st["financials"]["non_gaap_opex_usd_m"][i - 4]))
+
+    def test_every_row_of_the_prior_section_lands_in_the_drawer(self) -> None:
+        block = self.st["prior_kpi_settlement"]
+        tbl = table(self.payload, "原文、本页结算与本季报告的处置")
+        self.assertEqual([row[1] for row in tbl["rows"]], block["rows"])
+        self.assertEqual([row[3] for row in tbl["rows"]], block["dispositions"])
+        for item in block["not_drawn"]:
+            self.assertIn(f"（不作图：{item['why']}）", tbl["rows"][item["row"] - 1][2])
+        self.assertIs(self.payload["tables"][0], tbl, "section one's table leads the drawer")
+
+    def test_a_settlement_quarter_must_carry_the_previous_analysis(self) -> None:
+        first = self.st["analysis_coverage"]["first_period"]
+        self.assertLess(order(first), order(self.period))
+        with self.assertRaisesRegex(ValueError, "prior_kpi_settlement"):
+            self.rebuilt(lambda s: s.pop("prior_kpi_settlement"))
+        cases = (
+            ("set in", lambda s: s["prior_kpi_settlement"].__setitem__("set_in", shift(self.period, -2))),
+            ("closes questions set in", lambda s: s["followup_closure"].__setitem__("set_in", shift(self.period, -2))),
+            ("accounted for", lambda s: s["prior_kpi_settlement"]["not_drawn"].pop()),
+            ("remove its typed value", lambda s: s["prior_kpi_settlement"]["quantified"][0].__setitem__("value", 1.0)),
+            ("map it in build/amd.py", lambda s: s["prior_kpi_settlement"]["quantified"][0].__setitem__("reads", "dso")),
+            ("one disposition per row", lambda s: s["prior_kpi_settlement"]["dispositions"].pop()),
+            ("should have been settled then",
+             lambda s: s["prior_kpi_settlement"]["quantified"][0].__setitem__("settles", shift(self.period, -1))),
+        )
+        for message, edit in cases:
+            with self.subTest(case=message):
+                with self.assertRaisesRegex(ValueError, message):
+                    self.rebuilt(edit)
+
+    def test_a_line_that_settles_later_is_listed_not_drawn(self) -> None:
+        def postpone(s):
+            s["prior_kpi_settlement"]["quantified"][1]["settles"] = shift(self.period, 1)
+        payload = self.rebuilt(postpone)
+        exhibits = payload["sections"][0]["exhibits"]
+        overview = next(ex for ex in exhibits if ex["kind"] == "diverging_bars")
+        later = self.st["prior_kpi_settlement"]["quantified"][1]
+        self.assertNotIn(later["metric"], overview["xlabels"])
+        self.assertIn(f"未到期（{shift(self.period, 1)} 结算）", overview["note"])
+        self.assertIn("一条未到期", overview["title"])
+
+
 class AmdChartClaimsTest(unittest.TestCase):
     """Each chart's numbers and sentences, recomputed from the series."""
 
@@ -1416,8 +1611,8 @@ class AmdRollTest(unittest.TestCase):
     """A roll edits the series and nothing else: stale blocks stop the build,
     absent ones drop their part, and every record sentence answers to the data."""
 
-    STAMPED = ("followup_closure", "eps_reconciliation", "balance_sheet_exposure", "next_kpi",
-               "guidance", "quarter_story", "warrants", "dc_acceleration_claim", "latest")
+    STAMPED = ("followup_closure", "prior_kpi_settlement", "eps_reconciliation", "balance_sheet_exposure",
+               "next_kpi", "guidance", "quarter_story", "warrants", "dc_acceleration_claim", "latest")
 
     @classmethod
     def setUpClass(cls) -> None:
