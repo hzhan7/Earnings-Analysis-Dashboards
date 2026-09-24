@@ -180,6 +180,16 @@ _MSFT_THRESHOLD_FLOORS = {
         "the company's capex measure (including finance leases) is stated only on the call; this file "
         "holds the last eight calls. The filed cash measure runs the full record and is drawn in section "
         "four.", "coverage"),
+    "年化折旧：": (
+        "checked: quarterly depreciation is first printed in the FY2026 10-Qs' property-and-equipment note, "
+        "with the FY2025 quarters as comparatives (「$7.1 billion and $4.7 billion for the three months ended "
+        "September 30, 2025 and 2024」); the FY2025 and earlier 10-Qs print only the annual figure in the "
+        "10-K, so the quarterly record starts 2024Q3.", "disclosure"),
+    "未起租租约余额的年增量": (
+        "checked: leases signed but not yet commenced are first printed in the 10-Q for the quarter ended "
+        "2017-09-30 (「$219 million and $2.3 billion, respectively」); the FY2017 10-K has no such "
+        "sentence. A year-on-year increase needs a year-ago balance, so the line starts 2018Q3.",
+        "disclosure"),
 }
 
 

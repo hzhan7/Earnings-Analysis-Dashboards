@@ -262,11 +262,134 @@
         11,
         12
       ],
+      "prior_set_off_rows": [
+        11
+      ],
+      "_prior_set_off": "本季分析第 8 节「上季指标校准」表：AI ARR「期望 ≥$45B，红旗“不再披露”」→ 本季实际「不再披露」、判定「红旗触发」。",
       "_prior_report": "第 7 节 12 行原文：Azure 增速 (cc) 39–40% / <38%；MSC GM % ~64% / <63%；Operating margin (FY26 全年) up about 1pt YoY / flat or down；Commercial RPO YoY 维持 70%+ / <60%；12mo RPO 同比 维持 ≥30% / <25%；Commercial bookings ex-[单一大客户] YoY 回升到 +15%+ / <5%；M365 Copilot paid seats 期望 25M+ / <22M；Copilot seat adds YoY 期望维持 ≥+150% / <+100%；Q4 CapEx >$40B / <$36B；FCF 季度 视 finance lease mix，可能回落 $5–10B / <$3B；AI ARR 期望披露并 ≥$45B / 不再披露；OpEx 增速 (cc) mid-to-high single / >+10%。",
       "guidance_delivery": {
         "items": 6,
         "given_on": "2026-04-29"
-      }
+      },
+      "next_rows": 6,
+      "next_thresholds": [
+        {
+          "id": "azure_cut",
+          "row": 1,
+          "tier": "减仓",
+          "threshold": 42.0,
+          "direction": "up",
+          "report": "<42% → 减仓"
+        },
+        {
+          "id": "azure_add",
+          "row": 1,
+          "tier": "加仓",
+          "threshold": 45.0,
+          "direction": "up",
+          "report": "≥45%×2 季 → 加仓"
+        },
+        {
+          "id": "azure_revoke",
+          "row": "撤销①",
+          "tier": "撤销",
+          "threshold": 40.0,
+          "direction": "up",
+          "report": "任一季度 Azure cc < 40%"
+        },
+        {
+          "id": "adj_fcf_warn",
+          "row": 2,
+          "tier": "警示",
+          "threshold": 0.0,
+          "direction": "up",
+          "report": "任一季度 <$0 → 警示"
+        },
+        {
+          "id": "adj_fcf_fy_cut",
+          "row": 2,
+          "tier": "减仓",
+          "threshold": 25000.0,
+          "direction": "up",
+          "report": "FY27 全年 <$25B → 减仓"
+        },
+        {
+          "id": "buyback_low",
+          "row": 3,
+          "tier": "重新评估",
+          "threshold": 3000.0,
+          "direction": "up",
+          "report": "<$3B → 重新评估"
+        },
+        {
+          "id": "buyback_high_leg",
+          "row": 3,
+          "tier": "重新评估",
+          "threshold": 4500.0,
+          "direction": "down",
+          "report": "维持 >$4.5B 且调整后 FCF 为负"
+        },
+        {
+          "id": "adj_fcf_leg",
+          "row": 3,
+          "tier": "重新评估",
+          "threshold": 0.0,
+          "direction": "up",
+          "report": "（同上一条的另一腿）调整后 FCF 为负"
+        },
+        {
+          "id": "depr_warn",
+          "row": 4,
+          "tier": "警示",
+          "threshold": 40000.0,
+          "direction": "up",
+          "report": "FY27 Q1 年化折旧 <$40B → 警示"
+        },
+        {
+          "id": "leases_warn",
+          "row": 5,
+          "tier": "警示",
+          "threshold": 100.0,
+          "direction": "down",
+          "report": "继续以 >$100B/年累积 → 警示"
+        },
+        {
+          "id": "seats_leg",
+          "row": 6,
+          "tier": "减仓",
+          "threshold": 50.0,
+          "direction": "down",
+          "report": "席位再增 ≥50%（且收入增速 <17%）"
+        },
+        {
+          "id": "m365_leg",
+          "row": 6,
+          "tier": "减仓",
+          "threshold": 17.0,
+          "direction": "up",
+          "report": "收入增速 <17%（且席位再增 ≥50%）"
+        },
+        {
+          "id": "m365_confirm",
+          "row": 6,
+          "tier": "确认",
+          "threshold": 19.0,
+          "direction": "up",
+          "report": "收入增速 ≥19% → 护城河 KPI 确认"
+        },
+        {
+          "id": "oie_revoke",
+          "row": "撤销③",
+          "tier": "撤销",
+          "threshold": -2000.0,
+          "direction": "up",
+          "report": "其他收入（剔除利息）单季反向计提 > $2B"
+        }
+      ],
+      "next_unscored_rows": [
+        "撤销②"
+      ],
+      "_next_report": "第 8 节 6 行：Azure cc <42% 减仓 / ≥45%×2 季加仓；调整后季度 FCF 任一季 <$0 警示 / FY27 全年 <$25B 减仓；季度回购 <$3B 或 >$4.5B 且调整后 FCF 为负 → 重新评估；FY27 Q1 年化折旧 <$40B 警示；未起租租约 >$100B/年累积 警示；席位再增 ≥50% 而 M365 商业云 cc <17% 减仓 / ≥19% 确认。立场撤销条件：① Azure <40% ② 调整后 FCF 为负而回购未同步放缓 ③ 其他收入（剔除利息）单季反向计提 > $2B。"
     },
     "kpi": {
       "commercial_rpo_usd_bn": 678,
@@ -278,12 +401,21 @@
       "twelve_month_portion_growth_pct": 37,
       "twelve_month_share_pct": 30,
       "bookings_growth_excluding_largest_customer_pct": 18,
-      "source": "FY2026 10-K 附注 13（收入）：「Revenue allocated to remaining performance obligations related to the commercial portion of revenue was $678 billion … approximately 30% of both our total company … and commercial remaining performance obligation revenue over the next 12 months」；8-K EX-99.1 首页：「commercial remaining performance obligation increased 84% to $678 billion」「Microsoft Cloud revenue was $59.3 billion」「Microsoft 365 Copilot reached over 30 million paid seats」；FY2026 Q4 电话会 CFO：「Microsoft Cloud gross margin percentage was better than expected at 65%」「Capital expenditures were $41 billion」「roughly 30% will be recognized in revenue in the next 12 months, up 37%」「Commercial bookings grew 18% when excluding the impact from [单一大客户]」。"
+      "source": "FY2026 10-K 附注 13（收入）：「Revenue allocated to remaining performance obligations related to the commercial portion of revenue was $678 billion … approximately 30% of both our total company … and commercial remaining performance obligation revenue over the next 12 months」；8-K EX-99.1 首页：「commercial remaining performance obligation increased 84% to $678 billion」「Microsoft Cloud revenue was $59.3 billion」「Microsoft 365 Copilot reached over 30 million paid seats」；FY2026 Q4 电话会 CFO：「Microsoft Cloud gross margin percentage was better than expected at 65%」「Capital expenditures were $41 billion」「roughly 30% will be recognized in revenue in the next 12 months, up 37%」「Commercial bookings grew 18% when excluding the impact from [单一大客户]」。",
+      "m365_commercial_cloud_adjusted_pct": 16,
+      "m365_commercial_cloud_reported_pct": 14,
+      "interest_and_dividends_income_fy_usd_m": 3301,
+      "interest_expense_fy_usd_m": -3051,
+      "other_income_fy_usd_m": 10697,
+      "largest_customer_equity_method_net_fy_usd_bn": 6.5,
+      "leases_not_commenced_usd_bn": 329.1,
+      "leases_not_commenced_prior_quarter_usd_bn": 196.6,
+      "unpaid_capex_quarter_end_usd_bn": 26.7,
+      "unpaid_capex_prior_quarter_end_usd_bn": 22.6,
+      "discrete_gain_usd_bn": 3.2,
+      "discrete_eps_net_usd": 0.27,
+      "source_stage3": "FY2026 10-K 附注 3：Interest and dividends income 3,301、Interest expense (3,051)、Total 10,697，「$6.5 billion of net gains … from investments in [单一大客户]」；附注 6：「purchases of property and equipment remaining in accounts payable were $26.7 billion」；附注 13：「additional leases … that had not yet commenced of $329.1 billion」；FY2026 Q3 10-Q：「$22.6 billion」「$196.6 billion」；8-K EX-99.1：「Microsoft 365 Commercial cloud revenue increased 16% when adjusted … On a reported basis … increased 14%」「a $3.2 billion gain from our investment in [被投公司]」「a benefit of $0.27 on diluted earnings per share」。"
     }
-  },
-  "period_labelling": {
-    "convention": "自然年季度",
-    "note": "本页统一用自然年季度标注。Q2 2026 = 微软 FY2026 Q4（期末 2026-06-30），Q3 2026 = FY2027 Q1，依此类推。"
   },
   "periods": [
     "Q3 2023",
@@ -537,7 +669,52 @@
       16876
     ],
     "recast_note": "FY2025 起分部口径经过一次重述；本表八季全部取自 FY2026 各期 10-Q / 10-K 的重述后可比列",
-    "filings": "FY2026"
+    "filings": "FY2026",
+    "recast_before_window": {
+      "periods": [
+        "Q3 2023",
+        "Q4 2023",
+        "Q1 2024",
+        "Q2 2024"
+      ],
+      "productivity_revenue": [
+        25226,
+        25854,
+        27113,
+        28627
+      ],
+      "intelligent_cloud_revenue": [
+        20013,
+        21525,
+        22141,
+        23785
+      ],
+      "source": "现行（FY2025 重述后）口径的 FY2024 各季：FY2025 三份 10-Q 分部附注的去年同期列（PBP 25,226 / 25,854 / 27,113，IC 20,013 / 21,525 / 22,141），6 月止季为 FY2025 10-K 的 FY2024 全年（106,820 / 87,464）减九个月（78,193 / 63,679）。"
+    },
+    "pre_recast_crossover": {
+      "fiscal_year": "FY2020",
+      "intelligent_cloud_revenue": 48366,
+      "productivity_revenue": 46398,
+      "prior_fiscal_year": "FY2019",
+      "prior_intelligent_cloud_revenue": 38985,
+      "prior_productivity_revenue": 41160,
+      "source": "FY2020 10-K 分部附注（FY2025 重述前的旧分部口径）：IC 48,366 / 38,985，PBP 46,398 / 41,160（FY2020 / FY2019）。"
+    },
+    "ic_annual_before_quarterly": {
+      "labels": [
+        "FY2024",
+        "FY2025"
+      ],
+      "revenue": [
+        87464,
+        106265
+      ],
+      "cost_of_revenue": [
+        29611,
+        40171
+      ],
+      "source": "FY2025 10-K 分部经营成果表（首次按分部列示收入成本）：Intelligent Cloud Revenue 87,464 / 106,265，Cost of revenue 29,611 / 40,171。"
+    }
   },
   "azure_growth_cc_pct": [
     34,
@@ -679,6 +856,18 @@
         41.0
       ],
       "provenance": "公司口径的资本开支（含融资租赁）只在电话会 CFO 陈述里：FY2025 Q1–Q3「Capital expenditures including finance leases were $20 / $22.6 / $21.4 billion」，此后「Capital expenditures were $24.2 / $34.9 / $37.5 / $31.9 / $41 billion」（FY2026 Q4 只印到整数十亿）。它不等于现金流量表的现金资本开支加融资租赁新增：公司按资产到货计入、融资租赁按起租全额计入，现金流量表按付现。"
+    },
+    "m365_commercial_cloud": {
+      "periods": [
+        "Q2 2026"
+      ],
+      "adjusted_pct": [
+        16
+      ],
+      "reported_pct": [
+        14
+      ],
+      "provenance": "FY2026 Q4 8-K EX-99.1：「Microsoft 365 Commercial cloud revenue increased 16% when adjusted for the prior year comparable that benefited from 2 points of in-period revenue recognition. On a reported basis, Microsoft 365 Commercial cloud revenue increased 14%」；本季没有单列固定汇率增速（整个 PBP 分部只印一个增速）。调整口径是本季才有的，更早的季度没有可比读数。"
     }
   },
   "fiscal_year_usd_m": {
@@ -731,7 +920,6 @@
       22000,
       34300
     ],
-    "depreciation_and_amortization_fy2026": 38534,
     "contracted_not_yet_commenced_leases": [
       92700,
       329100
@@ -740,13 +928,75 @@
       94565,
       76843
     ],
-    "finance_lease_liabilities_fy2026": 66594,
-    "debt_fy2026": 40294,
-    "shareholder_return_basis": "股东回报按公司自己的口径 = 回购计划内的回购（10-K 附注十五：FY2025 $13,000M、FY2026 $16,719M）+ 现金流量表的分红。现金流量表的「Common stock repurchased」另含为员工代扣税而回购的股份（FY2025 $5,420M、FY2026 $5,552M），那是股权激励的结算，不是股东回报——公司在 FY2026 Q4 电话会上说全年回报股东「over $43 billion」，与 16,719 + 26,445 = 43,164 相符。"
+    "shareholder_return_basis": "股东回报按公司自己的口径 = 回购计划内的回购（10-K 附注十五：FY2025 $13,000M、FY2026 $16,719M）+ 现金流量表的分红。现金流量表的「Common stock repurchased」另含为员工代扣税而回购的股份（FY2025 $5,420M、FY2026 $5,552M），那是股权激励的结算，不是股东回报——公司在 FY2026 Q4 电话会上说全年回报股东「over $43 billion」，与 16,719 + 26,445 = 43,164 相符。",
+    "current_portion_of_long_term_debt": [
+      2999,
+      9227
+    ],
+    "long_term_debt": [
+      40152,
+      31067
+    ],
+    "finance_lease_liabilities": [
+      46172,
+      66594
+    ],
+    "depreciation_amortization_and_other": [
+      29433,
+      38534
+    ],
+    "balance_sheet_provenance": "FY2026 10-K 资产负债表：Current portion of long-term debt 9,227 / 2,999、Long-term debt 31,067 / 40,152；附注 13 租赁：Total finance lease liabilities 66,594 / 46,172；现金流量表：Depreciation, amortization, and other 38,534 / 29,433。",
+    "other_income_components": {
+      "labels": [
+        "FY2024",
+        "FY2025",
+        "FY2026"
+      ],
+      "interest_and_dividends_income": [
+        3157,
+        2647,
+        3301
+      ],
+      "interest_expense": [
+        -2935,
+        -2385,
+        -3051
+      ],
+      "net_recognized_gains_on_investments": [
+        -118,
+        -349,
+        4385
+      ],
+      "net_gains_on_derivatives": [
+        -187,
+        -260,
+        1867
+      ],
+      "net_gains_on_foreign_currency_remeasurements": [
+        -244,
+        171,
+        -527
+      ],
+      "other_net": [
+        -1319,
+        -4725,
+        4722
+      ],
+      "total": [
+        -1646,
+        -4901,
+        10697
+      ],
+      "largest_customer_equity_method_net_usd_bn": [
+        -1.5,
+        -4.8,
+        6.5
+      ],
+      "source": "FY2026 10-K 附注 3「Other income (expense), net」三年表；同一附注：「Other income (expense), net included $6.5 billion of net gains, $4.8 billion of net losses, and $1.5 billion of net losses for fiscal years 2026, 2025, and 2024, respectively, from investments in [单一大客户], primarily net recognized gains (losses) on our equity method investment reflected in Other, net. The net gains recorded for fiscal year 2026 primarily relate to the dilution gain from the [该客户] Recapitalization.」"
+    }
   },
   "outlook": {
     "period": "Q2 2026",
-    "next_quarter_label": "Q3 2026（FY2027 Q1）",
     "revenue_usd_m": [
       89850,
       90950
@@ -804,9 +1054,9 @@
       87620,
       89370
     ],
-    "non_gaap_eps_usd": 4.33,
     "post_earnings_price_change_pct": 9.0,
-    "source_conflict_note": "两个公开来源的收入预期相差 US$1.75B，本页只发布区间并据此降低 beat 幅度的可信度"
+    "source_conflict_note": "两个公开来源的收入预期相差 US$1.75B，本页只发布区间并据此降低 beat 幅度的可信度",
+    "post_earnings_price_when": "财报次日（2026-07-30）盘中"
   },
   "followup_closure": {
     "period": "Q2 2026",
@@ -863,6 +1113,7 @@
   "prior_kpi_settlement": {
     "period": "Q2 2026",
     "set_in": "Q1 2026",
+    "section": "第 7 节「关键观察指标（下季 Watchlist）」",
     "rows": 12,
     "calibration": "本季分析对这 12 行的校准：4 行设计或口径失效（商业 RPO 总额、Copilot 席位净增同比、季度 FCF、Q4 CapEx），原因都是跟踪了公司披露的标题数字而不是经济实质；AI 年化收入红旗触发后退役。",
     "quantified": [
@@ -1110,6 +1361,7 @@
         "row": 11,
         "short": "AI 年化收入",
         "text": "AI ARR：Q1 2026 实际 $37B；期望披露并 ≥$45B；Red Flag 不再披露",
+        "set_off": "AI 年化收入不再披露",
         "why": "本季新闻稿、10-K 与电话会都没有给 AI 年化收入：红旗「不再披露」已触发"
       },
       {
@@ -1125,77 +1377,197 @@
   "next_kpi": {
     "period": "Q2 2026",
     "for_period": "Q3 2026",
+    "section": "第 8 节「关键观察指标」与立场撤销条件",
+    "rows": 6,
     "quantified": [
       {
+        "id": "azure_cut",
+        "row": 1,
+        "reads": "azure_cc",
         "metric": "Azure 固定汇率增速",
+        "tier": "减仓",
+        "label": "Azure <42% 减仓",
         "direction": "up",
         "threshold": 42.0,
-        "current": 43.0,
         "unit": "pct",
-        "kind": "operating"
+        "basis": "Azure cc 增速：本季 43%；Q1 FY27 指引 ~45%。<42% = 本季加速被证实为供给脉冲；连续两季 ≥45% = 需求侧确认 → <42% 减仓；≥45%×2 季 加仓"
       },
       {
-        "metric": "Intelligent Cloud 分部毛利率",
+        "id": "azure_add",
+        "row": 1,
+        "reads": "azure_cc",
+        "metric": "Azure 固定汇率增速",
+        "tier": "加仓",
+        "label": "Azure 连续两季 ≥45% 加仓",
         "direction": "up",
-        "threshold": 56.0,
-        "current": 57.07,
+        "threshold": 45.0,
         "unit": "pct",
-        "kind": "operating"
+        "basis": "Azure cc 增速：本季 43%；Q1 FY27 指引 ~45%。<42% = 本季加速被证实为供给脉冲；连续两季 ≥45% = 需求侧确认 → <42% 减仓；≥45%×2 季 加仓",
+        "consecutive": 2
       },
       {
+        "id": "azure_revoke",
+        "row": "撤销①",
+        "reads": "azure_cc",
+        "metric": "Azure 固定汇率增速",
+        "tier": "撤销",
+        "label": "任一季 Azure <40% 撤销立场",
+        "direction": "up",
+        "threshold": 40.0,
+        "unit": "pct",
+        "basis": "任一季度 Azure cc < 40%"
+      },
+      {
+        "id": "adj_fcf_warn",
+        "row": 2,
+        "reads": "adj_fcf_quarter",
+        "metric": "调整后季度自由现金流",
+        "tier": "警示",
+        "label": "调整后季度 FCF <$0 警示",
+        "direction": "up",
+        "threshold": 0.0,
+        "unit": "usd_m",
+        "basis": "调整后季度 FCF（经营现金流 − 现金 capex − 未付 capex 增量）：FY26 全年 $47.187B。任一季度 <$0 = 现金引擎转负；FY27 全年 <$25B = 低于本报告 Base 下限 → 单季为负 警示；全年 <$25B 减仓"
+      },
+      {
+        "id": "adj_fcf_fy_cut",
+        "row": 2,
+        "reads": "adj_fcf_fy",
+        "metric": "财年调整后自由现金流",
+        "tier": "减仓",
+        "label": "FY27 调整后 FCF <$25B 减仓",
+        "direction": "up",
+        "threshold": 25000.0,
+        "unit": "usd_m",
+        "basis": "调整后季度 FCF（经营现金流 − 现金 capex − 未付 capex 增量）：FY26 全年 $47.187B。任一季度 <$0 = 现金引擎转负；FY27 全年 <$25B = 低于本报告 Base 下限 → 单季为负 警示；全年 <$25B 减仓",
+        "settles": "Q2 2027"
+      },
+      {
+        "id": "buyback_low",
+        "row": 3,
+        "reads": "buyback_quarter",
         "metric": "单季回购金额",
+        "tier": "重新评估",
+        "label": "季度回购 <$3B 重新评估",
         "direction": "up",
         "threshold": 3000.0,
-        "current": 4579.0,
         "unit": "usd_m",
-        "kind": "cash"
+        "basis": "季度回购金额：Q4 FY26 $4.579B。<$3B = 管理层以行动确认现金压力；维持 >$4.5B 且调整后 FCF 为负 = 靠资产负债表维持回报 → 任一情形 重新评估"
       },
       {
-        "metric": "单季自由现金流（报告口径）",
+        "id": "buyback_high_leg",
+        "row": 3,
+        "reads": "buyback_quarter",
+        "metric": "单季回购金额",
+        "tier": "重新评估",
+        "label": "季度回购 >$4.5B（与调整后 FCF 为负同时成立）",
+        "direction": "down",
+        "threshold": 4500.0,
+        "unit": "usd_m",
+        "basis": "季度回购金额：Q4 FY26 $4.579B。<$3B = 管理层以行动确认现金压力；维持 >$4.5B 且调整后 FCF 为负 = 靠资产负债表维持回报 → 任一情形 重新评估",
+        "group": "buyback_while_fcf_negative"
+      },
+      {
+        "id": "adj_fcf_leg",
+        "row": 3,
+        "reads": "adj_fcf_quarter",
+        "metric": "调整后季度自由现金流",
+        "tier": "重新评估",
+        "label": "调整后季度 FCF 为负（与回购 >$4.5B 同时成立）",
         "direction": "up",
-        "threshold": 15000.0,
-        "current": 19639.0,
+        "threshold": 0.0,
         "unit": "usd_m",
-        "kind": "cash"
+        "basis": "季度回购金额：Q4 FY26 $4.579B。<$3B = 管理层以行动确认现金压力；维持 >$4.5B 且调整后 FCF 为负 = 靠资产负债表维持回报 → 任一情形 重新评估",
+        "group": "buyback_while_fcf_negative"
       },
       {
-        "metric": "股东回报 / 调整后自由现金流",
-        "direction": "down",
-        "threshold": 100.0,
-        "current": 91.5,
-        "unit": "pct",
-        "kind": "cash",
-        "annual": true,
-        "current_note": "公司口径：计划内回购 16,719 + 分红 26,445 = 43,164，除以调整后自由现金流 47,187。原值 103.2 用了含员工代扣税回购的现金流量表回购一行（22,271）。"
+        "id": "depr_warn",
+        "row": 4,
+        "reads": "depr_annualized",
+        "metric": "年化折旧",
+        "tier": "警示",
+        "label": "年化折旧 <$40B 警示",
+        "direction": "up",
+        "threshold": 40000.0,
+        "unit": "usd_m",
+        "basis": "折旧费用与 D&A / 收入比：FY26 折旧 $34.3B、D&A $38.534B（占收入 11.6%）。FY27 Q1 年化折旧 <$40B = 15→25 年变更实质性生效 → 警示",
+        "reading_note": "年化折旧 = 单季折旧 × 4；报告设这条线是为了检验 FY27 Q1 起 15→25 年的折旧年限变更，本季是变更生效前的最后一季。",
+        "no_history_count": true
       },
       {
-        "metric": "已签约未起租租约 / 年收入",
+        "id": "leases_warn",
+        "row": 5,
+        "reads": "leases_nc_yoy",
+        "metric": "未起租租约余额的年增量",
+        "tier": "警示",
+        "label": "未起租租约一年增加 >$100B 警示",
         "direction": "down",
         "threshold": 100.0,
-        "current": 99.2,
+        "unit": "usd_bn",
+        "basis": "已签约未起租租约余额：$329.1B（上年 $92.7B）。若继续以 >$100B/年累积 = 承诺规模超出 FCF 承受力 → 警示",
+        "reading_note": "年增量 = 季末余额减一年前的余额；2025-03-31 及以前的余额是公司分印的经营、融资两个数之和，2026-06-30 的原文另加了「部分安排须满足特定合同条件」。"
+      },
+      {
+        "id": "seats_leg",
+        "row": 6,
+        "reads": "seats_qoq",
+        "metric": "Copilot 付费席位环比",
+        "tier": "减仓",
+        "label": "席位环比 ≥+50%（与 M365 商业云 <17% 同时成立）",
+        "direction": "down",
+        "threshold": 50.0,
         "unit": "pct",
-        "kind": "commitment",
-        "annual": true
+        "basis": "M365 Commercial cloud cc 增速 vs Copilot 席位：本季 +16% cc（adjusted）对应 30M 席位。若席位再增 ≥50% 而收入增速 <17% = 席位未能变现 → 减仓；若收入增速 ≥19% → 护城河 KPI 确认",
+        "boundary": "unsafe",
+        "group": "seats_without_revenue"
+      },
+      {
+        "id": "m365_leg",
+        "row": 6,
+        "reads": "m365_cc_adjusted",
+        "metric": "M365 商业云增速（调整后）",
+        "tier": "减仓",
+        "label": "M365 商业云增速 <17%（与席位 ≥+50% 同时成立）",
+        "direction": "up",
+        "threshold": 17.0,
+        "unit": "pct",
+        "basis": "M365 Commercial cloud cc 增速 vs Copilot 席位：本季 +16% cc（adjusted）对应 30M 席位。若席位再增 ≥50% 而收入增速 <17% = 席位未能变现 → 减仓；若收入增速 ≥19% → 护城河 KPI 确认",
+        "group": "seats_without_revenue"
+      },
+      {
+        "id": "m365_confirm",
+        "row": 6,
+        "reads": "m365_cc_adjusted",
+        "metric": "M365 商业云增速（调整后）",
+        "tier": "确认",
+        "label": "M365 商业云增速 ≥19% 护城河确认",
+        "direction": "up",
+        "threshold": 19.0,
+        "unit": "pct",
+        "basis": "M365 Commercial cloud cc 增速 vs Copilot 席位：本季 +16% cc（adjusted）对应 30M 席位。若席位再增 ≥50% 而收入增速 <17% = 席位未能变现 → 减仓；若收入增速 ≥19% → 护城河 KPI 确认"
+      },
+      {
+        "id": "oie_revoke",
+        "row": "撤销③",
+        "reads": "oie_ex_interest",
+        "metric": "其他收入（剔除利息）",
+        "tier": "撤销",
+        "label": "其他收入（剔除利息）单季 <−$2B 撤销立场",
+        "direction": "up",
+        "threshold": -2000.0,
+        "unit": "usd_m",
+        "basis": "其他收入（剔除利息）单季反向计提 > $2B"
       }
     ],
-    "disclosure_gated": [
+    "unscored": [
       {
-        "short": "折旧年限变更的实际影响",
-        "text": "折旧年限 15→25 年在下季实际带来多少折旧节省：管理层只给了「对 FY2027 经营利润影响很小」的定性说法"
-      },
-      {
-        "short": "未付资本开支走向",
-        "text": "计入应付账款的未付资本开支是回落还是继续攀升：决定 FY2026 的 US$19.8B 缺口是账期管理还是交付时点"
-      },
-      {
-        "short": "Copilot 每席位收入",
-        "text": "M365 Copilot 的每席位收入或独立年化收入：连续多季未披露，30M 席位的收入含义因此不可建模"
-      },
-      {
-        "short": "AI 年化收入是否恢复披露",
-        "text": "AI 年化收入是否恢复披露：上季时隔五季再次给出后本季又消失，且无人追问"
+        "row": "撤销②",
+        "short": "调整后 FCF 为负而回购未放缓",
+        "text": "FY27 任一季度调整后 FCF 为负、而同季回购未同步放缓（即用举债或动用现金维持股东回报）",
+        "why": "「未同步放缓」没有给数；它的两条腿按第 3 行拆出的两条线跟踪"
       }
-    ]
+    ],
+    "_note": "本季（Q2 2026，2026-07-30）本地分析第 8 节「本季观察指标（未来 1 年）」6 行与「立场撤销条件」3 条。每行的多档（减仓 / 加仓 / 警示 / 确认）拆成独立条目，「且」条件拆成同一 group 的两条腿；threshold、direction 与 basis 逐字取自该节。当前值不在这里存，由 build/msft.py 按 reads 从本文件的序列现算。settles 是只在某季结算的线（FY27 全年）。下季换季时本块原样搬进 prior_kpi_settlement，再换成新一季第 8 节。"
   },
   "sources": [
     {
@@ -1763,7 +2135,186 @@
       627,
       678
     ],
-    "commercial_rpo_provenance": "商业剩余履约义务季末余额（US$B）逐季读自各期 10-Q / 10-K 的收入附注：2019-09-30 至 2025-09-30 的句式是「was $X billion as of …, of which $Y billion is related to the commercial portion of revenue」，2025-12-31 起改为「Revenue allocated to remaining performance obligations related to the commercial portion of revenue was $Y billion」。2019-06-30 的 10-K 与更早的申报只印全公司「contracted not recognized revenue」，不拆商业部分，所以这条线从 2019Q3 起。公司只印到整数十亿。"
+    "commercial_rpo_provenance": "商业剩余履约义务季末余额（US$B）逐季读自各期 10-Q / 10-K 的收入附注：2019-09-30 至 2025-09-30 的句式是「was $X billion as of …, of which $Y billion is related to the commercial portion of revenue」，2025-12-31 起改为「Revenue allocated to remaining performance obligations related to the commercial portion of revenue was $Y billion」。2019-06-30 的 10-K 与更早的申报只印全公司「contracted not recognized revenue」，不拆商业部分，所以这条线从 2019Q3 起。公司只印到整数十亿。",
+    "interest_and_dividends_income_usd_m": [
+      230.0,
+      274.0,
+      293.0,
+      311.0,
+      380.0,
+      403.0,
+      473.0,
+      530.0,
+      575.0,
+      636.0,
+      681.0,
+      704.0,
+      668.0,
+      709.0,
+      724.0,
+      688.0,
+      673.0,
+      595.0,
+      570.0,
+      545.0,
+      519.0,
+      497.0,
+      520.0,
+      503.0,
+      519.0,
+      552.0,
+      641.0,
+      700.0,
+      748.0,
+      905.0,
+      1166.0,
+      734.0,
+      619.0,
+      638.0,
+      681.0,
+      600.0,
+      597.0,
+      769.0,
+      976.0,
+      840.0,
+      730.0,
+      755.0
+    ],
+    "interest_expense_usd_m": [
+      -340.0,
+      -345.0,
+      -437.0,
+      -521.0,
+      -609.0,
+      -655.0,
+      -672.0,
+      -698.0,
+      -691.0,
+      -672.0,
+      -674.0,
+      -672.0,
+      -671.0,
+      -669.0,
+      -637.0,
+      -654.0,
+      -614.0,
+      -686.0,
+      -589.0,
+      -571.0,
+      -633.0,
+      -553.0,
+      -539.0,
+      -525.0,
+      -503.0,
+      -496.0,
+      -500.0,
+      -490.0,
+      -496.0,
+      -482.0,
+      -525.0,
+      -909.0,
+      -800.0,
+      -701.0,
+      -582.0,
+      -594.0,
+      -594.0,
+      -615.0,
+      -698.0,
+      -736.0,
+      -778.0,
+      -839.0
+    ],
+    "interest_provenance": "利息与股息收入、利息费用两行逐季读自各期 10-Q 附注「Other income (expense), net」的三个月列（FY2017 及以前该行叫「Dividends and interest income」），每季取最后一次印出它的申报（次年 10-Q 的去年同期列）；6 月止的财政第四季由 10-K 全年减 3 月 10-Q 的九个月得到。同一季在两份申报里印的数逐一比对，没有一处不同；FY2024–FY2026 各四季相加等于 10-K 全年（3,157/−2,935、2,647/−2,385、3,301/−3,051）。",
+    "leases_not_commenced_usd_bn": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      2.519,
+      1.837,
+      2.345,
+      2.994,
+      7.4,
+      9.1,
+      8.3,
+      8.4,
+      7.0,
+      6.6,
+      6.2,
+      6.9,
+      8.9,
+      10.9,
+      12.1,
+      12.7,
+      11.0,
+      12.3,
+      11.6,
+      16.0,
+      17.0,
+      26.0,
+      26.9,
+      42.1,
+      82.6,
+      92.6,
+      96.2,
+      117.0,
+      116.1,
+      105.4,
+      99.2,
+      92.7,
+      106.2,
+      155.1,
+      196.6,
+      329.1
+    ],
+    "leases_not_commenced_provenance": "已签约、尚未起租的租约（主要是数据中心）季末余额，逐季读自各期 10-Q / 10-K 租赁附注：2017-09-30 起才有（此前的申报没有这句）；2025-03-31 及以前公司分印经营租赁与融资租赁两个数（「$4.4 billion and $94.8 billion, respectively」），本序列为两者之和；FY2025 10-K 起只印一个合计数；2026-06-30 起句末加了「with some arrangements subject to certain contractual conditions being met」。",
+    "unpaid_capex_in_payables_usd_bn": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      3.8,
+      null,
+      null,
+      null,
+      4.3,
+      null,
+      null,
+      null,
+      6.9,
+      18.6,
+      23.1,
+      22.6,
+      26.7
+    ],
+    "unpaid_capex_provenance": "「purchases of property and equipment remaining in accounts payable」：FY2025 10-K 首次披露（2025/2024/2023 年末 $6.9B / $4.3B / $3.8B），季末值自 FY2026 Q1 的 10-Q 起才有（$18.6B、$23.1B、$22.6B），FY2026 10-K 为 $26.7B。公司只印到 $0.1B；更早的季度与年度没有这一项，留空。"
   },
   "guidance_delivery": {
     "period": "Q2 2026",
@@ -1814,5 +2365,12 @@
     ],
     "one_offs": "指引的销货成本与经营费用里含约 $900M 自愿退休计划一次性成本（约 $350M 与 $550M）；本季新闻稿说这项低于预期，同时有 XBOX 的遣散费与减值。",
     "source": "FY2026 Q3 电话会 CFO outlook（2026-04-29，microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q3 官方逐字稿）：PBP「$37 to $37.3 billion」、IC「$37.95 to $38.25 billion」、MPC「$11.75 to $12.25 billion」、总收入「between $86.7 and $87.8 billion」、COGS「$29.4 to $29.6 billion」、经营费用「$19.3 to $19.4 billion」、Azure「between 39% and 40% in constant currency」。"
+  },
+  "other_income_story": {
+    "period": "Q2 2026",
+    "discrete_gain_usd_bn": 3.2,
+    "discrete_eps_net_usd": 0.27,
+    "words": "本季新闻稿列出的离散项里有一笔对另一家 AI 公司投资的 {gain} 收益（计入其他收入），连同低于预期的自愿退休计划费用、XBOX 的遣散与减值，公司把本季每股收益相对 4 月指引的离散项净影响算作 +{eps}。",
+    "source": "FY2026 Q4 8-K EX-99.1 首页：「These include a $3.2 billion gain from our investment in [被投公司] and lower-than-expected expenses related to the Voluntary Retirement Program which were partially offset by severance expense and impairment charges in XBOX」「resulting in a benefit of $0.27 on diluted earnings per share」。"
   }
 }
