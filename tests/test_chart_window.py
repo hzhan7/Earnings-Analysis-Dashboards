@@ -1068,22 +1068,38 @@ CONVERTED = {
                             "different definition (FY2016 $3.5B, FY2017 $3.7B, "
                             "FY2018 $4.0B, with no FSA split). That is a "
                             "different series, not an earlier part of this one.",
-        "FSA 占 backlog": "same backlog note -- the FSA split does not exist at all in "
-                       "the pre-ASC 606 annual disclosure.",
+        "backlog 总额：下季": "same backlog note -- the quarterly backlog total starts at "
+                        "2018Q4.",
         "backlog 自": "same backlog note.",
         "收入 US$#M、同比": "the current-quarter panel; the long revenue record is in this "
                       "page's own long section.",
+        "剔除 Ansys 的 Design Automation": "same two-segment structure as the segment charts "
+                                       "below it; Ansys itself exists only from the "
+                                       "acquisition quarter (2025Q2 on this page's labels).",
         "Design IP 连续#季": "the two-segment split dates from the fiscal 2019 "
                         "reorganisation and the current Design Automation / "
                         "Design IP naming from later still.",
         "两个分部的调整后营业利润率": "same two-segment structure.",
         "GAAP 与 non-GAAP 营业利润之间隔着": "current-quarter bridge, eight quarters by design.",
-        "八季里收入指数化到": "an explicitly eight-quarter index, stated in its own title.",
-        "FY# 收入指引#次上调": "one fiscal year's four guidance vintages -- the axis is "
-                          "vintages, not time.",
-        "non-GAAP 营业利润率：下季阈值": "next-quarter threshold chart, recent by design.",
-        "Design IP 收入同比：下季阈值": "next-quarter threshold chart, recent by design.",
-        "摊薄股数：下季阈值": "next-quarter threshold chart, recent by design.",
+        "non-GAAP 净利同比": "the dilution panel indexes the page's eight-quarter window to its "
+                         "first quarter, by design.",
+        "收入指引本季": "one fiscal year's four guidance vintages -- the axis is "
+                    "vintages, not time.",
+        "DA 减 Ansys 收入（残差口径）：下季": "next-quarter threshold chart, recent by design.",
+        "Design IP 收入同比：下季": "next-quarter threshold chart, recent by design.",
+        "FY# 年初至今 non-GAAP 营业利润率：下季": "next-quarter threshold chart on the page's "
+                                          "window; the fiscal-year-to-date line starts at the "
+                                          "first fiscal year wholly inside it, by design.",
+        # Section one settles last quarter's section-8 lines on the page's
+        # eight-quarter window, like the next-quarter threshold charts. The
+        # product-group shares behind the EDA line are printed from the FY2019
+        # Q1 10-Q onward; lengthening it means crossing the FY2023 and FY2024
+        # product-group redefinitions and the FY2021 switch from whole to
+        # one-decimal percentages, which this chart does not do.
+        "EDA 收入同比（不含 Ansys）：本季": "last-quarter threshold chart on the page's eight-quarter "
+                                   "window, recent by design.",
+        "Design IP 收入环比：本季": "last-quarter threshold chart, recent by design.",
+        "单季 non-GAAP 营业利润率：本季": "last-quarter threshold chart, recent by design.",
         "中国占比": "the geographic disaggregation reaches 2022Q4. Earlier quarters exist "
                "only on the pre-divestiture basis that still included Software "
                "Integrity, which is not comparable with the continuing-operations "
@@ -1839,17 +1855,21 @@ FLOOR_KIND = {
     'snps': {
         '把「超出自身指引」拆成两条腿': 'disclosure',
         '未来 12 个月可确认 backlog': 'disclosure',
-        'FSA 占 backlog': 'disclosure',
+        'backlog 总额：下季': 'disclosure',
         'backlog 自': 'disclosure',
         '收入 US$#M、同比': 'design',
+        '剔除 Ansys 的 Design Automation': 'disclosure',
         'Design IP 连续#季': 'disclosure',
         '两个分部的调整后营业利润率': 'disclosure',
         'GAAP 与 non-GAAP 营业利润之间隔着': 'design',
-        '八季里收入指数化到': 'design',
-        'FY# 收入指引#次上调': 'design',
-        'non-GAAP 营业利润率：下季阈值': 'design',
-        'Design IP 收入同比：下季阈值': 'design',
-        '摊薄股数：下季阈值': 'design',
+        'non-GAAP 净利同比': 'design',
+        '收入指引本季': 'design',
+        'DA 减 Ansys 收入（残差口径）：下季': 'design',
+        'Design IP 收入同比：下季': 'design',
+        'FY# 年初至今 non-GAAP 营业利润率：下季': 'design',
+        'EDA 收入同比（不含 Ansys）：本季': 'design',
+        'Design IP 收入环比：本季': 'design',
+        '单季 non-GAAP 营业利润率：本季': 'design',
         '中国占比': 'disclosure',
     },
     'spgi': {
@@ -1994,8 +2014,8 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 187 + amzn["disclosure"] + msft["disclosure"])
-        self.assertEqual(settled.count("design"), 40 + amzn["design"] + msft["design"])
+        self.assertEqual(settled.count("disclosure"), 188 + amzn["disclosure"] + msft["disclosure"])
+        self.assertEqual(settled.count("design"), 43 + amzn["design"] + msft["design"])
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
         """Every short chart either names its reason or is counted here.
