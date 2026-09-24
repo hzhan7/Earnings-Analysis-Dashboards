@@ -356,7 +356,7 @@ def settled_charts(s: dict, view: dict, closure: dict | None, prior: dict | None
             "capex_pct": f"{detail['investments_eur_m'][0] * 1000 / view['revenue'] * 100:.1f}%",
             "capex_relation": ("高于" if detail["investments_eur_m"][0] * 1000 / view["revenue"] * 100
                                > target["capex_pct_of_revenue"] else "没有超过"),
-            "capex_target": target["capex_words"],
+            "capex_target": f"{target['capex_words']}（电话会口径）",
             # The sentence the analysis got wrong last quarter is the one the
             # table settles, so its verb is read off the table, not typed.
             "release_words": "没有一笔转回" if released == 0 else f"转回了 {eur_k(released)}",
@@ -1139,10 +1139,10 @@ def long_charts(s: dict, view: dict) -> list[dict]:
                       f"所以 {h['periods'][0]} 起的爬升里有一段是口径，不全是经营改善。")
     target_words = ""
     if target is not None:
-        series.append({"name": f"公司 {target['year']} 年指引：{target['ebit_margin_words']}",
+        series.append({"name": f"公司 {target['year']} 年指引（电话会）：{target['ebit_margin_words']}",
                        "values": [target["ebit_margin_pct"]] * len(h["periods"]), "color": "RED"})
         if min(flat) <= target["ebit_margin_pct"] <= max(flat):
-            target_words = (f"所以公司把 {target['year']} 年的目标定在「{target['ebit_margin_words']}」，"
+            target_words = (f"所以公司在 {target['stated_in']}上把 {target['year']} 年的目标定在「{target['ebit_margin_words']}」，"
                             "要求的不是继续扩张，是守住这条线。")
     ebit = {
         "ref": "EX_MARGIN",
@@ -1239,7 +1239,7 @@ def long_charts(s: dict, view: dict) -> list[dict]:
         revenue_last_year = a["revenue_eur_k"][a["years"].index(view["year"] - 1)]
         level = round(revenue_last_year * (1 + guide["low"] / 100) * target["net_debt_pct_of_revenue_low"] / 100, -4)
         if level < nd["pre_ifrs16"][-1]:
-            debt_note += (f"按公司自己的年末目标（收入的 {pp(target['net_debt_pct_of_revenue_low'])}–"
+            debt_note += (f"按公司在电话会上给的年末目标（收入的 {pp(target['net_debt_pct_of_revenue_low'])}–"
                           f"{pp(target['net_debt_pct_of_revenue_high'])}%）与它给的全年增速，"
                           f"下半年需要回落到 €{level:,.0f} 千一线。")
     derived_years = nd.get("post_ifrs16_derived_years", [])
@@ -1248,7 +1248,7 @@ def long_charts(s: dict, view: dict) -> list[dict]:
         "kind": "lines",
         "title": (f"核心净金融负债 {span} 年从 €{nd['pre_ifrs16'][trough] / 1000:.1f} 百万"
                   f"走到 €{nd['pre_ifrs16'][-1] / 1000:.1f} 百万"
-                  + (f"，而公司给的年末目标是收入的 {pp(target['net_debt_pct_of_revenue_low'])}–"
+                  + (f"，而公司在电话会上给的年末目标是收入的 {pp(target['net_debt_pct_of_revenue_low'])}–"
                      f"{pp(target['net_debt_pct_of_revenue_high'])}%" if target is not None else "")),
         "xlabels": [f"{y}H1" for y in nd["years"]],
         "series": [
@@ -1578,7 +1578,10 @@ def build_payload(staging: dict) -> dict:
         "本页只发布公司披露值与可复算的简单派生值；D 标记代表 Derived / 自算。",
         "本页已知未接入：" + (kpi["unconnected"] + "以及 " if kpi is not None else "")
         + f"{half_cn(half)}之后的任何数据。",
-        "业绩电话会内容仅用于定位公司已在申报文件中量化的项目与统计指引口径的披露与否，公开仓不复制原件或逐字内容。",
+        (f"只在业绩电话会上说过的数 —— 本页用到的是公司 {view['year']} 年的三个经营目标（EBIT 利润率、投资占收入、"
+         "年末核心净金融负债占收入）—— 在出现处注明「电话会」，不混作申报值；" if targets_for(s, view["year"]) is not None else
+         "业绩电话会内容只在注明「电话会」的地方出现，不混作申报值；")
+        + "电话会还用来定位公司已在申报文件中量化的项目、统计指引口径的披露与否；公开仓不复制原件或逐字内容。",
         "核对抽屉最后那张「AI capex 循环」是全站共用的跨页对照块，在每一页都逐字节相同，不是对本公司的判断。它追的是四家云厂现金资本开支到 NVDA 数据中心收入再到 TSM 晶圆这条链，本公司不在这条链的任何一环上；它在折叠的抽屉里，不参与本页的论证。",
     ]
 

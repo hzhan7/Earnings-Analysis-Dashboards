@@ -970,7 +970,7 @@ def roll_back_to_full_year(staging: dict) -> dict:
 class BcRollTest(unittest.TestCase):
     """What a roll can change without touching the builder."""
 
-    STORY_ONLY = ("两家券商", "年指引：约", "而公司给的年末目标是收入的", "条待验证问题", "条量化阈值",
+    STORY_ONLY = ("两家券商", "年指引（电话会）：约", "而公司在电话会上给的年末目标是收入的", "条待验证问题", "条量化阈值",
                   "上一份季报分析写于", "本季分析另有", "越线的这一条管的是年末", "下季阈值（安全侧在上方）",
                   "一家贡献", "存货加应收减应付", "在 EBIT 与税前之间")
     HALF_BLOCKS = ("next_kpi", "half_story", "company_targets", "followup_closure",
@@ -1008,9 +1008,9 @@ class BcRollTest(unittest.TestCase):
             bc.build_payload(other)
         del other["followup_closure"]
         text = json.dumps(bc.build_payload(other), ensure_ascii=False)
-        self.assertIn("而公司给的年末目标是收入的", self.text)
-        self.assertNotIn("而公司给的年末目标是收入的", text)
-        self.assertNotIn("年指引：约", text)
+        self.assertIn("而公司在电话会上给的年末目标是收入的", self.text)
+        self.assertNotIn("而公司在电话会上给的年末目标是收入的", text)
+        self.assertNotIn("年指引（电话会）：约", text)
 
     def test_a_half_without_its_story_leaves_it_out(self) -> None:
         bare = copy.deepcopy(self.s)
