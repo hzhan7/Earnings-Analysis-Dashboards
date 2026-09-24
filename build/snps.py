@@ -177,6 +177,39 @@ def kind_words(lines: list[dict]) -> str:
     return "、".join(parts)
 
 
+def row_text(item: dict) -> str:
+    """Where in the analysis a line was written: its section-8 row, or the named clause
+    (「第 8 节立场撤销条件②」) when the line came from below the table."""
+    return item.get("row_label") or f"第 8 节第{cn_ordinal(item['row'])}行"
+
+
+def stand_in(line: dict, readings: dict) -> str | None:
+    """The reading's own name when it is not literally the line's metric -- a full-year
+    line read, before the year is over, on the year to date -- else None."""
+    name = readings[line["reads"]]["name"]
+    return None if name == line["metric"] else name
+
+
+def reading_text(line: dict, readings: dict) -> str:
+    """A settled line's reading for the tables, naming the stand-in when there is one."""
+    name = stand_in(line, readings)
+    return line["text"] if name is None else f"{line['text']}（{name}）"
+
+
+def stand_in_words(lines: list[dict], readings: dict) -> str:
+    """「FY2026 全年 non-GAAP 营业利润率」两条线的当前值取 FY2026 年初至今 non-GAAP 营业利润率：41.1%。"""
+    groups: dict[tuple[str, str, str], int] = {}
+    for line in lines:
+        name = stand_in(line, readings)
+        if name is not None:
+            key = (line["metric"], name, line["text"])
+            groups[key] = groups.get(key, 0) + 1
+    return "".join(
+        f"「{metric}」{'这条线' if count == 1 else cn_count(count) + '条线'}的当前值取"
+        f"{' ' if name[:1].isascii() else ''}{name}：{text}。"
+        for (metric, name, text), count in groups.items())
+
+
 def margin_text(value: float) -> str:
     """A headroom as a table prints it; zero is 「+0.0%」, never 「-0.0%」."""
     return f"{round(value, 1) + 0.0:+.1f}%"
@@ -329,8 +362,7 @@ def threshold_readings(staging: dict, ip_yoy: list[float | None]) -> dict[str, d
         "note": (
             f"Design Automation 分部收入减 Ansys 收入：Ansys 自 {compact_period(ANSYS_CLOSE)} 并入，"
             "之前两者相等。Ansys 一格取 10-Q MD&A 印的贡献额，没印的那几季取产品组占比 × 收入、"
-            "会计季 Q4 取 10-K 全年减前几季 D。它比产品组口径的 EDA 多出「Other」一组（已剥离业务所在），"
-            "所以同比系统性偏低。"
+            "会计季 Q4 取 10-K 全年减前几季 D。它等于产品组表里 EDA 与 Other 两组之和，比只看 EDA 一组多出「Other」。"
         ),
         "src": "分部收入来自各季业绩 8-K；Ansys 收入来自各期 10-Q / 10-K 的 MD&A 与收入附注；差为自算 D。",
     }
@@ -352,7 +384,8 @@ def threshold_readings(staging: dict, ip_yoy: list[float | None]) -> dict[str, d
                             / sum(revenue[i] for i in span) * 100)
         ytd_labels.append(labels[index])
     readings["fy_margin"] = {
-        "name": f"{fiscal[-1][:6]} 年初至今 non-GAAP 营业利润率",
+        # the fourth quarter's year-to-date is the year itself
+        "name": f"{fiscal[-1][:6]} {'全年' if fiscal[-1].endswith('Q4') else '年初至今'} non-GAAP 营业利润率",
         "labels": ytd_labels, "values": rounded(year_to_date), "show": pct,
         "fmt": "pct1", "ylab": "财年初至今营业利润率",
         "note": ("阈值写的是全年；财年最后一季发布前，能读到的是财年初至今的累计：分子分母都是各季相加，"
@@ -554,6 +587,11 @@ def joined(items: list[str]) -> str:
 def num(value: float, digits: int = 1) -> str:
     """A signed number in prose, with a typographic minus: ``-0.6`` → ``'−0.6'``."""
     return f"{value:+.{digits}f}".replace("-", "−")
+
+
+def money_move(value: float) -> str:
+    """「+US$30M」 / 「−US$5M」: a change in money, the sign outside the currency."""
+    return f"{'+' if value >= 0 else '−'}US${abs(value):,.0f}M"
 
 
 def month_words(date: str) -> str:
@@ -943,7 +981,6 @@ def build_payload(staging: dict) -> dict:
     verdicts = stamped_block(staging, "tracked_metric_verdicts", period)
     closure = stamped_block(staging, "followup_closure", period)
     next_kpi = stamped_block(staging, "next_kpi", period)
-    ansys_split = stamped_block(staging, "ansys_split_note", period)
     story = stamped_block(staging, "quarter_story", period)
     story_or = story or {}
 
@@ -1083,7 +1120,7 @@ def build_payload(staging: dict) -> dict:
             "note": fill_story(closure["note"], values),
             "src_extra": (
                 f"问题原文：上季（{closure['set_in']}）本站季报分析文末的 Follow-up Questions；判定照录本季分析"
-                "第 0 节「验证结果」栏，本页不改判。逐条的判定与证据见核对抽屉。"
+                "第 0 节的逐条核验，本页不改判。逐条的判定与证据见核对抽屉。"
             ),
         }
         closure_table = {
@@ -1096,6 +1133,7 @@ def build_payload(staging: dict) -> dict:
 
     verdict_chart = None
     if verdicts is not None:
+        values["verdict_rows"] = cn_count(sum(verdicts["counts"]))
         verdict_chart = {
             "ref": "EX_VERDICTS",
             "kind": "bars_labeled",
@@ -1111,7 +1149,8 @@ def build_payload(staging: dict) -> dict:
             "ylab": "条",
             "note": fill_story(verdicts["note"], values),
             "src_extra": (
-                "指标与阈值为上季本地研究设定，不是公司指引；判定照录本季分析第 0 节「上季 5 条关键观察指标逐条判定」，"
+                "指标与阈值取自上季本站季报分析第 8 节，不是公司指引；判定照录本季分析第 0 节对那"
+                f"{cn_count(sum(verdicts['counts']))}行的逐行判定，"
                 f"依据 {release_date} 业绩 8-K、截至 {period_end} 的 10-Q 与业绩电话会。"
             ),
         }
@@ -1133,7 +1172,7 @@ def build_payload(staging: dict) -> dict:
         open_words = "".join(f"「{line_label(line)}」{line['verdict']}：{line['text']}。"
                              for line in prior_lines if line["verdict"] not in SETTLED)
         row_words = "".join(
-            f"第 8 节第{cn_ordinal(item['row'])}行（{item['text']}）本季<b>无法结算</b>：{item['why']}。"
+            f"{row_text(item)}（{item['text']}）本季<b>无法结算</b>：{item['why']}。"
             for item in sorted(unsettled, key=lambda item: item["row"]))
         overview = headroom_exhibit(
             f"上季 {len(bars)} 条量化阈值：" + kind_words(bars),
@@ -1141,8 +1180,8 @@ def build_payload(staging: dict) -> dict:
               "threshold": line["threshold"], "actual": line["value"]} for line in bars],
             "actual",
             ("正值 = 达到或守住，负值 = 没到或越线。"
-             f"阈值与方向逐字取自上季（{prior_kpi['set_in']}）本站季报分析第 8 节的{cn_count(section_rows)}行，"
-             "读数取自本季申报。" + zero_words + open_words + row_words
+             f"阈值与方向逐字取自上季（{prior_kpi['set_in']}）本站季报分析第 8 节的{cn_count(section_rows)}处，"
+             "读数取自本季申报。" + stand_in_words(judged, readings) + zero_words + open_words + row_words
              + fill_story(prior_kpi.get("note", ""), values)
              + (f"有序列可画的读数各画一张图（Exhibit "
                 + "、".join("{" + chart["ref"] + "}" for chart in prior_charts) + "）。" if prior_charts else "")),
@@ -1157,16 +1196,16 @@ def build_payload(staging: dict) -> dict:
         prior_rows = []
         for line in prior_lines:
             prior_rows.append([
-                f"第 8 节第{cn_ordinal(line['row'])}行",
+                row_text(line),
                 line_label(line),
                 line["wording"],
-                line["text"],
+                reading_text(line, readings) if line["verdict"] in SETTLED else line["text"],
                 (margin_text(headroom(line_direction(line), line["threshold"], line["value"]))
                  if line["verdict"] in SETTLED and line["threshold"] != 0 else "—"),
                 line["verdict"],
                 line.get("disposition", "—"),
             ])
-        prior_rows += [[f"第 8 节第{cn_ordinal(item['row'])}行", "—", item["text"], "—", "—", "无法结算", item["why"]]
+        prior_rows += [[row_text(item), "—", item["text"], "—", "—", "无法结算", item["why"]]
                        for item in unsettled]
         order = [line["row"] for line in prior_lines] + [item["row"] for item in unsettled]
         prior_rows = [row for _, row in sorted(zip(order, prior_rows), key=lambda pair: pair[0])]
@@ -1190,11 +1229,11 @@ def build_payload(staging: dict) -> dict:
         settled_description = (
             "先结算上季留下的东西："
             + (f"上季本站季报分析文末 {len(closure['items'])} 条待验证问题闭环了几条；" if closure else "")
-            + (f"上季分析第 8 节「关键观察指标」{prior_kpi['rows']} 行 —— 本季分析给每一行的判定，"
+            + (f"上季分析第 8 节「关键观察指标」{prior_kpi['rows']} 处 —— 本季分析给每一处的判定，"
                f"以及其中能用申报读数结算的 {len(judged)} 条量化阈值（{len(bars)} 条进余量总览"
                + (f"、{cn_count(len(judged) - len(bars))}条阈值为 0 的写在总览的图注里" if len(judged) > len(bars) else "")
                + "，有序列的读数各画一张）"
-               + (f"；另{cn_count(len(unsettled))}行本季结算不了："
+               + (f"；另{cn_count(len(unsettled))}处本季结算不了："
                   + "、".join(item["short"] for item in sorted(unsettled, key=lambda item: item["row"]))
                   if unsettled else "")
                + "。" if prior_kpi else "")
@@ -1365,25 +1404,24 @@ def build_payload(staging: dict) -> dict:
     # ── section two ──────────────────────────────────────────────────────────
     close = periods.index(ANSYS_CLOSE) if ANSYS_CLOSE in periods else None
     fy_mid_now = middle(full_year["revenue_usd_m"]) if full_year else None
-    if ansys_split is not None:
-        shares_pct = ansys_split["percentages_pct"]
-        values.update({
-            "ansys_share": f"{shares_pct['Ansys']:.1f}%",
-            "ansys_shares": "、".join(f"{name} {value:.1f}%" for name, value in shares_pct.items()),
-            "ansys_base": f"${ansys_split['revenue_usd_m']:,.1f}M",
-            "ansys_implied": f"${ansys_split['revenue_usd_m'] * shares_pct['Ansys'] / 100:,.1f}M",
-            "ansys_rest": f"${da_revenue[-1] - ansys_split['revenue_usd_m'] * shares_pct['Ansys'] / 100:,.0f}M",
-            "ansys_precision": f"${ansys_split['revenue_usd_m'] * 0.0005:,.1f}M",
-        })
-    if footnote is not None:
-        values["fy_ansys_expected"] = f"${footnote['expected_ansys_revenue_usd_m'][-1] / 1000:.2f}B"
-    anchors = ""
+    # What the filings say about Ansys this quarter: its share of revenue (the
+    # revenue note), and -- once there is a year-ago Ansys quarter -- how much
+    # of the year-on-year increase it contributed (the 10-Q MD&A).
+    ansys_share_now = ansys_block["share_pct"][ansys_block["quarters"].index(period)] \
+        if period in ansys_block["quarters"] else None
+    ansys_increase = ansys_block["printed_increase_usd_m"][ansys_block["quarters"].index(period)] \
+        if period in ansys_block["quarters"] else None
+    total_increase = revenue[-1] - revenue[-5]
+    ansys_part = ansys_increase / total_increase * 100 if ansys_increase is not None and total_increase > 0 else None
+    anchors = (
+        f"<b>并表贡献是申报里印出来的</b>：本季 10-Q 的 MD&A 写明同比增量 US${total_increase:,.1f}M 里 Ansys "
+        f"贡献 US${ansys_increase:,.1f}M（{ansys_part:.0f}%），收入附注印的 Ansys 占比是 {ansys_share_now:.1f}%"
+        f"（≈ {values['ansys_now']}）；Design Automation 拆成 Ansys 与其余见 Exhibit {{EX_DA_SPLIT}}。"
+        if ansys_part is not None and ansys_share_now is not None else ""
+    )
     if footnote is not None and fy_mid_now:
-        anchors = (
-            ("<b>公司自己给的口径有两处可核对</b>：本季 10-Q 收入分解附注里 Ansys 占 "
-             f"{values['ansys_share']}（≈ {values['ansys_implied']}，见第三节）；" if ansys_split is not None else
-             "<b>公司自己给的全年口径</b>：")
-            + f"{full['fiscal_year']} 收入指引的脚注写明其中含 "
+        anchors += (
+            f"{full['fiscal_year']} 收入指引的脚注写明其中含 "
             f"US${footnote['expected_ansys_revenue_usd_m'][-1]:,.0f}M 的 Ansys 收入，"
             f"占指引中点的 {footnote['expected_ansys_revenue_usd_m'][-1] / fy_mid_now * 100:.1f}%"
             + ("，拆解见 Exhibit {EX_FY_SPLIT}。" if fy_split else "。")
@@ -1393,7 +1431,7 @@ def build_payload(staging: dict) -> dict:
         "kind": "gs_bar",
         "title": (
             f"收入 US${revenue[-1]:,.0f}M、同比 {signed(financials['revenue_yoy_pct'][-1])}"
-            + (f"，{story_or['revenue_title_tail']}" if story_or.get("revenue_title_tail") else "")
+            + (f"，同比增量的 {ansys_part:.0f}% 来自并入的 Ansys" if ansys_part is not None and ansys_part > 50 else "")
         ),
         "xlabels": labels,
         "values": revenue,
@@ -1413,9 +1451,9 @@ def build_payload(staging: dict) -> dict:
             f"环比 {signed(pct_change(revenue[-1], revenue[-2]))}。"
             + told("revenue_note")
             + anchors
-            + told("ansys_quarterly_note")
         ),
-        "src_extra": "收入来自各季业绩 8-K 合并损益表；同比为自算 D，分母见口径说明。",
+        "src_extra": ("收入来自各季业绩 8-K 合并损益表；同比为自算 D，分母见口径说明；Ansys 的同比贡献额与占比来自"
+                      f"截至 {period_end} 的 10-Q。"),
     }
 
     ip_now = ip_revenue[-1]
@@ -1461,10 +1499,66 @@ def build_payload(staging: dict) -> dict:
         ),
     }
 
+    # Design Automation split into Ansys and the rest, from the filed Ansys amounts.
+    residual = readings["eda_resid"]["values"]
+    rises = 0
+    while rises + 1 < len(residual) and residual[-1 - rises] > residual[-2 - rises]:
+        rises += 1
+    residual_yoy = pct_change(residual[-1], residual[-5])
+    eda_growth = readings["eda_yoy"]["values"]
+    two_year = ((1 + eda_growth[-1] / 100) * (1 + eda_growth[-5] / 100) - 1) * 100
+    ansys_values = [ansys.get(p) for p in periods]
+    ansys_seen = [(labels[i], value) for i, value in enumerate(ansys_values) if value is not None]
+    da_split_chart = {
+        "ref": "EX_DA_SPLIT",
+        "kind": "grouped_bars",
+        "title": (
+            f"剔除 Ansys 的 Design Automation US${residual[-1]:,.0f}M"
+            + (f"，连续{cn_count(rises)}季环比走高" if rises >= 2 else
+               f"，环比 {signed(pct_change(residual[-1], residual[-2]))}")
+            + f"；产品组口径的 EDA 同比 {signed(eda_growth[-1])}，上年同期 {signed(eda_growth[-5])}"
+        ),
+        "xlabels": labels,
+        "groups": [
+            {"name": "Design Automation 减 Ansys（残差口径）D", "color": "NAVY", "values": rounded(residual)},
+            {"name": "其中并入的 Ansys", "color": "GOLD", "values": rounded(ansys_values)},
+        ],
+        "bar_labels": False,
+        "fmt": "f0c",
+        "label_fmt": "f0c",
+        "ylab": "US$M",
+        "note": (
+            "深蓝是 Design Automation 分部收入减去 Ansys 收入，也就是本季分析说的「残差口径 EDA」；金色是 Ansys。"
+            f"本季深蓝 US${residual[-1]:,.1f}M，环比 {signed(pct_change(residual[-1], residual[-2]))}、同比 {signed(residual_yoy)}"
+            + (f"，是连续第{cn_ordinal(rises)}季环比走高" if rises >= 2 else "")
+            + "。<b>同比要换一个口径读</b>：收入附注的产品组表把 EDA、Design IP、Ansys 与 Other 分开印，"
+            f"只看 EDA 一组，同比是 {signed(eda_growth[-1])}，与管理层在电话会上说的一致；上年同期那一季是 "
+            f"{signed(eda_growth[-5])}，两年叠加 {signed(two_year)}。"
+            + (f"残差口径多含「Other」一组，本季同比因此比只看 EDA 低 {eda_growth[-1] - residual_yoy:.1f}pp。"
+               if residual_yoy < eda_growth[-1] else "")
+            + "Ansys 的季度收入依次是 "
+            + "、".join(f"{label} US${value:,.1f}M" for label, value in ansys_seen)
+            + " —— 并入当季只有两周；公司财年的第一季（"
+            + "、".join(labels[i] for i, (fiscal_label, value) in enumerate(zip(staging["fiscal_labels"], ansys_values))
+                        if fiscal_label.endswith("Q1") and value is not None)
+            + "）含 Ansys 原来 12 月的年末旺季，所以季度之间起伏大。"
+            + "逐季的产品组占比、Ansys 金额与各自出处见核对抽屉。"
+        ),
+        "src_extra": (
+            "分部收入来自各季业绩 8-K；Ansys 收入：10-Q MD&A 印的贡献额（没有上年同期 Ansys 的季度）、"
+            "收入附注的 Ansys 占比 × 收入（其余季度）、10-K 全年减前几季（会计季 Q4）；相减为自算 D。"
+        ),
+    }
+
     ip_cost_yoy = pct_change(ip_revenue[-1] - segments["design_ip_adj_op_income"][-1],
                              ip_revenue[-5] - segments["design_ip_adj_op_income"][-5])
     both_up = da_margin[-1] > da_margin[-5] and ip_margin[-1] > ip_margin[-5]
     ip_trough = min(range(len(ip_margin)), key=lambda i: ip_margin[i])
+    # The release prints each segment's adjusted operating margin to 0.1pp; a
+    # change in it is the difference of the two printed figures, which can sit
+    # 0.1pp away from the difference of the unrounded ratios (26.5 − 20.1 is
+    # 6.4, while 26.46 − 20.12 rounds to 6.3).
+    ip_margin_change = round(ip_margin[-1], 1) - round(ip_margin[-5], 1)
     segment_margin_chart = {
         "ref": "EX_SEG_MARGIN",
         "kind": "lines",
@@ -1486,7 +1580,7 @@ def build_payload(staging: dict) -> dict:
         "note": (
             (f"Design IP 的利润率从 {labels[ip_trough]} 的 {ip_margin[ip_trough]:.1f}% 低点回到 {ip_margin[-1]:.1f}%，"
              if ip_trough != len(ip_margin) - 1 else f"Design IP 的利润率 {ip_margin[-1]:.1f}% 是窗口低点，")
-            + f"同比 {ip_margin[-1] - ip_margin[-5]:+.1f}pp"
+            + f"同比 {ip_margin_change:+.1f}pp（按公司印的 {ip_margin[-5]:.1f}% 与 {ip_margin[-1]:.1f}% 相减）"
             + (" —— <b>回升由收入杠杆驱动</b>："
                f"同期该分部收入同比 {signed(pct_change(ip_revenue[-1], ip_revenue[-5]))}，"
                "利润率与收入同向，不是砍费用砍出来的。"
@@ -1503,6 +1597,21 @@ def build_payload(staging: dict) -> dict:
     }
 
     before_close = [amortization[i] for i in range(close)] if close else []
+    plan = stamped_block(staging, "restructuring_plan", period)
+    restructuring_words = ""
+    if plan is not None:
+        year = staging["fiscal_labels"][-1][:6]
+        this_year = [value for label, value in zip(staging["fiscal_labels"], financials["restructuring_usd_m"])
+                     if label[:6] == year]
+        low, high = plan["revised_usd_m"]
+        restructuring_words = (
+            f"<b>本季的重组费用只有 US${financials['restructuring_usd_m'][-1]:,.1f}M，但计划的总代价被上调了</b>："
+            f"{plan['source_short']}写明，{plan['approved']}把 {plan['name']} 的总费用预计由 "
+            f"US${plan['original_usd_m'][0]:,.0f}–{plan['original_usd_m'][1]:,.0f}M 上调到 "
+            f"US${low:,.0f}–{high:,.0f}M（中点 {money_move((low + high - sum(plan['original_usd_m'])) / 2)}），"
+            f"计划延到 {plan['completion']}完成；本财年{FISCAL_YTD_WORDS[len(this_year)]}已计 "
+            f"US${sum(this_year):,.1f}M。"
+        )
     wedge_chart = {
         "ref": "EX_WEDGE",
         "kind": "grouped_bars",
@@ -1538,7 +1647,8 @@ def build_payload(staging: dict) -> dict:
             f"{financials['gaap_operating_margin_pct'][-1]:.1f}%，另一套是 "
             f"{financials['non_gaap_operating_margin_pct'][-1]:.1f}%，相差 "
             f"{financials['non_gaap_operating_margin_pct'][-1] - financials['gaap_operating_margin_pct'][-1]:.1f}pp。"
-            "十年维度上这道裂口是怎么长出来的，见 Exhibit {EX_AMORT_LONG}。"
+            + restructuring_words
+            + "十年维度上这道裂口是怎么长出来的，见 Exhibit {EX_AMORT_LONG}。"
         ),
         "src_extra": (
             "GAAP 营业利润来自各季 8-K 合并损益表；调整后营业利润为同一份新闻稿的"
@@ -1552,13 +1662,13 @@ def build_payload(staging: dict) -> dict:
         financials["non_gaap_eps_usd"][0], financials["diluted_shares_m"][0])
     ni_yoy = pct_change(financials["non_gaap_net_income_usd_m"][-1], financials["non_gaap_net_income_usd_m"][-5])
     eps_yoy = pct_change(financials["non_gaap_eps_usd"][-1], financials["non_gaap_eps_usd"][-5])
+    shares_yoy = pct_change(financials["diluted_shares_m"][-1], financials["diluted_shares_m"][-5])
     dilution_chart = {
         "ref": "EX_DILUTION",
         "kind": "lines",
         "title": (
-            f"{cn_count(len(periods))}季里收入指数化到 {revenue[-1] / base_revenue * 100:.0f}、"
-            f"non-GAAP 净利到 {financials['non_gaap_net_income_usd_m'][-1] / base_income * 100:.0f}，"
-            f"而每股只到 {financials['non_gaap_eps_usd'][-1] / base_eps * 100:.0f}"
+            f"摊薄股数同比 {signed(shares_yoy)}：non-GAAP 净利同比 {signed(ni_yoy)}，"
+            f"落到每股{'只剩' if eps_yoy < ni_yoy else '是'} {signed(eps_yoy)}"
         ),
         "xlabels": labels,
         "series": [
@@ -1582,7 +1692,7 @@ def build_payload(staging: dict) -> dict:
         "ylab": f"指数（{periods[0]} = 100）",
         "note": (
             "<b>这张图只说一件事：金色线是绿线为什么走不上去的原因。</b>"
-            f"以 {periods[0]} 为 100，收入走到 {revenue[-1] / base_revenue * 100:.0f}、"
+            f"以窗口第一季 {periods[0]} 为 100，收入走到 {revenue[-1] / base_revenue * 100:.0f}、"
             f"non-GAAP 净利走到 {financials['non_gaap_net_income_usd_m'][-1] / base_income * 100:.0f}，"
             f"但摊薄股数同时走到 {financials['diluted_shares_m'][-1] / base_shares * 100:.0f} —— "
             f"于是每股口径只到 {financials['non_gaap_eps_usd'][-1] / base_eps * 100:.0f}。"
@@ -1607,8 +1717,8 @@ def build_payload(staging: dict) -> dict:
     if fy_split:
         fy_mid = [(lo + hi) / 2 for lo, hi
                   in zip(footnote["revenue_lo_usd_m"], footnote["revenue_hi_usd_m"])]
-        ansys = footnote["expected_ansys_revenue_usd_m"]
-        core = [total - a for total, a in zip(fy_mid, ansys)]
+        fy_ansys = footnote["expected_ansys_revenue_usd_m"]
+        core = [total - a for total, a in zip(fy_mid, fy_ansys)]
         raises = sum(1 for a, b in zip(fy_mid, fy_mid[1:]) if b > a)
         vintages = len(footnote["releases"])
         channel = [(release_at, amount) for release_at, amount
@@ -1619,39 +1729,51 @@ def build_payload(staging: dict) -> dict:
         while first_run < len(divest) and divest[first_run] == divest[0]:
             first_run += 1
         channel_words = ""
-        if len(channel) == 1:
-            at = footnote["releases"].index(channel[0][0])
+        if channel:
+            at = footnote["releases"].index(channel[-1][0])
+            quarterly = ansys_block.get("channel_accounting_usd_m", {})
             channel_words = (
-                f"<b>脚注里还有一句更值得记的话</b>：{channel[0][0]} 那份写明 US${ansys[at]:,.0f}M 里含 "
-                f"US${channel[0][1]:,.0f}M 是 Ansys 渠道伙伴的会计影响 —— 这是公司唯一一次在申报文件里给该会计项标价，"
-                "它进收入、不进利润。"
+                f"<b>脚注里还有一句值得记的话</b>：{channel[-1][0]} 那份写明 US${fy_ansys[at]:,.0f}M 里含 "
+                f"US${channel[-1][1]:,.0f}M 是 Ansys 渠道伙伴会计变更（转为总额法）的影响，它进收入、不进利润"
+                + ("；同一天提交的 10-Q 在 MD&A 里给了当季的数（"
+                   + "、".join(f"{quarter} US${amount:,.1f}M" for quarter, amount in quarterly.items()) + "）"
+                   if quarterly else "")
+                + ("，之后的脚注与 10-Q 都没有再给金额。" if at < vintages - 1 else "。")
             )
+        this_move, ansys_move = fy_mid[-1] - fy_mid[-2], fy_ansys[-1] - fy_ansys[-2]
         fy_split_chart = {
             "ref": "EX_FY_SPLIT",
             "kind": "grouped_bars",
             "title": (
-                f"{footnote['fiscal_year']} 收入指引"
-                + (f"{cn_count(raises)}次上调共 US${fy_mid[-1] - fy_mid[0]:,.0f}M，" if fy_mid[-1] > fy_mid[0] else
-                   f"累计下调 US${fy_mid[0] - fy_mid[-1]:,.0f}M，" if fy_mid[-1] < fy_mid[0] else "中点没有变，")
-                + 
-                f"其中 Ansys 那块贡献 US${ansys[-1] - ansys[0]:+,.0f}M"
+                f"{footnote['fiscal_year']} 收入指引本季"
+                + (f"上调 US${this_move:,.0f}M" if this_move > 0 else
+                   f"下调 US${-this_move:,.0f}M" if this_move < 0 else "中点不变")
+                + f"：Ansys 脚注 {money_move(ansys_move)}、其余业务 {money_move(this_move - ansys_move)}"
+                + (f"；全年累计{cn_count(raises)}次上调共 US${fy_mid[-1] - fy_mid[0]:,.0f}M" if fy_mid[-1] > fy_mid[0] else
+                   f"；全年累计下调 US${fy_mid[0] - fy_mid[-1]:,.0f}M" if fy_mid[-1] < fy_mid[0] else "")
             ),
             "xlabels": footnote["releases"],
             "groups": [
                 {"name": "其余业务 D", "color": "NAVY", "values": rounded(core)},
-                {"name": "指引脚注载明的 Ansys 收入", "color": "GOLD", "values": ansys},
+                {"name": "指引脚注载明的 Ansys 收入", "color": "GOLD", "values": fy_ansys},
             ],
             "bar_labels": True,
             "fmt": "f0c",
             "label_fmt": "f0c",
             "ylab": f"{footnote['fiscal_year']} 收入指引中点 US$M",
             "note": (
-                "<b>这是全页唯一能把并购与原生分开的地方，而且分法是公司自己给的。</b>"
-                f"每份新闻稿的 {footnote['fiscal_year']} 收入指引下面都挂着一条脚注，写明这个数里含多少 Ansys 收入。"
-                f"把{cn_count(vintages)}次指引并排：中点从 US${fy_mid[0]:,.0f}M {moved(fy_mid[0], fy_mid[-1])} US${fy_mid[-1]:,.0f}M，"
-                f"共 US${fy_mid[-1] - fy_mid[0]:+,.0f}M；同期脚注里的 Ansys 从 "
-                f"US${ansys[0]:,.0f}M {moved(ansys[0], ansys[-1])} US${ansys[-1]:,.0f}M，"
-                f"即 US${ansys[-1] - ansys[0]:+,.0f}M。"
+                "<b>这是公司自己给的并购与原生分法</b>：每份新闻稿的 "
+                f"{footnote['fiscal_year']} 收入指引下面都挂着一条脚注，写明这个数里含多少 Ansys 收入（季度的实际数见 "
+                "Exhibit {EX_DA_SPLIT}）。"
+                f"本季这一次，中点 {money_move(this_move)}，其中脚注里的 Ansys {money_move(ansys_move)}，"
+                f"其余业务 {money_move(this_move - ansys_move)}"
+                + (f" —— 本季收入本身就比指引中值多出 US${revenue[-1] - guided_revenue:,.1f}M，"
+                   f"全年上调里留给剩下季度的只有 US${this_move - (revenue[-1] - guided_revenue):,.1f}M。"
+                   if 0 <= this_move - (revenue[-1] - guided_revenue) < revenue[-1] - guided_revenue else "。")
+                + f"把{cn_count(vintages)}次指引并排：中点从 US${fy_mid[0]:,.0f}M {moved(fy_mid[0], fy_mid[-1])} US${fy_mid[-1]:,.0f}M，"
+                f"共 {money_move(fy_mid[-1] - fy_mid[0])}；同期脚注里的 Ansys 从 "
+                f"US${fy_ansys[0]:,.0f}M {moved(fy_ansys[0], fy_ansys[-1])} US${fy_ansys[-1]:,.0f}M，"
+                f"即 {money_move(fy_ansys[-1] - fy_ansys[0])}。"
                 f"两者相减，其余业务这{cn_count(vintages - 1)}次合计"
                 + (f"只上修了 US${core[-1] - core[0]:,.0f}M。" if core[-1] > core[0] else
                    f"反而下修了 US${abs(core[-1] - core[0]):,.0f}M。" if core[-1] < core[0] else "没有变。")
@@ -1674,109 +1796,79 @@ def build_payload(staging: dict) -> dict:
     fsa_share = [f / b * 100 for f, b in zip(backlog["fsa_usd_b"], backlog["backlog_usd_b"])]
     backlog_labels = [compact_period(quarter) for quarter in backlog["quarters"]]
 
-    tracked = {
-        "ng_margin": (labels, rounded(financials["non_gaap_operating_margin_pct"]),
-                      "pct1", "营业利润率", "non-GAAP 营业利润率"),
-        "ip_yoy": (labels, rounded(ip_yoy), "pct1", "同比", "Design IP 同比"),
-        "backlog_12m": (backlog_labels, rounded(twelve_month), "f1",
-                        "US$B", "未来 12 个月可确认额 D"),
-        "fsa_share": (backlog_labels, rounded(fsa_share), "pct1", "占 backlog 比重", "FSA 占比 D"),
-        "shares": (labels, financials["diluted_shares_m"], "f0c", "百万股", "摊薄股数"),
-    }
-    computed_now = {
-        "ng_margin": financials["non_gaap_operating_margin_pct"][-1],
-        "ip_yoy": ip_yoy[-1],
-        "backlog_12m": twelve_month[-1],
-        "fsa_share": fsa_share[-1],
-        "shares": financials["diluted_shares_m"][-1],
-    }
-
-    def current_of(entry: dict) -> float:
-        """A threshold's current value, computed from the series rather than typed."""
-        if entry["id"] in computed_now:
-            if "current" in entry:
-                raise ValueError(f"threshold `{entry['id']}` is computed from the series; "
-                                 "remove its typed value")
-            return computed_now[entry["id"]]
-        if "current" not in entry:
-            raise ValueError(f"threshold `{entry['id']}` has no value and no way to compute one")
-        return entry["current"]
-
-    next_charts = []
+    next_charts, next_table, followup_table = [], None, None
+    next_lines: list[dict] = []
+    next_bars: list[dict] = []
+    next_waiting: list[dict] = []
+    next_not_drawn: list[dict] = []
     if next_kpi is not None:
-        entries = [{**entry, "current": current_of(entry)} for entry in next_kpi["quantified"]]
-        margins = {entry["id"]: headroom(entry["direction"], entry["threshold"], entry["current"])
-                   for entry in entries}
-        names = {entry["id"]: entry["metric"] for entry in entries}
-        breached = [key for key, value in margins.items() if value < 0]
-        thinnest = min(margins, key=margins.get)
-        ordered = sorted(margins, key=margins.get)
-        if next_kpi.get("thinnest_two") and sorted(ordered[:2]) != sorted(next_kpi["thinnest_two"]):
-            raise ValueError(f"series block `next_kpi` says the two thinnest are {next_kpi['thinnest_two']}, "
-                             f"the data says {ordered[:2]}: rewrite its note for this quarter")
-        for entry in entries:
-            values[f"next_margin:{entry['id']}"] = f"{margins[entry['id']]:.1f}%"
-            values[f"next_current:{entry['id']}"] = unit_text(entry["unit"], entry["current"])
-            values[f"next_threshold:{entry['id']}"] = unit_text(entry["unit"], entry["threshold"])
-        fsa_now, fsa_prev = backlog["fsa_usd_b"][-1], backlog["fsa_usd_b"][-2]
-        values.update({
-            "fsa_now": f"{fsa_now:.1f}", "fsa_prev": f"{fsa_prev:.1f}",
-            "fsa_prev_high": f"{fsa_prev + 0.04:.2f}", "fsa_now_low": f"{fsa_now - 0.04:.2f}",
-        })
-        if full is not None:
-            values["fy_label"] = full["fiscal_year"]
-            values["fy_ng_margin_mid"] = f"{full_year['non_gaap_operating_margin_midpoint_pct']:.1f}%"
-        excluded = next_kpi.get("excluded", [])
-        excluded_text = (
-            f"另有{cn_count(len(excluded))}条本页<b>不接入</b>，原因各不相同，都写在这里而不是省略掉："
-            + "；".join(f"（{i}）{fill_story(item, values)}" for i, item in enumerate(excluded, 1)) + "。"
-            if excluded else "")
-        share_entry = next((e for e in entries if e["id"] == "shares"), None)
-        own_ceiling = (share_entry is not None and next_quarter is not None
-                       and share_entry["threshold"] == next_quarter["diluted_shares_m"][1])
-        headroom_chart = headroom_exhibit(
-            (f"下季 {len(entries)} 条量化阈值：{len(entries) - len(breached)} 条仍在安全侧，"
-             f"{len(breached)} 条已越线"
-             if breached else
-             f"下季 {len(entries)} 条量化阈值：全部仍在安全侧，最薄的「{names[thinnest]}」只剩 {margins[thinnest]:.1f}%"),
-            entries,
+        following = shift_quarter(period, 1)
+        if next_kpi["set_in"] != period or next_kpi["for_period"] != following:
+            raise ValueError(f"series block `next_kpi` is set in {next_kpi['set_in']!r} for "
+                             f"{next_kpi['for_period']!r}; this quarter is {period!r}, the next {following!r}")
+        next_lines = judged_lines(next_kpi["quantified"], readings, period)
+        next_not_drawn = next_kpi.get("not_drawn", [])
+        accounted = {line["row"] for line in next_lines} | {item["row"] for item in next_not_drawn}
+        if accounted != set(range(1, next_kpi["rows"] + 1)):
+            raise ValueError(f"series block `next_kpi`: rows {sorted(accounted)} of {next_kpi['rows']} are "
+                             "accounted for -- every row the analysis wrote is either a line or explained")
+        judged = [line for line in next_lines if line["verdict"] in SETTLED]
+        next_bars = [line for line in judged if line["threshold"] != 0]
+        next_waiting = [line for line in next_lines if line["verdict"] == NOT_YET]
+        charts = line_charts(next_lines, readings, "下季", "本季")
+        waiting_words = "".join(
+            f"「{line_label(line)}」{line['text']}（本季读数 {readings[line['reads']]['show'](readings[line['reads']]['value'])}），"
+            "不进这张图。" for line in next_waiting)
+        zero_words = "".join(
+            f"「{line_label(line)}」阈值是 0，没有百分比余量可算，不进这张图：当前 {line['text']}，{line['verdict']}。"
+            for line in judged if line["threshold"] == 0)
+        row_words = "".join(f"{row_text(item)}（{item['text']}）不成线：{item['why']}。" for item in next_not_drawn)
+        overview = headroom_exhibit(
+            f"下季 {len(next_bars)} 条量化阈值：按本季读数，" + kind_words(next_bars),
+            [{"metric": line_label(line), "direction": line_direction(line),
+              "threshold": line["threshold"], "current": line["value"]} for line in next_bars],
             "current",
-            "正值 = 仍在安全侧。" + fill_story(next_kpi.get("note", ""), values),
-            src_extra=(
-                "阈值为本地研究设定，不是公司指引"
-                + (f"（股数一条的 {unit_text(share_entry['unit'], share_entry['threshold'])} 取自公司自己的指引上限）"
-                   if own_ceiling else "")
-                + f"；当前值为截至 {period_end} 的实际。"
-                + excluded_text
-            ),
+            ("正值 = 按当前读数已达到或仍守住，负值 = 按当前读数还没到或已越线。"
+             f"阈值与方向逐字取自本季（{period}）本站季报分析第 8 节「新一轮跟踪表」与「立场撤销条件」，"
+             "不是公司指引；判定只看数字那一半，原文另附的事件或定性条件列在核对抽屉。"
+             + stand_in_words(judged, readings) + waiting_words + zero_words + row_words
+             + (f"有序列可画的读数各画一张图（Exhibit "
+                + "、".join("{" + chart["ref"] + "}" for chart in charts) + "）。" if charts else "")),
+            src_extra=f"当前值为截至 {period_end} 的申报值或据申报自算（D）；逐条原文与读数见核对抽屉。",
         )
-        next_charts = [headroom_chart]
-        for entry in entries:
-            if entry["id"] not in tracked:
-                continue
-            xlabels, series_values, fmt, ylab, actual_name = tracked[entry["id"]]
-            side = "上方" if entry["direction"] == "up" else "下方"
-            next_charts.append(threshold_exhibit(
-                (f"{entry['metric']}：下季阈值 {unit_text(entry['unit'], entry['threshold'])}，"
-                 f"当前 {unit_text(entry['unit'], entry['current'])}"),
-                xlabels,
-                series_values,
-                entry["threshold"],
-                fmt=fmt,
-                ylab=ylab,
-                actual_name=actual_name,
-                threshold_name=f"下季阈值（安全侧在{side}）",
-                note=(
-                    f"阈值 {unit_text(entry['unit'], entry['threshold'])}，"
-                    f"当前 {unit_text(entry['unit'], entry['current'])}，"
-                    f"余量 {headroom(entry['direction'], entry['threshold'], entry['current']):+.1f}%。"
-                ),
-                src_extra=(
-                    "实际值来自各季业绩 8-K 与 10-Q；阈值为本地研究设定，不是公司指引。"
-                ),
-            ))
-    else:
-        entries = []
+        overview["ref"] = "EX_NEXT"
+        overview["values"] = [value + 0.0 for value in overview["values"]]
+        overview["positive_label"] = "已达到 / 仍守住"
+        overview["negative_label"] = "还没到 / 已越线"
+        next_charts = [overview] + charts
+        next_rows = []
+        for line in next_lines:
+            next_rows.append([
+                row_text(line),
+                line_label(line),
+                line["wording"],
+                (reading_text(line, readings) if line["verdict"] in SETTLED else
+                 f"{line['text']}；本季 {readings[line['reads']]['show'](readings[line['reads']]['value'])}"),
+                (margin_text(headroom(line_direction(line), line["threshold"], line["value"]))
+                 if line["verdict"] in SETTLED and line["threshold"] != 0 else "—"),
+                line["verdict"],
+            ])
+        next_rows += [[row_text(item), "—", item["text"], "—", "—", "不成线"] for item in next_not_drawn]
+        order = [line["row"] for line in next_lines] + [item["row"] for item in next_not_drawn]
+        next_table = {
+            "n": 0,
+            "title": "下季阈值与本季读数（原单位）",
+            "headers": ["出处", "阈值", "本季分析原文", "本季读数", "余量 D", "按本季读数"],
+            "rows": [row for _, row in sorted(zip(order, next_rows), key=lambda pair: pair[0])],
+        }
+        followups = next_kpi.get("followups", [])
+        if followups:
+            followup_table = {
+                "n": 0,
+                "title": f"下季待验证问题（本季分析文末 {len(followups)} 条）",
+                "headers": ["#", "问题", "下季验证方式 / 触发阈值（原文）"],
+                "rows": [[str(i), item["question"], item["check"]] for i, item in enumerate(followups, 1)],
+            }
 
     # ── section four ─────────────────────────────────────────────────────────
     long_labels = long["fiscal_years"]
@@ -1959,15 +2051,16 @@ def build_payload(staging: dict) -> dict:
             + f"本财年{FISCAL_YTD_WORDS[fiscal_q]}实际动用 US${ytd_buyback:,.0f}M，"
             f"{int(period_end[5:7])} 月 {int(period_end[8:10])} 日仍余 "
             f"US${capital['remaining_authorization_usd_m'][-1]:,.0f}M；"
-            + (f"最近一季的现金流出 US${capital['buyback_usd_m'][-1]:,.1f}M"
-               + (" " + told("last_quarter_buyback_note") if story_or.get("last_quarter_buyback_note") else "")
+            + (f"最近一季回购现金流出 US${capital['buyback_usd_m'][-1]:,.1f}M"
                + ("，授权余额整个季度<b>一美元未动</b>。" if untouched else "。")
-               if capital["buyback_usd_m"][-1] else "最近一季没有回购。")
+               if capital["buyback_usd_m"][-1] else
+               "<b>最近一季回购为零</b>" + ("，授权余额整季未动" if untouched else "") + "。")
             + "每股口径这两年为什么走不动，见 Exhibit {EX_DILUTION}。"
         ),
         "src_extra": (
-            f"回购金额与摊薄股数逐年读自各年 10-K；{fiscal_now[:6]} 各季回购与授权余额来自各季 10-Q 的"
-            "现金流量表与 Item 2(c)，会计季 Q4 与季度差分为自算 D。"
+            f"回购金额与摊薄股数逐年读自各年 10-K；{fiscal_now[:6]} 各季回购是现金流量表「Purchases of treasury stock」"
+            "与「Purchase of equity forward contract」两行之和（加速回购的预付款在付款当季全额计入），"
+            "授权余额取各季 10-Q 的 Item 2(c)；季度值为年初至今相减，会计季 Q4 为全年减九个月，均为自算 D。"
         ),
     }
 
@@ -2013,7 +2106,8 @@ def build_payload(staging: dict) -> dict:
             f"US${twelve_month[-1]:.2f}B（年末 US${twelve_month[year_end]:.2f}B）。"
             "<b>口径必须说清楚</b>：那个百分比在申报文件里是对<b>扣除 FSA 之后</b>的 backlog 说的，"
             "所以金线 = （深蓝 − 灰）× 该百分比，不是深蓝乘以它。"
-            "灰线是客户可自由调配额度的不可撤销承诺，占比见第三节的阈值图。"
+            f"灰线是客户可自由调配额度的不可撤销承诺，本季占 backlog 的 {fsa_share[-1]:.1f}%（上季 {fsa_share[-2]:.1f}%）；"
+            "两个数都只印到 US$0.1B，单季的占比变化可能只是取整。"
             "本图为各季申报当时的数：FY2024 10-K 曾把 2023-10-31 的 8.6 重述为 8.1，"
             "差额来自 Software Integrity 剥离，本页画当时申报值而不追溯改写。"
         ),
@@ -2105,7 +2199,7 @@ def build_payload(staging: dict) -> dict:
     settled_charts = (([closure_chart] if closure_chart else []) + ([verdict_chart] if verdict_chart else [])
                       + prior_charts + [delivery_chart] + delivery_charts)
     highlights = ([revenue_chart] + ([expectation_chart] if expectation_chart else [])
-                  + [segment_chart, segment_margin_chart, wedge_chart, dilution_chart]
+                  + [da_split_chart, segment_chart, segment_margin_chart, wedge_chart, dilution_chart]
                   + ([fy_split_chart] if fy_split_chart else []) + [backlog_chart])
     routine = [amort_chart, margin_wedge_chart, buyback_chart, geography_chart]
 
@@ -2284,8 +2378,41 @@ def build_payload(staging: dict) -> dict:
             "headers": ["指标", "本季原指引", "本季实际", "兑现", "新指引", "变化 / 备注"],
             "rows": guide_rows,
         })
-    if entries:
-        tables.append(threshold_table(0, "下季阈值与当前值（原单位）", entries, "current", "当前值"))
+    tables += [table for table in (next_table, followup_table) if table is not None]
+
+    # The product-group and Ansys readings behind section one's EDA line and
+    # section two's split, one row per window quarter with where it was read.
+    eda_now, eda_then = eda_product_group(staging)
+    ansys_sources = dict(zip(ansys_block["quarters"], ansys_block["sources"]))
+
+    def share_text(parts: dict) -> str:
+        if "three_months" in parts:
+            return f"{parts['three_months'][0]:.1f}%"
+        return f"全年 {parts['full_year'][0]:.1f}% − 九个月 {parts['nine_months'][0]:.1f}%"
+
+    eda_rows = []
+    for index, reading in enumerate(staging["eda_product_group"]["readings"]):
+        quarter = periods[index]
+        eda_rows.append([
+            quarter,
+            staging["fiscal_labels"][index],
+            share_text(reading["now"]),
+            f"${eda_now[index]:,.1f}M D",
+            share_text(reading["year_ago"]),
+            f"${eda_then[index]:,.1f}M D",
+            f"{(eda_now[index] / eda_then[index] - 1) * 100:+.1f}% D",
+            f"${ansys[quarter]:,.1f}M" + ("" if ansys_block["printed_usd_m"][ansys_block["quarters"].index(quarter)]
+                                         is not None else " D") if quarter in ansys else "—",
+            f"${residual[index]:,.1f}M D",
+            reading["source"] + ("；Ansys：" + ansys_sources[quarter] if quarter in ansys_sources else ""),
+        ])
+    tables.append({
+        "n": 0,
+        "title": f"{cn_count(len(periods))}季度 EDA 产品组与 Ansys 收入（申报占比 × 同一份申报的收入）",
+        "headers": ["期间", "公司口径", "EDA 占比", "EDA 收入", "上年同期 EDA 占比", "上年同期 EDA 收入",
+                    "EDA 同比", "Ansys 收入", "Design Automation 减 Ansys", "出处"],
+        "rows": eda_rows,
+    })
     tables += [
         {
             "n": 0,
@@ -2362,18 +2489,19 @@ def build_payload(staging: dict) -> dict:
     amort_record = amortization_share[-1] > max(long_amort_share)
     brief = (
         '<h4>本季三条主线</h4><div class="takeaway-grid">'
-        '<article><span>记录</span><b>收入是预测，EPS 是底线</b>'
-        f'<p>{record_facts["finished"]} 季指引记录里，收入落在自己区间内 {record_facts["inside"]} 次，'
-        f'non-GAAP EPS 却 {record_facts["eps_above"]} 次穿出上限。同一张表，两种性质。</p></article>'
+        + ('<article><span>增长</span><b>EDA 顶着高基数</b>' if eda_growth[-5] > eda_growth[-1] else
+           '<article><span>增长</span><b>EDA</b>')
+        + f'<p>EDA（不含 Ansys）同比 {signed(eda_growth[-1])}，上年同期 {signed(eda_growth[-5])}；'
+        f'剔除 Ansys 的 Design Automation 环比 {signed(pct_change(residual[-1], residual[-2]))}。</p></article>'
         + ('<article><span>亮点</span><b>Design IP 重新转正</b>' if ip_turned else
            '<article><span>分部</span><b>Design IP</b>')
         + f'<p>US${ip_revenue[-1]:,.0f}M、同比 {signed(ip_yoy[-1])}；'
-        f'分部利润率 {ip_margin[-1]:.1f}%，同比 {ip_margin[-1] - ip_margin[-5]:+.1f}pp。</p></article>'
+        f'分部利润率 {ip_margin[-1]:.1f}%，同比 {ip_margin_change:+.1f}pp。</p></article>'
         '<article><span>代价</span><b>摊销与股数同时变重</b>'
         f'<p>收购摊销占收入 {amortization_share[-1]:.1f}%'
         + (f"，{ten}年最高" if amort_record else "")
         + f'；股数同比 {signed(shares_yoy)}'
-        + (f"，回购连着{cn_count(zero_run)}个财年为零" if zero_run and not resumed else "")
+        + ("，本季回购为零" if not capital["buyback_usd_m"][-1] else "")
         + '。</p></article>'
         '</div>'
     )
@@ -2431,14 +2559,16 @@ def build_payload(staging: dict) -> dict:
         "backlog 相关的三个数各有各的口径：总额与不可撤销 FSA 承诺是公司披露值（精度 US$0.1B），"
         "「未来 12 个月内可确认的比例」在申报原文里是对扣除 FSA 之后的 backlog 说的，"
         "因此本页的可确认额 =（总额 − FSA）× 该比例，为自算值。",
-        "本页不发布剔除 Ansys 之后的季度 EDA 收入序列。公司不印 Ansys 的季度收入金额；10-Q 的收入分解附注"
-        "只按产品组印占比"
-        + (f"（本季 Ansys {values['ansys_share']}）" if ansys_split is not None else "")
-        + "，只覆盖并入之后的几季，拉不出与本页其余序列并排的线；全年收入指引的脚注给的是预期口径。"
-        + ("能复算的两处 —— 本季占比推导出的单季值与年度指引层面的并购与原生拆分 —— 分别写在第三节与单独成图。"
-           if ansys_split is not None and fy_split else
-           "能复算的本季占比推导出的单季值写在第三节。" if ansys_split is not None else
-           "能复算的年度指引层面的并购与原生拆分单独成图。" if fy_split else ""),
+        "Ansys 与 EDA 的季度收入都在申报里：10-Q 的 MD&A 在没有上年同期 Ansys 的季度印 Ansys 的贡献额"
+        + ("（" + "、".join(f"{quarter}（公司 {fiscal_words(label)}）US${amount:,.1f}M" for quarter, label, amount
+                           in zip(ansys_block["quarters"], ansys_block["fiscal_labels"], ansys_block["printed_usd_m"])
+                           if amount is not None) + "）"
+           if any(amount is not None for amount in ansys_block["printed_usd_m"]) else "")
+        + "，之后印同比增量；收入附注每季按产品组（EDA / Design IP / Ansys / Other）印占比，这张表自 FY2019 起就有，"
+        "Ansys 那一行从并入当季开始；10-K 印全年。本页据此在第二节把 Design Automation 拆成 Ansys 与其余，"
+        "在第一节用产品组口径的 EDA 同比结算上季阈值"
+        + ("；全年收入指引脚注里的 Ansys 是预期口径，另画一张。" if fy_split else "。")
+        + "占比只印到 0.1pp，乘出来的金额各带约 ±0.05% × 收入的取整区间。",
         "本页只发布公司披露值、可复算的简单派生值，以及明确标注的市场预期；D 标记代表 Derived / 自算。",
         "市场预期一律标注为「市场预期」并给出取数时点，不写卖方机构名，也不发布评级、目标价或估值。",
     ]
@@ -2484,11 +2614,14 @@ def build_payload(staging: dict) -> dict:
                 "id": "quarter_highlights",
                 "title": "二、本季重点",
                 "description": (
-                    "收入" + ("与它对市场预期的落点" if expectation_chart else "")
-                    + "、两个分部各自的收入与利润率、GAAP 与 non-GAAP 之间那道由收购摊销撑开的裂口、"
-                    "股数对每股口径的吞噬"
-                    + ("、公司自己在指引脚注里给出的并购与原生拆分" if fy_split_chart else "")
+                    "本季分析的核心结论，能用申报画的各画一张：收入与其中并入的 Ansys"
+                    + ("、对市场预期的落点" if expectation_chart else "")
+                    + "、剔除 Ansys 后的 Design Automation 与 EDA 同比、Design IP、两个分部的利润率、"
+                    "GAAP 与 non-GAAP 之间由收购摊销撑开的裂口、股数对每股口径的吞噬"
+                    + ("、公司在指引脚注里给出的并购与原生拆分" if fy_split_chart else "")
                     + "，以及 backlog 与它未来 12 个月可确认的那一半。"
+                    + (f"另有{cn_count(len(story_or['undrawn']))}条结论不出图：" + "；".join(story_or["undrawn"]) + "。"
+                       if story_or.get("undrawn") else "")
                 ),
                 "exhibits": highlight_ex,
             },
@@ -2496,9 +2629,19 @@ def build_payload(staging: dict) -> dict:
                 "id": "next_quarter",
                 "title": "三、下季要跟踪什么",
                 "description": (
-                    ("当前值离下季阈值还有多远，统一用「距阈值余量」口径"
-                     + (f"；不接入的{cn_count(len(next_kpi['excluded']))}条也写在这里。"
-                        if next_kpi.get("excluded") else "。"))
+                    ("当前值离下季阈值还有多远，统一用「距阈值余量」口径。阈值逐字取自本季本站季报分析第 8 节的"
+                     f"「新一轮跟踪表」与「立场撤销条件」，拆成 {len(next_lines)} 条线："
+                     f"{len(next_bars)} 条有当前读数的进余量总览，有序列的读数各画一张"
+                     + (f"；{cn_count(len(next_lines) - len(next_bars) - len(next_waiting))}条阈值为 0 的写在总览图注里"
+                        if len(next_lines) - len(next_bars) - len(next_waiting) else "")
+                     + (f"；{cn_count(len(next_waiting))}条读的是下季本身的数（"
+                        + "、".join(dict.fromkeys(line["metric"] for line in next_waiting)) + "），等下季发布再结算"
+                        if next_waiting else "")
+                     + (f"；另{cn_count(len(next_not_drawn))}处不成线：" + "、".join(item["short"] for item in next_not_drawn)
+                        if next_not_drawn else "")
+                     + "。"
+                     + (f"本季分析文末留给下季的 {len(next_kpi['followups'])} 条待验证问题列在核对抽屉。"
+                        if next_kpi.get("followups") else ""))
                     if next_kpi is not None else "本季没有设定下季阈值。"),
                 "exhibits": next_ex,
             },
