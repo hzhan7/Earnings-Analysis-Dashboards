@@ -122,10 +122,14 @@ no dependency at all, and is what actually runs on a fresh clone.
 - Published numbers: company-reported figures, official statistics named and
   linked where they are used (the Bank of Korea's quarterly average won/dollar
   rate in the Samsung page's currency note), and transparent arithmetic
-  derivations only. Short commentary is research interpretation, not company
-  guidance or a rating.
+  derivations. Figures and statements given only on the earnings call may also
+  be published, and may settle a threshold, but each one is labelled as the
+  call (`电话会`) and never presented as a filed value. Short commentary is
+  research interpretation, not company guidance or a rating.
 - Market expectations may be published as a labelled, dated comparison point
-  (`市场预期`), with no broker or vendor named.
+  (`市场预期`), with no broker or vendor named. The home page's boundary says
+  the same; both call-only content and consensus were settled by the owner on
+  2026-09-24.
 - Excluded: ratings, target prices, valuation, broker-attributed estimates,
   unverified customer-concentration estimates, local absolute paths, source
   PDFs, PPTs and transcripts.
