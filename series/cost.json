@@ -16,7 +16,7 @@
   },
   "analysis_record": {
     "first_period": "Q4 2025",
-    "_note": "库里第一份 Costco 季报分析的正文是 FY2026 Q1（本站 Q4 2025）——文件名写的是 「2026-03-05 COST Q1 2026 vs Q4 2025 Analysis.md」，它自己的第 0 节写明此前没有沉淀分析。这一季之后的每一季都有上一份分析可结算，所以 builder 要求带上 followup_closure 或 prior_kpi_settlement。"
+    "_note": "库里第一份 Costco 季报分析的正文是 FY2026 Q1（本站 Q4 2025）——文件名原先按财年季度写作「2026-03-05 COST Q1 2026 vs Q4 2025 Analysis.md」，2026-09-24 按库里的日历年命名规则改为「2026-03-05 COST Q4 2025 vs Q3 2025 Analysis.md」；它自己的第 0 节写明此前没有沉淀分析。这一季之后的每一季都有上一份分析可结算，所以 builder 要求带上 followup_closure 或 prior_kpi_settlement。"
   },
   "_checks": {
     "period": "Q2 2026",
@@ -54,7 +54,7 @@
     "note": {
       "source": {
         "this_quarter": "2026-05-28 COST Q2 2026 vs Q1 2026 Analysis.md（第 0 节 上季 Follow-up 回答；第 8 节 关键观察指标）",
-        "previous_quarter": "2026-03-05 COST Q1 2026 vs Q4 2025 Analysis.md（第 8 节 关键观察指标；文末 Follow-up Questions）"
+        "previous_quarter": "2026-03-05 COST Q4 2025 vs Q3 2025 Analysis.md（第 8 节 关键观察指标；文末 Follow-up Questions）"
       },
       "previous_covers": {
         "period": "Q4 2025",
@@ -2957,7 +2957,7 @@
   "prior_kpi_settlement": {
     "period": "Q2 2026",
     "set_in": "Q4 2025",
-    "set_in_file": "2026-03-05 COST Q1 2026 vs Q4 2025 Analysis.md",
+    "set_in_file": "2026-03-05 COST Q4 2025 vs Q3 2025 Analysis.md",
     "due_text": "Q2/Q3",
     "_note": "上一份报告第 8 节五个指标里的量化阈值，逐字抄录（quote）；reads 指向本页算读数的序列，读数一律由 builder 从序列现算，不在这里写。not_charted 是按申报数结不了、或不能画成序列的几条，理由写在 reading / verdict 里。",
     "quantified": [
@@ -3177,7 +3177,7 @@
   "followup_closure": {
     "period": "Q2 2026",
     "set_in": "Q4 2025",
-    "set_in_file": "2026-03-05 COST Q1 2026 vs Q4 2025 Analysis.md",
+    "set_in_file": "2026-03-05 COST Q4 2025 vs Q3 2025 Analysis.md",
     "closed_in": "2026-05-28 COST Q2 2026 vs Q1 2026 Analysis.md",
     "_note": "上一份报告（文件名标 2026-03-05，正文是 FY2026 Q1）文末的 7 条 Follow-up，由本季报告第 0 节一次性闭环（FY2026 Q2 没有单独的报告）。verdict 照录第 0 节判定列原文；evidence 是本页核对的申报读数，花括号是 builder 现算的数。",
     "labels": [
