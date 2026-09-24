@@ -610,6 +610,16 @@ CONVERTED = {
         "non-GAAP 营业利润率：下季阈值": "next-quarter threshold chart, recent by design.",
         "Design IP 收入同比：下季阈值": "next-quarter threshold chart, recent by design.",
         "摊薄股数：下季阈值": "next-quarter threshold chart, recent by design.",
+        # Section one settles last quarter's section-8 lines on the page's
+        # eight-quarter window, like the next-quarter threshold charts. The
+        # product-group shares behind the EDA line are printed from the FY2019
+        # Q1 10-Q onward; lengthening it means crossing the FY2023 and FY2024
+        # product-group redefinitions and the FY2021 switch from whole to
+        # one-decimal percentages, which this chart does not do.
+        "EDA 收入同比（不含 Ansys）：本季": "last-quarter threshold chart on the page's eight-quarter "
+                                   "window, recent by design.",
+        "Design IP 收入环比：本季": "last-quarter threshold chart, recent by design.",
+        "单季 non-GAAP 营业利润率：本季": "last-quarter threshold chart, recent by design.",
         "中国占比": "the geographic disaggregation reaches 2022Q4. Earlier quarters exist "
                "only on the pre-divestiture basis that still included Software "
                "Integrity, which is not comparable with the continuing-operations "
@@ -1253,6 +1263,9 @@ FLOOR_KIND = {
         'non-GAAP 营业利润率：下季阈值': 'design',
         'Design IP 收入同比：下季阈值': 'design',
         '摊薄股数：下季阈值': 'design',
+        'EDA 收入同比（不含 Ansys）：本季': 'design',
+        'Design IP 收入环比：本季': 'design',
+        '单季 non-GAAP 营业利润率：本季': 'design',
         '中国占比': 'disclosure',
     },
     'spgi': {
@@ -1392,7 +1405,7 @@ class ChartWindowTest(unittest.TestCase):
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
         self.assertEqual(settled.count("disclosure"), 160)
-        self.assertEqual(settled.count("design"), 40)
+        self.assertEqual(settled.count("design"), 43)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
         """Every short chart either names its reason or is counted here.

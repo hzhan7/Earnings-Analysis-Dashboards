@@ -86,6 +86,161 @@ def _median(values: list[float]) -> float:
     return (ordered[middle - 1] + ordered[middle]) / 2
 
 
+# ── threshold lines, recomputed here rather than through the builder ─────────
+GOOD = {"hurdle": "达到", "guard": "守住"}
+BAD = {"hurdle": "没到", "guard": "越线"}
+COMPARE = {"<": lambda v, t: v < t, "≤": lambda v, t: v <= t, ">": lambda v, t: v > t, "≥": lambda v, t: v >= t}
+
+
+def shifted(label: str, by: int) -> str:
+    number = quarter_order(label) - 1 + by
+    return f"Q{number % 4 + 1} {number // 4}"
+
+
+def eda_pairs(source: dict) -> list[tuple[float, float]]:
+    """EDA without Ansys per window quarter, (this quarter, a year earlier), from the block's pairs."""
+    def amount(parts: dict) -> float:
+        if "three_months" in parts:
+            share, base = parts["three_months"]
+            return share * base / 100
+        (fy_share, fy_base), (nine_share, nine_base) = parts["full_year"], parts["nine_months"]
+        return (fy_share * fy_base - nine_share * nine_base) / 100
+    return [(amount(r["now"]), amount(r["year_ago"])) for r in source["eda_product_group"]["readings"]]
+
+
+def ansys_by_quarter(source: dict) -> dict[str, float]:
+    block = source["ansys_revenue"]
+    revenue = dict(zip(source["periods"], source["financials"]["revenue_usd_m"]))
+    out = {}
+    for i, quarter in enumerate(block["quarters"]):
+        if block["printed_usd_m"][i] is not None:
+            out[quarter] = block["printed_usd_m"][i]
+        elif block["share_pct"][i] is not None:
+            out[quarter] = block["share_pct"][i] / 100 * revenue[quarter]
+        else:
+            year = block["fiscal_labels"][i][:6]
+            out[quarter] = block["fiscal_year_usd_m"][year] - sum(
+                out[q] for q, f in zip(block["quarters"][:i], block["fiscal_labels"][:i]) if f[:6] == year)
+    return out
+
+
+def history(source: dict, reads: str) -> list[float | None]:
+    """The quarterly history a line reads, aligned to its chart's axis."""
+    fin, seg = source["financials"], source["segments_usd_m"]
+    periods = source["periods"]
+    ip = dict(zip(periods, seg["design_ip_revenue"]))
+    for label, value in seg.get("design_ip_revenue_prior_year_outside_window", {}).items():
+        ip.setdefault(shifted(label, -4), value)
+    if reads == "eda_yoy":
+        return [(a / b - 1) * 100 for a, b in eda_pairs(source)]
+    if reads == "eda_resid":
+        ansys = ansys_by_quarter(source)
+        return [da - ansys.get(p, 0.0) for p, da in zip(periods, seg["design_automation_revenue"])]
+    if reads == "margin":
+        return [oi / rev * 100 for oi, rev in zip(fin["non_gaap_operating_income_usd_m"], fin["revenue_usd_m"])]
+    if reads == "fy_margin":
+        out = []
+        for i, label in enumerate(source["fiscal_labels"]):
+            start = i - int(label[-1]) + 1
+            if start >= 0:
+                out.append(sum(fin["non_gaap_operating_income_usd_m"][start:i + 1])
+                           / sum(fin["revenue_usd_m"][start:i + 1]) * 100)
+        return out
+    if reads == "ip_yoy":
+        return [None if shifted(p, -4) not in ip else (ip[p] / ip[shifted(p, -4)] - 1) * 100 for p in periods]
+    if reads == "ip_qoq":
+        return [None if shifted(p, -1) not in ip else (ip[p] / ip[shifted(p, -1)] - 1) * 100 for p in periods]
+    backlog = source["backlog"]
+    if reads == "backlog_12m":
+        return [(b - f) * p / 100 for b, f, p in zip(backlog["backlog_usd_b"], backlog["fsa_usd_b"],
+                                                      backlog["next_12m_pct_of_ex_fsa"])]
+    if reads == "backlog_total":
+        return list(backlog["backlog_usd_b"])
+    raise KeyError(reads)
+
+
+def line_value(source: dict, line: dict) -> float | None:
+    if line.get("period") and quarter_order(line["period"]) != quarter_order(source["periods"][-1]):
+        return None
+    values = history(source, line["reads"])
+    run = line.get("consecutive", 1)
+    if run > 1:
+        recent = values[-run:]
+        return max(recent) if line["trigger"] in ("<", "≤") else min(recent)
+    return values[-1]
+
+
+def line_outcome(line: dict, value: float | None) -> str:
+    if value is None:
+        return "未到期"
+    hit = COMPARE[line["trigger"]](value, line["threshold"])
+    return (GOOD if hit == (line["kind"] == "hurdle") else BAD)[line["kind"]]
+
+
+def line_headroom(line: dict, value: float) -> float:
+    upward = line["trigger"] in (">", "≥")
+    safe_up = upward if line["kind"] == "hurdle" else not upward
+    return headroom("up" if safe_up else "down", line["threshold"], value)
+
+
+def check_closure(test: unittest.TestCase, source: dict, payload: dict) -> None:
+    """Section one's follow-up chart and drawer table against the note's record of §0."""
+    note = source["_checks"]["note"]["closure"]
+    items = source["followup_closure"]["items"]
+    settled = next(s for s in payload["sections"] if s["id"] == "settled")["exhibits"]
+    chart = settled[0]
+    test.assertEqual(chart["kind"], "bars_labeled")
+    test.assertTrue(chart["title"].startswith(f"上季 {note['total']} 条待验证问题："), chart["title"])
+    test.assertEqual(dict(zip(chart["xlabels"], chart["values"])), note["counts"])
+    test.assertEqual(len(items), note["total"])
+    test.assertEqual([item["verdict_text"] for item in items], note["verdicts_verbatim"])
+    table = next(t for t in payload["tables"] if t["title"] == f"上季 {note['total']} 条待验证问题与本季判定")
+    test.assertEqual([row[2] for row in table["rows"]], note["verdicts_verbatim"])
+
+
+def check_prior_lines(test: unittest.TestCase, source: dict, payload: dict) -> None:
+    """Last quarter's §8 lines: block, overview, charts and table against the note.
+
+    Every reading is recomputed here from the series, so this holds on any
+    quarter a roll produces: nothing in it names a quarter or a value.
+    """
+    note = source["_checks"]["note"]
+    block = source["prior_kpi_settlement"]
+    test.assertEqual(block["rows"], note["prior_rows"])
+    test.assertEqual(
+        [(e["row"], e["metric"], e["kind"], e["trigger"], e["threshold"], e.get("consecutive", 1))
+         for e in block["quantified"]],
+        [(t["row"], t["metric"], t["kind"], t["trigger"], t["threshold"], t.get("consecutive", 1))
+         for t in note["prior_thresholds"]])
+    test.assertEqual(sorted(str(item["row"]) for item in block.get("unsettled", [])),
+                     sorted(note.get("prior_unquantified_rows", {})))
+    for entry in block["quantified"]:
+        test.assertNotIn("current", entry)
+        test.assertNotIn("actual", entry)
+    judged = [(entry, line_value(source, entry)) for entry in block["quantified"]]
+    table = next(t for t in payload["tables"] if t["title"].startswith("上季（") and "阈值与本季读数" in t["title"])
+    rows = [row for row in table["rows"] if row[1] != "—"]
+    test.assertEqual([row[5] for row in rows],
+                     [line_outcome(entry, value) for entry, value in sorted(judged, key=lambda p: p[0]["row"])])
+    settled = next(s for s in payload["sections"] if s["id"] == "settled")["exhibits"]
+    overview = next(ex for ex in settled if ex["kind"] == "diverging_bars" and ex["title"].startswith("上季"))
+    bars = [(entry, value) for entry, value in judged
+            if line_outcome(entry, value) in ("达到", "没到", "守住", "越线") and entry["threshold"] != 0]
+    test.assertTrue(overview["title"].startswith(f"上季 {len(bars)} 条量化阈值："), overview["title"])
+    test.assertEqual(overview["values"], [round(line_headroom(entry, value), 1) + 0.0 for entry, value in bars])
+    charts = [ex for ex in settled if ex["kind"] == "lines" and "上季" in ex["title"]]
+    for entry, value in judged:
+        flat = [chart for chart in charts for series in chart["series"]
+                if series["name"].startswith("上季") and f" {entry['trigger']} " in series["name"]
+                and all(v == entry["threshold"] for v in series["values"])]
+        if entry["threshold"] == 0 and not flat:
+            test.assertIn(f"「{entry['metric']} {entry['trigger']}", overview["note"], entry["id"])
+            continue
+        test.assertEqual(len(flat), 1, entry["id"])
+        test.assertIn(line_outcome(entry, value), flat[0]["title"], entry["id"])
+        test.assertAlmostEqual(flat[0]["series"][0]["values"][-1], history(source, entry["reads"])[-1], places=4)
+
+
 class SnpsDashboardTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -791,12 +946,104 @@ class SnpsChecksTest(unittest.TestCase):
         self.assertIn(f"收入 US${c['revenue_usd_k'] / 1000:,.0f}M", self.payload["headline"])
         growth = (c["design_ip_revenue_usd_k"] / c["design_ip_revenue_year_ago_usd_k"] - 1) * 100
         self.assertIn(f"同比 {growth:+.1f}%", next(ex["title"] for ex in self.exhibits
-                                                  if ex["title"].startswith("Design IP")))
+                                                  if ex["title"].startswith("Design IP")
+                                                  and ex["kind"] == "grouped_bars"))
         table = next(t for t in self.payload["tables"] if t["title"].startswith("本季兑现"))
         tax = next(r for r in table["rows"] if r[0] == "non-GAAP 税率")
         self.assertEqual(tax[2], f"{c['non_gaap_tax_rate_pct']:.1f}%")
         eps_move = sum(c["full_year"]["non_gaap_eps_usd"]) / 2 - sum(c["full_year"]["previous_non_gaap_eps_usd"]) / 2
         self.assertIn(f"上调 ${eps_move:.2f}", published_text(table))
+
+
+class SnpsSettlementTest(unittest.TestCase):
+    """Section one against `_checks["note"]`, typed from the two analyses.
+
+    The note records what this quarter's analysis wrote in its section 0 (each
+    follow-up's verdict, verbatim, and its verdict on each of last quarter's
+    section-8 rows) and what last quarter's analysis wrote in its section 8
+    (each line: metric, comparison, threshold). The builder never reads the
+    note; the checks hold the series blocks and the published page to it and
+    recompute every reading, so a roll that re-keys both passes unedited.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads((ROOT / "series" / "snps.json").read_text(encoding="utf-8"))
+        cls.payload = build_payload(cls.source)
+        cls.settled = next(s for s in cls.payload["sections"] if s["id"] == "settled")
+
+    def test_the_closure_counts_section_zero_as_written(self) -> None:
+        check_closure(self, self.source, self.payload)
+
+    def test_the_verdicts_are_the_analysis_own(self) -> None:
+        chart = next(ex for ex in self.settled["exhibits"] if "条跟踪指标" in ex["title"])
+        self.assertEqual(dict(zip(chart["xlabels"], chart["values"])), self.source["_checks"]["note"]["verdicts"])
+
+    def test_last_quarters_lines_are_settled_as_the_analysis_wrote_them(self) -> None:
+        check_prior_lines(self, self.source, self.payload)
+
+    def test_section_one_opens_with_the_settlement_then_the_guidance(self) -> None:
+        kinds = [ex["kind"] for ex in self.settled["exhibits"]]
+        titles = [ex["title"] for ex in self.settled["exhibits"]]
+        self.assertTrue(titles[0].startswith("上季") and "待验证问题" in titles[0])
+        self.assertTrue(titles[1].startswith("上季") and "跟踪指标" in titles[1])
+        self.assertTrue(titles[2].startswith("上季") and "量化阈值" in titles[2])
+        first_guide = next(i for i, title in enumerate(titles) if "优于指引中值" in title)
+        self.assertTrue(all(title.startswith("上季") or "上季" in title for title in titles[:first_guide]))
+        self.assertEqual(kinds[first_guide + 1], "range_band")
+        self.assertNotIn("本站唯一一家", self.settled["description"])
+        self.assertNotIn("第一份季报分析", self.settled["description"])
+
+    def test_the_margin_line_is_not_said_to_have_held_three_quarters(self) -> None:
+        """The analysis' 「连续第三季兑现」 is its beat-and-raise line; the quarterly
+        margin the page prints was under 41% the quarter before."""
+        margins = self.source["financials"]["non_gaap_operating_margin_pct"]
+        chart = next(ex for ex in self.settled["exhibits"] if "条跟踪指标" in ex["title"])
+        self.assertNotIn("non-GAAP 营业利润率连续第三季兑现", chart["note"])
+        if margins[-2] < 41 <= margins[-1]:
+            self.assertIn(f"上一季是 {margins[-2]:.1f}%", chart["note"])
+
+    def test_the_eda_reading_agrees_with_the_company_s_own_figure(self) -> None:
+        """The product-group shares reproduce what management said on the call."""
+        said = self.source["_checks"]["note"]["management_eda_yoy_pct"]
+        self.assertEqual(round(history(self.source, "eda_yoy")[-1], 1), said)
+
+    def test_the_eda_shares_multiply_the_revenue_the_page_publishes(self) -> None:
+        fin = self.source["financials"]
+        for index, reading in enumerate(self.source["eda_product_group"]["readings"]):
+            with self.subTest(quarter=self.source["periods"][index]):
+                now, then = reading["now"], reading["year_ago"]
+                base = now["three_months"][1] if "three_months" in now else \
+                    now["full_year"][1] - now["nine_months"][1]
+                self.assertAlmostEqual(base, fin["revenue_usd_m"][index], places=3)
+                before = then["three_months"][1] if "three_months" in then else \
+                    then["full_year"][1] - then["nine_months"][1]
+                self.assertAlmostEqual((fin["revenue_usd_m"][index] / before - 1) * 100,
+                                       fin["revenue_yoy_pct"][index], places=4)
+
+    def test_the_ansys_quarters_reconcile_across_filings(self) -> None:
+        """Where two filings print the same quarter they agree within rounding."""
+        block = self.source["ansys_revenue"]
+        revenue = dict(zip(self.source["periods"], self.source["financials"]["revenue_usd_m"]))
+        ansys = ansys_by_quarter(self.source)
+        for i, quarter in enumerate(block["quarters"]):
+            printed, share = block["printed_usd_m"][i], block["share_pct"][i]
+            if printed is not None and share is not None:
+                self.assertLessEqual(abs(share / 100 * revenue[quarter] - printed),
+                                     0.0005 * revenue[quarter] + 0.05, quarter)
+            increase = block["printed_increase_usd_m"][i]
+            if increase is not None:
+                before = shifted(quarter, -4)
+                self.assertLessEqual(abs(ansys[quarter] - ansys.get(before, 0.0) - increase),
+                                     0.0005 * (revenue[quarter] + revenue.get(before, 0.0)) + 0.05, quarter)
+        for year, total in block["fiscal_year_usd_m"].items():
+            self.assertAlmostEqual(sum(value for q, f, value in zip(block["quarters"], block["fiscal_labels"],
+                                                                    [ansys[q] for q in block["quarters"]])
+                                       if f[:6] == year), total, places=6)
+        with self.assertRaisesRegex(ValueError, "printed increase"):
+            changed = copy.deepcopy(self.source)
+            changed["ansys_revenue"]["printed_increase_usd_m"][-1] += 5
+            build_payload(changed)
 
 
 class SnpsRollTest(unittest.TestCase):
@@ -824,7 +1071,7 @@ class SnpsRollTest(unittest.TestCase):
                 self.assertNotIn(claim, after)
 
     def test_quarter_blocks_refuse_to_publish_under_another_quarter(self) -> None:
-        for key in self.STAMPED:
+        for key in self.STAMPED + ("prior_kpi_settlement",):
             with self.subTest(block=key):
                 with self.assertRaisesRegex(ValueError, "stamped"):
                     self.rebuilt(lambda s, key=key: s[key].__setitem__("period", "Q1 1999"))
@@ -841,13 +1088,35 @@ class SnpsRollTest(unittest.TestCase):
                 del s[key]
         payload = self.rebuilt(strip)
         text = published_text(payload)
-        for gone in ("条跟踪指标", "EPS 指引中值高出预期", "量化阈值", "Processor IP Solutions 出售", "收入指引两次上调",
-                     "本季兑现与下季／全年指引", "28.7%", "投资者日"):
+        for gone in ("条跟踪指标", "条待验证问题", "EPS 指引中值高出预期", "Processor IP Solutions 出售",
+                     "收入指引两次上调", "本季兑现与下季／全年指引", "28.7%", "投资者日"):
             with self.subTest(gone=gone):
                 self.assertIn(gone, self.text)
                 self.assertNotIn(gone, text)
         self.assertEqual([s["id"] for s in payload["sections"]],
                          ["settled", "quarter_highlights", "next_quarter", "routine"])
+        sections = {s["id"]: s for s in payload["sections"]}
+        self.assertEqual(sections["next_quarter"]["exhibits"], [])
+        # Last quarter's thresholds are not optional once there was a last analysis.
+        self.assertTrue(any(ex["title"].startswith("上季") and "量化阈值" in ex["title"]
+                            for ex in sections["settled"]["exhibits"]))
+
+    def test_a_later_quarter_must_settle_the_previous_analysis(self) -> None:
+        """The first local analysis covers FY2026 Q1 (this page's Q4 2025); every
+        quarter after it owes a settlement of the one before, so a roll that
+        leaves `prior_kpi_settlement` out stops rather than publishing a section
+        one that silently skipped it -- and a block settling another quarter's
+        analysis stops too."""
+        with self.assertRaisesRegex(ValueError, "set thresholds in its section 8"):
+            self.rebuilt(lambda s: s.pop("prior_kpi_settlement"))
+        for key in ("prior_kpi_settlement", "followup_closure"):
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "last quarter was"):
+                    self.rebuilt(lambda s, key=key: s[key].__setitem__("set_in", "Q1 1999"))
+        with self.assertRaisesRegex(ValueError, "accounted for"):
+            self.rebuilt(lambda s: s["prior_kpi_settlement"]["unsettled"].pop())
+        with self.assertRaisesRegex(ValueError, "typed"):
+            self.rebuilt(lambda s: s["prior_kpi_settlement"]["quantified"][0].__setitem__("actual", 8.5))
 
     def test_a_story_whose_premise_fails_stops_the_build(self) -> None:
         def guide_below(s):

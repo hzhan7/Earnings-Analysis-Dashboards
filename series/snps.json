@@ -76,7 +76,103 @@
       "previous_operating_cash_flow_usd_m": 2300
     },
     "source": "Synopsys FY2026 Q3 业绩 8-K（2026-08-26，acc 0001193125-26-368620）EX-99.1：首页（Aug. 26, 2026；revenue $2.477 billion；GAAP EPS $2.84、non-GAAP EPS $3.91；non-GAAP net income $752.5 million）、Condensed Consolidated Statements of Income（Total revenue 2,476,822 / 1,739,737；Operating income 357,491；Diluted shares 192,319）、分部表（adjusted operating income Design Automation 905.0、Design IP 125.4）、GAAP to Non-GAAP Tax Rate Reconciliation（non-GAAP 18.0%）、Fourth Quarter and Full Fiscal Year 2026 Financial Targets（Q4 收入 2,530–2,580、non-GAAP 费用 1,450–1,480、non-GAAP EPS 4.10–4.16、股数 192–194、税率 18%；全年收入 9,690–9,740、non-GAAP EPS 15.04–15.10、OCF ~2,800、FCF ~2,600、capex ~225，脚注 Ansys $2.98 billion）；上一版全年指引读自 2026-05-27 业绩 8-K（acc 0001193125-26-241911）EX-99.1 的 Third Quarter and Full Fiscal Year 2026 Financial Targets（收入 9,625–9,705、non-GAAP EPS 14.72–14.80、OCF ~2,300）。截至 2026-07-31 的 10-Q（acc 0000883241-26-000025）：分部附注 Design IP revenue 473,851 / 427,571；收入附注 backlog $10.9 billion、non-cancellable FSA $1.9 billion、approximately 49%；收入分解三个月列 Ansys 28.7%。",
-    "checked_on": "2026-09-19"
+    "checked_on": "2026-09-19",
+    "note": {
+      "source": {
+        "this_quarter": "2026-08-26 SNPS Q3 2026 vs Q2 2026 Analysis.md：第 0 节「上季遗留问题回答」5 行（首段统计：0 条完全已验证、0 条被证伪、4 条部分验证、1 条仍未披露）与「上季 5 条关键观察指标逐条判定」；第 8 节「上季 5 条指标校准」「新一轮跟踪表（5 条）」「立场撤销条件」",
+        "last_quarter": "2026-05-27 SNPS Q2 2026 vs Q1 2026 Analysis.md：第 8 节「关键观察指标」5 行；文末「Follow-up Questions for Next Quarter」5 条"
+      },
+      "checked_on": "2026-09-24",
+      "closure": {
+        "total": 5,
+        "verdicts_verbatim": [
+          "部分验证",
+          "仍未披露",
+          "部分验证",
+          "部分验证",
+          "部分验证"
+        ],
+        "counts": {
+          "已验证": 0,
+          "部分验证": 4,
+          "仍未披露": 1,
+          "被证伪": 0
+        }
+      },
+      "verdicts": {
+        "触发（正面）": 1,
+        "部分触发": 1,
+        "未触发": 2,
+        "指标设计失效": 1
+      },
+      "prior_rows": 5,
+      "prior_thresholds": [
+        {
+          "row": 1,
+          "metric": "EDA 收入同比（不含 Ansys）",
+          "kind": "hurdle",
+          "trigger": "≥",
+          "threshold": 10.0,
+          "consecutive": 2,
+          "report": "#1 核心 EDA（ex-Ansys）YoY 增速：连续 2 季 ≥ +10% → 重估加仓"
+        },
+        {
+          "row": 1,
+          "metric": "EDA 收入同比（不含 Ansys）",
+          "kind": "guard",
+          "trigger": "<",
+          "threshold": 9.0,
+          "consecutive": 2,
+          "report": "#1：连续维持 8% 或跌破 → 减仓警示（本季报告第 0 节把 +8.5% 读作「维持 8%」）"
+        },
+        {
+          "row": 3,
+          "metric": "Design IP 收入环比",
+          "kind": "hurdle",
+          "trigger": "≥",
+          "threshold": 7.0,
+          "report": "#3 IP 季度收入环比斜率：Q3/Q4 维持环比 +高个位数及以上、2H YoY 转正 → 验证 FY27 mid-teens"
+        },
+        {
+          "row": 3,
+          "metric": "Design IP 收入同比",
+          "kind": "hurdle",
+          "trigger": ">",
+          "threshold": 0.0,
+          "report": "#3 同一句：2H YoY 转正"
+        },
+        {
+          "row": 3,
+          "metric": "Design IP 收入环比",
+          "kind": "guard",
+          "trigger": "≤",
+          "threshold": 0.0,
+          "report": "#3：若环比转平/负 → 复苏证伪、警示"
+        },
+        {
+          "row": 5,
+          "metric": "单季 non-GAAP 营业利润率",
+          "kind": "hurdle",
+          "trigger": "≥",
+          "threshold": 41.0,
+          "report": "#5 Non-GAAP OM 兑现：若 Q3/Q4 实际 OM 沿 41%+ 兑现且 FY27 续扩 → 确定性 alpha 兑现"
+        },
+        {
+          "row": 5,
+          "metric": "单季 non-GAAP 营业利润率",
+          "kind": "guard",
+          "trigger": "<",
+          "threshold": 40.0,
+          "report": "#5：若 < 40% 或协同停滞 → 警示"
+        }
+      ],
+      "prior_unquantified_rows": {
+        "2": "9/30 Investor Day 货币化框架可信度：事件未到期",
+        "4": "vs Cadence 核心增速差：跨公司口径，Synopsys 一侧只在电话会"
+      },
+      "management_eda_yoy_pct": 8.5,
+      "management_eda_source": "本季报告第 0 节 #1 与第 3 节 B1：管理层电话会口径 Q3 EDA +8.5% YoY（transcript：「the 8.5% Q3 EDA growth that you saw was against a really tough compare」）"
+    }
   },
   "periods": [
     "Q3 2024",
@@ -2253,7 +2349,6 @@
       "gaap_gain_quarter",
       "ansys_base_partial"
     ],
-    "closure_reading": "本季的信息增量在财务执行，不在结构性举证。",
     "gaap_eps_note": "本季 GAAP 利润里含一笔 Processor IP Solutions 出售的税前收益，它不进 non-GAAP，却全额进 GAAP",
     "expectation_lead": "本季对市场预期只是常规幅度，真正超出的是下季指引",
     "expectation_note": "上一季被 {prev_restructuring} 重组费用压平、本季被一笔出售业务的税前收益推高，两季都不干净。",
@@ -2270,19 +2365,46 @@
   },
   "followup_closure": {
     "period": "Q2 2026",
+    "set_in": "Q1 2026",
     "labels": [
       "已验证",
       "部分验证",
       "仍未披露",
       "被证伪"
     ],
-    "counts": [
-      0,
-      4,
-      1,
-      0
+    "items": [
+      {
+        "question": "核心 EDA（不含 Ansys）同比能否在本季突破 +8%、向双位数靠拢（≥ +10% 为加仓信号）？",
+        "verdict_text": "部分验证",
+        "verdict": "部分验证",
+        "evidence": "10-Q 产品组口径（EDA 占比 × 收入，上年同期列取自同一份 10-Q）同比 {eda_yoy_now}，上年同期 {eda_yoy_base}；管理层电话会口径 +8.5%，并称上年同期基数 +16%。突破 8% 成立，≥ +10% 的加仓线没到；管理层把「Q4 与全年双位数（有机）EDA」说成承诺（电话会），验证点顺延到 Q4"
+      },
+      {
+        "question": "9/30 Investor Day 能否给出可建模的货币化路径（agentic 消费式定价、IP 新模式 TCV、长期营业利润率目标）？",
+        "verdict_text": "仍未披露",
+        "verdict": "仍未披露",
+        "evidence": "事件在 2026-09-30，晚于本季财报（{release_date}），结构上本季无法闭环；管理层在电话会上至少 5 次把量化问题推给该日"
+      },
+      {
+        "question": "Design IP 能否延续环比增长、下半年同比转正？新模式的「few customers」能否如期在 FY2026 末签约？",
+        "verdict_text": "部分验证",
+        "verdict": "部分验证",
+        "evidence": "Design IP 收入 {ip_now}：环比 {ip_qoq_now}、同比 {ip_yoy_now}，下半年同比转正达成；新模式签约口径停在「in active discussions」，本季没有披露任何签署（电话会）"
+      },
+      {
+        "question": "Ansys 下半年运行率是季节性 reprofiling 还是需求转弱（低于个位数为需求侧警示）？",
+        "verdict_text": "部分验证",
+        "verdict": "部分验证",
+        "evidence": "Ansys 收入本季 {ansys_now}（10-Q 产品组占比 × 收入），上季 {ansys_prev}、再上季 {ansys_prev_two}（10-Q MD&A 印的 Ansys 贡献额）；全年预期由 {fy_ansys_prev} 上调到 {fy_ansys_now}（业绩 8-K 指引脚注）。渠道会计的单季金额本季没有披露 —— 上季 10-Q 印过 {channel:q1_2026}，本季电话会被问到不给"
+      },
+      {
+        "question": "GPU 加速 EDA 的 contract uplift 是否扩大、可量化？",
+        "verdict_text": "部分验证",
+        "verdict": "部分验证",
+        "evidence": "EDA 侧没有给 uplift 百分比或客户数；当季最大一单是 Ansys 的 GPU 加速 CFD（电话会）。「扩大」成立、「可量化」缺席，本季分析把这一条并入 Investor Day 一条跟踪"
+      }
     ],
-    "note": "上季留下的 5 条待验证问题，本季一条也没有完全闭环，也一条都没有被证伪。4 条部分验证、1 条仍未披露 —— 未披露的那条是 Ansys 渠道会计的单季金额，公司上季主动给过 $12.5M，本季被连问三次后不再给。"
+    "note": "本季分析第 0 节开头给了统计，逐条判定照录「验证结果」栏：{closure_counts}。仍未披露的一条是 Investor Day —— 事件在 9 月 30 日，晚于本季财报，不是公司拒答；Ansys 渠道会计的单季金额本季没有再给（上季 10-Q 印过 {channel:q1_2026}），那是第四条「部分验证」里的一半。本季分析对这一轮闭环的读法：信息增量在财务执行，不在结构性举证，所有量化问题都被推向 9/30 与 Q4 两个节点。"
   },
   "tracked_metric_verdicts": {
     "period": "Q2 2026",
@@ -2298,7 +2420,7 @@
       2,
       1
     ],
-    "note": "上季 5 条跟踪指标的判定：non-GAAP 营业利润率连续第三季兑现（触发，正面）；Design IP 的同比分量达标、环比分量未达标（部分触发）；Investor Day 与同业增速差两条未触发；还有一条被判为指标设计本身失效 —— 它的增速阈值没有内建基数校验，在并表与剥离同时发生的季度里会给出假信号。5 条全部保留，但阈值与口径都重设。"
+    "note": "本季分析第 0 节给上季第 8 节的每一行一个判定：non-GAAP 营业利润率本季 {margin_now}，到了 41% 那条线（触发，正面）；Design IP 同比 {ip_yoy_now} 转正、环比 {ip_qoq_now} 没到「高个位数」（部分触发）；Investor Day（事件在本季财报之后）与同业增速差两行未触发；EDA 一行被判为指标设计失效 —— 按原文字面，EDA 同比连续两季「维持 8%」、警示线越线，但上年同期是 {eda_yoy_base} 的高基数，报告认定这是阈值没做基数调整造成的假信号。五行全部保留，阈值与口径都重设（见第三节）。本季分析还说「高确定性 alpha 线连续第三季兑现」，那指的是超指引并上调全年；单季 non-GAAP 营业利润率上一季是 {margin_prev}，并不是连续三季都在 41% 以上。"
   },
   "next_kpi": {
     "period": "Q2 2026",
@@ -2385,5 +2507,323 @@
     "implied_ansys_usd_m": 710.8,
     "implied_da_ex_ansys_usd_m": 1292.9,
     "precision": "占比印到一位小数（±0.05pp），所以每个推导值带约 ±$1.2M 的取整区间。"
+  },
+  "prior_kpi_settlement": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "rows": 5,
+    "quantified": [
+      {
+        "id": "eda_hurdle",
+        "row": 1,
+        "reads": "eda_yoy",
+        "metric": "EDA 收入同比（不含 Ansys）",
+        "kind": "hurdle",
+        "trigger": "≥",
+        "threshold": 10.0,
+        "unit": "pct",
+        "consecutive": 2,
+        "wording": "核心 EDA（ex-Ansys）YoY：连续 2 季 ≥ +10%（AI / agentic / 联合方案拉动）→ 重估加仓",
+        "disposition": "本季分析判为指标设计失效：阈值没做基数调整；重设为报告值 / 上年基数 / 两年复合三列，裁决点改到 Q4 的 10% 与 9% 两道线"
+      },
+      {
+        "id": "eda_guard",
+        "row": 1,
+        "reads": "eda_yoy",
+        "metric": "EDA 收入同比（不含 Ansys）",
+        "kind": "guard",
+        "trigger": "<",
+        "threshold": 9.0,
+        "unit": "pct",
+        "consecutive": 2,
+        "wording": "连续维持 8% 或跌破 → 减仓警示（本页按「低于 9%」结算：本季分析第 0 节把 +8.5% 读作「维持 8%」）",
+        "disposition": "同上一行：本季分析认定字面越线是高基数造成的假信号，减仓警示不执行"
+      },
+      {
+        "id": "ip_qoq_hurdle",
+        "row": 3,
+        "reads": "ip_qoq",
+        "metric": "Design IP 收入环比",
+        "kind": "hurdle",
+        "trigger": "≥",
+        "threshold": 7.0,
+        "unit": "pct",
+        "wording": "IP 季度收入环比斜率：Q3 / Q4 维持环比 +高个位数及以上、2H YoY 转正 → 验证 FY27 mid-teens（「高个位数」本页取下沿 7%，按 8% 或 9% 读判定相同）",
+        "disposition": "部分触发；重设：Q4 在剥离后的干净基数上环比为正，加 Investor Day 对 mid-teens 的重申或上修"
+      },
+      {
+        "id": "ip_yoy_hurdle",
+        "row": 3,
+        "reads": "ip_yoy",
+        "metric": "Design IP 收入同比",
+        "kind": "hurdle",
+        "trigger": ">",
+        "threshold": 0.0,
+        "unit": "pct",
+        "wording": "同一句的后半：2H YoY 转正",
+        "disposition": "YoY 分支触发（正面）"
+      },
+      {
+        "id": "ip_qoq_guard",
+        "row": 3,
+        "reads": "ip_qoq",
+        "metric": "Design IP 收入环比",
+        "kind": "guard",
+        "trigger": "≤",
+        "threshold": 0.0,
+        "unit": "pct",
+        "wording": "若环比转平 / 负 → 复苏证伪、警示",
+        "disposition": "未触发"
+      },
+      {
+        "id": "margin_hurdle",
+        "row": 5,
+        "reads": "margin",
+        "metric": "单季 non-GAAP 营业利润率",
+        "kind": "hurdle",
+        "trigger": "≥",
+        "threshold": 41.0,
+        "unit": "pct",
+        "wording": "Non-GAAP OM：若 Q3 / Q4 实际 OM 沿 41%+ 兑现且 FY27 续扩 → 确定性 alpha 兑现（FY27 那一半要等 FY27）",
+        "disposition": "触发（正面）；警示线由 40% 上移到 41%，改看 FY26 全年"
+      },
+      {
+        "id": "margin_guard",
+        "row": 5,
+        "reads": "margin",
+        "metric": "单季 non-GAAP 营业利润率",
+        "kind": "guard",
+        "trigger": "<",
+        "threshold": 40.0,
+        "unit": "pct",
+        "wording": "若 < 40% 或协同停滞 → 警示",
+        "disposition": "未触发"
+      }
+    ],
+    "unsettled": [
+      {
+        "row": 2,
+        "short": "Investor Day（事件在本季财报之后）",
+        "text": "9/30 Investor Day 货币化框架可信度：给出可建模的 agentic 消费式定价、IP 新模式 TCV / uplift 与长期 OM 目标 → 加仓；仍只定性「FY27 起」→ 重新评估",
+        "why": "事件在 2026-09-30，晚于本季财报；本季分析判「未触发（事件未到期）」"
+      },
+      {
+        "row": 4,
+        "short": "与 Cadence 的核心增速差（两家「核心 EDA」口径不同，Synopsys 一侧只在电话会上给）",
+        "text": "vs Cadence 核心增速差（约 10pp）：连续收窄 → 折价收敛、正面；维持 / 扩大 → 折价合理",
+        "why": "两家的「核心 EDA」不是同一个口径，Synopsys 一侧是电话会口径，Cadence 一侧是它自己的新闻稿口径，跨公司相减会把口径差算成增速差；本季分析判「未触发」（10pp → 9.5pp，小于披露精度）"
+      }
+    ],
+    "note": "EDA 一行两条线按原文字面都已判出，本季分析另判它「指标设计失效」—— 上年同期是 {eda_yoy_base}，字面越线是高基数造成的，见 Exhibit {EX_VERDICTS}。原文写的是「核心 EDA（ex-Ansys）」没写口径：本页按 10-Q 产品组口径结算（与管理层电话会的 +8.5% 一致），换成 Design Automation 减 Ansys 的残差口径是 {eda_yoy_residual}，两条线的判定不变。"
+  },
+  "eda_product_group": {
+    "_note": "10-Q / 10-K 收入附注「percentage of revenue by product groups」表的 EDA 一行。表自 FY2019 Q1 起每份定期报告都印（FY2021 以前只到整数百分点），Ansys 并入后单列一组，所以 EDA 一行不含 Ansys。每季两列取自同一份申报：该季 10-Q 的三个月列与它重述过的上年同期列；会计季 Q4 没有 10-Q，取 10-K 全年列减第三季 10-Q 九个月列。FY2025 第三季的 EDA 占比在当季 10-Q 里是 68.6%（Ansys 另一行 4.5%），FY2026 第三季 10-Q 重印同一列为 68.0% / 5.1%；本页用重印后的口径，它与 FY2025 10-K 的全年 Ansys（10.7%，MD&A 印 $756.6M）一致。",
+    "quarters": [
+      "Q3 2024",
+      "Q4 2024",
+      "Q1 2025",
+      "Q2 2025",
+      "Q3 2025",
+      "Q4 2025",
+      "Q1 2026",
+      "Q2 2026"
+    ],
+    "readings": [
+      {
+        "fiscal": "FY2024Q4",
+        "now": {
+          "full_year": [
+            66.4,
+            6127.436
+          ],
+          "nine_months": [
+            66.8,
+            4491.45
+          ]
+        },
+        "year_ago": {
+          "full_year": [
+            69.2,
+            5318.014
+          ],
+          "nine_months": [
+            71.3,
+            3850.631
+          ]
+        },
+        "source": "FY2024 10-K（acc 0000883241-24-000024）R60 与 R5：FY2024 66.40% × 6,127,436、FY2023 69.20% × 5,318,014；减 FY2024 Q3 10-Q（acc 0000883241-24-000021）R53 与 R4 九个月列：66.80% × 4,491,450、71.30% × 3,850,631"
+      },
+      {
+        "fiscal": "FY2025Q1",
+        "now": {
+          "three_months": [
+            67.3,
+            1455.315
+          ]
+        },
+        "year_ago": {
+          "three_months": [
+            64.2,
+            1510.989
+          ]
+        },
+        "source": "FY2025 Q1 10-Q（acc 0000883241-25-000014）R50 与 R4：67.30% × 1,455,315；64.20% × 1,510,989"
+      },
+      {
+        "fiscal": "FY2025Q2",
+        "now": {
+          "three_months": [
+            66.9,
+            1604.266
+          ]
+        },
+        "year_ago": {
+          "three_months": [
+            69.3,
+            1454.712
+          ]
+        },
+        "source": "FY2025 Q2 10-Q（acc 0000883241-25-000017）R52 与 R4：66.90% × 1,604,266；69.30% × 1,454,712"
+      },
+      {
+        "fiscal": "FY2025Q3",
+        "now": {
+          "three_months": [
+            68.0,
+            1739.737
+          ]
+        },
+        "year_ago": {
+          "three_months": [
+            66.9,
+            1525.749
+          ]
+        },
+        "source": "本期列取 FY2026 Q3 10-Q（acc 0000883241-26-000025）R52 重印的上年同期 68.00% × 1,739,737（当季 10-Q 原印 68.60%）；上年同期列取 FY2025 Q3 10-Q（acc 0000883241-25-000024）R56 与 R4：66.90% × 1,525,749（那一季还没有 Ansys，无需重述）"
+      },
+      {
+        "fiscal": "FY2025Q4",
+        "now": {
+          "full_year": [
+            62.0,
+            7054.178
+          ],
+          "nine_months": [
+            67.4,
+            4799.318
+          ]
+        },
+        "year_ago": {
+          "full_year": [
+            66.4,
+            6127.436
+          ],
+          "nine_months": [
+            66.8,
+            4491.45
+          ]
+        },
+        "source": "FY2025 10-K（acc 0000883241-25-000028）R61 与 R5：FY2025 62.00% × 7,054,178、FY2024 66.40% × 6,127,436；减九个月：FY2025 取 FY2026 Q3 10-Q R52 重印的 67.40% × 4,799,318，FY2024 取 FY2025 Q3 10-Q R56 的 66.80% × 4,491,450"
+      },
+      {
+        "fiscal": "FY2026Q1",
+        "now": {
+          "three_months": [
+            45.6,
+            2408.798
+          ]
+        },
+        "year_ago": {
+          "three_months": [
+            67.3,
+            1455.315
+          ]
+        },
+        "source": "FY2026 Q1 10-Q（acc 0000883241-26-000014）R48 与 R4：45.60% × 2,408,798；67.30% × 1,455,315"
+      },
+      {
+        "fiscal": "FY2026Q2",
+        "now": {
+          "three_months": [
+            51.0,
+            2275.985
+          ]
+        },
+        "year_ago": {
+          "three_months": [
+            66.9,
+            1604.266
+          ]
+        },
+        "source": "FY2026 Q2 10-Q（acc 0000883241-26-000018）R50 与 R4：51.00% × 2,275,985；66.90% × 1,604,266"
+      },
+      {
+        "fiscal": "FY2026Q3",
+        "now": {
+          "three_months": [
+            51.8,
+            2476.822
+          ]
+        },
+        "year_ago": {
+          "three_months": [
+            68.0,
+            1739.737
+          ]
+        },
+        "source": "FY2026 Q3 10-Q（acc 0000883241-26-000025）R52 与 R4：51.80% × 2,476,822；68.00% × 1,739,737"
+      }
+    ]
+  },
+  "ansys_revenue": {
+    "_note": "Ansys 在 2025-07-17 并入（公司 FY2025 Q3，本页 Q2 2025）。10-Q MD&A 在没有上年同期 Ansys 的季度印贡献额，有了以后印同比增量；收入附注每季印 Ansys 占收入的比重；10-K 印全年。",
+    "quarters": [
+      "Q2 2025",
+      "Q3 2025",
+      "Q4 2025",
+      "Q1 2026",
+      "Q2 2026"
+    ],
+    "fiscal_labels": [
+      "FY2025Q3",
+      "FY2025Q4",
+      "FY2026Q1",
+      "FY2026Q2",
+      "FY2026Q3"
+    ],
+    "printed_usd_m": [
+      null,
+      null,
+      885.6,
+      652.4,
+      null
+    ],
+    "share_pct": [
+      5.1,
+      null,
+      36.8,
+      28.7,
+      28.7
+    ],
+    "fiscal_year_usd_m": {
+      "FY2025": 756.6
+    },
+    "printed_increase_usd_m": [
+      null,
+      null,
+      null,
+      null,
+      622.2
+    ],
+    "channel_accounting_usd_m": {
+      "Q1 2026": 12.5
+    },
+    "sources": [
+      "FY2026 Q3 10-Q R52 重印的上年同期 Ansys 5.10% × 1,739,737（当季 10-Q 原印 4.50%）",
+      "FY2025 10-K MD&A：「the Ansys Merger, which contributed $756.6 million in revenue in fiscal 2025」减去上一格",
+      "FY2026 Q1 10-Q MD&A：「Ansys' contribution of $885.6 million in revenue for the three months ended January 31, 2026」（R48 占比 36.80%）",
+      "FY2026 Q2 10-Q MD&A：「Ansys' contribution of $652.4 million ... including a $12.5 million increase due to the accounting change in Ansys' channel partner business」（R50 占比 28.70%）",
+      "FY2026 Q3 10-Q R52 占比 28.70% × 2,476,822；同一份 MD&A 印「increases in revenue from Ansys, which contributed $622.2 million」，与本格减 Q2 2025 一格相符"
+    ]
   }
 }
