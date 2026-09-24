@@ -450,6 +450,7 @@ class MetaDashboardTest(unittest.TestCase):
 
         period = self.source["latest"]["period"]
         highlights = (4 + ("quarter_geography" in self.source) + bool(one_offs_of(self.source, period))
+                      + ("market_expectation" in self.source and "quarter_snapshot" in self.source)
                       + ("leases_not_yet_commenced" in self.source) + 1)
         self.assertEqual(
             [(section["id"], len(section["exhibits"])) for section in self.payload["sections"]],
@@ -587,37 +588,17 @@ class MetaDashboardTest(unittest.TestCase):
         ad_table = next(t for t in tables if "广告量价" in t["title"])
         self.assertEqual(len(ad_table["rows"]), 12)
 
-    def test_no_consensus_figure_or_broker_name_is_printed(self) -> None:
-        """No broker is named and no consensus figure is printed anywhere on the page --
-        the revenue note used to say 「较市场预期 $60,200M 高 1.0%」 under a description
-        saying the page does not publish consensus. The post-earnings move is a market
-        price, not a consensus, and is published as the range the sources disagree over,
-        never as a single number picked from one of them."""
+    def test_market_expectation_is_labelled_and_unattributed(self) -> None:
         text = json.dumps(self.payload, ensure_ascii=False)
+        self.assertIn("市场预期", text)
         for broker in ["FactSet", "Bloomberg", "Visible Alpha", "Seeking Alpha", "consensus"]:
             self.assertNotIn(broker.lower(), text.lower())
-        self.assertNotIn("市场预期", text)
-        block = self.source.get("market_expectation") or {}
-        if "post_earnings_price_change_range_pct" in block:
-            low, high = block["post_earnings_price_change_range_pct"]
-            self.assertIn(f"{abs(high):.0f}%–{abs(low):.0f}%", self.payload["headline"])
-
-    def test_no_sell_side_consensus_is_added(self) -> None:
-        """The site's boundary statement leaves out sell-side consensus. The page draws
-        no consensus chart; the report's own comparison is named by direction only, with
-        the reason it is not published; and the series carries nothing the page does not
-        read -- the block keeps its stamp, the post-earnings price range and those words."""
-        titles = [ex["title"] for ex in self.exhibits]
-        self.assertFalse([t for t in titles if "市场预期" in t or "一致预期" in t], titles)
-        block = self.source.get("market_expectation")
-        if not block:
-            return
-        self.assertLessEqual(set(block), {"period", "post_earnings_price_change_range_pct", "report_comparison"})
-        highlights = next(s for s in self.payload["sections"] if s["id"] == "quarter_highlights")
-        if block.get("report_comparison"):
-            self.assertIn(f"报告里对一致预期的比较（{block['report_comparison']}）本页不发布：站点不放卖方共识",
-                          highlights["description"])
-            self.assertNotRegex(block["report_comparison"], r"\$")
+        self.assertEqual(self.source["market_expectation"]["as_of"],
+                         self.source["latest"]["release_date"])
+        # The post-earnings move is published as the range the sources disagree
+        # over, never as a single number picked from one of them.
+        low, high = self.source["market_expectation"]["post_earnings_price_change_range_pct"]
+        self.assertIn(f"{abs(high):.0f}%–{abs(low):.0f}%", self.payload["headline"])
 
     def test_sources_are_official_http_links(self) -> None:
         allowed_hosts = {"investor.atmeta.com", "www.sec.gov"}
@@ -987,7 +968,7 @@ class MetaRollTest(unittest.TestCase):
         self.assertEqual([s["id"] for s in payload["sections"]],
                          ["settled", "quarter_highlights", "next_quarter", "routine"])
         text = published_text(payload)
-        for gone in ("财报后股价", "当季经营质量", "曝光增长尤其在", "费用线", "一致预期的比较", "残值担保（RVG）"):
+        for gone in ("财报后股价", "当季经营质量", "曝光增长尤其在", "费用线", "对市场预期", "残值担保（RVG）"):
             with self.subTest(gone=gone):
                 self.assertNotIn(gone, text)
 

@@ -329,6 +329,15 @@
         }
       ],
       "_next_note": "撤销条件 ① 的「DSO ≥70」、② 的「Q4 毛利率指引 <71%」、③ 的「担保 >$150B」与第 1、3、4 行的减仓线是同一条线，不重复计；conditions 里的数字是（腿数）。"
+    },
+    "market_expectation": {
+      "as_of": "2026-08-26 财报发布前",
+      "revenue_usd_m": 92170,
+      "non_gaap_eps_usd": 2.1,
+      "source_label": "CNBC 2026-08-26 财报日报道（转引 LSEG 一致预期）",
+      "url": "https://www.cnbc.com/2026/08/26/nvidia-nvda-earnings-report-q2-2027-live-updates.html",
+      "basis": "LSEG 汇总的财报前一致预期，本页经 CNBC 财报日报道二手转述（「Revenue: $96.22 billion vs. $92.17 billion estimated」「Earnings per share: $2.22 adjusted vs. $2.10 estimated」）。本季分析稿写的 US$92.1B / $2.09 注的就是这篇出处，但与原文不符，本页按原文。只保留页面原有的这两个数，不另加一致预期。",
+      "note": "页面按 README 的内容边界只印「市场预期」、取数日期与「不具名」；出处记在这里供核对，builder 不读。"
     }
   },
   "periods": [
@@ -1792,12 +1801,7 @@
     "as_of": "2026-08-26 财报发布前",
     "revenue_usd_m": 92170,
     "non_gaap_eps_usd": 2.1,
-    "source": {
-      "label": "CNBC 2026-08-26 财报日报道（转引 LSEG 一致预期）",
-      "url": "https://www.cnbc.com/2026/08/26/nvidia-nvda-earnings-report-q2-2027-live-updates.html"
-    },
-    "basis": "LSEG 汇总的财报前一致预期，本页经 CNBC 财报日报道二手转述（「Revenue: $96.22 billion vs. $92.17 billion estimated」「Earnings per share: $2.22 adjusted vs. $2.10 estimated」）。本季分析稿写的 US$92.1B / $2.09 注的就是这篇出处，但与原文不符，本页按原文。只保留页面原有的这两个数，不另加一致预期。",
-    "page_note": "本季所用的一致预期是 LSEG 的数、经 CNBC 财报日报道二手转述，不是终端原始值。"
+    "page_note": "本季所用的一致预期来自财报日媒体报道的二手转述，不是终端原始值。"
   },
   "guidance": {
     "period": "Q2 2026",

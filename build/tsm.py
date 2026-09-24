@@ -1133,7 +1133,7 @@ def build_payload(staging: dict) -> dict:
             "src_extra": (
                 f"报告净利与 {net_income_bridge['one_off_short']} 相关收益来自 {deck_short(period)} "
                 "management report；核心净利为两者相减的自算值（未做税务调整），"
-                "市场预期为财报前一致预期，不具名。"
+                f"市场预期为财报前一致预期（{consensus['as_of']}），不具名。"
             ),
         }
 
@@ -1395,8 +1395,8 @@ def build_payload(staging: dict) -> dict:
             },
             "note": revenue_note,
             "src_extra": (
-                "美元收入逐季读自各季 earnings release 与法说会简报；同比为自算 D；"
-                "市场预期为财报前一致预期，不具名。"
+                "美元收入逐季读自各季 earnings release 与法说会简报；同比为自算 D"
+                + (f"；市场预期为财报前一致预期（{consensus['as_of']}），不具名。" if consensus else "。")
             ),
         },
         {

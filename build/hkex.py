@@ -2321,7 +2321,7 @@ def build_payload(staging: dict) -> dict:
                  "保证金投资收益的价差，以及资本开支里的总部物业。"
                  "收入那一张的柱子有"
                  f"{cn_fraction(derived_total / len(quarters))}是本页减出来的，来历见第四板块开头。"
-                 "分析稿里还有一条结论本页不画：业绩相对市场一致预期与股价的反应 —— 本站不发布券商共识与股价。"),
+                 "分析稿里还有一条结论本页不画：业绩相对市场一致预期与股价的反应 —— 要用站外的预期与行情数据，本页没有接入。"),
              "exhibits": highlight_ex},
             {"id": "next_quarter", "title": "三、下季要跟踪什么",
              "description": (

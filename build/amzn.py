@@ -1575,7 +1575,7 @@ def build_payload(staging: dict) -> dict:
                if deferred * 2 > provision else "")
             + f"按 {low_rate}%–{high_rate}% 的税率区间换算，经营性摊薄每股收益落在 "
             f"US${eps_low:.2f}–US${eps_high:.2f}"
-            + (f"，对照财报前市场预期的 US${consensus['diluted_eps_usd']:.2f}"
+            + (f"，对照 {consensus['as_of']} 财报前的市场预期 US${consensus['diluted_eps_usd']:.2f}"
                if consensus is not None and "diluted_eps_usd" in consensus else "")
             + f"；而账面摊薄每股收益是 US${snapshot['diluted_eps_usd'][-1]:.2f}。"
         )

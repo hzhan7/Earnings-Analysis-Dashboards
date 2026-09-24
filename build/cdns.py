@@ -2797,7 +2797,7 @@ def build_payload(staging: dict) -> dict:
             "expected_revenue_alt": f"${consensus['revenue_usd_m_alt'] / 1000:.2f}B",
             "expected_eps_beat": f"{pct_change(qo['non_gaap_eps'][-1], consensus['non_gaap_eps']):+.1f}%",
         }
-        market_note += fill_story(consensus["source_conflict_note"], market_values) + "。"
+        market_note += f"{consensus['as_of']} 财报前，" + fill_story(consensus["source_conflict_note"], market_values) + "。"
     notes.append(market_note)
     if story_or.get("not_tracked"):
         notes.append(told("not_tracked"))

@@ -662,27 +662,37 @@ class NvdaDashboardTest(unittest.TestCase):
         )
 
     # ── boundary ─────────────────────────────────────────────────────────────
-    def test_market_expectation_is_dated_and_sourced_and_names_no_broker(self) -> None:
+    def test_market_expectation_is_dated_and_names_no_broker_or_vendor(self) -> None:
+        """README's boundary, as the owner confirmed it on 2026-09-24: labelled, dated, unattributed.
+
+        For one quarter this page named its source on the page («CNBC … 转引 LSEG»), which
+        README rules out. The source is still recorded -- in `_checks`, which no builder
+        reads -- and the two figures on the page must be the ones that source prints.
+        """
         consensus = self.source["market_expectation"]
+        recorded = self.source["_checks"]["market_expectation"]
         self.assertIn(self.source["latest"]["release_date"], consensus["as_of"])
-        # The note itself flags that this quarter's consensus is second-hand;
-        # the page has to carry that caveat rather than quietly drop it.
-        self.assertIn("二手", consensus["basis"])
+        self.assertEqual(consensus["revenue_usd_m"], recorded["revenue_usd_m"])
+        self.assertEqual(consensus["non_gaap_eps_usd"], recorded["non_gaap_eps_usd"])
+        self.assertIn("二手", recorded["basis"])
+        # The figure is second-hand; the page carries that caveat rather than quietly dropping it.
         self.assertTrue(
             any("二手转述" in note for note in self.payload["notes"]),
             "the consensus caveat is not disclosed in the notes",
         )
-        # Every chart that prints a consensus figure says where it came from:
-        # a figure the page cannot point at is not published.
-        for exhibit in self.exhibits:
-            if "市场预期" in exhibit.get("note", "") + json.dumps(exhibit.get("xlabels"), ensure_ascii=False):
-                self.assertIn(consensus["source"]["label"], exhibit["src_extra"], exhibit["title"])
+        # Every chart that prints a consensus figure dates it and names nobody.
+        charts = [ex for ex in self.exhibits
+                  if "市场预期" in ex.get("note", "") + json.dumps(ex.get("xlabels"), ensure_ascii=False)]
+        self.assertTrue(charts)
+        for exhibit in charts:
+            self.assertIn(consensus["as_of"], exhibit["src_extra"], exhibit["title"])
+            self.assertIn("不具名", exhibit["src_extra"], exhibit["title"])
         # Only the two figures the page already carried: no new consensus content.
         self.assertEqual({k for k in consensus if k.endswith(("_usd_m", "_usd"))},
                          {"revenue_usd_m", "non_gaap_eps_usd"})
         blob = json.dumps(self.payload, ensure_ascii=False).lower()
-        for vendor in ["seeking alpha", "visible alpha", "factset", "bloomberg",
-                       "s&p global", "morgan stanley", "goldman", "bernstein",
+        for vendor in ["seeking alpha", "visible alpha", "factset", "bloomberg", "lseg", "refinitiv",
+                       "cnbc", "s&p global", "morgan stanley", "goldman", "bernstein",
                        "melius", "cantor", "td cowen", "marketscreener"]:
             self.assertNotIn(vendor, blob, vendor)
 

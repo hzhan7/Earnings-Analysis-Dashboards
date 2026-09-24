@@ -1431,8 +1431,7 @@ def expectation_chart(staging: dict, period: str, prior: str, fiscal: str,
             "只用于比较方向与相对幅度。"
         ),
         "src_extra": (
-            f"实际值来自 {period} 业绩 8-K；市场预期为财报前的一致预期（{consensus['as_of']}），"
-            f"出处：{consensus['source']['label']}。"
+            f"实际值来自 {period} 业绩 8-K；市场预期为财报前的一致预期（{consensus['as_of']}），不具名。"
             f"本组{cn_count(len(restated['quarters']))}季的 non-GAAP 数全部取自同一份 "
             f"{fiscal_short(fiscal)} 对账表，已是公司重述后的口径（含股权激励费用）。"
             "剔除股权收益后的环比为按公司指引税率区间的自算值，不是公司披露的拆分。"
@@ -1769,7 +1768,7 @@ def build_payload(staging: dict) -> dict:
             f"{long_n} 季收入逐季读自各季业绩 8-K 的合并损益表三个月列（财年第四季取每年 2 月"
             "全年 8-K 里与全年列并排印出的 Q4 列），并与各财年 10-K 全年数逐年勾稽；"
             "同比为自算 D"
-            + (f"；市场预期为财报前的一致预期，出处：{consensus['source']['label']}。"
+            + (f"；市场预期为财报前的一致预期（{consensus['as_of']}），不具名。"
                if consensus is not None else "。")
         ),
     }
@@ -2660,7 +2659,7 @@ def build_payload(staging: dict) -> dict:
     if exposure is not None and exposure.get("page_note"):
         notes.append(fill_story(exposure["page_note"], values))
     notes.append("本页只发布公司披露值、可复算的简单派生值，以及明确标注的市场预期；D 标记代表 Derived / 自算。")
-    notes.append("市场预期一律标注为「市场预期」并给出取数时点与出处，不写卖方机构名，也不发布评级、目标价或估值。"
+    notes.append("市场预期一律标注为「市场预期」并给出取数时点，不写券商或数据商名，也不发布评级、目标价或估值。"
                  + (consensus.get("page_note", "") if consensus is not None else ""))
     if guidance is not None and guidance.get("call_only", {}).get("page_note"):
         notes.append(guidance["call_only"]["page_note"])

@@ -1190,7 +1190,7 @@ def build_payload(staging: dict) -> dict:
             "src_extra": (
                 f"GAAP EPS 与权益收益的每股贡献来自 {quarter_word} release 脚注；${ex_now:.2f} 是 "
                 f"${eps_now:.2f} − ${gain_now:.2f} 的算术拆分，"
-                "不是公司定义的 non-GAAP。市场预期为财报前一致预期区间 "
+                f"不是公司定义的 non-GAAP。市场预期为 {consensus['as_of']} 财报前一致预期区间 "
                 f"${consensus['operating_eps_low']:.2f}–${consensus['operating_eps_high']:.2f} 的中值，不具名。"
             ),
         })
@@ -1534,7 +1534,7 @@ def build_payload(staging: dict) -> dict:
             "ylab": "同比增速",
             "note": (
                 f"在约 ${round(annual_revenue / 10000) * 100:,} 亿的年收入体量上{accel_words}"
-                + (f"，本季收入较市场预期{'高' if beat >= 0 else '低'} "
+                + (f"，本季收入较 {consensus['as_of']} 财报前的市场预期{'高' if beat >= 0 else '低'} "
                    f"{change(revenue_now, consensus['revenue_usd_m']) if beat >= 0 else f'{abs(beat):.1f}%'}。"
                    if consensus else "。")
                 + episode_words

@@ -1036,7 +1036,7 @@ def build_payload(staging: dict) -> dict:
             },
             "note": (
                 ((f"{'高于' if revenue_shown[-1] > consensus['revenue_usd_m_range'][1] else '低于' if revenue_shown[-1] < consensus['revenue_usd_m_range'][0] else '落在'}"
-                  f"市场预期区间 ${consensus['revenue_usd_m_range'][0]:,}–"
+                  f" {consensus['as_of']} 财报前的市场预期区间 ${consensus['revenue_usd_m_range'][0]:,}–"
                   f"{consensus['revenue_usd_m_range'][1]:,}M"
                   + ("之内" if consensus['revenue_usd_m_range'][0] <= revenue_shown[-1] <= consensus['revenue_usd_m_range'][1] else "")
                   + f"；两个公开来源相差 ${consensus['revenue_usd_m_range'][1] - consensus['revenue_usd_m_range'][0]:,}M，"
@@ -1674,7 +1674,7 @@ def build_payload(staging: dict) -> dict:
     notes += [
         "本页只发布公司披露值、可复算的简单派生值，以及明确标注的市场预期；D 标记代表 Derived / 自算。",
         "市场预期一律标注为「市场预期」并给出取数时点，不写卖方机构名，也不发布评级、目标价或估值。"
-        + (f"本季两个公开来源的收入预期相差 ${consensus['revenue_usd_m_range'][1] - consensus['revenue_usd_m_range'][0]:,}M，"
+        + (f"本季（{consensus['as_of']} 财报前）两个公开来源的收入预期相差 ${consensus['revenue_usd_m_range'][1] - consensus['revenue_usd_m_range'][0]:,}M，"
            "因此本页只发布区间与超预期方向，不发布超预期幅度。" if consensus else ""),
         "自由现金流（报告口径）= 经营现金流 − 现金支付的物业及设备，与公司口径一致；"
         "调整后口径再减去年报披露的「仍计入应付账款的物业及设备采购」的年度增量，是算术调整，"
