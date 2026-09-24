@@ -144,6 +144,69 @@ def _tsm_story_reach() -> int:
                    and (first_year(ex) or TARGET_YEAR + 1) <= TARGET_YEAR))
 
 
+def _msft_page() -> dict:
+    return js_payload(ROOT / "data" / "msft.js", "window.DASH")
+
+
+def _msft_threshold_reach() -> int:
+    """Microsoft's threshold-line charts -- the previous analysis's lines settled
+    in section one (「上季…线」), this analysis's in section three (「下季阈值」)
+    -- are drawn one per reading while the series carries the period-stamped
+    blocks, and which readings those are is each analysis's choice (the page is
+    rolled by editing `series/msft.json` alone). So the pin counts the permanent
+    charts and adds the threshold lines that reach 2016 while they are published."""
+    return sum(1 for section in _msft_page()["sections"] if section["id"] in ("settled", "next_quarter")
+               for ex in section["exhibits"]
+               if ex["kind"] == "lines" and ("上季" in ex["title"] or "下季" in ex["title"])
+               and (first_year(ex) or TARGET_YEAR + 1) <= TARGET_YEAR)
+
+
+# Floors of the MSFT threshold charts that stop after 2016. Which of these are
+# published depends on the analyses' key-metric sections, so an entry applies
+# only while its chart is on the page and short (`_msft_threshold_floors`).
+_MSFT_THRESHOLD_FLOORS = {
+    "Azure 固定汇率增速": (
+        "checked, and the old excuse was wrong: the growth rate IS filed -- the 10-Q / 10-K MD&A prints "
+        "「Azure revenue grew 110%」(2016-03-31) through 「Azure and other cloud services revenue increased 41%」"
+        "(FY2026 10-K), and every earnings 8-K prints it with the constant-currency rate. This file holds the "
+        "last eight quarters only; the name widened to 「Azure and other cloud services」 in FY2022 and "
+        "the FY2025 recast, so a longer line needs its breaks marked.", "coverage"),
+    "Microsoft Cloud 毛利率": (
+        "the Microsoft Cloud gross margin percentage is read on every earnings call (the CFO's prepared "
+        "remarks, official transcripts); this file holds eight quarters of it.", "coverage"),
+    "商业 RPO 余额同比": (
+        "checked against the filings: the commercial split of remaining performance obligations is first "
+        "printed in the 10-Q for the quarter ended 2019-09-30 (「of which $86 billion is related to the "
+        "commercial portion」); the FY2019 10-K prints only a total 「contracted not recognized revenue」. "
+        "A year-on-year rate needs a year-ago balance, so the line starts 2020Q3.", "disclosure"),
+    "12 个月内确认的商业 RPO 同比": (
+        "the growth of the next-twelve-months portion is a call statement (「roughly X% … up Y% "
+        "year-over-year」); this file holds the last eight calls, one of which did not give it.", "coverage"),
+    "单季资本开支（公司口径": (
+        "the company's capex measure (including finance leases) is stated only on the call; this file "
+        "holds the last eight calls. The filed cash measure runs the full record and is drawn in section "
+        "four.", "coverage"),
+    "年化折旧：": (
+        "checked: quarterly depreciation is first printed in the FY2026 10-Qs' property-and-equipment note, "
+        "with the FY2025 quarters as comparatives (「$7.1 billion and $4.7 billion for the three months ended "
+        "September 30, 2025 and 2024」); the FY2025 and earlier 10-Qs print only the annual figure in the "
+        "10-K, so the quarterly record starts 2024Q3.", "disclosure"),
+    "未起租租约余额的年增量": (
+        "checked: leases signed but not yet commenced are first printed in the 10-Q for the quarter ended "
+        "2017-09-30 (「$219 million and $2.3 billion, respectively」); the FY2017 10-K has no such "
+        "sentence. A year-on-year increase needs a year-ago balance, so the line starts 2018Q3.",
+        "disclosure"),
+}
+
+
+def _msft_threshold_floors() -> dict:
+    """The entries of `_MSFT_THRESHOLD_FLOORS` whose chart is published and short."""
+    short = [ex["title"] for section in _msft_page()["sections"] for ex in section["exhibits"]
+             if (first_year(ex) or TARGET_YEAR) > TARGET_YEAR]
+    return {key: value for key, value in _MSFT_THRESHOLD_FLOORS.items()
+            if any(key_matches(key, title) for title in short)}
+
+
 def _intc_threshold_reach() -> int:
     """Intel's threshold-line charts -- last quarter's thresholds settled in
     section one, next quarter's in section three -- are drawn only while the
@@ -417,7 +480,7 @@ def _cost_threshold_reach() -> int:
 REACH_2016 = {
     "amd": 15 + _amd_threshold_reach(), "amzn": 9 + _amzn_threshold_reach(), "arm": 0, "asml": 24, "avgo": 16, "axp": 7 + _axp_threshold_reach(), "bc": 3, "cboe": 8 + _cboe_threshold_reach(), "cdns": 12, "cfr": 20, "cme": 13 + _cme_threshold_reach(),
     "cost": 11 + _cost_threshold_reach(), "googl": 5 + _googl_threshold_reach(), "hkex": 15, "ibkr": 26, "ker": 11 + _ker_threshold_reach(), "ma": 13 + _ma_threshold_reach(), "mc": 9, "mco": 13, "meta": 5 + _meta_threshold_reach(),
-    "msci": 23, "msft": 8, "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 7 + _nke_threshold_reach(), "nvda": 10, "pm": 8,
+    "msci": 23, "msft": 5 + _msft_threshold_reach(), "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 7 + _nke_threshold_reach(), "nvda": 10, "pm": 8,
     "race": 12, "rms": 15, "samsung": 0, "schw": 10, "skhynix": 4, "snps": 8,
     "spgi": 14, "tjx": 13, "tsm": 14 + _tsm_story_reach(), "v": 17, "zgn": 0,
     "intc": 10 + _intc_threshold_reach(),
@@ -660,14 +723,16 @@ CONVERTED = {
                             "starts 2022Q1; the earlier allocation is a different basis.",
     },
     "msft": {
-        # Four floors, all of them disclosure floors.
-        "Azure 固定汇率增速": "Microsoft publishes an Azure growth rate and no Azure "
-                        "revenue, so there is no filed series to lengthen.",
-        "Intelligent Cloud 分部毛利率": "the segment's cost of revenue -- the denominator "
-                                 "-- is only in the reviewed eight quarters.",
+        # The threshold charts' floors come and go with the analyses; see
+        # _MSFT_THRESHOLD_FLOORS. These are the permanent charts'.
+        "Intelligent Cloud 分部毛利率": "checked: quarterly segment cost of revenue -- the denominator "
+                                 "-- is first printed as the FY2025 comparatives in the FY2026 10-Qs "
+                                 "(ASU 2023-07); the FY2025 10-Qs print segment revenue and operating "
+                                 "income only, so the quarterly record starts 2024Q3.",
         "Intelligent Cloud 本季首次超过": "segment revenue in this file covers the reviewed "
                                   "eight quarters only.",
-        "商业剩余履约义务": 'date corrected, and the excuse was measuring the wrong thing: Microsoft has disclosed the dollar split between total and commercial remaining performance obligations in every 10-Q/10-K since the quarter ended 2020-03-31 -- 21 quarters earlier than "five quarters ago". What genuinely started recently is a *percentage* metric, which is not what this chart plots (it plots the balance). Real floor 2020Q1; the metric did not exist before that.',
+        "商业剩余履约义务": "checked against the filings: the commercial split of remaining performance obligations is first printed in the 10-Q for the quarter ended 2019-09-30; the FY2019 10-K prints only a total \"contracted not recognized revenue\". The balance now runs from 2019Q3; the earlier note put the floor at 2020Q1, two quarters late.",
+        **{key: reason for key, (reason, _) in _msft_threshold_floors().items()},
         "FY# 股东回报": "an annual ratio built from the 10-K, two fiscal years wide.",
         "季度折旧": "quarterly depreciation only reaches 2024Q3 -- before that Microsoft "
                 "disclosed it annually and the page will not spread a year over four "
@@ -1668,12 +1733,12 @@ FLOOR_KIND = {
         '分部调整后 EBITDA 利润率': 'coverage',
     },
     'msft': {
-        'Azure 固定汇率增速': 'disclosure',
-        'Intelligent Cloud 分部毛利率': 'coverage',
+        'Intelligent Cloud 分部毛利率': 'disclosure',
         'Intelligent Cloud 本季首次超过': 'coverage',
-        '商业剩余履约义务': 'coverage',
+        '商业剩余履约义务': 'disclosure',
         'FY# 股东回报': 'design',
         '季度折旧': 'disclosure',
+        **{key: kind for key, (_, kind) in _msft_threshold_floors().items()},
     },
     'ndaq': {
         '全年非 GAAP 有效税率': 'disclosure',
@@ -1880,7 +1945,11 @@ class ChartWindowTest(unittest.TestCase):
         # (see _AMZN_THRESHOLD_FLOORS); the pins count the rest and add those
         # that are published, the way REACH_2016 does for the same charts.
         amzn = collections.Counter(kind for _, kind in _amzn_threshold_floors().values())
-        self.assertEqual(len(by_kind.get("coverage", [])), 32 + amzn["coverage"],
+        # MSFT's threshold charts carry their own floors, published only while
+        # the chart is (see _MSFT_THRESHOLD_FLOORS); the pins count the rest and
+        # add those.
+        msft = collections.Counter(kind for _, kind in _msft_threshold_floors().values())
+        self.assertEqual(len(by_kind.get("coverage", [])), 30 + amzn["coverage"] + msft["coverage"],
                          "charts whose data exists and has not been fetched")
         # Zero, and that is the point: every exemption on this page has now been
         # read against an actual pre-floor filing. The fourteen that had never
@@ -1893,8 +1962,8 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 185 + amzn["disclosure"])
-        self.assertEqual(settled.count("design"), 40 + amzn["design"])
+        self.assertEqual(settled.count("disclosure"), 186 + amzn["disclosure"] + msft["disclosure"])
+        self.assertEqual(settled.count("design"), 40 + amzn["design"] + msft["design"])
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
         """Every short chart either names its reason or is counted here.
