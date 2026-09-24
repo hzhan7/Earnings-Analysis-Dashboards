@@ -406,6 +406,38 @@ def _meta_price_dips() -> dict:
     return {}
 
 
+def _nvda_threshold_charts() -> tuple[int, int]:
+    """(reaching 2016, short by design) counts of NVIDIA's charts that roll with the quarter.
+
+    Section one draws one history per reading of the previous report's section
+    8 lines that settle this quarter, section three one per reading of this
+    report's; section two draws the recast of the customer split and the
+    GAAP / non-GAAP split only in a quarter whose series carries those
+    period-stamped blocks. All of that is data a roll edits, and which readings
+    run the long record (DSO) and which sit on a short one (the page's eight
+    quarters, or a disclosure that starts later: the recast customer mix, the
+    guarantee record, the new-basis cash conversion) is the analyses' choice,
+    not the page's -- so the pins count the permanent charts and add these while
+    they are published. Checked by rolling the series one quarter on disk: the
+    census holds with the stamped blocks gone.
+    """
+    page = js_payload(ROOT / "data" / "nvda.js", "window.DASH")
+    reach = short = 0
+    for section in page["sections"]:
+        for ex in section["exhibits"]:
+            rolling = ((section["id"] in ("settled", "next_quarter") and ex["kind"] == "lines")
+                       or any(str(label).endswith("原披露") for label in ex.get("xlabels") or [])
+                       or any(group.get("name") == "其中：股权投资收益（税前）" for group in ex.get("groups") or []))
+            year = first_year(ex) if rolling else None
+            if year is None:
+                continue
+            if year <= TARGET_YEAR:
+                reach += 1
+            elif len(ex.get("xlabels") or []) <= 8:
+                short += 1
+    return reach, short
+
+
 def _tsm_advanced_count() -> dict:
     """The process-mix note counts the quarters since 2021Q1 in which the page's
     summed 7nm-and-below line equals TSMC's own aggregate. The count grows by
@@ -480,7 +512,7 @@ def _cost_threshold_reach() -> int:
 REACH_2016 = {
     "amd": 15 + _amd_threshold_reach(), "amzn": 9 + _amzn_threshold_reach(), "arm": 0, "asml": 24, "avgo": 16, "axp": 7 + _axp_threshold_reach(), "bc": 3, "cboe": 8 + _cboe_threshold_reach(), "cdns": 12, "cfr": 20, "cme": 13 + _cme_threshold_reach(),
     "cost": 11 + _cost_threshold_reach(), "googl": 5 + _googl_threshold_reach(), "hkex": 15, "ibkr": 26, "ker": 11 + _ker_threshold_reach(), "ma": 13 + _ma_threshold_reach(), "mc": 9, "mco": 13, "meta": 5 + _meta_threshold_reach(),
-    "msci": 23, "msft": 5 + _msft_threshold_reach(), "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 7 + _nke_threshold_reach(), "nvda": 10, "pm": 8,
+    "msci": 23, "msft": 5 + _msft_threshold_reach(), "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 7 + _nke_threshold_reach(), "nvda": 9 + _nvda_threshold_charts()[0], "pm": 8,
     "race": 12, "rms": 15, "samsung": 0, "schw": 10, "skhynix": 4, "snps": 8,
     "spgi": 14, "tjx": 13, "tsm": 14 + _tsm_story_reach(), "v": 17, "zgn": 0,
     "intc": 10 + _intc_threshold_reach(),
@@ -1998,7 +2030,7 @@ class ChartWindowTest(unittest.TestCase):
         combined = {slug: SHORT_BY_DESIGN.get(slug, 0) + UNEXPLAINED_LONG.get(slug, 0)
                     for slug in set(SHORT_BY_DESIGN) | set(UNEXPLAINED_LONG)}
         self.assertEqual(by_page, combined)
-        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 60)
+        self.assertEqual(sum(SHORT_BY_DESIGN.values()) - _nvda_threshold_charts()[1], 55)
         # Zero, as of the SK hynix backfill. This number is not load-bearing on
         # its own -- an empty dict sums to zero for free -- but `by_length ==
         # UNEXPLAINED_LONG` two lines down is, and that one is what turns red if
@@ -2180,7 +2212,9 @@ SHORT_BY_DESIGN = {
     # the headquarters-purchase capex chart: eight quarters, instalment by instalment
     'hkex': 1,
     'mc': 8,
-    'nvda': 11,
+    # six permanent short charts, plus the charts that come and go with the
+    # quarter's period-stamped blocks (see the helper)
+    'nvda': 6 + _nvda_threshold_charts()[1],
     'pm': 5,
     'samsung': 21,
     'skhynix': 7,

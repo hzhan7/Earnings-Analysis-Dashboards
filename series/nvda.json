@@ -62,6 +62,34 @@
       "current": 279,
       "prior_quarter": 119
     },
+    "guarantee_max_exposure_usd_bn": {
+      "current": 108.5,
+      "prior_quarter": 3.5,
+      "_source": "Q2 FY27 10-Q 附注「Guarantees」汇总表 Total $108.5（含 2026 年 8 月 SB Energy 105.0）；Q1 FY27 10-Q「Facility Lease Guarantee」：maximum gross exposure under all agreements is $3.5 billion"
+    },
+    "other_income_usd_m": {
+      "current": 7773,
+      "prior_quarter": 16367,
+      "_source": "Q2 FY27 新闻稿合并损益表「Other income, net」7,773；Q1 FY27 新闻稿「Total other income, net」16,367",
+      "fiscal_year_totals": {
+        "FY2017": -29,
+        "FY2018": -14,
+        "FY2019": 92,
+        "FY2020": 124,
+        "FY2021": -123,
+        "FY2022": -100,
+        "FY2023": -43,
+        "FY2024": 846,
+        "FY2025": 2573,
+        "FY2026": 11063
+      },
+      "fiscal_year_source": "各年 10-K 合并损益表全年列（SEC XBRL NonoperatingIncomeExpense 年度值，FY2017–FY2026 十份 10-K；与季度值不是同一份文件）"
+    },
+    "accounts_receivable_usd_m": {
+      "current": 63059,
+      "prior_quarter": 40710,
+      "_source": "Q2 FY27 新闻稿资产负债表「Accounts receivable」63,059；Q1 FY27 40,710"
+    },
     "returned_to_shareholders_usd_bn_printed": 26.0,
     "next_quarter": {
       "period": "Q3 2026",
@@ -87,7 +115,221 @@
       ]
     },
     "source": "NVIDIA Q2 FY2027 业绩 8-K（acc 0001045810-26-000073）EX-99.1 新闻稿首页与 Q2 Fiscal 2027 Summary 表（Revenue 96,221 / 81,615 / 46,743，Q/Q 18%、Y/Y 106%；GAAP / non-GAAP gross margin 75.0% / 75.0%；operating expenses 8,408 / 8,232；operating income 63,734 / 63,956；net income 59,688 / 53,954；diluted EPS $2.46 / $2.22）与 Outlook 段（Q3 FY2027 收入 $108.0B ±2%、毛利率 74.0% ±50bp、营业费用 $9.2B / $9.0B、FY2027 税率 16.0%–18.0%）；EX-99.2 CFO Commentary 的 Revenue by Market Platform 表（Data Center 89,023，Hyperscale 48,710，ACIE 40,313，Edge Computing 7,198，Data Center Y/Y 117%）、「60 days sales outstanding (DSO), up from 45 days」「Accounts receivable was $63.1 billion」「Inventory was $31.6 billion」「commitments increased from $119 billion last quarter to $279 billion」「nearly $26.0 billion」与 GAAP/non-GAAP 对账表（Gains from equity securities (7,771)；net cash provided by operating activities 24,077；Free cash flow 21,341）；上季 Outlook 取自 Q1 FY2027 业绩 8-K（acc 0001045810-26-000051）EX-99.1（$91.0B ±2%、74.9% / 75.0%、$8.5B / $8.3B）。",
-    "checked_on": "2026-09-19"
+    "checked_on": "2026-09-19",
+    "note": {
+      "source": {
+        "this_report": "本季本地分析稿「2026-08-26 NVDA Q2 2026 vs Q1 2026 Analysis.md」（报告自述日历 Q2 2026 = FY27 Q2，截至 2026-07-26，财报发布 2026-08-26）：第 0 节上季遗留问题 6 条的「验证结果」列与其后的闭环判断；第 8 节「上季指标校准」表 8 行的判定与处置、「本季指标」表 5 行与立场撤销条件 3 条",
+        "prior_report": "上季本地分析稿「2026-05-20 NVDA Q1 2026 vs Q4 2025 Analysis.md」（FY27 Q1，季末 2026-04-26）：第 8 节「关键观察指标」8 行；文末 Follow-up Questions 6 题"
+      },
+      "checked_on": "2026-09-24",
+      "followup_closure": {
+        "total": 6,
+        "counts": {
+          "已验证": 3,
+          "部分验证": 1,
+          "被证伪": 1,
+          "未兑现": 1
+        },
+        "verdicts": [
+          "已验证",
+          "被证伪",
+          "已验证",
+          "部分验证",
+          "已验证",
+          "未兑现"
+        ],
+        "_note": "第 0 节「验证结果」列原文：#1 已验证（强）、#2 被证伪（且指标基数已被重述）、#3 已验证（远超阈值）、#4 部分验证 / 指标可观测性下降、#5 已验证（强，且是本季最重要发现）、#6 未兑现（且新增负面细节）；统计行「6 条里 3 条强验证，1 条证伪，1 条部分验证，1 条未兑现」。"
+      },
+      "prior_rows": 8,
+      "prior_thresholds": [
+        {
+          "row": 1,
+          "threshold": 95.0,
+          "trigger": ">=",
+          "action": "加仓",
+          "_note": "「>= $95B 加仓」"
+        },
+        {
+          "row": 1,
+          "threshold": 92.8,
+          "trigger": "<",
+          "action": "减仓",
+          "_note": "「< $92.8B 减仓」"
+        },
+        {
+          "row": 2,
+          "threshold": 50.0,
+          "trigger": ">",
+          "action": "里程碑",
+          "_note": "「Q2 >50% = 多元化里程碑」"
+        },
+        {
+          "row": 2,
+          "threshold": 48.0,
+          "trigger": "<",
+          "action": "警示",
+          "_note": "「<48% = hyperscaler 依赖回升」"
+        },
+        {
+          "row": 4,
+          "threshold": 74.5,
+          "trigger": "<",
+          "action": "警示",
+          "_note": "「<74.5% = Rubin/成本压力提前」"
+        },
+        {
+          "row": 4,
+          "threshold": 73.5,
+          "trigger": "<",
+          "action": "重新评估",
+          "_note": "「<73.5% = 重新评估」"
+        },
+        {
+          "row": 5,
+          "threshold": 60.0,
+          "trigger": ">",
+          "action": "警示",
+          "_note": "「>60 days = 回款质量恶化」"
+        },
+        {
+          "row": 6,
+          "threshold": 165.0,
+          "trigger": ">",
+          "action": "警示",
+          "_note": "「若 Q2 >$165B 且 revenue beat <3%」的前一半"
+        },
+        {
+          "row": 6,
+          "threshold": 3.0,
+          "trigger": "<",
+          "action": "警示",
+          "_note": "同一行的后一半；两半要同时成立"
+        }
+      ],
+      "prior_compound_rows": {
+        "6": "and"
+      },
+      "prior_not_quantified_rows": [
+        3,
+        7,
+        8
+      ],
+      "_prior_note": "第 3 行（Networking 占比 >20% / <18%）与第 8 行（中国 >$1B）有数值，但申报没有本季读数（前者停披露，后者只印「不到 DC 收入的 1%」这个上限）；第 7 行没有数值阈值。trigger 是原文触发动作的那一侧（>= / > 为达到或高于即触发，< 为低于即触发）；页面 series 里的 direction 是有利一侧：加仓 / 里程碑线与 trigger 同侧，警示 / 减仓 / 重新评估线与 trigger 相反。",
+      "next_rows": 8,
+      "next_revocation_rows": [
+        6,
+        7,
+        8
+      ],
+      "next_thresholds": [
+        {
+          "row": 1,
+          "threshold": 52.0,
+          "trigger": "<=",
+          "action": "加仓",
+          "_note": "「Q3 ≤52 天 … ≤52 加仓」"
+        },
+        {
+          "row": 1,
+          "threshold": 70.0,
+          "trigger": ">=",
+          "action": "减仓",
+          "_note": "「≥70 天 … ≥70 减仓」"
+        },
+        {
+          "row": 2,
+          "threshold": 80.0,
+          "trigger": ">=",
+          "action": "加仓",
+          "_note": "「Q3 ≥80% … ≥80% 加仓」"
+        },
+        {
+          "row": 2,
+          "threshold": 50.0,
+          "trigger": "<",
+          "action": "重新评估",
+          "consecutive": 2,
+          "_note": "「连续两季 <50% … <50% 连续两季 重新评估」"
+        },
+        {
+          "row": 3,
+          "threshold": 73.5,
+          "trigger": "<",
+          "action": "警示",
+          "_note": "「Q3 实际 <73.5% … 警示」"
+        },
+        {
+          "row": 3,
+          "threshold": 74.5,
+          "trigger": ">=",
+          "action": "上行",
+          "_note": "「Q3 ≥74.5% … ≥74.5% upside」"
+        },
+        {
+          "row": 3,
+          "threshold": 71.0,
+          "trigger": "<",
+          "action": "减仓",
+          "_note": "「Q4 指引若 <71% … Q4 指引<71% 减仓」；读 Q4 指引"
+        },
+        {
+          "row": 4,
+          "threshold": 150.0,
+          "trigger": ">",
+          "action": "减仓",
+          "_note": "「>$150B … >$150B 减仓」"
+        },
+        {
+          "row": 5,
+          "threshold": 20.0,
+          "trigger": ">",
+          "action": "警示",
+          "_note": "「>20% … >20% 警示」"
+        },
+        {
+          "row": 5,
+          "threshold": 14.0,
+          "trigger": "<=",
+          "action": "里程碑",
+          "_note": "「≤14% = 多元化里程碑」"
+        },
+        {
+          "row": 6,
+          "threshold": 30.0,
+          "trigger": "<",
+          "action": "撤回立场",
+          "_note": "撤销条件 ①「Q3 自由现金流 < $30B」"
+        },
+        {
+          "row": 8,
+          "threshold": 0.0,
+          "trigger": "<",
+          "action": "撤回立场",
+          "_note": "撤销条件 ③「Other income 转负」"
+        }
+      ],
+      "next_conditions": {
+        "6": [
+          "或",
+          2
+        ],
+        "7": [
+          "或",
+          1
+        ],
+        "8": [
+          "或",
+          2
+        ]
+      },
+      "next_not_quantified": [
+        {
+          "row": 4,
+          "_note": "「担保终止 加仓」是事件"
+        }
+      ],
+      "_next_note": "撤销条件 ① 的「DSO ≥70」、② 的「Q4 毛利率指引 <71%」、③ 的「担保 >$150B」与第 1、3、4 行的减仓线是同一条线，不重复计；conditions 里的数字是（腿数）。"
+    }
   },
   "periods": [
     "Q3 2024",
@@ -287,10 +529,10 @@
       "hyperscale": 37869,
       "acie": 37377
     },
-    "chart_note_tail": "<b>上季本页把阈值设在 ACIE 占 DC 上，本季它随基数一起作废</b>，第三节的阈值因此改建在 10-Q 的原始项上（{tenq_share}）。",
+    "chart_note_tail": "<b>上季报告把两条阈值设在 ACIE 占 DC 上，本季它们随基数一起作废</b>（结算见 Exhibit {EX_PRIOR}），本季报告因此把下季阈值改建在申报的原始项上（第三节）。",
     "platform_note_tail": "<b>本图刻意只画这两条</b>：Data Center 内部的客户类型拆分本季被公司重述过，而这两行在重述前后完全相同 —— 只看这张图察觉不到重分类发生过，这正是把它单独画一张的理由，见 Exhibit {EX_RECAST}。",
     "page_note": "Data Center 的 Hyperscale / ACIE 拆分本季被公司重分类并追溯重述（一家客户由 ACIE 改入 Hyperscale）。重述后的值只在本季 10-Q 的三列里印出，Q3 2025 与 Q4 2025 在新口径下不存在于任何申报，也无法由两个已披露数相减得到，因此本页不再画这条八季序列，改为一张重述前后对照图加一张核对表。",
-    "brief_card": "<article><span>口径</span><b>一条 KPI 被重述掉</b><p>Hyperscale 占 DC 的 {filed_period} 由 {filed_share} 改写为 {recast_share}；{tenq_share}阈值已改建在 10-Q 原始项上。</p></article>"
+    "brief_card": "<article><span>口径</span><b>一条 KPI 被重述掉</b><p>Hyperscale 占 DC 的 {filed_period} 由 {filed_share} 改写为 {recast_share}；报告把 ACIE 与 Networking 两条占比阈值退役，下季阈值改建在申报的原始项上。</p></article>"
   },
   "discontinued_dc_split_usd_m": {
     "quarters": [
@@ -378,7 +620,17 @@
       25797.0,
       31575.0
     ],
-    "dso_note": "DSO = 期末应收账款净额 ÷ 当季净收入 × 91，{window_words}季同一公式。"
+    "dso_days_printed": [
+      46,
+      53,
+      46,
+      54,
+      53,
+      51,
+      45,
+      60
+    ],
+    "dso_printed_note": "公司印出的 DSO 逐季读自各季 CFO commentary（8-K EX-99.2）「… days sales outstanding (DSO)」一句，只印整数天。"
   },
   "quarterly_guidance_history": {
     "quarters": [
@@ -1214,7 +1466,52 @@
       9.3377,
       8.7382
     ],
-    "provenance": "{long_quarters} 季全部取 GAAP 口径：GAAP 毛利率与营业利润率的定义在整个窗口内未变，而 non-GAAP 自 FY2027 Q1 起改为包含股权激励费用，两种口径接成一条线会在变更处砸出纯定义性的落差。"
+    "provenance": "{long_quarters} 季全部取 GAAP 口径：GAAP 毛利率与营业利润率的定义在整个窗口内未变，而 non-GAAP 自 FY2027 Q1 起改为包含股权激励费用，两种口径接成一条线会在变更处砸出纯定义性的落差。",
+    "accounts_receivable_usd_m": [
+      523.0,
+      644.0,
+      833.0,
+      826.0,
+      976.0,
+      1213.0,
+      1167.0,
+      1265.0,
+      1220.0,
+      1662.0,
+      2219.0,
+      1424.0,
+      1242.0,
+      1561.0,
+      1455.0,
+      1657.0,
+      1907.0,
+      2084.0,
+      2546.0,
+      2429.0,
+      3024.0,
+      3586.0,
+      3954.0,
+      4650.0,
+      5438.0,
+      5317.0,
+      4908.0,
+      3827.0,
+      4080.0,
+      7066.0,
+      8309.0,
+      9999.0,
+      12365.0,
+      14132.0,
+      17693.0,
+      23065.0,
+      22132.0,
+      27808.0,
+      33391.0,
+      38466.0,
+      40710.0,
+      63059.0
+    ],
+    "receivables_note": "应收账款净额逐季读自各季 10-Q / 10-K 资产负债表（SEC XBRL AccountsReceivableNetCurrent，每个季末一个值；最近八季与各季业绩新闻稿的资产负债表逐一相同）；DSO = 应收 ÷ 当季收入 × 91，与本页八季表同一公式，自算 D。"
   },
   "restated_comparatives": {
     "period": "Q2 2026",
@@ -1253,17 +1550,12 @@
       2.39,
       1.08
     ],
-    "gaap_total_other_income_usd_m": [
-      7773,
-      16367,
-      2766
-    ],
     "equity_securities_gains_usd_m": [
       7771,
       15936,
       2247
     ],
-    "note": "三季同取 FY2027 Q2 业绩 8-K 的合并损益表与 GAAP/non-GAAP 对账表，均为重述后 non-GAAP 口径（含股权激励费用）。股权证券收益为现金流量表的「Gains from equity securities, net」当季列，Q2 2025 取自本季 8-K 的上年同期列。GAAP 其他收入净额 = 税前利润 − 营业利润。"
+    "note": "三季同取 FY2027 Q2 业绩 8-K 的合并损益表与 GAAP/non-GAAP 对账表，均为重述后 non-GAAP 口径（含股权激励费用）。股权证券收益为现金流量表的「Gains from equity securities, net」当季列，Q2 2025 取自本季 8-K 的上年同期列。"
   },
   "fcf_conversion": {
     "quarters": [
@@ -1282,7 +1574,7 @@
       106.5996,
       39.5541
     ],
-    "note": "自由现金流 ÷ 当季 non-GAAP 净利润。Q3–Q4 2024 两季缺分母 —— 公司从未按重述后口径印出那两季的 non-GAAP 净利，而该项不能像毛利率与营业费用那样机械推算（见 financials 的口径说明）。"
+    "note": "自由现金流 ÷ 当季 non-GAAP 净利润。这条序列从 Q1 2025 开始：更早的季度公司从未按现行口径印出 non-GAAP 净利，而该项不能像毛利率与营业费用那样机械推算（口径说明见 Exhibit {EX_GM_NOW}）。"
   },
   "customer_concentration": {
     "quarters": [
@@ -1325,7 +1617,6 @@
     "total_future_commitments_usd_bn": 366.0,
     "additional_commitments_usd_bn": 56.0,
     "guarantee_max_exposure_usd_bn": {
-      "total": 108.5,
       "sb_energy": 105.0,
       "land_power_shell_ai_clouds_current": 3.529,
       "land_power_shell_ai_clouds_prior_fy_end": 3.53
@@ -1346,9 +1637,115 @@
       "usd_m": 25000,
       "tranches": 7
     },
-    "note": "全部取自 FY2027 Q2 10-Q（acc 0001045810-26-000075）。担保一栏要读清楚：原有的 AI 云土地/电力/厂房担保是 3,529（2026-07-26）对 3,530（2026-01-25），基本持平；新增的 105.0 全部来自 SB Energy，且该笔签于资产负债表日之后，公司把它并进了标题注明含期后事项的那张表。上一季 10-Q 没有任何担保上限披露，所以本项没有可比的上季基数。",
-    "guarantee_note": "<b>担保这一项要读清楚</b>：原有的 AI 云土地/电力/厂房担保是 {land_now} 对 {land_prev}，基本持平；新增的那笔签在资产负债表日之后，公司把它并进了标题注明含期后事项的表里。上一季 10-Q 没有任何担保上限披露，所以<b>本项没有可比的上季基数，也不存在「单季暴增 N 倍」这个说法</b>。",
-    "page_note": "担保最大总敞口没有可比的上季基数：上一季 10-Q 没有任何担保上限披露。本季表内含期后事项，其中单一一笔占绝大部分，且原有的 AI 云土地/电力/厂房担保在两个资产负债表日之间基本持平。"
+    "note": "全部取自 FY2027 Q2 10-Q（acc 0001045810-26-000075）；担保的逐季上限见第三节的担保图。",
+    "guarantee_note": "<b>担保这一项要读清楚</b>：原有的 AI 云土地/电力/厂房担保是 {land_now} 对 {land_prev}，基本持平；本季表里多出来的 {guarantee_sb} 是 2026 年 8 月、资产负债表日之后签的 SB Energy 担保，公司把它并进了标题注明含期后事项的表。上季 10-Q 印的上限是 {guarantee_prev}，所以「由 {guarantee_prev} 升到 {guarantee_now}」成立，但增量发生在季度结束之后。",
+    "page_note": "担保最大总敞口：上季 10-Q 印的上限是 {guarantee_prev}；本季汇总表的 {guarantee_now} 含一笔资产负债表日之后签的担保（{guarantee_sb}），按资产负债表日口径本季仍是 {land_now}。"
+  },
+  "guarantee_exposure_usd_bn": {
+    "quarters": [
+      "Q3 2025",
+      "Q4 2025",
+      "Q1 2026",
+      "Q2 2026"
+    ],
+    "max_gross_exposure": [
+      0.86,
+      3.5,
+      3.5,
+      108.5
+    ],
+    "note": "担保最大总敞口逐季读自 10-Q / 10-K 的担保附注：FY2026 Q3 10-Q（本页 Q3 2025）第一次出现这类担保（为合作方的数据中心租约提供违约担保，换取认股权证），FY2026 10-K 与 FY2027 Q1 10-Q 各印一个上限；本季 10-Q 的汇总表含 2026 年 8 月、资产负债表日之后签的 SB Energy 担保，表头写明含这一笔。更早的季度没有这类担保。"
+  },
+  "other_income_usd_m": {
+    "quarters": [
+      "Q1 2016",
+      "Q2 2016",
+      "Q3 2016",
+      "Q4 2016",
+      "Q1 2017",
+      "Q2 2017",
+      "Q3 2017",
+      "Q4 2017",
+      "Q1 2018",
+      "Q2 2018",
+      "Q3 2018",
+      "Q4 2018",
+      "Q1 2019",
+      "Q2 2019",
+      "Q3 2019",
+      "Q4 2019",
+      "Q1 2020",
+      "Q2 2020",
+      "Q3 2020",
+      "Q4 2020",
+      "Q1 2021",
+      "Q2 2021",
+      "Q3 2021",
+      "Q4 2021",
+      "Q1 2022",
+      "Q2 2022",
+      "Q3 2022",
+      "Q4 2022",
+      "Q1 2023",
+      "Q2 2023",
+      "Q3 2023",
+      "Q4 2023",
+      "Q1 2024",
+      "Q2 2024",
+      "Q3 2024",
+      "Q4 2024",
+      "Q1 2025",
+      "Q2 2025",
+      "Q3 2025",
+      "Q4 2025",
+      "Q1 2026",
+      "Q2 2026"
+    ],
+    "total_other_income": [
+      -4,
+      0,
+      -18,
+      -7,
+      -18,
+      -4,
+      1,
+      5,
+      16,
+      23,
+      23,
+      30,
+      31,
+      35,
+      32,
+      26,
+      5,
+      -42,
+      -50,
+      -37,
+      88,
+      -50,
+      -33,
+      -105,
+      -63,
+      -24,
+      12,
+      32,
+      69,
+      181,
+      105,
+      491,
+      370,
+      572,
+      447,
+      1183,
+      272,
+      2766,
+      1926,
+      6098,
+      16367,
+      7773
+    ],
+    "note": "GAAP 其他收入净额是利息收入、利息费用与其他收支净额（Other, net）三行的合计，公司对这一合计行的叫法换过几次；FY2017 的损益表不印合计行、而且把第三行叫作「Other income (expense), net」，那一年取三行相加（Q4 FY2017：17 − 18 − 6 = −7，与同一份新闻稿非 GAAP 对账表里的「GAAP other income (expense), net」(7) 相同）。财年第一至第三季逐季读自各季 10-Q 合并损益表的三个月列；财年第四季取每年 2 月那份业绩新闻稿的 Q4 列。每个财年四季相加与 10-K 全年值的差最大 US$2M（FY2018：利息收入四季合计 68、全年 69，其他收支净额四季合计 −23、全年 −22，都是分行四舍五入）。"
   },
   "capital_return_usd_m": {
     "period": "Q2 2026",
@@ -1393,10 +1790,14 @@
   "market_expectation": {
     "period": "Q2 2026",
     "as_of": "2026-08-26 财报发布前",
-    "revenue_usd_m": 92100,
-    "non_gaap_eps_usd": 2.09,
-    "basis": "取自本地分析稿所采用的公开隐含一致预期（营收 US$92.1B、non-GAAP EPS $2.09），不具名、不引用。分析稿自己注明这两个数来自二手财经媒体转述而非终端原始值，因此「超出预期」的绝对幅度有 ±1% 量级的不确定性。",
-    "page_note": "本季所用的一致预期来自二手转述而非终端原始值，因此「超出预期」的绝对幅度有 ±1% 量级的不确定性。"
+    "revenue_usd_m": 92170,
+    "non_gaap_eps_usd": 2.1,
+    "source": {
+      "label": "CNBC 2026-08-26 财报日报道（转引 LSEG 一致预期）",
+      "url": "https://www.cnbc.com/2026/08/26/nvidia-nvda-earnings-report-q2-2027-live-updates.html"
+    },
+    "basis": "LSEG 汇总的财报前一致预期，本页经 CNBC 财报日报道二手转述（「Revenue: $96.22 billion vs. $92.17 billion estimated」「Earnings per share: $2.22 adjusted vs. $2.10 estimated」）。本季分析稿写的 US$92.1B / $2.09 注的就是这篇出处，但与原文不符，本页按原文。只保留页面原有的这两个数，不另加一致预期。",
+    "page_note": "本季所用的一致预期是 LSEG 的数、经 CNBC 财报日报道二手转述，不是终端原始值。"
   },
   "guidance": {
     "period": "Q2 2026",
@@ -1430,6 +1831,7 @@
   },
   "followup_closure": {
     "period": "Q2 2026",
+    "set_in": "Q1 2026",
     "labels": [
       "已验证",
       "部分验证",
@@ -1443,65 +1845,427 @@
       1
     ],
     "total": 6,
-    "note": "上季 6 条待验证问题的闭环结果。3 条强验证：收入超自身指引 5.7%、Vera Rubin 已进入量产出货、战略投资与供应承诺全面膨胀。1 条部分验证：Networking 并未快于 compute，且公司自本季起停止披露该拆分。1 条被证伪：ACIE 没有超过 Hyperscale —— 而且这条指标的基数被公司重述过，本页据此把它退役。1 条未兑现：中国 Data Center compute 收入仍为零。",
-    "note_tail": "<b>本季第一次出现「被证伪」这一格，而且它值得单独读</b>：被证伪的不只是那条判断，是那条判断赖以成立的<b>序列本身</b> —— 公司在本季把一家客户由 ACIE 重分类进 Hyperscale 并追溯重述历史，同一个季度在两套口径下给出方向相反的结论。加上停止披露的 Networking 拆分，上季的两条占比阈值本季一起退役，详见 Exhibit {EX_RECAST} 与第三节。"
+    "items": [
+      {
+        "question": "Q2 实际收入能否超过 $95B，而不只是落在 $91B 的指引区间里？",
+        "verdict": "已验证",
+        "evidence": "实际 {revenue_now}，比指引中值 {guide_mid_now} 高 {beat_guide}。报告判「已验证（强）」：二阶导继续加速，但这一条已被市场充分定价。"
+      },
+      {
+        "question": "ACIE 是否正式超过 Hyperscale，且 DSO 是否仍在正常区间？",
+        "verdict": "被证伪",
+        "evidence": "本季 ACIE {acie_now}、Hyperscale {hyper_now}，ACIE 占 Data Center {acie_share_now}，没有超过；同一季公司把一家客户由 ACIE 重分类进 Hyperscale 并追溯重述，上季的 Hyperscale / ACIE 由原披露 {hyper_filed} / {acie_filed} 改成 {hyper_recast} / {acie_recast}（见 Exhibit {EX_RECAST}）。DSO 公司印 {dso_printed_now} 天，上季 {dso_printed_prev} 天。报告判「被证伪（且指标基数已被重述）」，并把 ACIE 占比这条阈值退役。"
+      },
+      {
+        "question": "Vera Rubin 的 Q3 量产爬坡是否给出明确的出货金额或订单 / backlog 量级？",
+        "verdict": "已验证",
+        "evidence": "10-Q 写明 Vera Rubin 已在 FY2027 Q3（本页 Q3 2026）开始量产出货；量级只在电话会上给过（公司口径：主要客户都已下单，Q3 Vera Rubin 约占 Data Center 收入的 20%），申报里没有金额。报告判「已验证（远超阈值）」：上季把「$3B–$5B」当作正面门槛，低估了约四倍。"
+      },
+      {
+        "question": "Networking 收入能否继续快于 compute，Data Center 的 networking 占比能否突破 20%？",
+        "verdict": "部分验证",
+        "evidence": "公司自本季起不再披露 Data Center 的 compute / networking 拆分，新闻稿、CFO commentary 与 10-Q 三处都没有；电话会只说 networking 收入环比 +18%，而 Data Center 整体环比 {dc_qoq}。报告判「部分验证 / 指标可观测性下降」：networking 没有快于 compute，占比没有突破，而且这条指标的分子公司不再印了。"
+      },
+      {
+        "question": "战略投资、客户融资与供应承诺是否在 10-Q 里继续膨胀？",
+        "verdict": "已验证",
+        "evidence": "10-Q：供应与产能承诺由上季 {commit_prev} 升到 {commit_now}；担保最大总敞口由上季 10-Q 的 {guarantee_prev} 升到本季汇总表的 {guarantee_now}，其中 {guarantee_sb} 是资产负债表日之后（2026 年 8 月）签的 SB Energy 担保，公司把它并进了注明含期后事项的那张表。报告判「已验证（强，且是本季最重要发现）」。"
+      },
+      {
+        "question": "中国 H200 / 中国 Data Center compute 是否开始产生收入？",
+        "verdict": "未兑现",
+        "evidence": "CFO commentary：本季对华 Data Center Hopper 出货「less than 1% of Data Center revenue」，即不到 {china_cap}；Q3 指引仍不假设任何中国 Data Center compute 收入。10-Q 另写：上半年因 H200 需求减弱计提 US$0.4B，发出去的 H200 进口时要交 25% 关税、公司无法转嫁。报告判「未兑现（且新增负面细节）」。"
+      }
+    ],
+    "note": "判定取自本季报告第 0 节「验证结果」列：6 条里 3 条已验证、1 条被证伪、1 条部分验证、1 条未兑现（报告的统计行写作「3 条强验证，1 条证伪，1 条部分验证，1 条未兑现」）。报告在统计之后说，真正的教训不在记分：上季 8 条阈值里有 2 条（ACIE 占比、Networking 占比）一个季度内就被公司重述或停止披露 —— 阈值建在了公司可以重画的呈现层上，所以本季它把阈值改建在申报的原始项上（见第三节）。"
+  },
+  "prior_kpi_settlement": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "source_section": "第 8 节「关键观察指标」",
+    "rows": [
+      "Q2 FY27 actual revenue：Guide $91.0B；actual < $92.8B = beat 弱化；>= $95B = 二阶导继续强 —— < $92.8B 减仓；>= $95B 加仓",
+      "ACIE 占 Data Center 比重：Q1 49.7%；Q2 >50% = 多元化里程碑；<48% = hyperscaler 依赖回升 —— 多元化里程碑 / 警示",
+      "Networking 占 Data Center 比重：Q1 19.7%；>20% = AI factory 护城河强化；<18% = fabric attach 弱化 —— 护城河 KPI / 警示",
+      "non-GAAP GM：Q2 guide 75.0% ±50bp；<74.5% = Rubin/成本压力提前；<73.5% = 重新评估 —— 警示 / 重新评估",
+      "DSO：Q1 45 days；公司预计 Q2 回 normal / mid-50s；>60 days = 回款质量恶化 —— 警示",
+      "Inventory + supply-related commitments：Q1 $144.8B；若 Q2 >$165B 且 revenue beat <3%，说明锁仓快于需求兑现 —— 警示",
+      "Vera Rubin ramp：Q3 production start；若 Q2 call 不给 PO / ramp 量化，或 Q3 未形成可见收入 —— 跟踪 / 警示",
+      "China DC compute revenue：Q1/Q2 baseline = $0；Q2 >$1B = policy upside 开始兑现 —— upside / 加仓"
+    ],
+    "quantified": [
+      {
+        "id": "rev_add",
+        "row": 1,
+        "metric": "Q2 收入（加仓线）",
+        "reads": "revenue_bn",
+        "unit": "usd_bn",
+        "threshold": 95.0,
+        "direction": "up",
+        "action": "加仓",
+        "settles": "Q2 2026",
+        "rule": ">= $95B = 二阶导继续强 —— 加仓"
+      },
+      {
+        "id": "rev_cut",
+        "row": 1,
+        "metric": "Q2 收入（减仓线）",
+        "reads": "revenue_bn",
+        "unit": "usd_bn",
+        "threshold": 92.8,
+        "direction": "up",
+        "action": "减仓",
+        "settles": "Q2 2026",
+        "rule": "actual < $92.8B = beat 弱化 —— 减仓"
+      },
+      {
+        "id": "acie_milestone",
+        "row": 2,
+        "metric": "ACIE 占 DC（里程碑）",
+        "reads": "acie_share_pct",
+        "unit": "pct",
+        "threshold": 50.0,
+        "direction": "up",
+        "strict": true,
+        "action": "里程碑",
+        "settles": "Q2 2026",
+        "rule": "Q2 >50% = 多元化里程碑"
+      },
+      {
+        "id": "acie_warn",
+        "row": 2,
+        "metric": "ACIE 占 DC（警示线）",
+        "reads": "acie_share_pct",
+        "unit": "pct",
+        "threshold": 48.0,
+        "direction": "up",
+        "action": "警示",
+        "settles": "Q2 2026",
+        "rule": "<48% = hyperscaler 依赖回升 —— 警示"
+      },
+      {
+        "id": "gm_warn",
+        "row": 4,
+        "metric": "non-GAAP 毛利率（警示线）",
+        "reads": "ng_gm_pct",
+        "unit": "pct",
+        "threshold": 74.5,
+        "direction": "up",
+        "action": "警示",
+        "settles": "Q2 2026",
+        "rule": "<74.5% = Rubin/成本压力提前 —— 警示"
+      },
+      {
+        "id": "gm_reassess",
+        "row": 4,
+        "metric": "non-GAAP 毛利率（重新评估线）",
+        "reads": "ng_gm_pct",
+        "unit": "pct",
+        "threshold": 73.5,
+        "direction": "up",
+        "action": "重新评估",
+        "settles": "Q2 2026",
+        "rule": "<73.5% = 重新评估"
+      },
+      {
+        "id": "dso_warn",
+        "row": 5,
+        "metric": "DSO（警示线）",
+        "reads": "dso_printed_days",
+        "unit": "days",
+        "threshold": 60.0,
+        "direction": "down",
+        "action": "警示",
+        "settles": "Q2 2026",
+        "rule": ">60 days = 回款质量恶化 —— 警示"
+      },
+      {
+        "id": "supply_warn",
+        "row": 6,
+        "metric": "存货 + 供应承诺（合取之一）",
+        "reads": "total_supply_bn",
+        "unit": "usd_bn",
+        "threshold": 165.0,
+        "direction": "down",
+        "action": "警示",
+        "settles": "Q2 2026",
+        "rule": "Q2 >$165B"
+      },
+      {
+        "id": "beat_warn",
+        "row": 6,
+        "metric": "收入较指引中值（合取之一）",
+        "reads": "revenue_beat_pct",
+        "unit": "pct",
+        "threshold": 3.0,
+        "direction": "up",
+        "action": "警示",
+        "settles": "Q2 2026",
+        "rule": "revenue beat <3%"
+      }
+    ],
+    "conditions": [
+      {
+        "row": 6,
+        "mode": "and",
+        "ids": [
+          "supply_warn",
+          "beat_warn"
+        ],
+        "text": "Q2 >$165B 且 revenue beat <3%"
+      }
+    ],
+    "not_drawn": [
+      {
+        "row": 3,
+        "metric": "Networking 占 Data Center",
+        "reading": "公司自本季起停止披露 compute / networking 拆分，申报里没有本季读数（上季 {networking_prev_share}）；电话会只说 networking 收入环比 +18%",
+        "why": "阈值的分子不再有申报值；按电话会口径推算的占比是估算，不作结算"
+      },
+      {
+        "row": 7,
+        "metric": "Vera Rubin 爬坡",
+        "reading": "10-Q：FY2027 Q3 开始量产出货；电话会（公司口径）：主要客户都已下单，Q3 约占 Data Center 收入的 20%",
+        "why": "原文没有数值阈值；前半句（Q2 电话会给不给量化）已经给了，后半句（Q3 有没有形成可见收入）要到 Q3 才能结算"
+      },
+      {
+        "row": 8,
+        "metric": "中国 Data Center compute 收入",
+        "reading": "CFO commentary：对华 Data Center Hopper 出货不到 Data Center 收入的 1%，即低于 {china_cap}",
+        "why": "公司只印上限、不印金额，算不出余量；上限已经低于「>$1B」这条线，所以没有达到是确定的"
+      }
+    ],
+    "dispositions": [
+      "触发（正面）；退役 —— 已兑现且被市场定价",
+      "指标设计失效 —— 基数被公司追溯重定义；退役，改用单一客户占比",
+      "指标可观测性失效（公司已停止披露）；退役",
+      "当季未触发，前瞻已触发（Q3 指引 74.0% 已破线）；保留并重设阈值",
+      "实质触发（59.6 天，管理层称 60 天）；保留，升为首要指标",
+      "复合条件未触发（beat 达 5.7%），但阈值过松 2.1 倍；重设为「担保敞口」指标",
+      "未触发（正面）：Q3 约占 DC 收入 20%；退役 —— 已量化",
+      "未兑现（<$890M，且摊薄毛利）；退役 —— 概率低、且质量已下调"
+    ],
+    "chart_notes": {
+      "acie_share_pct": "这条线是对着原披露口径的 {filed_period} {acie_filed_share} 设的；同一个 {filed_period} 按重述口径是 {acie_recast_share}，本来就在警示线以下 —— 本季的「击穿」来自口径被改写，不是客户结构在本季变了。本季在原口径下的值不存在：被重分类那家客户的本季收入公司没有披露。本季报告判「指标设计失效」并退役。",
+      "ng_gm_pct": "报告另按公司给出的 Q3 指引 {gm_guide_next}（已在警示线以下）判「前瞻已触发」；那是下一季的指引，实际要到 Q3 才结算，本季报告把它重设进了第三节的毛利率阈值。",
+      "dso_printed_days": "公司在 CFO commentary 里只印整数天：本季 {dso_printed_now} 天，正好压在「>60 days」这条线上、没有越过；按本页公式（应收 ÷ 当季收入 × 91）是 {dso_now} 天，同样没有越过 —— 两个口径结论相同，本页按公司印出值结算。本季报告判「实质触发」，并把 DSO 升为下季首要指标（见第三节）。",
+      "total_supply_bn": "原文是合取条件「Q2 >$165B 且 revenue beat <3%」：存货 + 供应承诺越过了，但收入比指引中值高 {beat_guide}，不在 3% 以下 —— 合取不成立，警示不触发。本季报告说这条阈值「过松 2.1 倍」，把它重设为担保敞口指标（见第三节）。收入较指引中值的完整记录见 Exhibit {EX_REV_DEV}。"
+    },
+    "note": "第二行只有重述口径的本季读数；第五行按公司印出的整数天结算，按本页公式的一位小数结论相同；第六行的「revenue beat」按对公司指引中值算 —— 上季原文第一行同样以指引为基准，本季报告校准时用的也是这个口径。"
   },
   "next_kpi": {
     "period": "Q2 2026",
+    "source_section": "第 8 节「关键观察指标」",
+    "_roll_note": "换季时把本块原样搬进 prior_kpi_settlement（rows / quantified / conditions / not_drawn 不改），加 set_in 与下一份报告第 8 节对每一行的处置 dispositions；chart_notes 与 note 是本季的叙述，搬过去之前按下一份报告重写或删掉。quantified 里没有读数：每条线的读数由 build/nvda.py 的 reading() 按 reads 从数组现算。settles 晚于下季的线留在 next_kpi，过期未结的会让构建停下。",
+    "rows": [
+      "DSO（10-Q：应收净额 ÷ 当季收入 × 91）：当前 59.6 天（上季 45.4）。Q3 ≤52 天 = 账期重置为一次性、现金转化恢复；55–62 天 = 新常态、维持折价；≥70 天 = 现金转化结构性受损 —— ≤52 加仓 | 55–62 跟踪 | ≥70 减仓",
+      "FCF / non-GAAP 净利润 转化率：当前单季 39.6%，H1 累计 70.2%。Q3 ≥80% = 本季属一次性；50%–80% = 温和恶化；连续两季 <50% = 商业模式已变 —— ≥80% 加仓 | <50% 连续两季 重新评估",
+      "Non-GAAP 毛利率（实际 vs 指引）：Q3 指引 74.0%±50bp、Q4 指引 71%–72%。Q3 实际 <73.5% = 存储成本失控；Q4 指引若 <71% = 成本尚未见顶；Q3 ≥74.5% = 提价传导快于预期 —— <73.5% 警示 | Q4 指引<71% 减仓 | ≥74.5% upside",
+      "担保最大总敞口（10-Q Commitments & Contingencies 表）：当前 $108.5B（= 股东权益的 47.4%）。>$150B（含行使 3.8GW 追加选择权）= 信用敞口失控；OpenAI 取得投资级信用、担保按条款终止 = 重大利好 —— >$150B 减仓 | 担保终止 加仓",
+      "单一最大直接客户收入占比（10-Q Concentration of Revenue）：当前 16%（去年同期 23%）。>20% = 集中度回升、多元化叙事证伪；≤14% = 多元化里程碑 —— >20% 警示 | ≤14% 多元化里程碑",
+      "立场撤销条件 ①：Q3 DSO ≥70 天，或 Q3 自由现金流 < $30B",
+      "立场撤销条件 ②：Q4 毛利率指引 < 71%（即当前 71%–72% 区间被再次下修）",
+      "立场撤销条件 ③：担保最大总敞口 > $150B，或前沿实验室融资环境转弱导致 Other income 转负（本季 Other income 中股权收益占 99.97%，$7,771M / $7,773M）"
+    ],
+    "revocation_rows": [
+      6,
+      7,
+      8
+    ],
     "quantified": [
       {
-        "id": "dso",
-        "metric": "DSO",
-        "direction": "down",
-        "threshold": 70.0,
+        "id": "dso_add",
+        "row": 1,
+        "metric": "DSO（加仓线）",
+        "reads": "dso_days",
         "unit": "days1",
-        "layer": "10-Q",
-        "layer_noun": "应收"
+        "threshold": 52.0,
+        "direction": "down",
+        "action": "加仓",
+        "settles": "Q3 2026",
+        "rule": "Q3 ≤52 天 = 账期重置为一次性、现金转化恢复 —— 加仓"
       },
       {
-        "id": "fcf_conversion",
-        "metric": "FCF / non-GAAP 净利转化率",
+        "id": "dso_cut",
+        "row": 1,
+        "metric": "DSO（减仓线）",
+        "reads": "dso_days",
+        "unit": "days1",
+        "threshold": 70.0,
+        "direction": "down",
+        "strict": true,
+        "action": "减仓",
+        "settles": "Q3 2026",
+        "rule": "≥70 天 = 现金转化结构性受损 —— 减仓"
+      },
+      {
+        "id": "fcfc_add",
+        "row": 2,
+        "metric": "FCF / non-GAAP 净利（加仓线）",
+        "reads": "fcf_conversion_pct",
+        "unit": "pct",
+        "threshold": 80.0,
         "direction": "up",
+        "action": "加仓",
+        "settles": "Q3 2026",
+        "rule": "Q3 ≥80% = 本季属一次性 —— 加仓"
+      },
+      {
+        "id": "fcfc_reassess",
+        "row": 2,
+        "metric": "FCF / non-GAAP 净利（重新评估线）",
+        "reads": "fcf_conversion_pct",
+        "unit": "pct",
         "threshold": 50.0,
-        "unit": "pct",
-        "layer": "10-Q",
-        "layer_noun": "现金流",
-        "breach_note": "<b>越线的那条是现金转化</b>：本季 FCF 只有 non-GAAP 净利的 {fcf_conversion_now}，而本页把「连续两季低于 {fcf_conversion_line}」定为需要重新评估商业模式的门槛 —— 所以它现在是一条计时器，不是一次读数。"
-      },
-      {
-        "id": "ng_gross_margin",
-        "metric": "non-GAAP 毛利率",
         "direction": "up",
+        "consecutive": 2,
+        "action": "重新评估",
+        "settles": "Q3 2026",
+        "rule": "连续两季 <50% = 商业模式已变 —— 重新评估"
+      },
+      {
+        "id": "gm_warn",
+        "row": 3,
+        "metric": "Q3 non-GAAP 毛利率（警示线）",
+        "reads": "ng_gm_pct",
+        "unit": "pct",
         "threshold": 73.5,
-        "unit": "pct",
-        "layer": "8-K",
-        "layer_noun": "non-GAAP 毛利率"
+        "direction": "up",
+        "action": "警示",
+        "settles": "Q3 2026",
+        "rule": "Q3 实际 <73.5% = 存储成本失控 —— 警示"
       },
       {
-        "id": "guarantee",
-        "metric": "担保最大总敞口",
-        "direction": "down",
-        "threshold": 150.0,
+        "id": "gm_upside",
+        "row": 3,
+        "metric": "Q3 non-GAAP 毛利率（上行线）",
+        "reads": "ng_gm_pct",
+        "unit": "pct",
+        "threshold": 74.5,
+        "direction": "up",
+        "action": "上行",
+        "settles": "Q3 2026",
+        "rule": "Q3 ≥74.5% = 提价传导快于预期 —— upside"
+      },
+      {
+        "id": "gm_guide_cut",
+        "row": 3,
+        "metric": "Q4 毛利率指引（减仓线）",
+        "reads": "ng_gm_guide_pct",
+        "unit": "pct",
+        "threshold": 71.0,
+        "direction": "up",
+        "action": "减仓",
+        "settles": "Q3 2026",
+        "rule": "Q4 指引若 <71% = 成本尚未见顶 —— 减仓"
+      },
+      {
+        "id": "guarantee_cut",
+        "row": 4,
+        "metric": "担保最大总敞口（减仓线）",
+        "reads": "guarantee_bn",
         "unit": "usd_bn",
-        "layer": "10-Q",
-        "layer_noun": "承诺与担保"
+        "threshold": 150.0,
+        "direction": "down",
+        "action": "减仓",
+        "settles": "Q3 2026",
+        "rule": ">$150B（含行使 3.8GW 追加选择权）= 信用敞口失控 —— 减仓"
       },
       {
-        "id": "top_customer",
-        "metric": "单一最大直接客户占比",
-        "direction": "down",
-        "threshold": 20.0,
+        "id": "top_warn",
+        "row": 5,
+        "metric": "最大直接客户占比（警示线）",
+        "reads": "top_customer_pct",
         "unit": "pct",
-        "layer": "10-Q",
-        "layer_noun": "客户集中度"
+        "threshold": 20.0,
+        "direction": "down",
+        "action": "警示",
+        "settles": "Q3 2026",
+        "rule": ">20% = 集中度回升、多元化叙事证伪 —— 警示"
+      },
+      {
+        "id": "top_milestone",
+        "row": 5,
+        "metric": "最大直接客户占比（里程碑）",
+        "reads": "top_customer_pct",
+        "unit": "pct",
+        "threshold": 14.0,
+        "direction": "down",
+        "action": "里程碑",
+        "settles": "Q3 2026",
+        "rule": "≤14% = 多元化里程碑"
+      },
+      {
+        "id": "fcf_revoke",
+        "row": 6,
+        "metric": "Q3 自由现金流（撤销线）",
+        "reads": "fcf_bn",
+        "unit": "usd_bn",
+        "threshold": 30.0,
+        "direction": "up",
+        "action": "撤回立场",
+        "settles": "Q3 2026",
+        "rule": "Q3 自由现金流 < $30B —— 撤回立场"
+      },
+      {
+        "id": "other_income_revoke",
+        "row": 8,
+        "metric": "GAAP 其他收入净额（撤销线）",
+        "reads": "other_income_bn",
+        "unit": "usd_bn",
+        "threshold": 0.0,
+        "direction": "up",
+        "action": "撤回立场",
+        "settles": "Q3 2026",
+        "rule": "Other income 转负 —— 撤回立场"
       }
     ],
-    "table_only": [
-      "担保最大总敞口"
+    "conditions": [
+      {
+        "row": 6,
+        "mode": "or",
+        "ids": [
+          "dso_cut",
+          "fcf_revoke"
+        ],
+        "text": "Q3 DSO ≥70 天，或 Q3 自由现金流 < $30B"
+      },
+      {
+        "row": 7,
+        "mode": "or",
+        "ids": [
+          "gm_guide_cut"
+        ],
+        "text": "Q4 毛利率指引 < 71%"
+      },
+      {
+        "row": 8,
+        "mode": "or",
+        "ids": [
+          "guarantee_cut",
+          "other_income_revoke"
+        ],
+        "text": "担保最大总敞口 > $150B，或 Other income 转负"
+      }
     ],
-    "excluded": "另有四条来自业绩电话会、任何申报里都没有，因此不设阈值图：FY2028 收入增长「约 70%」、Q4 2026 毛利率指引 71%–72%、FY2028 毛利率 72%–73%、FY2027 营业费用增速「low 50s」%。",
-    "retired_lead": "<b>本季{kpi_count}条阈值全部换了地基</b>：",
-    "retired": "上季的两条占比阈值本季退役。「ACIE 占 Data Center」的基数被公司在本季重分类并追溯重述，同一个季度在两套口径下得出方向相反的结论；「Networking 占 Data Center」的分子公司已停止披露。两条都建在管理层的呈现层上 —— 公司可以重画的口径 —— 而本季{tenq_share}改建在 10-Q 的原始项（{tenq_items}）上，这类项不能被重分类{eightk_clause}。"
+    "not_drawn": [
+      {
+        "row": 4,
+        "metric": "担保按条款终止",
+        "threshold_text": "OpenAI 取得投资级信用、担保按条款终止 = 重大利好 —— 加仓",
+        "reading": "未终止（10-Q：担保在 OpenAI 达到满意的信用级别或各期租约到期时终止）",
+        "why": "是事件，不是数字"
+      }
+    ],
+    "chart_notes": {
+      "dso_days": "报告另写：55–62 天 = 新常态、维持折价（只跟踪，不触发动作）；52–55 天与 62–70 天之间没有写动作。报告把 DSO 定为下季首要指标：它是裁定「本季现金转化腰斩是一次性账期重置、还是商业模式转变」的唯一判据。",
+      "fcf_conversion_pct": "报告另写：50%–80% = 温和恶化。",
+      "ng_gm_guide_pct": "Q4 指引要到 Q3 业绩发布时才给出，图上最后一格是本季给的 {next_q_label} 指引。公司在电话会上已经说过 Q4 的毛利率区间，那个数只在电话会上，本页不画（见页末注释）。",
+      "guarantee_bn": "本季汇总表的 {guarantee_now} 含资产负债表日之后签的 SB Energy 担保 {guarantee_sb}；10-Q 写明公司另持有约 3.8GW 追加信用支持的选择权，报告的 >$150B 含行使这个选择权。担保按条款终止（报告的加仓条件）是事件，不是数字，写在核对抽屉里。",
+      "fcf_bn": "这是立场撤销条件 ① 的后一半：Q3 DSO ≥70 天或 Q3 自由现金流 < $30B，任一成立即撤回报告的立场；前一半就是 DSO 图上的减仓线。",
+      "other_income_bn": "这是立场撤销条件 ③ 的后一半：担保 >$150B，或前沿实验室融资环境转弱导致 Other income 转负；前一半就是担保图上的减仓线。本季 GAAP 其他收入净额里股权证券收益占 {equity_gain_share}。"
+    },
+    "note": "报告说这五行「全部取自 10-Q 的不可重述原始项」；按本页的读数，DSO、担保与客户集中度读 10-Q，毛利率与 FCF / non-GAAP 净利要用 8-K 的 non-GAAP 数与 Outlook。三条立场撤销条件里，① 的前一半、② 与 ③ 的前一半就是上面的减仓线，不重复画；新加的是 ① 的「Q3 自由现金流 < $30B」与 ③ 的「Other income 转负」两条线。"
   },
   "quarter_story": {
     "period": "Q2 2026",
@@ -1513,14 +2277,14 @@
       "yoy_accelerating",
       "fcf_share_halved",
       "gm_guide_cut",
-      "recast_this_quarter",
-      "dso_matches_print"
+      "recast_this_quarter"
     ],
-    "headline": "收入 {revenue}、同比 {revenue_yoy}，环比绝对增量 {revenue_step} 再创纪录；但本页的对象不是这个季度的利润表 —— 自由现金流环比 {fcf_qoq}、DSO 由 {dso_prev} 天跳到 {dso_now} 天、表外供应与产能承诺由 {commit_prev} 升到 {commit_now}，另有 {guarantee_total} 表外担保。同一季公司还把上季这张页面用来判断客户结构的那条序列重分类并追溯重述了。",
+    "headline": "收入 {revenue}、同比 {revenue_yoy}，环比绝对增量 {revenue_step} 再创纪录；但本页的对象不是这个季度的利润表 —— 自由现金流环比 {fcf_qoq}、DSO 由 {dso_prev} 天跳到 {dso_now} 天、表外供应与产能承诺由 {commit_prev} 升到 {commit_now}，另有 {guarantee_total} 表外担保。同一季公司还把上季报告用来判断客户结构的那条序列重分类并追溯重述了。",
     "brief_cards": "<article><span>亮点</span><b>二阶导连续第{accel_run}季加速</b><p>同比 {revenue_yoy_whole}，环比增量 {revenue_step} 创纪录；{next_q} 指引中值 {next_mid_whole}，隐含环比 {next_qoq}。</p></article><article><span>存疑</span><b>现金转化腰斩</b><p>FCF 占收入由 {fcf_share_prev} 掉到 {fcf_share_now}，DSO {dso_now} 天；同季仍回报 {returned}。</p></article>",
     "cash_quality_lead": "<b>这是本季真正变坏的一项，而且它不在利润表上。</b>",
     "dso_reason": "公司自己的解释是给若干投资级客户的大额、跨多季出货延长了账期。",
-    "gm_outlook": "<b>但要读的是前瞻而不是水平</b>：公司本季主动把 {next_q} 毛利率指引下修到 {next_gm}（本季实际 {gm_now}），理由是存储成本，且明说这是在提价已经生效之后的水平。",
+    "gm_outlook": "<b>下修在指引里</b>：公司本季把 {next_q} 毛利率指引给到 {next_gm}（本季实际 {gm_now}）；电话会上的解释是存储成本，并说更往后的毛利率区间是提价生效之后的水平 —— 那几个数只在电话会上，任何申报里都没有，本页不画（见页末注释）。",
+    "highlights_gap": "画不出来的本季结论：下一财年收入「约 70%」、Q4 与下一财年的毛利率区间、Vera Rubin 占 Data Center 收入的比例、networking 的环比增速都只在电话会上说过；报告「为了同时做三件事而借钱」的现金用途对账里，股权投资那一项因为公司在本季 10-Q 把投资活动的行项重新切分（上季「可交易债券与股票」合在一行），本季单季数只能算出一个区间，本页只画回购加分红相对自由现金流与发债。",
     "gm_cut_reason": "公司归因于存储成本",
     "china_row": [
       "中国 Data Center compute",
@@ -1528,10 +2292,8 @@
       "低于 Data Center 收入的 1%",
       "基本符合",
       "仍假设为 0",
-      "公司称现有 Hopper 出货摊薄毛利率"
-    ],
-    "dso_printed_days": 60,
-    "dso_printed_note": "公司本季在 CFO commentary 里印的是整数 {dso_printed} 天。"
+      "公司在电话会上说现有 Hopper 出货摊薄毛利率"
+    ]
   },
   "sources": [
     {
@@ -1549,6 +2311,22 @@
     {
       "label": "NVIDIA Q1 FY2027 业绩新闻稿（上季口径对照）",
       "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000051/q1fy27pr.htm"
+    },
+    {
+      "label": "NVIDIA Q1 FY2027 Form 10-Q（上季担保上限、ACIE 原披露口径）",
+      "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm"
+    },
+    {
+      "label": "NVIDIA Q1 FY2027 CFO Commentary（上季 DSO 与 networking）",
+      "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000051/q1fy27cfocommentary.htm"
+    },
+    {
+      "label": "NVIDIA FY2026 Form 10-K（年末担保上限）",
+      "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000021/nvda-20260125.htm"
+    },
+    {
+      "label": "NVIDIA Q3 FY2026 Form 10-Q（第一笔租约担保）",
+      "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581025000230/nvda-20251026.htm"
     },
     {
       "label": "NVIDIA 投资者关系（季度业绩归档）",
