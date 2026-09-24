@@ -31,6 +31,7 @@ the window, which is what licenses the page to plot those quarters at all.
 
 from __future__ import annotations
 
+import calendar
 import copy
 import hashlib
 import json
@@ -149,9 +150,14 @@ class SchwDashboardTest(unittest.TestCase):
         for key, values in self.fin.items():
             with self.subTest(series=key):
                 self.assertEqual(len(values), len(self.periods))
-                if key == "bda_usd_m":
+                if key in ("bda_usd_m", "adjusted_total_expenses_usd_m"):
                     # Bank deposit account fees arrive with TD Ameritrade
-                    # (closed 2020-10-06); before that the line does not exist.
+                    # (closed 2020-10-06); the non-GAAP expense reconciliation
+                    # first appears in the 2Q20 release (with 2Q19 beside it).
+                    # Before those the line does not exist -- and once it
+                    # starts it has no hole.
+                    first = next(i for i, v in enumerate(values) if v is not None)
+                    self.assertTrue(all(v is not None for v in values[first:]))
                     continue
                 self.assertTrue(all(v is not None for v in values))
 
@@ -166,7 +172,8 @@ class SchwDashboardTest(unittest.TestCase):
                 continue
             with self.subTest(series=key):
                 self.assertEqual(len(values), len(ops["periods"]))
-        # Two operating series are empty before 2020 and say why in the file.
+        # An operating series that is empty before 2020 says why in the file.
+        self.assertTrue(self.source["operating_notes"]["not_backfilled"])
         for key in self.source["operating_notes"]["not_backfilled"]:
             self.assertTrue(all(v is None for v in ops[key][:ops["periods"].index("2020Q1")]),
                             key)
@@ -336,13 +343,16 @@ class SchwDashboardTest(unittest.TestCase):
         self.assertIn("4,146", note)
 
     # ── thresholds ───────────────────────────────────────────────────────────
-    def test_every_threshold_names_a_direction_and_a_real_series(self) -> None:
-        ops = self.ops
-        for entry in self.source["next_kpi"]["entries"]:
-            with self.subTest(metric=entry["metric"]):
-                self.assertIn(entry["direction"], ("up", "down"))
-                if entry.get("series_key"):
-                    self.assertIn(entry["series_key"], ops)
+    def test_every_line_names_a_tier_a_comparison_and_a_known_record(self) -> None:
+        from build.schw import READS
+        for block in ("prior_kpi_settlement", "next_kpi"):
+            for line in self.source[block]["lines"]:
+                with self.subTest(block=block, line=line["id"]):
+                    self.assertIn(line["tier"], ("warn", "red", "green", "watch"))
+                    self.assertIn(line["op"], ("<", "<=", ">", ">="))
+                    self.assertIn(line["reads"], READS)
+                    self.assertTrue(("threshold" in line) != ("baseline" in line),
+                                    "a line has a number or a reference, not both")
 
     # ── content boundary ─────────────────────────────────────────────────────
     def test_the_page_publishes_no_rating_or_valuation(self) -> None:
@@ -513,9 +523,17 @@ class SchwChecksTest(unittest.TestCase):
         self.assertEqual(ops["net_market_gains_usd_bn"][-1], checks["net_market_gains_usd_bn"])
         self.assertEqual(ops["margin_loans_usd_bn"][-1], checks["margin_loans_usd_bn"]["this_quarter"])
         self.assertEqual(ops["bank_loans_usd_bn"][-2], checks["bank_loans_usd_bn"]["prior_quarter"])
-        self.assertEqual(ops["transactional_sweep_cash_usd_bn"][-2],
-                         checks["transactional_sweep_cash_usd_bn"]["prior_quarter"])
         self.assertEqual(ops["adjusted_tier1_leverage_pct"][-1], checks["adjusted_tier1_leverage_pct"])
+        # sweep cash and the long/short pair are read from the monthly table and the release's footnote
+        monthly, disclosures = self.source["monthly"], self.source["latest_disclosures"]
+        months = quarter_months_of(self.source["periods"][-1])
+        before = previous_month(months[0])
+        sweep = dict(zip(monthly["months"], monthly["transactional_sweep_cash_usd_bn"]))
+        self.assertEqual(sweep[months[-1]], checks["transactional_sweep_cash_usd_bn"]["this_quarter"])
+        self.assertEqual(sweep[before], checks["transactional_sweep_cash_usd_bn"]["prior_quarter"])
+        self.assertEqual(disclosures["transactional_sweep_cash_usd_bn"], checks["transactional_sweep_cash_usd_bn"]["this_quarter"])
+        self.assertEqual(disclosures["short_credits_usd_bn"], checks["long_short_quarter_end_usd_bn"]["short_credits"])
+        self.assertEqual(ops["long_short_margin_loans_usd_bn"][-1], checks["long_short_quarter_end_usd_bn"]["margin_loans"])
 
     def test_every_rate_the_page_computes_rounds_to_the_one_the_release_prints(self) -> None:
         fin, checks = self.source["financials"], self.checks
@@ -529,20 +547,32 @@ class SchwChecksTest(unittest.TestCase):
             with self.subTest(line=word):
                 self.assertEqual(int(pct), checks["printed_yoy_pct"][key])
         self.assertIn(f"税前利润率 {checks['pretax_margin_pct'][0]:.1f}%", self.payload["headline"])
+        # The release prints the margin every quarter, so the chart draws the printed figure, not a ratio.
+        margin_chart = next(ex for ex in self.exhibits if ex["title"].startswith("税前利润率（"))
+        self.assertEqual(margin_chart["series"][0]["values"], self.source["operating"]["pretax_margin_pct_disclosed"])
+        self.assertEqual(margin_chart["series"][0]["values"][-1], checks["pretax_margin_pct"][0])
 
-    def test_the_expense_threshold_carries_the_official_growth(self) -> None:
+    def test_the_expense_line_reads_the_official_growth(self) -> None:
         """The series once carried 9.9 here, which no line of the release gives.
 
-        The entry says it is this quarter's adjusted expense growth; the release's
+        The line is on this quarter's adjusted expense growth; the release's
         reconciliation prints adjusted total expenses of 3,233 and 2,920, 10.7%
         (it says "up 11%"). On 9.9 the bar sat safely under the 10.5% threshold;
-        on the official figure it is over it.
+        on the official figure it is over it. The reading is no longer typed at
+        all: it is computed from the adjusted totals the series carries, and
+        those are held here to the release.
         """
         now, before = self.checks["adjusted_total_expenses_usd_m"]
         official = round((now / before - 1) * 100, 1)
         self.assertEqual(round(official), self.checks["adjusted_total_expenses_printed_yoy_pct"])
-        entry = next(e for e in self.source["next_kpi"]["entries"] if "费用" in e["metric"])
-        self.assertEqual(entry["current"], official)
+        adjusted = self.source["financials"]["adjusted_total_expenses_usd_m"]
+        self.assertEqual((adjusted[-1], adjusted[-5]), (now, before))
+        if not any(line["reads"] == "adj_expense_yoy" for line in self.source["next_kpi"]["lines"]):
+            return
+        section = next(s for s in self.payload["sections"] if s["id"] == "next_quarter")
+        chart = next(ex for ex in section["exhibits"] if ex["title"].startswith("调整后费用同比："))
+        self.assertIn(f"当前 {official:+.1f}%", chart["title"])
+        self.assertAlmostEqual(chart["series"][0]["values"][-1], (now / before - 1) * 100, places=3)
 
     def test_trading_revenue_is_not_called_a_record_it_is_not(self) -> None:
         """The release says record trading *activity*; revenue sat US$1M under 1Q21."""
@@ -572,6 +602,12 @@ OPS = {"<": lambda a, b: a < b, "<=": lambda a, b: a <= b, ">": lambda a, b: a >
 def quarter_months_of(period: str) -> list[str]:
     year, quarter = int(period[:4]), int(period[-1])
     return [f"{year}-{month:02d}" for month in range(3 * quarter - 2, 3 * quarter + 1)]
+
+
+def previous_month(month: str) -> str:
+    """``'2026-04'`` -> ``'2026-03'``, ``'2026-01'`` -> ``'2025-12'``."""
+    n = int(month[:4]) * 12 + int(month[5:]) - 2
+    return f"{n // 12}-{n % 12 + 1:02d}"
 
 
 def expected_watch(source: dict, line: dict) -> tuple[float, float]:
@@ -755,6 +791,21 @@ class SchwSectionOneTest(unittest.TestCase):
         self.assertNotIn("都没有低于去年同月", broken)
         self.assertIn(f"{MONTH_WORDS[int(months[1][5:]) - 1]} core 净新增资产低于去年同月", broken)
 
+    def test_a_line_read_against_another_reference_stops_the_build(self) -> None:
+        """`baseline` is the reference the analysis wrote; the builder never swaps in the one it knows.
+
+        A monthly line compared 「vs 上月」 would otherwise be settled against the
+        same month a year earlier and published under the analysis's own words.
+        """
+        def other_reference(s):
+            s["prior_kpi_settlement"]["rows"] = [{"row": 1, "text": "core NNA vs 上月"}]
+            s["prior_kpi_settlement"]["lines"] = [
+                {"id": "m1", "row": 1, "tier": "watch", "reads": "core_nna_month", "month": 1,
+                 "op": "<", "baseline": "prior_month", "event": "低于上月"}]
+
+        with self.assertRaisesRegex(ValueError, "baseline 'prior_month'"):
+            self.rebuilt(other_reference)
+
     def test_no_placeholder_reaches_the_page(self) -> None:
         text = published_text(self.payload)
         self.assertIsNone(re.search(r"\{[a-z0-9_:]+\}", text), "a story placeholder was published unfilled")
@@ -771,7 +822,7 @@ class SchwRollTest(unittest.TestCase):
 
     BLOCKS = ("followup_closure", "tracked_metric_verdicts", "prior_kpi_settlement",
               "next_kpi", "latest_disclosures")
-    REQUIRED = ("followup_closure", "prior_kpi_settlement")
+    REQUIRED = ("followup_closure", "prior_kpi_settlement", "next_kpi")
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -804,20 +855,14 @@ class SchwRollTest(unittest.TestCase):
                     self.rebuilt(lambda s, key=key: s.pop(key))
 
     def test_a_quarter_without_its_optional_stories_leaves_them_out(self) -> None:
-        optional = [key for key in self.BLOCKS if key not in self.REQUIRED and key != "latest_disclosures"]
-
-        def strip(s):
-            for key in optional:
-                del s[key]
-        payload = self.rebuilt(strip)
-        sections = {sec["id"]: sec for sec in payload["sections"]}
-        self.assertEqual(sections["next_quarter"]["exhibits"], [])
+        """The scorecard is the one block a quarter may lack; its chart and table go with it."""
+        payload = self.rebuilt(lambda s: s.pop("tracked_metric_verdicts"))
         text = published_text(payload)
-        for gone in ("条判断：", "最值得看"):
-            with self.subTest(gone=gone):
-                self.assertIn(gone, published_text(self.payload))
-                self.assertNotIn(gone, text)
-        self.assertEqual(len(payload["tables"]), len(self.payload["tables"]) - 2)
+        self.assertIn("条判断：", published_text(self.payload))
+        self.assertNotIn("条判断：", text)
+        self.assertEqual(len(payload["tables"]), len(self.payload["tables"]) - 1)
+        settled = next(sec for sec in payload["sections"] if sec["id"] == "settled")
+        self.assertNotIn("记分卡", settled["description"])
 
     def test_a_sentence_that_restates_a_block_needs_that_block(self) -> None:
         """The closure answers restate the release's buyback and the call's NIM range: without
@@ -836,35 +881,29 @@ class SchwRollTest(unittest.TestCase):
                     self.assertEqual(claim in before, present_before)
                     self.assertEqual(claim in after, not present_before)
 
-        # Records the series has: they go when an earlier quarter beats them.
+        # Records the series has: they go when an earlier quarter beats them. The
+        # margin the page draws and states is the one the releases print.
         def higher_margin_before(s):
-            fin = s["financials"]
-            i = s["periods"].index("2019Q1")
-            fin["pretax_usd_m"][i] = fin["revenue_usd_m"][i] * 0.6
+            ops = s["operating"]
+            ops["pretax_margin_pct_disclosed"][ops["periods"].index("2019Q1")] = 60.0
         claim_moves(("是这段窗口里的最高值", "年窗口里的最高值"), higher_margin_before)
+
+        # ...and a printed figure that only ties an earlier one is said as a tie.
+        def tied_margin_before(s):
+            ops = s["operating"]
+            ops["pretax_margin_pct_disclosed"][ops["periods"].index("2019Q1")] = ops["pretax_margin_pct_disclosed"][-1]
+        tied = published_text(self.rebuilt(tied_margin_before))
+        self.assertNotIn("是这段窗口里的最高值", tied)
+        self.assertIn("追平这段窗口里的最高值", tied)
 
         def one_line_down(s):
             s["financials"]["other_usd_m"][-1] = s["financials"]["other_usd_m"][-5] - 1
         claim_moves(("五条线全部同比为正", "五条收入线全部同比为正"), one_line_down)
 
-        def second_downward_line(s):
-            entry = next(e for e in s["next_kpi"]["entries"] if e["metric"] == "银行贷款余额")
-            entry["direction"] = "down"
-        claim_moves(("唯一一条<b>向下为安全</b>",), second_downward_line)
-
         # A record the series does not have: it appears only when it becomes true.
         def trading_record(s):
             s["financials"]["trading_usd_m"][-1] = max(s["financials"]["trading_usd_m"]) + 1
         claim_moves(("交易收入仍然创了纪录", "交易收入仍创纪录"), trading_record, present_before=False)
-
-    def test_a_cross_reference_to_the_notes_lands_on_the_item_it_means(self) -> None:
-        """Section three sends the reader to the notes item about monthly data by number."""
-        overview = next(ex for ex in self.exhibits if ex["title"].startswith("下季"))
-        match = re.search(r"见口径说明第(.)条", overview["note"])
-        self.assertIsNotNone(match)
-        position = next(i for i, note in enumerate(self.payload["notes"])
-                        if "不画月度走势" in note) + 1
-        self.assertEqual(match.group(1), cn_count(position) if position != 2 else "二")
 
     def test_the_rankings_and_counts_are_recounted_here(self) -> None:
         fin, periods = self.source["financials"], self.source["periods"]
@@ -892,6 +931,400 @@ class SchwRollTest(unittest.TestCase):
         self.assertEqual("NIM 回到 3% 以上" in text, any(v >= 3 for v in nim[:-1]) and nim[-1] >= 3)
         # Fee revenue by full year, counted rather than called "almost monotonic".
         self.assertNotIn("几乎单调上升", text)
+
+
+QUARTER_END = {"1": "03-31", "2": "06-30", "3": "09-30", "4": "12-31"}
+
+
+def shift_quarter(period: str, step: int) -> str:
+    """``'2026Q2'``, 1 -> ``'2026Q3'``."""
+    index = int(period[:4]) * 4 + int(period[-1]) - 1 + step
+    return f"{index // 4}Q{index % 4 + 1}"
+
+
+def label_of(period: str) -> str:
+    """``'2026Q3'`` -> ``'Q3 2026'``."""
+    return f"Q{period[-1]} {period[:4]}"
+
+
+def order_of(label: str) -> tuple[int, int]:
+    quarter, year = label.split()
+    return int(year), int(quarter[1])
+
+
+def recomputed_reading(source: dict, reads: str, line: dict) -> float:
+    """This quarter's reading for a line, recomputed here from the series.
+
+    Written out separately from build/schw.py on purpose: the page's reading
+    and this one share only the series. A kind of line this function does not
+    know fails the test -- a new kind is a code change and gets its own check.
+    """
+    ops, fin = source["operating"], source["financials"]
+    period = source["periods"][-1]
+    months = quarter_months_of(period)
+    monthly = source["monthly"]
+    index = {month: i for i, month in enumerate(monthly["months"])}
+
+    def month_value(key: str, month: str) -> float:
+        return monthly[key][index[month]]
+
+    def month_before(month: str, step: int) -> str:
+        n = int(month[:4]) * 12 + int(month[5:]) - 1 - step
+        return f"{n // 12}-{n % 12 + 1:02d}"
+
+    if reads == "nim":
+        return ops["nim_pct"][-1]
+    if reads == "rpt":
+        return ops["revenue_per_trade_usd"][-1]
+    if reads == "adj_t1l":
+        return ops["adjusted_tier1_leverage_pct"][-1]
+    if reads == "repurchases":
+        return ops["repurchases_usd_bn"][-1]
+    if reads == "swa_flow_yoy":
+        return ops["swa_net_flow_yoy_pct"][-1]
+    if reads == "mi_flow_yoy":
+        return ops["mi_net_flow_yoy_pct"][-1]
+    if reads == "revenue_yoy":
+        return (fin["revenue_usd_m"][-1] / fin["revenue_usd_m"][-5] - 1) * 100
+    if reads == "adj_expense_yoy":
+        adjusted = fin["adjusted_total_expenses_usd_m"]
+        return (adjusted[-1] / adjusted[-5] - 1) * 100
+    if reads == "dats_qoq":
+        dats = ops["dats_thousands"]
+        return (dats[-1] / dats[-2] - 1) * 100
+    if reads in ("pal_yoy", "pal_qoq"):
+        pal = dict(zip(source["pledged_asset_lines"]["quarters"], source["pledged_asset_lines"]["usd_bn"]))
+        base = pal[shift_quarter(period, -4 if reads == "pal_yoy" else -1)]
+        return (pal[period] / base - 1) * 100
+    if reads == "margin_ex_ls_qoq":
+        margin, ls = ops["margin_loans_usd_bn"], ops["long_short_margin_loans_usd_bn"]
+        return ((margin[-1] - ls[-1]) / (margin[-2] - ls[-2]) - 1) * 100
+    if reads == "core_nna_annualized":
+        def rate(month: str) -> float:
+            days = calendar.monthrange(int(month[:4]), int(month[5:]))[1]
+            return (month_value("core_net_new_assets_usd_bn", month)
+                    / month_value("beginning_client_assets_usd_bn", month) * 365 / days * 100)
+        window = line.get("window", 1)
+        return min(max(rate(month_before(end, back)) for back in range(window)) for end in months)
+    if reads == "core_nna_non_tax_month":
+        # The analysis's own 「4 月税季」: April is the tax month.
+        return min(month_value("core_net_new_assets_usd_bn", m) for m in months if not m.endswith("-04"))
+    if reads == "dats_month_low":
+        return min(month_value("dats_thousands", m) for m in months)
+    if reads == "new_accounts_month_low":
+        return min(month_value("new_brokerage_accounts_thousands", m) for m in months)
+    raise AssertionError(f"no independent reading for {reads!r}: write one before publishing the line")
+
+
+def favourable_up(line: dict) -> bool:
+    return (line["tier"] == "green") == (line["op"] in (">", ">="))
+
+
+def recomputed_headroom(line: dict, value: float) -> float:
+    sign = 1 if favourable_up(line) else -1
+    return sign * (value - line["threshold"]) / abs(line["threshold"]) * 100
+
+
+def recomputed_hit(source: dict, line: dict) -> bool:
+    """Whether the event a warning or green line watches happened, recomputed."""
+    value = recomputed_reading(source, line["reads"], line)
+    hit = OPS[line["op"]](value, line["threshold"])
+    need = line.get("consecutive", 1)
+    if hit and need > 1:
+        key = {"swa_flow_yoy": "swa_net_flow_yoy_pct", "mi_flow_yoy": "mi_net_flow_yoy_pct"}[line["reads"]]
+        recent = source["operating"][key][-need:]
+        hit = all(v is not None and OPS[line["op"]](v, line["threshold"]) for v in recent)
+    for leg in line.get("and", []):
+        hit = hit and OPS[leg["op"]](recomputed_reading(source, leg["reads"], leg), leg["threshold"])
+    return hit
+
+
+CHARTED = {"nim", "revenue_yoy", "adj_expense_yoy", "rpt", "pal_yoy", "pal_qoq", "repurchases", "adj_t1l"}
+# The readers `recomputed_reading` answers from the monthly table.
+MONTHLY_READS = {"core_nna_annualized", "core_nna_non_tax_month", "dats_month_low", "new_accounts_month_low"}
+
+
+class SchwNextQuarterTest(unittest.TestCase):
+    """Section three against the quarter's own section 15.1, as `_checks["note"]` keys it.
+
+    Nothing here names a line or a quarter: the lines come from the note, the
+    readings are recomputed from the series, so a roll edits the series and the
+    note and leaves this class alone.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads((ROOT / "series" / "schw.json").read_text(encoding="utf-8"))
+        cls.note = cls.source["_checks"]["note"]
+        cls.kpi = cls.source["next_kpi"]
+        cls.payload = build_payload(cls.source)
+        cls.section = next(s for s in cls.payload["sections"] if s["id"] == "next_quarter")
+        cls.overview = cls.section["exhibits"][0]
+
+    def due(self) -> list[dict]:
+        return [line for line in self.kpi["lines"]
+                if order_of(line["settles"]) == order_of(self.kpi["for_period"])]
+
+    def test_the_lines_are_the_reports(self) -> None:
+        self.assertEqual(len(self.kpi["rows"]), self.note["next_rows"])
+        got = [{k: line[k] for k in ("id", "row", "tier", "op", "threshold")} for line in self.kpi["lines"]]
+        want = [{k: t[k] for k in ("id", "row", "tier", "op", "threshold")} for t in self.note["next_thresholds"]]
+        self.assertEqual(got, want)
+        by_id = {line["id"]: line for line in self.kpi["lines"]}
+        for t in self.note["next_thresholds"]:
+            with self.subTest(line=t["id"]):
+                for key in ("window", "settles"):
+                    if key in t:
+                        self.assertEqual(by_id[t["id"]].get(key), t[key])
+        without = sorted({row["row"] for row in self.kpi["rows"]} - {line["row"] for line in self.kpi["lines"]})
+        self.assertEqual(without, self.note["next_not_carried"]["rows"])
+        for line in self.kpi["lines"]:
+            for typed in ("actual", "current", "value", "reading"):
+                self.assertNotIn(typed, line)
+
+    def test_the_overview_is_recomputed_here(self) -> None:
+        risk = [line for line in self.due() if line["tier"] in ("warn", "red")]
+        drawn = [line for line in risk if line["threshold"] != 0]
+        self.assertEqual(self.overview["kind"], "diverging_bars")
+        self.assertEqual(self.overview["values"],
+                         [round(recomputed_headroom(line, recomputed_reading(self.source, line["reads"], line)), 1)
+                          for line in drawn])
+        beyond = sum(1 for line in risk if recomputed_hit(self.source, line))
+        self.assertEqual(self.overview["title"],
+                         f"下季 {len(risk)} 条警示线：当前 {len(risk) - beyond} 条在安全侧、{beyond} 条已越线")
+
+    def test_green_and_later_lines_are_stated_not_drawn(self) -> None:
+        green = [line for line in self.due() if line["tier"] == "green"]
+        reached = sum(1 for line in green if recomputed_hit(self.source, line))
+        if green:
+            self.assertIn(f"另有{cn_count(len(green))}条正面信号线", self.overview["note"])
+            self.assertIn(f"当前{cn_count(reached)}条已达到", self.overview["note"])
+        for line in self.kpi["lines"]:
+            if order_of(line["settles"]) > order_of(self.kpi["for_period"]):
+                year, quarter = order_of(line["settles"])
+                with self.subTest(line=line["id"]):
+                    self.assertIn(f"要到 {quarter}Q{str(year)[2:]} 才结算", self.overview["note"])
+                    for chart in self.section["exhibits"][1:]:
+                        for series in chart["series"][1:]:
+                            self.assertNotEqual(series["values"][0], line["threshold"],
+                                                f"{line['id']} is drawn before its quarter")
+
+    def test_every_quarterly_record_gets_its_own_chart(self) -> None:
+        charts = self.section["exhibits"][1:]
+        for line in self.due():
+            if line["reads"] not in CHARTED:
+                continue
+            with self.subTest(line=line["id"]):
+                hits = [chart for chart in charts
+                        if any(s["values"] and all(v == line["threshold"] for v in s["values"])
+                               for s in chart["series"][1:])]
+                self.assertEqual(len(hits), 1)
+                chart = hits[0]
+                self.assertTrue(chart["title"].split("：")[1].startswith("下季"), chart["title"])
+                self.assertAlmostEqual(chart["series"][0]["values"][-1],
+                                       recomputed_reading(self.source, line["reads"], line), places=3)
+                if line["reads"] == "repurchases":
+                    # the analysis named no basis: the note gives the release's trade-date figure
+                    # beside the cash-flow one and says which settles
+                    printed = self.source["latest_disclosures"]["buyback_usd_m"] / 1000
+                    self.assertIn(f"约 US${printed:.1f}B", chart["note"])
+                    self.assertIn("按现金流量表口径结算", chart["note"])
+
+    def test_rows_without_a_line_say_why_in_the_drawer(self) -> None:
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("下季"))
+        for row in self.kpi["rows"]:
+            if row["row"] not in self.note["next_not_carried"]["rows"]:
+                continue
+            with self.subTest(row=row["row"]):
+                cells = [r for r in table["rows"] if r[0] == str(row["row"])]
+                self.assertEqual(len(cells), 1)
+                self.assertTrue(cells[0][-1].startswith("不结算："))
+                self.assertNotIn("{", cells[0][-1])
+
+    def test_the_annualized_rate_is_the_companys_formula(self) -> None:
+        """Four printed rates pin the formula; this one pins the month the page quotes."""
+        monthly = self.source["monthly"]
+        month = quarter_months_of(self.source["periods"][-1])[-1]
+        i = monthly["months"].index(month)
+        days = calendar.monthrange(int(month[:4]), int(month[5:]))[1]
+        rate = monthly["core_net_new_assets_usd_bn"][i] / monthly["beginning_client_assets_usd_bn"][i] * 365 / days * 100
+        self.assertEqual(round(rate, 1), self.source["_checks"]["section_three"]["core_nna_annualized_last_month_pct"])
+        # the rival formula -- twelve times the month over closing assets -- is kept out by the full year 2024
+        # (4.3% printed): opening 8,516.6, core net new assets 367 over 366 days
+        self.assertEqual(round(367 / 8516.6 * 365 / 366 * 100, 1), 4.3)
+        self.assertNotEqual(round(367 / 10097.9 * 100, 1), 4.3)
+
+    def test_the_new_records_carry_the_filed_figures(self) -> None:
+        checks = self.source["_checks"]["section_three"]
+        ops, periods = self.source["operating"], self.source["periods"]
+        pal = dict(zip(self.source["pledged_asset_lines"]["quarters"], self.source["pledged_asset_lines"]["usd_bn"]))
+        now = periods[-1]
+        self.assertEqual(pal[now], checks["pal_usd_bn"]["this_quarter"])
+        self.assertEqual(pal[shift_quarter(now, -1)], checks["pal_usd_bn"]["prior_quarter"])
+        self.assertEqual(pal[shift_quarter(now, -4)], checks["pal_usd_bn"]["year_ago"])
+        self.assertEqual(round((pal[now] / pal[shift_quarter(now, -4)] - 1) * 100), checks["pal_printed_yoy_pct"])
+        self.assertEqual(ops["long_short_margin_loans_usd_bn"][-1], checks["long_short_margin_loans_usd_bn"]["this_quarter"])
+        self.assertEqual(ops["long_short_margin_loans_usd_bn"][-2], checks["long_short_margin_loans_usd_bn"]["prior_quarter"])
+        quarter_in_year = int(now[-1])
+        repurchases = ops["repurchases_usd_bn"]
+        self.assertAlmostEqual(sum(repurchases[-quarter_in_year:]), checks["repurchases_ytd_usd_bn"]["this_quarter"], places=6)
+        self.assertAlmostEqual(sum(repurchases[-quarter_in_year:-1]), checks["repurchases_ytd_usd_bn"]["prior_quarter"], places=6)
+        self.assertEqual(ops["mi_net_flow_yoy_pct"][-1], checks["managed_investing_net_flows_yoy_pct"])
+        self.assertEqual(ops["swa_net_flow_yoy_pct"][-1], checks["schwab_wealth_advisory_net_flows_yoy_pct"])
+        adjusted = self.source["financials"]["adjusted_total_expenses_usd_m"]
+        self.assertEqual([adjusted[-1], adjusted[-5]], checks["adjusted_total_expenses_usd_m"])
+        monthly = self.source["monthly"]
+        for month, value in checks["new_brokerage_accounts_thousands"].items():
+            self.assertEqual(monthly["new_brokerage_accounts_thousands"][monthly["months"].index(month)], value)
+
+
+def rolled_forward(staging: dict) -> dict:
+    """The series as a data-only roll to the next quarter would leave it, in memory.
+
+    Every aligned array gains one cell -- the same quarter a year earlier, so
+    every identity the real quarters satisfy still holds (a record that was
+    blank a year ago repeats its last reading instead); the monthly block gains
+    the quarter's three months the same way. The one-quarter blocks go the way a
+    roll takes them: this quarter's `next_kpi` moves, as it stands, into
+    `prior_kpi_settlement`; a new `followup_closure` is stamped; the scorecard is
+    left out; `next_kpi` is re-stamped with its dated lines moved one quarter on.
+    Nothing is written to disk and no code is touched.
+    """
+    s = copy.deepcopy(staging)
+    old = s["periods"][-1]
+    new = shift_quarter(old, 1)
+    label, old_label = label_of(new), label_of(old)
+    year, quarter = new[:4], new[-1]
+
+    def grown(values: list) -> None:
+        values.append(values[-4] if values[-4] is not None else values[-1])
+
+    s["periods"].append(new)
+    s["period_ends"].append(f"{year}-{QUARTER_END[quarter]}")
+    for values in s["financials"].values():
+        grown(values)
+    ops = s["operating"]
+    for key, values in ops.items():
+        if key in ("periods", "period_ends") or not isinstance(values, list):
+            continue
+        grown(values)
+    ops["periods"].append(new)
+    ops["period_ends"].append(f"{year}-{QUARTER_END[quarter]}")
+    pal = s["pledged_asset_lines"]
+    pal["quarters"].append(new)
+    grown(pal["usd_bn"])
+    monthly = s["monthly"]
+    for month in quarter_months_of(new):
+        year_ago = monthly["months"].index(f"{int(month[:4]) - 1}{month[4:]}")
+        monthly["months"].append(month)
+        for key, values in monthly.items():
+            if isinstance(values, list) and key != "months":
+                values.append(values[year_ago])
+    release = f"{int(year) + 1}-01-21" if quarter == "4" else f"{year}-{int(quarter) * 3 + 1:02d}-16"
+    s["latest"] = {**s["latest"], "period": label, "release_date": release}
+    s["sources"].insert(0, {"label": f"Schwab {quarter}Q{year[2:]} 业绩新闻稿（换季演练）",
+                            "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000316709&type=8-K"})
+    s["latest_disclosures"]["period"] = label
+    s["guidance"]["scenario"]["period"] = label
+    s.pop("tracked_metric_verdicts", None)
+    s["followup_closure"] = {
+        "period": label, "set_in": old_label, "labels": ["已回答", "部分回答", "未获披露"],
+        "rule": "换季演练：按每问的状态标记归类。",
+        "items": [{"n": n, "topic": f"演练问题 {n}", "verdict": verdict, "answer": "换季演练"}
+                  for n, verdict in enumerate(["已回答", "部分回答", "未获披露", "已回答"], 1)],
+    }
+    # Two separate copies: the settled block must keep the quarters its lines
+    # were set for, whatever the re-stamp below does to next quarter's copy.
+    kpi = s["next_kpi"]
+    prior = copy.deepcopy({key: value for key, value in kpi.items() if key != "for_period"})
+    s["prior_kpi_settlement"] = {**prior, "period": label}
+    following = label_of(shift_quarter(new, 1))
+    s["next_kpi"] = {**copy.deepcopy(kpi), "period": label, "set_in": label, "for_period": following}
+    for line in s["next_kpi"]["lines"]:
+        if order_of(line["settles"]) <= order_of(label):
+            line["settles"] = following
+    return s
+
+
+class SchwRollRehearsalTest(unittest.TestCase):
+    """Next quarter is built from the series alone: last quarter's lines are settled, dated ones wait."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads((ROOT / "series" / "schw.json").read_text(encoding="utf-8"))
+        cls.once = rolled_forward(cls.source)
+        cls.twice = rolled_forward(cls.once)
+        cls.payload_once = build_payload(cls.once)
+        cls.payload_twice = build_payload(cls.twice)
+
+    def settled(self, payload: dict) -> dict:
+        return next(s for s in payload["sections"] if s["id"] == "settled")
+
+    def test_the_rolled_page_has_the_four_sections_filled(self) -> None:
+        for payload in (self.payload_once, self.payload_twice):
+            self.assertEqual([s["id"] for s in payload["sections"]],
+                             ["settled", "quarter_highlights", "next_quarter", "routine"])
+            for section in payload["sections"]:
+                self.assertTrue(section["exhibits"], section["id"])
+        # what the page says about last quarter's block is about the block the roll moved in
+        prior = self.once["prior_kpi_settlement"]
+        description = self.settled(self.payload_once)["description"]
+        self.assertIn(prior["section_note"], description)
+        self.assertNotIn(f"本季分析{prior['section']}", description)
+        notes = " ".join(self.payload_once["notes"])
+        self.assertNotIn(self.source["prior_kpi_settlement"]["table_name"], notes)
+        # a block of warning lines is not a monthly tracking table: only its single-month lines read the months
+        monthly_lines = [line for line in prior["lines"] if line["reads"] in MONTHLY_READS]
+        self.assertTrue(monthly_lines)
+        self.assertIn(f"第一节里上季分析单月口径的{cn_count(len(monthly_lines))}条线", notes)
+
+    def test_last_quarters_lines_are_settled_on_the_new_figures(self) -> None:
+        prior = self.once["prior_kpi_settlement"]
+        page = label_of(self.once["periods"][-1])
+        due = [line for line in prior["lines"] if order_of(line["settles"]) == order_of(page)]
+        risk = [line for line in due if line["tier"] in ("warn", "red")]
+        # a rehearsal with nothing due would pass every check below without settling anything
+        self.assertTrue(risk)
+        self.assertTrue([line for line in due if line["reads"] in CHARTED])
+        overview = next(ex for ex in self.settled(self.payload_once)["exhibits"] if ex["kind"] == "diverging_bars")
+        broken = sum(1 for line in risk if recomputed_hit(self.once, line))
+        self.assertEqual(overview["title"], f"上季 {len(risk)} 条警示线：{len(risk) - broken} 条守住、{broken} 条越线")
+        self.assertEqual(overview["values"],
+                         [round(recomputed_headroom(line, recomputed_reading(self.once, line["reads"], line)), 1)
+                          for line in risk if line["threshold"] != 0])
+        # every quarterly record behind a due line is drawn again, now as a settlement: one chart per record
+        charts = [ex for ex in self.settled(self.payload_once)["exhibits"] if ex["kind"] == "lines"]
+        self.assertEqual(len(charts), len({line["reads"] for line in due if line["reads"] in CHARTED}))
+        for chart in charts:
+            self.assertIn("上季", chart["title"])
+
+    def test_a_dated_line_waits_for_its_quarter(self) -> None:
+        prior = self.once["prior_kpi_settlement"]
+        page = label_of(self.once["periods"][-1])
+        later = [line for line in prior["lines"] if order_of(line["settles"]) > order_of(page)]
+        self.assertTrue(later)
+        table = next(t for t in self.payload_once["tables"] if t["title"].startswith("上季") and "逐行" in t["title"])
+        for line in later:
+            year, quarter = order_of(line["settles"])
+            with self.subTest(line=line["id"]):
+                self.assertTrue(any(row[-1] == f"未到期（{quarter}Q{str(year)[2:]} 结算）" for row in table["rows"]))
+        # one quarter on, the same line is due and settled on that quarter's figures
+        prior_twice = self.twice["prior_kpi_settlement"]
+        page_twice = label_of(self.twice["periods"][-1])
+        due_twice = [line for line in prior_twice["lines"] if order_of(line["settles"]) == order_of(page_twice)]
+        self.assertTrue({line["id"] for line in later} <= {line["id"] for line in due_twice})
+        overview = next(ex for ex in self.settled(self.payload_twice)["exhibits"] if ex["kind"] == "diverging_bars")
+        self.assertEqual(overview["values"],
+                         [round(recomputed_headroom(line, recomputed_reading(self.twice, line["reads"], line)), 1)
+                          for line in due_twice if line["tier"] in ("warn", "red") and line["threshold"] != 0])
+        table_twice = next(t for t in self.payload_twice["tables"] if t["title"].startswith("上季") and "逐行" in t["title"])
+        self.assertFalse([row for row in table_twice["rows"] if row[-1].startswith("未到期")])
+
+    def test_a_line_whose_quarter_has_passed_stops_the_build(self) -> None:
+        stale = copy.deepcopy(self.once)
+        stale["prior_kpi_settlement"]["lines"][0]["settles"] = label_of(self.source["periods"][-1])
+        with self.assertRaisesRegex(ValueError, "passed"):
+            build_payload(stale)
 
 
 if __name__ == "__main__":

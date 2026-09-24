@@ -175,7 +175,7 @@ REACH_2016 = {
     "amd": 16, "amzn": 13, "arm": 0, "asml": 16, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
     "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
-    "race": 9, "rms": 7, "samsung": 0, "schw": 9, "skhynix": 3, "snps": 8,
+    "race": 9, "rms": 7, "samsung": 0, "schw": 13, "skhynix": 3, "snps": 8,
     "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
     "intc": 10 + _intc_threshold_reach(),
     # Not a company page. It is here because the ratchet now walks every
@@ -556,9 +556,11 @@ CONVERTED = {
     },
     "schw": {
         # Floors, each named on the chart it governs.
-        "NIM：": "net interest margin has three interior holes in the repo's own "
-                "2020-2021 stretch, so the longest complete tail this chart can draw "
-                "starts after them.",
+        "调整后费用同比": "adjusted total expenses (non-GAAP) are first printed in the 2Q20 "
+                   "release, whose year-ago column is 2Q19; the eighteen releases from "
+                   "4Q15 through 1Q20 carry no non-GAAP measure at all (each one read, "
+                   "not assumed: none even contains the string GAAP), so the "
+                   "year-on-year line starts 2020Q2.",
         "调整后 Tier 1 杠杆率": "the adjusted (AOCI-inclusive) leverage ratio is a "
                         "company-defined measure Schwab began giving in 2024; the "
                         "2016-2019 filings carry only the GAAP Tier 1 ratio, which "
@@ -1225,7 +1227,7 @@ FLOOR_KIND = {
         '美洲出货同比': 'disclosure',
     },
     'schw': {
-        'NIM：': 'coverage',
+        '调整后费用同比': 'disclosure',
         '调整后 Tier 1 杠杆率': 'disclosure',
         '五条收入线': 'disclosure',
         '季度净新增资产按渠道': 'design',
@@ -1376,7 +1378,7 @@ class ChartWindowTest(unittest.TestCase):
         by_kind = {}
         for slug, title, kind in pending:
             by_kind.setdefault(kind, []).append(f"{slug}/{title}")
-        self.assertEqual(len(by_kind.get("coverage", [])), 34,
+        self.assertEqual(len(by_kind.get("coverage", [])), 33,
                          "charts whose data exists and has not been fetched")
         # Zero, and that is the point: every exemption on this page has now been
         # read against an actual pre-floor filing. The fourteen that had never
@@ -1389,7 +1391,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 160)
+        self.assertEqual(settled.count("disclosure"), 161)
         self.assertEqual(settled.count("design"), 40)
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
