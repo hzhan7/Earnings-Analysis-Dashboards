@@ -55,7 +55,7 @@ def current_value(source: dict, ident: str) -> float:
     if ident == "ng_gross_margin":
         return source["financials"]["non_gaap_gross_margin_pct"][-1]
     if ident == "guarantee":
-        return source["balance_sheet_exposure"]["guarantee_max_exposure_usd_bn"]["total"]
+        return source["guarantee_exposure_usd_bn"]["max_gross_exposure"][-1]
     if ident == "top_customer":
         return float(source["customer_concentration"]["largest_direct_customer_pct"][-1])
     raise KeyError(ident)
@@ -922,11 +922,208 @@ class NvdaChecksTest(unittest.TestCase):
         self.assertEqual(round(returned), round(self.checks["returned_to_shareholders_usd_bn_printed"]))
 
 
+# The report's trigger side of a line, from the page's favourable side: a buy,
+# milestone or upside line triggers on the favourable side, every other line
+# on the opposite one.
+FAVOURABLE_SIDE = {("up", True): ">", ("up", False): ">=", ("down", True): "<", ("down", False): "<="}
+OPPOSITE = {">": "<=", ">=": "<", "<": ">=", "<=": ">"}
+REACHING = ("加仓", "里程碑", "上行")
+
+
+def trigger_of(line: dict) -> str:
+    side = FAVOURABLE_SIDE[(line["direction"], bool(line.get("strict")))]
+    return side if line["action"] in REACHING else OPPOSITE[side]
+
+
+def on_favourable_side(line: dict, value: float) -> bool:
+    return {">": value > line["threshold"], ">=": value >= line["threshold"],
+            "<": value < line["threshold"], "<=": value <= line["threshold"]}[
+        FAVOURABLE_SIDE[(line["direction"], bool(line.get("strict")))]]
+
+
+def raw_reading(source: dict, reads: str) -> float:
+    """Each reading recomputed from the raw arrays, without the builder's `reading`."""
+    fin = source["financials"]
+    guide = source["quarterly_guidance_history"]
+    period = source["periods"][-1]
+    if reads == "revenue_bn":
+        return fin["revenue_usd_m"][-1] / 1000
+    if reads == "revenue_beat_pct":
+        at = guide["quarters"].index(period)
+        return (guide["actual_revenue_usd_m"][at] / guide["guide_revenue_usd_bn"][at] / 1000 - 1) * 100
+    if reads == "acie_share_pct":
+        mix = source["dc_customer_mix"]
+        return mix["acie"][-1] / (mix["acie"][-1] + mix["hyperscale"][-1]) * 100
+    if reads == "ng_gm_pct":
+        return fin["non_gaap_gross_profit_usd_m"][-1] / fin["revenue_usd_m"][-1] * 100
+    if reads == "ng_gm_guide_pct":
+        return guide["non_gaap_gm_guide_pct"][-1]
+    if reads == "dso_printed_days":
+        return float(source["working_capital"]["dso_days_printed"][-1])
+    if reads == "dso_days":
+        return source["working_capital"]["accounts_receivable_usd_m"][-1] / fin["revenue_usd_m"][-1] * 91
+    if reads == "total_supply_bn":
+        supply = source["total_supply_usd_bn"]
+        return supply["inventory"][-1] + supply["supply_related_commitments"][-1]
+    if reads == "fcf_conversion_pct":
+        return source["fcf_conversion"]["values_pct"][-1]
+    if reads == "guarantee_bn":
+        return source["guarantee_exposure_usd_bn"]["max_gross_exposure"][-1]
+    if reads == "top_customer_pct":
+        return float(source["customer_concentration"]["largest_direct_customer_pct"][-1])
+    if reads == "fcf_bn":
+        return source["cash_flow_usd_m"]["free_cash_flow"][-1] / 1000
+    if reads == "other_income_bn":
+        return source["other_income_usd_m"]["total_other_income"][-1] / 1000
+    raise KeyError(reads)
+
+
+class NvdaSettlementTest(unittest.TestCase):
+    """Section one settles what the previous report left, as the reports wrote it.
+
+    The expected verdicts and lines are read from `_checks["note"]`, which was
+    typed from the two reports independently of the blocks the builder reads;
+    every reading is recomputed here from the raw arrays.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads((ROOT / "series" / "nvda.json").read_text(encoding="utf-8"))
+        cls.note = cls.source["_checks"]["note"]
+        cls.payload = build_payload(cls.source)
+        cls.settled = cls.payload["sections"][0]["exhibits"]
+        cls.text = published_text(cls.payload)
+
+    def test_the_closure_is_the_reports_section_zero(self) -> None:
+        block = self.source["followup_closure"]
+        expected = self.note["followup_closure"]
+        self.assertEqual(block["set_in"], self.source["periods"][-2])
+        self.assertEqual(block["total"], expected["total"])
+        self.assertEqual([item["verdict"] for item in block["items"]], expected["verdicts"])
+        self.assertEqual(dict(zip(block["labels"], block["counts"])), expected["counts"])
+        chart = self.settled[0]
+        self.assertEqual(chart["kind"], "bars_labeled")
+        self.assertTrue(chart["title"].startswith(f"上季 {expected['total']} 条待验证问题："))
+        # The title lists every category the report used, with its count.
+        for label, count in expected["counts"].items():
+            self.assertIn(f"{count} 条{label}", chart["title"])
+        self.assertEqual(sum(chart["values"]), expected["total"])
+        # Each question is on the page with its verdict, and the verdict is
+        # attributed to the report, not to the page.
+        for number, item in enumerate(block["items"], 1):
+            self.assertIn(f"{number}. {item['question']} —— <b>{item['verdict']}</b>", chart["note"])
+        self.assertIn("第 0 节", chart["src_extra"])
+        self.assertNotIn("本页据此", chart["note"])
+
+    def test_the_prior_lines_are_the_prior_reports_section_eight(self) -> None:
+        block = self.source["prior_kpi_settlement"]
+        self.assertEqual(block["set_in"], self.source["periods"][-2])
+        self.assertEqual(len(block["rows"]), self.note["prior_rows"])
+        self.assertEqual(len(block["dispositions"]), self.note["prior_rows"])
+        expected = {(item["row"], item["threshold"]): item for item in self.note["prior_thresholds"]}
+        drawn = {(line["row"], line["threshold"]): line for line in block["quantified"]}
+        self.assertEqual(set(drawn), set(expected), "a line was added, dropped or retyped")
+        for key, line in drawn.items():
+            with self.subTest(line=line["id"]):
+                self.assertEqual(trigger_of(line), expected[key]["trigger"])
+                self.assertEqual(line["action"], expected[key]["action"])
+        self.assertEqual(sorted(item["row"] for item in block["not_drawn"]),
+                         self.note["prior_not_quantified_rows"])
+        self.assertEqual({str(c["row"]): c["mode"] for c in block["conditions"]},
+                         self.note["prior_compound_rows"])
+
+    def test_the_prior_readings_are_recomputed_here(self) -> None:
+        block = self.source["prior_kpi_settlement"]
+        lines = block["quantified"]
+        overview = next(ex for ex in self.settled if ex["kind"] == "diverging_bars" and "量化阈值" in ex["title"])
+        self.assertEqual(overview["xlabels"], [line["metric"] for line in lines])
+        favourable = 0
+        for line, bar in zip(lines, overview["values"]):
+            value = raw_reading(self.source, line["reads"])
+            self.assertAlmostEqual(bar, round(headroom(line["direction"], line["threshold"], value), 1),
+                                   places=1, msg=line["id"])
+            favourable += on_favourable_side(line, value)
+        self.assertIn(f"{favourable} 条在有利一侧、{len(lines) - favourable} 条在不利一侧", overview["title"])
+        # One history per reading that has one, every line of its row on it.
+        charts = [ex for ex in self.settled if ex["kind"] == "lines"]
+        by_reads = {}
+        for line in lines:
+            by_reads.setdefault(line["reads"], []).append(line)
+        drawn_reads = [reads for reads in by_reads if reads != "revenue_beat_pct"]
+        self.assertEqual(len(charts), len(drawn_reads))
+        for chart, reads in zip(charts, drawn_reads):
+            for line in by_reads[reads]:
+                value = raw_reading(self.source, line["reads"])
+                name = {"加仓": "加仓线", "减仓": "减仓线", "警示": "警示线", "重新评估": "重新评估线",
+                        "里程碑": "里程碑"}[line["action"]]
+                with self.subTest(line=line["id"]):
+                    if str(line["id"]) in {i for c in block["conditions"] if c["mode"] == "and" for i in c["ids"]}:
+                        verb = "未越过" if on_favourable_side(line, value) else "越过"
+                        self.assertIn(f"{verb}上季合取条件之一", chart["title"])
+                    elif on_favourable_side(line, value) and value == line["threshold"]:
+                        self.assertIn(f"正压在上季{name}", chart["title"])
+                    elif line["action"] in REACHING:
+                        self.assertIn(("达到" if on_favourable_side(line, value) else "没到") + f"上季{name}",
+                                      chart["title"])
+                    else:
+                        self.assertIn(("守住" if on_favourable_side(line, value) else "击穿") + f"上季{name}",
+                                      chart["title"])
+                    threshold_series = [s for s in chart["series"] if s["values"] == [line["threshold"]] * len(chart["xlabels"])]
+                    self.assertEqual(len(threshold_series), 1, "each line is its own series")
+        # The compound row: 「且」 needs both legs over their lines.
+        for condition in block["conditions"]:
+            legs = [next(l for l in lines if l["id"] == i) for i in condition["ids"]]
+            over = [not on_favourable_side(l, raw_reading(self.source, l["reads"])) for l in legs]
+            met = all(over) if condition["mode"] == "and" else any(over)
+            self.assertIn("<b>条件成立</b>" if met else "<b>条件不成立</b>", overview["note"])
+
+    def test_every_prior_row_is_settled_or_explained(self) -> None:
+        block = self.source["prior_kpi_settlement"]
+        table = next(t for t in self.payload["tables"] if t["title"].startswith("上季第 8 节"))
+        self.assertEqual([row[1] for row in table["rows"]], block["rows"])
+        self.assertEqual([row[3] for row in table["rows"]], block["dispositions"])
+        for row in table["rows"]:
+            self.assertTrue(row[2].strip(), row[0])
+        for item in block["not_drawn"]:
+            self.assertIn("不作图", table["rows"][item["row"] - 1][2])
+
+    def test_the_guarantee_record_has_the_base_the_page_once_denied(self) -> None:
+        """The previous 10-Q printed a maximum guarantee exposure; the page used to say it printed none."""
+        record = self.source["guarantee_exposure_usd_bn"]
+        self.assertEqual(record["quarters"][-1], self.source["periods"][-1])
+        self.assertIn(self.source["periods"][-2], record["quarters"])
+        self.assertIsNotNone(record["max_gross_exposure"][record["quarters"].index(self.source["periods"][-2])])
+        for claim in ("没有任何担保上限披露", "没有可比的上季基数"):
+            self.assertNotIn(claim, self.text)
+
+    def test_a_malformed_settlement_block_stops_the_build(self) -> None:
+        def rebuilt(edit) -> None:
+            changed = copy.deepcopy(self.source)
+            edit(changed)
+            build_payload(changed)
+
+        cases = [
+            ("set in", lambda s: s["prior_kpi_settlement"].__setitem__("set_in", "Q4 2025")),
+            ("types a reading", lambda s: s["prior_kpi_settlement"]["quantified"][0].__setitem__("value", 1.0)),
+            ("no series on this page", lambda s: s["prior_kpi_settlement"]["quantified"][0].__setitem__("reads", "x")),
+            ("accounted for", lambda s: s["prior_kpi_settlement"]["not_drawn"].pop()),
+            ("should have been settled", lambda s: s["prior_kpi_settlement"]["quantified"][0].__setitem__(
+                "settles", "Q1 2026")),
+            ("disagree", lambda s: s["followup_closure"].__setitem__("total", 7)),
+            ("does not match", lambda s: s["followup_closure"]["items"][0].__setitem__("verdict", "被证伪")),
+        ]
+        for words, edit in cases:
+            with self.subTest(words):
+                with self.assertRaisesRegex(ValueError, words):
+                    rebuilt(edit)
+
+
 class NvdaRollTest(unittest.TestCase):
     """A roll edits the series and nothing else."""
 
-    STAMPED = ("guidance", "market_expectation", "followup_closure", "next_kpi", "dc_customer_mix",
-               "restated_comparatives", "balance_sheet_exposure", "capital_return_usd_m", "quarter_story")
+    STAMPED = ("guidance", "market_expectation", "followup_closure", "prior_kpi_settlement", "next_kpi",
+               "dc_customer_mix", "restated_comparatives", "balance_sheet_exposure", "capital_return_usd_m",
+               "quarter_story")
 
     @classmethod
     def setUpClass(cls) -> None:

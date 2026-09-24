@@ -148,6 +148,34 @@ def _intc_threshold_reach() -> int:
                if "警戒线" in ex["title"])
 
 
+def _nvda_threshold_charts() -> tuple[int, int]:
+    """(reaching 2016, short by design) counts of NVIDIA's threshold-line charts.
+
+    Section one draws one history per reading of the previous report's section
+    8 lines that settle this quarter, section three one per reading of this
+    report's -- and both sets come from two period-stamped blocks of
+    `series/nvda.json`, which is all a roll edits. Which readings run the long
+    record (DSO) and which sit on a short one (the page's eight quarters, or a
+    disclosure that starts later: the recast customer mix, the guarantee record,
+    the new-basis cash conversion) is the analyses' choice, not the page's, so
+    the pins count the permanent charts and add these while they are published.
+    """
+    page = js_payload(ROOT / "data" / "nvda.js", "window.DASH")
+    reach = short = 0
+    for section in page["sections"]:
+        if section["id"] not in ("settled", "next_quarter"):
+            continue
+        for ex in section["exhibits"]:
+            year = first_year(ex) if ex["kind"] == "lines" else None
+            if year is None:
+                continue
+            if year <= TARGET_YEAR:
+                reach += 1
+            elif len(ex.get("xlabels") or []) <= 8:
+                short += 1
+    return reach, short
+
+
 def _tsm_advanced_count() -> dict:
     """The process-mix note counts the quarters since 2021Q1 in which the page's
     summed 7nm-and-below line equals TSMC's own aggregate. The count grows by
@@ -174,7 +202,7 @@ def _tsm_advanced_count() -> dict:
 REACH_2016 = {
     "amd": 16, "amzn": 13, "arm": 0, "asml": 16, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
     "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
-    "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
+    "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10 + _nvda_threshold_charts()[0], "pm": 6,
     "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
     "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
     "intc": 10 + _intc_threshold_reach(),
@@ -1427,7 +1455,9 @@ class ChartWindowTest(unittest.TestCase):
         combined = {slug: SHORT_BY_DESIGN.get(slug, 0) + UNEXPLAINED_LONG.get(slug, 0)
                     for slug in set(SHORT_BY_DESIGN) | set(UNEXPLAINED_LONG)}
         self.assertEqual(by_page, combined)
-        self.assertEqual(sum(SHORT_BY_DESIGN.values()), 51)
+        # NVIDIA's threshold histories roll with the page's stamped blocks, so
+        # they are counted live (above) and kept out of this site total.
+        self.assertEqual(sum(SHORT_BY_DESIGN.values()) - _nvda_threshold_charts()[1], 47)
         # Zero, as of the SK hynix backfill. This number is not load-bearing on
         # its own -- an empty dict sums to zero for free -- but `by_length ==
         # UNEXPLAINED_LONG` two lines down is, and that one is what turns red if
@@ -1604,7 +1634,9 @@ class ChartWindowTest(unittest.TestCase):
 SHORT_BY_DESIGN = {
     'bc': 7,
     'mc': 8,
-    'nvda': 11,
+    # seven permanent eight-quarter charts, plus the threshold histories that
+    # come and go with the two stamped threshold blocks (see the helper)
+    'nvda': 7 + _nvda_threshold_charts()[1],
     'pm': 5,
     'samsung': 15,
     'skhynix': 5,
