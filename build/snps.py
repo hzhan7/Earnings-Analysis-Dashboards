@@ -1523,11 +1523,15 @@ def build_payload(staging: dict) -> dict:
     require(story, facts, "quarter_story")
 
     # ── assemble ─────────────────────────────────────────────────────────────
-    settled_charts = ([verdict_chart] if verdict_chart else []) + [delivery_chart] \
-        + ([expectation_chart] if expectation_chart else []) + delivery_charts
-    highlights = [revenue_chart, segment_chart, segment_margin_chart, wedge_chart,
-                  dilution_chart] + ([fy_split_chart] if fy_split_chart else [])
-    routine = [amort_chart, margin_wedge_chart, buyback_chart, backlog_chart, geography_chart]
+    # Section one settles what was set before this quarter; section two is this
+    # quarter's own conclusions. The market-expectation panel is a reading of
+    # this quarter (and of the guide it issued), so it sits in section two, and
+    # so does the backlog chart, whose title is this quarter's reading of it.
+    settled_charts = ([verdict_chart] if verdict_chart else []) + [delivery_chart] + delivery_charts
+    highlights = ([revenue_chart] + ([expectation_chart] if expectation_chart else [])
+                  + [segment_chart, segment_margin_chart, wedge_chart, dilution_chart]
+                  + ([fy_split_chart] if fy_split_chart else []) + [backlog_chart])
+    routine = [amort_chart, margin_wedge_chart, buyback_chart, geography_chart]
 
     refs = {ex.get("ref"): ex for ex in settled_charts + highlights + next_charts + routine if ex.get("ref")}
     exhibits = resolve_exhibit_refs(
@@ -1910,9 +1914,11 @@ def build_payload(staging: dict) -> dict:
                 "id": "quarter_highlights",
                 "title": "二、本季重点",
                 "description": (
-                    "两个分部各自的收入与利润率、GAAP 与 non-GAAP 之间那道由收购摊销撑开的裂口、"
+                    "收入" + ("与它对市场预期的落点" if expectation_chart else "")
+                    + "、两个分部各自的收入与利润率、GAAP 与 non-GAAP 之间那道由收购摊销撑开的裂口、"
                     "股数对每股口径的吞噬"
-                    + ("，以及公司自己在指引脚注里给出的并购与原生拆分。" if fy_split_chart else "。")
+                    + ("、公司自己在指引脚注里给出的并购与原生拆分" if fy_split_chart else "")
+                    + "，以及 backlog 与它未来 12 个月可确认的那一半。"
                 ),
                 "exhibits": highlight_ex,
             },
@@ -1931,8 +1937,7 @@ def build_payload(staging: dict) -> dict:
                 "title": "四、长期常规跟踪",
                 "description": (
                     f"SNPS 专属的常规序列：{ten}年收购摊销强度与它撑开的利润率裂口、"
-                    f"{ten}年回购与股数、{cn_count(len(backlog['quarters']))}季 backlog 与它可确认的那一半，"
-                    f"以及{geo_n}季地域结构。"
+                    f"{ten}年回购与股数，以及{geo_n}季地域结构。"
                 ),
                 "exhibits": routine_ex,
             },

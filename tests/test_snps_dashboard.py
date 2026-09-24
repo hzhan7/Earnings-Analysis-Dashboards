@@ -97,6 +97,35 @@ class SnpsDashboardTest(unittest.TestCase):
         }
         cls.record = cls.source["quarterly_guidance_history"]
 
+    # ── the four sections ────────────────────────────────────────────────────
+    def test_the_page_has_the_site_s_four_sections_in_order(self) -> None:
+        self.assertEqual(
+            [(section["id"], section["title"]) for section in self.payload["sections"]],
+            [("settled", "一、上季跟踪指标兑现了吗"), ("quarter_highlights", "二、本季重点"),
+             ("next_quarter", "三、下季要跟踪什么"), ("routine", "四、长期常规跟踪")])
+        for section in self.payload["sections"]:
+            with self.subTest(section=section["id"]):
+                self.assertTrue(section["exhibits"])
+                self.assertTrue(section["description"].strip())
+        self.assertIn("本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列",
+                      self.payload["notes"][0])
+
+    def test_this_quarter_s_readings_sit_in_section_two(self) -> None:
+        """The market-expectation panel and the backlog chart read this quarter.
+
+        Both used to sit elsewhere: the expectation panel in section one, among
+        what was set last quarter, and the backlog chart -- whose title is this
+        quarter's reading, three declines since the fiscal year-end -- among the
+        long-run series of section four.
+        """
+        legends = {section["id"]: [ex.get("legend") for ex in section["exhibits"]]
+                   for section in self.payload["sections"]}
+        self.assertIn("较对照的幅度", legends["quarter_highlights"])
+        self.assertNotIn("较对照的幅度", legends["settled"])
+        backlog = [section["id"] for section in self.payload["sections"] for ex in section["exhibits"]
+                   if any(s["name"].startswith("backlog") for s in ex.get("series", []))]
+        self.assertEqual(backlog, ["quarter_highlights"])
+
     # ── shape ────────────────────────────────────────────────────────────────
     def test_the_quarterly_margin_guidance_is_not_the_full_year_one(self) -> None:
         """The two midpoints in the release are the fiscal year's, not Q4's.
