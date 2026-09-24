@@ -1076,9 +1076,15 @@ def build_payload(staging: dict) -> dict:
                 f"{'掉' if mpc_margin[-1] < mpc_margin[-2] else '升'}到 {mpc_margin[-1]:.1f}%。"
                 + ((f"「首次」只对现行口径成立：公司自 FY2025 起重划分部，重述后的数回到 {basis_from}，"
                     f"这{cn_count(basis_quarters)}季里此前每一季都是 PBP 更大；"
-                    + (f"按重划前的旧口径，IC 从 {old_basis['fiscal_year']} 起就大于 PBP（{old_basis['fiscal_year']} 10-K："
-                       f"IC ${old_basis['intelligent_cloud_revenue']:,}M、PBP ${old_basis['productivity_revenue']:,}M），"
-                       "两套口径不能接起来比。" if old_basis else ""))
+                    # The old basis is named by its crossover year, and that year
+                    # is called the crossover only while the year before still
+                    # had PBP ahead.
+                    + ((f"按重划前的旧口径，IC 在 {old_basis['fiscal_year']} 就已超过 PBP（{old_basis['fiscal_year']} 10-K："
+                        f"IC ${old_basis['intelligent_cloud_revenue']:,}M、PBP ${old_basis['productivity_revenue']:,}M"
+                        + (f"；{old_basis['prior_fiscal_year']} 还是 ${old_basis['prior_intelligent_cloud_revenue']:,}M 对 "
+                           f"${old_basis['prior_productivity_revenue']:,}M"
+                           if old_basis["prior_intelligent_cloud_revenue"] <= old_basis["prior_productivity_revenue"] else "")
+                        + "），两套口径不能接起来比。") if old_basis else ""))
                    if ic_first_lead else "")
             ),
             "src_extra": (
@@ -1544,6 +1550,13 @@ def build_payload(staging: dict) -> dict:
         ["商业签约额（剔除单一大客户）同比", "%",
          listed(kpi["bookings_ex_largest_customer_yoy_pct"]["values"]),
          " / ".join(kpi["bookings_ex_largest_customer_yoy_pct"]["periods"])],
+        # The section-8 line reads the adjusted rate; the release prints the
+        # reported one beside it, so both are in the drawer.
+        ["M365 商业云收入同比（调整后 / 报告口径）", "%",
+         " ; ".join(f"{adjusted} / {reported}" for adjusted, reported in zip(
+             kpi["m365_commercial_cloud"]["adjusted_pct"], kpi["m365_commercial_cloud"]["reported_pct"])),
+         " / ".join(kpi["m365_commercial_cloud"]["periods"])
+         + "；新闻稿（8-K EX-99.1）原句，调整后口径剔除上年同期的一次性确认"],
     ]
 
     tables = []

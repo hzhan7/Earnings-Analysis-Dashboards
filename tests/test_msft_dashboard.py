@@ -506,6 +506,12 @@ class MsftDashboardTest(unittest.TestCase):
         self.assertEqual(len(segment_table["rows"]), len(self.segments["periods"]))
         base_table = next(t for t in tables if "季度基础数据" in t["title"])
         self.assertEqual(len(base_table["rows"]), len(self.source["periods"]))
+        # The section-8 M365 line reads the adjusted rate; the reported one is
+        # printed beside it.
+        m365 = self.source["operating_kpi"]["m365_commercial_cloud"]
+        kpi_table = next(t for t in tables if t["title"].startswith("披露不连续的运营指标"))
+        m365_row = next(r for r in kpi_table["rows"] if r[0].startswith("M365 商业云收入同比"))
+        self.assertIn(f"{m365['adjusted_pct'][-1]} / {m365['reported_pct'][-1]}", m365_row[2])
         # Net cash with finance-lease liabilities counted as debt, from the 10-K.
         fy = self.fy
         net = [cash - current - term - leases for cash, current, term, leases in zip(
@@ -905,6 +911,13 @@ class MsftSectionTwoTest(unittest.TestCase):
             old = segments["pre_recast_crossover"]
             self.assertIn(f"IC ${old['intelligent_cloud_revenue']:,}M、PBP ${old['productivity_revenue']:,}M",
                           chart["note"])
+            # The old basis's crossover year is named as such only with the
+            # year before it on the page, PBP still ahead.
+            before = (f"{old['prior_fiscal_year']} 还是 ${old['prior_intelligent_cloud_revenue']:,}M 对 "
+                      f"${old['prior_productivity_revenue']:,}M")
+            self.assertEqual(before in chart["note"],
+                             old["prior_intelligent_cloud_revenue"] <= old["prior_productivity_revenue"])
+            self.assertNotIn("起就大于", chart["note"])
         # A quarter of the recast year in which IC led would take 「first」 away.
         led = copy.deepcopy(self.source)
         led["segments_usd_m"]["recast_before_window"]["intelligent_cloud_revenue"][0] = 30000
