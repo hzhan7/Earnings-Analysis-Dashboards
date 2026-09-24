@@ -10,15 +10,20 @@ Every period, date, count and figure printed here is computed from the series.
 A sentence that states a record, a window low, "all five" or "the only one" is
 printed only while the series still says so, and gives way to a sentence that
 is true when it stops. What belongs to one quarter only carries a ``period``
-stamp and is read through `board.stamped_block` -- the settlement of last
-quarter's thresholds, questions and verdicts (`settled_thresholds`,
-`followup_closure`, `tracked_metric_verdicts`), the next thresholds
-(`next_kpi`), the call's scenario figures (`guidance.scenario`) and the
-release's one-quarter disclosures (`latest_disclosures`). A block stamped for
-another quarter stops the build; an absent one leaves its part of the page out.
-Where a one-quarter sentence has to restate a number, the series writes a
-placeholder and the builder fills it. `_checks` is a separate reading of the
-quarter's release that the tests hold the page to; this builder never reads it.
+stamp and is read through `board.stamped_block` -- the settlement of what the
+previous quarter's analysis left (`followup_closure`, its scorecard
+`tracked_metric_verdicts`, and `prior_kpi_settlement`, the previous analysis's
+monitoring lines), the next thresholds (`next_kpi`), the call's scenario
+figures (`guidance.scenario`) and the release's one-quarter disclosures
+(`latest_disclosures`). A block stamped for another quarter stops the build.
+The follow-up closure and the previous analysis's lines are required -- every
+quarter from Q2 2026 on has an analysis before it, and a roll that forgot them
+would otherwise publish an empty first section -- the other blocks leave their
+part of the page out when absent. Where a one-quarter sentence has to restate a
+number, the series writes a placeholder and the builder fills it; a threshold
+block never stores a reading, it names the record the reading comes from
+(`reads`). `_checks` is a separate reading of the quarter's release and of the
+two analyses that the tests hold the page to; this builder never reads it.
 
 Three things about this company break the template the other pages share, and
 each one is answered on the page rather than smoothed over:
@@ -38,11 +43,12 @@ intensity and the depreciation wave mean nothing here.  What carries this
 company is the split between rate-driven and fee-driven revenue, the operating
 leverage between the two, and the volume/price relationship inside trading.
 
-**The tracking framework is monthly and this site is quarterly.**  Schwab
-publishes a monthly activity report, and the underlying research note's watch
-list is built on it.  Plotting a monthly series would make this page move
-between earnings dates, which is the one thing the content boundary forbids, so
-the monthly-only thresholds are named and excluded rather than quietly drawn.
+**The tracking framework is monthly and this page's axes are quarterly.**
+Schwab publishes a monthly activity report, and both analyses' watch lists are
+built on it.  Every quarterly release also prints that report's last thirteen
+months, so a monthly line is settled from the release at the quarterly roll --
+the page never moves between earnings dates -- and its reading enters the
+threshold overview and the audit table; no chart runs on a monthly axis.
 
 Published numbers are company-reported or transparent arithmetic.  No rating,
 no target price, no valuation, no broker-attributed estimate.
@@ -51,6 +57,8 @@ no target price, no valuation, no broker-attributed estimate.
 from __future__ import annotations
 
 import json
+import operator
+import re
 import sys
 from pathlib import Path
 
@@ -62,6 +70,7 @@ from build.board import (  # noqa: E402
     cn_count,
     cn_ordinal,
     display_period,
+    fill_story,
     headroom,
     headroom_exhibit,
     latest_block,
@@ -101,6 +110,34 @@ FIVE_LINES = (
     ("银行存款账户费", "bda_usd_m", "银行存款账户费"),
     ("其他", "other_usd_m", "其他"),
 )
+
+MONTH_WORDS = ("一月", "二月", "三月", "四月", "五月", "六月",
+               "七月", "八月", "九月", "十月", "十一月", "十二月")
+
+# The comparison each analysis wrote beside a line, as the event it watches for.
+OPS = {"<": operator.lt, "<=": operator.le, ">": operator.gt, ">=": operator.ge}
+TRIGGER_WORDS = {"<": "低于", "<=": "不高于", ">": "高于", ">=": "不低于"}
+
+
+def cn_join(left: str, right: str) -> str:
+    """Join two phrases with the space this site's prose puts between Latin and Chinese."""
+    if left and right and left[-1].isascii() and left[-1].isalnum() and not right[0].isascii():
+        return f"{left} {right}"
+    return left + right
+
+
+def filled(text: str, values: dict[str, str]) -> str:
+    """`board.fill_story`, plus a refusal to publish a placeholder it could not see.
+
+    `fill_story` only recognises lower-case letters and underscores, so a name
+    with a digit in it (``{t1l_now}``) passes through as literal braces; the
+    first draft of this page's closure table shipped one.
+    """
+    out = fill_story(text, values)
+    stray = re.findall(r"\{[^{}]*\}", out)
+    if stray:
+        raise ValueError(f"unfilled placeholders {stray} in {text[:60]!r}")
+    return out
 
 
 def compact(period: str) -> str:
@@ -200,88 +237,315 @@ def filing_words(period: str, period_end: str) -> str:
     return f"截至 {period_end} 的 10-Q"
 
 
-def settled_exhibits(staging: dict, ops: dict, blocks: dict, when: dict) -> list:
-    """Section one: last quarter's thresholds, questions and verdicts, where they exist."""
-    closure = blocks["closure"]
-    verdicts = blocks["verdicts"]
-    settled = blocks["settled"]
-    op_periods = ops["periods"]
-    charts = []
+# ── months ───────────────────────────────────────────────────────────────────
+# Schwab's monthly activity report is reprinted, thirteen months at a time, at
+# the back of every quarterly release. The series keeps those months as one
+# rolling block (`monthly`), appended three months per roll, so a monthly line
+# is settled from the quarterly release and nothing on this page moves between
+# earnings dates.
 
-    if closure:
-        counts = closure["counts"]
-        charts.append({
-            "kind": "bars_labeled",
-            "title": (
-                f"上季留下的 {sum(counts)} 个问题：{counts[0]} 个被完全回答、"
-                f"{counts[1]} 个部分回答、{counts[2]} 个公司一个数都没给"
-            ),
-            "xlabels": closure["labels"],
-            "values": counts,
-            "legend": "问题数",
-            "fmt": "f0",
-            "yfmt": "f0",
-            "label_fmt": "f0",
-            "ylab": "个",
-            "note": closure["note"],
-            "src_extra": (f"问题清单来自上季本地研究记录；判定依据 {when['release']} 业绩 8-K、"
-                          f"{when['filing']} 与当季电话会。"),
-        })
+def quarter_months(period: str) -> list[str]:
+    """``2026Q2`` -> ``['2026-04', '2026-05', '2026-06']``."""
+    year, quarter = int(period[:4]), int(period[-1])
+    return [f"{year}-{month:02d}" for month in range(3 * quarter - 2, 3 * quarter + 1)]
+
+
+def month_word(month: str) -> str:
+    """``2026-04`` -> ``四月``."""
+    return MONTH_WORDS[int(month[5:]) - 1]
+
+
+def shift_month(month: str, step: int) -> str:
+    index = int(month[:4]) * 12 + int(month[5:]) - 1 + step
+    return f"{index // 12}-{index % 12 + 1:02d}"
+
+
+def quarter_end_month(period: str) -> str:
+    return quarter_months(period)[-1]
+
+
+class Monthly:
+    """The months of the rolling block, read for one quarter.
+
+    A quarter whose three months are not in the block stops the build: the roll
+    appends them from the release's own monthly table, and a page that settled a
+    monthly line on last quarter's months would be settling the wrong quarter.
+    """
+
+    def __init__(self, staging: dict, period: str) -> None:
+        self.block = staging["monthly"]
+        self.index = {month: i for i, month in enumerate(self.block["months"])}
+        self.quarter = quarter_months(period)
+        missing = [month for month in self.quarter if month not in self.index]
+        if missing:
+            raise ValueError(f"series block `monthly` has no {missing}: append the quarter's three "
+                             "months from its release's Monthly Activity Report with the roll")
+
+    def value(self, key: str, month: str) -> float:
+        if month not in self.index or self.block[key][self.index[month]] is None:
+            raise ValueError(f"series block `monthly` has no {key} for {month}")
+        return self.block[key][self.index[month]]
+
+    def before(self, key: str) -> list[tuple[str, float]]:
+        """Every month before this quarter, with its value."""
+        first = self.quarter[0]
+        return [(month, self.block[key][i]) for month, i in self.index.items()
+                if month < first and self.block[key][i] is not None]
+
+
+# ── section one ──────────────────────────────────────────────────────────────
+
+def watch_reading(staging: dict, period: str, line: dict) -> dict:
+    """This quarter's reading of one line the previous analysis was watching.
+
+    The line names the record it is read against (``reads``) and either a
+    number (``threshold``) or the reference the analysis wrote in words
+    (``baseline``: 「vs 去年同月」, 「是否继续创新高」), which is looked up here.
+    Nothing is typed into the block, so a roll that moves last quarter's lines
+    in as they stood settles them against the new quarter's figures.
+    """
+    monthly = Monthly(staging, period)
+    reads = line["reads"]
+    if reads == "core_nna_month":
+        month = monthly.quarter[line["month"] - 1]
+        year_ago = shift_month(month, -12)
+        value = monthly.value("core_net_new_assets_usd_bn", month)
+        base = monthly.value("core_net_new_assets_usd_bn", year_ago)
+        return {"subject": f"{month_word(month)} core 净新增资产", "label": f"{month_word(month)} core NNA",
+                "month": month, "value": value, "threshold": base,
+                "value_text": f"US${value:,.1f}B", "threshold_text": f"去年{month_word(year_ago)} US${base:,.1f}B"}
+    if reads == "dats_month_low":
+        month = min(monthly.quarter, key=lambda m: monthly.value("dats_thousands", m))
+        value = monthly.value("dats_thousands", month)
+        return {"subject": "季内最弱一个月的 DATs", "label": "DATs 最弱月", "month": month,
+                "value": value, "threshold": line["threshold"],
+                "value_text": f"{value / 1000:.2f}M（{month_word(month)}）",
+                "threshold_text": f"约 {line['threshold'] / 1000:.1f}M"}
+    if reads == "margin_month_end":
+        month = monthly.quarter[-1]
+        value = monthly.value("margin_balances_usd_bn", month)
+        # The previous high is read off every month-end the releases printed
+        # before this quarter and every quarter-end in the client-assets record,
+        # which is the same balance ("Margin loans outstanding").
+        ops = staging["operating"]
+        end = ops["periods"].index(period)
+        earlier = dict(monthly.before("margin_balances_usd_bn"))
+        for quarter, balance in zip(ops["periods"][:end], ops["margin_loans_usd_bn"][:end]):
+            if balance is not None:
+                earlier.setdefault(quarter_end_month(quarter), balance)
+        where = max(sorted(earlier), key=lambda m: earlier[m])
+        within = " / ".join(f"{monthly.value('margin_balances_usd_bn', m):,.1f}" for m in monthly.quarter)
+        return {"subject": "季末保证金余额", "label": "季末保证金余额", "month": month,
+                "value": value, "threshold": earlier[where],
+                "value_text": f"US${value:,.1f}B（季内三个月末依次 {within}）",
+                "threshold_text": f"此前最高 US${earlier[where]:,.1f}B（{where[:4]} 年{month_word(where)}末）"}
+    raise ValueError(f"a line reads {reads!r}, which build/schw.py does not know")
+
+
+def row_reading(staging: dict, period: str, row: dict) -> str:
+    """One sentence of this quarter's figures for a row the analysis gave no number."""
+    monthly = Monthly(staging, period)
+    reads = row["reads"]
+    if reads == "sweep_month_path":
+        start = shift_month(monthly.quarter[0], -1)
+        path = [(m, monthly.value("transactional_sweep_cash_usd_bn", m)) for m in [start] + monthly.quarter]
+        lower = sum(1 for _, v in path[1:] if v < path[0][1])
+        return ("月末余额依次是" + " → ".join(f"{month_word(m)} {v:,.1f}" for m, v in path) + "（US$B），"
+                + ("季内没有一个月末低于上季末" if not lower else f"季内有{cn_count(lower)}个月末低于上季末"))
+    if reads == "client_cash_path":
+        start = shift_month(monthly.quarter[0], -1)
+        year_ago = shift_month(monthly.quarter[-1], -12)
+        path = " → ".join(f"{month_word(m)} {monthly.value('client_cash_pct', m):.1f}%"
+                          for m in [start] + monthly.quarter)
+        return (f"{path}（去年{month_word(year_ago)} "
+                f"{monthly.value('client_cash_pct', year_ago):.1f}%）")
+    raise ValueError(f"a row reads {reads!r}, which build/schw.py does not know")
+
+
+def counted(items: list[dict], labels: list[str], what: str) -> list[int]:
+    """Counts per label, from the items -- never typed -- and no item outside the labels."""
+    stray = sorted({item["verdict"] for item in items} - set(labels))
+    if stray:
+        raise ValueError(f"{what} carries verdicts {stray} that have no bar")
+    return [sum(1 for item in items if item["verdict"] == label) for label in labels]
+
+
+def numbers_word(ns: list[int]) -> str:
+    """``[7, 8, 9, 10]`` -> ``第 7–10 条``-style run, ``[2, 3, 6]`` -> ``第 2、3、6``."""
+    if len(ns) > 2 and ns == list(range(ns[0], ns[-1] + 1)):
+        return f"第 {ns[0]}–{ns[-1]}"
+    return "第 " + "、".join(str(n) for n in ns)
+
+
+def story_values(staging: dict, blocks: dict, scenario: dict | None) -> dict[str, str]:
+    """The numbers the one-quarter sentences restate, computed from the series."""
+    ops, fin = staging["operating"], staging["financials"]
+    period = staging["periods"][-1]
+    monthly = Monthly(staging, period)
+    nim, dats, rpt = ops["nim_pct"], ops["dats_thousands"], ops["revenue_per_trade_usd"]
+    tier1 = ops["adjusted_tier1_leverage_pct"]
+    investor = ops["net_new_assets_investor_services_usd_bn"]
+    start = shift_month(monthly.quarter[0], -1)
+    values = {
+        "sweep_path": " → ".join(
+            f"{month_word(m)} {monthly.value('transactional_sweep_cash_usd_bn', m):,.1f}"
+            for m in [start] + monthly.quarter) + "（US$B）",
+        "nim_now": f"{nim[-1]:.2f}%",
+        "nim_qoq": f"{(nim[-1] - nim[-2]) * 100:+.0f}bp",
+        "dats_now": f"{dats[-1] / 1000:.2f}M",
+        "dats_qoq": signed(pct_change(dats[-1], dats[-2]), 0),
+        "rpt_now": f"${rpt[-1]:.2f}",
+        "tier_now": f"{tier1[-1]:.1f}%",
+        "is_qoq": signed(pct_change(investor[-1], investor[-2]), 0),
+    }
+    nim_range = next((item for item in (scenario or {}).get("items", []) if item["metric"] == "全年 NIM"), None)
+    if nim_range:
+        values["nim_range"] = f"{nim_range['low']:.2f}%–{nim_range['high']:.2f}%"
+    disclosures = blocks["disclosures"]
+    if disclosures:
+        values["buyback_now"] = f"US${disclosures['buyback_usd_m'] / 1000:.1f}B"
+        if disclosures.get("prior_quarter_buyback_usd_m"):
+            values["buyback_before"] = f"US${disclosures['prior_quarter_buyback_usd_m'] / 1000:.1f}B"
+        for key, word in (("preferred_redeemed_usd_bn", "pref_redeemed"), ("preferred_issued_usd_bn", "pref_issued")):
+            if disclosures.get(key) is not None:
+                values[word] = f"US${disclosures[key]:.1f}B"
+    return values
+
+
+def settled_exhibits(staging: dict, blocks: dict, story: dict, when: dict) -> tuple[list, list]:
+    """Section one: what the previous quarter's analysis left, settled.
+
+    (a) the follow-up questions as this quarter's analysis judged them in its
+    section 0, with its scorecard of last quarter's judgements beside them, and
+    (b) the previous analysis's own watch lines, read against this quarter's
+    figures. Returns the charts and their audit tables.
+    """
+    period = staging["periods"][-1]
+    closure, verdicts, prior = blocks["closure"], blocks["verdicts"], blocks["prior"]
+    charts, tables = [], []
+
+    labels = closure["labels"]
+    counts = counted(closure["items"], labels, "followup_closure")
+    groups = "；".join(f"{label}：{numbers_word([i['n'] for i in closure['items'] if i['verdict'] == label])} 问"
+                      for label, count in zip(labels, counts) if count)
+    charts.append({
+        "kind": "bars_labeled",
+        "title": (f"上季 {len(closure['items'])} 条待验证问题："
+                  + "、".join(f"{count} 条{label}" for label, count in zip(labels, counts))),
+        "xlabels": labels,
+        "values": counts,
+        "legend": "问题条数",
+        "fmt": "f0",
+        "yfmt": "f0",
+        "label_fmt": "f0",
+        "ylab": "条",
+        "note": f"{groups}。{closure['rule']}每一问的原文、判定与本季读数见核对抽屉。",
+        "src_extra": (f"问题清单来自上季（{closure['set_in']}）本地分析的下季度关注清单；判定取自本季本地分析第〇节，"
+                      f"读数取自 {when['release']} 业绩新闻稿与当季电话会。"),
+    })
+    tables.append({
+        "title": f"上季 {len(closure['items'])} 条待验证问题：本季分析第〇节的判定与本季读数",
+        "headers": ["问", "上季留下的问题", "本季判定", "本季读数与依据"],
+        "rows": [[str(item["n"]), item["topic"], item["verdict"], filled(item["answer"], story)]
+                 for item in closure["items"]],
+    })
+
     if verdicts:
-        counts = verdicts["counts"]
+        v_labels = verdicts["labels"]
+        v_counts = counted(verdicts["items"], v_labels, "tracked_metric_verdicts")
+        quiet = [item["n"] for item in verdicts["items"] if not item["topic"]]
         charts.append({
             "kind": "bars_labeled",
-            "title": (
-                f"上季 {sum(counts)} 条判断：{counts[0]} 条被验证、"
-                f"{counts[1]} 条被证伪、{counts[2]} 条尚未到期"
-            ),
-            "xlabels": verdicts["labels"],
-            "values": counts,
+            "title": (f"上季 {len(verdicts['items'])} 条判断："
+                      + "、".join(f"{count} 条{label}" for label, count in zip(v_labels, v_counts))),
+            "xlabels": v_labels,
+            "values": v_counts,
             "legend": "判断条数",
             "fmt": "f0",
             "yfmt": "f0",
             "label_fmt": "f0",
             "ylab": "条",
-            "note": verdicts["note"],
-            "src_extra": "判断为本地研究设定，不是公司指引。",
+            "note": (filled(verdicts["summary"], story)
+                     + "归类按本季分析「上季判断记分卡」的打分列：✅ 记验证、❌ 记证伪、⏳ 记尚未到期，"
+                     "原文打「❌幅度/✅方向」的单列为方向对但幅度错。"
+                     + (f"{numbers_word(quiet)} 条是{verdicts['unrestated']}，本页只计入判定、不转述内容（见口径说明）。"
+                        if quiet else "")),
+            "src_extra": f"判断来自上季（{verdicts['set_in']}）本地分析，不是公司指引；判定取自本季本地分析。",
         })
-    if not settled:
-        return charts
+        tables.append({
+            "title": f"上季 {len(verdicts['items'])} 条判断：本季分析记分卡的判定",
+            "headers": ["条", "上季判断", "本季判定"],
+            "rows": [[str(item["n"]), item["topic"] or "（本页不转述）", item["verdict"]]
+                     for item in verdicts["items"]],
+        })
 
-    entries = settled["entries"]
-    cleared = sum(1 for e in entries
-                  if headroom(e["direction"], e["threshold"], e["actual"]) >= 0)
-    trading = staging["financials"]["trading_usd_m"]
-    note = settled["note"].format(
-        total=cn_count(len(entries)), held=cn_count(cleared),
-        broken=cn_count(len(entries) - cleared),
-        trading_yoy=signed(pct_change(trading[-1], trading[-5]), 0))
-    charts.append(headroom_exhibit(
-        f"上季{cn_count(len(entries))}条阈值：{cleared} 条守住、{len(entries) - cleared} 条越过",
-        entries,
-        "actual",
-        (note + "百分比、美元与比率被归一化成「距阈值的余量」才能放在一根轴上；"
-         "原始单位见核对抽屉。" + settled.get("excluded", "")),
-        f"阈值为本地研究设定，不是公司指引；实际值取自 {when['release']} 业绩新闻稿与{when['filing']}。",
-    ))
-    for entry in entries:
-        key = entry.get("series_key")
-        if not key:
+    readings = [(line, watch_reading(staging, period, line)) for line in prior["lines"]]
+    for line, _ in readings:
+        if line.get("tier") != "watch":
+            raise ValueError(f"line {line['id']!r}: only `watch` lines are settled here")
+        if line["op"] not in OPS:
+            raise ValueError(f"line {line['id']!r} has no comparison the page knows: {line['op']!r}")
+    happened = {line["id"]: OPS[line["op"]](got["value"], got["threshold"]) for line, got in readings}
+
+    # One clause per row of the table; a row settled month by month says its
+    # months once when they all came out the same way.
+    clauses = []
+    for row in prior["rows"]:
+        group = [(line, got) for line, got in readings if line["row"] == row["row"]]
+        if not group:
             continue
-        labels, values = tail(op_periods, ops[key])
-        charts.append(threshold_exhibit(
-            f"{entry['metric']}：{len(labels)} 季走势与上季阈值",
-            axis([compact(p) for p in labels]),
-            rounded(values),
-            entry["threshold"],
-            fmt={"pct": "pct2", "usd_eps": "usd2", "usd_bn": "f0c"}.get(entry["unit"], "f1"),
-            ylab={"pct": "%", "usd_eps": "US$/笔", "usd_bn": "US$B"}.get(entry["unit"], ""),
-            actual_name=entry["metric"],
-            threshold_name=f"上季阈值 {unit_text(entry['unit'], entry['threshold'])}",
-            note=entry_note(entry) + "余量总览说的是哪条线破了，这张图说的是它怎么走到这里的。",
-            src_extra="实际值取自各季业绩 8-K 的 EX-99.1 新闻稿。",
-        ))
-    return charts
+        states = {happened[line["id"]] for line, _ in group}
+        if len(group) > 1 and len(states) == 1:
+            state = states.pop()
+            months = "、".join(month_word(got["month"]) for _, got in group)
+            subject = group[0][1]["subject"].split(" ", 1)[1]
+            clauses.append(f"{months}的 {subject}都{'' if state else '没有'}{group[0][0]['event']}")
+        else:
+            clauses.extend(cn_join(got["subject"], ("" if happened[line["id"]] else "没有") + line["event"])
+                           for line, got in group)
+    no_line = [row for row in prior["rows"] if not any(line["row"] == row["row"] for line in prior["lines"])]
+    charts.append({
+        "kind": "diverging_bars",
+        "title": f"上季{prior['table_name']}的 {len(readings)} 条线：" + "，".join(clauses),
+        "xlabels": [got["label"] for _, got in readings],
+        "values": [round((got["value"] - got["threshold"]) / abs(got["threshold"]) * 100, 1)
+                   for _, got in readings],
+        "legend": "距上季所盯那条线",
+        "positive_label": "高于那条线",
+        "negative_label": "低于那条线",
+        "fmt": "pct1",
+        "yfmt": "pct1",
+        "label_fmt": "pct1",
+        "ylab": "距该线 %",
+        "zero_line": True,
+        "note": (
+            prior["section_note"]
+            + "所以图上的正负只表示本季读数落在那条线的哪一侧，不表示好坏。"
+            + "".join(f"{got['subject']} {got['value_text']}，对照{got['threshold_text']}。" for _, got in readings)
+            + "".join(f"第 {row['row']} 行「{row['text']}」{row['why']}，本季{row_reading(staging, period, row)}。"
+                      for row in no_line)
+        ),
+        "src_extra": (f"线取自上季（{prior['set_in']}）本地分析{prior['section']}，不是公司指引；"
+                      f"读数取自本季业绩新闻稿的月度活动表与客户资产表。"),
+    })
+    rows = []
+    for row in prior["rows"]:
+        group = [(line, got) for line, got in readings if line["row"] == row["row"]]
+        if not group:
+            rows.append([str(row["row"]), row["text"], "—", row_reading(staging, period, row), "—",
+                         f"未量化：{row['why']}"])
+            continue
+        for line, got in group:
+            rows.append([str(row["row"]), row["text"], f"{TRIGGER_WORDS[line['op']]}{got['threshold_text']}",
+                         got["value_text"],
+                         f"{(got['value'] - got['threshold']) / abs(got['threshold']) * 100:+.1f}%",
+                         ("" if happened[line["id"]] else "没有") + line["event"]])
+    tables.append({
+        "title": f"上季{prior['table_name']}逐行（{prior['set_in']} 本地分析{prior['section']}）：原文、本季读数、所盯的事发生了吗",
+        "headers": ["行", "原文", "所盯的事（本页的线）", "本季读数", "距该线 D", "结果"],
+        "rows": rows,
+    })
+    return charts, tables
 
 
 def highlight_exhibits(staging: dict, fin: dict, periods: list, ops: dict,
@@ -815,15 +1079,23 @@ def build_payload(staging: dict) -> dict:
     blocks = {
         "closure": stamped_block(staging, "followup_closure", period),
         "verdicts": stamped_block(staging, "tracked_metric_verdicts", period),
-        "settled": stamped_block(staging, "settled_thresholds", period),
+        "prior": stamped_block(staging, "prior_kpi_settlement", period),
         "next": stamped_block(staging, "next_kpi", period),
         "disclosures": stamped_block(staging, "latest_disclosures", period),
     }
+    for key, name in (("closure", "followup_closure"), ("prior", "prior_kpi_settlement")):
+        if blocks[key] is None:
+            raise ValueError(f"series block `{name}` is required for {period}: the analysis before this "
+                             "quarter left questions and watch lines, and section one settles them")
+        if blocks[key].get("set_in") and display_period(blocks[key]["set_in"]) == period:
+            raise ValueError(f"series block `{name}` settles what {blocks[key]['set_in']} set, "
+                             "which is this quarter: it has to be the quarter before")
     scenario = stamped_block(guidance, "scenario", period)
     disclosures = blocks["disclosures"]
     release = release_source(staging)
     when = {"release": latest["release_date"],
             "filing": filing_words(periods[-1], latest["period_end"])}
+    story = story_values(staging, blocks, scenario)
 
     revenue = fin["revenue_usd_m"]
     pretax = fin["pretax_usd_m"]
@@ -833,12 +1105,8 @@ def build_payload(staging: dict) -> dict:
     rpt = ops["revenue_per_trade_usd"]
     dats = ops["dats_thousands"]
 
-    tables = []
-    if blocks["settled"]:
-        entries = blocks["settled"]["entries"]
-        tables.append(threshold_table(len(tables) + 1,
-                                      f"上季{cn_count(len(entries))}条阈值：原始单位与余量",
-                                      entries, "actual", "本季实际值"))
+    settled_charts, settled_tables = settled_exhibits(staging, blocks, story, when)
+    tables = [{"n": index + 1, **table} for index, table in enumerate(settled_tables)]
     if blocks["next"]:
         entries = blocks["next"]["entries"]
         tables.append(threshold_table(len(tables) + 1,
@@ -891,13 +1159,11 @@ def build_payload(staging: dict) -> dict:
     tier1_words = f"调整后 Tier 1 杠杆率停在 {tier1[-1]:.1f}%"
     if tier1[-1] < midpoint and any(v is not None and v >= midpoint for v in tier1[:-1]):
         tier1_words += " 没有回到目标区间中枢"
-    settled = blocks["settled"]
-    settled_words = ""
-    if settled:
-        entries = settled["entries"]
-        held = sum(1 for e in entries
-                   if headroom(e["direction"], e["threshold"], e["actual"]) >= 0)
-        settled_words = f" —— 上季设下的{cn_count(len(entries))}条阈值守住{cn_count(held)}条"
+    closure = blocks["closure"]
+    closure_counts = counted(closure["items"], closure["labels"], "followup_closure")
+    settled_words = (f" —— 上季留下的{cn_count(len(closure['items']))}个问题里"
+                     + "、".join(f"{cn_count(count)}个{label}"
+                                for label, count in zip(closure["labels"], closure_counts) if count))
     headline = (
         f"净收入 US${revenue[-1]:,.0f}M、同比 {signed(pct_change(revenue[-1], revenue[-5]))}，"
         + ("五条收入线全部同比为正，" if five_up else "")
@@ -956,22 +1222,15 @@ def build_payload(staging: dict) -> dict:
     )
 
     # ── section descriptions and notes ──────────────────────────────────────
-    closure, verdicts, kpi = blocks["closure"], blocks["verdicts"], blocks["next"]
-    settled_parts = []
-    if settled:
-        settled_parts.append(f"本地设下的{cn_count(len(settled['entries']))}条阈值")
-    tail_parts = []
-    if closure:
-        tail_parts.append(f"上季留下的 {sum(closure['counts'])} 个问题")
-    if verdicts:
-        tail_parts.append(f"{sum(verdicts['counts'])} 条判断")
-    settled_scope = "，以及".join(filter(None, ["".join(settled_parts),
-                                                  "和 ".join(tail_parts)]))
+    verdicts, kpi, prior = blocks["verdicts"], blocks["next"], blocks["prior"]
     settled_description = (
-        ("先结清上季设下的阈值，再看新数字。" if settled_scope else "")
-        + "Schwab 不在申报文件里给可逐季核对的数字区间，"
-        "所以这一节没有其他公司页那样的指引兑现长记录"
-        + (f" —— 它结清的是{settled_scope}。" if settled_scope else "；本季也没有上季留下的阈值可结清。")
+        f"先结清上季（{closure['set_in']}）本地分析留下的东西：本季分析第〇节闭环的"
+        f"{cn_count(len(closure['items']))}个待验证问题"
+        + (f"与上季判断记分卡的{cn_count(len(verdicts['items']))}条判断" if verdicts else "")
+        + f"，以及上季分析{prior['section']}的{cn_count(len(prior['rows']))}行。"
+        + prior["section_note"]
+        + "公司自己的指引只在 Business Update 电话会上以情景形式给出，申报文件里没有可逐季核对的数字区间，"
+        "所以这一节不画公司指引的兑现记录（原因见口径说明）。"
     )
     if kpi:
         excluded = kpi.get("excluded_count", 0)
@@ -994,27 +1253,22 @@ def build_payload(staging: dict) -> dict:
         total = disclosures["core_net_new_assets_usd_bn"]
         if round(sum(months), 1) == round(total, 1):
             monthly_words = (
-                f"需要说明的是这不是无法聚合：本季{MONTHS[quarter]}的月度 core 净新增资产 "
+                f"月度表与季度数是同一套数：本季{MONTHS[quarter]}的月度 core 净新增资产 "
                 + " + ".join(f"{m:g}" for m in months)
-                + f" 恰好等于公司自己公布的季度 core 净新增资产 US${total:,.1f}B，"
-                "聚合是可核的 —— 不接入是节奏问题，不是数据问题。"
+                + f" 恰好等于公司自己公布的季度 core 净新增资产 US${total:,.1f}B。"
             )
-    threshold_count = (f"因此第三节的阈值清单里，只有季度口径可核的{cn_count(len(kpi['entries']))}条接入，"
+    threshold_count = (f"第三节的阈值清单里，季度口径的{cn_count(len(kpi['entries']))}条接入余量总览，"
                        f"其余{cn_count(kpi.get('excluded_count', 0))}条写明了不接入的理由。"
                        if kpi else "本季第三节没有设定阈值。")
     identity_quarters = sum(1 for p in periods if p >= "2017Q1")
     provision = staging["financials_notes"]["loan_loss_provision_quarters"]
-    sweep_points = sum(1 for v in ops["transactional_sweep_cash_usd_bn"] if v is not None)
-    sweep_in_overview = bool(settled) and any(not e.get("series_key") and "sweep" in e["metric"]
-                                              for e in settled["entries"])
     if disclosures:
         sweep_note = (
             "交易性 sweep 现金的表观总额包含 long/short 策略相关的空头贷记"
-            f"（本季六月 US${disclosures['short_credits_usd_bn']:,.1f}B），公司在新闻稿脚注里单独披露了这一拆分。"
+            f"（本季{month_word(quarter_end_month(periods[-1]))} US${disclosures['short_credits_usd_bn']:,.1f}B），"
+            "公司在新闻稿脚注里单独披露了这一拆分。"
             + disclosures["sweep_reading"].format(qoq=disclosures["sweep_cash_qoq_change_usd_bn"])
-            + "，因此表观总额不能直接当作客户现金流向来读"
-            + ("；本页在第一节的余量总览里发布该口径，但因为可发布的季末点只有"
-               f"{cn_count(sweep_points)}个，没有为它单独作图。" if sweep_in_overview else "。")
+            + "，因此表观总额不能直接当作客户现金流向来读。"
         )
     else:
         sweep_note = None
@@ -1027,8 +1281,9 @@ def build_payload(staging: dict) -> dict:
         "本页按「上季兑现 → 本季重点 → 下季跟踪 → 长期常规」四段排列，以图为主，每张图下一到两句解释；支撑表格收在核对抽屉里。",
         "Schwab 的会计年度与自然年一致，本页所有季度标注即公司自己的季度，无需换算。",
         why,
-        "本页只发布季度口径，不发布月度数据。Schwab 每月中旬发布月度活动报告，其中的月度净新增资产、日均交易量、交易性 sweep 现金、新开经纪账户与保证金余额都是本季研究记录里权重最高的跟踪项。把它们画进来会让这一页在两次财报之间发生变化，而本站的内容边界要求每一页只按季度这一个节奏更新。"
-        f"{threshold_count}{monthly_words}",
+        "本页的图都用季度轴，不画月度走势。Schwab 每月中旬发布月度活动报告，其中的月度净新增资产、日均交易量、交易性 sweep 现金、新开经纪账户与保证金余额是两份研究记录里权重最高的跟踪项；"
+        "每季业绩新闻稿又把最近十三个月的月度表整张印出来。本页只从新闻稿里的这张表取月度数字、用来结算阈值，所以页面只在财报发布时变化，不在两次财报之间更新。"
+        f"第一节结算上季分析的月度追踪表，用的就是本季新闻稿印的{MONTHS[quarter]}。{threshold_count}{monthly_words}",
         "各年第四季度公司不出 10-Q，其利润表各行均为 10-K 全年数减去同年三份 10-Q 的三个季度，四条腿都是申报值。这一步有独立的对账：新闻稿逐季印出「Pre-tax profit margin」，把推出来的第四季度税前利润与净收入相除，与公司印的数逐年一致"
         f"（核对抽屉里的第{cn_ordinal(fourth_table)}张表）。",
         "五条收入线（净利息收入、资产管理与行政管理费、交易收入、银行存款账户费、其他）相加恒等于公司披露的净收入合计，"
@@ -1042,9 +1297,9 @@ def build_payload(staging: dict) -> dict:
         "调整后 Tier 1 杠杆率是公司自己定义的非 GAAP 指标（在 GAAP 口径上计入累计其他综合收益），公司同时披露 GAAP 口径与调节表；"
         f"本页用它是因为公司自述以该口径管理资本并设定 {TIER1_TARGET[0]:g}%–{TIER1_TARGET[1]:g}% 的长期运营目标。",
         "「AI capex 循环」跨页对照表在本站每一页都以完全相同的内容发布，本页也保留。它不是 SCHW 的经营指标 —— 券商不在那条产业链上 —— 保留它是因为它是全站共享的产业参照，且收在核对抽屉里，不占用本页的图表流。",
-        "本页只发布公司披露值、可复算的简单派生值，以及明确标注的市场预期；D 标记代表 Derived / 自算，不代表公司定义的非 GAAP 指标。",
+        "本页只发布公司披露值与可复算的简单派生值；D 标记代表 Derived / 自算，不代表公司定义的非 GAAP 指标。",
         "本页不发布评级、目标价、估值倍数、情景 EPS 与任何券商归属的估计。本季分析师在电话会上问了什么，只在能说明「公司没有披露什么」时作为证据使用，不转述其结论。",
-        "本页已知未接入：所有月度活动报告口径（见上）、Crypto 与 Forge 的任何运营或收入数据（公司未披露）、AI 产品的客户端使用数据（公司未披露）、剔除 long/short 之后的底层 sweep 现金逐季序列（公司只在当季脚注给出拆分）"
+        "本页已知未接入：Crypto 与 Forge 的任何运营或收入数据（公司未披露）、AI 产品的客户端使用数据（公司未披露）、剔除 long/short 之后的底层 sweep 现金逐季序列（公司只在当季脚注给出季末那个月的拆分）"
         f"{not_covered}。",
         "业绩电话会与新闻稿仅链接 SEC 托管版本，公开仓不复制原件或逐字内容。",
     ]
@@ -1054,7 +1309,7 @@ def build_payload(staging: dict) -> dict:
     # of these notes by position; the position is counted, not typed (the typed
     # 「第三条」 pointed at the guidance item once a note was added above it).
     when["monthly_note"] = cn_ordinal(
-        1 + next(i for i, note in enumerate(notes) if note.startswith("本页只发布季度口径")))
+        1 + next(i for i, note in enumerate(notes) if note.startswith("本页的图都用季度轴")))
 
     income = highlight_exhibits(staging, fin, periods, ops, blocks)
     balance = routine_exhibits(staging, fin, periods, ops, blocks)
@@ -1066,7 +1321,7 @@ def build_payload(staging: dict) -> dict:
                   balance["lending"], balance["flows"], income["leverage"]]
     routine = [balance["assets"], income["mix"], income["share"], balance["shares"]]
 
-    settled_ex = number_exhibits(settled_exhibits(staging, ops, blocks, when), 2)
+    settled_ex = number_exhibits(settled_charts, 2)
     highlight_ex = number_exhibits(highlights, (settled_ex[-1]["n"] + 1) if settled_ex else 2)
     next_ex = number_exhibits(next_exhibits(staging, ops, blocks["next"], when)
                               if blocks["next"] else [], highlight_ex[-1]["n"] + 1)

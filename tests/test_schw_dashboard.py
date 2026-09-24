@@ -336,49 +336,13 @@ class SchwDashboardTest(unittest.TestCase):
         self.assertIn("4,146", note)
 
     # ── thresholds ───────────────────────────────────────────────────────────
-    def test_threshold_headroom_signs_match_the_stated_verdicts(self) -> None:
-        """However many of last quarter's thresholds held, the page says that many.
-
-        Recounted here from the block, and checked in the title, the headline
-        and the chart note, each of which states the count in its own words.
-        """
-        entries = self.source["settled_thresholds"]["entries"]
-        held = [e["metric"] for e in entries
-                if headroom(e["direction"], e["threshold"], e["actual"]) >= 0]
-        broken = [e["metric"] for e in entries
-                  if headroom(e["direction"], e["threshold"], e["actual"]) < 0]
-        overview = next(ex for ex in self.by_section["settled"]
-                        if ex["kind"] == "diverging_bars")
-        self.assertIn(f"{len(held)} 条守住、{len(broken)} 条越过", overview["title"])
-        self.assertTrue(overview["note"].startswith(
-            f"{cn_count(len(entries))}条里{cn_count(len(held))}条守住、{cn_count(len(broken))}条没有。"))
-        self.assertIn(f"上季设下的{cn_count(len(entries))}条阈值守住{cn_count(len(held))}条",
-                      self.payload["headline"])
-
     def test_every_threshold_names_a_direction_and_a_real_series(self) -> None:
         ops = self.ops
-        for group in ("settled_thresholds",):
-            for entry in self.source[group]["entries"]:
-                with self.subTest(metric=entry["metric"]):
-                    self.assertIn(entry["direction"], ("up", "down"))
-                    if entry.get("series_key"):
-                        self.assertIn(entry["series_key"], ops)
         for entry in self.source["next_kpi"]["entries"]:
             with self.subTest(metric=entry["metric"]):
                 self.assertIn(entry["direction"], ("up", "down"))
                 if entry.get("series_key"):
                     self.assertIn(entry["series_key"], ops)
-
-    def test_a_threshold_without_a_series_is_named_as_excluded(self) -> None:
-        """A metric left off the per-metric charts has to say why on the page."""
-        block = self.source["settled_thresholds"]
-        without = [e["metric"] for e in block["entries"] if not e.get("series_key")]
-        overview = next(ex for ex in self.by_section["settled"] if ex["kind"] == "diverging_bars")
-        for metric in without:
-            words = re.findall(r"[A-Za-z]+", metric) or [metric]
-            with self.subTest(metric=metric):
-                self.assertTrue(any(word in block["excluded"] for word in words))
-                self.assertIn(block["excluded"], overview["note"])
 
     # ── content boundary ─────────────────────────────────────────────────────
     def test_the_page_publishes_no_rating_or_valuation(self) -> None:
@@ -409,23 +373,37 @@ class SchwDashboardTest(unittest.TestCase):
             "SCHW files no numeric guidance range; the page must not draw one",
         )
 
-    def test_the_page_states_why_it_drops_the_monthly_series(self) -> None:
+    def test_the_page_states_where_its_monthly_figures_come_from(self) -> None:
+        """Monthly figures settle thresholds; they come from the quarterly release, not the monthly report."""
         notes = " ".join(self.payload["notes"])
-        self.assertIn("不发布月度数据", notes)
+        self.assertIn("不画月度走势", notes)
+        self.assertIn("本页只从新闻稿里的这张表取月度数字", notes)
         checks = self.source["_checks"]
-        # the aggregation is shown to be checkable, with the release's own months
+        # the months add to the quarter the company printed, with the release's own months
         self.assertIn(" + ".join(f"{m:g}" for m in checks["core_nna_monthly_usd_bn"])
                       + f" 恰好等于公司自己公布的季度 core 净新增资产 "
                       f"US${checks['core_net_new_assets_usd_bn']:,.1f}B", notes)
-        self.assertIn("月度", self.source["next_kpi"]["excluded_note"])
 
     def test_no_exhibit_plots_a_monthly_series(self) -> None:
-        """Every x axis is quarter labels, never months."""
-        month = re.compile(r"(?i)\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b|月")
+        """Every time axis is quarter labels, never months.
+
+        A label that *is* a month -- 「2026-04」, 「Apr-26」, 「4月」, 「四月」 -- is
+        what a monthly axis looks like. A metric named after a month on a
+        categorical axis (section one's 「四月 core NNA」 bar) is not; the first
+        version of this test matched any 「月」 anywhere and could not tell the two
+        apart.
+        """
+        month = re.compile(
+            r"^(?:\d{2,4}[-/年])?(?:[一二三四五六七八九十]{1,3}|\d{1,2})月$"
+            r"|^(?i:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*(?:[-' ]?\d{2,4})?$"
+            r"|^\d{4}-\d{2}$")
         for exhibit in self.exhibits:
             for label in exhibit.get("xlabels", []):
                 with self.subTest(title=exhibit["title"], label=label):
                     self.assertIsNone(month.search(str(label)))
+        # the pattern does see a monthly axis when there is one
+        for label in ("2026-04", "Apr-26", "4月", "四月", "May"):
+            self.assertIsNotNone(month.search(label), label)
 
     def test_notes_carry_no_markup(self) -> None:
         """`notes` is escaped on render; chart notes are not.
@@ -579,12 +557,221 @@ class SchwChecksTest(unittest.TestCase):
         self.assertIn(f"{high['period']} 的纪录 US${high['usd_m']:,.0f}M", text)
 
 
+def previous_quarter(label: str) -> str:
+    """``'Q2 2026'`` -> ``'Q1 2026'``."""
+    quarter, year = label.split()
+    number = int(quarter[1])
+    return f"Q4 {int(year) - 1}" if number == 1 else f"Q{number - 1} {year}"
+
+
+MONTH_WORDS = ("一月", "二月", "三月", "四月", "五月", "六月",
+               "七月", "八月", "九月", "十月", "十一月", "十二月")
+OPS = {"<": lambda a, b: a < b, "<=": lambda a, b: a <= b, ">": lambda a, b: a > b, ">=": lambda a, b: a >= b}
+
+
+def quarter_months_of(period: str) -> list[str]:
+    year, quarter = int(period[:4]), int(period[-1])
+    return [f"{year}-{month:02d}" for month in range(3 * quarter - 2, 3 * quarter + 1)]
+
+
+def expected_watch(source: dict, line: dict) -> tuple[float, float]:
+    """(this quarter's reading, the line it is read against) for one watch line, recomputed.
+
+    Written out here from the series, not by calling build/schw.py: a line whose
+    `reads` this function does not know fails the test, because a new kind of
+    line is a code change and its reading has to be checked by hand once.
+    """
+    monthly = source["monthly"]
+    index = {month: i for i, month in enumerate(monthly["months"])}
+    period = source["periods"][-1]
+    months = quarter_months_of(period)
+    if line["reads"] == "core_nna_month":
+        month = months[line["month"] - 1]
+        year_ago = f"{int(month[:4]) - 1}{month[4:]}"
+        core = monthly["core_net_new_assets_usd_bn"]
+        assert line["baseline"] == "year_ago_month"
+        return core[index[month]], core[index[year_ago]]
+    if line["reads"] == "dats_month_low":
+        return min(monthly["dats_thousands"][index[m]] for m in months), line["threshold"]
+    if line["reads"] == "margin_month_end":
+        assert line["baseline"] == "prior_high"
+        margin = monthly["margin_balances_usd_bn"]
+        earlier = [margin[i] for month, i in index.items() if month < months[0]]
+        ops = source["operating"]
+        earlier += [v for p, v in zip(ops["periods"], ops["margin_loans_usd_bn"]) if p < period and v is not None]
+        return margin[index[months[-1]]], max(earlier)
+    raise AssertionError(f"no independent reading for {line['reads']!r}: write one before publishing the line")
+
+
+class SchwSectionOneTest(unittest.TestCase):
+    """Section one against the two analyses, as `_checks["note"]` keys them.
+
+    The note is typed from the analyses themselves (this quarter's section 0, the
+    previous quarter's monitoring table), not copied from the blocks the builder
+    reads; every reading is recomputed from the series without calling a
+    function of build/schw.py. Nothing here names a quarter or a line, so a roll
+    that edits the series and the note leaves this class as it is.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = json.loads((ROOT / "series" / "schw.json").read_text(encoding="utf-8"))
+        cls.note = cls.source["_checks"]["note"]
+        cls.payload = build_payload(cls.source)
+        cls.settled = next(s for s in cls.payload["sections"] if s["id"] == "settled")
+        cls.charts = cls.settled["exhibits"]
+
+    def rebuilt(self, edit) -> dict:
+        changed = copy.deepcopy(self.source)
+        edit(changed)
+        return build_payload(changed)
+
+    def test_every_block_settles_the_quarter_before(self) -> None:
+        page = self.source["_checks"]["period"]
+        for key in ("followup_closure", "tracked_metric_verdicts", "prior_kpi_settlement"):
+            if key not in self.source:
+                continue
+            with self.subTest(block=key):
+                self.assertEqual(self.source[key]["set_in"], previous_quarter(page))
+
+    def test_the_closure_is_the_one_section_zero_gives(self) -> None:
+        closure = self.note["followup_closure"]
+        chart = self.charts[0]
+        self.assertEqual(chart["kind"], "bars_labeled")
+        self.assertEqual(chart["title"], f"上季 {closure['total']} 条待验证问题："
+                         + "、".join(f"{count} 条{label}" for label, count in closure["counts"].items()))
+        self.assertEqual(dict(zip(chart["xlabels"], chart["values"])), closure["counts"])
+        by_verdict = {}
+        for item in self.source["followup_closure"]["items"]:
+            by_verdict.setdefault(item["verdict"], []).append(item["n"])
+        self.assertEqual(by_verdict, closure["questions"])
+        # the headline carries the same tally, in words
+        self.assertIn(f"上季留下的{cn_count(closure['total'])}个问题里"
+                      + "、".join(f"{cn_count(count)}个{label}" for label, count in closure["counts"].items() if count),
+                      self.payload["headline"])
+
+    def test_the_scorecard_is_the_reports(self) -> None:
+        verdicts = self.note.get("verdicts")
+        if verdicts is None:
+            self.assertNotIn("tracked_metric_verdicts", self.source)
+            return
+        chart = self.charts[1]
+        self.assertEqual(chart["kind"], "bars_labeled")
+        self.assertTrue(chart["title"].startswith(f"上季 {verdicts['total']} 条判断："), chart["title"])
+        self.assertEqual(dict(zip(chart["xlabels"], chart["values"])), verdicts["counts"])
+        by_verdict = {}
+        for item in self.source["tracked_metric_verdicts"]["items"]:
+            by_verdict.setdefault(item["verdict"], []).append(item["n"])
+        self.assertEqual(by_verdict, verdicts["items"])
+        for label, count in verdicts["counts"].items():
+            self.assertIn(f"{count} 条{label}", chart["title"])
+
+    def test_judgements_the_page_does_not_restate_stay_unrestated(self) -> None:
+        if "tracked_metric_verdicts" not in self.source:
+            return
+        table = next(t for t in self.payload["tables"] if "条判断：本季分析记分卡" in t["title"])
+        quiet = {item["n"] for item in self.source["tracked_metric_verdicts"]["items"] if not item["topic"]}
+        for row in table["rows"]:
+            with self.subTest(item=row[0]):
+                self.assertEqual(row[1] == "（本页不转述）", int(row[0]) in quiet)
+
+    def test_the_previous_lines_are_the_previous_analysis_lines(self) -> None:
+        prior = self.source["prior_kpi_settlement"]
+        self.assertEqual(len(prior["rows"]), self.note["prior_rows"])
+        self.assertEqual(
+            [(l["id"], l["row"], l["op"], l.get("threshold"), l.get("baseline")) for l in prior["lines"]],
+            [(t["id"], t["row"], t["op"], t.get("threshold"), t.get("baseline")) for t in self.note["prior_thresholds"]])
+        without = sorted({row["row"] for row in prior["rows"]} - {line["row"] for line in prior["lines"]})
+        self.assertEqual(without, self.note["prior_not_carried"]["rows"])
+        for line in prior["lines"]:
+            for typed in ("actual", "current", "value", "reading"):
+                with self.subTest(line=line["id"], key=typed):
+                    self.assertNotIn(typed, line, "a line names its record; it never stores the reading")
+
+    def test_the_monthly_block_carries_the_release_months(self) -> None:
+        monthly = self.source["monthly"]
+        months = monthly["months"]
+        for earlier, later in zip(months, months[1:]):
+            self.assertEqual(int(later[:4]) * 12 + int(later[5:]), int(earlier[:4]) * 12 + int(earlier[5:]) + 1)
+        for key, cells in self.source["_checks"]["monthly"].items():
+            if key.startswith("_"):
+                continue
+            for month, value in cells.items():
+                with self.subTest(row=key, month=month):
+                    self.assertEqual(monthly[key][months.index(month)], value)
+        for month in quarter_months_of(self.source["periods"][-1]):
+            self.assertIn(month, months)
+
+    def test_the_previous_lines_are_settled_on_figures_recomputed_here(self) -> None:
+        prior = self.source["prior_kpi_settlement"]
+        watched = [line for line in prior["lines"] if line.get("tier") == "watch"]
+        if not watched:
+            return
+        chart = next(ex for ex in self.charts if ex["kind"] == "diverging_bars")
+        self.assertTrue(chart["title"].startswith(f"上季{prior['table_name']}的 {len(watched)} 条线："), chart["title"])
+        expected = []
+        for line in watched:
+            value, base = expected_watch(self.source, line)
+            expected.append(round((value - base) / abs(base) * 100, 1))
+            happened = OPS[line["op"]](value, base)
+            # each line's event is stated with or without 「没有」 as the figures say
+            with self.subTest(line=line["id"]):
+                self.assertIn(line["event"], chart["title"])
+                self.assertEqual(f"没有{line['event']}" in chart["title"], not happened)
+        self.assertEqual(chart["values"], expected)
+        for row in prior["rows"]:
+            if row["row"] in self.note["prior_not_carried"]["rows"]:
+                self.assertIn(f"第 {row['row']} 行「{row['text']}」{row['why']}", chart["note"])
+
+    def test_a_universal_sentence_gives_way_when_one_month_breaks_it(self) -> None:
+        """「都没有低于去年同月」 holds only while every month does; the words move with the data.
+
+        Built on a block made here -- three month lines on one row, the way an
+        analysis's 「vs 去年同月」 row reads -- so the test does not depend on
+        which lines this quarter's block happens to carry.
+        """
+        months = quarter_months_of(self.source["periods"][-1])
+
+        def month_row(s, break_month=None):
+            s["prior_kpi_settlement"]["rows"] = [{"row": 1, "text": "core NNA vs 去年同月"}]
+            s["prior_kpi_settlement"]["lines"] = [
+                {"id": f"m{i}", "row": 1, "tier": "watch", "reads": "core_nna_month", "month": i,
+                 "op": "<", "baseline": "year_ago_month", "event": "低于去年同月"} for i in (1, 2, 3)]
+            monthly = s["monthly"]
+            core = monthly["core_net_new_assets_usd_bn"]
+            for i, month in enumerate(months):
+                year_ago = f"{int(month[:4]) - 1}{month[4:]}"
+                base = core[monthly["months"].index(year_ago)]
+                below = month == break_month
+                core[monthly["months"].index(month)] = base - 1 if below else base + 1
+
+        def title(payload):
+            settled = next(s for s in payload["sections"] if s["id"] == "settled")
+            return next(ex for ex in settled["exhibits"] if ex["kind"] == "diverging_bars")["title"]
+
+        words = "、".join(MONTH_WORDS[int(m[5:]) - 1] for m in months)
+        self.assertIn(f"{words}的 core 净新增资产都没有低于去年同月", title(self.rebuilt(month_row)))
+        broken = title(self.rebuilt(lambda s: month_row(s, months[1])))
+        self.assertNotIn("都没有低于去年同月", broken)
+        self.assertIn(f"{MONTH_WORDS[int(months[1][5:]) - 1]} core 净新增资产低于去年同月", broken)
+
+    def test_no_placeholder_reaches_the_page(self) -> None:
+        text = published_text(self.payload)
+        self.assertIsNone(re.search(r"\{[a-z0-9_:]+\}", text), "a story placeholder was published unfilled")
+
+    def test_the_section_says_which_part_of_the_previous_analysis_it_settles(self) -> None:
+        prior = self.source["prior_kpi_settlement"]
+        self.assertIn(prior["section"], self.settled["description"])
+        self.assertIn(prior["section_note"], self.settled["description"])
+
+
 class SchwRollTest(unittest.TestCase):
     """A roll edits the series and nothing else: the one-quarter blocks and the
     sentences that describe the record are held to what the series says."""
 
-    BLOCKS = ("followup_closure", "tracked_metric_verdicts", "settled_thresholds",
+    BLOCKS = ("followup_closure", "tracked_metric_verdicts", "prior_kpi_settlement",
               "next_kpi", "latest_disclosures")
+    REQUIRED = ("followup_closure", "prior_kpi_settlement")
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -609,22 +796,36 @@ class SchwRollTest(unittest.TestCase):
             self.rebuilt(lambda s: s.__setitem__(
                 "sources", [x for x in s["sources"] if not x["label"].startswith(label)]))
 
-    def test_a_quarter_without_its_stories_leaves_them_out(self) -> None:
+    def test_a_required_block_cannot_go_missing(self) -> None:
+        """Every quarter from here on has an analysis before it; forgetting its settlement stops the roll."""
+        for key in self.REQUIRED:
+            with self.subTest(block=key):
+                with self.assertRaisesRegex(ValueError, "required"):
+                    self.rebuilt(lambda s, key=key: s.pop(key))
+
+    def test_a_quarter_without_its_optional_stories_leaves_them_out(self) -> None:
+        optional = [key for key in self.BLOCKS if key not in self.REQUIRED and key != "latest_disclosures"]
+
         def strip(s):
-            for key in self.BLOCKS:
+            for key in optional:
                 del s[key]
-            del s["guidance"]["scenario"]
         payload = self.rebuilt(strip)
         sections = {sec["id"]: sec for sec in payload["sections"]}
-        self.assertEqual(sections["settled"]["exhibits"], [])
         self.assertEqual(sections["next_quarter"]["exhibits"], [])
         text = published_text(payload)
-        for gone in ("个问题", "条判断", "阈值守住", "最值得看", "Summer Business Update",
-                     "公司给的全年区间", "空头贷记", "本季回购", "恰好等于"):
+        for gone in ("条判断：", "最值得看"):
             with self.subTest(gone=gone):
                 self.assertIn(gone, published_text(self.payload))
                 self.assertNotIn(gone, text)
         self.assertEqual(len(payload["tables"]), len(self.payload["tables"]) - 2)
+
+    def test_a_sentence_that_restates_a_block_needs_that_block(self) -> None:
+        """The closure answers restate the release's buyback and the call's NIM range: without
+        the block that holds the figure the build stops, instead of printing the braces."""
+        with self.assertRaises(KeyError):
+            self.rebuilt(lambda s: s.pop("latest_disclosures"))
+        with self.assertRaises(KeyError):
+            self.rebuilt(lambda s: s["guidance"].pop("scenario"))
 
     def test_the_record_sentences_are_computed_not_remembered(self) -> None:
         def claim_moves(claims, edit, present_before=True):
@@ -662,7 +863,7 @@ class SchwRollTest(unittest.TestCase):
         match = re.search(r"见口径说明第(.)条", overview["note"])
         self.assertIsNotNone(match)
         position = next(i for i, note in enumerate(self.payload["notes"])
-                        if "不发布月度数据" in note) + 1
+                        if "不画月度走势" in note) + 1
         self.assertEqual(match.group(1), cn_count(position) if position != 2 else "二")
 
     def test_the_rankings_and_counts_are_recounted_here(self) -> None:

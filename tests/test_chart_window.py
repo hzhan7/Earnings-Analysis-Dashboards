@@ -175,7 +175,7 @@ REACH_2016 = {
     "amd": 16, "amzn": 13, "arm": 0, "asml": 16, "avgo": 6, "axp": 11, "bc": 1, "cboe": 10, "cdns": 10, "cfr": 13, "cme": 14,
     "cost": 13, "googl": 11, "hkex": 13, "ibkr": 21, "ker": 11, "ma": 17, "mc": 5, "mco": 7, "meta": 10,
     "msci": 15, "msft": 8, "mu": 7, "ndaq": 9, "nke": 8, "nvda": 10, "pm": 6,
-    "race": 9, "rms": 7, "samsung": 0, "schw": 10, "skhynix": 3, "snps": 8,
+    "race": 9, "rms": 7, "samsung": 0, "schw": 9, "skhynix": 3, "snps": 8,
     "spgi": 11, "tjx": 10, "tsm": 17 + _tsm_story_reach(), "v": 15, "zgn": 0,
     "intc": 10 + _intc_threshold_reach(),
     # Not a company page. It is here because the ratchet now walks every
@@ -555,11 +555,10 @@ CONVERTED = {
         "分部调整后 EBITDA 利润率": "same segment window.",
     },
     "schw": {
-        # Four floors, each named on the chart it governs.
-        "NIM（环比是否恢复增长）": "net interest margin has three interior holes in the "
-                          "repo's own 2020-2021 stretch, so the longest complete "
-                          "tail this chart can draw starts after them.",
-        "NIM：": "same three holes.",
+        # Floors, each named on the chart it governs.
+        "NIM：": "net interest margin has three interior holes in the repo's own "
+                "2020-2021 stretch, so the longest complete tail this chart can draw "
+                "starts after them.",
         "调整后 Tier 1 杠杆率": "the adjusted (AOCI-inclusive) leverage ratio is a "
                         "company-defined measure Schwab began giving in 2024; the "
                         "2016-2019 filings carry only the GAAP Tier 1 ratio, which "
@@ -1226,7 +1225,6 @@ FLOOR_KIND = {
         '美洲出货同比': 'disclosure',
     },
     'schw': {
-        'NIM（环比是否恢复增长）': 'coverage',
         'NIM：': 'coverage',
         '调整后 Tier 1 杠杆率': 'disclosure',
         '五条收入线': 'disclosure',
@@ -1378,7 +1376,7 @@ class ChartWindowTest(unittest.TestCase):
         by_kind = {}
         for slug, title, kind in pending:
             by_kind.setdefault(kind, []).append(f"{slug}/{title}")
-        self.assertEqual(len(by_kind.get("coverage", [])), 35,
+        self.assertEqual(len(by_kind.get("coverage", [])), 34,
                          "charts whose data exists and has not been fetched")
         # Zero, and that is the point: every exemption on this page has now been
         # read against an actual pre-floor filing. The fourteen that had never
