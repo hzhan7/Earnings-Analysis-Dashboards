@@ -513,7 +513,7 @@ REACH_2016 = {
     "amd": 15 + _amd_threshold_reach(), "amzn": 9 + _amzn_threshold_reach(), "arm": 0, "asml": 24, "avgo": 16, "axp": 7 + _axp_threshold_reach(), "bc": 3, "cboe": 8 + _cboe_threshold_reach(), "cdns": 12, "cfr": 20, "cme": 13 + _cme_threshold_reach(),
     "cost": 11 + _cost_threshold_reach(), "googl": 5 + _googl_threshold_reach(), "hkex": 15, "ibkr": 26, "ker": 11 + _ker_threshold_reach(), "ma": 13 + _ma_threshold_reach(), "mc": 9, "mco": 13, "meta": 5 + _meta_threshold_reach(),
     "msci": 23, "msft": 5 + _msft_threshold_reach(), "mu": 6 + _mu_threshold_reach(), "ndaq": 9, "nke": 7 + _nke_threshold_reach(), "nvda": 9 + _nvda_threshold_charts()[0], "pm": 8,
-    "race": 12, "rms": 15, "samsung": 0, "schw": 10, "skhynix": 4, "snps": 8,
+    "race": 12, "rms": 15, "samsung": 0, "schw": 13, "skhynix": 4, "snps": 8,
     "spgi": 14, "tjx": 13, "tsm": 14 + _tsm_story_reach(), "v": 17, "zgn": 0,
     "intc": 10 + _intc_threshold_reach(),
     # Not a company page. It is here because the ratchet now walks every
@@ -1028,11 +1028,12 @@ CONVERTED = {
         "分部调整后 EBITDA 利润率": "same segment window.",
     },
     "schw": {
-        # Four floors, each named on the chart it governs.
-        "NIM（环比是否恢复增长）": "net interest margin has three interior holes in the "
-                          "repo's own 2020-2021 stretch, so the longest complete "
-                          "tail this chart can draw starts after them.",
-        "NIM：": "same three holes.",
+        # Floors, each named on the chart it governs.
+        "调整后费用同比": "adjusted total expenses (non-GAAP) are first printed in the 2Q20 "
+                   "release, whose year-ago column is 2Q19; the eighteen releases from "
+                   "4Q15 through 1Q20 carry no non-GAAP measure at all (each one read, "
+                   "not assumed: none even contains the string GAAP), so the "
+                   "year-on-year line starts 2020Q2.",
         "调整后 Tier 1 杠杆率": "the adjusted (AOCI-inclusive) leverage ratio is a "
                         "company-defined measure Schwab began giving in 2024; the "
                         "2016-2019 filings carry only the GAAP Tier 1 ratio, which "
@@ -1823,8 +1824,7 @@ FLOOR_KIND = {
         '美洲出货同比': 'disclosure',
     },
     'schw': {
-        'NIM（环比是否恢复增长）': 'coverage',
-        'NIM：': 'coverage',
+        '调整后费用同比': 'disclosure',
         '调整后 Tier 1 杠杆率': 'disclosure',
         '五条收入线': 'disclosure',
         '季度净新增资产按渠道': 'design',
@@ -1981,7 +1981,7 @@ class ChartWindowTest(unittest.TestCase):
         # the chart is (see _MSFT_THRESHOLD_FLOORS); the pins count the rest and
         # add those.
         msft = collections.Counter(kind for _, kind in _msft_threshold_floors().values())
-        self.assertEqual(len(by_kind.get("coverage", [])), 30 + amzn["coverage"] + msft["coverage"],
+        self.assertEqual(len(by_kind.get("coverage", [])), 28 + amzn["coverage"] + msft["coverage"],
                          "charts whose data exists and has not been fetched")
         # Zero, and that is the point: every exemption on this page has now been
         # read against an actual pre-floor filing. The fourteen that had never
@@ -1994,7 +1994,7 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 186 + amzn["disclosure"] + msft["disclosure"])
+        self.assertEqual(settled.count("disclosure"), 187 + amzn["disclosure"] + msft["disclosure"])
         self.assertEqual(settled.count("design"), 40 + amzn["design"] + msft["design"])
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:

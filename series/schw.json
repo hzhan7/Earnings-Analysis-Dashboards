@@ -65,10 +65,6 @@
         2681,
         1977
       ],
-      "diluted_eps_usd": [
-        1.54,
-        1.08
-      ],
       "diluted_shares_m": [
         1739,
         1822
@@ -137,7 +133,7 @@
       "this_quarter": 67.0,
       "prior_quarter": 60.9
     },
-    "long_short_june_usd_bn": {
+    "long_short_quarter_end_usd_bn": {
       "margin_loans": 42.1,
       "short_credits": 43.7
     },
@@ -160,7 +156,365 @@
       "usd_m": 1216
     },
     "source": "Schwab 2Q26 业绩新闻稿（8-K EX-99.1，2026-07-21，acc 0000316709-26-000027）：电头「WESTLAKE, Texas, July 21, 2026」；Consolidated Statements of Income 三个月两栏（Net interest revenue 3,357 / 2,822 … Diluted 1.54 / 1.08，加权摊薄股数 1,739 / 1,822）；Financial and Operating Highlights 表的同比列（19 / 16 / 28 / 35 / 32 / 21；Compensation 17；Total expenses 12）、Pre-tax profit margin 51.9 / 47.9、DATs 11,920 / 9,899 / 7,571、Revenue Per Trade 1.64 / 1.80 / 2.03、Bank loans — net 67.0 / 60.9；2Q26 Financial Commentary（NIM 「expanded 12 basis points quarter-over-quarter to 3.00%」、sweep「$485.7 billion, an increase of $24.2 billion」、「Repurchased 11.2 million shares … for $1.0 billion」、adjusted total expenses「up 11%」）；Net Interest Revenue Information 表（3.00 / 2.66，平均生息资产 444,982）；Growth in Client Assets and Accounts 表（13,084.9 = 7,343.0 + 5,741.9；净新增 118.7 = 38.5 + 80.2；Net market gains 1,198.3；Margin loans outstanding (165.1) / (126.7)）；月度活动报告（Core Net New Assets Apr 7.2 / May 49.9 / Jun 62.7；Transactional Sweep Cash Mar 461.5 / Jun 485.7；脚注 (4)「margin loans totaled $42.1 billion and short credits totaled $43.7 billion」）；Non-GAAP 调节表（Adjusted total expenses 3,233 / 2,920；Tier 1 Leverage 8.7%，Adjusted 6.8）。另：2Q26 10-Q（acc 0000316709-26-000031，2026-08-07）利润表 Interest revenue 4,146 / Interest expense (789)；1Q26 新闻稿「repurchased 24.3 million shares for $2.4 billion」；1Q21 10-Q（acc 0000316709-21-000029）Trading revenue 1,216 —— 窗口内交易收入的最高值，本季 1,215 没有超过它，新闻稿说的「Record client trading activity」是交易量。",
-    "checked_on": "2026-09-19"
+    "checked_on": "2026-09-19",
+    "monthly": {
+      "_source": "2Q26 新闻稿 Monthly Activity Report（2025-06 至 2026-06）与 1Q26 新闻稿同表（2025-03 至 2026-03），逐格照印出值录入：Core Net New Assets、Client Daily Average Trades、Margin Balances at month end、Transactional Sweep Cash、Client Cash as a Percentage of Client Assets 五行。",
+      "core_net_new_assets_usd_bn": {
+        "2025-04": 2.7,
+        "2025-05": 35.0,
+        "2025-06": 42.6,
+        "2026-04": 7.2,
+        "2026-05": 49.9,
+        "2026-06": 62.7
+      },
+      "dats_thousands": {
+        "2026-04": 10328,
+        "2026-05": 11813,
+        "2026-06": 13615
+      },
+      "margin_balances_usd_bn": {
+        "2026-03": 126.7,
+        "2026-04": 136.0,
+        "2026-05": 154.6,
+        "2026-06": 165.1
+      },
+      "transactional_sweep_cash_usd_bn": {
+        "2026-03": 461.5,
+        "2026-04": 467.6,
+        "2026-05": 472.4,
+        "2026-06": 485.7
+      },
+      "client_cash_pct": {
+        "2025-06": 9.9,
+        "2026-03": 9.9,
+        "2026-04": 9.2,
+        "2026-05": 8.9,
+        "2026-06": 9.0
+      }
+    },
+    "note": {
+      "source": {
+        "this_quarter": "2026-07-21 SCHW Q2 2026 vs Q1 2026 Analysis.md：〇「上季 Follow-up 回答」（10 问逐条与「上季判断记分卡」11 条）；十五 15.1「关键观察指标监控表」14 行",
+        "previous_quarter": "2026-04-17 SCHW Q1 2026 vs Q4 2025 Analysis.md：十六「下季度关注清单」10 问；十四 14.3「月度数据追踪表（持续监测）」5 行（该报告没有带阈值的关键观察指标节）"
+      },
+      "checked_on": "2026-09-24",
+      "followup_closure": {
+        "total": 10,
+        "counts": {
+          "已回答": 3,
+          "部分回答": 5,
+          "未获披露": 2
+        },
+        "questions": {
+          "已回答": [
+            2,
+            3,
+            6
+          ],
+          "部分回答": [
+            1,
+            4,
+            5,
+            9,
+            10
+          ],
+          "未获披露": [
+            7,
+            8
+          ]
+        },
+        "_report": "第〇节逐问状态：Q1 ⚠️ 部分回答；Q2 ✅；Q3 ✅；Q4 ⚠️；Q5 ⚠️；Q6 ✅（结论与预设相反）；Q7 ❌（零披露）；Q8 ❌（均无）；Q9 ⚠️；Q10 ⚠️（经 transcript 反推）。节内没有统计行。"
+      },
+      "verdicts": {
+        "total": 11,
+        "counts": {
+          "验证": 7,
+          "证伪": 2,
+          "方向对但幅度错": 1,
+          "尚未到期": 1
+        },
+        "items": {
+          "验证": [
+            1,
+            2,
+            5,
+            6,
+            7,
+            8,
+            11
+          ],
+          "证伪": [
+            3,
+            4
+          ],
+          "方向对但幅度错": [
+            10
+          ],
+          "尚未到期": [
+            9
+          ]
+        },
+        "_report": "「上季判断记分卡」打分列：#1 ✅ #2 ✅ #3 ❌ #4 ❌ #5 ✅ #6 ✅ #7 ✅ #8 ✅ #9 ⏳ #10 ❌幅度/✅方向 #11 ✅"
+      },
+      "prior_rows": 5,
+      "prior_thresholds": [
+        {
+          "id": "core_nna_m1",
+          "row": 1,
+          "op": "<",
+          "baseline": "year_ago_month",
+          "report": "Core NNA 每月数值 vs 去年同月"
+        },
+        {
+          "id": "core_nna_m2",
+          "row": 1,
+          "op": "<",
+          "baseline": "year_ago_month",
+          "report": "Core NNA 每月数值 vs 去年同月"
+        },
+        {
+          "id": "core_nna_m3",
+          "row": 1,
+          "op": "<",
+          "baseline": "year_ago_month",
+          "report": "Core NNA 每月数值 vs 去年同月"
+        },
+        {
+          "id": "dats_back_to_q1_2025",
+          "row": 4,
+          "op": "<=",
+          "threshold": 7400.0,
+          "report": "DATs 月度（是否恢复 Q1 2025 水平约 7.4M）"
+        },
+        {
+          "id": "margin_new_high",
+          "row": 5,
+          "op": ">",
+          "baseline": "prior_high",
+          "report": "Margin balances（是否继续创新高）"
+        }
+      ],
+      "prior_not_carried": {
+        "rows": [
+          2,
+          3
+        ],
+        "_report": "#2 sweep 月末余额「是否出现明显 JPM-类影响」、#3 client cash 占比「长期趋势」：原文没有数字阈值"
+      },
+      "next_rows": 14,
+      "next_thresholds": [
+        {
+          "id": "core_nna_annualized_2m",
+          "row": 1,
+          "tier": "warn",
+          "op": "<",
+          "threshold": 4.0,
+          "window": 2,
+          "report": "单月年化 <4% 且连续两月 → 🟠"
+        },
+        {
+          "id": "core_nna_non_tax_month",
+          "row": 1,
+          "tier": "warn",
+          "op": "<",
+          "threshold": 20.0,
+          "report": "或非税季单月 <$20B → 🟠"
+        },
+        {
+          "id": "core_nna_annualized_3m",
+          "row": 1,
+          "tier": "red",
+          "op": "<",
+          "threshold": 4.0,
+          "window": 3,
+          "report": "连续三月 <4% → 🔴"
+        },
+        {
+          "id": "dats_month_9500",
+          "row": 2,
+          "tier": "warn",
+          "op": "<",
+          "threshold": 9500.0,
+          "report": "单月 <9.5M → 🟠"
+        },
+        {
+          "id": "dats_month_8500",
+          "row": 2,
+          "tier": "red",
+          "op": "<",
+          "threshold": 8500.0,
+          "report": "<8.5M → 🔴"
+        },
+        {
+          "id": "dats_month_12000",
+          "row": 2,
+          "tier": "green",
+          "op": ">=",
+          "threshold": 12000.0,
+          "report": "持续 ≥12M → 🟢"
+        },
+        {
+          "id": "nim_q3",
+          "row": 4,
+          "tier": "warn",
+          "op": "<",
+          "threshold": 3.05,
+          "settles": "Q3 2026",
+          "report": "Q3 <3.05% → 🟠"
+        },
+        {
+          "id": "nim_q4",
+          "row": 4,
+          "tier": "red",
+          "op": "<",
+          "threshold": 3.25,
+          "settles": "Q4 2026",
+          "report": "4Q <3.25%；4Q 落空 → 🔴"
+        },
+        {
+          "id": "margin_ex_ls_qoq",
+          "row": 5,
+          "tier": "warn",
+          "op": "<=",
+          "threshold": -15.0,
+          "report": "环比 -15% 以上 → 🟠"
+        },
+        {
+          "id": "pal_yoy",
+          "row": 6,
+          "tier": "warn",
+          "op": "<",
+          "threshold": 30.0,
+          "report": "同比 <+30% → 🟠 / 🔴"
+        },
+        {
+          "id": "pal_qoq",
+          "row": 6,
+          "tier": "warn",
+          "op": "<",
+          "threshold": 0.0,
+          "report": "或环比转负 → 🟠 / 🔴"
+        },
+        {
+          "id": "adj_expense_yoy",
+          "row": 8,
+          "tier": "warn",
+          "op": ">",
+          "threshold": 10.5,
+          "report": "Q3 费用同比 >10.5% → 🟠"
+        },
+        {
+          "id": "revenue_yoy",
+          "row": 8,
+          "tier": "warn",
+          "op": "<",
+          "threshold": 17.0,
+          "report": "或收入同比 <17% → 🟠"
+        },
+        {
+          "id": "rpt_and_dats",
+          "row": 9,
+          "tier": "warn",
+          "op": "<",
+          "threshold": 1.6,
+          "report": "Q3 RPT <$1.60 且 DATs 同步环比回落 → 🟠"
+        },
+        {
+          "id": "swa_flows_40",
+          "row": 10,
+          "tier": "warn",
+          "op": "<",
+          "threshold": 40.0,
+          "report": "SWA <+40% → 🟠"
+        },
+        {
+          "id": "mi_flows_25",
+          "row": 10,
+          "tier": "warn",
+          "op": "<",
+          "threshold": 25.0,
+          "report": "或 MI <+25% → 🟠"
+        },
+        {
+          "id": "swa_flows_70",
+          "row": 10,
+          "tier": "green",
+          "op": ">",
+          "threshold": 70.0,
+          "report": "持续 >+70% → 🟢（原文没说指哪一条，两条都算）"
+        },
+        {
+          "id": "mi_flows_70",
+          "row": 10,
+          "tier": "green",
+          "op": ">",
+          "threshold": 70.0,
+          "report": "持续 >+70% → 🟢（同上）"
+        },
+        {
+          "id": "new_accounts_month",
+          "row": 11,
+          "tier": "warn",
+          "op": "<",
+          "threshold": 380.0,
+          "report": "单月 <380 千 → 🟠"
+        },
+        {
+          "id": "repurchases_2b",
+          "row": 13,
+          "tier": "green",
+          "op": ">=",
+          "threshold": 2.0,
+          "report": "恢复 ≥$2B/季 → 🟢"
+        },
+        {
+          "id": "adj_t1l",
+          "row": 13,
+          "tier": "warn",
+          "op": "<",
+          "threshold": 6.75,
+          "report": "adj T1L <6.75% → 🟠"
+        }
+      ],
+      "next_not_carried": {
+        "rows": [
+          3,
+          7,
+          12,
+          14
+        ],
+        "_report": "#3 剔 L/S 后 sweep 的单月降幅与连续下降（月内剔 L/S 读不到）；#7 12 月 FOMC 加息定价（第三方）；#12 产品里程碑（事件）；#14 对手现金产品形态（事件 / 第三方）"
+      }
+    },
+    "section_three": {
+      "_source": "2Q26 新闻稿（Non-GAAP 表 Adjusted total expenses 3,233 / 2,920；要点「Managed Investing Solutions net flows grew 53%」、「net flows into Schwab Wealth Advisory increased 80%」、「Pledged Asset Line balances equaled $33.4 billion – up 59%」、「margin loan debits … $42.1 billion」；月度表 June core NNA 年化「5.8%」、New Brokerage Accounts Apr 437 / May 461 / Jun 490）；1Q26 新闻稿「including $21.3 billion related to long/short strategies」；4Q25 新闻稿脚注 (2)「Includes $9.6 billion」；2Q26 10-Q 贷款附注 Pledged asset lines 33,416；2Q25 10-Q 21,038；1Q26 10-Q 28,790；2Q26 10-Q 现金流量表回购 YTD 3,377、1Q26 2,378。",
+      "adjusted_total_expenses_usd_m": [
+        3233.0,
+        2920.0
+      ],
+      "managed_investing_net_flows_yoy_pct": 53.0,
+      "schwab_wealth_advisory_net_flows_yoy_pct": 80.0,
+      "pal_usd_bn": {
+        "this_quarter": 33.416,
+        "prior_quarter": 28.79,
+        "year_ago": 21.038
+      },
+      "pal_printed_yoy_pct": 59,
+      "long_short_margin_loans_usd_bn": {
+        "this_quarter": 42.1,
+        "prior_quarter": 21.3
+      },
+      "repurchases_ytd_usd_bn": {
+        "this_quarter": 3.377,
+        "prior_quarter": 2.378
+      },
+      "core_nna_annualized_last_month_pct": 5.8,
+      "new_brokerage_accounts_thousands": {
+        "2026-04": 437,
+        "2026-05": 461,
+        "2026-06": 490
+      }
+    }
   },
   "periods": [
     "2016Q1",
@@ -922,50 +1276,6 @@
       2397.0,
       2681.0
     ],
-    "diluted_eps_usd": [
-      0.29,
-      0.3,
-      0.35,
-      0.357,
-      0.39,
-      0.39,
-      0.42,
-      0.4053,
-      0.55,
-      0.6,
-      0.65,
-      0.6536,
-      0.69,
-      0.66,
-      0.7,
-      0.6204,
-      0.58,
-      0.48,
-      0.48,
-      0.5651,
-      0.73,
-      0.59,
-      0.74,
-      0.7618,
-      0.67,
-      0.87,
-      0.99,
-      0.9728,
-      0.83,
-      0.64,
-      0.56,
-      0.506,
-      0.68,
-      0.66,
-      0.71,
-      0.9347,
-      0.99,
-      1.08,
-      1.26,
-      1.329,
-      1.37,
-      1.54
-    ],
     "diluted_shares_m": [
       1330.0,
       1333.0,
@@ -1009,6 +1319,50 @@
       1781.0,
       1752.0,
       1739.0
+    ],
+    "adjusted_total_expenses_usd_m": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      1435.0,
+      1465.0,
+      1469.0,
+      1527.0,
+      1469.0,
+      1492.0,
+      2271.0,
+      2482.0,
+      2510.0,
+      2302.0,
+      2430.0,
+      2583.0,
+      2571.0,
+      2570.0,
+      2662.0,
+      2773.0,
+      2701.0,
+      2703.0,
+      2852.0,
+      2802.0,
+      2768.0,
+      2852.0,
+      2847.0,
+      3014.0,
+      2920.0,
+      2987.0,
+      3029.0,
+      3151.0,
+      3233.0
     ]
   },
   "_2026q2_gross_legs_note": "2026Q2's two gross interest legs are printed DIFFERENTLY in two of Schwab's own documents, and this page carries the 10-Q's pair because the 10-Q is what its provenance declares for the income statement. The 2Q26 earnings 8-K EX-99.1 (2026-07-21) prints interest revenue 4,432 and interest expense (1,075); the 2Q26 10-Q (2026-08-07) prints 4,146 and (789), and the XBRL tags carry the same pair. Net interest revenue is 3,357 in both. The cause is a presentation change Schwab made between the two filings: 10-Q footnote (3) says that beginning in Q2 2026 the net fixed yield on client long-short strategies is presented within other interest revenue and prior periods are not recast, so the release's other interest revenue 372 and other interest expense 286 become a single net 86 in the 10-Q. 372 - 286 = 86. Nothing here is an error in either document. This note exists because a check on 2026-08-31 concluded the opposite and changed the pair to the release's, on the reasoning that 2025Q2 is stored as 3,787 / 965 and the release reprints exactly that -- which discriminates nothing, since the 10-Q prints 3,787 / 965 for that quarter too. Two candidate sources that agree on the quarter you test with cannot tell you which source you are on.",
@@ -1188,11 +1542,11 @@
       2.34,
       2.14,
       1.53,
-      null,
-      null,
+      1.38,
+      1.55,
       1.48,
       1.46,
-      null,
+      1.45,
       1.44,
       1.38,
       1.62,
@@ -1212,50 +1566,6 @@
       2.9,
       2.88,
       3.0
-    ],
-    "avg_interest_earning_assets_usd_m": [
-      179116.0,
-      185159.0,
-      194895.0,
-      206860.0,
-      216825.0,
-      215760.0,
-      214331.0,
-      223893.0,
-      238451.0,
-      243779.0,
-      258334.0,
-      268267.0,
-      273603.0,
-      265674.0,
-      265173.0,
-      269768.0,
-      291643.0,
-      362498.0,
-      null,
-      null,
-      517506.0,
-      530640.0,
-      null,
-      588125.0,
-      632376.0,
-      623603.0,
-      586952.0,
-      533318.0,
-      504595.0,
-      485446.0,
-      453764.0,
-      441339.0,
-      436698.0,
-      418968.0,
-      419247.0,
-      426438.0,
-      427030.0,
-      421845.0,
-      419780.0,
-      431141.0,
-      437675.0,
-      444982.0
     ],
     "dats_thousands": [
       616.0,
@@ -1344,50 +1654,6 @@
       2.05,
       1.8,
       1.64
-    ],
-    "trading_days": [
-      61.0,
-      64.0,
-      64.0,
-      62.5,
-      62.0,
-      63.0,
-      62.5,
-      62.5,
-      61.0,
-      64.0,
-      62.5,
-      62.0,
-      61.0,
-      63.0,
-      63.5,
-      63.0,
-      62.0,
-      63.0,
-      64.0,
-      63.0,
-      61.0,
-      63.0,
-      64.0,
-      63.5,
-      62.0,
-      62.0,
-      64.0,
-      62.5,
-      62.0,
-      62.0,
-      62.5,
-      62.5,
-      61.0,
-      63.0,
-      63.5,
-      63.0,
-      60.0,
-      62.0,
-      63.5,
-      63.0,
-      61.0,
-      62.0
     ],
     "pretax_margin_pct_disclosed": [
       37.1,
@@ -1741,94 +2007,6 @@
       -275.0,
       1198.3
     ],
-    "new_brokerage_accounts_thousands": [
-      265.0,
-      271.0,
-      264.0,
-      293.0,
-      362.0,
-      357.0,
-      336.0,
-      386.0,
-      443.0,
-      384.0,
-      369.0,
-      380.0,
-      386.0,
-      386.0,
-      363.0,
-      433.0,
-      609.0,
-      1652.0,
-      592.0,
-      15774.0,
-      3153.0,
-      1657.0,
-      1178.0,
-      1318.0,
-      1202.0,
-      1014.0,
-      897.0,
-      931.0,
-      1042.0,
-      960.0,
-      894.0,
-      910.0,
-      1094.0,
-      985.0,
-      972.0,
-      1119.0,
-      1183.0,
-      1098.0,
-      1143.0,
-      1268.0,
-      1299.0,
-      1388.0
-    ],
-    "active_brokerage_accounts_thousands": [
-      9869.0,
-      9977.0,
-      10046.0,
-      10155.0,
-      10320.0,
-      10487.0,
-      10565.0,
-      10755.0,
-      11005.0,
-      11202.0,
-      11423.0,
-      11593.0,
-      11787.0,
-      11967.0,
-      12118.0,
-      12333.0,
-      12736.0,
-      14107.0,
-      14393.0,
-      29629.0,
-      31902.0,
-      32265.0,
-      32675.0,
-      33165.0,
-      33577.0,
-      33896.0,
-      33875.0,
-      33758.0,
-      34120.0,
-      34382.0,
-      34540.0,
-      34838.0,
-      35301.0,
-      35612.0,
-      35982.0,
-      36456.0,
-      37011.0,
-      37476.0,
-      37963.0,
-      38506.0,
-      39099.0,
-      39802.0
-    ],
     "margin_loans_usd_bn": [
       14.5,
       15.4,
@@ -1917,138 +2095,6 @@
       60.9,
       67.0
     ],
-    "bank_deposits_usd_bn": [
-      135.7,
-      137.3,
-      149.6,
-      163.5,
-      166.9,
-      162.3,
-      165.3,
-      169.7,
-      190.2,
-      199.9,
-      213.4,
-      231.4,
-      219.5,
-      208.4,
-      209.3,
-      220.1,
-      277.5,
-      301.6,
-      320.7,
-      358.0,
-      369.9,
-      368.6,
-      395.3,
-      443.8,
-      465.8,
-      442.0,
-      395.7,
-      366.7,
-      325.7,
-      304.4,
-      284.4,
-      290.0,
-      269.5,
-      252.4,
-      246.5,
-      259.1,
-      246.2,
-      233.1,
-      239.1,
-      255.7,
-      253.0,
-      249.7
-    ],
-    "total_assets_usd_bn": [
-      191.0,
-      198.1,
-      209.3,
-      223.4,
-      227.1,
-      220.6,
-      230.7,
-      243.3,
-      248.3,
-      261.9,
-      272.1,
-      296.5,
-      282.8,
-      276.3,
-      279.0,
-      294.0,
-      370.8,
-      400.5,
-      419.4,
-      549.0,
-      563.5,
-      574.5,
-      607.5,
-      667.3,
-      681.0,
-      637.6,
-      577.6,
-      551.8,
-      535.6,
-      511.5,
-      475.2,
-      493.2,
-      468.8,
-      449.7,
-      466.1,
-      479.8,
-      462.9,
-      458.9,
-      465.3,
-      491.0,
-      493.3,
-      517.3
-    ],
-    "capex_usd_m": [
-      61.0,
-      131.0,
-      75.0,
-      86.0,
-      67.0,
-      86.0,
-      118.0,
-      141.0,
-      135.0,
-      126.0,
-      156.0,
-      159.0,
-      181.0,
-      173.0,
-      190.0,
-      209.0,
-      250.0,
-      169.0,
-      122.0,
-      200.0,
-      209.0,
-      225.0,
-      176.0,
-      431.0,
-      209.0,
-      339.0,
-      193.0,
-      211.0,
-      187.0,
-      168.0,
-      250.0,
-      199.0,
-      122.0,
-      92.0,
-      135.0,
-      258.0,
-      156.0,
-      136.0,
-      152.0,
-      158.0,
-      173.0,
-      792.0
-    ],
     "adjusted_tier1_leverage_pct": [
       null,
       null,
@@ -2093,63 +2139,188 @@
       6.8,
       6.8
     ],
-    "transactional_sweep_cash_usd_bn": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      461.5,
-      485.7
+    "repurchases_usd_bn": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      1.155,
+      0.809,
+      0.256,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.455,
+      1.94,
+      2.842,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.5,
+      0.333,
+      2.748,
+      2.765,
+      2.378,
+      0.999
     ],
-    "not_backfilled": {
-      "adjusted_tier1_leverage_pct": "2016–2019 没有这项披露。当年的 10-Q/10-K 只有 GAAP 的 Tier 1 Leverage Ratio，与仓库这条「调整后 Tier 1 杠杆率」（含 AOCI 的公司自定义口径）不是同一个数。",
-      "transactional_sweep_cash_usd_bn": "2016–2019 的申报里查无此项（全文检索 0 命中）。"
-    }
+    "long_short_margin_loans_usd_bn": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      9.6,
+      21.3,
+      42.1
+    ],
+    "mi_net_flow_yoy_pct": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      15.0,
+      37.0,
+      40.0,
+      50.0,
+      46.0,
+      53.0
+    ],
+    "swa_net_flow_yoy_pct": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      80.0
+    ]
   },
   "guidance": {
     "why_no_delivery_record": "本页没有其他公司页那样的「指引兑现长记录」。原因是取数限制而非编辑取舍：Schwab 的 scenario 指引发布在 Winter / Investor Day / Summer / Fall 四场 Business Update 的电话会上，申报文件（8-K EX-99.1 新闻稿）里没有可逐季核对的数字区间；公司并在 2026 年明确放弃了 EPS 点位指引。把只存在于网络直播材料、无法与第二个来源交叉核对的十几个季度抄成一张记录表，正是本站建立时要避免的失败方式",
     "scenario": {
       "period": "Q2 2026",
-      "fiscal_year": 2026,
       "call": "Summer Business Update",
-      "venue": "2026 Summer Business Update（2026-07-21，业绩电话会）",
-      "note": "公司自 2026 年起不再给出全年 EPS 点位，改用收入 / NIM / 费用增速的 scenario 组合。以下四项是电话会上以数字形式给出的，本页只发布这四项。",
       "items": [
         {
           "metric": "全年净收入同比增速",
@@ -2180,142 +2351,448 @@
   },
   "followup_closure": {
     "period": "Q2 2026",
+    "set_in": "Q1 2026",
     "labels": [
-      "完全回答",
+      "已回答",
       "部分回答",
       "未获披露"
     ],
-    "counts": [
-      3,
-      5,
-      2
-    ],
-    "note": "上季（2026-04-17）留下 10 个问题。本季闭环质量的读数是：现金与 NIM 两条硬财务问题被完全回答，而三条新收入线（Crypto 活跃度、AI 货币化、Forge AUM）一条数据都没有给。问题不在于答案好坏，而在于<b>能被验证的都是老业务，讲得最多的新业务恰恰没有可验证的量</b>。"
+    "rule": "本季报告第〇节没有统计行，本页按每问的状态标记归类：✅ 记为已回答（第 6 问报告注「结论与预设相反」），⚠️ 记为部分回答（第 1 问原文即「部分回答」，第 10 问注「经文字稿反推」），❌ 记为未获披露（第 7 问原文「零披露」、第 8 问「均无」）。",
+    "items": [
+      {
+        "n": 1,
+        "topic": "全年 EPS 指引上调到多少",
+        "verdict": "部分回答",
+        "answer": "公司不再给 EPS 点位，改用收入、NIM、费用增速的情景组合（电话会）；报告指出上调的主体发生在 5 月 Investor Day"
+      },
+      {
+        "n": 2,
+        "topic": "四月税季 sweep 现金回撤多少、有没有非季节性外流",
+        "verdict": "已回答",
+        "answer": "月末余额依次是{sweep_path}，没有出现外流；报告提醒增量的大部分是 long/short 空头贷记的机械性放大"
+      },
+      {
+        "n": 3,
+        "topic": "NIM 能否环比回升、全年区间是否上调",
+        "verdict": "已回答",
+        "answer": "NIM {nim_now}、环比 {nim_qoq}；全年区间上调到 {nim_range}（电话会）"
+      },
+      {
+        "n": 4,
+        "topic": "优先股赎回还是保留",
+        "verdict": "部分回答",
+        "answer": "赎回 {pref_redeemed} Series I、发行 {pref_issued} Series L（新闻稿）；其余系列的时间表没有披露"
+      },
+      {
+        "n": 5,
+        "topic": "Crypto 上线后的活跃度数据",
+        "verdict": "部分回答",
+        "answer": "比特币与以太坊交易已上线（新闻稿）；活跃用户、交易量与收入都没有披露"
+      },
+      {
+        "n": 6,
+        "topic": "DATs 回落之后 RPT 能否回到 $1.90 以上",
+        "verdict": "已回答",
+        "answer": "前提没有出现：DATs 不降反升到 {dats_now}（环比 {dats_qoq}），RPT 降到 {rpt_now}"
+      },
+      {
+        "n": 7,
+        "topic": "AI 货币化的首批客户使用数据",
+        "verdict": "未获披露",
+        "answer": "零披露；原定面向客户的助手改为员工内测（电话会）"
+      },
+      {
+        "n": 8,
+        "topic": "Forge 首次披露 AUM 或收入贡献",
+        "verdict": "未获披露",
+        "answer": "都没有；电话会只说 Forge 约贡献全年费用增速 1 个百分点"
+      },
+      {
+        "n": 9,
+        "topic": "调整后 Tier 1 杠杆率回到 7.0% 以上的时间线",
+        "verdict": "部分回答",
+        "answer": "仍是 {tier_now}、没有时间线；本季回购 {buyback_now}（上季 {buyback_before}），管理层称资本优先投向业务"
+      },
+      {
+        "n": 10,
+        "topic": "Investor Day 有没有提出 2028 年目标",
+        "verdict": "部分回答",
+        "answer": "报告没有取得 Investor Day 原始材料，按电话会反推没有定年的 2028 目标"
+      }
+    ]
   },
   "tracked_metric_verdicts": {
     "period": "Q2 2026",
+    "set_in": "Q1 2026",
     "labels": [
-      "被验证",
-      "被证伪",
-      "仍待验"
+      "验证",
+      "证伪",
+      "方向对但幅度错",
+      "尚未到期"
     ],
-    "counts": [
-      7,
-      3,
-      1
+    "items": [
+      {
+        "n": 1,
+        "topic": "NII 环比下降 1% 是技术性重分类、不是结构性恶化",
+        "verdict": "验证"
+      },
+      {
+        "n": 2,
+        "topic": "CFO 说「tracking higher」即全年指引必然上调",
+        "verdict": "验证"
+      },
+      {
+        "n": 3,
+        "topic": "三月单月 Investor Services 净新增超过 Advisor Services 是结构性拐点",
+        "verdict": "证伪"
+      },
+      {
+        "n": 4,
+        "topic": "RPT 降到 $1.80 是交易行为现象、会回升",
+        "verdict": "证伪"
+      },
+      {
+        "n": 5,
+        "topic": "Schwab Wealth Advisory 单季净流入创纪录是资管费加速的证据",
+        "verdict": "验证"
+      },
+      {
+        "n": 6,
+        "topic": "调整后 Tier 1 杠杆率 6.8% 意味着二季度回购必然下调",
+        "verdict": "验证"
+      },
+      {
+        "n": 7,
+        "topic": null,
+        "verdict": "验证"
+      },
+      {
+        "n": 8,
+        "topic": null,
+        "verdict": "验证"
+      },
+      {
+        "n": 9,
+        "topic": null,
+        "verdict": "尚未到期"
+      },
+      {
+        "n": 10,
+        "topic": null,
+        "verdict": "方向对但幅度错"
+      },
+      {
+        "n": 11,
+        "topic": "JPM 现金产品的冲击被高估",
+        "verdict": "验证"
+      }
     ],
-    "note": "上季 11 条判断里 7 条被本季数据验证、3 条被证伪、1 条尚未到期。三条被证伪的判断有一个共同方向：全部是<b>低估了上行</b>（RPT 会回升、Investor Services 月度反超是拐点、全年 EPS 基准）。把创纪录的季度默认当异常值、预期它均值回归，是这套框架系统性的偏误方向，不是随机误差。",
+    "unrestated": "关于财报后股价反应、持仓结论、12 个月股价区间与全年盈利预测基准的判断",
+    "summary": "报告自己的小结：上季三个核心命题 —— JPM 现金产品的冲击被高估、NIM 没有结构性问题、全年指引必然上调 —— 全部被验证；错在四处：系统性低估上行弹性（EPS、DATs、NIM 与回购收缩幅度都错在「太保守」一侧），把三月单月 Investor Services 超过 Advisor Services 拔高成拐点（本季 Investor Services 净新增环比 {is_qoq}），把 RPT 当作独立变量，以及把催化剂排在七月、而真正的上调在五月 Investor Day。",
     "rpt_note": "上季正是拿 RPT 单独做锚定而判断错了方向，本页把它降级为伴随指标。",
     "channel_note": "上季曾把 3 月单月 Investor Services 反超 Advisor Services 判为结构性拐点，本季 Investor Services 环比 {is_qoq}，反超没有延续 —— 一个数据点撑不起一个拐点。"
   },
-  "settled_thresholds": {
-    "period": "Q2 2026",
-    "entries": [
-      {
-        "metric": "NIM（环比是否恢复增长）",
-        "direction": "up",
-        "threshold": 2.88,
-        "actual": 3.0,
-        "unit": "pct",
-        "series_key": "nim_pct",
-        "note": "上季设的问题是「Q2 是否恢复环比增长」，阈值取上季实际 NIM {threshold:.2f}%。"
-      },
-      {
-        "metric": "每笔交易收入 RPT",
-        "direction": "up",
-        "threshold": 1.9,
-        "actual": 1.64,
-        "unit": "usd_eps",
-        "series_key": "revenue_per_trade_usd",
-        "note": "上季设的是「DATs 回落后 RPT 是否回升到 ${threshold:.2f}+」。"
-      },
-      {
-        "metric": "调整后 Tier 1 杠杆率",
-        "direction": "up",
-        "threshold": 7.0,
-        "actual": 6.8,
-        "unit": "pct",
-        "series_key": "adjusted_tier1_leverage_pct",
-        "note": "上季设的是「6.8% → {threshold:.1f}%+ 的时间线」。"
-      },
-      {
-        "metric": "交易性 sweep 现金（季末）",
-        "direction": "up",
-        "threshold": 461.5,
-        "actual": 485.7,
-        "unit": "usd_bn",
-        "series_key": null,
-        "note": "上季设的是「4 月税季 drawdown 多少、是否出现非季节性外流」，阈值取上季末余额 {threshold}。"
-      }
-    ],
-    "note": "{total}条里{held}条守住、{broken}条没有。没守住的{broken}条方向相反：RPT 跌破阈值但交易收入同比仍增 {trading_yoy}（量的斜率盖过价），Tier 1 缓冲没有恢复是管理层主动把资本投向贷款增长而非回购。阈值本身没错，错的是把它们当成独立变量 —— 这是本页第一节保留原阈值、而不是事后改写的原因。",
-    "excluded": "sweep 现金只有两个季末点可发布（公司按月披露、本站只发布季度口径，见口径说明），因此它进了余量总览但没有自己的历史图。"
-  },
   "next_kpi": {
     "period": "Q2 2026",
-    "entries": [
+    "set_in": "Q2 2026",
+    "for_period": "Q3 2026",
+    "section": "第十五节 15.1「关键观察指标监控表」",
+    "table_name": "关键观察指标",
+    "section_note": "原文按「先月度、后季度」排列，每行都写了阈值与触发动作（橙色警示、红色、绿色）。",
+    "_note": "rows 是 15.1 原文十四行（subject 指标、text 阈值原文、action 触发动作的颜色；没有线的行写 why）。lines 是能用申报读数结算的线：tier（warn 橙 / red 红 / green 绿）、op 与 threshold 取自原文，settles 是结算季；monthly 读数的 window 是原文要求连续几个月，consecutive 是要求连续几季；and 是同一条线的另一半条件。读数不在这里存，由 build/schw.py 按 reads 现算。换季时整块原样搬进 prior_kpi_settlement 并改戳，再换成新一季第十五节。",
+    "rows": [
       {
-        "metric": "NIM",
-        "direction": "up",
-        "threshold": 3.05,
-        "current": 3.0,
-        "unit": "pct",
-        "series_key": "nim_pct",
-        "note": "通往公司自己 4Q26 退出区间 3.25%–3.30% 的最低路径（自算）。"
+        "row": 1,
+        "subject": "月度 Core NNA / 年化有机增速",
+        "text": "单月年化 <4% 且连续两月；或非税季单月 <$20B",
+        "action": "橙色警示；连续三月 <4% 为红色"
       },
       {
-        "metric": "调整后费用同比增速",
-        "direction": "down",
-        "threshold": 10.5,
-        "current": 10.7,
-        "unit": "pct",
-        "series_key": null,
-        "note": "公司全年指引 9.5%–10.5% 的上沿；当前值是公司调整后费用的同比：3,233 / 2,920 − 1 = 10.7%（新闻稿印「up 11%」）。"
+        "row": 2,
+        "subject": "月度 DATs",
+        "text": "单月 <9.5M；<8.5M",
+        "action": "<9.5M 橙色；<8.5M 红色；持续 ≥12M 绿色"
       },
       {
-        "metric": "每笔交易收入 RPT",
-        "direction": "up",
-        "threshold": 1.6,
-        "current": 1.64,
-        "unit": "usd_eps",
-        "series_key": "revenue_per_trade_usd",
-        "note": "管理层称 RPT 将自 2Q 水平温和回升；跌破 ${threshold:.2f} 且 DATs 同步回落即量价同跌。"
+        "row": 3,
+        "subject": "Sweep cash（剔 L/S 后的底层现金）",
+        "text": "剔 L/S 后非税季单月降幅 >$10B；连续两月下降",
+        "action": "橙色；连续下降为红色",
+        "why": "剔除 long/short 的底层现金只有季末那个月读得到 —— 公司只在季报脚注给季末月的空头贷记（{sweep_ex_ls}），单月降幅与连续两月都读不到；原文自己也写「勿用表观总额判断」"
       },
       {
-        "metric": "日均交易量 DATs",
-        "direction": "up",
-        "threshold": 9500,
-        "current": 11920,
-        "unit": "million",
-        "series_key": "dats_thousands",
-        "note": "公司全年 DATs 假设 10.6M 隐含下半年回落；{threshold_m:.1f}M 是再降约 8% 的位置（自算）。"
+        "row": 4,
+        "subject": "NIM",
+        "text": "Q3 <3.05%；4Q <3.25%",
+        "action": "橙色；4Q 落空为红色"
       },
       {
-        "metric": "调整后 Tier 1 杠杆率",
-        "direction": "up",
-        "threshold": 6.75,
-        "current": 6.8,
-        "unit": "pct",
-        "series_key": "adjusted_tier1_leverage_pct",
-        "note": "公司自述的长期运营目标区间 {threshold:g}%–7% 的下沿。"
+        "row": 5,
+        "subject": "Margin 余额（剔 L/S）",
+        "text": "环比 -15% 以上",
+        "action": "橙色；与 DATs 同弱为红色"
       },
       {
-        "metric": "银行贷款余额",
-        "direction": "up",
-        "threshold": 60.9,
-        "current": 67.0,
-        "unit": "usd_bn",
-        "series_key": "bank_loans_usd_bn",
-        "note": "阈值取上季末余额：NIM 扩张的增量按管理层说法「绝大部分」来自放贷，余额环比转负即主引擎熄火。"
+        "row": 6,
+        "subject": "PAL 余额与同比增速",
+        "text": "同比 <+30%；或环比转负",
+        "action": "橙色 / 红色"
+      },
+      {
+        "row": 7,
+        "subject": "12 月 FOMC 加息定价",
+        "text": "期货转为定价降息 ≥50bp",
+        "action": "橙色；加息落地为绿色",
+        "why": "这是第三方的利率期货定价，不是 Schwab 的申报，本站不发布"
+      },
+      {
+        "row": 8,
+        "subject": "调整后费用增速 vs 收入增速",
+        "text": "Q3 费用同比 >10.5%；或收入同比 <17%",
+        "action": "橙色；量回落而费用不回落为红色"
+      },
+      {
+        "row": 9,
+        "subject": "RPT（每笔交易收入）",
+        "text": "Q3 RPT <$1.60 且 DATs 同步环比回落",
+        "action": "橙色"
+      },
+      {
+        "row": 10,
+        "subject": "SWA / Managed Investing 净流入同比",
+        "text": "SWA <+40%；或 MI <+25%",
+        "action": "橙色；持续 >+70% 为绿色"
+      },
+      {
+        "row": 11,
+        "subject": "新开经纪账户（月度）",
+        "text": "单月 <380 千",
+        "action": "橙色"
+      },
+      {
+        "row": 12,
+        "subject": "产品里程碑执行",
+        "text": "Fall BU 时 transfers 未启动、或 ETF 货币化仍无时间表",
+        "action": "橙色",
+        "why": "事件型条件，没有可画的数；Fall Business Update 之后逐条核"
+      },
+      {
+        "row": 13,
+        "subject": "回购节奏与 adjusted T1L",
+        "text": "恢复 ≥$2B/季；adj T1L <6.75%",
+        "action": "回购恢复为绿色；T1L 跌破为橙色"
+      },
+      {
+        "row": 14,
+        "subject": "对手现金产品形态",
+        "text": "JPM 取消门槛或转默认 sweep 化；任一大行推出 frictionless 高息 sweep",
+        "action": "红色",
+        "why": "对手的产品页与行业新闻，不是 Schwab 的申报，本站不发布"
       }
     ],
-    "lead": {
-      "metric": "调整后费用同比增速",
-      "label": "费用增速"
-    },
-    "excluded_count": 8,
-    "excluded_monthly_count": 5,
-    "excluded_note": "上季分析笔记的跟踪表里还有 {excluded} 条不接入本页：月度 core NNA、月度 DATs、月度 sweep 现金、月度新开户、剔除 long/short 后的 margin 余额这{monthly}条只有<b>月度</b>口径，接进来会让这一页在两次财报之间发生变化，违反本站的季度节奏（见口径说明第{notes_ref}条）；12 月 FOMC 加息定价与对手现金产品形态两条是第三方与事件驱动数据，本站不发布；产品里程碑（crypto transfers、ETF 货币化）没有公司披露的量化口径可画。"
+    "lines": [
+      {
+        "id": "core_nna_annualized_2m",
+        "row": 1,
+        "tier": "warn",
+        "reads": "core_nna_annualized",
+        "window": 2,
+        "op": "<",
+        "threshold": 4.0,
+        "settles": "Q3 2026"
+      },
+      {
+        "id": "core_nna_non_tax_month",
+        "row": 1,
+        "tier": "warn",
+        "reads": "core_nna_non_tax_month",
+        "op": "<",
+        "threshold": 20.0,
+        "settles": "Q3 2026"
+      },
+      {
+        "id": "core_nna_annualized_3m",
+        "row": 1,
+        "tier": "red",
+        "reads": "core_nna_annualized",
+        "window": 3,
+        "op": "<",
+        "threshold": 4.0,
+        "settles": "Q3 2026"
+      },
+      {
+        "id": "dats_month_9500",
+        "row": 2,
+        "tier": "warn",
+        "reads": "dats_month_low",
+        "op": "<",
+        "threshold": 9500.0,
+        "settles": "Q3 2026"
+      },
+      {
+        "id": "dats_month_8500",
+        "row": 2,
+        "tier": "red",
+        "reads": "dats_month_low",
+        "op": "<",
+        "threshold": 8500.0,
+        "settles": "Q3 2026"
+      },
+      {
+        "id": "dats_month_12000",
+        "row": 2,
+        "tier": "green",
+        "reads": "dats_month_low",
+        "op": ">=",
+        "threshold": 12000.0,
+        "settles": "Q3 2026"
+      },
+      {
+        "id": "nim_q3",
+        "row": 4,
+        "tier": "warn",
+        "reads": "nim",
+        "op": "<",
+        "threshold": 3.05,
+        "settles": "Q3 2026"
+      },
+      {
+        "id": "nim_q4",
+        "row": 4,
+        "tier": "red",
+        "reads": "nim",
+        "op": "<",
+        "threshold": 3.25,
+        "settles": "Q4 2026"
+      },
+      {
+        "id": "margin_ex_ls_qoq",
+        "row": 5,
+        "tier": "warn",
+        "reads": "margin_ex_ls_qoq",
+        "op": "<=",
+        "threshold": -15.0,
+        "settles": "Q3 2026"
+      },
+      {
+        "id": "pal_yoy",
+        "row": 6,
+        "tier": "warn",
+        "reads": "pal_yoy",
+        "op": "<",
+        "threshold": 30.0,
+        "settles": "Q3 2026"
+      },
+      {
+        "id": "pal_qoq",
+        "row": 6,
+        "tier": "warn",
+        "reads": "pal_qoq",
+        "op": "<",
+        "threshold": 0.0,
+        "settles": "Q3 2026"
+      },
+      {
+        "id": "adj_expense_yoy",
+        "row": 8,
+        "tier": "warn",
+        "reads": "adj_expense_yoy",
+        "op": ">",
+        "threshold": 10.5,
+        "settles": "Q3 2026"
+      },
+      {
+        "id": "revenue_yoy",
+        "row": 8,
+        "tier": "warn",
+        "reads": "revenue_yoy",
+        "op": "<",
+        "threshold": 17.0,
+        "settles": "Q3 2026"
+      },
+      {
+        "id": "rpt_and_dats",
+        "row": 9,
+        "tier": "warn",
+        "reads": "rpt",
+        "op": "<",
+        "threshold": 1.6,
+        "settles": "Q3 2026",
+        "and": [
+          {
+            "reads": "dats_qoq",
+            "op": "<",
+            "threshold": 0.0,
+            "words": "DATs 同步环比回落"
+          }
+        ]
+      },
+      {
+        "id": "swa_flows_40",
+        "row": 10,
+        "tier": "warn",
+        "reads": "swa_flow_yoy",
+        "op": "<",
+        "threshold": 40.0,
+        "settles": "Q3 2026"
+      },
+      {
+        "id": "mi_flows_25",
+        "row": 10,
+        "tier": "warn",
+        "reads": "mi_flow_yoy",
+        "op": "<",
+        "threshold": 25.0,
+        "settles": "Q3 2026"
+      },
+      {
+        "id": "swa_flows_70",
+        "row": 10,
+        "tier": "green",
+        "reads": "swa_flow_yoy",
+        "op": ">",
+        "threshold": 70.0,
+        "consecutive": 2,
+        "settles": "Q3 2026"
+      },
+      {
+        "id": "mi_flows_70",
+        "row": 10,
+        "tier": "green",
+        "reads": "mi_flow_yoy",
+        "op": ">",
+        "threshold": 70.0,
+        "consecutive": 2,
+        "settles": "Q3 2026"
+      },
+      {
+        "id": "new_accounts_month",
+        "row": 11,
+        "tier": "warn",
+        "reads": "new_accounts_month_low",
+        "op": "<",
+        "threshold": 380.0,
+        "settles": "Q3 2026"
+      },
+      {
+        "id": "repurchases_2b",
+        "row": 13,
+        "tier": "green",
+        "reads": "repurchases",
+        "op": ">=",
+        "threshold": 2.0,
+        "settles": "Q3 2026"
+      },
+      {
+        "id": "adj_t1l",
+        "row": 13,
+        "tier": "warn",
+        "reads": "adj_t1l",
+        "op": "<",
+        "threshold": 6.75,
+        "settles": "Q3 2026"
+      }
+    ]
   },
   "latest_disclosures": {
     "period": "Q2 2026",
@@ -2324,28 +2801,23 @@
     "transactional_sweep_cash_usd_bn": 485.7,
     "sweep_cash_qoq_change_usd_bn": 24.2,
     "short_credits_usd_bn": 43.7,
-    "margin_loans_june_usd_bn": 42.1,
-    "pledged_asset_line_usd_bn": 33.4,
     "pledged_asset_line_yoy_pct": 59.0,
-    "tier1_leverage_pct": 8.7,
-    "adjusted_tier1_leverage_pct": 6.8,
     "buyback_usd_m": 1000.0,
     "buyback_shares_m": 11.2,
-    "transaction_costs_pretax_usd_m": 170.0,
-    "adjusted_eps_usd": 1.62,
-    "core_nna_monthly_usd_bn": [
-      7.2,
-      49.9,
-      62.7
-    ],
     "prior_quarter_buyback_usd_m": 2400.0,
-    "prior_quarter_buyback_shares_m": 24.3,
-    "buyback_note": "公司把资本投向了贷款增长而不是回购，这也是第三节 Tier 1 那条阈值的背景。",
+    "buyback_note": "管理层在电话会上说资本优先投向业务增长、其次才是回购，本季分析据此把「回购恢复到每季 US$2B 以上」列为第三节的正面信号线。",
     "nim_attribution": "按管理层说法本季 NIM 扩张的增量「绝大部分」来自它",
     "sweep_reading": "本季表观环比 +US${qoq:,.1f}B 的大部分来自这一机械性放大",
     "filings_through": "2026-08-07",
     "next_update_not_covered": "2026 年 10 月 Fall Business Update",
-    "note": "六月数取自新闻稿月度活动报告的脚注 (4)：保证金余额 165.1 里含 long/short 策略的保证金贷款 42.1，交易性 sweep 现金 485.7 里含该策略的空头贷记 43.7（脚注 (7) 把 short credits 列在 sweep 现金的构成里）。1Q26 新闻稿只给出三月末该策略的保证金贷款 21.3（sweep 现金里的空头贷记没有三月末数），所以「表观 +24.2 的大部分来自空头贷记」是按两边大致对等推的，不是公司给的拆分。"
+    "_note": "六月数取自新闻稿月度活动报告的脚注 (4)：保证金余额 165.1 里含 long/short 策略的保证金贷款 42.1，交易性 sweep 现金 485.7 里含该策略的空头贷记 43.7（脚注 (7) 把 short credits 列在 sweep 现金的构成里）。1Q26 新闻稿只给出三月末该策略的保证金贷款 21.3（sweep 现金里的空头贷记没有三月末数），所以「表观 +24.2 的大部分来自空头贷记」是按两边大致对等推的，不是公司给的拆分。",
+    "preferred_redeemed_usd_bn": 2.1,
+    "preferred_issued_usd_bn": 1.5,
+    "undrawn_conclusions": [
+      "报告的另一条结论 —— sweep 现金表观增加的大头是 long/short 策略的空头贷记、底层客户现金只是走平微增 —— 画不出来：公司只印了本季末那个月的空头贷记，上季末的没有印，剔除后的底层现金环比算不出来（报告那一步是用保证金一侧作代理推的）",
+      "财富漏斗那条结论里的 Schwab Wealth Advisory 与 Managed Investing 净流入，公司只在新闻稿要点里印增速、不印金额，所以只进第三节的阈值总览，不单独作图"
+    ],
+    "adjusted_total_expenses_printed_yoy_pct": 11.0
   },
   "sources": [
     {
@@ -2389,14 +2861,376 @@
     "basis_notes": [
       "**2020Q1 起 Schwab 把 order flow revenue 从 Other 重分类进 Trading**，并追溯重述了 2019 四季（trading 185→217、174→207、172→206、86→122，Other 同额反向）。本站 2016–2019 存的是当季原报口径，order flow 单列在 order_flow_revenue_usd_m，需要重述口径时自行加回。",
       "**Revenue Per Trade 公司从 1Q20 新闻稿才开始印**，但那一份把 2019 四季一并印了（4.58 / 4.59 / 4.52 / 2.47），用的是重述后（含 order flow）的 trading revenue。本站 2016–2019 的 revenue_per_trade_usd 是按当季原报口径自算的，公司印出来的那一版另存 revenue_per_trade_as_reported_usd。",
-      "**TD Ameritrade 于 2020 年 10 月并入**，2016–2019 的所有规模指标都是并购前口径。"
+      "**TD Ameritrade 于 2020 年 10 月并入**，2016–2019 的所有规模指标都是并购前口径。",
+      "**NIM 的三个空洞（2020Q3 1.38、2020Q4 1.55、2021Q3 1.45）取自各季新闻稿的 Net Interest Revenue 表，与次年新闻稿同比栏的数一致。**4Q25 起公司把 long/short 策略的平均余额剔出生息资产、重算了 2025 年：2025Q2 这里用的是 2Q26 新闻稿重印的 2.66（首印 2.65），2025Q3 仍是首印 2.86 —— 4Q25 新闻稿脚注说该季因此高 0.02pp，重印值要等 3Q26 新闻稿的同比栏，换季时替换。",
+      "**repurchases_usd_bn 是现金流量表「Repurchases of common stock」按年初至今逐季相减**（companyfacts；1Q19 与 3Q25 两份 10-Q 的 R 文件，后者用自定义元素 PaymentsForRepurchaseOfCommonStockAndNonvotingCommonStock）。新闻稿要点按成交口径印整数十亿，与这里差结算时点（2Q25 印 351 对这里 333）。"
     ],
     "window_note": "26 季 → 42 季（2016Q1–2026Q2）。 与  此前跑在两条不同的轴上（38 季 vs 26 季），现在同为 42 季。两条序列在 2016–2019 与仓库**没有任何重叠格**（主表当年只有 2017 起、operating 只有 2020 起），所以这一批没有「与仓库对账」可做 —— 立得住的是别的东西：交易日数自算与仓库既有 26 季逐格相同，再由公司自印的 Revenue Per Trade 反解验证 2019 四季，合计 30 季全对。",
     "not_backfilled": {
-      "adjusted_tier1_leverage_pct": "2016–2019 没有这项披露。当年的 10-Q/10-K 只有 GAAP 的 Tier 1 Leverage Ratio，与仓库这条「调整后 Tier 1 杠杆率」（含 AOCI 的公司自定义口径）不是同一个数。",
-      "transactional_sweep_cash_usd_bn": "2016–2019 的申报里查无此项（全文检索 0 命中）。"
+      "adjusted_tier1_leverage_pct": "2016–2019 没有这项披露。当年的 10-Q/10-K 只有 GAAP 的 Tier 1 Leverage Ratio，与仓库这条「调整后 Tier 1 杠杆率」（含 AOCI 的公司自定义口径）不是同一个数。"
     }
   },
   "_rbs_reclassification_note": "Schwab moved Retirement Business Services from Advisor Services to Investor Services in the fourth quarter of 2024 and recast prior periods -- but only back to 2023-12-31, which is as far as the 4Q24 and 1Q25 releases reprint. The four channel series therefore change basis at 2023Q3/2023Q4 and this page cannot close that break: no recast figure exists for 2016Q1 through 2023Q3, so the quarters before 2023Q4 are the pre-reclassification split and the quarters from 2023Q4 are the post-reclassification one. 2023Q4 through 2024Q3 now carry the recast values (Advisor Services at 2024-09-30 goes from 4,614.6 to 4,343.8, a 270.8 move), which is what the company published; before 2026-08-31 this page carried the pre-recast side there, which made Advisor Services appear to fall 5.1% into 2024Q4 while total client assets rose 1.8% -- an artefact of the seam, not a business event, and one the net-new-assets note was arguing about. Nothing failed while it was wrong because the reclassification moves balances BETWEEN the two channels: the totals are identical on both bases, so every sum on this page held.",
-  "_long_short_recast_note": "Beginning in 4Q25 Schwab excludes the average balances of client margin loans and short credits tied to certain RIA long/short strategies (on which it earns a fixed net yield) from interest-earning assets and funding sources, and recasts prior periods. The later releases reprint the year-ago quarter on the new basis: the 1Q26 release gives 1Q25 average interest-earning assets of 427,030 (the 1Q25 release printed 427,265; NIM 2.53 on both), and the 2Q26 release gives 2Q25 421,845 and NIM 2.66 (the 2Q25 release printed 422,729 and 2.65). The series carries the recast figures where a later release has printed them, the same rule as the RBS recast above; 3Q25 is still the as-first-printed 419,780 / 2.86 until the 3Q26 release reprints it. The long/short balances were small before 2025 (average margin loans US$235M in 1Q25), so the earlier quarters are not materially affected."
+  "_long_short_recast_note": "Beginning in 4Q25 Schwab excludes the average balances of client margin loans and short credits tied to certain RIA long/short strategies (on which it earns a fixed net yield) from interest-earning assets and funding sources, and recasts prior periods. The later releases reprint the year-ago quarter on the new basis: the 1Q26 release gives 1Q25 average interest-earning assets of 427,030 (the 1Q25 release printed 427,265; NIM 2.53 on both), and the 2Q26 release gives 2Q25 421,845 and NIM 2.66 (the 2Q25 release printed 422,729 and 2.65). The series carries the recast figures where a later release has printed them, the same rule as the RBS recast above; 3Q25 is still the as-first-printed 419,780 / 2.86 until the 3Q26 release reprints it. The long/short balances were small before 2025 (average margin loans US$235M in 1Q25), so the earlier quarters are not materially affected.",
+  "monthly": {
+    "_source": "每季业绩新闻稿（8-K EX-99.1）末尾的 Monthly Activity Report 各印 13 个月：2025-03 至 2026-03 取自 1Q26 新闻稿（acc 0000316709-26-000016），2026-04 至 2026-06 取自 2Q26 新闻稿（acc 0000316709-26-000027）；两份重叠的 2025-06 至 2026-03 十个月，本块各行逐格一致。换季时从新一季新闻稿的月度表追加该季三个月。margin_balances 与 transactional_sweep_cash 自 2Q26 新闻稿起脚注 (4) 注明含 long/short 策略的保证金贷款与空头贷记。",
+    "months": [
+      "2025-03",
+      "2025-04",
+      "2025-05",
+      "2025-06",
+      "2025-07",
+      "2025-08",
+      "2025-09",
+      "2025-10",
+      "2025-11",
+      "2025-12",
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04",
+      "2026-05",
+      "2026-06"
+    ],
+    "core_net_new_assets_usd_bn": [
+      59.1,
+      2.7,
+      35.0,
+      42.6,
+      46.9,
+      44.4,
+      46.2,
+      44.4,
+      40.4,
+      79.1,
+      27.8,
+      32.5,
+      79.7,
+      7.2,
+      49.9,
+      62.7
+    ],
+    "dats_thousands": [
+      7365.0,
+      8362.0,
+      7184.0,
+      7147.0,
+      7252.0,
+      7182.0,
+      7832.0,
+      8617.0,
+      8459.0,
+      7746.0,
+      9512.0,
+      9922.0,
+      10232.0,
+      10328.0,
+      11813.0,
+      13615.0
+    ],
+    "margin_balances_usd_bn": [
+      83.6,
+      76.2,
+      81.3,
+      83.4,
+      88.3,
+      92.4,
+      97.2,
+      105.6,
+      110.1,
+      112.3,
+      116.3,
+      120.6,
+      126.7,
+      136.0,
+      154.6,
+      165.1
+    ],
+    "transactional_sweep_cash_usd_bn": [
+      407.8,
+      403.3,
+      398.1,
+      412.1,
+      407.5,
+      406.7,
+      425.6,
+      428.8,
+      427.5,
+      453.7,
+      433.3,
+      436.1,
+      461.5,
+      467.6,
+      472.4,
+      485.7
+    ],
+    "client_cash_pct": [
+      10.6,
+      10.5,
+      10.1,
+      9.9,
+      9.7,
+      9.5,
+      9.4,
+      9.3,
+      9.4,
+      9.7,
+      9.3,
+      9.3,
+      9.9,
+      9.2,
+      8.9,
+      9.0
+    ],
+    "beginning_client_assets_usd_bn": [
+      10280.2,
+      9929.7,
+      9892.2,
+      10349.0,
+      10757.3,
+      10963.5,
+      11228.1,
+      11593.9,
+      11828.0,
+      11834.3,
+      11903.0,
+      12148.5,
+      12220.3,
+      11767.9,
+      12605.3,
+      13135.3
+    ],
+    "new_brokerage_accounts_thousands": [
+      388.0,
+      439.0,
+      336.0,
+      323.0,
+      377.0,
+      382.0,
+      384.0,
+      429.0,
+      365.0,
+      474.0,
+      476.0,
+      395.0,
+      428.0,
+      437.0,
+      461.0,
+      490.0
+    ]
+  },
+  "prior_kpi_settlement": {
+    "period": "Q2 2026",
+    "set_in": "Q1 2026",
+    "section": "第十四节 14.3「月度数据追踪表（持续监测）」",
+    "table_name": "月度追踪表",
+    "section_note": "上季报告没有带阈值的「关键观察指标」节；起同样作用的是它第十四节「催化剂日历与关键追踪事件」里的 14.3 月度数据追踪表（与本季报告第十五节逐项平行），原文只列要追踪什么、没有写触发动作。",
+    "_note": "rows 是 14.3 原文五行；lines 是其中能用申报读数结算的线：op 与 threshold / baseline 取自原文（「vs 去年同月」→ 去年同月，「约 7.4M」→ 7400 千笔，「是否继续创新高」→ 此前最高），本季读数不在这里存，由 build/schw.py 按 reads 从 monthly 块与 operating 块现算。没有线的行写 why，并由 reads 现算一句读数。换季时整块换成上一季 next_kpi 的内容（原样搬过来）并改戳。",
+    "rows": [
+      {
+        "row": 1,
+        "text": "Core NNA 每月数值 vs 去年同月"
+      },
+      {
+        "row": 2,
+        "text": "Transactional sweep cash 月末余额（是否出现明显 JPM-类影响）",
+        "reads": "sweep_month_path",
+        "why": "原文没有写数字阈值"
+      },
+      {
+        "row": 3,
+        "text": "Client cash as % of assets（长期趋势）",
+        "reads": "client_cash_path",
+        "why": "原文没有写数字阈值"
+      },
+      {
+        "row": 4,
+        "text": "DATs 月度（是否恢复 Q1 2025 水平约 7.4M）"
+      },
+      {
+        "row": 5,
+        "text": "Margin balances（是否继续创新高）"
+      }
+    ],
+    "lines": [
+      {
+        "id": "core_nna_m1",
+        "row": 1,
+        "tier": "watch",
+        "reads": "core_nna_month",
+        "month": 1,
+        "op": "<",
+        "baseline": "year_ago_month",
+        "event": "低于去年同月"
+      },
+      {
+        "id": "core_nna_m2",
+        "row": 1,
+        "tier": "watch",
+        "reads": "core_nna_month",
+        "month": 2,
+        "op": "<",
+        "baseline": "year_ago_month",
+        "event": "低于去年同月"
+      },
+      {
+        "id": "core_nna_m3",
+        "row": 1,
+        "tier": "watch",
+        "reads": "core_nna_month",
+        "month": 3,
+        "op": "<",
+        "baseline": "year_ago_month",
+        "event": "低于去年同月"
+      },
+      {
+        "id": "dats_back_to_q1_2025",
+        "row": 4,
+        "tier": "watch",
+        "reads": "dats_month_low",
+        "op": "<=",
+        "threshold": 7400.0,
+        "event": "回到约 7.4M"
+      },
+      {
+        "id": "margin_new_high",
+        "row": 5,
+        "tier": "watch",
+        "reads": "margin_month_end",
+        "op": ">",
+        "baseline": "prior_high",
+        "event": "再创新高"
+      }
+    ]
+  },
+  "revenue_2015_usd_m": {
+    "_source": "2015 年各季 Total net revenues：1Q15、2Q15、3Q15 各自的 10-Q 与 2015 年 10-K 的季度数据（XBRL us-gaap:Revenues 三个月口径，每季由两份以上申报读到同一个数），四季相加 6,380 = 2015 年 10-K 全年数。2016 年各季本页的值与这里同一口径（贷款损失准备仍在净收入内）。",
+    "quarters": [
+      "2015Q1",
+      "2015Q2",
+      "2015Q3",
+      "2015Q4"
+    ],
+    "usd_m": [
+      1526.0,
+      1566.0,
+      1597.0,
+      1691.0
+    ]
+  },
+  "pledged_asset_lines": {
+    "_source": "各期 10-Q 与 10-K 的 Bank Loans and Related Allowance for Credit Losses 附注（贷款构成表）「Pledged asset lines」行；2015 年三份 10-Q 叫 Personal loans secured by securities（2015 年 10-K 起改名，2014 年末 2,320 两边一致）。每个年末在当年 10-K 与次年三份 10-Q 里各读到一次，全部一致；2Q26 33.416 ÷ 2Q25 21.038 = +58.8%，新闻稿印「up 59%」。换季追加一格。",
+    "quarters": [
+      "2015Q1",
+      "2015Q2",
+      "2015Q3",
+      "2015Q4",
+      "2016Q1",
+      "2016Q2",
+      "2016Q3",
+      "2016Q4",
+      "2017Q1",
+      "2017Q2",
+      "2017Q3",
+      "2017Q4",
+      "2018Q1",
+      "2018Q2",
+      "2018Q3",
+      "2018Q4",
+      "2019Q1",
+      "2019Q2",
+      "2019Q3",
+      "2019Q4",
+      "2020Q1",
+      "2020Q2",
+      "2020Q3",
+      "2020Q4",
+      "2021Q1",
+      "2021Q2",
+      "2021Q3",
+      "2021Q4",
+      "2022Q1",
+      "2022Q2",
+      "2022Q3",
+      "2022Q4",
+      "2023Q1",
+      "2023Q2",
+      "2023Q3",
+      "2023Q4",
+      "2024Q1",
+      "2024Q2",
+      "2024Q3",
+      "2024Q4",
+      "2025Q1",
+      "2025Q2",
+      "2025Q3",
+      "2025Q4",
+      "2026Q1",
+      "2026Q2"
+    ],
+    "usd_bn": [
+      2.549,
+      2.919,
+      3.166,
+      3.232,
+      3.321,
+      3.531,
+      3.646,
+      3.851,
+      3.845,
+      4.001,
+      4.279,
+      4.369,
+      4.362,
+      4.57,
+      4.556,
+      4.561,
+      4.576,
+      4.695,
+      4.878,
+      5.206,
+      5.467,
+      5.734,
+      6.885,
+      7.916,
+      8.797,
+      10.415,
+      11.412,
+      12.709,
+      13.716,
+      14.844,
+      14.94,
+      14.592,
+      13.801,
+      13.572,
+      13.538,
+      13.548,
+      13.841,
+      14.964,
+      15.713,
+      17.024,
+      18.608,
+      21.038,
+      23.39,
+      26.603,
+      28.79,
+      33.416
+    ]
+  },
+  "nim_recast": {
+    "intro": "4Q25 起公司把 long/short 策略的平均余额剔出生息资产、重算了 2025 年各季（1Q25 与更早不受影响）：",
+    "quarters": {
+      "2025Q2": {
+        "first_print": 2.65,
+        "recast": 2.66,
+        "source": "2Q26 新闻稿同比栏"
+      },
+      "2025Q3": {
+        "first_print": 2.86,
+        "recast": null,
+        "delta_pp": 0.02,
+        "source": "4Q25 新闻稿脚注"
+      }
+    }
+  }
 }
