@@ -496,8 +496,10 @@ def value_text(entry: dict, value: float | None = None) -> str:
 
 
 def margin_text(entry: dict) -> str:
-    # `+ 0.0`: a reading exactly on its line has zero headroom, not "-0.0%".
-    return f"{headroom(entry['direction'], entry['threshold'], entry['value']) + 0.0:+.1f}%"
+    # Round first, then `+ 0.0`: a reading a hair's breadth on the wrong side
+    # of its line (-0.006%) rounds to a negative zero, and "-0.0%" is not a
+    # number anyone printed.
+    return f"{round(headroom(entry['direction'], entry['threshold'], entry['value']), 1) + 0.0:+.1f}%"
 
 
 def metric_value(entry: dict, value: float | None = None) -> str:

@@ -561,12 +561,17 @@ class NvdaDashboardTest(unittest.TestCase):
         self.assertNotIn("市场预期", self.payload["sections"][0]["description"])
         highlights = self.by_section["quarter_highlights"]
         market = [i for i, ex in enumerate(highlights) if reads_the_market(ex)]
+        if self.source.get("followup_closure"):
+            self.assertIn("条待验证问题", self.by_section["settled"][0]["title"])
+        # The chart is published only in a quarter whose series carries the
+        # (period-stamped) expectation and the split it sits beside.
+        if self.source.get("market_expectation") is None or self.source.get("restated_comparatives") is None:
+            self.assertEqual(market, [], "a consensus chart with no expectation block behind it")
+            return
         self.assertEqual(len(market), 1, "the consensus chart went missing or doubled")
         split = next(i for i, ex in enumerate(highlights)
                      if any(group["name"] == "GAAP 净利" for group in ex.get("groups", [])))
         self.assertEqual(market[0], split + 1, "the consensus chart no longer sits beside the split")
-        if self.source.get("followup_closure"):
-            self.assertIn("条待验证问题", self.by_section["settled"][0]["title"])
 
     def test_exhibits_are_numbered_in_render_order(self) -> None:
         numbers = [exhibit["n"] for exhibit in self.exhibits]
@@ -914,6 +919,9 @@ class NvdaChecksTest(unittest.TestCase):
 FAVOURABLE_SIDE = {("up", True): ">", ("up", False): ">=", ("down", True): "<", ("down", False): "<="}
 OPPOSITE = {">": "<=", ">=": "<", "<": ">=", "<=": ">"}
 REACHING = ("加仓", "里程碑", "上行")
+LINE_NAMES = {"加仓": "加仓线", "减仓": "减仓线", "警示": "警示线", "重新评估": "重新评估线",
+              "里程碑": "里程碑", "上行": "上行线", "撤回立场": "撤销线"}
+NO_HISTORY = {"revenue_beat_pct"}
 
 
 def trigger_of(line: dict) -> str:
@@ -1020,7 +1028,10 @@ class NvdaSettlementTest(unittest.TestCase):
 
     def test_the_prior_readings_are_recomputed_here(self) -> None:
         block = self.source["prior_kpi_settlement"]
-        lines = block["quantified"]
+        every = block["quantified"]
+        # A line at zero has no percentage headroom: it is drawn on its series,
+        # not in the overview (next quarter's block moves here with one).
+        lines = [line for line in every if line["threshold"] != 0]
         overview = next(ex for ex in self.settled if ex["kind"] == "diverging_bars" and "量化阈值" in ex["title"])
         self.assertEqual(overview["xlabels"], [line["metric"] for line in lines])
         favourable = on_line = 0
@@ -1037,15 +1048,16 @@ class NvdaSettlementTest(unittest.TestCase):
         # One history per reading that has one, every line of its row on it.
         charts = [ex for ex in self.settled if ex["kind"] == "lines"]
         by_reads = {}
-        for line in lines:
+        for line in every:
             by_reads.setdefault(line["reads"], []).append(line)
-        drawn_reads = [reads for reads in by_reads if reads != "revenue_beat_pct"]
+        # The one reading the page has no history for: the beat is a ratio of
+        # two records, not a series of its own.
+        drawn_reads = [reads for reads in by_reads if reads not in NO_HISTORY]
         self.assertEqual(len(charts), len(drawn_reads))
         for chart, reads in zip(charts, drawn_reads):
             for line in by_reads[reads]:
                 value = raw_reading(self.source, line["reads"])
-                name = {"加仓": "加仓线", "减仓": "减仓线", "警示": "警示线", "重新评估": "重新评估线",
-                        "里程碑": "里程碑"}[line["action"]]
+                name = LINE_NAMES[line["action"]]
                 with self.subTest(line=line["id"]):
                     if str(line["id"]) in {i for c in block["conditions"] if c["mode"] == "and" for i in c["ids"]}:
                         verb = "未越过" if on_favourable_side(line, value) else "越过"
@@ -1062,7 +1074,7 @@ class NvdaSettlementTest(unittest.TestCase):
                     self.assertEqual(len(threshold_series), 1, "each line is its own series")
         # The compound row: 「且」 needs both legs over their lines.
         for condition in block["conditions"]:
-            legs = [next(l for l in lines if l["id"] == i) for i in condition["ids"]]
+            legs = [next(l for l in every if l["id"] == i) for i in condition["ids"]]
             over = [not on_favourable_side(l, raw_reading(self.source, l["reads"])) for l in legs]
             met = all(over) if condition["mode"] == "and" else any(over)
             self.assertIn("<b>条件成立</b>" if met else "<b>条件不成立</b>", overview["note"])
@@ -1114,11 +1126,19 @@ class NvdaSettlementTest(unittest.TestCase):
             edit(changed)
             build_payload(changed)
 
+        def uncovered_row(s: dict) -> None:
+            block = s["prior_kpi_settlement"]
+            block["rows"].append("（演练）没人处理的一行")
+            block["dispositions"].append("（演练）")
+
         cases = [
             ("set in", lambda s: s["prior_kpi_settlement"].__setitem__("set_in", "Q4 2025")),
             ("types a reading", lambda s: s["prior_kpi_settlement"]["quantified"][0].__setitem__("value", 1.0)),
             ("no series on this page", lambda s: s["prior_kpi_settlement"]["quantified"][0].__setitem__("reads", "x")),
-            ("accounted for", lambda s: s["prior_kpi_settlement"]["not_drawn"].pop()),
+            # A row nothing draws, explains or conditions on -- made by adding
+            # one, so the case does not depend on which rows this quarter's
+            # block happens to leave uncovered once a not_drawn item goes.
+            ("accounted for", uncovered_row),
             ("should have been settled", lambda s: s["prior_kpi_settlement"]["quantified"][0].__setitem__(
                 "settles", "Q1 2026")),
             ("disagree", lambda s: s["followup_closure"].__setitem__("total", 7)),
@@ -1213,19 +1233,29 @@ class NvdaNextQuarterTest(unittest.TestCase):
         dso = [ar / rev * 91 for ar, rev in zip(long["accounts_receivable_usd_m"], long["revenue_usd_m"])]
         for mine, theirs in zip(dso[-len(working["dso_days"]):], working["dso_days"]):
             self.assertAlmostEqual(mine, theirs, places=3)
-        chart = next(ex for ex in self.section if ex["title"].startswith("DSO："))
+        # Whichever lines this quarter's report draws on DSO (a later report
+        # may draw none), their chart runs the whole record.
+        group = [line for line in self.block["quantified"] if line["reads"] == "dso_days"]
+        if not group:
+            return
+        chart = self.chart_of(group[0])
         self.assertEqual(len(chart["xlabels"]), len(long["quarters"]))
-        cut = next(line for line in self.block["quantified"] if line["reads"] == "dso_days" and line["action"] == "减仓")
-        over = [compact_period(q) for q, d in zip(long["quarters"], dso) if d >= cut["threshold"]]
-        self.assertIn(f"{len(dso)} 季里 DSO 到过", chart["note"])
-        if over:
-            self.assertIn(f"有 {len(over)} 季（{'、'.join(over)}）", chart["note"])
+        cut = next((line for line in group if line["action"] == "减仓"), None)
+        if cut is not None:
+            over = [compact_period(q) for q, d in zip(long["quarters"], dso) if d >= cut["threshold"]]
+            self.assertIn(f"{len(dso)} 季里 DSO 到过", chart["note"])
+            if over:
+                self.assertIn(f"有 {len(over)} 季（{'、'.join(over)}）", chart["note"])
 
     def test_the_other_income_line_is_drawn_on_the_whole_record(self) -> None:
         """The revocation line at zero, against every quarter back to 2016 -- counted here, not by the builder."""
         other = self.source["other_income_usd_m"]
-        chart = next(ex for ex in self.section if ex["title"].startswith("GAAP 其他收入净额："))
-        self.assertEqual(chart["xlabels"], [compact_period(q) for q in self.source["long_history"]["quarters"]])
+        self.assertEqual(other["quarters"], self.source["long_history"]["quarters"])
+        group = [line for line in self.block["quantified"] if line["reads"] == "other_income_bn"]
+        if not group:
+            return
+        chart = self.chart_of(group[0])
+        self.assertEqual(chart["xlabels"], [compact_period(q) for q in other["quarters"]])
         self.assertEqual(chart["xlabels"][0], "Q1'16")
         negative = [i for i, value in enumerate(other["total_other_income"]) if value < 0]
         self.assertGreater(len(negative), 4, "the sentence below is the long form; a short list is printed instead")
@@ -1234,6 +1264,11 @@ class NvdaNextQuarterTest(unittest.TestCase):
                       f"最近一次是 {compact_period(other['quarters'][negative[-1]])}"
                       + (f"，此后 {since} 季都为正。" if since else "，也就是本季。"),
                       chart["note"])
+
+    def chart_of(self, line: dict) -> dict:
+        """The section-three chart that draws a line: the one carrying it as a flat series."""
+        return next(ex for ex in self.section[1:]
+                    if any(s["values"] == [line["threshold"]] * len(ex["xlabels"]) for s in ex["series"]))
 
     def test_a_line_that_is_due_cannot_sit_in_next_kpi(self) -> None:
         broken = copy.deepcopy(self.source)
@@ -1380,6 +1415,7 @@ class NvdaRollRehearsalTest(unittest.TestCase):
         text = published_text(payload)
         self.assertIsNone(re.search(r"\{[A-Za-z_:]+\}", text))
         self.assertNotIn("_checks", text)
+        self.assertIsNone(re.search(r"-0\.0+(?!\d)", text), "a negative zero reached the rolled page")
         prior = rolled["prior_kpi_settlement"]
         lines = [line for line in prior["quantified"] if line["threshold"] != 0]
         overview = next(ex for ex in payload["sections"][0]["exhibits"] if ex["title"].startswith("上季 "))
@@ -1393,8 +1429,7 @@ class NvdaRollRehearsalTest(unittest.TestCase):
                                                   for s in c["series"]))
             value = raw_reading(rolled, line["reads"])
             ok = on_favourable_side(line, value)
-            name = {"加仓": "加仓线", "减仓": "减仓线", "警示": "警示线", "重新评估": "重新评估线",
-                    "里程碑": "里程碑", "上行": "上行线", "撤回立场": "撤销线"}[line["action"]]
+            name = LINE_NAMES[line["action"]]
             if line.get("consecutive") and not ok:
                 continue          # the run is checked in its own test below
             if ok and value == line["threshold"]:
@@ -1416,7 +1451,10 @@ class NvdaRollRehearsalTest(unittest.TestCase):
                 ("growth", 1.9, {}),
                 ("stress", 1.5, {"dso_days": 72.0, "free_cash_flow": 12000.0, "non_gaap_gross_margin_pct": 73.0,
                                  "gm_guide": 70.5, "guarantee": 160.0, "other_income": -500.0,
-                                 "top_customer": 22})):
+                                 "top_customer": 22}),
+                # A reading a hair under its line: the headroom rounds to zero
+                # and must print as +0.0%, not the "-0.0%" it once did.
+                ("hairline", 1.0, {"non_gaap_gross_margin_pct": 73.4999})):
             with self.subTest(name):
                 rolled = rolled_forward(self.source, growth, overrides)
                 payload = self.settle_checked(rolled)
