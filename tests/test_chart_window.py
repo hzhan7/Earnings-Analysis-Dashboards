@@ -2118,10 +2118,11 @@ class ChartWindowTest(unittest.TestCase):
         # tracked exhibit by exhibit (621 at the luxury page's rebuild; 674 when
         # INTC landed on top of AMD and ARM, which is what pushed past 660; 750
         # on 2026-09-23 after the four-part pass had merged its first ten pages,
-        # each of which gained closure and threshold lines; 804 at its twentieth --
-        # re-measured with headroom for the rest of that pass).
+        # each of which gained closure and threshold lines; 804 at its twentieth,
+        # when 900 was a placeholder for the rest of that pass; 878 when the pass
+        # finished on 2026-09-24 with all 39 company pages merged).
         self.assertGreaterEqual(total, 540)
-        self.assertLessEqual(total, 900)
+        self.assertLessEqual(total, 950)
 
     def test_flipping_the_alternation_changes_nothing(self) -> None:
         """The property that makes the parser safe, stated as a property.
