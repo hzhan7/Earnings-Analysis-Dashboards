@@ -390,6 +390,7 @@ class CostDashboardTest(unittest.TestCase):
                 if state == "filed":
                     self.assertIn("本季合计", cats["title"])
                     self.assertTrue(seg["title"].startswith("三个地区分部的营业利润率：美国 "))
+                    self.assertIn("只占本季总收入", seg["note"])
                     for ex in (cats, seg):
                         self.assertNotIn("尚未申报", ex["note"])
                         self.assertIsNotNone(ex["groups"][0]["values"][-1] if "groups" in ex
@@ -398,6 +399,7 @@ class CostDashboardTest(unittest.TestCase):
                 else:
                     self.assertIn(f"{labels[-2]} 合计", cats["title"])
                     self.assertTrue(seg["title"].startswith(f"三个地区分部的营业利润率：{labels[-2]} 美国 "))
+                    self.assertIn(f"只占 {labels[-2]} 总收入", seg["note"])
                     for ex in (cats, seg):
                         self.assertIn(f"{labels[-1]} 那一格是空的", ex["note"])
                         self.assertIn(f"{filing} 尚未申报", ex["note"])

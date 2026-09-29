@@ -1515,6 +1515,7 @@ def build_payload(staging: dict) -> dict:
                        if cats["net_sales_yoy_pct"][cats_at] > 0 else None)
     cats_when = "本季" if cats_at == len(labels) - 1 else f"{labels[cats_at]} "
     seg_when = "本季" if seg_at == len(labels) - 1 else f"{labels[seg_at]} "
+    seg_share_when = "本季" if seg_when == "本季" else f" {seg_when}"   # 「只占 Q2'26 总收入」
 
     def pending_words(filed: list[int]) -> str:
         """The empty trailing cells, and why they are empty."""
@@ -1822,8 +1823,8 @@ def build_payload(staging: dict) -> dict:
         ],
         "fmt": "pct2", "yfmt": "pct2", "label_fmt": "pct2", "end_label": True,
         "ylab": "%",
-        "note": ((f"<b>加拿大的分部利润率长期高于美国</b>，而它只占{seg_when}总收入的 "
-                  if canada_higher else f"加拿大只占{seg_when}总收入的 ")
+        "note": ((f"<b>加拿大的分部利润率长期高于美国</b>，而它只占{seg_share_when}总收入的 "
+                  if canada_higher else f"加拿大只占{seg_share_when}总收入的 ")
                  + f"{seg['canada']['revenue_usd_m'][seg_at] / revenue[seg_at] * 100:.1f}%。"
                  + ("三个分部的收入相加等于合并总收入、营业利润相加等于合并营业利润，"
                     f"{cn_count(len(seg_filed))}个季度逐季核对差额为零。"
