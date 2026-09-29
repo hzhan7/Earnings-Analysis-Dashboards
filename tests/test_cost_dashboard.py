@@ -60,6 +60,89 @@ def js_payload(path: Path, assignment: str) -> dict:
     return json.loads(body)
 
 
+# Lines a report's section 8 may or may not ask for in a given quarter. A test
+# about how a line is drawn, worded or settled puts the one it needs on the page
+# itself, instead of relying on this quarter's report having chosen it: the
+# FY2026 Q4 report tracked different metrics from the FY2026 Q3 one, and every
+# test that had looked a chart up by the old report's choice went red on a roll
+# that changed no code.
+PROBES = {
+    "digital_comp": {"id": "probe_digital_comp", "reads": "digital_comp", "metric": "数字化同店销售",
+                     "direction": "up", "threshold": 15.0, "unit": "pct", "signed": True,
+                     "downside": {"value": 10.0, "name": "跟踪线"}, "quote": "测试探针"},
+    "us_traffic": {"id": "probe_us_traffic", "reads": "us_traffic", "metric": "美国同店客流（补充跟踪）",
+                   "direction": "up", "threshold": 1.5, "unit": "pct", "signed": True, "quote": "测试探针"},
+    "core_on_core": {"id": "probe_core_on_core", "reads": "core_on_core", "metric": "核心商品毛利率同比变动",
+                     "direction": "up", "threshold": -10, "unit": "bps", "breach_on_equal": True,
+                     "consecutive": 2, "upside": {"value": 0, "name": "回正线（安心）"}, "quote": "测试探针"},
+    "executive_share": {"id": "probe_executive_share", "reads": "executive_share",
+                        "metric": "Executive 会员占付费会员", "direction": "up", "threshold": 47.0,
+                        "unit": "pct", "quote": "测试探针"},
+    "renewal_us": {"id": "probe_renewal_us", "reads": "renewal_us", "chart": "probe_renewal",
+                   "family": "会员续费率", "metric": "美加会员续费率", "direction": "up",
+                   "threshold": 92.2, "unit": "pct", "quote": "测试探针"},
+    "renewal_us_change_bp": {"id": "probe_renewal_us_change", "reads": "renewal_us_change_bp",
+                             "chart": "probe_renewal_change", "family": "会员续费率季度变化",
+                             "metric": "美加续费率季度变化", "direction": "up", "threshold": -5,
+                             "unit": "bps", "quote": "测试探针"},
+}
+
+
+def with_lines(staging: dict, block: str, reads_list: list[str]) -> dict:
+    """The series with a line on each of `reads_list` in `block` (`next_kpi` or
+    `prior_kpi_settlement`), added only where that block does not read it
+    already; `_checks.note` is kept in step so the note-driven checks hold."""
+    s = copy.deepcopy(staging)
+    entries = s[block]["quantified"]
+    note = s["_checks"]["note"]
+    for reads in reads_list:
+        if any(entry["reads"] == reads for entry in entries):
+            continue
+        probe = copy.deepcopy(PROBES[reads])
+        entries.append(probe)
+        row = {"metric": probe["metric"], "threshold": probe["threshold"], "direction": probe["direction"]}
+        if block == "next_kpi":
+            note["next_thresholds"].append(row)
+        else:
+            charted = sum(1 for t in note["prior_thresholds"] if t["settled_on"] == "chart")
+            note["prior_thresholds"].insert(charted, {**row, "settled_on": "chart"})
+    return s
+
+
+def with_only_lines(staging: dict, prior_reads: list[str], next_reads: list[str]) -> dict:
+    """The series with exactly these lines in the two threshold blocks."""
+    s = copy.deepcopy(staging)
+    s["prior_kpi_settlement"]["quantified"] = [copy.deepcopy(PROBES[r]) for r in prior_reads]
+    s["next_kpi"]["quantified"] = [copy.deepcopy(PROBES[r]) for r in next_reads]
+    return s
+
+
+def filed_and_blank(staging: dict) -> tuple[dict, dict]:
+    """The series with the segment and category blocks' last cell filed, and blank.
+
+    A roll made before the quarter's 10-Q / 10-K leaves those two cells empty;
+    one made after fills them. The live series is in one state or the other,
+    so a test about the difference builds both: the filed copy borrows the
+    year-ago cell (the identities are not what is under test here), the blank
+    copy empties the last cell.
+    """
+    filed, blank = copy.deepcopy(staging), copy.deepcopy(staging)
+    for name in ("segments_usd_m", "merchandise_categories"):
+        for block_copy, fill in ((filed, True), (blank, False)):
+            block = block_copy[name]
+            ago = len(block["periods"]) - 5
+            for key, value in block.items():
+                if key == "periods":
+                    continue
+                lists = value.values() if isinstance(value, dict) else [value]
+                for series in lists:
+                    if fill and series[-1] is None:
+                        series[-1] = copy.deepcopy(series[ago])
+                    elif not fill:
+                        series[-1] = None
+    return filed, blank
+
+
 def readings(source: dict) -> dict[str, float]:
     """This quarter's reading of every metric a threshold may read, computed here.
 
@@ -237,8 +320,22 @@ class CostDashboardTest(unittest.TestCase):
                     self.fin["pretax_income_usd_m"][index] - self.fin["income_tax_usd_m"][index],
                     self.fin["net_income_usd_m"][index])
 
+    def pending_cells(self, block: dict) -> list[int]:
+        """Cells left empty for a 10-Q / 10-K not yet filed: whole, and only at the end."""
+        lists = [v for key, value in block.items() if key != "periods"
+                 for v in (value.values() if isinstance(value, dict) else [value])]
+        empty = [i for i in range(len(block["periods"])) if lists[0][i] is None]
+        for i in empty:
+            self.assertTrue(all(values[i] is None for values in lists), f"cell {i} is half empty")
+        self.assertEqual(empty, list(range(len(block["periods"]) - len(empty), len(block["periods"]))))
+        self.assertLessEqual(len(empty), 1, "only the quarter just rolled can be waiting")
+        return empty
+
     def test_segments_sum_to_the_consolidated_figures(self) -> None:
+        pending = self.pending_cells(self.seg)
         for index in range(8):
+            if index in pending:
+                continue
             with self.subTest(period=self.source["periods"][index]):
                 revenue = sum(self.seg[key]["revenue_usd_m"][index]
                               for key in ("united_states", "canada", "other_international"))
@@ -258,9 +355,10 @@ class CostDashboardTest(unittest.TestCase):
         """
         derived = [period for period, flag
                    in zip(self.seg["periods"], self.seg["is_derived"]) if flag]
+        waiting = [self.seg["periods"][i] for i in self.pending_cells(self.seg)]
         self.assertEqual(derived, [period for period, fiscal
                                    in zip(self.source["periods"], self.source["fiscal_labels"])
-                                   if fiscal.endswith("Q4")])
+                                   if fiscal.endswith("Q4") and period not in waiting])
         for period in derived:
             index = self.source["periods"].index(period)
             total = sum(self.seg[key]["revenue_usd_m"][index]
@@ -271,11 +369,51 @@ class CostDashboardTest(unittest.TestCase):
         for period in derived:
             self.assertIn(compact_period(period), chart["note"])
 
+    def test_a_quarter_waiting_for_its_filing_leaves_the_cell_empty(self) -> None:
+        """Segments and categories come from the 10-Q, a fiscal Q4's from the 10-K.
+
+        Rolled before that filing, the two charts keep the gap, say which filing
+        it waits for, and read their titles off the last quarter that has a
+        figure; rolled after it, none of that is said. Both states are built here.
+        """
+        filed, blank = filed_and_blank(self.source)
+        labels = [compact_period(period) for period in self.source["periods"]]
+        filing = "10-K" if self.source["fiscal_labels"][-1].endswith("Q4") else "10-Q"
+        for state, staging in (("filed", filed), ("blank", blank)):
+            payload = build_payload(staging)
+            guard_payload(payload)
+            exhibits = [ex for section in payload["sections"] for ex in section["exhibits"]]
+            cats = next(ex for ex in exhibits if ex["title"].startswith("四条商品线"))
+            seg = next(ex for ex in exhibits if ex["title"].startswith("三个地区分部"))
+            highlights = next(s for s in payload["sections"] if s["id"] == "quarter_highlights")
+            with self.subTest(state=state):
+                if state == "filed":
+                    self.assertIn("本季合计", cats["title"])
+                    self.assertTrue(seg["title"].startswith("三个地区分部的营业利润率：美国 "))
+                    for ex in (cats, seg):
+                        self.assertNotIn("尚未申报", ex["note"])
+                        self.assertIsNotNone(ex["groups"][0]["values"][-1] if "groups" in ex
+                                             else ex["series"][0]["values"][-1])
+                    self.assertIn("加油站所在的那一条贡献了", highlights["description"])
+                else:
+                    self.assertIn(f"{labels[-2]} 合计", cats["title"])
+                    self.assertTrue(seg["title"].startswith(f"三个地区分部的营业利润率：{labels[-2]} 美国 "))
+                    for ex in (cats, seg):
+                        self.assertIn(f"{labels[-1]} 那一格是空的", ex["note"])
+                        self.assertIn(f"{filing} 尚未申报", ex["note"])
+                    self.assertIsNone(cats["groups"][0]["values"][-1])
+                    self.assertIsNone(seg["series"][0]["values"][-1])
+                    self.assertIn(f"要等 {filing}", highlights["description"])
+                    self.assertNotIn("加油站所在的那一条贡献了", highlights["description"])
+
     def test_merchandise_categories_sum_to_net_sales(self) -> None:
         cats = self.source["merchandise_categories"]
         keys = ["foods_and_sundries_usd_m", "non_foods_usd_m", "fresh_foods_usd_m",
                 "warehouse_ancillary_and_other_usd_m"]
+        pending = self.pending_cells(cats)
         for index in range(8):
+            if index in pending:
+                continue
             with self.subTest(period=cats["periods"][index]):
                 self.assertEqual(sum(cats[key][index] for key in keys),
                                  self.fin["net_sales_usd_m"][index])
@@ -481,10 +619,12 @@ class CostDashboardTest(unittest.TestCase):
         self.assertEqual(mem["periods"][start], "Q1 2023")
         for value in mem["renewal_rate_us_canada_pct"][:start]:
             self.assertEqual(value, round(value), "pre-decimal era is whole points")
-        level = next(ex for ex in self.by_section["next_quarter"] if ex["title"].startswith("会员续费率："))
+        probed = build_payload(with_lines(self.source, "next_kpi", ["renewal_us", "renewal_us_change_bp"]))
+        nxt = next(s for s in probed["sections"] if s["id"] == "next_quarter")["exhibits"]
+        level = next(ex for ex in nxt if ex["title"].startswith("会员续费率："))
         self.assertEqual(len(level["xlabels"]), len(mem["periods"]) - start)
         # A change needs two one-decimal readings, so it starts one quarter later.
-        change = next(ex for ex in self.by_section["settled"] if ex["title"].startswith("会员续费率季度变化"))
+        change = next(ex for ex in nxt if ex["title"].startswith("会员续费率季度变化"))
         self.assertEqual(len(change["xlabels"]), len(mem["periods"]) - start - 1)
 
     # ── the guidance record ─────────────────────────────────────────────────
@@ -687,7 +827,9 @@ class CostDashboardTest(unittest.TestCase):
             self.assertIn("EX-99.2", core["value_source"][index])
         for index in set(q4) - set(filled):
             self.assertIsNone(core["value_source"][index])
-        chart = next(ex for ex in self.by_section["next_quarter"] if "核心商品" in ex["title"])
+        probed = build_payload(with_lines(self.source, "next_kpi", ["core_on_core"]))
+        chart = next(ex for ex in next(s for s in probed["sections"] if s["id"] == "next_quarter")["exhibits"]
+                     if "核心商品" in ex["title"])
         self.assertIn(f"{len(q4)} 个会计 Q4 有 {len(filled)} 个由它填上", chart["note"])
         disclosed = sum(1 for value in core["change_bps"] if value is not None)
         self.assertIn(f"{disclosed} 个有披露的季度", chart["note"])
@@ -752,9 +894,22 @@ class CostDashboardTest(unittest.TestCase):
             if actual is not None:
                 settled[year] = (estimate, actual)
         self.assertGreaterEqual(len(settled), 2)
+        # FY2025, the year this was first checked against, landed exactly; FY2026
+        # (last estimate 940, the FY2026 Q4 deck's year-end 939) did not, so the
+        # page's count is computed and this pins only the years it was read through.
         for year, (estimate, actual) in settled.items():
-            with self.subTest(year=year):
-                self.assertEqual(estimate, actual, "the final vintage lands exactly")
+            if year <= PINNED_FISCAL_YEAR:
+                with self.subTest(year=year):
+                    self.assertEqual(estimate, actual, "the final vintage lands exactly")
+        exact = sum(1 for estimate, actual in settled.values() if estimate == actual)
+        chart = next(ex for ex in self.exhibits if ex["title"].startswith("公司自己估的财年末仓库数"))
+        if exact == len(settled):
+            self.assertIn("都精确落在最后一次估计上", chart["title"])
+        else:
+            self.assertIn(f"里 {exact} 个精确落在最后一次估计上", chart["title"])
+            self.assertNotIn("一个不差", chart["note"])
+        for year, (estimate, actual) in settled.items():
+            self.assertIn(f"FY{year} 最后估 {estimate} 家、实际 {actual} 家", chart["note"])
 
     # ── what the page refuses ───────────────────────────────────────────────
     def test_the_page_carries_no_monthly_series(self) -> None:
@@ -910,7 +1065,9 @@ class CostDashboardTest(unittest.TestCase):
         reading onto its line (which the analysis wrote as「≤ −10bp」, so equal
         breaks it); the titles must turn with them.
         """
-        turned = copy.deepcopy(self.source)
+        base = with_only_lines(self.source, ["digital_comp"], ["us_traffic", "core_on_core"])
+        before_settled = next(s for s in build_payload(base)["sections"] if s["id"] == "settled")["exhibits"]
+        turned = copy.deepcopy(base)
         turned["comp_history_pct"]["digital_reported_pct"][-1] = 12.0
         turned["supplement"]["comp_traffic_us_pct"][-1] = 1.4
         turned["core_on_core"]["change_bps"][-1] = -10
@@ -918,7 +1075,6 @@ class CostDashboardTest(unittest.TestCase):
         payload = build_payload(turned)
         settled = next(s for s in payload["sections"] if s["id"] == "settled")["exhibits"]
         nxt = next(s for s in payload["sections"] if s["id"] == "next_quarter")["exhibits"]
-        before_settled = self.by_section["settled"]
         digital = next(ex for ex in settled if ex["title"].startswith("数字化同店销售"))
         self.assertIn("击穿上季阈值", digital["title"])
         self.assertIn("守住上季阈值", next(ex for ex in before_settled
@@ -940,13 +1096,16 @@ class CostDashboardTest(unittest.TestCase):
 
     def test_the_closure_tally_is_counted_from_the_items(self) -> None:
         moved = copy.deepcopy(self.source)
-        moved["followup_closure"]["items"][3]["verdict"] = "部分确认"
+        closure = moved["followup_closure"]
+        was = closure["items"][0]["verdict"]
+        now = next(label for label in closure["labels"] if label != was)
+        closure["items"][0]["verdict"] = now
         chart = next(s for s in build_payload(moved)["sections"] if s["id"] == "settled")["exhibits"][0]
         counts = dict(zip(chart["xlabels"], chart["values"]))
         before = dict(zip(self.by_section["settled"][0]["xlabels"], self.by_section["settled"][0]["values"]))
-        self.assertEqual(counts["部分确认"], before["部分确认"] + 1)
-        self.assertEqual(counts["仍在跟踪"], before["仍在跟踪"] - 1)
-        moved["followup_closure"]["items"][0]["verdict"] = "已兑现"
+        self.assertEqual(counts[now], before[now] + 1)
+        self.assertEqual(counts[was], before[was] - 1)
+        closure["items"][0]["verdict"] = "不是任何一个标签"
         with self.assertRaisesRegex(ValueError, "not labels"):
             build_payload(moved)
 
@@ -1066,9 +1225,10 @@ class CostDashboardTest(unittest.TestCase):
         self.assertIn(f"第 {min(early)} 到 {max(early)} 天", band["note"])
 
     def test_quarter_blocks_refuse_to_publish_under_another_quarter(self) -> None:
-        for key in ("prior_kpi_settlement", "next_kpi", "local_note", "followup_closure"):
+        for key in ("prior_kpi_settlement", "next_kpi", "local_note", "followup_closure", "quarter_story"):
             stale = copy.deepcopy(self.source)
-            stale[key]["period"] = "Q1 1999"
+            # a block this quarter's report has no use for is absent; stamped wrong, it still stops the build
+            stale[key] = {**stale.get(key, {}), "period": "Q1 1999"}
             with self.subTest(block=key):
                 with self.assertRaisesRegex(ValueError, "stamped"):
                     build_payload(stale)
@@ -1103,24 +1263,46 @@ class CostDashboardTest(unittest.TestCase):
             build_payload(with_blocks)
 
     def test_the_local_report_s_own_claims_leave_with_their_block(self) -> None:
+        # A report that calls the last four quarters' mean "structural", and flags
+        # this quarter's gasoline tailwind; built here, since a quarter's report
+        # may make neither claim.
+        adjusted = self.hist["adjusted_total_pct"]
+        claiming = copy.deepcopy(self.source)
+        claiming["local_note"] = {"period": self.source["periods"][-1],
+                                  "structural_comp_claim_pct": round(sum(adjusted[-4:]) / 4, 1),
+                                  "gas_tailwind_flagged": True}
         bare = copy.deepcopy(self.source)
-        del bare["local_note"]
-        text = json.dumps(build_payload(bare), ensure_ascii=False)
-        self.assertNotIn("「结构性", text)
-        self.assertIn("「结构性", json.dumps(self.payload, ensure_ascii=False))
+        bare.pop("local_note", None)
+        with_claims = json.dumps(build_payload(claiming), ensure_ascii=False)
+        without = json.dumps(build_payload(bare), ensure_ascii=False)
+        self.assertIn("「结构性", with_claims)
+        self.assertNotIn("「结构性", without)
+        if self.hist["gap_pp"][-1] > 0:
+            self.assertIn("本地报告把本季", with_claims)
+            self.assertNotIn("本地报告把本季", without)
 
     def test_the_prose_claims_follow_the_data(self) -> None:
-        """Turn two readings around and the sentences that described them must go."""
-        turned = copy.deepcopy(self.source)
-        deck = turned["supplement"]
-        deck["comp_traffic_pct"][-1] = deck["comp_traffic_pct"][-2] + 1.0
-        deck["comp_ticket_pct"][-1] = deck["comp_ticket_pct"][-2] - 1.0
-        before = json.dumps(self.payload, ensure_ascii=False)
-        after = json.dumps(build_payload(turned), ensure_ascii=False)
+        """Turn two readings around and the sentences that described them must go.
+
+        Both directions are built here: which one the live quarter is in is the
+        quarter's business (FY2026 Q3 was traffic down, ticket up; Q4 the reverse).
+        """
+        def turned(traffic_step: float, ticket_step: float) -> str:
+            staging = copy.deepcopy(self.source)
+            deck = staging["supplement"]
+            deck["comp_traffic_pct"][-1] = round(deck["comp_traffic_pct"][-2] + traffic_step, 1)
+            deck["comp_ticket_pct"][-1] = round(deck["comp_ticket_pct"][-2] + ticket_step, 1)
+            return json.dumps(build_payload(staging), ensure_ascii=False)
+
+        softening, firming = turned(-1.0, +1.0), turned(+1.0, -1.0)
         for claim in ("客流在走软", "缺口由客单补上", "客单在补位"):
             with self.subTest(claim=claim):
-                self.assertIn(claim, before)
-                self.assertNotIn(claim, after)
+                self.assertIn(claim, softening)
+                self.assertNotIn(claim, firming)
+        for claim in ("客流在走强", "客单在走弱"):
+            with self.subTest(claim=claim):
+                self.assertIn(claim, firming)
+                self.assertNotIn(claim, softening)
 
 
 def next_quarter(label: str) -> str:
@@ -1272,7 +1454,8 @@ class CostRollRehearsalTest(unittest.TestCase):
             staging = rolled_forward(staging)
             cls.rolls.append((staging, build_payload(staging)))
         # a stressed quarter: every reading the settlement reads pushed to the wrong side
-        stressed = rolled_forward(cls.staging)
+        stressed = rolled_forward(with_lines(cls.staging, "next_kpi",
+                                             ["adjusted_comp", "renewal_us", "core_on_core", "us_traffic"]))
         stressed["comp_history_pct"]["adjusted_total_pct"][-1] = 5.2
         stressed["comp_history_pct"]["gap_pp"][-1] = round(
             stressed["comp_history_pct"]["reported_total_pct"][-1] - 5.2, 6)
@@ -1391,6 +1574,10 @@ class CostChecksTest(unittest.TestCase):
         cls.checks = cls.source["_checks"]
         cls.payload = build_payload(cls.source)
         cls.exhibits = [ex for section in cls.payload["sections"] for ex in section["exhibits"]]
+        # The three lines whose printed reading is checked below, drawn whether or
+        # not this quarter's report asked for them.
+        probed = build_payload(with_lines(cls.source, "next_kpi", ["executive_share", "us_traffic", "core_on_core"]))
+        cls.probed = next(s for s in probed["sections"] if s["id"] == "next_quarter")["exhibits"]
 
     def exhibit(self, prefix: str) -> dict:
         return next(ex for ex in self.exhibits if ex["title"].startswith(prefix))
@@ -1465,12 +1652,12 @@ class CostChecksTest(unittest.TestCase):
         self.assertIn(f"客单 {checks['adjusted_comparable_ticket_pct']:+.1f}%", traffic["title"])
         execs = self.exhibit(f"Executive 会员 {checks['executive_members_mm']:.1f}MM")
         self.assertIn(f"{checks['executive_members_mm'] / checks['paid_members_mm'] * 100:.1f}%", execs["title"])
-        share = self.exhibit("Executive 会员占付费会员：")
-        self.assertIn(f"本季 {checks['executive_members_mm'] / checks['paid_members_mm'] * 100:.1f}%",
+        share = next(ex for ex in self.probed if ex["title"].startswith("Executive 会员占付费会员："))
+        self.assertIn(f"当前 {checks['executive_members_mm'] / checks['paid_members_mm'] * 100:.1f}%",
                       share["title"])
-        us_traffic = self.exhibit("美国同店客流")
+        us_traffic = next(ex for ex in self.probed if ex["title"].startswith("美国同店客流"))
         self.assertIn(f"当前 {checks['comparable_traffic_us_pct']:+.1f}%", us_traffic["title"])
-        core = next(ex for ex in self.exhibits if ex["title"].startswith("核心商品"))
+        core = next(ex for ex in self.probed if ex["title"].startswith("核心商品"))
         self.assertIn(f"当前 {checks['core_on_core_bps']:+.0f}bp".replace("-", "−"), core["title"])
         # EPS growth is the rate the company prints (the deck's「+15.2% Growth」),
         # not the four legs' unrounded product a few hundredths away.

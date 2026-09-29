@@ -1409,6 +1409,15 @@ def build_payload(staging: dict) -> dict:
     bridge = staging["eps_growth_bridge_pct"]
     seg = staging["segments_usd_m"]
     cats = staging["merchandise_categories"]
+    # A quarter's segment and merchandise-category figures are printed in its
+    # 10-Q; a fiscal fourth quarter's come from the 10-K, less the 36 weeks
+    # before it. A roll made between the release and that filing leaves those
+    # cells empty: the charts draw the gap, and every sentence that would say
+    # 「本季」 reads the last quarter that has a figure and names it.
+    pending_filing = "10-K" if staging["fiscal_labels"][-1].endswith("Q4") else "10-Q"
+    seg_filed = [i for i, value in enumerate(seg["united_states"]["revenue_usd_m"]) if value is not None]
+    cats_filed = [i for i, value in enumerate(cats["net_sales_yoy_pct"]) if value is not None]
+    seg_at, cats_at = seg_filed[-1], cats_filed[-1]
     mem = staging["membership"]
     bal = staging["balance_sheet_usd_m"]
     ann = staging["annual"]
@@ -1501,8 +1510,21 @@ def build_payload(staging: dict) -> dict:
                       f"此后 {len(gap) - 1 - last_negative} 季都不为负。")
     else:
         sign_story = ""
-    ancillary = cats["growth_contribution_pp"]["warehouse_ancillary_and_other_usd_m"][-1]
-    ancillary_share = ancillary / cats["net_sales_yoy_pct"][-1] if cats["net_sales_yoy_pct"][-1] > 0 else None
+    ancillary = cats["growth_contribution_pp"]["warehouse_ancillary_and_other_usd_m"][cats_at]
+    ancillary_share = (ancillary / cats["net_sales_yoy_pct"][cats_at]
+                       if cats["net_sales_yoy_pct"][cats_at] > 0 else None)
+    cats_when = "本季" if cats_at == len(labels) - 1 else f"{labels[cats_at]} "
+    seg_when = "本季" if seg_at == len(labels) - 1 else f"{labels[seg_at]} "
+
+    def pending_words(filed: list[int]) -> str:
+        """The empty trailing cells, and why they are empty."""
+        waiting = list(range(filed[-1] + 1, len(labels)))
+        if not waiting:
+            return ""
+        return (f"<b>{'、'.join(labels[i] for i in waiting)} 那一格是空的：</b>"
+                + ("会计 Q4 的这组数要用 10-K 的全年数减去前 36 周，" if pending_filing == "10-K" else
+                   "这组数印在 10-Q 里，")
+                + f"而 {pending_filing} 尚未申报；图题与这里的读数是 {labels[filed[-1]]} 的。")
     if ancillary_share is not None and 0.4 <= ancillary_share < 0.5:
         ancillary_words = "接近全部增量的一半"
     elif ancillary_share is not None and 0.5 <= ancillary_share < 0.6:
@@ -1544,9 +1566,9 @@ def build_payload(staging: dict) -> dict:
         + seg["other_international"]["revenue_usd_m"][i] == revenue[i]
         and seg["united_states"]["operating_income_usd_m"][i] + seg["canada"]["operating_income_usd_m"][i]
         + seg["other_international"]["operating_income_usd_m"][i] == operating[i]
-        for i in range(len(staging["periods"])))
-    canada_higher = all(c > u for c, u in zip(seg["canada"]["operating_margin_pct"],
-                                               seg["united_states"]["operating_margin_pct"]))
+        for i in seg_filed)
+    canada_higher = all(seg["canada"]["operating_margin_pct"][i] > seg["united_states"]["operating_margin_pct"][i]
+                        for i in seg_filed)
     negative_gaps = sum(1 for v in gap_filed if v < 0)
     positive_gaps = sum(1 for v in gap_filed if v > 0)
     zero_gaps = sum(1 for v in gap_filed if v == 0)
@@ -1648,9 +1670,9 @@ def build_payload(staging: dict) -> dict:
         {
             "ref": "EX_CATS",
             "kind": "grouped_bars",
-            "title": (f"四条商品线对净销售额增速的贡献：本季合计 "
-                      f"{cats['net_sales_yoy_pct'][-1]:+.1f}%，其中加油站所在那条占 "
-                      f"{cats['growth_contribution_pp']['warehouse_ancillary_and_other_usd_m'][-1]:.1f} 个百分点"),
+            "title": (f"四条商品线对净销售额增速的贡献：{cats_when}合计 "
+                      f"{cats['net_sales_yoy_pct'][cats_at]:+.1f}%，其中加油站所在那条占 "
+                      f"{cats['growth_contribution_pp']['warehouse_ancillary_and_other_usd_m'][cats_at]:.1f} 个百分点"),
             "xlabels": labels,
             "groups": [
                 {"name": "食品与日用", "color": "NAVY",
@@ -1669,16 +1691,17 @@ def build_payload(staging: dict) -> dict:
                       f"{staging['weeks_by_period'][comparative]} 周" if mismatch else ""),
             "note": ("四根柱相加等于当季净销售额的同比增速，是恒等式不是估计。"
                      "<b>红色那条是加油站、药房、食品部、眼镜与轮胎安装所在的「仓内附属与其他」</b>，"
-                     f"本季它一条就贡献了 "
-                     f"{cats['growth_contribution_pp']['warehouse_ancillary_and_other_usd_m'][-1]:.1f} "
+                     f"{cats_when}它一条就贡献了 "
+                     f"{cats['growth_contribution_pp']['warehouse_ancillary_and_other_usd_m'][cats_at]:.1f} "
                      f"个百分点，{ancillary_words}，而它只占上年净销售额的 "
-                     f"{cats['ancillary_share_of_base_pct'][-1]:.1f}%。"
+                     f"{cats['ancillary_share_of_base_pct'][cats_at]:.1f}%。"
                      "这是「汽油推高了 headline」这句话在申报文件里的样子 —— "
                      "公司不拆汽油单独的销售额，但它拆到了这条线。"
                      + (f"<b>{labels[mismatch[0]]} 那一格要打折：</b>它是 {weeks[mismatch[0]]} 周的会计 Q4 "
                         f"对上年 {staging['weeks_by_period'][comparative]} 周的会计 Q4"
                         f"（FY{fiscal_year_of(comparative)} 是 53 周财年），"
-                        "同比因此被少算了大约一周，四根柱一起被压低。" if mismatch else "")),
+                        "同比因此被少算了大约一周，四根柱一起被压低。" if mismatch else "")
+                     + pending_words(cats_filed)),
             "src_extra": ("各季 10-Q 与 10-K 收入分解附注的四个商品类别；"
                           "贡献 = 该类别同比增量 ÷ 上年同期净销售额，本页自算（D）。"),
         },
@@ -1784,10 +1807,10 @@ def build_payload(staging: dict) -> dict:
     segment_ex = {
         "ref": "EX_SEGMARGIN",
         "kind": "lines",
-        "title": (f"三个地区分部的营业利润率：美国 "
-                  f"{seg['united_states']['operating_margin_pct'][-1]:.2f}%、加拿大 "
-                  f"{seg['canada']['operating_margin_pct'][-1]:.2f}%、其他国际 "
-                  f"{seg['other_international']['operating_margin_pct'][-1]:.2f}%"),
+        "title": (f"三个地区分部的营业利润率：{'' if seg_when == '本季' else seg_when}美国 "
+                  f"{seg['united_states']['operating_margin_pct'][seg_at]:.2f}%、加拿大 "
+                  f"{seg['canada']['operating_margin_pct'][seg_at]:.2f}%、其他国际 "
+                  f"{seg['other_international']['operating_margin_pct'][seg_at]:.2f}%"),
         "xlabels": labels,
         "series": [
             {"name": "美国", "color": "NAVY",
@@ -1799,17 +1822,18 @@ def build_payload(staging: dict) -> dict:
         ],
         "fmt": "pct2", "yfmt": "pct2", "label_fmt": "pct2", "end_label": True,
         "ylab": "%",
-        "note": (("<b>加拿大的分部利润率长期高于美国</b>，而它只占本季总收入的 "
-                  if canada_higher else "加拿大只占本季总收入的 ")
-                 + f"{seg['canada']['revenue_usd_m'][-1] / revenue[-1] * 100:.1f}%。"
+        "note": ((f"<b>加拿大的分部利润率长期高于美国</b>，而它只占{seg_when}总收入的 "
+                  if canada_higher else f"加拿大只占{seg_when}总收入的 ")
+                 + f"{seg['canada']['revenue_usd_m'][seg_at] / revenue[seg_at] * 100:.1f}%。"
                  + ("三个分部的收入相加等于合并总收入、营业利润相加等于合并营业利润，"
-                    f"{cn_count(len(staging['periods']))}个季度逐季核对差额为零。"
+                    f"{cn_count(len(seg_filed))}个季度逐季核对差额为零。"
                     if segments_close else "")
-                 + f"<b>{'、'.join(labels[i] for i in long_quarters)} "
-                 f"{cn_count(len(long_quarters))}格是自算值（D）：</b>"
+                 + f"<b>{'、'.join(labels[i] for i in long_quarters if i in seg_filed)} "
+                 f"{cn_count(sum(1 for i in long_quarters if i in seg_filed))}格是自算值（D）：</b>"
                  "会计 Q4 没有 10-Q，分部数只能用全年减去 36 周累计。"
                  "同一个减法在合并层面得到的净销售额与营业利润，与 Q4 业绩稿印出的 16 周数逐项相同，"
-                 "这是本页愿意用它做分部的理由。"),
+                 "这是本页愿意用它做分部的理由。"
+                 + pending_words(seg_filed)),
         "src_extra": ("各季 10-Q 与 10-K 分部附注；分部利润率为分部营业利润除以分部总收入，"
                       "本页自算（D）。"),
     }
@@ -2388,8 +2412,10 @@ def build_payload(staging: dict) -> dict:
                      if latest_gap > 0 and eps_wedge > 0 else
                      "headline 与底层之间的两处差距都能用申报值原样拆开：")
                     + "comp 那端是汽油与汇率，每股收益那端是利息收入与税率。"
-                    f"剥完之后剩下的是{traffic_words}、{ticket_words}，以及四条商品线里"
-                    f"加油站所在的那一条贡献了{share_words}的销售增量。"
+                    f"剥完之后剩下的是{traffic_words}、{ticket_words}"
+                    + (f"，以及四条商品线里加油站所在的那一条贡献了{share_words}的销售增量。"
+                       if cats_at == len(labels) - 1 else
+                       f"；四条商品线各贡献了多少要等 {pending_filing}，那张图暂时停在 {labels[cats_at]}。")
                     + (fill_story(quarter_story["elsewhere"], exhibit_words)
                        if quarter_story and quarter_story.get("elsewhere") else "")
                     + ("本页不画的：" + "；".join(quarter_story["undrawn"]) + "。"
