@@ -572,6 +572,30 @@ def _amzn_threshold_floors() -> dict:
             if any(key_matches(key, title) for title in short)}
 
 
+# Costco's renewal-rate level lines run from 2016 with the whole-percent era
+# marked by a break, so they are not short. The quarter-on-quarter change line
+# is: it needs two one-decimal readings. It is drawn only while an analysis sets
+# a line on it, so its floor rides on the page, as Amazon's do.
+_COST_THRESHOLD_FLOORS = {
+    "续费率季度变化": (
+        "precision floor, not an availability one: the renewal rate is printed as a "
+        "whole percent through the 10-Q for FY2023 Q1 (period 2022-11-20, \"93%/90%\") "
+        "and to one decimal from FY2023 Q2 (period 2023-02-12, \"92.6%/90.5%\"). A "
+        "quarter-on-quarter change needs two one-decimal readings, so it starts the "
+        "quarter after; the level itself is drawn from 2016 with the break marked.",
+        "disclosure"),
+}
+
+
+def _cost_threshold_floors() -> dict:
+    """The entries of `_COST_THRESHOLD_FLOORS` whose chart is published and short."""
+    page = js_payload(ROOT / "data" / "cost.js", "window.DASH")
+    short = [ex["title"] for section in page["sections"] for ex in section["exhibits"]
+             if (first_year(ex) or TARGET_YEAR) > TARGET_YEAR]
+    return {key: value for key, value in _COST_THRESHOLD_FLOORS.items()
+            if any(key_matches(key, title) for title in short)}
+
+
 # Pages whose migration is finished. For these the strict rule applies: every
 # time-axis exhibit reaches 2016 unless it is named below with the disclosure
 # that stops it. An entry that no longer matches a short exhibit fails too --
@@ -931,14 +955,9 @@ CONVERTED = {
     # Costco's supplemental EX-99.2 deck did not exist before 2024-05-30, and
     # the pre-deck filings never quantify these metrics at all.
     'cost': {
-        '会员续费率': "precision floor, not an availability one: the renewal rate is "
-                  "printed as a whole percent through the 10-Q for FY2023 Q1 "
-                  "(period 2022-11-20, \"93%/90%\") and to one decimal from FY2023 "
-                  "Q2 (period 2023-02-12, \"92.6%/90.5%\"). Splicing the two would "
-                  "put a step of up to half a point into a series whose whole "
-                  "point is half-point moves. The quarter-on-quarter change chart "
-                  "starts one quarter later still: a change needs two one-decimal "
-                  "readings.",
+        # The renewal-rate change line's floor rides on the page (see
+        # _COST_THRESHOLD_FLOORS); the level lines now reach 2016.
+        **{key: reason for key, (reason, _) in _cost_threshold_floors().items()},
         '每股收益增速拆成四条腿': "a clean year-over-year pair needs both quarters free of "
                        "the noncontrolling-interest line (the Taiwan joint "
                        "venture), which was not fully gone until FY2023 -- so "
@@ -1755,7 +1774,7 @@ FLOOR_KIND = {
         '收入增速：对年初那一档': 'disclosure',
     },
     'cost': {
-        '会员续费率': 'disclosure',
+        **{key: kind for key, (_, kind) in _cost_threshold_floors().items()},
         '每股收益增速拆成四条腿': 'disclosure',
         '客流': 'disclosure',
         '公司自己估的财年末仓库数': 'disclosure',
@@ -2001,7 +2020,10 @@ class ChartWindowTest(unittest.TestCase):
         # the chart is (see _MSFT_THRESHOLD_FLOORS); the pins count the rest and
         # add those.
         msft = collections.Counter(kind for _, kind in _msft_threshold_floors().values())
-        self.assertEqual(len(by_kind.get("coverage", [])), 28 + amzn["coverage"] + msft["coverage"],
+        # ...and so does Costco's renewal-rate change line (_COST_THRESHOLD_FLOORS).
+        cost = collections.Counter(kind for _, kind in _cost_threshold_floors().values())
+        self.assertEqual(len(by_kind.get("coverage", [])), 28 + amzn["coverage"] + msft["coverage"]
+                         + cost["coverage"],
                          "charts whose data exists and has not been fetched")
         # Zero, and that is the point: every exemption on this page has now been
         # read against an actual pre-floor filing. The fourteen that had never
@@ -2014,8 +2036,9 @@ class ChartWindowTest(unittest.TestCase):
         # ...and the two settled kinds, so the split cannot drift silently.
         settled = [kind for kinds in FLOOR_KIND.values() for kind in kinds.values()
                    if kind in ("disclosure", "design")]
-        self.assertEqual(settled.count("disclosure"), 188 + amzn["disclosure"] + msft["disclosure"])
-        self.assertEqual(settled.count("design"), 43 + amzn["design"] + msft["design"])
+        self.assertEqual(settled.count("disclosure"),
+                         187 + amzn["disclosure"] + msft["disclosure"] + cost["disclosure"])
+        self.assertEqual(settled.count("design"), 43 + amzn["design"] + msft["design"] + cost["design"])
 
     def test_no_page_has_an_unexplained_short_axis_beyond_the_pinned_backlog(self) -> None:
         """Every short chart either names its reason or is counted here.
