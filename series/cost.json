@@ -6,12 +6,12 @@
     "cik": "0000909832"
   },
   "latest": {
-    "period": "Q2 2026",
-    "fiscal_label": "FY2026 Q3",
-    "period_end": "2026-05-10",
-    "release_date": "2026-05-28",
-    "weeks": 12,
-    "analysis_date": "2026-08-29",
+    "period": "Q3 2026",
+    "fiscal_label": "FY2026 Q4",
+    "period_end": "2026-08-30",
+    "release_date": "2026-09-24",
+    "weeks": 16,
+    "analysis_date": "2026-09-29",
     "audit_status": "unaudited"
   },
   "analysis_record": {
@@ -19,114 +19,113 @@
     "_note": "库里第一份 Costco 季报分析的正文是 FY2026 Q1（本站 Q4 2025）——文件名原先按财年季度写作「2026-03-05 COST Q1 2026 vs Q4 2025 Analysis.md」，2026-09-24 按库里的日历年命名规则改为「2026-03-05 COST Q4 2025 vs Q3 2025 Analysis.md」；它自己的第 0 节写明此前没有沉淀分析。这一季之后的每一季都有上一份分析可结算，所以 builder 要求带上 followup_closure 或 prior_kpi_settlement。"
   },
   "_checks": {
-    "period": "Q2 2026",
-    "fiscal_label": "FY2026 Q3",
-    "period_end": "2026-05-10",
-    "release_date": "2026-05-28",
-    "weeks": 12,
-    "net_sales_usd_m": 69154,
-    "net_sales_yoy_pct": 11.6,
-    "membership_fees_usd_m": 1373,
-    "total_revenue_usd_m": 70527,
-    "operating_income_usd_m": 2815,
-    "net_income_usd_m": 2192,
-    "diluted_eps_usd": 4.93,
-    "diluted_eps_growth_printed_pct": 15.2,
-    "comparable_sales_total_pct": 9.8,
-    "comparable_sales_adjusted_total_pct": 6.6,
-    "digitally_enabled_comparable_sales_pct": 21.5,
-    "cash_and_equivalents_usd_m": 18946,
-    "short_term_investments_usd_m": 1050,
-    "comparable_traffic_pct": 2.4,
-    "comparable_ticket_pct": 7.3,
-    "adjusted_comparable_ticket_pct": 4.2,
-    "executive_members_mm": 41.2,
-    "paid_members_mm": 82.9,
-    "renewal_rate_us_canada_pct": 92.2,
-    "renewal_rate_worldwide_pct": 89.7,
-    "gross_margin_change_bps": -21,
-    "sga_rate_change_bps": -20,
-    "core_on_core_bps": -9,
-    "fy_end_warehouse_estimate": 940,
-    "source": "Costco FY2026 Q3 业绩 8-K（2026-05-28，acc 0000909832-26-000046）逐项读取：EX-99.1 首段「third quarter (twelve weeks) … of fiscal 2026, ended May 10, 2026」、「Net sales for the quarter increased 11.6 percent, to $69.15 billion」、同店销售表 12 周栏 Total Company 9.8% / Adjusted 6.6%、Digitally-Enabled 21.5%；损益表 12 周栏（Net sales 69,154；Membership fees 1,373；Total revenue 70,527；Operating income 2,815；Net income 2,192；Diluted 4.93）；资产负债表（Cash and cash equivalents 18,946；Short-term investments 1,050）。EX-99.2 补充材料：Diluted EPS $4.93 +15.2% Growth；Comparable Traffic +2.4%、Ticket +7.3%、Adjusted Ticket +4.2%；41.2MM Executive、82.9MM Paid；US/CN 92.2%、Worldwide 89.7%；Gross Margin -21 bps；SG&A +20 bps（该页注明「+ = Favorable/lower」，即SG&A 率下降 20 个基点，本块按页面的符号记为 -20）；Core on Core Sales -9 bps；仓库扩张表 FY'26 End (Estimated) 940。EX-99.2 Segment Reporting 页美国列 Traffic +1.8%。",
-    "checked_on": "2026-09-19",
-    "comparable_traffic_us_pct": 1.8,
+    "period": "Q3 2026",
+    "fiscal_label": "FY2026 Q4",
+    "period_end": "2026-08-30",
+    "release_date": "2026-09-24",
+    "weeks": 16,
+    "net_sales_usd_m": 93873,
+    "net_sales_yoy_pct": 11.2,
+    "membership_fees_usd_m": 1850,
+    "total_revenue_usd_m": 95723,
+    "operating_income_usd_m": 3801,
+    "net_income_usd_m": 2998,
+    "diluted_eps_usd": 6.75,
+    "diluted_eps_growth_printed_pct": 15.0,
+    "comparable_sales_total_pct": 9.4,
+    "comparable_sales_adjusted_total_pct": 6.7,
+    "digitally_enabled_comparable_sales_pct": 19.5,
+    "cash_and_equivalents_usd_m": 20207,
+    "short_term_investments_usd_m": 1094,
+    "comparable_traffic_pct": 3.3,
+    "comparable_ticket_pct": 5.9,
+    "adjusted_comparable_ticket_pct": 3.3,
+    "executive_members_mm": 42.3,
+    "paid_members_mm": 84.1,
+    "renewal_rate_us_canada_pct": 92.3,
+    "renewal_rate_worldwide_pct": 89.8,
+    "gross_margin_change_bps": -11,
+    "sga_rate_change_bps": -27,
+    "core_on_core_bps": 18,
+    "fy_end_warehouse_estimate": 967,
+    "fy_end_warehouses_actual": 939,
+    "ieepa_refund_benefit_per_diluted_share_usd": 0.15,
+    "source": "Costco FY2026 Q4 与全年业绩 8-K（2026-09-24，acc 0000909832-26-000084）逐项读取：EX-99.1 首段「16-week fourth quarter and the 52-week fiscal year ended August 30, 2026」、「Net sales for the quarter increased 11.2 percent, to $93.9 billion」、「non-recurring benefit of $0.15 per diluted share from IEEPA tariff refunds」；同店销售表 16 Weeks 栏 Total Company 9.4% / Adjusted 6.7%、Digitally-Enabled 19.5%；损益表 16 Weeks Ended August 30, 2026 栏（Net sales 93,873；Membership fees 1,850；Total revenue 95,723；Operating income 3,801；Net income 2,998；Diluted 6.75）；资产负债表 August 30, 2026 栏（Cash and cash equivalents 20,207；Short-term investments 1,094）。EX-99.2 补充材料（九页图片）：Financial Performance 页 Diluted EPS $6.75 +15.0% Growth*、Gross Margin -11 bps vs Q4 FY'25、SG&A +27 bps vs Q4 FY'25（该页注明「+ = Favorable/lower」，即 SG&A 率下降 27 个基点，本块按页面的符号记为 -27）、Core on Core Sales³ +18 bps（脚注 3：剔除本季 IEEPA 关税退款及其部分再投资的影响）；Sales 页 Comparable Traffic +3.3%、Ticket +5.9%、Adjusted Ticket +3.3%；Membership 页 42.3MM Executive、84.1MM Paid、US/CN 92.3%、Worldwide 89.8%；Segment Reporting 页美国列 Traffic +3.2%；Warehouse Expansion 页 FY'27 (Estimated) 967、FY'26 End 939。FY2026 10-K 尚未申报：分部与商品类别那一格留空。",
+    "checked_on": "2026-09-29",
+    "comparable_traffic_us_pct": 3.2,
     "note": {
       "source": {
-        "this_quarter": "2026-05-28 COST Q2 2026 vs Q1 2026 Analysis.md（第 0 节 上季 Follow-up 回答；第 8 节 关键观察指标）",
-        "previous_quarter": "2026-03-05 COST Q4 2025 vs Q3 2025 Analysis.md（第 8 节 关键观察指标；文末 Follow-up Questions）"
+        "this_quarter": "2026-09-24 COST Q3 2026 vs Q2 2026 Analysis.md（第 0 节 上季遗留问题回答；第 8 节 关键观察指标）",
+        "previous_quarter": "2026-05-28 COST Q2 2026 vs Q1 2026 Analysis.md（第 8 节 关键观察指标；文末 Follow-up Questions for Next Quarter）"
       },
       "previous_covers": {
-        "period": "Q4 2025",
-        "fiscal_label": "FY2026 Q1",
-        "why": "文件名标 Q1 2026，正文（Q&A 段 December 11, 2025 电话会）是 FY2026 Q1"
+        "period": "Q2 2026",
+        "fiscal_label": "FY2026 Q3",
+        "why": "文件名标 Q2 2026，正文（2026-05-28 电话会）是 FY2026 Q3，与本站 Q2 2026 同一季"
       },
-      "checked_on": "2026-09-24",
+      "checked_on": "2026-09-29",
       "followup_closure": {
-        "total": 7,
+        "total": 5,
         "counts": {
-          "看多确认": 3,
-          "部分确认": 2,
-          "进展中": 1,
-          "仍在跟踪": 1
+          "已验证": 3,
+          "部分验证": 1,
+          "前提被证伪": 1
         },
         "verdicts": [
-          "看多确认",
-          "看多确认",
-          "看多确认",
-          "仍在跟踪",
-          "进展中",
-          "部分确认",
-          "部分确认"
+          "前提被证伪",
+          "已验证",
+          "已验证",
+          "部分验证",
+          "已验证"
         ]
       },
       "prior_thresholds": [
         {
-          "metric": "美加续费率季度变化",
-          "threshold": -5,
-          "direction": "up",
-          "settled_on": "chart"
-        },
-        {
-          "metric": "全球续费率季度变化",
-          "threshold": -5,
-          "direction": "up",
-          "settled_on": "chart"
-        },
-        {
-          "metric": "Executive 会员同比",
-          "threshold": 8.0,
-          "direction": "up",
-          "settled_on": "chart"
-        },
-        {
-          "metric": "Executive 会员占付费会员",
-          "threshold": 47.0,
-          "direction": "up",
-          "settled_on": "chart"
-        },
-        {
-          "metric": "数字化同店销售",
-          "threshold": 15.0,
-          "direction": "up",
-          "settled_on": "chart"
-        },
-        {
-          "metric": "App 流量同比",
-          "threshold": 30.0,
-          "direction": "up",
-          "settled_on": "table"
-        },
-        {
-          "metric": "Retail media 收入",
-          "threshold": 200.0,
-          "direction": "up",
-          "settled_on": "table"
-        },
-        {
-          "metric": "会员费有机增速（剔除涨价与汇率）",
+          "metric": "调整后合并 comp",
           "threshold": 6.0,
           "direction": "up",
+          "settled_on": "chart"
+        },
+        {
+          "metric": "调整后合并 comp（汽油转为逆风后）",
+          "threshold": 5.5,
+          "direction": "up",
+          "settled_on": "chart"
+        },
+        {
+          "metric": "美加会员续费率",
+          "threshold": 92.2,
+          "direction": "up",
+          "settled_on": "chart"
+        },
+        {
+          "metric": "全球会员续费率",
+          "threshold": 89.7,
+          "direction": "up",
+          "settled_on": "chart"
+        },
+        {
+          "metric": "核心商品毛利率同比变动",
+          "threshold": -10,
+          "direction": "up",
+          "settled_on": "chart"
+        },
+        {
+          "metric": "美国同店客流（补充跟踪）",
+          "threshold": 1.5,
+          "direction": "up",
+          "settled_on": "chart"
+        },
+        {
+          "metric": "现金部署：特别股息 + 关税退税返还路径",
+          "settled_on": "table"
+        },
+        {
+          "metric": "营业利润增速与净利润增速之差（EPS 质量）",
+          "settled_on": "table"
+        },
+        {
+          "metric": "retail media 是否首次量化收入",
           "settled_on": "table"
         }
       ],
@@ -137,87 +136,69 @@
           "direction": "up"
         },
         {
-          "metric": "调整后合并 comp（汽油转为逆风后）",
-          "threshold": 5.5,
-          "direction": "up"
-        },
-        {
-          "metric": "美加会员续费率",
-          "threshold": 92.2,
-          "direction": "up"
-        },
-        {
           "metric": "全球会员续费率",
           "threshold": 89.7,
-          "direction": "up"
-        },
-        {
-          "metric": "核心商品毛利率同比变动",
-          "threshold": -10,
-          "direction": "up"
-        },
-        {
-          "metric": "美国同店客流（补充跟踪）",
-          "threshold": 1.5,
           "direction": "up"
         }
       ],
       "next_not_charted": [
-        "现金部署：特别股息 + 关税退税返还路径",
-        "营业利润增速与净利润增速之差（EPS 质量）",
-        "retail media 是否首次量化收入"
+        "付费会员同比（与全球续费率一起才算飞轮失速）",
+        "美加续费率（护城河加分线）",
+        "会员费收入剔除汇率增速（涨价红利用尽后）",
+        "商品端利润贡献增速（营业利润减会员费，剔除关税退款）",
+        "现金部署（特别股息 / 回购）"
       ]
     }
   },
   "periods": [
-    "Q3 2024",
     "Q4 2024",
     "Q1 2025",
     "Q2 2025",
     "Q3 2025",
     "Q4 2025",
     "Q1 2026",
-    "Q2 2026"
+    "Q2 2026",
+    "Q3 2026"
   ],
   "fiscal_labels": [
-    "FY2024 Q4",
     "FY2025 Q1",
     "FY2025 Q2",
     "FY2025 Q3",
     "FY2025 Q4",
     "FY2026 Q1",
     "FY2026 Q2",
-    "FY2026 Q3"
+    "FY2026 Q3",
+    "FY2026 Q4"
   ],
   "period_ends": [
-    "2024-09-01",
     "2024-11-24",
     "2025-02-16",
     "2025-05-11",
     "2025-08-31",
     "2025-11-23",
     "2026-02-15",
-    "2026-05-10"
+    "2026-05-10",
+    "2026-08-30"
   ],
   "release_dates": [
-    "2024-09-26",
     "2024-12-12",
     "2025-03-06",
     "2025-05-29",
     "2025-09-25",
     "2025-12-11",
     "2026-03-05",
-    "2026-05-28"
+    "2026-05-28",
+    "2026-09-24"
   ],
   "weeks": [
-    16,
     12,
     12,
     12,
     16,
     12,
     12,
-    12
+    12,
+    16
   ],
   "weeks_by_period": {
     "Q4 2015": 12,
@@ -262,10 +243,11 @@
     "Q3 2025": 16,
     "Q4 2025": 12,
     "Q1 2026": 12,
-    "Q2 2026": 12
+    "Q2 2026": 12,
+    "Q3 2026": 16
   },
   "yoy_week_mismatch": [
-    true,
+    false,
     false,
     false,
     false,
@@ -276,316 +258,316 @@
   ],
   "financials": {
     "net_sales_usd_m": [
-      78185.0,
       60985.0,
       62530.0,
       61965.0,
       84432.0,
       65978.0,
       68242.0,
-      69154.0
+      69154.0,
+      93873.0
     ],
     "membership_fees_usd_m": [
-      1512.0,
       1166.0,
       1193.0,
       1240.0,
       1724.0,
       1329.0,
       1355.0,
-      1373.0
+      1373.0,
+      1850.0
     ],
     "total_revenue_usd_m": [
-      79697.0,
       62151.0,
       63723.0,
       63205.0,
       86156.0,
       67307.0,
       69597.0,
-      70527.0
+      70527.0,
+      95723.0
     ],
     "merchandise_costs_usd_m": [
-      69588.0,
       54109.0,
       55744.0,
       54996.0,
       75037.0,
       58510.0,
       60719.0,
-      61519.0
+      61519.0,
+      83531.0
     ],
     "sga_usd_m": [
-      7067.0,
       5846.0,
       5663.0,
       5679.0,
       7778.0,
       6334.0,
       6272.0,
-      6193.0
+      6193.0,
+      8391.0
     ],
     "operating_income_usd_m": [
-      3042.0,
       2196.0,
       2316.0,
       2530.0,
       3341.0,
       2463.0,
       2606.0,
-      2815.0
+      2815.0,
+      3801.0
     ],
     "interest_expense_usd_m": [
-      -49.0,
       -37.0,
       -36.0,
       -35.0,
       -46.0,
       -35.0,
       -33.0,
-      -32.0
+      -32.0,
+      -45.0
     ],
     "interest_income_and_other_usd_m": [
-      120.0,
       147.0,
       142.0,
       85.0,
       215.0,
       155.0,
       148.0,
-      155.0
+      155.0,
+      253.0
     ],
     "pretax_income_usd_m": [
-      3113.0,
       2306.0,
       2422.0,
       2580.0,
       3510.0,
       2583.0,
       2721.0,
-      2938.0
+      2938.0,
+      4009.0
     ],
     "income_tax_usd_m": [
-      759.0,
       508.0,
       634.0,
       677.0,
       900.0,
       582.0,
       686.0,
-      746.0
+      746.0,
+      1011.0
     ],
     "net_income_usd_m": [
-      2354.0,
       1798.0,
       1788.0,
       1903.0,
       2610.0,
       2001.0,
       2035.0,
-      2192.0
+      2192.0,
+      2998.0
     ],
     "diluted_eps_usd": [
-      5.29,
       4.04,
       4.02,
       4.28,
       5.87,
       4.5,
       4.58,
-      4.93
+      4.93,
+      6.75
     ],
     "diluted_shares_000s": [
-      444977,
       444891,
       444886,
       444762,
       444706,
       444515,
       444420,
-      444430
+      444430,
+      444364
     ],
     "total_revenue_yoy_pct": [
-      0.960235,
       7.529542,
       9.03631,
       8.015039,
       8.104446,
       8.295924,
       9.218022,
-      11.584527
+      11.584527,
+      11.104276
     ],
     "net_sales_yoy_pct": [
-      0.975074,
       7.525081,
       9.068392,
       7.968009,
       7.990024,
       8.187259,
       9.134815,
-      11.601711
+      11.601711,
+      11.181779
     ],
     "membership_fees_yoy_pct": [
-      0.198807,
       7.763401,
       7.380738,
       10.418522,
       14.021164,
       13.979417,
       13.579212,
-      10.725806
+      10.725806,
+      7.308585
     ],
     "operating_income_yoy_pct": [
-      9.385113,
       10.685484,
       12.318138,
       15.157032,
       9.82906,
       12.15847,
       12.521589,
-      11.264822
+      11.264822,
+      13.768333
     ],
     "net_income_yoy_pct": [
-      8.981481,
       13.152926,
       2.581756,
       13.206425,
       10.875106,
       11.290323,
       13.814318,
-      15.186548
+      15.186548,
+      14.8659
     ],
     "gross_margin_pct": [
-      10.995715,
       11.274904,
       10.852391,
       11.246672,
       11.127298,
       11.318924,
       11.024003,
-      11.040576
+      11.040576,
+      11.017012
     ],
     "sga_pct_of_net_sales": [
-      9.038818,
       9.585964,
       9.056453,
       9.164851,
       9.212147,
       9.60017,
       9.190821,
-      8.955375
+      8.955375,
+      8.938672
     ],
     "operating_margin_pct": [
-      3.816957,
       3.53333,
       3.63448,
       4.002848,
       3.877849,
       3.659352,
       3.744414,
-      3.991379
+      3.991379,
+      3.970833
     ],
     "effective_tax_rate_pct": [
-      24.381625,
       22.029488,
       26.176713,
       26.24031,
       25.641026,
       22.53194,
       25.211319,
-      25.391423
+      25.391423,
+      25.218259
     ]
   },
   "comparable_sales_pct": {
     "periods": [
-      "Q3 2024",
       "Q4 2024",
       "Q1 2025",
       "Q2 2025",
       "Q3 2025",
       "Q4 2025",
       "Q1 2026",
-      "Q2 2026"
+      "Q2 2026",
+      "Q3 2026"
     ],
     "reported_total_pct": [
-      5.4,
       5.2,
       6.8,
       5.7,
       5.7,
       6.4,
       7.4,
-      9.8
+      9.8,
+      9.4
     ],
     "adjusted_total_pct": [
-      6.9,
       7.1,
       9.1,
       8.0,
       6.4,
       6.4,
       6.7,
-      6.6
+      6.6,
+      6.7
     ],
     "adjusted_us_pct": [
-      6.3,
       7.2,
       8.6,
       7.9,
       6.0,
       5.9,
       6.4,
-      6.8
+      6.8,
+      7.2
     ],
     "adjusted_canada_pct": [
-      7.9,
       6.7,
       10.5,
       7.8,
       8.3,
       9.0,
       7.6,
-      6.2
+      6.2,
+      4.6
     ],
     "adjusted_other_pct": [
-      9.3,
       7.1,
       10.3,
       8.5,
       7.2,
       6.8,
       7.1,
-      5.9
+      5.9,
+      6.2
     ],
     "digital_reported_pct": [
-      18.9,
       13.0,
       20.9,
       14.8,
       13.6,
       20.5,
       22.6,
-      21.5
+      21.5,
+      19.5
     ],
     "filed_integer_reported_total_pct": [
-      null,
       5.0,
       7.0,
       6.0,
       null,
       6.0,
       7.0,
-      10.0
+      10.0,
+      null
     ],
     "filed_integer_adjusted_total_pct": [
-      null,
       7.0,
       9.0,
       8.0,
       null,
       6.0,
       7.0,
-      7.0
+      7.0,
+      null
     ]
   },
   "comp_history_pct": {
@@ -631,7 +613,8 @@
       "Q3 2025",
       "Q4 2025",
       "Q1 2026",
-      "Q2 2026"
+      "Q2 2026",
+      "Q3 2026"
     ],
     "fiscal_labels": [
       "FY2016 Q2",
@@ -675,7 +658,8 @@
       "FY2025 Q4",
       "FY2026 Q1",
       "FY2026 Q2",
-      "FY2026 Q3"
+      "FY2026 Q3",
+      "FY2026 Q4"
     ],
     "period_ends": [
       "2016-02-14",
@@ -719,7 +703,8 @@
       "2025-08-31",
       "2025-11-23",
       "2026-02-15",
-      "2026-05-10"
+      "2026-05-10",
+      "2026-08-30"
     ],
     "reported_total_pct": [
       1,
@@ -763,7 +748,8 @@
       5.7,
       6.4,
       7.4,
-      9.8
+      9.8,
+      9.4
     ],
     "adjusted_total_pct": [
       5,
@@ -807,7 +793,8 @@
       6.4,
       6.4,
       6.7,
-      6.6
+      6.6,
+      6.7
     ],
     "reported_us_pct": [
       3,
@@ -851,7 +838,8 @@
       5.1,
       5.9,
       5.9,
-      9.4
+      9.4,
+      10.7
     ],
     "adjusted_us_pct": [
       4,
@@ -895,7 +883,8 @@
       6.0,
       5.9,
       6.4,
-      6.8
+      6.8,
+      7.2
     ],
     "gap_pp": [
       -4,
@@ -939,7 +928,8 @@
       -0.7,
       0.0,
       0.7,
-      3.2
+      3.2,
+      2.7
     ],
     "digital_reported_pct": [
       null,
@@ -983,7 +973,8 @@
       13.6,
       20.5,
       22.6,
-      21.5
+      21.5,
+      19.5
     ],
     "digital_metric_name": [
       null,
@@ -1027,6 +1018,7 @@
       "E-commerce",
       "Digitally-Enabled",
       "Digitally-Enabled",
+      "Digitally-Enabled",
       "Digitally-Enabled"
     ],
     "adjustment_basis": [
@@ -1045,6 +1037,7 @@
       "gasoline_fx_and_asc606_DISCLOSED_NOT_SPLICED",
       "gasoline_fx_and_asc606_DISCLOSED_NOT_SPLICED",
       "gasoline_fx_and_asc606_DISCLOSED_NOT_SPLICED",
+      "gasoline_and_fx",
       "gasoline_and_fx",
       "gasoline_and_fx",
       "gasoline_and_fx",
@@ -1121,7 +1114,8 @@
       "Q3 2025",
       "Q4 2025",
       "Q1 2026",
-      "Q2 2026"
+      "Q2 2026",
+      "Q3 2026"
     ],
     "operating_leg_pct": [
       13.306682,
@@ -1134,7 +1128,8 @@
       9.82906,
       12.15847,
       12.521589,
-      11.264822
+      11.264822,
+      13.768333
     ],
     "below_the_line_leg_pct": [
       5.009739,
@@ -1147,7 +1142,8 @@
       2.662239,
       -0.130465,
       -0.156787,
-      2.346786
+      2.346786,
+      0.393951
     ],
     "tax_leg_pct": [
       -2.090592,
@@ -1160,7 +1156,8 @@
       -1.665468,
       -0.644412,
       1.307709,
-      1.150882
+      1.150882,
+      0.568548
     ],
     "share_count_leg_pct": [
       0.028803,
@@ -1173,7 +1170,8 @@
       0.060939,
       0.084587,
       0.104856,
-      0.074702
+      0.074702,
+      0.076964
     ],
     "product_pct": [
       16.529155,
@@ -1186,7 +1184,8 @@
       10.942673,
       11.384459,
       13.933659,
-      15.272595
+      15.272595,
+      14.954306
     ],
     "reported_eps_yoy_pct": [
       16.529155,
@@ -1199,239 +1198,240 @@
       10.942673,
       11.384459,
       13.933659,
-      15.272595
+      15.272595,
+      14.954306
     ]
   },
   "segments_usd_m": {
     "periods": [
-      "Q3 2024",
       "Q4 2024",
       "Q1 2025",
       "Q2 2025",
       "Q3 2025",
       "Q4 2025",
       "Q1 2026",
-      "Q2 2026"
+      "Q2 2026",
+      "Q3 2026"
     ],
     "is_derived": [
-      true,
       false,
       false,
       false,
       true,
       false,
       false,
-      false
+      false,
+      null
     ],
     "united_states": {
       "revenue_usd_m": [
-        57909,
         45088,
         46413,
         46318,
         62227,
         48569,
         49931,
-        51434
+        51434,
+        null
       ],
       "operating_income_usd_m": [
-        2089,
         1498,
         1515,
         1713,
         2152,
         1616,
         1635,
-        1873
+        1873,
+        null
       ],
       "operating_margin_pct": [
-        3.607384,
         3.322392,
         3.264172,
         3.698346,
         3.458306,
         3.327225,
         3.274519,
-        3.64156
+        3.64156,
+        null
       ]
     },
     "canada": {
       "revenue_usd_m": [
-        11085,
         8404,
         8296,
         8321,
         11902,
         9073,
         9291,
-        9410
+        9410,
+        null
       ],
       "operating_income_usd_m": [
-        539,
         362,
         403,
         450,
         634,
         434,
         476,
-        506
+        506,
+        null
       ],
       "operating_margin_pct": [
-        4.862427,
         4.307473,
         4.857763,
         5.408004,
         5.326836,
         4.783423,
         5.123238,
-        5.377258
+        5.377258,
+        null
       ]
     },
     "other_international": {
       "revenue_usd_m": [
-        10703,
         8659,
         9014,
         8566,
         12027,
         9665,
         10375,
-        9683
+        9683,
+        null
       ],
       "operating_income_usd_m": [
-        414,
         336,
         398,
         367,
         555,
         413,
         495,
-        436
+        436,
+        null
       ],
       "operating_margin_pct": [
-        3.868074,
         3.880356,
         4.415354,
         4.28438,
         4.614617,
         4.273151,
         4.771084,
-        4.502737
+        4.502737,
+        null
       ]
     }
   },
   "merchandise_categories": {
     "periods": [
-      "Q3 2024",
       "Q4 2024",
       "Q1 2025",
       "Q2 2025",
       "Q3 2025",
       "Q4 2025",
       "Q1 2026",
-      "Q2 2026"
+      "Q2 2026",
+      "Q3 2026"
     ],
     "foods_and_sundries_usd_m": [
-      31699,
       25062,
       25112,
       25149,
       34241,
       26943,
       27149,
-      26533
+      26533,
+      null
     ],
     "non_foods_usd_m": [
-      19672,
       16171,
       17526,
       16080,
       21413,
       17440,
       19153,
-      17529
+      17529,
+      null
     ],
     "fresh_foods_usd_m": [
-      11008,
       8218,
       8836,
       8785,
       12149,
       9016,
       9887,
-      9673
+      9673,
+      null
     ],
     "warehouse_ancillary_and_other_usd_m": [
-      15806,
       11534,
       11056,
       11951,
       16629,
       12579,
       12053,
-      15419
+      15419,
+      null
     ],
     "growth_contribution_pp": {
       "foods_and_sundries_usd_m": [
-        0.253132,
         3.593279,
         2.506497,
         3.631168,
         3.251263,
         3.084365,
         3.257636,
-        2.233519
+        2.233519,
+        null
       ],
       "non_foods_usd_m": [
-        0.861423,
         2.477211,
         4.376341,
         2.721634,
         2.22677,
         2.08084,
         2.601951,
-        2.338417
+        2.338417,
+        null
       ],
       "fresh_foods_usd_m": [
-        0.410694,
         1.569194,
         1.465176,
         1.562936,
         1.459359,
         1.308518,
         1.680793,
-        1.433067
+        1.433067,
+        null
       ],
       "warehouse_ancillary_and_other_usd_m": [
-        -0.550174,
         -0.114604,
         0.720378,
         0.052272,
         1.052632,
         1.713536,
         1.594435,
-        5.596708
+        5.596708,
+        null
       ]
     },
     "net_sales_yoy_pct": [
-      0.975074,
       7.525081,
       9.068392,
       7.968009,
       7.990024,
       8.187259,
       9.134815,
-      11.601711
+      11.601711,
+      null
     ],
     "ancillary_share_of_base_pct": [
-      20.963451,
       20.450659,
       18.564128,
       20.771188,
       20.216154,
       18.912847,
       17.681113,
-      19.286694
+      19.286694,
+      null
     ]
   },
   "mdna_margins_pct": {
@@ -1462,7 +1462,8 @@
       "Q3 2025",
       "Q4 2025",
       "Q1 2026",
-      "Q2 2026"
+      "Q2 2026",
+      "Q3 2026"
     ],
     "gross_margin_pct": [
       11.05,
@@ -1491,7 +1492,8 @@
       null,
       11.32,
       11.02,
-      11.04
+      11.04,
+      null
     ],
     "gross_margin_change_bps": [
       30,
@@ -1520,7 +1522,8 @@
       null,
       4,
       17,
-      -21
+      -21,
+      null
     ],
     "gross_margin_ex_gasoline_pct": [
       11.01,
@@ -1549,7 +1552,8 @@
       null,
       null,
       10.96,
-      11.26
+      11.26,
+      null
     ],
     "gross_margin_ex_gasoline_change_bps": [
       26,
@@ -1578,7 +1582,8 @@
       null,
       4,
       11,
-      1
+      1,
+      null
     ],
     "sga_pct": [
       10.3,
@@ -1607,7 +1612,8 @@
       null,
       9.6,
       9.19,
-      8.96
+      8.96,
+      null
     ],
     "sga_change_bps": [
       17,
@@ -1636,7 +1642,8 @@
       null,
       1,
       13,
-      -20
+      -20,
+      null
     ],
     "sga_ex_gasoline_pct": [
       10.26,
@@ -1665,7 +1672,8 @@
       null,
       null,
       9.14,
-      9.14
+      9.14,
+      null
     ],
     "sga_ex_gasoline_change_bps": [
       13,
@@ -1694,7 +1702,8 @@
       null,
       1,
       8,
-      -2
+      -2,
+      null
     ],
     "quarter_figure_available": [
       true,
@@ -1723,7 +1732,8 @@
       false,
       true,
       true,
-      true
+      true,
+      false
     ]
   },
   "membership": {
@@ -1769,7 +1779,8 @@
       "Q3 2025",
       "Q4 2025",
       "Q1 2026",
-      "Q2 2026"
+      "Q2 2026",
+      "Q3 2026"
     ],
     "paid_members_000s": [
       46100.0,
@@ -1813,7 +1824,8 @@
       81000,
       81400,
       82100,
-      82900
+      82900,
+      84100
     ],
     "cardholders_000s": [
       84000.0,
@@ -1857,7 +1869,8 @@
       145200,
       145900,
       147200,
-      148500
+      148500,
+      150400
     ],
     "renewal_rate_us_canada_pct": [
       91.0,
@@ -1901,7 +1914,8 @@
       92.3,
       92.2,
       92.1,
-      92.2
+      92.2,
+      92.3
     ],
     "renewal_rate_worldwide_pct": [
       88.0,
@@ -1945,7 +1959,8 @@
       89.8,
       89.7,
       89.7,
-      89.7
+      89.7,
+      89.8
     ],
     "warehouses_at_period_end": [
       698.0,
@@ -1989,7 +2004,8 @@
       914,
       921,
       924,
-      928
+      928,
+      939
     ],
     "membership_fees_usd_m": [
       603.0,
@@ -2033,7 +2049,8 @@
       1724.0,
       1329.0,
       1355.0,
-      1373.0
+      1373.0,
+      1850.0
     ],
     "weeks": [
       12,
@@ -2077,7 +2094,8 @@
       16,
       12,
       12,
-      12
+      12,
+      16
     ],
     "annualised_fee_per_paid_member_usd": [
       56.68,
@@ -2121,7 +2139,8 @@
       69.17,
       70.75,
       71.52,
-      71.77
+      71.77,
+      71.49
     ],
     "renewal_decimal_from_index": 28,
     "fee_increase_index": 35
@@ -2169,7 +2188,8 @@
       "Q3 2025",
       "Q4 2025",
       "Q1 2026",
-      "Q2 2026"
+      "Q2 2026",
+      "Q3 2026"
     ],
     "cash_and_equivalents_usd_m": [
       3633.0,
@@ -2213,7 +2233,8 @@
       14161.0,
       16217.0,
       17383.0,
-      18946.0
+      18946.0,
+      20207.0
     ],
     "short_term_investments_usd_m": [
       1222.0,
@@ -2257,7 +2278,8 @@
       1123.0,
       966.0,
       857.0,
-      1050.0
+      1050.0,
+      1094.0
     ],
     "merchandise_inventories_usd_m": [
       null,
@@ -2301,7 +2323,8 @@
       18116.0,
       21141.0,
       18991.0,
-      19418.0
+      19418.0,
+      19324.0
     ],
     "deferred_membership_fees_usd_m": [
       null,
@@ -2345,7 +2368,8 @@
       2854.0,
       2990.0,
       3126.0,
-      3157.0
+      3157.0,
+      3006.0
     ],
     "total_assets_usd_m": [
       null,
@@ -2389,7 +2413,8 @@
       77099.0,
       82790.0,
       83639.0,
-      86430.0
+      86430.0,
+      89045.0
     ],
     "total_equity_usd_m": [
       null,
@@ -2433,7 +2458,8 @@
       29164.0,
       30303.0,
       32087.0,
-      33509.0
+      33509.0,
+      35803.0
     ],
     "cash_and_short_term_investments_usd_m": [
       4855.0,
@@ -2477,59 +2503,60 @@
       15284.0,
       17183.0,
       18240.0,
-      19996.0
+      19996.0,
+      21301.0
     ]
   },
   "cash_flow_usd_m": {
     "periods": [
-      "Q3 2024",
       "Q4 2024",
       "Q1 2025",
       "Q2 2025",
       "Q3 2025",
       "Q4 2025",
       "Q1 2026",
-      "Q2 2026"
+      "Q2 2026",
+      "Q3 2026"
     ],
     "operating_cash_flow_usd_m": [
-      2958.0,
       3260.0,
       2748.0,
       3460.0,
       3867.0,
       4688.0,
       2996.0,
-      3449.0
+      3449.0,
+      4692.0
     ],
     "capex_usd_m": [
-      1577.0,
       1264.0,
       1137.0,
       1131.0,
       1966.0,
       1526.0,
       1289.0,
-      1413.0
+      1413.0,
+      2207.0
     ],
     "buybacks_usd_m": [
-      216.0,
       207.0,
       205.0,
       211.0,
       280.0,
       210.0,
       209.0,
-      184.0
+      184.0,
+      245.0
     ],
     "dividends_paid_usd_m": [
-      514.0,
       515.0,
       0.0,
       515.0,
       1153.0,
       577.0,
       577.0,
-      0.0
+      0.0,
+      1304.0
     ]
   },
   "annual": {
@@ -2955,112 +2982,10 @@
     ]
   },
   "prior_kpi_settlement": {
-    "period": "Q2 2026",
-    "set_in": "Q4 2025",
-    "set_in_file": "2026-03-05 COST Q4 2025 vs Q3 2025 Analysis.md",
-    "due_text": "Q2/Q3",
-    "_note": "上一份报告第 8 节五个指标里的量化阈值，逐字抄录（quote）；reads 指向本页算读数的序列，读数一律由 builder 从序列现算，不在这里写。not_charted 是按申报数结不了、或不能画成序列的几条，理由写在 reading / verdict 里。",
-    "quantified": [
-      {
-        "id": "renewal_us_change",
-        "reads": "renewal_us_change_bp",
-        "chart": "renewal_change",
-        "family": "会员续费率季度变化",
-        "metric": "美加续费率季度变化",
-        "direction": "up",
-        "threshold": -5,
-        "unit": "bps",
-        "downside": {
-          "value": -15,
-          "name": "减仓线",
-          "inclusive": true
-        },
-        "caveat": "上一份报告说此前「续费率连续 2 季下滑 -10bps/季」，与这两季的申报读数不符。",
-        "quote": "续费率季度变化：续费率连续 2 季下滑 -10bps/季；Q2/Q3 下滑减速至 ≤ -5bps/季 或 stabilize = 数字化定向沟通见效 → 加仓；下滑加速到 -15bps+/季 = 年轻会员结构性流失 → 减仓"
-      },
-      {
-        "id": "renewal_ww_change",
-        "reads": "renewal_ww_change_bp",
-        "chart": "renewal_change",
-        "family": "会员续费率季度变化",
-        "metric": "全球续费率季度变化",
-        "direction": "up",
-        "threshold": -5,
-        "unit": "bps",
-        "downside": {
-          "value": -15,
-          "name": "减仓线",
-          "inclusive": true
-        },
-        "quote": "续费率季度变化：续费率连续 2 季下滑 -10bps/季；Q2/Q3 下滑减速至 ≤ -5bps/季 或 stabilize = 数字化定向沟通见效 → 加仓；下滑加速到 -15bps+/季 = 年轻会员结构性流失 → 减仓"
-      },
-      {
-        "id": "executive_yoy",
-        "reads": "executive_yoy",
-        "metric": "Executive 会员同比",
-        "direction": "up",
-        "threshold": 8.0,
-        "unit": "pct",
-        "signed": true,
-        "downside": {
-          "value": 5.0,
-          "name": "跟踪线"
-        },
-        "quote": "Executive 会员季度增速：Q1 +9.1%（vs Q4 隐含较低）；Q2/Q3 ≥ +8% YoY + Executive 占总会员 ≥ 47% = 升级路径兑现 → 加仓；< +5% = 升级动力退潮 → 跟踪"
-      },
-      {
-        "id": "executive_share",
-        "reads": "executive_share",
-        "metric": "Executive 会员占付费会员",
-        "direction": "up",
-        "threshold": 47.0,
-        "unit": "pct",
-        "quote": "Executive 会员季度增速：Q1 +9.1%（vs Q4 隐含较低）；Q2/Q3 ≥ +8% YoY + Executive 占总会员 ≥ 47% = 升级路径兑现 → 加仓；< +5% = 升级动力退潮 → 跟踪"
-      },
-      {
-        "id": "digital_comp",
-        "reads": "digital_comp",
-        "metric": "数字化同店销售",
-        "direction": "up",
-        "threshold": 15.0,
-        "unit": "pct",
-        "signed": true,
-        "downside": {
-          "value": 10.0,
-          "name": "跟踪线"
-        },
-        "quote": "E-commerce / 数字化 comp 增速：Q1 +20.5%（vs Q4 较高基数）；Q2/Q3 ≥ +15% YoY + App 流量 YoY ≥ +30% = 数字化引擎结构性 → 加仓 + 估值乘数支撑；< +10% = Black Friday 季节性已 lap → 跟踪"
-      }
-    ],
-    "not_charted": [
-      {
-        "metric": "App 流量同比",
-        "threshold_text": "≥ +30%（与数字化 comp ≥ +15% 同为加仓条件）",
-        "reading": "上一季（FY2026 Q2）的补充材料印了 Total App visits +63%；本季的补充材料不再单列 App，只印 Ecommerce Site & App Traffic +37%（站点与 App 合计）。",
-        "verdict": "口径已换，按原口径结不了（合计口径在 +30% 之上）",
-        "quote": "E-commerce / 数字化 comp 增速：Q1 +20.5%（vs Q4 较高基数）；Q2/Q3 ≥ +15% YoY + App 流量 YoY ≥ +30% = 数字化引擎结构性 → 加仓 + 估值乘数支撑；< +10% = Black Friday 季节性已 lap → 跟踪"
-      },
-      {
-        "metric": "Retail media 收入",
-        "threshold_text": "H1 FY26 首次披露 ≥ 年化 US$200M 且增速 ≥ +50%",
-        "reading": "FY2026 Q2、Q3 两季的业绩新闻稿、EX-99.2 补充材料与 10-Q 都没有这条收入。",
-        "verdict": "触发「连续 2 季无量化披露 = 仍是 narrative → 跟踪」",
-        "quote": "Retail media 收入首次披露 + 增速：当前未单独披露；H1 FY26 首次披露 Retail media revenue ≥ $200M annualized + 增速 ≥ +50% YoY = 高毛利收入流确立 → 加仓 + 多元化里程碑；连续 2 季无量化披露 = 仍是 narrative → 跟踪"
-      },
-      {
-        "metric": "会员费有机增速（剔除涨价与汇率）",
-        "threshold_text": "≥ +6%（< +4% 或转负 = 警示）",
-        "reading": "电话会口径：本季 CFO「Excluding the membership fee increase and FX, membership income grew 7%」，上一季「7.5%」。申报文件不印这个增速；10-Q 只印涨价贡献占会员费增量的约数（本季约 25%、上一季约 35%），与补充材料的会员费增速 {fee_growth}（剔除汇率 {fee_growth_ex_fx}）放在一起只能核方向，核不到小数点。",
-        "verdict": "守住（电话会口径，不画图）",
-        "quote": "Membership fees revenue 有机增速：Q1 +7.3% 有机；Q2/Q3 有机增速 ≥ +6% = 会员经济模型稳定 → 跟踪；< +4% 或转负 = 会员经济压力升级 → 警示"
-      }
-    ]
-  },
-  "next_kpi": {
-    "period": "Q2 2026",
+    "period": "Q3 2026",
     "set_in": "Q2 2026",
     "set_in_file": "2026-05-28 COST Q2 2026 vs Q1 2026 Analysis.md",
-    "_note": "本季报告第 8 节的阈值，逐字抄录（quote）；当前值由 builder 从 reads 指向的序列现算。下一季换季时，这个 quantified 列表原样搬进 prior_kpi_settlement，再按新报告写 next_kpi。",
+    "_note": "上一份报告第 8 节的阈值：quantified 由上一季的 next_kpi.quantified 原样搬来（quote 逐字不变），caveat 是本季结清时加的说明；读数一律由 builder 从 reads 指向的序列现算，不在这里写。not_charted 是上一季就不画线的三条，reading 与 verdict 按本季申报与本季报告写。",
     "quantified": [
       {
         "id": "adjusted_comp",
@@ -3092,7 +3017,8 @@
           "value": 5.0,
           "name": "减仓线"
         },
-        "quote": "Reported comp 中 gas/FX 反转后的 ex-gas 韧性：下季 gas 转负；若 ex-gas comp 仍 ≥+5.5% = headline 走弱但底层稳 → 视情绪杀为买点；ex-gas 同步跌破 +5% = 真实降速 → 减仓"
+        "quote": "Reported comp 中 gas/FX 反转后的 ex-gas 韧性：下季 gas 转负；若 ex-gas comp 仍 ≥+5.5% = headline 走弱但底层稳 → 视情绪杀为买点；ex-gas 同步跌破 +5% = 真实降速 → 减仓",
+        "caveat": "第二条线的前提是「下季汽油转为逆风」，而本季汽油与汇率合计仍在抬高报告 comp（第二节的缺口图），这个前提没有出现；本季报告第 8 节把这条线记为「指标设计失效（时点错）」，并重设到 FY2027 Q3。本页照常按读数结清，但这一格结清的不是它原本要测的那件事。"
       },
       {
         "id": "renewal_us",
@@ -3130,7 +3056,8 @@
           "value": 0,
           "name": "回正线（安心）"
         },
-        "quote": "core-on-core 毛利率：-9bps；回正或 ≥0 = 周期性让利 → 安心；连续 2 季 ≤-10bps = 竞争性结构侵蚀 → 警示"
+        "quote": "core-on-core 毛利率：-9bps；回正或 ≥0 = 周期性让利 → 安心；连续 2 季 ≤-10bps = 竞争性结构侵蚀 → 警示",
+        "caveat": "本季这一格来自 EX-99.2 补充材料（会计 Q4 没有 10-Q），并带着一条上季没有的脚注：「Excluding the impact from the IEEPA tariff refunds received in the quarter, less partial reinvestment of those refunds」。退款扣除再投资之后的净额单列在同一页毛利率桥的「Other」一行（+9bps），电话会上 CFO 说这一项不计入核心商品毛利（电话会）。报告的「回正」用的就是这个剔除后的数。"
       },
       {
         "id": "us_traffic",
@@ -3146,100 +3073,156 @@
     "not_charted": [
       {
         "metric": "现金部署：特别股息 + 关税退税返还路径",
-        "tracked_by": "EX_CASH",
         "threshold_text": "事件：宣布特别股息，或关税退税的返还机制明确",
-        "reading": "本季没有宣布特别股息；10-Q 只披露了 2026 年 3 月四起要求把 IEEPA 关税退款返还会员的集体诉讼，没有退税金额，也没有返还机制。现金余额见第三节最后那张现金图。",
-        "why": "事件型触发，没有数值阈值，用本节最后那张现金图跟踪",
+        "reading": "本季内没有 8-K 宣布特别股息。关税退税：业绩新闻稿写明本季含一次性收益每股 0.15 美元，是 IEEPA 关税退款扣除「再投资于会员价值」那部分之后的净额，即返还走的是降价；退款金额（第四季 1.84 亿美元，约为预期总额的三分之一多一点）只在电话会给出。现金余额见第三节最后那张现金图。",
+        "verdict": "部分触发：退税的返还机制明确了（降价再投资），特别股息没有宣布",
         "quote": "现金部署：特别股息 + 关税退税返还路径：现金 $18.95B；宣布特别股息或退税明确返还机制 = 重估催化（卖方预期 2–3 季内）；现金持续闲置 + 诉讼锁定 = 拖累"
       },
       {
         "metric": "营业利润增速与净利润增速之差（EPS 质量）",
         "threshold_text": "报告只问是否收窄，没有给数",
         "reading": "本季每股收益增速里来自营业外与税率的两条腿合计 {eps_wedge}，拆法见第二节的每股收益分解图。",
-        "why": "报告只问差距是否收窄、没有给阈值，它的读数在第二节那张每股收益分解图里",
+        "verdict": "收窄（本季报告判「已验证（收窄）」，并退役这条指标）",
         "quote": "补充跟踪（非核心）：① 营业利润增速 vs 净利润增速的 gap（EPS 质量）；② retail media 是否首次量化收入；③ 客流（US traffic 是否跌破 +1.5%）"
       },
       {
         "metric": "retail media 是否首次量化收入",
         "threshold_text": "事件：首次披露收入",
-        "reading": "本季任何申报文件都没有这条收入。",
-        "why": "事件型，本季任何申报文件都没有这条收入",
+        "reading": "本季业绩新闻稿与 EX-99.2 补充材料都没有这条收入；FY2026 10-K 尚未申报。",
+        "verdict": "仍未量化（本季报告第 4 节：电话会上零提及）",
         "quote": "补充跟踪（非核心）：① 营业利润增速 vs 净利润增速的 gap（EPS 质量）；② retail media 是否首次量化收入；③ 客流（US traffic 是否跌破 +1.5%）"
       }
     ]
   },
-  "local_note": {
-    "period": "Q2 2026",
-    "_note": "本季本地报告自己的论断，页面拿它们与申报值对照，不作为数据发布。只属于这一季：换季时换成新一季报告的内容，或整块删掉。",
-    "structural_comp_claim_pct": 6.5,
-    "gas_tailwind_flagged": true
+  "next_kpi": {
+    "period": "Q3 2026",
+    "set_in": "Q3 2026",
+    "set_in_file": "2026-09-24 COST Q3 2026 vs Q2 2026 Analysis.md",
+    "_note": "本季报告第 8 节「新指标表」五行的阈值，逐字抄录（quote）；当前值由 builder 从 reads 指向的序列现算。能画线的只有两条：调整后 comp（报告按月读，本页按季）与全球续费率；其余的序列不在阈值图能读的范围里，或本身是事件、加分线，进 not_charted。第 4 行原文把两条线与一个市场预期的每股收益绑在一起，报告自己在第 9 节写明那个预期来源不一，本页不引，quote 里以「……」省去。补充跟踪的三条（加拿大调整后 comp、EIA 零售油价、应收账款构成）不进本块：第一条阈值图没有这条序列，后两条不是 Costco 的申报或要等 10-K。下一季换季时，这个 quantified 列表原样搬进 prior_kpi_settlement。",
+    "quantified": [
+      {
+        "id": "adjusted_comp",
+        "reads": "adjusted_comp",
+        "chart": "adjusted_comp",
+        "family": "调整后合并 comp",
+        "metric": "调整后合并 comp",
+        "direction": "up",
+        "threshold": 6.0,
+        "unit": "pct",
+        "signed": true,
+        "downside": {
+          "value": 5.5,
+          "name": "降速线"
+        },
+        "remark": "报告的两条线都按月读（9–11 月均值、连续两个月），本页口径是季度，下一季的季度读数就是这三个月合起来的近似",
+        "quote": "月度调整后 comp（ex-gas/FX，还原日历错位）：8 月 6.1%（还原后），Q3 2026 季度 6.7%；9–11 月均值 ≥6.0% = 引擎完好；连续两个月 <5.5% = 降速 → 跟踪 / 减仓"
+      },
+      {
+        "id": "renewal_ww",
+        "reads": "renewal_ww",
+        "metric": "全球会员续费率",
+        "direction": "up",
+        "threshold": 89.7,
+        "unit": "pct",
+        "remark": "报告要它与付费会员增速低于 3.5% 同时成立才算飞轮失速，付费会员同比的读数在核对抽屉",
+        "quote": "付费会员增速 + WW 续费率：+3.8% / 89.8%；会员增速 <3.5% 且 WW 续费率回落到 <89.7% = 飞轮失速；续费率 US/CN ≥92.5% = 护城河加分 → 减仓 / 护城河 KPI"
+      }
+    ],
+    "not_charted": [
+      {
+        "metric": "付费会员同比（与全球续费率一起才算飞轮失速）",
+        "threshold_text": "< +3.5% 且全球续费率 < 89.7% = 飞轮失速",
+        "reading": "本季付费会员 {paid_mm}，同比 {paid_yoy}（付费会员数相除，D）。",
+        "why": "阈值图目前只接了 comp、续费率、Executive、客流与核心商品毛利率这几条序列，付费会员同比不在其中，读数写在核对抽屉",
+        "quote": "付费会员增速 + WW 续费率：+3.8% / 89.8%；会员增速 <3.5% 且 WW 续费率回落到 <89.7% = 飞轮失速；续费率 US/CN ≥92.5% = 护城河加分 → 减仓 / 护城河 KPI"
+      },
+      {
+        "metric": "美加续费率（护城河加分线）",
+        "threshold_text": "≥ 92.5% = 护城河加分（加分线，不是警戒线）",
+        "reading": "本季 {renewal_us}。",
+        "why": "报告写的是加分条件而不是警戒线，而阈值图画的是安全侧的线",
+        "quote": "付费会员增速 + WW 续费率：+3.8% / 89.8%；会员增速 <3.5% 且 WW 续费率回落到 <89.7% = 飞轮失速；续费率 US/CN ≥92.5% = 护城河加分 → 减仓 / 护城河 KPI"
+      },
+      {
+        "metric": "会员费收入剔除汇率增速（涨价红利用尽后）",
+        "threshold_text": "FY2027 Q1 ≥ +6.5% = 正常；< +5.5% = 警示",
+        "reading": "本季补充材料印的会员费增速 {fee_growth}，剔除汇率 {fee_growth_ex_fx}。报告同时引的「剔除涨价与汇率 +6.8%」不在任何申报文件里（电话会）；CFO 说本季是 2024 年 9 月那次涨价带来同比贡献的最后一季（电话会）。",
+        "why": "阈值图没有接会员费增速这条序列，读数写在核对抽屉",
+        "quote": "会员费收入 ex-FX 增速（涨价红利用尽后）：Q3 2026 +7.7%（剔除涨价 +6.8%）；FY27 Q1 ≥+6.5% = 正常；<+5.5% = 递延余额的警示兑现 → 警示"
+      },
+      {
+        "metric": "商品端利润贡献增速（营业利润减会员费，剔除关税退款）",
+        "threshold_text": "FY2027 Q1 同比 ≥ +12% / < +9%",
+        "reading": "报告算出的 FY2026 下半年 +13.8% 剔除了关税退款的毛利净额，那个金额只在电话会给出；申报文件只印它对每股收益的合计影响（每股 0.15 美元）。",
+        "why": "要剔除的关税退款毛利净额不在申报文件里，本页不重算",
+        "quote": "商品端利润贡献增速（营业利润 − 会员费，剔除退税）：FY26 H2 +13.8%；FY27 Q1 ≥+12% = ……可达；<+9% = ……需下调 3–5% → 跟踪 / 警示"
+      },
+      {
+        "metric": "现金部署（特别股息 / 回购）",
+        "tracked_by": "EX_CASH",
+        "threshold_text": "事件：宣布 ≥ 每股 15 美元的特别股息；FY2027 Q1 现金 > 230 亿美元仍无动作 = 继续跟踪",
+        "reading": "本季没有宣布特别股息；现金余额见本节最后那张现金图。",
+        "why": "事件型触发，现金那半条也只是「继续跟踪」而不是警戒线，用本节最后那张现金图跟踪",
+        "quote": "现金部署（特别股息 / 回购）：现金 $20.2B（$45.6/股），一年内到期债务 $2.25B；宣布 ≥$15/股特别股息 = 重估催化；FY27 Q1 现金 >$23B 仍无动作 = 继续跟踪 → 加仓催化 / 跟踪"
+      }
+    ]
   },
   "followup_closure": {
-    "period": "Q2 2026",
-    "set_in": "Q4 2025",
-    "set_in_file": "2026-03-05 COST Q4 2025 vs Q3 2025 Analysis.md",
-    "closed_in": "2026-05-28 COST Q2 2026 vs Q1 2026 Analysis.md",
-    "_note": "上一份报告（文件名标 2026-03-05，正文是 FY2026 Q1）文末的 7 条 Follow-up，由本季报告第 0 节一次性闭环（FY2026 Q2 没有单独的报告）。verdict 照录第 0 节判定列原文；evidence 是本页核对的申报读数，花括号是 builder 现算的数。",
+    "period": "Q3 2026",
+    "set_in": "Q2 2026",
+    "set_in_file": "2026-05-28 COST Q2 2026 vs Q1 2026 Analysis.md",
+    "closed_in": "2026-09-24 COST Q3 2026 vs Q2 2026 Analysis.md",
+    "_note": "上一份报告（2026-05-28，正文 FY2026 Q3）文末的 5 条 Follow-up，由本季报告第 0 节逐条判定。verdict 取第 0 节「验证结果」一栏的判定主词；主词之后的限定语（括号里的、分号之后的）照录在 evidence 开头。evidence 是本页核对的申报读数，花括号是 builder 现算的数。",
     "labels": [
-      "看多确认",
-      "部分确认",
-      "进展中",
-      "仍在跟踪"
+      "已验证",
+      "部分验证",
+      "前提被证伪"
     ],
-    "rule": "判定一栏照录本季报告第 0 节的原文措辞，按措辞本身分组，不合并近义词、也不改判；报告没有给统计行，条数是本页按原文逐条数出来的。报告在验证结果一栏给三条打了勾、四条打了警示符号，与这里的分界一致 —— 打勾的恰是三条「看多确认」。",
-    "reading": "本页逐条对照了申报文件，没有找到与报告判定相矛盾的读数，逐条读数列在核对抽屉。报告的闭环小结是：续费率与 Executive 两条本季兑现，retail media 与 AI 的变现仍停在叙事；新出现的张力是客流走软与汽油顺风即将反转，那两条在第二、三节。",
+    "rule": "判定一栏取本季报告第 0 节「验证结果」的判定主词，按措辞本身分组，不合并近义词、也不改判；有三条在主词之后加了限定语（「（回正）」「（收窄）」「；ex-gas 部分已验证」），限定语照录在读数一栏的开头。报告没有给统计行，条数是本页按原文逐条数出来的。",
+    "reading": "本页逐条对照了申报文件，没有找到与报告判定相矛盾的读数，逐条读数列在核对抽屉。本季报告自己的记分卡里，上一份报告有两条判断没站住：汽油顺风下季就会反转（方向、幅度、归因、时点四项都记错），以及关税退款是一笔很大的现金期权（方向记对，幅度与归因记错）—— 申报文件里它只是本季每股 0.15 美元的一次性收益。",
     "items": [
       {
-        "question": "续费率下滑是否减速到每季 5 个基点以内？",
-        "short": "续费率下滑减速",
-        "verdict": "看多确认",
-        "evidence": "10-Q 正文与 EX-99.2：美加由上一季的 {renewal_us_prev} 回到 {renewal_us}（{renewal_us_change}），全球 {renewal_ww_prev} → {renewal_ww}（{renewal_ww_change}）。"
+        "question": "汽油顺风退潮后，报告 comp 回落到多少？剔除汽油的 comp 能否守住 +6%？",
+        "short": "汽油退潮与调整后 comp 守 6%",
+        "verdict": "前提被证伪",
+        "evidence": "原文判定「前提被证伪；ex-gas 部分已验证」。业绩新闻稿：调整后 comp {adjusted_comp_prev} → {adjusted_comp}，守住 +6%；报告 comp 仍高于调整后 comp（第二节的缺口图），即汽油与汇率合计仍在抬高 headline，「退潮」没有发生。"
       },
       {
-        "question": "Executive 会员占总会员是否突破 47%？",
-        "short": "Executive 占比破 47%",
-        "verdict": "看多确认",
-        "evidence": "EX-99.2：Executive {executive_mm}、付费会员 {paid_mm}，比值 {executive_share}（上一季 {executive_share_prev}）；Executive 同比 {executive_yoy}、付费会员同比 {paid_yoy}。公司只印分子与分母，比值与同比为本页相除（D）。"
+        "question": "续费率企稳能否延续（美加 ≥92.2%、全球 ≥89.7%）？",
+        "short": "续费率企稳延续",
+        "verdict": "已验证",
+        "evidence": "EX-99.2 补充材料（会计 Q4 没有 10-Q）：美加 {renewal_us_prev} → {renewal_us}（{renewal_us_change}），全球 {renewal_ww_prev} → {renewal_ww}（{renewal_ww_change}）。"
       },
       {
-        "question": "数字化 comp 是否维持在 +15% 以上？",
-        "short": "数字化 comp 守 +15%",
-        "verdict": "看多确认",
-        "evidence": "业绩新闻稿：Digitally-Enabled comp {digital}（上一季 {digital_prev}）。阈值设在同一个 digitally-enabled 口径上（FY2026 Q1 起），与更早的 e-commerce comp 不可直接比。"
+        "question": "core-on-core 毛利率回正，还是连续转负？",
+        "short": "core-on-core 回正",
+        "verdict": "已验证",
+        "evidence": "原文判定「已验证（回正）」。EX-99.2 补充材料 Financial Performance 页的 Core on Core Sales 由负转正，逐季读数见本节的核心商品毛利率图；本季这一格带一条上季没有的脚注，剔除了本季收到的 IEEPA 关税退款及其部分再投资的影响。"
       },
       {
-        "question": "Retail media 收入是否首次量化披露？",
-        "short": "retail media 量化",
-        "verdict": "仍在跟踪",
-        "evidence": "10-K、10-Q、业绩 8-K 与 EX-99.2 补充材料里都没有这条收入。"
+        "question": "是否宣布特别股息？关税退税的返还机制是否明确？",
+        "short": "特别股息与退税返还",
+        "verdict": "部分验证",
+        "evidence": "原文判定「部分验证（返还机制明确；特别股息仍未披露）」。业绩新闻稿首段：本季含 IEEPA 关税退款带来的一次性收益每股 0.15 美元，已扣除把部分退款再投资于会员价值的部分；本季内没有 8-K 宣布特别股息。退款金额只在电话会给出：第四季收到 1.84 亿美元（退款 1.74 亿、利息 0.10 亿），约为预期总额的三分之一多一点，大部分会继续再投资于会员价值（电话会）。"
       },
       {
-        "question": "AI 在药房之外的投资回报是否量化？",
-        "short": "AI 药房外回报",
-        "verdict": "进展中",
-        "evidence": "申报文件里没有任何 AI 相关的金额或回报率；EX-99.2 只列了几条定性的数字化举措。"
-      },
-      {
-        "question": "comp 增速与美国客流是否企稳？",
-        "short": "comp 与美国客流企稳",
-        "verdict": "部分确认",
-        "evidence": "EX-99.2：调整后 comp {adjusted_comp_prev} → {adjusted_comp}；全公司同店客流 {traffic_prev} → {traffic}，美国 {us_traffic_prev} → {us_traffic}；剔除汽油与汇率的客单 {adjusted_ticket}。comp 稳，客流不稳。"
-      },
-      {
-        "question": "FY2026 全年开店「20 年最高」与新店爬坡？",
-        "short": "FY2026 开店与爬坡",
-        "verdict": "部分确认",
-        "evidence": "EX-99.2 仓库扩张表：财年末估计由上一季的 {fy_end_estimate_prev} 家改为 {fy_end_estimate} 家，对上一财年末 {fy_start_warehouses} 家即净新开 {net_new_prev} → {net_new} 家；本季末 {warehouses} 家。新店爬坡的销售额不在任何申报文件里。"
+        "question": "营业利润增速与净利润增速的差是否收窄（线下项的顺风是否消退）？",
+        "short": "营业与净利润增速差收窄",
+        "verdict": "已验证",
+        "evidence": "原文判定「已验证（收窄）」。每股收益分解：本季来自营业外与税率的两条腿合计 {eps_wedge}，拆法见第二节的每股收益分解图。报告的收窄是剔除关税退款之后的口径。"
       }
     ]
   },
   "quarter_story": {
-    "period": "Q2 2026",
-    "_note": "本季报告（2026-05-28 那一份）第 1、7 节的结论里，页面在第二节之外处理的与不画的：elsewhere 的花括号是 builder 现算的图号；undrawn 是画不了或不发布的结论与理由。只属于这一季：换季时换成新一季报告的内容，或整块删掉。",
-    "elsewhere": "本季报告的另一条主结论 —— 续费率拐点（美加回升、全球持平）与 Executive 会员质增 —— 正是上一份报告第 8 节第 1、2 条阈值，结清在第一节（{prior_charts}）；core-on-core 转负是本季报告第 8 节的第 4 条线，在第三节（{ex:next_core_on_core}）。",
+    "period": "Q3 2026",
+    "_note": "本季报告（2026-09-24 那一份）第 1、7 节的结论里，页面在第二节之外处理的与不画的：elsewhere 的花括号是 builder 现算的图号；undrawn 是画不了或不发布的结论与理由。只属于这一季：换季时换成新一季报告的内容，或整块删掉。",
+    "elsewhere": "本季每股收益里还有一笔不在那两条腿里的一次性收益：业绩新闻稿写明，IEEPA 关税退款扣除再投资于会员价值的部分，给本季带来每股 0.15 美元；它记在毛利里（补充材料毛利率桥的「Other」一行 +9bps），所以落在营业利润那条腿里。本季报告的另两条结论 —— core-on-core 由负转正、续费率回升 —— 结清在第一节（{prior_charts}）。",
     "undrawn": [
-      "同业的 comp 对比（BJ's、Walmart、Target 等）：报告标注取自网络检索，不是 Costco 的申报",
-      "财报后的股价反应与估值倍数：本站不发布估值"
+      "月度调整后 comp 的季内走势（报告据每月销售稿算出季内逐月下行）：月度销售几乎不进 SEC，本站口径是季度",
+      "汽油零售价同比与 2027 年 3–5 月的 headline 悬崖：报告用的是 EIA 周度油价，不是 Costco 的申报",
+      "LIFO 年末调整对单季每股收益的扭曲：补充材料只印 LIFO 对毛利率的基点影响（本季 −11bps），季度金额只在电话会给出（本季 1.52 亿美元，去年同季 0.43 亿美元）",
+      "会员费涨价红利用尽后 FY2027 的每股收益算术：报告倒推用的是网络检索到的市场预期，报告自己写明来源不一，本页不引",
+      "同业 comp 对比、财报后的股价反应与估值：前者报告标注取自网络检索，后者本站不发布"
     ]
   },
   "disclosure_boundary": [
@@ -4092,7 +4075,8 @@
       "Q3 2025",
       "Q4 2025",
       "Q1 2026",
-      "Q2 2026"
+      "Q2 2026",
+      "Q3 2026"
     ],
     "target_fiscal_year": [
       2024,
@@ -4103,7 +4087,8 @@
       2026,
       2026,
       2026,
-      2026
+      2026,
+      2027
     ],
     "fy_end_estimate": [
       890,
@@ -4114,7 +4099,8 @@
       944,
       942,
       942,
-      940
+      940,
+      967
     ],
     "actual_fy_end": [
       890,
@@ -4122,9 +4108,10 @@
       914,
       914,
       914,
-      null,
-      null,
-      null,
+      939,
+      939,
+      939,
+      939,
       null
     ]
   },
@@ -4138,7 +4125,8 @@
       "Q3 2025",
       "Q4 2025",
       "Q1 2026",
-      "Q2 2026"
+      "Q2 2026",
+      "Q3 2026"
     ],
     "fiscal_labels": [
       "FY2024 Q3",
@@ -4149,7 +4137,8 @@
       "FY2025 Q4",
       "FY2026 Q1",
       "FY2026 Q2",
-      "FY2026 Q3"
+      "FY2026 Q3",
+      "FY2026 Q4"
     ],
     "period_ends": [
       "2024-05-12",
@@ -4160,7 +4149,8 @@
       "2025-08-31",
       "2025-11-23",
       "2026-02-15",
-      "2026-05-10"
+      "2026-05-10",
+      "2026-08-30"
     ],
     "comp_traffic_pct": [
       6.1,
@@ -4171,7 +4161,8 @@
       3.7,
       3.1,
       3.1,
-      2.4
+      2.4,
+      3.3
     ],
     "comp_traffic_us_pct": [
       5.5,
@@ -4182,7 +4173,8 @@
       3.5,
       2.6,
       2.4,
-      1.8
+      1.8,
+      3.2
     ],
     "comp_ticket_pct": [
       0.5,
@@ -4193,7 +4185,8 @@
       1.9,
       3.2,
       4.2,
-      7.3
+      7.3,
+      5.9
     ],
     "adjusted_comp_ticket_pct": [
       null,
@@ -4204,7 +4197,8 @@
       2.6,
       3.2,
       3.5,
-      4.2
+      4.2,
+      3.3
     ],
     "executive_members_mm": [
       34.5,
@@ -4215,7 +4209,8 @@
       38.7,
       39.7,
       40.4,
-      41.2
+      41.2,
+      42.3
     ],
     "paid_members_mm": [
       74.5,
@@ -4226,7 +4221,8 @@
       81.0,
       81.4,
       82.1,
-      82.9
+      82.9,
+      84.1
     ],
     "digitally_enabled_comp_pct": [
       20.7,
@@ -4237,7 +4233,8 @@
       13.6,
       20.5,
       22.6,
-      21.5
+      21.5,
+      19.5
     ],
     "executive_sales_penetration_pct": [
       73.1,
@@ -4248,7 +4245,8 @@
       74.2,
       74.3,
       75.8,
-      75.0
+      75.0,
+      75.6
     ],
     "membership_income_growth_pct": [
       7.6,
@@ -4259,7 +4257,8 @@
       14.0,
       14.0,
       13.6,
-      10.7
+      10.7,
+      7.3
     ],
     "membership_income_growth_ex_fx_pct": [
       8.0,
@@ -4270,7 +4269,8 @@
       13.6,
       14.0,
       12.2,
-      9.9
+      9.9,
+      7.7
     ],
     "core_on_core_bps": [
       10,
@@ -4281,7 +4281,8 @@
       29,
       30,
       22,
-      -9
+      -9,
+      18
     ]
   },
   "core_on_core": {
@@ -4327,7 +4328,8 @@
       "Q3 2025",
       "Q4 2025",
       "Q1 2026",
-      "Q2 2026"
+      "Q2 2026",
+      "Q3 2026"
     ],
     "change_bps": [
       11,
@@ -4371,7 +4373,8 @@
       29,
       30,
       22,
-      -9
+      -9,
+      18
     ],
     "value_source": [
       "10-Q MD&A prose",
@@ -4415,7 +4418,8 @@
       "8-K EX-99.2 supplemental deck",
       "10-Q/10-K MD&A prose",
       "10-Q/10-K MD&A prose",
-      "10-Q/10-K MD&A prose"
+      "10-Q/10-K MD&A prose",
+      "8-K EX-99.2 supplemental deck"
     ]
   },
   "special_dividends": {
@@ -4490,20 +4494,20 @@
   ],
   "sources": [
     {
+      "label": "Costco FY2026 Q4 业绩新闻稿（8-K EX-99.1，2026-09-24）",
+      "url": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000084/costex9918-k92426.htm"
+    },
+    {
+      "label": "Costco FY2026 Q4 补充材料（同一份 8-K 的 EX-99.2，含客流客单与毛利率基点分解）",
+      "url": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000084/costex9928-k92426.htm"
+    },
+    {
       "label": "Costco FY2026 Q3 业绩新闻稿（8-K EX-99.1，2026-05-28）",
       "url": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000046/costex9918-k52826.htm"
     },
     {
-      "label": "Costco FY2026 Q3 补充材料（同一份 8-K 的 EX-99.2，含客流客单与毛利率基点分解）",
-      "url": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000046/costex9928-k52826.htm"
-    },
-    {
       "label": "Costco 截至 2026-05-10 的 10-Q",
       "url": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000051/cost-20260510.htm"
-    },
-    {
-      "label": "Costco FY2026 Q2 业绩新闻稿（8-K EX-99.1，2026-03-05）",
-      "url": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000025/costex9918-k3526.htm"
     },
     {
       "label": "Costco FY2025 10-K（含资本开支计划与开店计划、会员表与 Executive 会员数）",
