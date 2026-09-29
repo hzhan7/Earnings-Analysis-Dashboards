@@ -393,20 +393,36 @@ class CostDashboardTest(unittest.TestCase):
                     self.assertIn("只占本季总收入", seg["note"])
                     for ex in (cats, seg):
                         self.assertNotIn("尚未申报", ex["note"])
-                        self.assertIsNotNone(ex["groups"][0]["values"][-1] if "groups" in ex
-                                             else ex["series"][0]["values"][-1])
+                    self.assertEqual(cats["xlabels"], labels)
+                    self.assertIsNotNone(seg["series"][0]["values"][-1])
                     self.assertIn("加油站所在的那一条贡献了", highlights["description"])
                 else:
                     self.assertIn(f"{labels[-2]} 合计", cats["title"])
                     self.assertTrue(seg["title"].startswith(f"三个地区分部的营业利润率：{labels[-2]} 美国 "))
                     self.assertIn(f"只占 {labels[-2]} 总收入", seg["note"])
+                    self.assertIn(f"{labels[-1]} 那一根还没画", cats["note"])
+                    self.assertIn(f"{labels[-1]} 那一格是空的", seg["note"])
                     for ex in (cats, seg):
-                        self.assertIn(f"{labels[-1]} 那一格是空的", ex["note"])
                         self.assertIn(f"{filing} 尚未申报", ex["note"])
-                    self.assertIsNone(cats["groups"][0]["values"][-1])
+                    # a stacked column with nothing in it would be a label over empty canvas
+                    self.assertEqual(cats["xlabels"], labels[:-1])
                     self.assertIsNone(seg["series"][0]["values"][-1])
                     self.assertIn(f"要等 {filing}", highlights["description"])
                     self.assertNotIn("加油站所在的那一条贡献了", highlights["description"])
+
+    def test_the_category_chart_stacks_each_quarter_to_its_net_sales_growth(self) -> None:
+        """One column a quarter: the four contributions stacked, negatives below
+        zero, and the diamond at their sum, which is net sales growth."""
+        chart = next(ex for ex in self.by_section["quarter_highlights"]
+                     if ex["title"].startswith("四条商品线"))
+        self.assertEqual(chart["kind"], "bridge_bar")
+        self.assertEqual(len(chart["stacks"]), 4)
+        self.assertNotIn("RED", [stack["color"] for stack in chart["stacks"]],
+                         "RED is the engine's break and outlier colour")
+        for i, label in enumerate(chart["xlabels"]):
+            with self.subTest(quarter=label):
+                total = sum(stack["values"][i] for stack in chart["stacks"])
+                self.assertAlmostEqual(total, chart["net"]["values"][i], places=4)
 
     def test_merchandise_categories_sum_to_net_sales(self) -> None:
         cats = self.source["merchandise_categories"]
@@ -615,19 +631,33 @@ class CostDashboardTest(unittest.TestCase):
         self.assertEqual(set(names[index:]), {"Digitally-Enabled"})
         self.assertEqual(self.hist["periods"][index], "Q4 2025")
 
-    def test_renewal_rates_are_plotted_only_where_they_have_a_decimal(self) -> None:
+    def test_renewal_levels_run_the_whole_record_with_the_precision_break_marked(self) -> None:
+        """The level is drawn from 2016; a dashed line marks where the company
+        went from whole percents to one decimal, and only the one-decimal
+        readings are counted against a line. The quarter-on-quarter change still
+        starts after the break: it needs two one-decimal readings."""
         mem = self.source["membership"]
         start = mem["renewal_decimal_from_index"]
         self.assertEqual(mem["periods"][start], "Q1 2023")
-        for value in mem["renewal_rate_us_canada_pct"][:start]:
-            self.assertEqual(value, round(value), "pre-decimal era is whole points")
+        for key in ("renewal_rate_us_canada_pct", "renewal_rate_worldwide_pct"):
+            for value in mem[key][:start]:
+                self.assertEqual(value, round(value), "pre-decimal era is whole points")
+            self.assertTrue(any(value != round(value) for value in mem[key][start:]))
         probed = build_payload(with_lines(self.source, "next_kpi", ["renewal_us", "renewal_us_change_bp"]))
         nxt = next(s for s in probed["sections"] if s["id"] == "next_quarter")["exhibits"]
         level = next(ex for ex in nxt if ex["title"].startswith("会员续费率："))
-        self.assertEqual(len(level["xlabels"]), len(mem["periods"]) - start)
+        self.assertEqual(level["xlabels"], [compact_period(period) for period in mem["periods"]])
+        self.assertEqual(level["xlabels"][0], "Q1'16")
+        self.assertEqual(level["break_at"], start)
+        self.assertEqual(level["xlabels"][level["break_at"]], compact_period(mem["periods"][start]))
+        self.assertIn("一位小数", level["break_label"])
+        self.assertIn("此前为整数", level["break_label"])
+        self.assertIn(f"有一位小数的 {len(mem['periods']) - start} 个读数里", level["note"])
+        self.assertIn("竖虚线两边的取数精度不同", level["note"])
         # A change needs two one-decimal readings, so it starts one quarter later.
         change = next(ex for ex in nxt if ex["title"].startswith("会员续费率季度变化"))
         self.assertEqual(len(change["xlabels"]), len(mem["periods"]) - start - 1)
+        self.assertNotIn("break_at", change)
 
     # ── the guidance record ─────────────────────────────────────────────────
     def test_the_capex_record_is_two_sided(self) -> None:
@@ -964,7 +994,7 @@ class CostDashboardTest(unittest.TestCase):
             # names, not on the prose that explains the refusal.
             self.assertNotIn("2.2pp", exhibit["title"])
             self.assertNotIn("retail media", exhibit["title"].lower())
-            for series in exhibit.get("series", []) + exhibit.get("groups", []):
+            for series in exhibit.get("series", []) + exhibit.get("groups", []) + exhibit.get("stacks", []):
                 self.assertNotIn("retail media", series["name"].lower())
             for field in ("title", "note", "src_extra"):
                 self.assertNotIn("2.2pp", exhibit.get(field) or "")
@@ -981,7 +1011,7 @@ class CostDashboardTest(unittest.TestCase):
         self.assertIsNone(self.payload["guidance"])
         for exhibit in self.exhibits:
             self.assertNotIn("市场预期", exhibit["title"])
-            for series in exhibit.get("series", []) + exhibit.get("groups", []):
+            for series in exhibit.get("series", []) + exhibit.get("groups", []) + exhibit.get("stacks", []):
                 self.assertNotIn("市场预期", series["name"])
         for table in self.payload["tables"]:
             self.assertNotIn("市场预期", " ".join(table["headers"]))
@@ -1524,7 +1554,7 @@ class CostRollRehearsalTest(unittest.TestCase):
                 for ex in exhibits:
                     for key in ("title", "note", "src_extra"):
                         self.assertNotIn("{", ex.get(key) or "", ex["title"])
-                    for series in ex.get("series", []) + ex.get("groups", []):
+                    for series in ex.get("series", []) + ex.get("groups", []) + ex.get("stacks", []):
                         self.assertEqual(len(series["values"]), len(ex["xlabels"]), ex["title"])
                 # ...and the builder still never reads `_checks`.
                 self.assertEqual(build_payload({k: v for k, v in staging.items() if k != "_checks"}), payload)

@@ -275,12 +275,19 @@ def kpi_history(staging: dict, reads: str) -> tuple[list[str], list[float | None
             "name": "数字化同店销售（digitally-enabled）", "short": "数字化同店销售", "fmt": "pct1", "ylab": "%",
             "context": [{"name": "电商同店销售（e-commerce，此前的窄口径）", "color": "GRAY",
                          "values": [v if n == "E-commerce" else None for v, n in zip(digital, names)]}]}
+    # The level runs the whole record. Before `start` the company rounded it to a
+    # whole percent, so the chart marks where the precision changes, and counts
+    # against a line only the one-decimal readings: a whole-percent 90% could be
+    # anything from 89.5% to 90.4%.
+    precision = {"break_at": start,
+                 "break_label": f"{fiscal_label_of(mem['periods'][start])} 起一位小数，此前为整数",
+                 "count_from": start}
     if reads == "renewal_us":
-        return mem_labels[start:], us[start:], {
-            "name": "美加续费率", "short": "美加", "fmt": "pct1", "ylab": "%"}
+        return mem_labels, us, {
+            "name": "美加续费率", "short": "美加", "fmt": "pct1", "ylab": "%", **precision}
     if reads == "renewal_ww":
-        return mem_labels[start:], world[start:], {
-            "name": "全球续费率", "short": "全球", "fmt": "pct1", "ylab": "%"}
+        return mem_labels, world, {
+            "name": "全球续费率", "short": "全球", "fmt": "pct1", "ylab": "%", **precision}
     if reads == "renewal_us_change_bp":
         return mem_labels[start + 1:], change_bp(us), {
             "name": "美加续费率季度变化", "short": "美加", "fmt": "f0", "ylab": "基点"}
@@ -380,6 +387,9 @@ def kpi_chart(staging: dict, group: list[dict], *, word: str, title: str, ref: s
         for context in spec.get("context", []):
             series.append({"name": context["name"], "values": rounded(context["values"]),
                            "color": context["color"]})
+    breaks = [spec for spec in (kpi_history(staging, reads)[2]
+                                for reads in dict.fromkeys(entry["reads"] for entry in group))
+              if "break_at" in spec]
     drawn = set()
     # The harsher lines are drawn only when the chart has a single threshold:
     # two thresholds with two harsher lines each is four flat lines, and the
@@ -411,6 +421,8 @@ def kpi_chart(staging: dict, group: list[dict], *, word: str, title: str, ref: s
     }
     if markers:
         chart["markers"] = True
+    if breaks:
+        chart["break_at"], chart["break_label"] = breaks[0]["break_at"], breaks[0]["break_label"]
     if len(xlabels) > 16:
         chart["xstep"] = LONG_STEP
     return chart
@@ -435,14 +447,20 @@ def kpi_series_note(staging: dict, reads: str, local_note: dict | None) -> str:
                    if claim is not None and abs(recent_mean - claim) <= 0.3 and claim < max(adjusted_filed)
                    else "。")
                 + resolution_note(staging))
-    if reads in ("renewal_us", "renewal_ww", "renewal_us_change_bp", "renewal_ww_change_bp"):
+    rolling = "续费率是滚动口径：公司写明它统计的是报告日前第 7 到第 18 个月到期的会员。"
+    if reads in ("renewal_us_change_bp", "renewal_ww_change_bp"):
         return ("<b>这条线为什么不从更早画起：</b>"
                 f"Costco 在 {fiscal_label_of(mem['periods'][start])} 之前把续费率四舍五入到"
                 "整数百分点（91%、92%、93%），之后才给到一位小数。"
                 "把两段接在一起会把四舍五入画成一段台阶式的「趋势」，"
-                + ("所以季度变化从有两个一位小数读数的那一季起算。" if reads.endswith("_bp") else
-                   "所以本图从有小数的那一季起画。")
-                + "续费率是滚动口径：公司写明它统计的是报告日前第 7 到第 18 个月到期的会员。")
+                "所以季度变化从有两个一位小数读数的那一季起算。" + rolling)
+    if reads in ("renewal_us", "renewal_ww"):
+        return (f"<b>竖虚线两边的取数精度不同：</b>本图从 {compact_period(mem['periods'][0])} 画起，"
+                f"Costco 在 {fiscal_label_of(mem['periods'][start])}（本图 "
+                f"{compact_period(mem['periods'][start])}）之前把续费率四舍五入到整数百分点"
+                "（91%、92%、93%），之后才给到一位小数。虚线左边的台阶是四舍五入留下的，"
+                "不是续费率真的那样一格一格地跳；拿阈值比较、数越线次数，只用虚线右边的读数。"
+                + rolling)
     if reads in ("executive_share", "executive_yoy"):
         return ("<b>公司从不印这两个比率</b>，但它印它们的组成部分 —— Executive 会员数与付费会员数"
                 "并排放在同一张表里，所以占比与同比都是申报值相除（D）。" + deck_source(staging))
@@ -558,11 +576,14 @@ def kpi_line_words(staging: dict, entry: dict, value: float, *, word: str) -> st
 
 def kpi_count_words(entry: dict, values: list[float | None], spec: dict) -> str:
     """How often the metric's own record sat on the wrong side of this line."""
-    readings = [value for value in values if value is not None]
+    readings = [value for value in values[spec.get("count_from", 0):] if value is not None]
     below = sum(1 for value in readings if crossed(entry, value))
     name = spec["short"] + (" " if spec["short"][-1].isascii() else "")
-    return (f"{name}一共 {len(readings)} 个读数，落在这条线"
-            f"{'下方' if entry['direction'] == 'up' else '上方'}的有 {below} 个。")
+    side = "下方" if entry["direction"] == "up" else "上方"
+    if spec.get("count_from"):
+        return (f"{name}有一位小数的 {len(readings)} 个读数里，落在这条线{side}的有 {below} 个；"
+                "虚线左边的整数读数只精确到 ±0.5 个百分点，不参与计数。")
+    return f"{name}一共 {len(readings)} 个读数，落在这条线{side}的有 {below} 个。"
 
 
 def closure_counts(closure: dict) -> list[int]:
@@ -1517,12 +1538,12 @@ def build_payload(staging: dict) -> dict:
     seg_when = "本季" if seg_at == len(labels) - 1 else f"{labels[seg_at]} "
     seg_share_when = "本季" if seg_when == "本季" else f" {seg_when}"   # 「只占 Q2'26 总收入」
 
-    def pending_words(filed: list[int]) -> str:
-        """The empty trailing cells, and why they are empty."""
+    def pending_words(filed: list[int], state: str = "那一格是空的") -> str:
+        """The trailing quarters with no figure yet, and why."""
         waiting = list(range(filed[-1] + 1, len(labels)))
         if not waiting:
             return ""
-        return (f"<b>{'、'.join(labels[i] for i in waiting)} 那一格是空的：</b>"
+        return (f"<b>{'、'.join(labels[i] for i in waiting)} {state}：</b>"
                 + ("会计 Q4 的这组数要用 10-K 的全年数减去前 36 周，" if pending_filing == "10-K" else
                    "这组数印在 10-Q 里，")
                 + f"而 {pending_filing} 尚未申报；图题与这里的读数是 {labels[filed[-1]]} 的。")
@@ -1670,39 +1691,46 @@ def build_payload(staging: dict) -> dict:
         },
         {
             "ref": "EX_CATS",
-            "kind": "grouped_bars",
+            "kind": "bridge_bar",
             "title": (f"四条商品线对净销售额增速的贡献：{cats_when}合计 "
                       f"{cats['net_sales_yoy_pct'][cats_at]:+.1f}%，其中加油站所在那条占 "
                       f"{cats['growth_contribution_pp']['warehouse_ancillary_and_other_usd_m'][cats_at]:.1f} 个百分点"),
-            "xlabels": labels,
-            "groups": [
+            # One stacked column per quarter, drawn only through the last quarter
+            # with a filing: a column waiting for its 10-Q / 10-K would be a label
+            # over empty canvas (the bridge contract in test_chart_contract).
+            "xlabels": labels[:cats_at + 1],
+            "stacks": [
                 {"name": "食品与日用", "color": "NAVY",
-                 "values": rounded(cats["growth_contribution_pp"]["foods_and_sundries_usd_m"])},
+                 "values": rounded(cats["growth_contribution_pp"]["foods_and_sundries_usd_m"][:cats_at + 1])},
                 {"name": "非食品", "color": "BLUE",
-                 "values": rounded(cats["growth_contribution_pp"]["non_foods_usd_m"])},
+                 "values": rounded(cats["growth_contribution_pp"]["non_foods_usd_m"][:cats_at + 1])},
                 {"name": "生鲜", "color": "GOLD",
-                 "values": rounded(cats["growth_contribution_pp"]["fresh_foods_usd_m"])},
-                {"name": "仓内附属与其他（含加油站）", "color": "RED",
+                 "values": rounded(cats["growth_contribution_pp"]["fresh_foods_usd_m"][:cats_at + 1])},
+                {"name": "仓内附属与其他（含加油站）", "color": "GREEN",
                  "values": rounded(
-                     cats["growth_contribution_pp"]["warehouse_ancillary_and_other_usd_m"])},
+                     cats["growth_contribution_pp"]["warehouse_ancillary_and_other_usd_m"][:cats_at + 1])},
             ],
-            "bar_labels": True,
-            "fmt": "pp1", "label_fmt": "pp1", "ylab": "百分点",
+            "net": {"name": "净销售额同比（四段合计）",
+                    "values": rounded(cats["net_sales_yoy_pct"][:cats_at + 1])},
+            "fmt": "pp1", "yfmt": "pp1", "label_fmt": "pp1", "ylab": "百分点",
             "annot": (f"{labels[mismatch[0]]}：{weeks[mismatch[0]]} 周对上年 "
                       f"{staging['weeks_by_period'][comparative]} 周" if mismatch else ""),
-            "note": ("四根柱相加等于当季净销售额的同比增速，是恒等式不是估计。"
-                     "<b>红色那条是加油站、药房、食品部、眼镜与轮胎安装所在的「仓内附属与其他」</b>，"
-                     f"{cats_when}它一条就贡献了 "
+            "note": ("每季一根柱，四段相加等于当季净销售额的同比增速（菱形），是恒等式不是估计；"
+                     "某一类同比下滑时，那一段画在零线以下。"
+                     "<b>绿色那段是「仓内附属与其他」</b>：10-Q 写明它包括加油站、药房、眼镜、美食区、"
+                     "助听器与轮胎安装，以及电商、商业中心与旅行等其他业务。"
+                     f"{cats_when}它一段就贡献了 "
                      f"{cats['growth_contribution_pp']['warehouse_ancillary_and_other_usd_m'][cats_at]:.1f} "
                      f"个百分点，{ancillary_words}，而它只占上年净销售额的 "
                      f"{cats['ancillary_share_of_base_pct'][cats_at]:.1f}%。"
                      "这是「汽油推高了 headline」这句话在申报文件里的样子 —— "
-                     "公司不拆汽油单独的销售额，但它拆到了这条线。"
-                     + (f"<b>{labels[mismatch[0]]} 那一格要打折：</b>它是 {weeks[mismatch[0]]} 周的会计 Q4 "
+                     "公司不印汽油单独的销售额，但它拆到了这条线；这一段里汽油占多少，"
+                     "10-Q 另外印了油价与油量各自对净销售额的影响，本页还没有接进来。"
+                     + (f"<b>{labels[mismatch[0]]} 那一根要打折：</b>它是 {weeks[mismatch[0]]} 周的会计 Q4 "
                         f"对上年 {staging['weeks_by_period'][comparative]} 周的会计 Q4"
                         f"（FY{fiscal_year_of(comparative)} 是 53 周财年），"
-                        "同比因此被少算了大约一周，四根柱一起被压低。" if mismatch else "")
-                     + pending_words(cats_filed)),
+                        "同比因此被少算了大约一周，四段一起被压低。" if mismatch else "")
+                     + pending_words(cats_filed, "那一根还没画")),
             "src_extra": ("各季 10-Q 与 10-K 收入分解附注的四个商品类别；"
                           "贡献 = 该类别同比增量 ÷ 上年同期净销售额，本页自算（D）。"),
         },
