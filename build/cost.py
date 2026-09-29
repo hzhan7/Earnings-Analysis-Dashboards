@@ -2359,10 +2359,16 @@ def build_payload(staging: dict) -> dict:
         ),
         "headline": (
             f"总收入 US${revenue[-1]:,.0f}M、同比 {signed(fin['total_revenue_yoy_pct'][-1])}，"
-            f"报告 comp {signed(hist['reported_total_pct'][-1])} 是 {quarters_since_higher} "
-            f"个季度以来最高；但公司自己披露的剔除汽油与汇率后的 comp 是 "
+            + (f"报告 comp {signed(reported[-1])} 是 {quarters_since_higher} 个季度以来最高；但"
+               if quarters_since_higher > 1 else
+               f"报告 comp {signed(reported[-1])}（上一季 {signed(reported[-2])}），而")
+            + f"公司自己披露的剔除汽油与汇率后的 comp 是 "
             f"{signed(hist['adjusted_total_pct'][-1])}，两者 {latest_gap:.1f} 个百分点的缺口"
-            f"在这 {len(gap)} 季里有 {negative_gaps} 季是负的，{cn_count(4)}个季度前还是 {gap[-4]:+.1f}；"
+            f"在这 {len(gap)} 季里有 {negative_gaps} 季是负的"
+            + ("" if last_negative is None else
+               "，本季也在其中" if last_negative == len(gap) - 1 else
+               f"，最后一次为负是 {hist_labels[last_negative]} 的 {gap[last_negative]:+.1f}")
+            + "；"
             f"同一季每股收益 {signed(eps_printed)} 对营业利润 "
             f"{signed(fin['operating_income_yoy_pct'][-1])}。"
             + ("两端的加成都能用申报值原样剥掉。" if both_ends else "")

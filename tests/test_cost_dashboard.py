@@ -1281,6 +1281,40 @@ class CostDashboardTest(unittest.TestCase):
             self.assertIn("本地报告把本季", with_claims)
             self.assertNotIn("本地报告把本季", without)
 
+    def test_the_headline_rank_and_sign_follow_the_data(self) -> None:
+        """「是 N 个季度以来最高」 only when the quarter is at least level with the last
+        one, and the sign clause names the quarter it read. FY2026 Q4's +9.4% sat under
+        Q3's +9.8%, which printed「是 1 个季度以来最高」; and「四个季度前还是 X」read
+        the gap three quarters back. Both states are built here, counted independently.
+        """
+        def headline(reported_steps: dict[int, float]) -> tuple[dict, str]:
+            staging = copy.deepcopy(self.source)
+            for index, value in reported_steps.items():
+                staging["comp_history_pct"]["reported_total_pct"][index] = value
+            return staging, build_payload(staging)["headline"]
+
+        reported = self.hist["reported_total_pct"]
+        top = max(v for v in reported if v is not None)
+        for name, steps in (("previous higher", {-2: round(reported[-1] + 0.5, 1)}),
+                            ("record high", {-1: round(top + 1.0, 1)})):
+            staging, text = headline(steps)
+            series = staging["comp_history_pct"]["reported_total_pct"]
+            higher = [i for i, v in enumerate(series[:-1]) if v is not None and v > series[-1]]
+            since = len(series) - 1 - max(higher) if higher else len(series)
+            with self.subTest(state=name):
+                if since > 1:
+                    self.assertIn(f"是 {since} 个季度以来最高", text)
+                else:
+                    self.assertNotIn("个季度以来最高", text)
+                    self.assertIn(f"（上一季 {series[-2]:+.1f}%）", text)
+        gap = self.hist["gap_pp"]
+        negative = [i for i, v in enumerate(gap) if v is not None and v < 0]
+        labels = [compact_period(period) for period in self.hist["periods"]]
+        self.assertNotIn("个季度前还是", self.payload["headline"])
+        if negative and negative[-1] < len(gap) - 1:
+            self.assertIn(f"最后一次为负是 {labels[negative[-1]]} 的 {gap[negative[-1]]:+.1f}",
+                          self.payload["headline"])
+
     def test_the_prose_claims_follow_the_data(self) -> None:
         """Turn two readings around and the sentences that described them must go.
 
